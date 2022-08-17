@@ -19,9 +19,52 @@ Processing pipeline
 1. Parse frontend to unrefined IR
 2. Detect all idioms required for the language, and replace in the IR
 
-- if an idiom may or may not save bytes depending on some details, mark it as one of several alternatives
+- if an idiom may or may not save bytes depending on some details, mark it as one of several alternatives. For example, a procedure or function used twice may or may not be shorter when inlined. Try both alternatives and compare
+- this might lead to exponential complexity, so there should be flags to avoid excessive branching. Similarly to -O3 in gcc spending more time compiling for faster output, our -O3 would spend more time compiling for shorter output
 
 3. Emit to the desired language
+
+## Example
+
+Example naive Fibonacci (in a hypothetical lisp + imperative syntax):
+
+```py
+a = 0
+b = 1
+i = 1
+while (< i 31) {
+  (println a)
+  t = (add a b)
+  b = a
+  a = t
+}
+```
+
+This could compile to the following in C
+
+```c
+a;b=1;t;i=1;main(){for(;i<31;t=a+b,b=a,a=t)printf("%d
+",a)}
+```
+
+Note the following C-specific features, besides the syntax:
+
+- declarations out front
+- default values (0) omitted
+- statements moved inside the for loop (!)
+
+The same unrefined IR could compile to the following in Lua:
+
+```lua
+a=0
+b=1
+for i=1,30 do print(a)a,b=a+b,a end
+```
+
+Note the following Lua-specific features, besides the syntax:
+
+- foreach-range loop instead of a glorified while loop (!)
+- temporary variable replaced with simultaneous assignment (!)
 
 ## Competitiveness
 
@@ -35,27 +78,7 @@ TODO. For now just create the unrefined IR directly. Worry about syntax later.
 
 The goal is to have a small but expressive core subset of language features. Approximately a lowest common denominator of most the languges targeted.
 
-The IR is three-address code plus mutable globals and control flow
-
-Example Fibonacci:
-
-```py
-0   integer_literal 0
-1   a = 0               # a = 0
-2   integer_literal 1
-3   b = 2               # b = 1
-4   i = 2               # i = 1
-5   integer_literal 31
-6   less i 5            # i < 31
-7   while_start 12
-8   print a             # print(a)
-9   add a b
-10  b = a
-11  a = 9
-12  while_end 7
-```
-
-Is this too flat? Should the `while` be some nested structure instead of `jmp`-style flat assembly?
+The IR is a tree. Assignments are by value, not reference (no aliasing)
 
 Types:
 
@@ -75,11 +98,11 @@ Control Flow:
 
 Opcodes:
 
-- arithmetic: add, subtract, multiply, (integer) divide, exponent
+- arithmetic: add, subtract, multiply, (integer) divide, exponent, mod (mathematical)
 - integer comparision: less, greater, etc.
-- indexing: `array_get`, `map_get`, `string_get_byte`
-- conversions: `int_to_string`, `string_to_int`
-- string ops: string concatenation, print
+- indexing: `array_get`, `map_get`, `str_get_byte`
+- conversions: `int_to_string`, `str_to_int`
+- string ops: string concatenation, print, length
 - `map_keys`
 - `sort`
 
@@ -101,4 +124,9 @@ Planned idioms:
 - if string concatenation's only purpose is to be printed, then split each appended part into its own print statement (C, other languages with long concat)
 - merge several prints into one print (pretty much every language)
 - replace while loops with for loops (C, Java, etc)
+- replace temp variable with simultaneous assignment (Lua, Python, etc)
 - ...much more. We'll see what's useful when starting
+
+## Implementation plan
+
+Backend first. Only numbers, booleans, strings; add arrays and maps later.
