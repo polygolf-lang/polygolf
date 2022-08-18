@@ -28,6 +28,9 @@ Processing pipeline
 Example naive Fibonacci (in a hypothetical lisp + imperative syntax):
 
 ```py
+(declare a integer)
+(declare b integer)
+(declare i integer)
 a = 0
 b = 1
 i = 1
@@ -42,8 +45,7 @@ while (< i 31) {
 This could compile to the following in C
 
 ```c
-a;b=1;t;i=1;main(){for(;i<31;t=a+b,b=a,a=t)printf("%d
-",a)}
+a;b=1;t;i=1;main(){for(;i++<31;t=a+b,b=a,a=t)printf("%d\n",a);}
 ```
 
 Note the following C-specific features, besides the syntax:
@@ -101,7 +103,8 @@ Opcodes:
 - integer comparision: less, greater, etc.
 - indexing: `array_get`, `map_get`, `str_get_byte`
 - conversions: `int_to_string`, `str_to_int`
-- string ops: string concatenation, print, length
+- string ops: string concatenation, string split, print, length
+- array/map `length`
 - `map_keys`
 - `sort`
 
