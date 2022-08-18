@@ -102,7 +102,7 @@ TODO. For now just create the unrefined IR directly. Worry about syntax later.
 
 ## Unrefined IR
 
-The goal is to have a small but expressive core subset of language features. Approximately a lowest common denominator of most the languges targeted.
+The goal is to have a small but expressive core subset of language features. Approximately a lowest common denominator of most of the languages targeted.
 
 The IR is a tree. Assignments are by value, not reference (no aliasing)
 
@@ -125,7 +125,7 @@ Control Flow:
 Opcodes:
 
 - arithmetic: add, subtract, multiply, (integer) divide, exponent, mod (mathematical)
-- integer comparision: less, greater, etc.
+- integer comparison: less, greater, etc.
 - indexing: `array_get`, `map_get`, `str_get_byte`
 - conversions: `int_to_string`, `str_to_int`
 - string ops: string concatenation, string split, print, length
