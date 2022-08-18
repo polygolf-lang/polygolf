@@ -6,10 +6,9 @@ Design goals
 
 - a language (IR) that compiles to many languages (C, Lua, Java, etc.)
 - targeted languages are limited to those available on https://code.golf
-  1. C-like mutable imperative: BASIC, C, C#, C++, COBOL, Crystal, D, Fortran, Go, Java, JavaScript, Julia, Lua, Nim, Pascal, Perl, PHP, PowerShell, Python, Raku, Ruby, Rust, Swift, V, Zig (less?)
+  1. C-like mutable imperative (easy): Bash, BASIC, C, C#, C++, COBOL, Crystal, D, Fortran, Go, Java, JavaScript, Julia, Lua, Nim, Pascal, Perl, PHP, PowerShell, Python, Raku, Ruby, Rust, Swift, V, Zig
   2. mostly functional: Elixir, F#, Haskell, Lisp
-  3. other imperative: Assembly, Bash (more?)
-  4. other: ><>, brainfuck, GolfScript, Hexagony, J, K, Prolog, sed, SQL, VimL
+  3. other: Assembly, ><>, brainfuck, GolfScript, Hexagony, J, K, Prolog, sed, SQL, VimL
 - can compile PolyGolf to any language without language-specific annotations
 - alternative options and domain annotations may help recognition of language-specific idioms
 - goal for each language target (vague): at most twice as long on average for all holes, aka score at least 500× number of holes
