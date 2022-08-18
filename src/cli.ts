@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
 import {
-  Application,
-  Assignment,
-  Block,
-  Identifier,
-  IntegerLiteral,
-  Program,
-  WhileLoop,
-} from "./types/IR";
+  application,
+  assignment,
+  block,
+  id,
+  int,
+  whileLoop,
+} from "./types/IRbuilders";
 import lua from "./emitters/lua";
 
 // hardcode input for now
@@ -23,24 +22,18 @@ import lua from "./emitters/lua";
 //   a = t
 // }
 
-const rawIR: Program = new Block([
-  new Assignment("a", new IntegerLiteral(0n)),
-  new Assignment("b", new IntegerLiteral(1n)),
-  new Assignment("i", new IntegerLiteral(1n)),
-  new WhileLoop(
-    new Application("lt", [new Identifier("i"), new IntegerLiteral(32n)]),
-    new Block([
-      new Application("println", [new Identifier("a")]),
-      new Assignment(
-        "t",
-        new Application("add", [new Identifier("a"), new Identifier("b")])
-      ),
-      new Assignment("b", new Identifier("a")),
-      new Assignment("a", new Identifier("t")),
-      new Assignment(
-        "i",
-        new Application("add", [new Identifier("i"), new IntegerLiteral(1n)])
-      ),
+const rawIR = block([
+  assignment("a", int(0n)),
+  assignment("b", int(1n)),
+  assignment("i", int(1n)),
+  whileLoop(
+    application("lt", [id("i"), int(32n)]),
+    block([
+      application("println", [id("a")]),
+      assignment("t", application("add", [id("a"), id("b")])),
+      assignment("b", id("a")),
+      assignment("a", id("t")),
+      assignment("i", application("add", [id("i"), int(1n)])),
     ])
   ),
 ]);

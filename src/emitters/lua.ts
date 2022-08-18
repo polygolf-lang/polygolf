@@ -10,35 +10,40 @@ function emitBlock(block: IR.Block): string {
 }
 
 function emitStatement(stmt: IR.Statement): string {
-  if (stmt instanceof IR.WhileLoop) {
-    return (
-      `while ${emitExpr(stmt.condition)} do\n` + emitBlock(stmt.body) + `\nend`
-    );
-  } else if (stmt instanceof IR.IfStatement) {
-    return (
-      `if ${emitExpr(stmt.condition)}then\n` +
-      emitBlock(stmt.consequent) +
-      "\nelse\n" +
-      emitBlock(stmt.alternate) +
-      "\nend"
-    );
-  } else {
-    return emitExpr(stmt);
+  switch (stmt.type) {
+    case "WhileLoop":
+      return (
+        `while ${emitExpr(stmt.condition)} do\n` +
+        emitBlock(stmt.body) +
+        `\nend`
+      );
+    case "IfStatement":
+      return (
+        `if ${emitExpr(stmt.condition)}then\n` +
+        emitBlock(stmt.consequent) +
+        "\nelse\n" +
+        emitBlock(stmt.alternate) +
+        "\nend"
+      );
+    default:
+      return emitExpr(stmt);
   }
 }
 
 function emitExpr(expr: IR.Expr): string {
-  if (expr instanceof IR.Assignment) {
-    return `${expr.variable}=${emitExpr(expr.expr)}`;
-  } else if (expr instanceof IR.Application) {
-    return emitApplication(expr);
-  } else if (expr instanceof IR.Identifier) {
-    return expr.name;
-  } else if (expr instanceof IR.StringLiteral) {
-    // TODO: special string handling
-    return JSON.stringify(expr.value);
-  } else {
-    return expr.value.toString();
+  switch (expr.type) {
+    case "Assignment":
+      return `${expr.variable}=${emitExpr(expr.expr)}`;
+    case "Application":
+      return emitApplication(expr);
+    case "Identifier":
+      return expr.name;
+    case "StringLiteral":
+      // TODO: special string handling
+      return JSON.stringify(expr.value);
+    case "IntegerLiteral":
+      // TODO: avoid exponential notation
+      return expr.value.toString();
   }
 }
 

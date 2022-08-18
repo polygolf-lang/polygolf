@@ -1,21 +1,23 @@
 export type Program = Block;
 
-export class Block {
-  constructor(public children: Statement[]) {}
+export interface Block {
+  type: "Block";
+  children: Statement[];
 }
 
 export type Statement = Expr | WhileLoop | IfStatement;
 
-export class WhileLoop {
-  constructor(public condition: Expr, public body: Block) {}
+export interface WhileLoop {
+  type: "WhileLoop";
+  condition: Expr;
+  body: Block;
 }
 
-export class IfStatement {
-  constructor(
-    public condition: Expr,
-    public consequent: Block,
-    public alternate: Block
-  ) {}
+export interface IfStatement {
+  type: "IfStatement";
+  condition: Expr;
+  consequent: Block;
+  alternate: Block;
 }
 
 export type Expr = Assignment | Application | Identifier | Literal;
@@ -26,15 +28,19 @@ export type Expr = Assignment | Application | Identifier | Literal;
  * Since many languages lack assignment expressions, assignments should be
  * statement-level by default.
  */
-export class Assignment {
-  constructor(public variable: string, public expr: Expr) {}
+export interface Assignment {
+  type: "Assignment";
+  variable: string;
+  expr: Expr;
 }
 
 /**
  * A function application, such as (+ a b) or (print x)
  */
-export class Application {
-  constructor(public name: Builtin, public args: Expr[]) {}
+export interface Application {
+  type: "Application";
+  name: Builtin;
+  args: Expr[];
 }
 
 export type Builtin =
@@ -63,21 +69,24 @@ export type Builtin =
   | "eq"
   | "geq"
   | "gt"
-  // other two arugment
+  // other two argument
   | "array_get"
   | "str_get_byte"
   | "str_concat";
 
-export class Identifier {
-  constructor(public name: string) {}
+export interface Identifier {
+  type: "Identifier";
+  name: string;
 }
 
 export type Literal = IntegerLiteral | StringLiteral;
 
-export class IntegerLiteral {
-  constructor(public value: BigInt) {}
+export interface IntegerLiteral {
+  type: "IntegerLiteral";
+  value: BigInt;
 }
 
-export class StringLiteral {
-  constructor(public value: string) {}
+export interface StringLiteral {
+  type: "StringLiteral";
+  value: string;
 }
