@@ -108,8 +108,8 @@ Types:
 - `boolean`
 - `integer` (unbounded; domain annotations may help language-specific narrowing to 32-bit ints etc)
 - `string`
-- `Map<?,?>`
-- `Array<?>` (can be implemented as `Map<integer,?>`) (0 indexed)
+- `Array<?>` (0 indexed)
+- `Map<?,?>` (not implementing for now)
 
 Constant literals for each type.
 
@@ -148,6 +148,7 @@ Planned idioms:
 - merge several prints into one print (pretty much every language)
 - replace while loops with for loops (C, Java, etc)
 - replace temp variable with simultaneous assignment (Lua, Python, etc)
+- variable shortening (all languages): convert all variables to a single letter, to allow for more-verbose PolyGolf code
 - ...much more. We'll see what's useful when starting
 
 ## Implementation plan
