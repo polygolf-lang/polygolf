@@ -33,7 +33,7 @@ function emitStatement(stmt: IR.Statement): string {
 function emitExpr(expr: IR.Expr): string {
   switch (expr.type) {
     case "Assignment":
-      return `${expr.variable}=${emitExpr(expr.expr)}`;
+      return `${emitExpr(expr.variable)}=${emitExpr(expr.expr)}`;
     case "Application":
       return emitApplication(expr);
     case "Identifier":
@@ -106,5 +106,5 @@ function prefix(s: string) {
 }
 
 function arrayGet(args: IR.Expr[]) {
-  return `(${emitExpr(args[0])})[${emitExpr(args[1])}]`;
+  return `(${emitExpr(args[0])})[(${emitExpr(args[1])})+1]`;
 }

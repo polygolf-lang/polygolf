@@ -13,6 +13,9 @@ export interface WhileLoop {
   body: Block;
 }
 
+/**
+ * if (condition) { consequent } else { alternate }
+ */
 export interface IfStatement {
   type: "IfStatement";
   condition: Expr;
@@ -30,7 +33,7 @@ export type Expr = Assignment | Application | Identifier | Literal;
  */
 export interface Assignment {
   type: "Assignment";
-  variable: string;
+  variable: Identifier;
   expr: Expr;
 }
 

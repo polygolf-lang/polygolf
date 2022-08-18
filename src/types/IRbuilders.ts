@@ -16,8 +16,15 @@ export function ifStatement(
   return { type: "IfStatement", condition, consequent, alternate };
 }
 
-export function assignment(variable: string, expr: IR.Expr): IR.Assignment {
-  return { type: "Assignment", variable, expr };
+export function assignment(
+  variable: IR.Identifier | string,
+  expr: IR.Expr
+): IR.Assignment {
+  return {
+    type: "Assignment",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    expr,
+  };
 }
 
 export function application(name: IR.Builtin, args: IR.Expr[]): IR.Application {
