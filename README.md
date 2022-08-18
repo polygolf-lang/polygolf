@@ -23,6 +23,30 @@ Processing pipeline
 
 3. Emit to the desired language
 
+## Usage
+
+Requires npm and node installed.
+
+To get started, clone the repository, then to install, run
+
+```
+npm install
+npm run build
+npm install . --location=global
+```
+
+This will set up the `polygolf` command to point to the CLI script.
+
+To uninstall, use `npm uninstall polygolf --location=global`
+
+## Development
+
+To get started, clone the repository, then run `npm install` to install dependencies
+
+After making a change, run `npm run build` before running the cli as `node dist/cli.js`.
+
+The npm alias `npm run cli` is equivalent to `npm run build; node dist/cli.js`
+
 ## Example
 
 Example naive Fibonacci (in a hypothetical lisp + imperative syntax):

@@ -1,0 +1,29 @@
+{
+  "name": "polygolf",
+  "version": "0.1.0",
+  "description": "Ambitious polyglot autogolfer for https://code.golf",
+  "main": "dist/cli.js",
+  "bin": {
+    "polygolf": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "etsc",
+    "test": "tsc --noEmit",
+    "cli": "npm run build; node dist/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jared-hughes/polygolf.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jared-hughes/polygolf/issues"
+  },
+  "homepage": "https://github.com/jared-hughes/polygolf#readme",
+  "devDependencies": {
+    "@types/node": "^18.7.6",
+    "esbuild": "^0.15.5",
+    "esbuild-node-tsc": "^2.0.2",
+    "typescript": "^4.7.4"
+  }
+}
