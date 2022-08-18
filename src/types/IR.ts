@@ -1,3 +1,5 @@
+export type Node = Block | Statement;
+
 export type Program = Block;
 
 export interface Block {
