@@ -39,6 +39,7 @@ while (< i 31) {
   t = (add a b)
   b = a
   a = t
+  i = (add i 1)
 }
 ```
 
