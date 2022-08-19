@@ -18,7 +18,16 @@ export type Expr =
  */
 export type Program = {
   type: "Program";
-  block: Block;
+  imports: Import[];
+  varDeclarations: VarDeclaration[];
+  block: Block;  
+};
+
+/**
+ * Program input (array of strings).
+ */
+ export type Argv = {
+  type: "Argv";
 };
 
 /**
@@ -64,6 +73,28 @@ export interface Assignment {
   expr: Expr;
 }
 
+export type VariableType =
+  | "integer"
+  | "string"
+  | "boolean"
+
+/**
+ * Variable declaration.
+ */
+ export interface VarDeclaration {
+  type: "VarDeclaration";
+  variable: Identifier;
+  variableType: VariableType;
+}
+
+/**
+ * Import.
+ */
+ export interface Import {
+  type: "Import";
+  name: string;
+}
+
 /**
  * A general function application, such as (+ a b) or (print x). Raw OK
  *
@@ -81,9 +112,10 @@ export type Builtin =
   | "print"
   | "println"
   | "str_length"
+  | "cardinality"
   | "int_to_str"
   | "str_to_int"
-  | "sort"
+  | "sorted"
   | "bitnot"
   | "neg"
   // (num, num) => num
@@ -105,7 +137,10 @@ export type Builtin =
   // other two argument
   | "array_get"
   | "str_get_byte"
-  | "str_concat";
+  | "str_concat"
+  | "contains_key"
+  | "contains_value"
+  | "indexof" // finds the first index of element in the array, or -1 if it is not present
 
 /**
  * An identifier, such as referring to a global variable. Raw OK
@@ -133,6 +168,26 @@ export interface StringLiteral {
   value: string;
 }
 
+/**
+ * Array constructor. Raw OK
+ *
+ */
+ export interface ArrayConstructor {
+  type: "ArrayConstructor";
+  exprs: Expr[];
+}
+
+/**
+ * Setting a map value at given key. Raw OK
+ *
+ * a[i] = b
+ */
+export interface MapSet {
+  type: "MapSet";
+  array: Expr;
+  index: Expr;
+}
+
 /// === Interfaces below here are language-specific ===
 
 export interface FunctionCall {
@@ -155,14 +210,125 @@ export interface BinaryOp {
   right: Expr;
 }
 
+/**
+ * Mutating operator.
+ *
+ * a += 5
+ */
+export interface MutatingBinaryOp {
+  type: "MutatingBinaryOp";
+  op: string;
+  variable: Identifier;
+  right: Expr;
+}
+
 export interface UnaryOp {
   type: "UnaryOp";
   op: string;
   arg: Expr;
 }
 
-export interface ArrayAccess {
-  type: "ArrayAccess";
+/**
+ * Conditional ternary operator.
+ *
+ * Python: [alternate,consequent][condition].
+ * C: condition?consequent:alternate.
+ */
+ export interface ConditionalOp {
+  type: "ConditionalOp";
+  condition: Expr;
+  consequent: Expr;
+  alternate: Expr;
+}
+
+export interface ArrayGet {
+  type: "ArrayGet";
   array: Expr;
   index: Expr;
 }
+
+export interface MapGet {
+  type: "MapGet";
+  array: Expr;
+  index: Expr;
+}
+
+export interface ArraySet {
+  type: "ArraySet";
+  array: Expr;
+  index: Expr;
+}
+
+/**
+ * A loop over the integer interval [low, high)
+ *
+ * Python: for variable in range(low, high):body.
+ */
+ export interface ForRange {
+  type: "ForRange";
+  variable: Identifier;
+  low: Expr;
+  high: Expr;
+  body: Block;
+}
+
+/**
+ * A loop over the items in an array.
+ *
+ * Python: for variable in array:body.
+ */
+ export interface ForEach {
+  type: "ForEach";
+  variable: Identifier;
+  array: Expr;
+  body: Block;
+}
+
+/**
+ * A loop over the items in an array.
+ *
+ * Python: for variable in array:body.
+ */
+ export interface ForEach {
+  type: "ForEach";
+  variable: Identifier;
+  array: Expr;
+  body: Block;
+}
+
+/**
+ * A loop over the keys in an map.
+ *
+ * Python: for variable in array:body.
+ */
+ export interface ForEachKey {
+  type: "ForEachKey";
+  variable: Identifier;
+  map: Expr;
+  body: Block;
+}
+
+/**
+ * A loop over the (key,value) pairs in an map (or (index, value) pairs in an array).
+ *
+ * Python: for variable in array:body.
+ */
+ export interface ForEachPair {
+  type: "ForEachPair";
+  keyVariable: Identifier;
+  valueVariable: Identifier;
+  map: Expr;
+  body: Block;
+}
+
+/**
+ * Multiple assignment.
+ *
+ * (a,b)=(b,a).
+ */
+export interface MultipleAssignment {
+  type: "MultipleAssignment";
+  variables: Identifier[];
+  exprs: Expr[];
+}
+
