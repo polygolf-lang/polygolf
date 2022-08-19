@@ -297,6 +297,19 @@ export interface ArraySet {
 }
 
 /**
+ * A C like for loop.
+ *
+ * C: for(init;condition;append){body}.
+ */
+ export interface ForCLike {
+  type: "ForCLike";
+  init: Block;
+  append: Block;
+  condition: Expr;
+  body: Block;
+}
+
+/**
  * A loop over the (key,value) pairs in an map (or (index, value) pairs in an array).
  *
  * Python: for variable in array:body.
