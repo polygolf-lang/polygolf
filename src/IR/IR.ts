@@ -88,14 +88,6 @@ export type VariableType =
 }
 
 /**
- * Import.
- */
- export interface Import {
-  type: "Import";
-  name: string;
-}
-
-/**
  * A general function application, such as (+ a b) or (print x). Raw OK
  *
  * Every language frontend should convert *all* function applications to
@@ -189,6 +181,14 @@ export interface MapSet {
 }
 
 /// === Interfaces below here are language-specific ===
+
+/**
+ * Import.
+ */
+ export interface Import {
+  type: "Import";
+  name: string;
+}
 
 export interface FunctionCall {
   type: "FunctionCall";
@@ -285,18 +285,6 @@ export interface ArraySet {
 }
 
 /**
- * A loop over the items in an array.
- *
- * Python: for variable in array:body.
- */
- export interface ForEach {
-  type: "ForEach";
-  variable: Identifier;
-  array: Expr;
-  body: Block;
-}
-
-/**
  * A loop over the keys in an map.
  *
  * Python: for variable in array:body.
@@ -326,9 +314,20 @@ export interface ArraySet {
  *
  * (a,b)=(b,a).
  */
-export interface MultipleAssignment {
+export interface ManyToManyAssignment {
   type: "MultipleAssignment";
   variables: Identifier[];
   exprs: Expr[];
+}
+
+/**
+ * Multiple assignment.
+ *
+ * a=b=c=1.
+ */
+ export interface OneToManyAssignment {
+  type: "MultipleAssignment";
+  variables: Identifier[];
+  expr: Expr;
 }
 
