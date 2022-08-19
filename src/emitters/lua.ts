@@ -2,7 +2,7 @@ import * as IR from "../types/IR";
 
 export default function lua(program: IR.Program): string {
   // mixins would go here to pre-process the IR
-  return emitBlock(program);
+  return emitBlock(program.block);
 }
 
 function emitBlock(block: IR.Block): string {

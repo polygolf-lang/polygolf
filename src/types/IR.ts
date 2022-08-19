@@ -1,6 +1,9 @@
 export type Node = Block | Statement;
 
-export type Program = Block;
+export type Program = {
+  type: "Program";
+  block: Block;
+};
 
 export interface Block {
   type: "Block";

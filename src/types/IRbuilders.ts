@@ -1,5 +1,9 @@
 import * as IR from "./IR";
 
+export function program(block: IR.Block): IR.Program {
+  return { type: "Program", block };
+}
+
 export function block(children: IR.Statement[]): IR.Block {
   return { type: "Block", children };
 }
