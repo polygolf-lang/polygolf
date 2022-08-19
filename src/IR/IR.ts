@@ -315,7 +315,7 @@ export interface ArraySet {
  * (a,b)=(b,a).
  */
 export interface ManyToManyAssignment {
-  type: "MultipleAssignment";
+  type: "ManyToManyAssignment";
   variables: Identifier[];
   exprs: Expr[];
 }
@@ -326,7 +326,7 @@ export interface ManyToManyAssignment {
  * a=b=c=1.
  */
  export interface OneToManyAssignment {
-  type: "MultipleAssignment";
+  type: "OneToManyAssignment";
   variables: Identifier[];
   expr: Expr;
 }
