@@ -8,7 +8,7 @@ import {
   int,
   program,
   whileLoop,
-} from "./types/IRbuilders";
+} from "./IR/builders";
 import lua from "./emitters/lua";
 
 // hardcode input for now

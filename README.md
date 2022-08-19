@@ -47,6 +47,8 @@ After making a change, run `npm run build` before running the cli as `node dist/
 
 The npm alias `npm run cli` is equivalent to `npm run build; node dist/cli.js`
 
+Some concepts (visitor, Path, etc.) are similar to those used by the JavaScript transpiler Babel, so the [Babel plugin handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md) is worth skimming.
+
 ## Example
 
 Example naive Fibonacci (in a hypothetical lisp + imperative syntax):

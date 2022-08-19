@@ -1,4 +1,4 @@
-import * as IR from "./IR";
+import { IR } from ".";
 
 export function program(block: IR.Block): IR.Program {
   return { type: "Program", block };
@@ -45,4 +45,32 @@ export function int(value: BigInt): IR.IntegerLiteral {
 
 export function stringLiteral(value: string): IR.StringLiteral {
   return { type: "StringLiteral", value };
+}
+
+export function functionCall(func: string, args: IR.Expr[]): IR.FunctionCall {
+  return { type: "FunctionCall", func, args };
+}
+
+export function methodCall(
+  object: IR.Expr,
+  method: string,
+  args: IR.Expr[]
+): IR.MethodCall {
+  return { type: "MethodCall", method, object, args };
+}
+
+export function binaryOp(
+  op: string,
+  left: IR.Expr,
+  right: IR.Expr
+): IR.BinaryOp {
+  return { type: "BinaryOp", op, left, right };
+}
+
+export function unaryOp(op: string, arg: IR.Expr): IR.UnaryOp {
+  return { type: "UnaryOp", op, arg };
+}
+
+export function arrayAccess(array: IR.Expr, index: IR.Expr): IR.ArrayAccess {
+  return { type: "ArrayAccess", array, index };
 }
