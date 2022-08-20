@@ -1,4 +1,4 @@
-name: Format and Typing Check
+name: "Tests: Formatting, Typing, and Unit"
 
 on:
   push:
