@@ -3,7 +3,12 @@ import { Path, programToPath } from ".";
 import { Block, Variants } from "./IR";
 
 export function expandVariants(program: IR.Program): IR.Program[]{
-  return getVariantChoices(getVariantsStructure(program)).map(x => instantiateProgram(program, x))
+  var structure: Variant = getVariantsStructure(program);
+  var expansionCount = countVariantExpansions(structure);
+  if(expansionCount > 1000){
+    throw new Error(`Too many variants (${expansionCount}).`);
+  }
+  return getVariantChoices(structure).map(x => instantiateProgram(program, x))
 }
 
 function getVariantChoices(program: Variant): number[][]{
@@ -19,6 +24,13 @@ function getVariantChoices(program: Variant): number[][]{
     result = newResult;
   });
   return result
+}
+
+function countVariantExpansions(structure: Variant): number{
+  return structure.commands.map(countCommandExpansion).reduce((a,b) => a*b, 1);
+}
+function countCommandExpansion(structure: Command): number{
+  return structure.variants.map(countVariantExpansions).reduce((a,b) => a+b, 0);
 }
 
 function getCommandChoices(command: Command): number[][]{
