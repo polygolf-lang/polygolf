@@ -8,7 +8,9 @@
   },
   "scripts": {
     "build": "etsc",
-    "test": "tsc --noEmit",
+    "test:typecheck": "tsc --noEmit",
+    "test:formatting": "prettier-check .",
+    "test": "npm run test:formatting; npm run test:typecheck",
     "cli": "npm run build; node dist/cli.js"
   },
   "repository": {
@@ -24,6 +26,7 @@
     "@types/node": "^18.7.6",
     "esbuild": "^0.15.5",
     "esbuild-node-tsc": "^2.0.2",
+    "prettier-check": "^2.0.0",
     "typescript": "^4.7.4"
   }
 }
