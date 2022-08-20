@@ -1,6 +1,6 @@
 import {
   IR,
-  arrayAccess,
+  arrayGet,
   binaryOp,
   functionCall,
   int,
@@ -56,7 +56,7 @@ const applicationMap = new Map(
     gt: infix(">"),
     // TODO: create a mixin to put a +1 in every array_get before language-specific transforms
     array_get: (args: IR.Expr[]) =>
-      arrayAccess(args[0], binaryOp("+", args[1], int(1n))),
+      arrayGet(args[0], binaryOp("+", args[1], int(1n))),
     str_get_byte: method("byte"),
     str_concat: infix(".."),
   })

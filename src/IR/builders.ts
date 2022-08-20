@@ -1,7 +1,7 @@
 import { IR } from ".";
 
-export function program(block: IR.Block): IR.Program {
-  return { type: "Program", block };
+export function program(block: IR.Block, imports: IR.Import[] = [], varDeclarations: IR.VarDeclaration[] = []): IR.Program {
+  return { type: "Program", block, imports, varDeclarations };
 }
 
 export function block(children: IR.Statement[]): IR.Block {
@@ -71,6 +71,6 @@ export function unaryOp(op: string, arg: IR.Expr): IR.UnaryOp {
   return { type: "UnaryOp", op, arg };
 }
 
-export function arrayAccess(array: IR.Expr, index: IR.Expr): IR.ArrayAccess {
-  return { type: "ArrayAccess", array, index };
+export function arrayGet(array: IR.Expr, index: IR.Expr): IR.ArrayGet {
+  return { type: "ArrayGet", array, index };
 }
