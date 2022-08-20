@@ -36,13 +36,13 @@ export type Program = {
   type: "Program";
   imports: Import[];
   varDeclarations: VarDeclaration[];
-  block: Block;  
+  block: Block;
 };
 
 /**
- * Program input (array of strings).
+ * Program input (array of strings) as niladic variable.
  */
- export type Argv = {
+export type Argv = {
   type: "Argv";
 };
 
@@ -89,18 +89,23 @@ export interface Assignment {
   expr: Expr;
 }
 
-export type VariableType =
-  | "integer"
+/** The type of the value of a node when evaluated */
+export type ValueType =
+  | "number"
   | "string"
   | "boolean"
+  | { type: "List"; member: ValueType }
+  | { type: "Table"; key: "number" | "string"; value: ValueType }
+  | { type: "Array"; member: ValueType; length: number }
+  | { type: "Set"; member: ValueType };
 
 /**
  * Variable declaration.
  */
- export interface VarDeclaration {
+export interface VarDeclaration {
   type: "VarDeclaration";
   variable: Identifier;
-  variableType: VariableType;
+  variableType: ValueType;
 }
 
 /**
@@ -148,7 +153,7 @@ export type Builtin =
   | "str_concat"
   | "contains_key"
   | "contains_value"
-  | "indexof" // finds the first index of element in the array, or -1 if it is not present
+  | "indexof"; // finds the first index of element in the array, or -1 if it is not present
 
 /**
  * An identifier, such as referring to a global variable. Raw OK
@@ -180,7 +185,7 @@ export interface StringLiteral {
  * Array constructor. Raw OK
  *
  */
- export interface ArrayConstructor {
+export interface ArrayConstructor {
   type: "ArrayConstructor";
   exprs: Expr[];
 }
@@ -201,7 +206,7 @@ export interface MapSet {
 /**
  * Import.
  */
- export interface Import {
+export interface Import {
   type: "Import";
   name: string;
 }
@@ -250,7 +255,7 @@ export interface UnaryOp {
  * Python: [alternate,consequent][condition].
  * C: condition?consequent:alternate.
  */
- export interface ConditionalOp {
+export interface ConditionalOp {
   type: "ConditionalOp";
   condition: Expr;
   consequent: Expr;
@@ -280,7 +285,7 @@ export interface ArraySet {
  *
  * Python: for variable in range(low, high):body.
  */
- export interface ForRange {
+export interface ForRange {
   type: "ForRange";
   variable: Identifier;
   low: Expr;
@@ -293,7 +298,7 @@ export interface ArraySet {
  *
  * Python: for variable in array:body.
  */
- export interface ForEach {
+export interface ForEach {
   type: "ForEach";
   variable: Identifier;
   array: Expr;
@@ -305,7 +310,7 @@ export interface ArraySet {
  *
  * Python: for variable in array:body.
  */
- export interface ForEachKey {
+export interface ForEachKey {
   type: "ForEachKey";
   variable: Identifier;
   map: Expr;
@@ -317,7 +322,7 @@ export interface ArraySet {
  *
  * C: for(init;condition;append){body}.
  */
- export interface ForCLike {
+export interface ForCLike {
   type: "ForCLike";
   init: Block;
   append: Block;
@@ -330,7 +335,7 @@ export interface ArraySet {
  *
  * Python: for variable in array:body.
  */
- export interface ForEachPair {
+export interface ForEachPair {
   type: "ForEachPair";
   keyVariable: Identifier;
   valueVariable: Identifier;
@@ -354,9 +359,8 @@ export interface ManyToManyAssignment {
  *
  * a=b=c=1.
  */
- export interface OneToManyAssignment {
+export interface OneToManyAssignment {
   type: "OneToManyAssignment";
   variables: Identifier[];
   expr: Expr;
 }
-

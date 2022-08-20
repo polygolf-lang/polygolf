@@ -1,6 +1,10 @@
 import { IR } from ".";
 
-export function program(block: IR.Block, imports: IR.Import[] = [], varDeclarations: IR.VarDeclaration[] = []): IR.Program {
+export function program(
+  block: IR.Block,
+  imports: IR.Import[] = [],
+  varDeclarations: IR.VarDeclaration[] = []
+): IR.Program {
   return { type: "Program", block, imports, varDeclarations };
 }
 
