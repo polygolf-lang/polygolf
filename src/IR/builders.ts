@@ -78,3 +78,7 @@ export function unaryOp(op: string, arg: IR.Expr): IR.UnaryOp {
 export function arrayGet(array: IR.Expr, index: IR.Expr): IR.ArrayGet {
   return { type: "ArrayGet", array, index };
 }
+
+export function variants(variants: IR.Block[]): IR.Variants {
+  return { type: "Variants", variants };
+}

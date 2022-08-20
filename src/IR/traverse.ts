@@ -39,6 +39,15 @@ export class Path<N extends IR.Node = IR.Node> {
     }
   }
 
+  /** Replace this node's child given by pathFragment with newChildrem */
+  replaceChildWithMany(newChildren: IR.Node[], pathFragment: PathFragment): void {
+    if (typeof pathFragment === "string") {
+      throw new Error("Cannot replace scalar property with multiple nodes.");
+    } else {
+      (this.node as any)[pathFragment.prop].splice(pathFragment.index, 1, ...newChildren);
+    }
+  }
+
   /** Replace this node with newNode by mutating the parent */
   replaceWith(newNode: IR.Node): void {
     if (this.parent === null || this.pathFragment === null)
@@ -46,11 +55,17 @@ export class Path<N extends IR.Node = IR.Node> {
     return this.parent.replaceChild(newNode, this.pathFragment);
   }
 
+  /** Replace this node with newNodes by mutating the parent */
+  replaceWithMany(newNodes: IR.Node[]): void {
+    if (this.parent === null || this.pathFragment === null)
+      throw new Error("Cannot replace the root node");
+    return this.parent.replaceChildWithMany(newNodes, this.pathFragment);
+  }
+
   /**
    * visit this node and all children nodes recursively (visitor pattern)
    *
-   * It may eventually be necessary to add separate enter() and exit()
-   * hooks for functionality, or to run several plugins simultaneously
+   * It may to run several plugins simultaneously
    * to avoid re-walking the tree many times (for performance). But this is
    * kept very simple for now.
    *
@@ -58,9 +73,10 @@ export class Path<N extends IR.Node = IR.Node> {
    * - replacing a node with a structure that contains itself (infinite loop)
    * - more mutation issues probably
    */
-  visit(visitor: (node: Path) => void): void {
-    visitor(this);
-    this.getChildPaths().forEach((path) => path.visit(visitor));
+  visit(enter: (node: Path) => void, exit?: (node: Path) => void): void {
+    enter(this);
+    this.getChildPaths().forEach((path) => path.visit(enter, exit));
+    if(exit) exit(this);
   }
 }
 

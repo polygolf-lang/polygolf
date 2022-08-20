@@ -1,6 +1,6 @@
 export type Node = Program | Block | Statement;
 
-export type Statement = Expr | WhileLoop | IfStatement;
+export type Statement = Expr | WhileLoop | IfStatement | Variants;
 
 export type Expr =
   | Argv
@@ -28,6 +28,14 @@ export type Expr =
   | ForCLike
   | ManyToManyAssignment
   | OneToManyAssignment;
+
+/**
+ * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
+ */
+ export type Variants = {
+  type: "Variants";
+  variants: Block[];
+};
 
 /**
  * Program node. This should be the root node. Raw OK
