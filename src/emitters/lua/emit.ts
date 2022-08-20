@@ -24,6 +24,8 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string {
         emitBlock(stmt.alternate) +
         "\nend"
       );
+    case "Variants":
+      throw new Error("Variants should have been instantiated.");
     default:
       return emitExpr(stmt, parent);
   }
