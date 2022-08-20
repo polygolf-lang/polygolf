@@ -3,6 +3,8 @@ export type Node = Program | Block | Statement;
 export type Statement = Expr | WhileLoop | IfStatement;
 
 export type Expr =
+  | Argv
+  | VarDeclaration
   | Assignment
   | Application
   | FunctionCall
@@ -11,7 +13,21 @@ export type Expr =
   | UnaryOp
   | Identifier
   | StringLiteral
-  | IntegerLiteral;
+  | IntegerLiteral
+  | ArrayConstructor
+  | MapSet
+  | Import
+  | MutatingBinaryOp
+  | ConditionalOp
+  | ArrayGet
+  | MapGet
+  | ArraySet
+  | ForRange
+  | ForEach
+  | ForEachPair
+  | ForCLike
+  | ManyToManyAssignment
+  | OneToManyAssignment;
 
 /**
  * Program node. This should be the root node. Raw OK
