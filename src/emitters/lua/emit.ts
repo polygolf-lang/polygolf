@@ -86,5 +86,7 @@ function emitExprNoParens(expr: IR.Expr): string {
       return emitExpr(expr.left, expr) + expr.op + emitExpr(expr.right, expr);
     case "UnaryOp":
       return expr.op + emitExpr(expr.arg, expr);
+    default:
+      throw new Error(`Unexpected node while emitting Lua: ${expr.type}. `);
   }
 }
