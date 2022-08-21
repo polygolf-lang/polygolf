@@ -15,15 +15,20 @@ export type Expr =
   | StringLiteral
   | IntegerLiteral
   | ArrayConstructor
+  | ListConstructor
+  | MapGet
   | MapSet
+  | ArrayGet
+  | ArraySet
+  | ListGet
+  | ListSet
+  | ListPush
   | Import
   | MutatingBinaryOp
   | ConditionalOp
-  | ArrayGet
-  | MapGet
-  | ArraySet
   | ForRange
   | ForEach
+  | ForEachKey
   | ForEachPair
   | ForCLike
   | ManyToManyAssignment
@@ -191,14 +196,35 @@ export interface ArrayConstructor {
 }
 
 /**
+ * List constructor. Raw OK
+ *
+ */
+export interface ListConstructor {
+  type: "ListConstructor";
+  exprs: Expr[];
+}
+
+/**
+ * Getting a map value at given key. Raw OK
+ *
+ * map[key]
+ */
+export interface MapGet {
+  type: "MapGet";
+  map: Expr;
+  key: Expr;
+}
+
+/**
  * Setting a map value at given key. Raw OK
  *
- * a[i] = b
+ * map[key] = value
  */
 export interface MapSet {
   type: "MapSet";
-  array: Expr;
-  index: Expr;
+  map: Identifier;
+  key: Expr;
+  value: Expr;
 }
 
 /// === Interfaces below here are language-specific ===
@@ -268,16 +294,29 @@ export interface ArrayGet {
   index: Expr;
 }
 
-export interface MapGet {
-  type: "MapGet";
-  array: Expr;
+export interface ArraySet {
+  type: "ArraySet";
+  array: Identifier;
+  index: Expr;
+  value: Expr;
+}
+export interface ListGet {
+  type: "ListGet";
+  list: Expr;
   index: Expr;
 }
 
-export interface ArraySet {
-  type: "ArraySet";
-  array: Expr;
+export interface ListSet {
+  type: "ListSet";
+  list: Identifier;
   index: Expr;
+  value: Expr;
+}
+
+export interface ListPush {
+  type: "ListPush";
+  list: Identifier;
+  value: Expr;
 }
 
 /**
@@ -294,14 +333,14 @@ export interface ForRange {
 }
 
 /**
- * A loop over the items in an array.
+ * A loop over the items in a collection.
  *
- * Python: for variable in array:body.
+ * Python: for variable in collection:body.
  */
 export interface ForEach {
   type: "ForEach";
   variable: Identifier;
-  array: Expr;
+  collection: Expr;
   body: Block;
 }
 

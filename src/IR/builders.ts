@@ -75,6 +75,171 @@ export function unaryOp(op: string, arg: IR.Expr): IR.UnaryOp {
   return { type: "UnaryOp", op, arg };
 }
 
+export function argv(): IR.Argv {
+  return { type: "Argv" };
+}
+
+export function varDeclaration(
+  variable: IR.Identifier | string,
+  variableType: IR.ValueType): IR.VarDeclaration {
+  return {
+    type: "VarDeclaration",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    variableType
+  };
+}
+
+export function arrayConstructor(exprs: IR.Expr[]): IR.ArrayConstructor {
+  return { type: "ArrayConstructor", exprs };
+}
+
+export function listConstructor(exprs: IR.Expr[]): IR.ListConstructor {
+  return { type: "ListConstructor", exprs };
+}
+
+export function mapGet(map: IR.Expr, key: IR.Expr): IR.MapGet {
+  return { type: "MapGet", map, key };
+}
+
+export function mapSet(
+  map: IR.Identifier | string,
+  key: IR.Expr,
+  value: IR.Expr): IR.MapSet {
+  return {
+    type: "MapSet",
+    map: typeof map === "string" ? id(map) : map,
+    key,
+    value
+  };
+}
+
 export function arrayGet(array: IR.Expr, index: IR.Expr): IR.ArrayGet {
   return { type: "ArrayGet", array, index };
+}
+
+export function arraySet(
+  array: IR.Identifier | string,
+  index: IR.Expr,
+  value: IR.Expr): IR.ArraySet {
+  return {
+    type: "ArraySet",
+    array: typeof array === "string" ? id(array) : array,
+    index,
+    value
+  };
+}
+
+export function listGet(list: IR.Expr, index: IR.Expr): IR.ListGet {
+  return { type: "ListGet", list, index };
+}
+
+export function listSet(
+  list: IR.Identifier | string,
+  index: IR.Expr,
+  value: IR.Expr): IR.ListSet {
+  return {
+    type: "ListSet",
+    list: typeof list === "string" ? id(list) : list,
+    index,
+    value
+  };
+}
+
+export function listPush(
+  list: IR.Identifier | string,
+  value: IR.Expr): IR.ListPush {
+  return {
+    type: "ListPush",
+    list: typeof list === "string" ? id(list) : list,
+    value
+  };
+}
+
+
+export function forRange(
+  variable: IR.Identifier | string,
+  low: IR.Expr,
+  high: IR.Expr,
+  body: IR.Block): IR.ForRange {
+  return {
+    type: "ForRange",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    low,
+    high,
+    body
+  };
+}
+
+export function forEach(
+  variable: IR.Identifier | string,
+  collection: IR.Expr,
+  body: IR.Block): IR.ForEach {
+  return {
+    type: "ForEach",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    collection,
+    body
+  };
+}
+
+export function forEachKey(
+  variable: IR.Identifier | string,
+  map: IR.Expr,
+  body: IR.Block): IR.ForEachKey {
+  return {
+    type: "ForEachKey",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    map,
+    body
+  };
+}
+
+export function forCLike(
+  init: IR.Block,
+  append: IR.Block,
+  condition: IR.Expr,
+  body: IR.Block): IR.ForCLike {
+  return {
+    type: "ForCLike",
+    init,
+    append,
+    condition,
+    body
+  };
+}
+
+export function forEachPair(
+  keyVariable: IR.Identifier | string,
+  valueVariable: IR.Identifier | string,
+  map: IR.Expr,
+  body: IR.Block): IR.ForEachPair {
+  return {
+    type: "ForEachPair",
+    keyVariable: typeof keyVariable === "string" ? id(keyVariable) : keyVariable,
+    valueVariable: typeof valueVariable === "string" ? id(valueVariable) : valueVariable,
+    map,
+    body
+  };
+}
+
+export function manyToManyAssignment(
+  variables: (IR.Identifier | string)[],
+  exprs: IR.Expr[]
+): IR.ManyToManyAssignment {
+  return {
+    type: "ManyToManyAssignment",
+    variables: variables.map(v => typeof v === "string" ? id(v) : v),
+    exprs,
+  };
+}
+
+export function oneToManyAssignment(
+  variables: (IR.Identifier | string)[],
+  expr: IR.Expr
+): IR.OneToManyAssignment {
+  return {
+    type: "OneToManyAssignment",
+    variables: variables.map(v => typeof v === "string" ? id(v) : v),
+    expr,
+  };
 }
