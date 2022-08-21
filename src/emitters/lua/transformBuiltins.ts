@@ -37,7 +37,6 @@ const applicationMap = new Map(
     str_length: method("len"),
     int_to_str: call("tostring"),
     str_to_int: prefix("~~"),
-    sort: call("sort"),
     bitnot: prefix("~"),
     neg: prefix("-"),
     add: infix("+"),
@@ -57,7 +56,8 @@ const applicationMap = new Map(
     // TODO: create a mixin to put a +1 in every array_get before language-specific transforms
     array_get: (args: IR.Expr[]) =>
       arrayGet(args[0], binaryOp("+", args[1], int(1n))),
-    str_get_byte: method("byte"),
+    str_get_byte: (args: IR.Expr[]) =>
+      methodCall(args[0], "byte", [binaryOp("+", args[1], int(1n))]),
     str_concat: infix(".."),
   })
 ) as Map<IR.Builtin, (args: IR.Expr[]) => IR.Expr>;
