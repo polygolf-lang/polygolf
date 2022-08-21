@@ -124,20 +124,20 @@ Control Flow:
 - if-else
 - while
 
-Opcodes:
+Builtin constants
+- argv
+
+
+Builtin functions:
 
 - arithmetic: add, subtract, multiply, (integer) divide, exponent, mod (mathematical)
 - integer comparison: less, greater, etc.
-- indexing: `array_get`, `table_get`, `str_get_byte`
-- conversions: `int_to_string`, `str_to_int`
+- indexing (table, string)
+- conversions: (int <--> string, etc.)
 - string ops: string concatenation, string split, print, length
-- array/list/table `length`
-- `taable_keys`
-- `sort`
+- sort
 
-Unicode support would benefit from `string_get_char`, and related methods. todo later.
-
-String comparison?
+[Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/IR.ts#L128).
 
 ## Idiom recognition (backend)
 
