@@ -25,7 +25,7 @@ Processing pipeline
 
 ## Usage
 
-Requires npm and node installed.
+Requires npm and node 17.0+ installed.
 
 To get started, clone the repository, then to install, run
 

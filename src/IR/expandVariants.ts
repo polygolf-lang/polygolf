@@ -1,6 +1,5 @@
 import { IR } from ".";
 import { Path, programToPath } from ".";
-import { Block, Variants } from "./IR";
 
 export function expandVariants(program: IR.Program): IR.Program[] {
   var structure: Variant = getVariantsStructure(program);
@@ -33,6 +32,7 @@ function countVariantExpansions(structure: Variant): number {
     .map(countCommandExpansion)
     .reduce((a, b) => a * b, 1);
 }
+
 function countCommandExpansion(structure: Command): number {
   return structure.variants
     .map(countVariantExpansions)
@@ -73,27 +73,21 @@ function getVariantsStructure(node: IR.Program): Variant {
   return result;
 }
 
-function instantiateProgram(node: IR.Program, choices: number[]): IR.Program {
-  var node: IR.Program = structuredClone(node);
+function instantiateProgram(
+  program: IR.Program,
+  choices: number[]
+): IR.Program {
+  program = structuredClone(program);
   choices.reverse();
-  programToPath(node).visit((x) => {
-    if (x.node.type === "Block") {
-      while (x.node.children.some((y) => y.type === "Variants")) {
-        var origChildren = x.node.children;
-        x.node.children = [];
-        origChildren.forEach((c) => {
-          if (x.node.type === "Block") {
-            if (c.type === "Variants") {
-              c.variants[choices.pop()!].children.forEach((v) => {
-                if (x.node.type == "Block") x.node.children.push(v);
-              });
-            } else {
-              x.node.children.push(c);
-            }
-          }
-        });
+  programToPath(program).visit((path) => {
+    const node = path.node;
+    if (node.type === "Block") {
+      while (node.children.some((child) => child.type === "Variants")) {
+        node.children = node.children.flatMap((c) =>
+          c.type === "Variants" ? c.variants[choices.pop()!].children : c
+        );
       }
     }
   });
-  return node;
+  return program;
 }

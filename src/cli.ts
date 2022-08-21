@@ -44,6 +44,8 @@ const rawIR = program(
 );
 console.log(lua(rawIR));
 
+// [ c; | [ d; | e; ]; ];
+// [ f; | g; ];
 const variantsTest = program(
   block([
     variants([
