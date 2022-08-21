@@ -16,8 +16,8 @@ export type Expr =
   | IntegerLiteral
   | ArrayConstructor
   | ListConstructor
-  | MapGet
-  | MapSet
+  | TableGet
+  | TableSet
   | ArrayGet
   | ArraySet
   | ListGet
@@ -205,24 +205,24 @@ export interface ListConstructor {
 }
 
 /**
- * Getting a map value at given key. Raw OK
+ * Getting a table value at given key. Raw OK
  *
- * map[key]
+ * table[key]
  */
-export interface MapGet {
-  type: "MapGet";
-  map: Expr;
+export interface TableGet {
+  type: "TableGet";
+  table: Expr;
   key: Expr;
 }
 
 /**
- * Setting a map value at given key. Raw OK
+ * Setting a table value at given key. Raw OK
  *
- * map[key] = value
+ * table[key] = value
  */
-export interface MapSet {
-  type: "MapSet";
-  map: Identifier;
+export interface TableSet {
+  type: "TableSet";
+  table: Identifier;
   key: Expr;
   value: Expr;
 }
@@ -345,14 +345,14 @@ export interface ForEach {
 }
 
 /**
- * A loop over the keys in an map.
+ * A loop over the keys in an table.
  *
  * Python: for variable in array:body.
  */
 export interface ForEachKey {
   type: "ForEachKey";
   variable: Identifier;
-  map: Expr;
+  table: Expr;
   body: Block;
 }
 
@@ -370,7 +370,7 @@ export interface ForCLike {
 }
 
 /**
- * A loop over the (key,value) pairs in an map (or (index, value) pairs in an array).
+ * A loop over the (key,value) pairs in a table (or (index, value) pairs in an array).
  *
  * Python: for variable in array:body.
  */
@@ -378,7 +378,7 @@ export interface ForEachPair {
   type: "ForEachPair";
   keyVariable: Identifier;
   valueVariable: Identifier;
-  map: Expr;
+  table: Expr;
   body: Block;
 }
 

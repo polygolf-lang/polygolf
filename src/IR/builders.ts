@@ -97,17 +97,17 @@ export function listConstructor(exprs: IR.Expr[]): IR.ListConstructor {
   return { type: "ListConstructor", exprs };
 }
 
-export function mapGet(map: IR.Expr, key: IR.Expr): IR.MapGet {
-  return { type: "MapGet", map, key };
+export function tableGet(table: IR.Expr, key: IR.Expr): IR.TableGet {
+  return { type: "TableGet", table, key };
 }
 
-export function mapSet(
-  map: IR.Identifier | string,
+export function tableSet(
+  table: IR.Identifier | string,
   key: IR.Expr,
-  value: IR.Expr): IR.MapSet {
+  value: IR.Expr): IR.TableSet {
   return {
-    type: "MapSet",
-    map: typeof map === "string" ? id(map) : map,
+    type: "TableSet",
+    table: typeof table === "string" ? id(table) : table,
     key,
     value
   };
@@ -184,12 +184,12 @@ export function forEach(
 
 export function forEachKey(
   variable: IR.Identifier | string,
-  map: IR.Expr,
+  table: IR.Expr,
   body: IR.Block): IR.ForEachKey {
   return {
     type: "ForEachKey",
     variable: typeof variable === "string" ? id(variable) : variable,
-    map,
+    table,
     body
   };
 }
@@ -211,13 +211,13 @@ export function forCLike(
 export function forEachPair(
   keyVariable: IR.Identifier | string,
   valueVariable: IR.Identifier | string,
-  map: IR.Expr,
+  table: IR.Expr,
   body: IR.Block): IR.ForEachPair {
   return {
     type: "ForEachPair",
     keyVariable: typeof keyVariable === "string" ? id(keyVariable) : keyVariable,
     valueVariable: typeof valueVariable === "string" ? id(valueVariable) : valueVariable,
-    map,
+    table,
     body
   };
 }
