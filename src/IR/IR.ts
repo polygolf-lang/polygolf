@@ -1,6 +1,16 @@
 export type Node = Program | Block | Statement;
 
-export type Statement = Expr | WhileLoop | IfStatement | Variants;
+export type Statement =
+  | Expr
+  | WhileLoop  
+  | ForRange 
+  | ForRangeInclusive
+  | ForEach
+  | ForEachKey
+  | ForEachPair
+  | ForCLike
+  | IfStatement
+  | Variants;
 
 export type Expr =
   | Argv
@@ -26,11 +36,6 @@ export type Expr =
   | Import
   | MutatingBinaryOp
   | ConditionalOp
-  | ForRange
-  | ForEach
-  | ForEachKey
-  | ForEachPair
-  | ForCLike
   | ManyToManyAssignment
   | OneToManyAssignment;
 

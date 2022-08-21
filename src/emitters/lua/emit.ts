@@ -16,6 +16,12 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string {
         emitBlock(stmt.body) +
         `\nend`
       );
+    case "ForRangeInclusive":
+      return (
+        `for ${emitExpr(stmt.variable, stmt)}=${emitExpr(stmt.low, stmt)},${emitExpr(stmt.high, stmt)}${stmt.increment === null ? "" : "," + emitExpr(stmt.increment, stmt)} do\n` +
+        emitBlock(stmt.body) +
+        `\nend`
+      );
     case "IfStatement":
       return (
         `if ${emitExpr(stmt.condition, stmt)}then\n` +
