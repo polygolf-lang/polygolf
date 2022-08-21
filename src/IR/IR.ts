@@ -15,15 +15,20 @@ export type Expr =
   | StringLiteral
   | IntegerLiteral
   | ArrayConstructor
-  | MapSet
+  | ListConstructor
+  | TableGet
+  | TableSet
+  | ArrayGet
+  | ArraySet
+  | ListGet
+  | ListSet
+  | ListPush
   | Import
   | MutatingBinaryOp
   | ConditionalOp
-  | ArrayGet
-  | MapGet
-  | ArraySet
   | ForRange
   | ForEach
+  | ForEachKey
   | ForEachPair
   | ForCLike
   | ManyToManyAssignment
@@ -199,14 +204,35 @@ export interface ArrayConstructor {
 }
 
 /**
- * Setting a map value at given key. Raw OK
+ * List constructor. Raw OK
  *
- * a[i] = b
  */
-export interface MapSet {
-  type: "MapSet";
-  array: Expr;
-  index: Expr;
+export interface ListConstructor {
+  type: "ListConstructor";
+  exprs: Expr[];
+}
+
+/**
+ * Getting a table value at given key. Raw OK
+ *
+ * table[key]
+ */
+export interface TableGet {
+  type: "TableGet";
+  table: Expr;
+  key: Expr;
+}
+
+/**
+ * Setting a table value at given key. Raw OK
+ *
+ * table[key] = value
+ */
+export interface TableSet {
+  type: "TableSet";
+  table: Identifier;
+  key: Expr;
+  value: Expr;
 }
 
 /// === Interfaces below here are language-specific ===
@@ -276,16 +302,29 @@ export interface ArrayGet {
   index: Expr;
 }
 
-export interface MapGet {
-  type: "MapGet";
-  array: Expr;
+export interface ArraySet {
+  type: "ArraySet";
+  array: Identifier;
+  index: Expr;
+  value: Expr;
+}
+export interface ListGet {
+  type: "ListGet";
+  list: Expr;
   index: Expr;
 }
 
-export interface ArraySet {
-  type: "ArraySet";
-  array: Expr;
+export interface ListSet {
+  type: "ListSet";
+  list: Identifier;
   index: Expr;
+  value: Expr;
+}
+
+export interface ListPush {
+  type: "ListPush";
+  list: Identifier;
+  value: Expr;
 }
 
 /**
@@ -302,26 +341,26 @@ export interface ForRange {
 }
 
 /**
- * A loop over the items in an array.
+ * A loop over the items in a collection.
  *
- * Python: for variable in array:body.
+ * Python: for variable in collection:body.
  */
 export interface ForEach {
   type: "ForEach";
   variable: Identifier;
-  array: Expr;
+  collection: Expr;
   body: Block;
 }
 
 /**
- * A loop over the keys in an map.
+ * A loop over the keys in an table.
  *
  * Python: for variable in array:body.
  */
 export interface ForEachKey {
   type: "ForEachKey";
   variable: Identifier;
-  map: Expr;
+  table: Expr;
   body: Block;
 }
 
@@ -339,7 +378,7 @@ export interface ForCLike {
 }
 
 /**
- * A loop over the (key,value) pairs in an map (or (index, value) pairs in an array).
+ * A loop over the (key,value) pairs in a table (or (index, value) pairs in an array).
  *
  * Python: for variable in array:body.
  */
@@ -347,7 +386,7 @@ export interface ForEachPair {
   type: "ForEachPair";
   keyVariable: Identifier;
   valueVariable: Identifier;
-  map: Expr;
+  table: Expr;
   body: Block;
 }
 

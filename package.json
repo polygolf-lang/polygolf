@@ -11,7 +11,8 @@
     "build": "etsc",
     "test:typecheck": "tsc --noEmit",
     "test:formatting": "prettier-check .",
-    "test": "npm run test:formatting; npm run test:typecheck",
+    "test:jest": "jest --config jest.config.js",
+    "test": "npm run test:formatting && npm run test:typecheck && npm run test:jest",
     "cli": "npm run build; node --enable-source-maps dist/cli.js"
   },
   "repository": {
@@ -24,10 +25,13 @@
   },
   "homepage": "https://github.com/jared-hughes/polygolf#readme",
   "devDependencies": {
+    "@types/jest": "^28.1.7",
     "@types/node": "^18.7.6",
     "esbuild": "^0.15.5",
     "esbuild-node-tsc": "^2.0.2",
+    "jest": "^28.1.3",
     "prettier-check": "^2.0.0",
+    "ts-jest": "^28.0.8",
     "typescript": "^4.7.4"
   }
 }
