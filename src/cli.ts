@@ -48,18 +48,10 @@ const variantsTest = program(
   block([
     variants([
       block([id("c")]),
-      block([
-        variants([
-          block([id("d")]),
-          block([id("e")]),
-        ])
-      ]),
+      block([variants([block([id("d")]), block([id("e")])])]),
     ]),
-    variants([
-      block([id("f")]),
-      block([id("g")]),
-    ])
+    variants([block([id("f")]), block([id("g")])]),
   ])
-)
+);
 
-expandVariants(variantsTest).forEach(x => console.log("\n" + lua(x)));
+expandVariants(variantsTest).forEach((x) => console.log("\n" + lua(x)));

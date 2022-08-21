@@ -40,11 +40,18 @@ export class Path<N extends IR.Node = IR.Node> {
   }
 
   /** Replace this node's child given by pathFragment with newChildrem */
-  replaceChildWithMany(newChildren: IR.Node[], pathFragment: PathFragment): void {
+  replaceChildWithMany(
+    newChildren: IR.Node[],
+    pathFragment: PathFragment
+  ): void {
     if (typeof pathFragment === "string") {
       throw new Error("Cannot replace scalar property with multiple nodes.");
     } else {
-      (this.node as any)[pathFragment.prop].splice(pathFragment.index, 1, ...newChildren);
+      (this.node as any)[pathFragment.prop].splice(
+        pathFragment.index,
+        1,
+        ...newChildren
+      );
     }
   }
 
@@ -76,7 +83,7 @@ export class Path<N extends IR.Node = IR.Node> {
   visit(enter: (node: Path) => void, exit?: (node: Path) => void): void {
     enter(this);
     this.getChildPaths().forEach((path) => path.visit(enter, exit));
-    if(exit) exit(this);
+    if (exit) exit(this);
   }
 }
 

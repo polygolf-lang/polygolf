@@ -32,7 +32,7 @@ export type Expr =
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
  */
- export type Variants = {
+export type Variants = {
   type: "Variants";
   variants: Block[];
 };
