@@ -7,9 +7,12 @@ import {
   id,
   int,
   program,
+  variants,
   whileLoop,
 } from "./IR/builders";
 import lua from "./emitters/lua";
+import debugEmit from "./emitters/debug/emit";
+import { expandVariants } from "./IR/expandVariants";
 
 // hardcode input for now
 
@@ -41,3 +44,17 @@ const rawIR = program(
   ])
 );
 console.log(lua(rawIR));
+
+// [ c; c1; | [ d; d1; | e; ]; ];
+// [ f; | g; | h; i; ];
+const variantsTest = program(
+  block([
+    variants([
+      block([id("c"), id("c1")]),
+      block([variants([block([id("d"), id("d1")]), block([id("e")])])]),
+    ]),
+    variants([block([id("f")]), block([id("g")]), block([id("h"), id("i")])]),
+  ])
+);
+
+expandVariants(variantsTest).forEach((x) => console.log("\n" + debugEmit(x)));

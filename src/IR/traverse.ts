@@ -1,6 +1,10 @@
+import emit from "../emitters/debug/emit";
 import { IR } from ".";
 
 export class Path<N extends IR.Node = IR.Node> {
+  _removed = false;
+  visitState: VisitState | null = null;
+
   constructor(
     public node: N,
     public parent: Path | null,
@@ -14,24 +18,37 @@ export class Path<N extends IR.Node = IR.Node> {
   getChildPaths(): Path[] {
     const result = [];
     for (let key in this.node) {
-      const value = this.node[key];
+      const value = this.node[key] as any as IR.Node[] | IR.Node;
       if (Array.isArray(value)) {
-        // value: IR.Node[]
         result.push(
-          ...(value as IR.Node[]).map(
+          ...value.map(
             (child, i) => new Path(child, this, { prop: key, index: i })
           )
         );
       } else if (typeof (value as any).type === "string") {
-        // value: IR.Node
-        result.push(new Path(value as any as IR.Node, this, key));
+        result.push(new Path(value, this, key));
       }
     }
     return result;
   }
 
+  getChild(pathFragment: PathFragment): Path {
+    return new Path(getChild(this.node, pathFragment), this, pathFragment);
+  }
+
   /** Replace this node's child given by pathFragment with newChild */
   replaceChild(newChild: IR.Node, pathFragment: PathFragment): void {
+    const oldChild = getChild(this.node, pathFragment);
+    if (this.visitState) {
+      const queue = this.visitState.queue;
+      for (let i = queue.length - 1; i >= 0; i--) {
+        if (queue[i].node === oldChild) {
+          queue[i]._removed = true;
+          queue[i] = new Path(newChild, this, pathFragment);
+          break;
+        }
+      }
+    }
     if (typeof pathFragment === "string") {
       (this.node as any)[pathFragment] = newChild;
     } else {
@@ -39,18 +56,61 @@ export class Path<N extends IR.Node = IR.Node> {
     }
   }
 
+  /** Replace this node's child given by pathFragment with newChildren */
+  replaceChildWithMultiple(
+    newChildren: IR.Node[],
+    pathFragment: PathFragment
+  ): void {
+    if (typeof pathFragment === "string")
+      throw new Error("Cannot replace scalar property with multiple nodes.");
+    const oldChild = getChild(this.node, pathFragment);
+    if (this.visitState) {
+      const queue = this.visitState.queue;
+      for (let i = queue.length - 1; i >= 0; i--) {
+        const entry = queue[i] as Path & {
+          pathFragment: { index: number };
+        };
+        if (entry.node === oldChild) {
+          entry._removed = true;
+          queue.splice(
+            i,
+            1,
+            ...[...newChildren]
+              .reverse()
+              .map((node) => new Path(node, this, pathFragment))
+          );
+        } else if (entry.pathFragment.index > pathFragment.index) {
+          entry.pathFragment.index += newChildren.length - 1;
+        }
+      }
+    }
+    (this.node as any)[pathFragment.prop].splice(
+      pathFragment.index,
+      1,
+      ...newChildren
+    );
+  }
+
   /** Replace this node with newNode by mutating the parent */
   replaceWith(newNode: IR.Node): void {
+    this._removed = true;
     if (this.parent === null || this.pathFragment === null)
       throw new Error("Cannot replace the root node");
     return this.parent.replaceChild(newNode, this.pathFragment);
   }
 
+  /** Replace this node with newNodes by mutating the parent */
+  replaceWithMultiple(newNodes: IR.Node[]): void {
+    this._removed = true;
+    if (this.parent === null || this.pathFragment === null)
+      throw new Error("Cannot replace the root node");
+    return this.parent.replaceChildWithMultiple(newNodes, this.pathFragment);
+  }
+
   /**
    * visit this node and all children nodes recursively (visitor pattern)
    *
-   * It may eventually be necessary to add separate enter() and exit()
-   * hooks for functionality, or to run several plugins simultaneously
+   * It may eventually be necessary to run several plugins simultaneously
    * to avoid re-walking the tree many times (for performance). But this is
    * kept very simple for now.
    *
@@ -58,10 +118,37 @@ export class Path<N extends IR.Node = IR.Node> {
    * - replacing a node with a structure that contains itself (infinite loop)
    * - more mutation issues probably
    */
-  visit(visitor: (node: Path) => void): void {
-    visitor(this);
-    this.getChildPaths().forEach((path) => path.visit(visitor));
+  visit(enter: (path: Path) => void, exit?: (path: Path) => void): void {
+    if (this._removed) return;
+    enter(this);
+    if (this._removed) return;
+    this.visitState = {
+      queue: this.getChildPaths().reverse(),
+    };
+    let i = 10;
+    while (this.visitState.queue.length > 0 && --i) {
+      const path = this.visitState.queue.at(-1)!;
+      path.visit(enter, exit);
+      if (!path._removed) {
+        this.visitState.queue.pop();
+      }
+    }
+    if (exit) exit(this);
   }
+
+  printPath(): string {
+    if (this.pathFragment === null || this.parent === null) return "";
+    const fragString =
+      typeof this.pathFragment === "string"
+        ? "." + this.pathFragment
+        : "." + this.pathFragment.prop + "[" + this.pathFragment.index + "]";
+    return this.parent.printPath() + fragString;
+  }
+}
+
+interface VisitState {
+  // end of the queue (next to be popped) is at the end
+  queue: Path[];
 }
 
 /**

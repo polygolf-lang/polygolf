@@ -81,11 +81,12 @@ export function argv(): IR.Argv {
 
 export function varDeclaration(
   variable: IR.Identifier | string,
-  variableType: IR.ValueType): IR.VarDeclaration {
+  variableType: IR.ValueType
+): IR.VarDeclaration {
   return {
     type: "VarDeclaration",
     variable: typeof variable === "string" ? id(variable) : variable,
-    variableType
+    variableType,
   };
 }
 
@@ -104,12 +105,13 @@ export function tableGet(table: IR.Expr, key: IR.Expr): IR.TableGet {
 export function tableSet(
   table: IR.Identifier | string,
   key: IR.Expr,
-  value: IR.Expr): IR.TableSet {
+  value: IR.Expr
+): IR.TableSet {
   return {
     type: "TableSet",
     table: typeof table === "string" ? id(table) : table,
     key,
-    value
+    value,
   };
 }
 
@@ -117,15 +119,20 @@ export function arrayGet(array: IR.Expr, index: IR.Expr): IR.ArrayGet {
   return { type: "ArrayGet", array, index };
 }
 
+export function variants(variants: IR.Block[]): IR.Variants {
+  return { type: "Variants", variants };
+}
+
 export function arraySet(
   array: IR.Identifier | string,
   index: IR.Expr,
-  value: IR.Expr): IR.ArraySet {
+  value: IR.Expr
+): IR.ArraySet {
   return {
     type: "ArraySet",
     array: typeof array === "string" ? id(array) : array,
     index,
-    value
+    value,
   };
 }
 
@@ -136,61 +143,65 @@ export function listGet(list: IR.Expr, index: IR.Expr): IR.ListGet {
 export function listSet(
   list: IR.Identifier | string,
   index: IR.Expr,
-  value: IR.Expr): IR.ListSet {
+  value: IR.Expr
+): IR.ListSet {
   return {
     type: "ListSet",
     list: typeof list === "string" ? id(list) : list,
     index,
-    value
+    value,
   };
 }
 
 export function listPush(
   list: IR.Identifier | string,
-  value: IR.Expr): IR.ListPush {
+  value: IR.Expr
+): IR.ListPush {
   return {
     type: "ListPush",
     list: typeof list === "string" ? id(list) : list,
-    value
+    value,
   };
 }
-
 
 export function forRange(
   variable: IR.Identifier | string,
   low: IR.Expr,
   high: IR.Expr,
-  body: IR.Block): IR.ForRange {
+  body: IR.Block
+): IR.ForRange {
   return {
     type: "ForRange",
     variable: typeof variable === "string" ? id(variable) : variable,
     low,
     high,
-    body
+    body,
   };
 }
 
 export function forEach(
   variable: IR.Identifier | string,
   collection: IR.Expr,
-  body: IR.Block): IR.ForEach {
+  body: IR.Block
+): IR.ForEach {
   return {
     type: "ForEach",
     variable: typeof variable === "string" ? id(variable) : variable,
     collection,
-    body
+    body,
   };
 }
 
 export function forEachKey(
   variable: IR.Identifier | string,
   table: IR.Expr,
-  body: IR.Block): IR.ForEachKey {
+  body: IR.Block
+): IR.ForEachKey {
   return {
     type: "ForEachKey",
     variable: typeof variable === "string" ? id(variable) : variable,
     table,
-    body
+    body,
   };
 }
 
@@ -198,13 +209,14 @@ export function forCLike(
   init: IR.Block,
   append: IR.Block,
   condition: IR.Expr,
-  body: IR.Block): IR.ForCLike {
+  body: IR.Block
+): IR.ForCLike {
   return {
     type: "ForCLike",
     init,
     append,
     condition,
-    body
+    body,
   };
 }
 
@@ -212,13 +224,16 @@ export function forEachPair(
   keyVariable: IR.Identifier | string,
   valueVariable: IR.Identifier | string,
   table: IR.Expr,
-  body: IR.Block): IR.ForEachPair {
+  body: IR.Block
+): IR.ForEachPair {
   return {
     type: "ForEachPair",
-    keyVariable: typeof keyVariable === "string" ? id(keyVariable) : keyVariable,
-    valueVariable: typeof valueVariable === "string" ? id(valueVariable) : valueVariable,
+    keyVariable:
+      typeof keyVariable === "string" ? id(keyVariable) : keyVariable,
+    valueVariable:
+      typeof valueVariable === "string" ? id(valueVariable) : valueVariable,
     table,
-    body
+    body,
   };
 }
 
@@ -228,7 +243,7 @@ export function manyToManyAssignment(
 ): IR.ManyToManyAssignment {
   return {
     type: "ManyToManyAssignment",
-    variables: variables.map(v => typeof v === "string" ? id(v) : v),
+    variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     exprs,
   };
 }
@@ -239,7 +254,7 @@ export function oneToManyAssignment(
 ): IR.OneToManyAssignment {
   return {
     type: "OneToManyAssignment",
-    variables: variables.map(v => typeof v === "string" ? id(v) : v),
+    variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     expr,
   };
 }
