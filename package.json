@@ -12,7 +12,7 @@
     "test:typecheck": "tsc --noEmit",
     "test:formatting": "prettier-check .",
     "test": "npm run test:formatting; npm run test:typecheck",
-    "cli": "npm run build; node dist/cli.js"
+    "cli": "npm run build; node --enable-source-maps dist/cli.js"
   },
   "repository": {
     "type": "git",

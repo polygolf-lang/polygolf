@@ -93,12 +93,8 @@ function instantiateProgram(
   choices.reverse();
   programToPath(program).visit((path) => {
     const node = path.node;
-    if (node.type === "Block") {
-      while (node.children.some((child) => child.type === "Variants")) {
-        node.children = node.children.flatMap((c) =>
-          c.type === "Variants" ? c.variants[choices.pop()!].children : c
-        );
-      }
+    if (node.type === "Variants") {
+      path.replaceWithMultiple(node.variants[choices.pop()!].children);
     }
   });
   return program;
