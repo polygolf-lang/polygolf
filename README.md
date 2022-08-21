@@ -113,8 +113,8 @@ Types:
 - `boolean`
 - `integer` (unbounded; domain annotations may help language-specific narrowing to 32-bit ints etc)
 - `string`
-- `Array<?>` (0 indexed)
-- `Map<?,?>` (not implementing for now)
+- `List<?>` (0 indexed)
+- `Table<?,?>` (not implementing for now)
 
 Constant literals for each type.
 
@@ -128,11 +128,11 @@ Opcodes:
 
 - arithmetic: add, subtract, multiply, (integer) divide, exponent, mod (mathematical)
 - integer comparison: less, greater, etc.
-- indexing: `array_get`, `map_get`, `str_get_byte`
+- indexing: `array_get`, `table_get`, `str_get_byte`
 - conversions: `int_to_string`, `str_to_int`
 - string ops: string concatenation, string split, print, length
-- array/map `length`
-- `map_keys`
+- array/list/table `length`
+- `taable_keys`
 - `sort`
 
 Unicode support would benefit from `string_get_char`, and related methods. todo later.
@@ -159,4 +159,4 @@ Planned idioms:
 
 ## Implementation plan
 
-Backend first. Only numbers, booleans, strings; add arrays and maps later.
+Backend first. Only numbers, booleans, strings; add lists and tables later.
