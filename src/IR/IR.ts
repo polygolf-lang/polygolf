@@ -328,15 +328,30 @@ export interface ListPush {
 }
 
 /**
- * A loop over the integer interval [low, high)
+ * A loop over the integer interval [low, high) with optional increment.
  *
- * Python: for variable in range(low, high):body.
+ * Python: for variable in range(low, high, increment):body.
  */
 export interface ForRange {
   type: "ForRange";
   variable: Identifier;
   low: Expr;
   high: Expr;
+  increment: Expr | null;
+  body: Block;
+}
+
+/**
+ * A loop over the integer interval [low, high] with optional increment.
+ *
+ * Python: for variable in range(low, high+1, increment):body.
+ */
+ export interface ForRangeInclusive {
+  type: "ForRangeInclusive";
+  variable: Identifier;
+  low: Expr;
+  high: Expr;
+  increment: Expr | null;
   body: Block;
 }
 
