@@ -72,7 +72,7 @@ export class Path<N extends IR.Node = IR.Node> {
   /**
    * visit this node and all children nodes recursively (visitor pattern)
    *
-   * It may to run several plugins simultaneously
+   * It may eventually be necessary to run several plugins simultaneously
    * to avoid re-walking the tree many times (for performance). But this is
    * kept very simple for now.
    *
