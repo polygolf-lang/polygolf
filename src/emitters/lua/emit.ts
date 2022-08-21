@@ -42,7 +42,8 @@ function needsParens(expr: IR.Expr, parent: IR.Node): boolean {
   if (
     parent.type === "MethodCall" &&
     expr === parent.object &&
-    expr.type !== "Identifier"
+    expr.type !== "Identifier" &&
+    expr.type !== "ArrayGet"
   )
     return true;
   if (parent.type !== "BinaryOp") return false;
@@ -64,7 +65,7 @@ function emitExprNoParens(expr: IR.Expr): string {
       // TODO: special string handling
       return JSON.stringify(expr.value);
     case "IntegerLiteral":
-      // TODO: avoid exponential notation
+      // TODO: avoid exponential notation e.g. 1e20
       return expr.value.toString();
     case "FunctionCall":
       return (
@@ -75,7 +76,7 @@ function emitExprNoParens(expr: IR.Expr): string {
       );
     case "MethodCall":
       return (
-        expr.object +
+        emitExpr(expr.object, expr) +
         ":" +
         expr.method +
         "(" +
@@ -86,6 +87,10 @@ function emitExprNoParens(expr: IR.Expr): string {
       return emitExpr(expr.left, expr) + expr.op + emitExpr(expr.right, expr);
     case "UnaryOp":
       return expr.op + emitExpr(expr.arg, expr);
+    case "ArrayGet":
+      return (
+        emitExpr(expr.array, expr) + "[" + emitExpr(expr.index, expr) + "]"
+      );
     default:
       throw new Error(`Unexpected node while emitting Lua: ${expr.type}. `);
   }
