@@ -16,12 +16,16 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string {
         emitBlock(stmt.body) +
         `\nend`
       );
-    case "ForRangeInclusive":
+    case "ForRangeInclusive": {
+      const increment =
+        stmt.increment === null ? "" : "," + emitExpr(stmt.increment, stmt);
       return (
-        `for ${emitExpr(stmt.variable, stmt)}=${emitExpr(stmt.low, stmt)},${emitExpr(stmt.high, stmt)}${stmt.increment === null ? "" : "," + emitExpr(stmt.increment, stmt)} do\n` +
+        `for ${emitExpr(stmt.variable, stmt)}=${emitExpr(stmt.low, stmt)},` +
+        `${emitExpr(stmt.high, stmt)}${increment} do\n` +
         emitBlock(stmt.body) +
         `\nend`
       );
+    }
     case "IfStatement":
       return (
         `if ${emitExpr(stmt.condition, stmt)}then\n` +
@@ -32,6 +36,12 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string {
       );
     case "Variants":
       throw new Error("Variants should have been instantiated.");
+    case "ForRange":
+    case "ForEach":
+    case "ForEachKey":
+    case "ForEachPair":
+    case "ForCLike":
+      throw new Error(`Unexpected node (${stmt.type}) while emitting Lua`);
     default:
       return emitExpr(stmt, parent);
   }

@@ -2,8 +2,8 @@ export type Node = Program | Block | Statement;
 
 export type Statement =
   | Expr
-  | WhileLoop  
-  | ForRange 
+  | WhileLoop
+  | ForRange
   | ForRangeInclusive
   | ForEach
   | ForEachKey
@@ -351,7 +351,7 @@ export interface ForRange {
  *
  * Python: for variable in range(low, high+1, increment):body.
  */
- export interface ForRangeInclusive {
+export interface ForRangeInclusive {
   type: "ForRangeInclusive";
   variable: Identifier;
   low: Expr;
