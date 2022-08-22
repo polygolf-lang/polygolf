@@ -1,11 +1,10 @@
-import { IR } from "IR";
+import { IR, Visitor } from "IR";
 
 export interface Language {
   name: string;
-  plugins: Plugin[];
+  /** The visitors are applied in left-to-right order. */
+  plugins: Visitor[];
   emitter: Emitter;
 }
-
-export type Plugin = (program: IR.Program) => IR.Program;
 
 export type Emitter = (program: IR.Program) => string;

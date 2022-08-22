@@ -16,21 +16,17 @@ import {
  *
  * Postcondition: all Application nodes have been removed
  */
-export default function transformBuiltins(program: IR.Program): IR.Program {
-  const path = programToPath(program);
-  path.visit({
-    enter(path: Path) {
-      const node = path.node;
-      if (node.type === "Application") {
-        const func = applicationMap.get(node.name);
-        if (func === undefined) throw `Undefined function ${node.name}`;
-        path.replaceWith(func(node.args));
-        return;
-      }
-    },
-  });
-  return program;
-}
+export default {
+  enter(path: Path) {
+    const node = path.node;
+    if (node.type === "Application") {
+      const func = applicationMap.get(node.name);
+      if (func === undefined) throw `Undefined function ${node.name}`;
+      path.replaceWith(func(node.args));
+      return;
+    }
+  },
+};
 
 const applicationMap = new Map(
   Object.entries({
