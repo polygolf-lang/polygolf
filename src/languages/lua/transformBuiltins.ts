@@ -18,14 +18,16 @@ import {
  */
 export default function transformBuiltins(program: IR.Program): IR.Program {
   const path = programToPath(program);
-  path.visit((path: Path) => {
-    const node = path.node;
-    if (node.type === "Application") {
-      const func = applicationMap.get(node.name);
-      if (func === undefined) throw `Undefined function ${node.name}`;
-      path.replaceWith(func(node.args));
-      return;
-    }
+  path.visit({
+    enter(path: Path) {
+      const node = path.node;
+      if (node.type === "Application") {
+        const func = applicationMap.get(node.name);
+        if (func === undefined) throw `Undefined function ${node.name}`;
+        path.replaceWith(func(node.args));
+        return;
+      }
+    },
   });
   return program;
 }

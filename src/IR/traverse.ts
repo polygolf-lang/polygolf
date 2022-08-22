@@ -117,9 +117,9 @@ export class Path<N extends IR.Node = IR.Node> {
    * - replacing a node with a structure that contains itself (infinite loop)
    * - more mutation issues probably
    */
-  visit(enter: (path: Path) => void, exit?: (path: Path) => void): void {
+  visit(visitor: Visitor): void {
     if (this._removed) return;
-    enter(this);
+    visitor.enter?.(this);
     if (this._removed) return;
     this.visitState = {
       queue: this.getChildPaths().reverse(),
@@ -127,12 +127,12 @@ export class Path<N extends IR.Node = IR.Node> {
     let i = 10;
     while (this.visitState.queue.length > 0 && --i) {
       const path = this.visitState.queue.at(-1)!;
-      path.visit(enter, exit);
+      path.visit(visitor);
       if (!path._removed) {
         this.visitState.queue.pop();
       }
     }
-    if (exit) exit(this);
+    visitor.exit?.(this);
   }
 
   printPath(): string {
@@ -175,4 +175,9 @@ export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
 
 export function programToPath(node: IR.Program) {
   return new Path(node, null, null);
+}
+
+export interface Visitor {
+  enter?: (path: Path) => void;
+  exit?: (path: Path) => void;
 }
