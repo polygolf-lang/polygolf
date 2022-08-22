@@ -1,4 +1,4 @@
-import { IR, programToPath } from "IR";
+import { IR, programToPath } from "../IR";
 import { Language } from "./Language";
 
 export function applyLanguage(language: Language, program: IR.Program): string {
