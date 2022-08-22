@@ -1,4 +1,3 @@
-import emit from "../emitters/debug/emit";
 import { IR } from ".";
 
 export class Path<N extends IR.Node = IR.Node> {

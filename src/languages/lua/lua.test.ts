@@ -1,9 +1,10 @@
 import { assignment, int } from "../../IR/builders";
 import lua from ".";
 import { IR, block, program, application, stringLiteral, id } from "../../IR";
+import { applyLanguage } from "../../common/applyLanguage";
 
 function expectTransform(program: IR.Program, output: string) {
-  expect(lua(program)).toEqual(output);
+  expect(applyLanguage(lua, program)).toEqual(output);
 }
 
 function expectStatement(statement: IR.Statement, output: string) {
