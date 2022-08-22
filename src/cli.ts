@@ -11,9 +11,10 @@ import {
   variants,
   whileLoop,
 } from "./IR/builders";
-import lua from "./emitters/lua";
-import debugEmit from "./emitters/debug/emit";
+import lua from "./languages/lua";
+import debugEmit from "./languages/debug/emit";
 import { expandVariants } from "./IR/expandVariants";
+import { applyLanguage } from "./common/applyLanguage";
 
 // hardcode input for now
 
@@ -44,7 +45,7 @@ const rawIR = program(
     ),
   ])
 );
-console.log(lua(rawIR));
+console.log(applyLanguage(lua, rawIR));
 
 // [ c; c1; | [ d; d1; | e; ]; ];
 // [ f; | g; | h; i; ];

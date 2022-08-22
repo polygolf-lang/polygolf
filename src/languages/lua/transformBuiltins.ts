@@ -16,9 +16,8 @@ import {
  *
  * Postcondition: all Application nodes have been removed
  */
-export default function transformBuiltins(program: IR.Program): IR.Program {
-  const path = programToPath(program);
-  path.visit((path: Path) => {
+export default {
+  enter(path: Path) {
     const node = path.node;
     if (node.type === "Application") {
       const func = applicationMap.get(node.name);
@@ -26,9 +25,8 @@ export default function transformBuiltins(program: IR.Program): IR.Program {
       path.replaceWith(func(node.args));
       return;
     }
-  });
-  return program;
-}
+  },
+};
 
 const applicationMap = new Map(
   Object.entries({

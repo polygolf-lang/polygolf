@@ -91,11 +91,13 @@ function instantiateProgram(
 ): IR.Program {
   program = structuredClone(program);
   choices.reverse();
-  programToPath(program).visit((path) => {
-    const node = path.node;
-    if (node.type === "Variants") {
-      path.replaceWithMultiple(node.variants[choices.pop()!].children);
-    }
+  programToPath(program).visit({
+    enter(path) {
+      const node = path.node;
+      if (node.type === "Variants") {
+        path.replaceWithMultiple(node.variants[choices.pop()!].children);
+      }
+    },
   });
   return program;
 }
