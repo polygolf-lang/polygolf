@@ -72,7 +72,7 @@ export function binaryOp(
 }
 
 export function mutatingBinaryOp(
-  op: IR.BuiltinBinop,
+  op: string,
   variable: IR.Identifier,
   right: IR.Expr
 ): IR.MutatingBinaryOp {

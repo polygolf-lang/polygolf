@@ -271,7 +271,7 @@ export interface BinaryOp {
  */
 export interface MutatingBinaryOp {
   type: "MutatingBinaryOp";
-  op: BuiltinBinop;
+  op: string;
   variable: Identifier;
   right: Expr;
 }
