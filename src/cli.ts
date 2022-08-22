@@ -4,6 +4,7 @@ import {
   application,
   assignment,
   block,
+  forRange,
   id,
   int,
   mutatingBinaryOp,
@@ -11,10 +12,12 @@ import {
   variants,
   whileLoop,
 } from "./IR/builders";
+import { programToPath } from"./IR/traverse";
 import lua from "./languages/lua";
 import debugEmit from "./languages/debug/emit";
 import { expandVariants } from "./IR/expandVariants";
 import { applyLanguage } from "./common/applyLanguage";
+import { forRangeToForRangeInclusive } from "./plugins/loops";
 
 // hardcode input for now
 
@@ -47,16 +50,19 @@ const rawIR = program(
 );
 console.log(applyLanguage(lua, rawIR));
 
-// [ c; c1; | [ d; d1; | e; ]; ];
-// [ f; | g; | h; i; ];
-const variantsTest = program(
+const loopTest = program(
   block([
-    variants([
-      block([id("c"), id("c1")]),
-      block([variants([block([id("d"), id("d1")]), block([id("e")])])]),
-    ]),
-    variants([block([id("f")]), block([id("g")]), block([id("h"), id("i")])]),
+    forRange(
+      "i",
+      int(0n),
+      int(10n),
+      int(1n),
+      block([application("print", [id("x")])])
+    ),
   ])
 );
 
-expandVariants(variantsTest).forEach((x) => console.log("\n" + debugEmit(x)));
+const path = programToPath(loopTest);
+console.log(debugEmit(loopTest));
+path.visit(forRangeToForRangeInclusive);
+console.log(debugEmit(loopTest));

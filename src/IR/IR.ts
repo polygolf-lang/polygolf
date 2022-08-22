@@ -337,7 +337,7 @@ export interface ForRange {
   variable: Identifier;
   low: Expr;
   high: Expr;
-  increment: Expr | null;
+  increment: Expr;
   body: Block;
 }
 
@@ -351,7 +351,7 @@ export interface ForRangeInclusive {
   variable: Identifier;
   low: Expr;
   high: Expr;
-  increment: Expr | null;
+  increment: Expr;
   body: Block;
 }
 

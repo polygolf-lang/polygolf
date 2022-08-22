@@ -170,12 +170,12 @@ function isVariableUsedAlone(path: Path, collection: string, index: string) {
       const node = path.node;
       if (
         node.type === "Identifier" &&
-        node.name == index &&
+        node.name === index &&
         !isArrayOrListGet(path.parent!.node, collection, index)
       ) {
         result = true;
       }
     },
   });
-  return true;
+  return result;
 }

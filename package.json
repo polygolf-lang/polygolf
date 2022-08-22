@@ -13,7 +13,7 @@
     "test:formatting": "prettier-check .",
     "test:jest": "jest --config jest.config.js",
     "test": "npm run test:formatting && npm run test:typecheck && npm run test:jest",
-    "cli": "npm run build; node --enable-source-maps dist/cli.js"
+    "cli": "npm run build && node --enable-source-maps dist/cli.js"
   },
   "repository": {
     "type": "git",
