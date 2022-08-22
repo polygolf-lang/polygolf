@@ -3,12 +3,15 @@ import { IR } from ".";
 export class Path<N extends IR.Node = IR.Node> {
   _removed = false;
   visitState: VisitState | null = null;
+  root: Path;
 
   constructor(
     public node: N,
     public parent: Path | null,
     public pathFragment: PathFragment | null
-  ) {}
+  ) {
+    this.root = parent?.root ?? parent ?? this;
+  }
 
   /**
    * Return all children of this node as Paths. Assumes a child of a node
@@ -142,6 +145,35 @@ export class Path<N extends IR.Node = IR.Node> {
         ? "." + this.pathFragment
         : "." + this.pathFragment.prop + "[" + this.pathFragment.index + "]";
     return this.parent.printPath() + fragString;
+  }
+
+  getUsedIdentifiers(): string[] {
+    var result: string[] = [];
+    this.root.visit({
+      enter(path: Path) {
+        if (path.node.type === "Identifier") {
+          result.push(path.node.name);
+        }
+      },
+    });
+    return result;
+  }
+
+  getNewIdentifier(): string {
+    var usedOnes = this.getUsedIdentifiers();
+    var newOne = "a";
+    var num = 0;
+    while (usedOnes.includes(newOne)) {
+      if (newOne.length === 1) {
+        newOne = String.fromCharCode(newOne.charCodeAt(0) + 1);
+        if (newOne === "{") {
+          newOne = "v0";
+        }
+      } else {
+        newOne = "v" + (num++).toString();
+      }
+    }
+    return newOne;
   }
 }
 

@@ -161,6 +161,7 @@ export type Builtin =
   | "gt"
   // other two argument
   | "array_get"
+  | "list_get"
   | "str_get_byte"
   | "str_concat"
   | "contains_key"
