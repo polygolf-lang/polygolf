@@ -53,12 +53,11 @@ describe("Parentheses", () => {
     application("str_length", [stringLiteral("abc")]),
     `("abc"):len()`
   );
-  // Currently fails because transformBuiltins should be done on exit, not enter
-  // testStatement(
-  //   "method call on ArrayGet",
-  //   application("str_length", [application("array_get", [id("A"), id("i")])]),
-  //   `A[i]:len()`
-  // );
+  testStatement(
+    "method call on ArrayGet",
+    application("str_length", [application("array_get", [id("A"), id("i")])]),
+    `A[i+1]:len()`
+  );
   // TODO: operator precedence
 });
 

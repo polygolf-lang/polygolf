@@ -6,6 +6,7 @@ import {
   block,
   id,
   int,
+  mutatingBinaryOp,
   program,
   variants,
   whileLoop,
@@ -38,7 +39,7 @@ const rawIR = program(
         assignment("t", application("add", [id("a"), id("b")])),
         assignment("b", id("a")),
         assignment("a", id("t")),
-        assignment("i", application("add", [id("i"), int(1n)])),
+        mutatingBinaryOp("add", id("i"), int(1n)),
       ])
     ),
   ])

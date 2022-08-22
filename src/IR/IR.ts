@@ -138,6 +138,9 @@ export interface Application {
   args: Expr[];
 }
 
+export type BuiltinBinop = // (num, num) => num
+  "add" | "sub" | "mul" | "div" | "exp" | "mod" | "bitand" | "bitor" | "bitxor";
+
 export type Builtin =
   // one argument
   | "print"
@@ -149,16 +152,7 @@ export type Builtin =
   | "sorted"
   | "bitnot"
   | "neg"
-  // (num, num) => num
-  | "add"
-  | "sub"
-  | "mul"
-  | "div"
-  | "exp"
-  | "mod"
-  | "bitand"
-  | "bitor"
-  | "bitxor"
+  | BuiltinBinop
   // (num, num) => bool
   | "lt"
   | "leq"
@@ -277,7 +271,7 @@ export interface BinaryOp {
  */
 export interface MutatingBinaryOp {
   type: "MutatingBinaryOp";
-  op: string;
+  op: BuiltinBinop;
   variable: Identifier;
   right: Expr;
 }

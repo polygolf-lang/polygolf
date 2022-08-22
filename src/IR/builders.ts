@@ -71,6 +71,14 @@ export function binaryOp(
   return { type: "BinaryOp", op, left, right };
 }
 
+export function mutatingBinaryOp(
+  op: IR.BuiltinBinop,
+  variable: IR.Identifier,
+  right: IR.Expr
+): IR.MutatingBinaryOp {
+  return { type: "MutatingBinaryOp", op, variable, right };
+}
+
 export function unaryOp(op: string, arg: IR.Expr): IR.UnaryOp {
   return { type: "UnaryOp", op, arg };
 }
