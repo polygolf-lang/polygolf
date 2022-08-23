@@ -147,12 +147,12 @@ export class Path<N extends IR.Node = IR.Node> {
     return this.parent.printPath() + fragString;
   }
 
-  getUsedIdentifiers(): string[] {
-    var result: string[] = [];
+  getUsedIdentifiers(): Set<string> {
+    const result = new Set<string>();
     this.root.visit({
       enter(path: Path) {
         if (path.node.type === "Identifier") {
-          result.push(path.node.name);
+          result.add(path.node.name);
         }
       },
     });
@@ -163,7 +163,7 @@ export class Path<N extends IR.Node = IR.Node> {
     var usedOnes = this.getUsedIdentifiers();
     var newOne = "a";
     var num = 0;
-    while (usedOnes.includes(newOne)) {
+    while (usedOnes.has(newOne)) {
       if (newOne.length === 1) {
         newOne = String.fromCharCode(newOne.charCodeAt(0) + 1);
         if (newOne === "{") {
