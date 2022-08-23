@@ -31,7 +31,7 @@ function testApplication(func: IR.Builtin, args: IR.Expr[], output: string) {
 }
 
 function testBinaryOp(
-  op: string,
+  op: IR.BuiltinBinop,
   left: IR.Expr,
   right: IR.Expr,
   output: string

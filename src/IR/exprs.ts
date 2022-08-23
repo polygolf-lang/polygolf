@@ -13,9 +13,29 @@ export interface MethodCall {
   args: Expr[];
 }
 
+export type BuiltinBinop =
+  // (num, num) => num
+  | "add"
+  | "sub"
+  | "mul"
+  | "div"
+  | "exp"
+  | "mod"
+  | "bitand"
+  | "bitor"
+  | "bitxor"
+  // (num, num) => bool
+  | "lt"
+  | "leq"
+  | "eq"
+  | "geq"
+  | "gt"
+  // other
+  | "str_concat";
+
 export interface BinaryOp {
   type: "BinaryOp";
-  op: string;
+  op: BuiltinBinop;
   left: Expr;
   right: Expr;
 }
@@ -27,14 +47,16 @@ export interface BinaryOp {
  */
 export interface MutatingBinaryOp {
   type: "MutatingBinaryOp";
-  op: string;
+  op: BuiltinBinop;
   variable: Identifier;
   right: Expr;
 }
 
+export type BuiltinUnary = "bitnot" | "neg";
+
 export interface UnaryOp {
   type: "UnaryOp";
-  op: string;
+  op: BuiltinUnary;
   arg: Expr;
 }
 
@@ -63,28 +85,6 @@ export interface Application {
   args: Expr[];
 }
 
-export type BuiltinBinop =
-  // (num, num) => num
-  | "add"
-  | "sub"
-  | "mul"
-  | "div"
-  | "exp"
-  | "mod"
-  | "bitand"
-  | "bitor"
-  | "bitxor"
-  // (num, num) => bool
-  | "lt"
-  | "leq"
-  | "eq"
-  | "geq"
-  | "gt"
-  // other
-  | "str_concat";
-
-export type BuiltinUnary = "bitnot" | "neg";
-
 export type Builtin =
   // one argument
   | "print"
@@ -112,19 +112,19 @@ export function methodCall(
   return { type: "MethodCall", method, object, args };
 }
 
-export function binaryOp(op: string, left: Expr, right: Expr): BinaryOp {
+export function binaryOp(op: BuiltinBinop, left: Expr, right: Expr): BinaryOp {
   return { type: "BinaryOp", op, left, right };
 }
 
 export function mutatingBinaryOp(
-  op: string,
+  op: BuiltinBinop,
   variable: Identifier,
   right: Expr
 ): MutatingBinaryOp {
   return { type: "MutatingBinaryOp", op, variable, right };
 }
 
-export function unaryOp(op: string, arg: Expr): UnaryOp {
+export function unaryOp(op: BuiltinUnary, arg: Expr): UnaryOp {
   return { type: "UnaryOp", op, arg };
 }
 
