@@ -1,4 +1,4 @@
-import { Expr, Block, Identifier } from "./IR";
+import { Expr, Block, Identifier, id } from "./IR";
 
 /**
  * A while loop. Raw OK
@@ -77,4 +77,85 @@ export interface ForEachPair {
   valueVariable: Identifier;
   table: Expr;
   body: Block;
+}
+
+export function whileLoop(condition: Expr, body: Block): WhileLoop {
+  return { type: "WhileLoop", condition, body };
+}
+
+export function forRange(
+  variable: Identifier | string,
+  low: Expr,
+  high: Expr,
+  increment: Expr,
+  body: Block,
+  inclusive: boolean
+): ForRange {
+  return {
+    type: "ForRange",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    low,
+    high,
+    increment,
+    body,
+    inclusive,
+  };
+}
+
+export function forEach(
+  variable: Identifier | string,
+  collection: Expr,
+  body: Block
+): ForEach {
+  return {
+    type: "ForEach",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    collection,
+    body,
+  };
+}
+
+export function forEachKey(
+  variable: Identifier | string,
+  table: Expr,
+  body: Block
+): ForEachKey {
+  return {
+    type: "ForEachKey",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    table,
+    body,
+  };
+}
+
+export function forCLike(
+  init: Block,
+  append: Block,
+  condition: Expr,
+  body: Block
+): ForCLike {
+  return {
+    type: "ForCLike",
+    init,
+    append,
+    condition,
+    body,
+  };
+}
+
+export function forEachPair(
+  keyVariable: Identifier | string,
+  valueVariable: Identifier | string,
+  table: Expr,
+  body: Block
+): ForEachPair {
+  return {
+    type: "ForEachPair",
+    keyVariable:
+      typeof keyVariable === "string" ? id(keyVariable) : keyVariable,
+    valueVariable:
+      typeof valueVariable === "string" ? id(valueVariable) : valueVariable,
+    table,
+    body,
+  };
 }

@@ -48,8 +48,6 @@ export * from "./loops";
 export * from "./terminals";
 export * from "./toplevel";
 
-export * from "./builders";
-
 export type Node = Program | Block | Statement;
 
 export type Statement =

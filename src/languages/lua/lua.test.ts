@@ -1,7 +1,8 @@
-import { assignment, int } from "../../IR/builders";
 import lua from ".";
 import {
   IR,
+  assignment,
+  int,
   block,
   program,
   application,

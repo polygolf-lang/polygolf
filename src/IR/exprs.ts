@@ -99,3 +99,35 @@ export type Builtin =
   | "contains_key"
   | "contains_value"
   | "indexof"; // finds the first index of element in the array, or -1 if it is not present
+
+export function functionCall(func: string, args: Expr[]): FunctionCall {
+  return { type: "FunctionCall", func, args };
+}
+
+export function methodCall(
+  object: Expr,
+  method: string,
+  args: Expr[]
+): MethodCall {
+  return { type: "MethodCall", method, object, args };
+}
+
+export function binaryOp(op: string, left: Expr, right: Expr): BinaryOp {
+  return { type: "BinaryOp", op, left, right };
+}
+
+export function mutatingBinaryOp(
+  op: string,
+  variable: Identifier,
+  right: Expr
+): MutatingBinaryOp {
+  return { type: "MutatingBinaryOp", op, variable, right };
+}
+
+export function unaryOp(op: string, arg: Expr): UnaryOp {
+  return { type: "UnaryOp", op, arg };
+}
+
+export function application(name: Builtin, args: Expr[]): Application {
+  return { type: "Application", name, args };
+}

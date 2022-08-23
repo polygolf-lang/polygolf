@@ -1,7 +1,7 @@
 import * as loops from "./loops";
-import { IR } from "../IR";
 import { programToPath, Visitor } from "../common/traverse";
 import {
+  IR,
   application,
   arrayGet,
   block,
@@ -9,7 +9,7 @@ import {
   id,
   int,
   program,
-} from "../IR/builders";
+} from "../IR";
 import debugEmit from "../languages/debug/emit";
 
 const loopProgram1 = program(

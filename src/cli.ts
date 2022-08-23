@@ -11,7 +11,7 @@ import {
   mutatingBinaryOp,
   program,
   whileLoop,
-} from "./IR/builders";
+} from "./IR";
 import { programToPath } from "./common/traverse";
 import lua from "./languages/lua";
 import debugEmit from "./languages/debug/emit";

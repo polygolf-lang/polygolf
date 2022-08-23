@@ -30,3 +30,19 @@ export interface StringLiteral {
   type: "StringLiteral";
   value: string;
 }
+
+export function id(name: string): Identifier {
+  return { type: "Identifier", name };
+}
+
+export function int(value: BigInt): IntegerLiteral {
+  return { type: "IntegerLiteral", value };
+}
+
+export function stringLiteral(value: string): StringLiteral {
+  return { type: "StringLiteral", value };
+}
+
+export function argv(): Argv {
+  return { type: "Argv" };
+}

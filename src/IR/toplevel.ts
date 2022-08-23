@@ -1,4 +1,4 @@
-import { Expr, Identifier, Statement } from "./IR";
+import { Expr, id, Identifier, Statement } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
@@ -63,4 +63,39 @@ export interface VarDeclaration {
 export interface Import {
   type: "Import";
   name: string;
+}
+
+export function program(
+  block: Block,
+  imports: Import[] = [],
+  varDeclarations: VarDeclaration[] = []
+): Program {
+  return { type: "Program", block, imports, varDeclarations };
+}
+
+export function block(children: Statement[]): Block {
+  return { type: "Block", children };
+}
+
+export function ifStatement(
+  condition: Expr,
+  consequent: Block,
+  alternate: Block
+): IfStatement {
+  return { type: "IfStatement", condition, consequent, alternate };
+}
+
+export function varDeclaration(
+  variable: Identifier | string,
+  variableType: ValueType
+): VarDeclaration {
+  return {
+    type: "VarDeclaration",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    variableType,
+  };
+}
+
+export function variants(variants: Block[]): Variants {
+  return { type: "Variants", variants };
 }
