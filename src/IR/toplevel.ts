@@ -13,7 +13,7 @@ export interface Variants {
  */
 export interface Program {
   type: "Program";
-  imports: Import[];
+  dependencies: Set<string>;
   varDeclarations: VarDeclaration[];
   block: Block;
 }
@@ -57,20 +57,12 @@ export interface VarDeclaration {
   variableType: ValueType;
 }
 
-/**
- * Import.
- */
-export interface Import {
-  type: "Import";
-  name: string;
-}
-
 export function program(
   block: Block,
-  imports: Import[] = [],
+  dependencies: Set<string> = new Set<string>(),
   varDeclarations: VarDeclaration[] = []
 ): Program {
-  return { type: "Program", block, imports, varDeclarations };
+  return { type: "Program", block, dependencies, varDeclarations };
 }
 
 export function block(children: Statement[]): Block {

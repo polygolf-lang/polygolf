@@ -6,6 +6,7 @@ export interface Language {
   /** The visitors are applied in left-to-right order. */
   plugins: Visitor[];
   opMap?: Map<string, (arg: IR.Expr, arg2?: IR.Expr) => IR.Expr>;
+  dependencyMap?: Map<string, string>;
   identGen: IdentifierGenerator;
   emitter: Emitter;
 }

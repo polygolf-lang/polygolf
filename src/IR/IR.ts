@@ -36,7 +36,6 @@ import { Argv, Identifier, IntegerLiteral, StringLiteral } from "./terminals";
 import {
   Block,
   IfStatement,
-  Import,
   Program,
   VarDeclaration,
   Variants,
@@ -84,7 +83,6 @@ export type Expr =
   | ListGet
   | ListSet
   | ListPush
-  | Import
   | MutatingBinaryOp
   | ConditionalOp
   | ManyToManyAssignment

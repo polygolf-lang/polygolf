@@ -14,12 +14,33 @@ function applyLanguageToVariant(
   for (const visitor of language.plugins) {
     path.visit(visitor);
   }
+  if (language.dependencyMap !== undefined) {
+    addDependencies(path, language.dependencyMap);
+  }
   const identMap = getIdentMap(path, language.identGen);
   if (language.opMap !== undefined) {
     path.visit(mapOps(language.opMap));
   }
   path.visit(nameIdents(identMap));
   return language.emitter(program);
+}
+
+function addDependencies(
+  programPath: Path<IR.Program>,
+  dependecyMap: Map<string, string>
+) {
+  programPath.visit({
+    enter(path: Path) {
+      const node = path.node;
+      let op: string = node.type;
+      if (node.type === "BinaryOp" || node.type === "UnaryOp") op = node.op;
+      if (node.type === "FunctionCall") op = node.func;
+      if (node.type === "MethodCall") op = node.method;
+      if (dependecyMap.has(op)) {
+        programPath.node.dependencies.add(dependecyMap.get(op)!);
+      }
+    },
+  });
 }
 
 function getIdentMap(
