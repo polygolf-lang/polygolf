@@ -10,6 +10,39 @@ export default function emit(node: IR.Node): string {
       );
     case "WhileLoop":
       return `while ${emit(node.condition)} ` + emit(node.body);
+    case "ForRange":
+      return (
+        `for ${emit(node.variable)} in range(${emit(node.low)},<${emit(
+          node.high
+        )},${emit(node.increment)}) ` + emit(node.body)
+      );
+    case "ForRangeInclusive":
+      return (
+        `for ${emit(node.variable)} in range(${emit(node.low)},${emit(
+          node.high
+        )},${emit(node.increment)}) ` + emit(node.body)
+      );
+    case "ForEach":
+      return (
+        `foreach ${emit(node.variable)} in ${emit(node.collection)}` +
+        emit(node.body)
+      );
+    case "ForEachPair":
+      return (
+        `foreach (${emit(node.keyVariable)},${emit(
+          node.valueVariable
+        )}) in  ${emit(node.table)}` + emit(node.body)
+      );
+    case "ForCLike":
+      return (
+        `for(${emit(node.init)};${emit(node.condition)};${emit(node.append)})` +
+        emit(node.body)
+      );
+    case "ForEachKey":
+      return (
+        `foreach ${emit(node.variable)} in keys(${emit(node.table)})` +
+        emit(node.body)
+      );
     case "IfStatement":
       return (
         `if ${emit(node)} \n` +
@@ -20,6 +53,8 @@ export default function emit(node: IR.Node): string {
       );
     case "Variants":
       return "[ " + node.variants.map(emit).join(" | ") + " ]";
+    case "VarDeclaration":
+      return `${emit(node.variable)}:${JSON.stringify(node.variableType)}`;
     case "Assignment":
       return `${emit(node.variable)}=${emit(node.expr)}`;
     case "Application":
