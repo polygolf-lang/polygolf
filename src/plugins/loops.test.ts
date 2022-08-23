@@ -1,17 +1,6 @@
 import * as loops from "./loops";
 import { IR, programToPath, Visitor } from "../IR";
-import {
-  application,
-  assignment,
-  block,
-  forRange,
-  id,
-  int,
-  mutatingBinaryOp,
-  program,
-  variants,
-  whileLoop,
-} from "../IR/builders";
+import { application, block, forRange, id, int, program } from "../IR/builders";
 import debugEmit from "../languages/debug/emit";
 
 const loopProgram1 = program(
@@ -60,8 +49,8 @@ const loopProgram3 = program(
 );
 
 function expectTransform(program: IR.Program, plugin: Visitor, output: string) {
-  var programClone = structuredClone(program);
-  var path = programToPath(programClone);
+  const programClone = structuredClone(program);
+  const path = programToPath(programClone);
   path.visit(plugin);
   expect(debugEmit(programClone)).toEqual(output);
 }

@@ -24,7 +24,7 @@ export class Path<N extends IR.Node = IR.Node> {
    */
   getChildPaths(): Path[] {
     const result = [];
-    for (let key in this.node) {
+    for (const key in this.node) {
       const value = this.node[key] as any as IR.Node[] | IR.Node;
       if (Array.isArray(value)) {
         result.push(
@@ -46,7 +46,7 @@ export class Path<N extends IR.Node = IR.Node> {
   /** Replace this node's child given by pathFragment with newChild */
   replaceChild(newChild: IR.Node, pathFragment: PathFragment): void {
     const oldChild = getChild(this.node, pathFragment);
-    if (this.visitState) {
+    if (this.visitState != null) {
       const queue = this.visitState.queue;
       for (let i = queue.length - 1; i >= 0; i--) {
         if (queue[i].node === oldChild) {
@@ -71,7 +71,7 @@ export class Path<N extends IR.Node = IR.Node> {
     if (typeof pathFragment === "string")
       throw new Error("Cannot replace scalar property with multiple nodes.");
     const oldChild = getChild(this.node, pathFragment);
-    if (this.visitState) {
+    if (this.visitState != null) {
       const queue = this.visitState.queue;
       for (let i = queue.length - 1; i >= 0; i--) {
         const entry = queue[i] as Path & {
@@ -133,7 +133,7 @@ export class Path<N extends IR.Node = IR.Node> {
       queue: this.getChildPaths().reverse(),
     };
     let i = 10;
-    while (this.visitState.queue.length > 0 && --i) {
+    while (this.visitState.queue.length > 0 && --i > 0) {
       const path = this.visitState.queue.at(-1)!;
       path.visit(visitor);
       if (!path._removed) {
@@ -148,7 +148,11 @@ export class Path<N extends IR.Node = IR.Node> {
     const fragString =
       typeof this.pathFragment === "string"
         ? "." + this.pathFragment
-        : "." + this.pathFragment.prop + "[" + this.pathFragment.index + "]";
+        : "." +
+          this.pathFragment.prop +
+          "[" +
+          this.pathFragment.index.toString() +
+          "]";
     return this.parent.printPath() + fragString;
   }
 

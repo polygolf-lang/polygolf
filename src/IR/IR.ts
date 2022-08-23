@@ -42,27 +42,27 @@ export type Expr =
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
  */
-export type Variants = {
+export interface Variants {
   type: "Variants";
   variants: Block[];
-};
+}
 
 /**
  * Program node. This should be the root node. Raw OK
  */
-export type Program = {
+export interface Program {
   type: "Program";
   imports: Import[];
   varDeclarations: VarDeclaration[];
   block: Block;
-};
+}
 
 /**
  * Program input (array of strings) as niladic variable.
  */
-export type Argv = {
+export interface Argv {
   type: "Argv";
-};
+}
 
 /**
  * A block of several statements. Raw OK

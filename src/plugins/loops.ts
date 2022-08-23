@@ -14,9 +14,9 @@ import {
   IR,
 } from "../IR";
 
-//TODO: add loop plugin tests
+// TODO: add loop plugin tests
 
-export var forRangeToForRangeInclusive = {
+export const forRangeToForRangeInclusive = {
   enter(path: Path) {
     const node = path.node;
     if (node.type === "ForRange") {
@@ -33,7 +33,7 @@ export var forRangeToForRangeInclusive = {
   },
 };
 
-export var forRangeToWhile = {
+export const forRangeToWhile = {
   enter(path: Path) {
     const node = path.node;
     if (node.type === "ForRange") {
@@ -52,7 +52,7 @@ export var forRangeToWhile = {
   },
 };
 
-export var forRangeToForCLike = {
+export const forRangeToForCLike = {
   enter(path: Path) {
     const node = path.node;
     if (node.type === "ForRange") {
@@ -80,21 +80,21 @@ export var forRangeToForCLike = {
  * for i,x in enumerate(collection):
  *     commands(i, x)
  */
-export var forRangeToForEachPair = {
+export const forRangeToForEachPair = {
   enter(path: Path) {
     const node = path.node;
     if (
       node.type === "ForRange" &&
-      node.low.type == "IntegerLiteral" &&
+      node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
       node.high.type === "Application" &&
       node.high.args.length === 1 &&
       node.high.name === "cardinality" &&
       node.high.args[0].type === "Identifier"
     ) {
-      let collection = node.high.args[0];
-      var elementIdentifier = id(path.getNewIdentifier());
-      var bodyPath = new Path(node.body, path, "body");
+      const collection = node.high.args[0];
+      const elementIdentifier = id(path.getNewIdentifier());
+      const bodyPath = new Path(node.body, path, "body");
       bodyPath.visit({
         // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
         enter(path2: Path) {
@@ -120,21 +120,21 @@ export var forRangeToForEachPair = {
  * for x in collection:
  *     commands(x)
  */
-export var forRangeToForEach = {
+export const forRangeToForEach = {
   enter(path: Path) {
     const node = path.node;
     if (
       node.type === "ForRange" &&
-      node.low.type == "IntegerLiteral" &&
+      node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
       node.high.type === "Application" &&
       node.high.args.length === 1 &&
       node.high.name === "cardinality" &&
       node.high.args[0].type === "Identifier"
     ) {
-      let collection = node.high.args[0];
-      var elementIdentifier = id(path.getNewIdentifier());
-      var bodyPath = new Path(node.body, path, "body");
+      const collection = node.high.args[0];
+      const elementIdentifier = id(path.getNewIdentifier());
+      const bodyPath = new Path(node.body, path, "body");
       if (!isVariableUsedAlone(bodyPath, collection.name, node.variable.name)) {
         // if the loop variable is only used to index the collection
         bodyPath.visit({
@@ -164,7 +164,7 @@ function isArrayOrListGet(node: IR.Node, collection: string, index: string) {
 }
 
 function isVariableUsedAlone(path: Path, collection: string, index: string) {
-  var result = false;
+  let result = false;
   path.visit({
     enter(path: Path) {
       const node = path.node;

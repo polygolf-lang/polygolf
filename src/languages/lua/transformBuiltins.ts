@@ -7,7 +7,6 @@ import {
   methodCall,
   unaryOp,
   Path,
-  programToPath,
 } from "../../IR";
 
 /**
@@ -21,9 +20,9 @@ export default {
     const node = path.node;
     if (node.type === "Application") {
       const func = applicationMap.get(node.name);
-      if (func === undefined) throw `Undefined function ${node.name}`;
+      if (func === undefined)
+        throw new Error(`Undefined function ${node.name}`);
       path.replaceWith(func(node.args));
-      return;
     }
   },
 };

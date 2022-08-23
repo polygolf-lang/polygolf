@@ -8,7 +8,8 @@
   },
   "scripts": {
     "prettier": "prettier --write .",
-    "build": "etsc",
+    "eslint-fix": "eslint --fix \"src/**\"",
+    "build": "etsc --project tsconfig.build.json",
     "test:typecheck": "tsc --noEmit",
     "test:formatting": "prettier-check .",
     "test:lint": "eslint \"src/**\"",

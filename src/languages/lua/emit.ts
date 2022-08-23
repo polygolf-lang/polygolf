@@ -76,7 +76,7 @@ function emitExprNoParens(expr: IR.Expr): string {
     case "Assignment":
       return `${emitExpr(expr.variable, expr)}=${emitExpr(expr.expr, expr)}`;
     case "Application":
-      throw "Applications should have been removed";
+      throw new Error("Applications should have been removed");
     case "Identifier":
       return expr.name;
     case "StringLiteral":
