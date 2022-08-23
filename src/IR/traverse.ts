@@ -160,20 +160,23 @@ export class Path<N extends IR.Node = IR.Node> {
   }
 
   getNewIdentifier(): string {
-    var usedOnes = this.getUsedIdentifiers();
-    var newOne = "a";
-    var num = 0;
-    while (usedOnes.has(newOne)) {
-      if (newOne.length === 1) {
-        newOne = String.fromCharCode(newOne.charCodeAt(0) + 1);
-        if (newOne === "{") {
-          newOne = "v0";
-        }
-      } else {
-        newOne = "v" + (num++).toString();
-      }
+    const usedVars = this.getUsedIdentifiers();
+    // try lowercase
+    for (let i = "a".charCodeAt(0); i <= "z".charCodeAt(0); i++) {
+      const newVar = String.fromCharCode(i);
+      if (!usedVars.has(newVar)) return newVar;
     }
-    return newOne;
+    // try uppercase
+    for (let i = "A".charCodeAt(0); i <= "Z".charCodeAt(0); i++) {
+      const newOne = String.fromCharCode(i);
+      if (!usedVars.has(newOne)) return newOne;
+    }
+    // give up on golfing and just go for correctness
+    // usedVars is a finite set, so this must terminate
+    for (let i = 0; true; i++) {
+      const newOne = "v" + i.toString();
+      if (!usedVars.has(newOne)) return newOne;
+    }
   }
 }
 
