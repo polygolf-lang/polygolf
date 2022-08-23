@@ -16,11 +16,11 @@ export interface IdentifierGenerator {
 
 export type Emitter = (program: IR.Program) => string;
 
-export var defaultIdentGen = {
+export const defaultIdentGen = {
   preferred(original: string) {
-    let lower = original[0].toLowerCase();
-    let upper = original[0].toUpperCase();
-    return [original[0], original[0] == lower ? upper : lower];
+    const lower = original[0].toLowerCase();
+    const upper = original[0].toUpperCase();
+    return [original[0], original[0] === lower ? upper : lower];
   },
   short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
   general: (i: number) => "v" + i.toString(),
