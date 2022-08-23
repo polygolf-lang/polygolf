@@ -3,14 +3,19 @@ import { IR } from ".";
 export class Path<N extends IR.Node = IR.Node> {
   _removed = false;
   visitState: VisitState | null = null;
-  root: Path;
+  root: Path<IR.Program>;
 
   constructor(
     public node: N,
     public parent: Path | null,
     public pathFragment: PathFragment | null
   ) {
-    this.root = parent?.root ?? parent ?? this;
+    const root = parent?.root ?? parent ?? this;
+    if (root.node.type !== "Program")
+      throw new Error(
+        `Programming error: Root node should be a Program, but got ${root.node.type}`
+      );
+    this.root = root as Path<IR.Program>;
   }
 
   /**
