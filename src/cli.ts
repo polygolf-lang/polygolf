@@ -56,7 +56,8 @@ const loopTest = program(
       int(0n),
       int(10n),
       int(1n),
-      block([application("print", [id("x")])])
+      block([application("print", [id("x")])]),
+      false
     ),
   ])
 );

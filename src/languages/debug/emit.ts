@@ -12,15 +12,9 @@ export default function emit(node: IR.Node): string {
       return `while ${emit(node.condition)} ` + emit(node.body);
     case "ForRange":
       return (
-        `for ${emit(node.variable)} in range(${emit(node.low)},<${emit(
-          node.high
-        )},${emit(node.increment)}) ` + emit(node.body)
-      );
-    case "ForRangeInclusive":
-      return (
-        `for ${emit(node.variable)} in range(${emit(node.low)},${emit(
-          node.high
-        )},${emit(node.increment)}) ` + emit(node.body)
+        `for ${emit(node.variable)} in range(${emit(node.low)},` +
+        (node.inclusive ? "<=" : "<") +
+        `${emit(node.high)},${emit(node.increment)}) ${emit(node.body)}`
       );
     case "ForEach":
       return (

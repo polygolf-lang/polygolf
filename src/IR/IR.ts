@@ -4,7 +4,6 @@ export type Statement =
   | Expr
   | WhileLoop
   | ForRange
-  | ForRangeInclusive
   | ForEach
   | ForEachKey
   | ForEachPair
@@ -335,26 +334,16 @@ export interface ListPush {
 }
 
 /**
- * A loop over the integer interval [low, high) with optional increment.
+ * A loop over the integer interval [low, high) or [low, high] with increment.
+ *
+ * Increment is required but should default to 1 or -1 in most cases, allowing
+ * the emitter to golf some output space
  *
  * Python: for variable in range(low, high, increment):body.
  */
 export interface ForRange {
   type: "ForRange";
-  variable: Identifier;
-  low: Expr;
-  high: Expr;
-  increment: Expr;
-  body: Block;
-}
-
-/**
- * A loop over the integer interval [low, high] with optional increment.
- *
- * Python: for variable in range(low, high+1, increment):body.
- */
-export interface ForRangeInclusive {
-  type: "ForRangeInclusive";
+  inclusive: boolean;
   variable: Identifier;
   low: Expr;
   high: Expr;

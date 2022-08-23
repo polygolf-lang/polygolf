@@ -10,7 +10,8 @@ const loopProgram1 = program(
       int(0n),
       int(10n),
       int(1n),
-      block([application("print", [id("x")])])
+      block([application("print", [id("x")])]),
+      false
     ),
   ])
 );
@@ -22,7 +23,8 @@ const loopProgram2 = program(
       int(0n),
       application("cardinality", [id("collection")]),
       int(1n),
-      block([application("print", [arrayGet(id("collection"), id("i"))])])
+      block([application("print", [arrayGet(id("collection"), id("i"))])]),
+      false
     ),
   ])
 );
@@ -37,7 +39,8 @@ const loopProgram3 = program(
       block([
         application("print", [id("i")]),
         application("print", [arrayGet(id("collection"), id("i"))]),
-      ])
+      ]),
+      false
     ),
   ])
 );
@@ -53,19 +56,19 @@ test("ForRange -> ForRangeInclusive", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToForRangeInclusive,
-    "{ for i in range(0,(10sub1),1) { (print x); }; }"
+    "{ for i in range(0,(10 sub 1),1) { (print x); }; }"
   ));
 test("ForRange -> WhileLoop", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToWhile,
-    '{ i:"number"; i=0; while (ilt10) { (print x); i=(iadd1); }; }'
+    '{ i:"number"; i=0; while (i lt 10) { (print x); i=(i add 1); }; }'
   ));
 test("ForRange -> ForCLike", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToForCLike,
-    '{ for({ i:"number"; i=0; };(ilt10);{ (iadd1); }){ (print x); }; }'
+    '{ for({ i:"number"; i=0; };(i lt 10);{ (i add 1); }){ (print x); }; }'
   ));
 
 test("ForRange -> ForEachPair", () =>

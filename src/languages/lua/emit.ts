@@ -16,7 +16,8 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string {
         emitBlock(stmt.body) +
         `\nend`
       );
-    case "ForRangeInclusive": {
+    case "ForRange": {
+      if (!stmt.inclusive) throw new Error("Lua requires inclusive ForRange");
       const increment =
         stmt.increment === null ? "" : "," + emitExpr(stmt.increment, stmt);
       return (
@@ -36,7 +37,6 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string {
       );
     case "Variants":
       throw new Error("Variants should have been instantiated.");
-    case "ForRange":
     case "ForEach":
     case "ForEachKey":
     case "ForEachPair":

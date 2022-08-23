@@ -1,5 +1,5 @@
 import {
-  forRangeInclusive,
+  forRange,
   Path,
   binaryOp,
   int,
@@ -19,14 +19,15 @@ import {
 export const forRangeToForRangeInclusive = {
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "ForRange") {
+    if (node.type === "ForRange" && !node.inclusive) {
       path.replaceWith(
-        forRangeInclusive(
+        forRange(
           node.variable,
           node.low,
           binaryOp("sub", node.high, int(1n)),
           node.increment,
-          node.body
+          node.body,
+          true
         )
       );
     }
@@ -40,13 +41,16 @@ export const forRangeToWhile = {
       node.body.children.push(
         assignment(
           node.variable,
-          binaryOp("add", node.variable, node.increment ?? int(1n))
+          binaryOp("add", node.variable, node.increment)
         )
       );
       path.replaceWithMultiple([
         varDeclaration(node.variable, "number"),
         assignment(node.variable, node.low),
-        whileLoop(binaryOp("lt", node.variable, node.high), node.body),
+        whileLoop(
+          binaryOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+          node.body
+        ),
       ]);
     }
   },
@@ -63,7 +67,7 @@ export const forRangeToForCLike = {
             assignment(node.variable, node.low),
           ]),
           block([binaryOp("add", node.variable, node.increment ?? int(1n))]),
-          binaryOp("lt", node.variable, node.high),
+          binaryOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
           node.body
         )
       );
@@ -80,11 +84,13 @@ export const forRangeToForCLike = {
  * for i,x in enumerate(collection):
  *     commands(i, x)
  */
+// TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
 export const forRangeToForEachPair = {
   enter(path: Path) {
     const node = path.node;
     if (
       node.type === "ForRange" &&
+      !node.inclusive &&
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
       node.high.type === "Application" &&
@@ -125,6 +131,7 @@ export const forRangeToForEach = {
     const node = path.node;
     if (
       node.type === "ForRange" &&
+      !node.inclusive &&
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
       node.high.type === "Application" &&

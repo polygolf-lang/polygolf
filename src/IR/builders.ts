@@ -177,7 +177,8 @@ export function forRange(
   low: IR.Expr,
   high: IR.Expr,
   increment: IR.Expr,
-  body: IR.Block
+  body: IR.Block,
+  inclusive: boolean
 ): IR.ForRange {
   return {
     type: "ForRange",
@@ -186,23 +187,7 @@ export function forRange(
     high,
     increment,
     body,
-  };
-}
-
-export function forRangeInclusive(
-  variable: IR.Identifier | string,
-  low: IR.Expr,
-  high: IR.Expr,
-  increment: IR.Expr,
-  body: IR.Block
-): IR.ForRangeInclusive {
-  return {
-    type: "ForRangeInclusive",
-    variable: typeof variable === "string" ? id(variable) : variable,
-    low,
-    high,
-    increment,
-    body,
+    inclusive,
   };
 }
 
