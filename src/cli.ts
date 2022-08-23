@@ -9,8 +9,8 @@ import {
   int,
   mutatingBinaryOp,
   program,
-  whileLoop,
   print,
+  variants,
 } from "./IR";
 import { programToPath } from "./common/traverse";
 import lua from "./languages/lua";
@@ -35,15 +35,26 @@ const rawIR = program(
     assignment("a", int(0n)),
     assignment("b", int(1n)),
     assignment("i", int(1n)),
-    whileLoop(
-      binaryOp("lt", id("i"), int(32n)),
+    forRange(
+      "i",
+      int(0n),
+      int(30n),
+      int(1n),
       block([
-        print(id("a")),
-        assignment("t", binaryOp("add", id("a"), id("b"))),
-        assignment("b", id("a")),
-        assignment("a", id("t")),
-        mutatingBinaryOp("add", id("i"), int(1n)),
-      ])
+        variants([
+          block([
+            assignment("t", binaryOp("add", id("a"), id("b"))),
+            assignment("b", id("a")),
+            assignment("a", id("t")),
+            mutatingBinaryOp("add", id("i"), int(1n)),
+          ]),
+          block([
+            mutatingBinaryOp("add", id("b"), id("a")),
+            assignment("a", binaryOp("sub", id("b"), id("a"))),
+          ]),
+        ]),
+      ]),
+      true
     ),
   ])
 );

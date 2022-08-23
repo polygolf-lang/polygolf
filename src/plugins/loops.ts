@@ -14,8 +14,6 @@ import {
   IR,
 } from "../IR";
 
-// TODO: add loop plugin tests
-
 export const forRangeToForRangeInclusive = {
   enter(path: Path) {
     const node = path.node;

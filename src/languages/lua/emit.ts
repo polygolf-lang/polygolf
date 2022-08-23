@@ -18,8 +18,10 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string {
       );
     case "ForRange": {
       if (!stmt.inclusive) throw new Error("Lua requires inclusive ForRange");
-      const increment =
-        stmt.increment === null ? "" : "," + emitExpr(stmt.increment, stmt);
+      let increment = "," + emitExpr(stmt.increment, stmt);
+      if (increment === ",1") {
+        increment = "";
+      }
       return (
         `for ${emitExpr(stmt.variable, stmt)}=${emitExpr(stmt.low, stmt)},` +
         `${emitExpr(stmt.high, stmt)}${increment} do\n` +
