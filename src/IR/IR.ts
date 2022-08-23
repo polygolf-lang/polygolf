@@ -161,6 +161,7 @@ export type Builtin =
   | "gt"
   // other two argument
   | "array_get"
+  | "list_get"
   | "str_get_byte"
   | "str_concat"
   | "contains_key"
@@ -271,7 +272,7 @@ export interface BinaryOp {
  */
 export interface MutatingBinaryOp {
   type: "MutatingBinaryOp";
-  op: BuiltinBinop;
+  op: string;
   variable: Identifier;
   right: Expr;
 }
@@ -336,7 +337,7 @@ export interface ForRange {
   variable: Identifier;
   low: Expr;
   high: Expr;
-  increment: Expr | null;
+  increment: Expr;
   body: Block;
 }
 
@@ -350,7 +351,7 @@ export interface ForRangeInclusive {
   variable: Identifier;
   low: Expr;
   high: Expr;
-  increment: Expr | null;
+  increment: Expr;
   body: Block;
 }
 

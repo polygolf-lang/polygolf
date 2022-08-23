@@ -3,12 +3,20 @@ import { IR } from ".";
 export class Path<N extends IR.Node = IR.Node> {
   _removed = false;
   visitState: VisitState | null = null;
+  root: Path<IR.Program>;
 
   constructor(
     public node: N,
     public parent: Path | null,
     public pathFragment: PathFragment | null
-  ) {}
+  ) {
+    const root = parent?.root ?? parent ?? this;
+    if (root.node.type !== "Program")
+      throw new Error(
+        `Programming error: Root node should be a Program, but got ${root.node.type}`
+      );
+    this.root = root as Path<IR.Program>;
+  }
 
   /**
    * Return all children of this node as Paths. Assumes a child of a node
@@ -142,6 +150,38 @@ export class Path<N extends IR.Node = IR.Node> {
         ? "." + this.pathFragment
         : "." + this.pathFragment.prop + "[" + this.pathFragment.index + "]";
     return this.parent.printPath() + fragString;
+  }
+
+  getUsedIdentifiers(): Set<string> {
+    const result = new Set<string>();
+    this.root.visit({
+      enter(path: Path) {
+        if (path.node.type === "Identifier") {
+          result.add(path.node.name);
+        }
+      },
+    });
+    return result;
+  }
+
+  getNewIdentifier(): string {
+    const usedVars = this.getUsedIdentifiers();
+    // try lowercase
+    for (let i = "a".charCodeAt(0); i <= "z".charCodeAt(0); i++) {
+      const newVar = String.fromCharCode(i);
+      if (!usedVars.has(newVar)) return newVar;
+    }
+    // try uppercase
+    for (let i = "A".charCodeAt(0); i <= "Z".charCodeAt(0); i++) {
+      const newOne = String.fromCharCode(i);
+      if (!usedVars.has(newOne)) return newOne;
+    }
+    // give up on golfing and just go for correctness
+    // usedVars is a finite set, so this must terminate
+    for (let i = 0; true; i++) {
+      const newOne = "v" + i.toString();
+      if (!usedVars.has(newOne)) return newOne;
+    }
   }
 }
 

@@ -72,7 +72,7 @@ export function binaryOp(
 }
 
 export function mutatingBinaryOp(
-  op: IR.BuiltinBinop,
+  op: string,
   variable: IR.Identifier,
   right: IR.Expr
 ): IR.MutatingBinaryOp {
@@ -176,7 +176,7 @@ export function forRange(
   variable: IR.Identifier | string,
   low: IR.Expr,
   high: IR.Expr,
-  increment: IR.Expr | null,
+  increment: IR.Expr,
   body: IR.Block
 ): IR.ForRange {
   return {
@@ -193,7 +193,7 @@ export function forRangeInclusive(
   variable: IR.Identifier | string,
   low: IR.Expr,
   high: IR.Expr,
-  increment: IR.Expr | null,
+  increment: IR.Expr,
   body: IR.Block
 ): IR.ForRangeInclusive {
   return {
