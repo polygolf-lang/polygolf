@@ -12,7 +12,7 @@ import {
   variants,
   whileLoop,
 } from "./IR/builders";
-import { programToPath } from"./IR/traverse";
+import { programToPath } from "./IR/traverse";
 import lua from "./languages/lua";
 import debugEmit from "./languages/debug/emit";
 import { expandVariants } from "./IR/expandVariants";

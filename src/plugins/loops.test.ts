@@ -42,7 +42,6 @@ const loopProgram2 = program(
   ])
 );
 
-
 const loopProgram3 = program(
   block([
     forRange(
@@ -51,9 +50,7 @@ const loopProgram3 = program(
       application("cardinality", [id("collection")]),
       int(1n),
       block([
-        application("print", [
-          id("i")
-        ]),
+        application("print", [id("i")]),
         application("print", [
           application("array_get", [id("collection"), id("i")]),
         ]),
@@ -70,15 +67,39 @@ function expectTransform(program: IR.Program, plugin: Visitor, output: string) {
 }
 
 test("ForRange -> ForRangeInclusive", () =>
-  expectTransform(loopProgram1, loops.forRangeToForRangeInclusive, "{ for i in range(0,(10sub1),1) { (print x); }; }"));
+  expectTransform(
+    loopProgram1,
+    loops.forRangeToForRangeInclusive,
+    "{ for i in range(0,(10sub1),1) { (print x); }; }"
+  ));
 test("ForRange -> WhileLoop", () =>
-  expectTransform(loopProgram1, loops.forRangeToWhile, "{ i:\"number\"; i=0; while (ilt10) { (print x); i=(iadd1); }; }"));
+  expectTransform(
+    loopProgram1,
+    loops.forRangeToWhile,
+    '{ i:"number"; i=0; while (ilt10) { (print x); i=(iadd1); }; }'
+  ));
 test("ForRange -> ForCLike", () =>
-  expectTransform(loopProgram1, loops.forRangeToForCLike, "{ for({ i:\"number\"; i=0; };(ilt10);{ (iadd1); }){ (print x); }; }"));
+  expectTransform(
+    loopProgram1,
+    loops.forRangeToForCLike,
+    '{ for({ i:"number"; i=0; };(ilt10);{ (iadd1); }){ (print x); }; }'
+  ));
 
 test("ForRange -> ForEachPair", () =>
-  expectTransform(loopProgram3, loops.forRangeToForEachPair, "{ foreach (i,a) in  collection{ (print i); (print a); }; }"));
+  expectTransform(
+    loopProgram3,
+    loops.forRangeToForEachPair,
+    "{ foreach (i,a) in  collection{ (print i); (print a); }; }"
+  ));
 test("ForRange -> ForEach", () =>
-  expectTransform(loopProgram2, loops.forRangeToForEach, "{ foreach a in collection{ (print a); }; }"));
+  expectTransform(
+    loopProgram2,
+    loops.forRangeToForEach,
+    "{ foreach a in collection{ (print a); }; }"
+  ));
 test("ForRange -> ForEach", () =>
-  expectTransform(loopProgram3, loops.forRangeToForEach, "{ for i in range(0,<(cardinality collection),1) { (print i); (print (array_get collection i)); }; }"));
+  expectTransform(
+    loopProgram3,
+    loops.forRangeToForEach,
+    "{ for i in range(0,<(cardinality collection),1) { (print i); (print (array_get collection i)); }; }"
+  ));

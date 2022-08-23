@@ -21,7 +21,6 @@ function testApplication(func: IR.Builtin, args: IR.Expr[], output: string) {
 
 test("Assignment", () => expectStatement(assignment("b", int(1n)), "b=1"));
 
-
 describe("Applications", () => {
   testApplication("print", [stringLiteral("abc")], `io.write("abc")`);
   testApplication("println", [stringLiteral("abc")], `print("abc")`);
