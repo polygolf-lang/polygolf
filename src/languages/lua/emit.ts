@@ -102,9 +102,13 @@ function emitExprNoParens(expr: IR.Expr): string {
         ")"
       );
     case "BinaryOp":
-      return emitExpr(expr.left, expr) + expr.op + emitExpr(expr.right, expr);
+      return (
+        emitExpr(expr.left, expr) +
+        binopMap[expr.op as keyof typeof binopMap] +
+        emitExpr(expr.right, expr)
+      );
     case "UnaryOp":
-      return expr.op + emitExpr(expr.arg, expr);
+      return (expr.op === "neg" ? "-" : "~") + emitExpr(expr.arg, expr);
     case "ArrayGet":
       return (
         emitExpr(expr.array, expr) + "[" + emitExpr(expr.index, expr) + "]"
@@ -113,3 +117,21 @@ function emitExprNoParens(expr: IR.Expr): string {
       throw new Error(`Unexpected node while emitting Lua: ${expr.type}. `);
   }
 }
+
+const binopMap = {
+  add: "+",
+  sub: "-",
+  mul: "*",
+  div: "//",
+  exp: "^",
+  mod: "%",
+  bitand: "&",
+  bitor: "|",
+  bitxor: "~",
+  lt: "<",
+  leq: "<=",
+  eq: "==",
+  geq: ">=",
+  gt: ">",
+  str_concat: "..",
+};

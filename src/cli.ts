@@ -3,6 +3,7 @@
 import {
   application,
   assignment,
+  binaryOp,
   block,
   forRange,
   id,
@@ -35,10 +36,10 @@ const rawIR = program(
     assignment("b", int(1n)),
     assignment("i", int(1n)),
     whileLoop(
-      application("lt", [id("i"), int(32n)]),
+      binaryOp("lt", id("i"), int(32n)),
       block([
         application("println", [id("a")]),
-        assignment("t", application("add", [id("a"), id("b")])),
+        assignment("t", binaryOp("add", id("a"), id("b"))),
         assignment("b", id("a")),
         assignment("a", id("t")),
         mutatingBinaryOp("add", id("i"), int(1n)),

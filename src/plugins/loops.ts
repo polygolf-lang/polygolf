@@ -153,13 +153,13 @@ export const forRangeToForEach = {
 };
 
 function isArrayOrListGet(node: IR.Node, collection: string, index: string) {
+  if (node.type !== "ArrayGet" && node.type !== "ListGet") return false;
+  const obj = node.type === "ArrayGet" ? node.array : node.list;
   return (
-    node.type === "Application" &&
-    (node.name === "array_get" || node.name === "list_get") &&
-    node.args[0].type === "Identifier" &&
-    node.args[0].name === collection &&
-    node.args[1].type === "Identifier" &&
-    node.args[1].name === index
+    obj.type === "Identifier" &&
+    obj.name === collection &&
+    node.index.type === "Identifier" &&
+    node.index.name === index
   );
 }
 

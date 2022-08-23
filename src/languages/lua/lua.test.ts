@@ -1,6 +1,16 @@
 import { assignment, int } from "../../IR/builders";
 import lua from ".";
-import { IR, block, program, application, stringLiteral, id } from "../../IR";
+import {
+  IR,
+  block,
+  program,
+  application,
+  stringLiteral,
+  id,
+  unaryOp,
+  binaryOp,
+  arrayGet,
+} from "../../IR";
 import { applyLanguage } from "../../common/applyLanguage";
 
 function expectTransform(program: IR.Program, output: string) {
@@ -19,6 +29,15 @@ function testApplication(func: IR.Builtin, args: IR.Expr[], output: string) {
   testStatement(func, application(func, args), output);
 }
 
+function testBinaryOp(
+  op: string,
+  left: IR.Expr,
+  right: IR.Expr,
+  output: string
+) {
+  testStatement(op, binaryOp(op, left, right), output);
+}
+
 test("Assignment", () => expectStatement(assignment("b", int(1n)), "b=1"));
 
 describe("Applications", () => {
@@ -27,25 +46,25 @@ describe("Applications", () => {
   testApplication("str_length", [id("s")], `s:len()`);
   testApplication("int_to_str", [id("x")], "tostring(x)");
   testApplication("str_to_int", [id("x")], "~~x");
-  testApplication("bitnot", [id("x")], "~x");
-  testApplication("neg", [id("x")], "-x");
-  testApplication("add", [id("x"), id("y")], "x+y");
-  testApplication("sub", [id("x"), id("y")], "x-y");
-  testApplication("mul", [id("x"), id("y")], "x*y");
-  testApplication("div", [id("x"), id("y")], "x//y");
-  testApplication("exp", [id("x"), id("y")], "x^y");
-  testApplication("mod", [id("x"), id("y")], "x%y");
-  testApplication("bitand", [id("x"), id("y")], "x&y");
-  testApplication("bitor", [id("x"), id("y")], "x|y");
-  testApplication("bitxor", [id("x"), id("y")], "x~y");
-  testApplication("lt", [id("x"), id("y")], "x<y");
-  testApplication("leq", [id("x"), id("y")], "x<=y");
-  testApplication("eq", [id("x"), id("y")], "x==y");
-  testApplication("geq", [id("x"), id("y")], "x>=y");
-  testApplication("gt", [id("x"), id("y")], "x>y");
-  testApplication("array_get", [id("x"), id("y")], "x[y+1]");
+  testStatement("bitnot", unaryOp("bitnot", id("x")), "~x");
+  testStatement("neg", unaryOp("neg", id("x")), "-x");
+  testBinaryOp("add", id("x"), id("y"), "x+y");
+  testBinaryOp("sub", id("x"), id("y"), "x-y");
+  testBinaryOp("mul", id("x"), id("y"), "x*y");
+  testBinaryOp("div", id("x"), id("y"), "x//y");
+  testBinaryOp("exp", id("x"), id("y"), "x^y");
+  testBinaryOp("mod", id("x"), id("y"), "x%y");
+  testBinaryOp("bitand", id("x"), id("y"), "x&y");
+  testBinaryOp("bitor", id("x"), id("y"), "x|y");
+  testBinaryOp("bitxor", id("x"), id("y"), "x~y");
+  testBinaryOp("lt", id("x"), id("y"), "x<y");
+  testBinaryOp("leq", id("x"), id("y"), "x<=y");
+  testBinaryOp("eq", id("x"), id("y"), "x==y");
+  testBinaryOp("geq", id("x"), id("y"), "x>=y");
+  testBinaryOp("gt", id("x"), id("y"), "x>y");
+  testStatement("ArrayGet", arrayGet(id("x"), id("y")), "x[y+1]");
   testApplication("str_get_byte", [id("x"), id("y")], "x:byte(y+1)");
-  testApplication("str_concat", [id("x"), id("y")], "x..y");
+  testBinaryOp("str_concat", id("x"), id("y"), "x..y");
 });
 
 describe("Parentheses", () => {
@@ -56,7 +75,7 @@ describe("Parentheses", () => {
   );
   testStatement(
     "method call on ArrayGet",
-    application("str_length", [application("array_get", [id("A"), id("i")])]),
+    application("str_length", [arrayGet(id("A"), id("i"))]),
     `A[i+1]:len()`
   );
   // TODO: operator precedence

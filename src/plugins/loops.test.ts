@@ -1,5 +1,5 @@
 import * as loops from "./loops";
-import { IR, programToPath, Visitor } from "../IR";
+import { arrayGet, IR, programToPath, Visitor } from "../IR";
 import { application, block, forRange, id, int, program } from "../IR/builders";
 import debugEmit from "../languages/debug/emit";
 
@@ -22,11 +22,7 @@ const loopProgram2 = program(
       int(0n),
       application("cardinality", [id("collection")]),
       int(1n),
-      block([
-        application("print", [
-          application("array_get", [id("collection"), id("i")]),
-        ]),
-      ])
+      block([application("print", [arrayGet(id("collection"), id("i"))])])
     ),
   ])
 );
@@ -40,9 +36,7 @@ const loopProgram3 = program(
       int(1n),
       block([
         application("print", [id("i")]),
-        application("print", [
-          application("array_get", [id("collection"), id("i")]),
-        ]),
+        application("print", [arrayGet(id("collection"), id("i"))]),
       ])
     ),
   ])
@@ -90,5 +84,5 @@ test("ForRange -> ForEach", () =>
   expectTransform(
     loopProgram3,
     loops.forRangeToForEach,
-    "{ for i in range(0,<(cardinality collection),1) { (print i); (print (array_get collection i)); }; }"
+    "{ for i in range(0,<(cardinality collection),1) { (print i); (print collection[i]); }; }"
   ));

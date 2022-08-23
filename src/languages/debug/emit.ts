@@ -79,9 +79,13 @@ export default function emit(node: IR.Node): string {
         ")"
       );
     case "BinaryOp":
-      return "(" + emit(node.left) + node.op + emit(node.right) + ")";
+      return (
+        "(" + emit(node.left) + " " + node.op + " " + emit(node.right) + ")"
+      );
     case "UnaryOp":
       return node.op + emit(node.arg);
+    case "ArrayGet":
+      return emit(node.array) + "[" + emit(node.index) + "]";
     default:
       throw new Error(`Unimplemented node for debug: ${node.type}. `);
   }

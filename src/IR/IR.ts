@@ -138,8 +138,27 @@ export interface Application {
   args: Expr[];
 }
 
-export type BuiltinBinop = // (num, num) => num
-  "add" | "sub" | "mul" | "div" | "exp" | "mod" | "bitand" | "bitor" | "bitxor";
+export type BuiltinBinop =
+  // (num, num) => num
+  | "add"
+  | "sub"
+  | "mul"
+  | "div"
+  | "exp"
+  | "mod"
+  | "bitand"
+  | "bitor"
+  | "bitxor"
+  // (num, num) => bool
+  | "lt"
+  | "leq"
+  | "eq"
+  | "geq"
+  | "gt"
+  // other
+  | "str_concat";
+
+export type BuiltinUnary = "bitnot" | "neg";
 
 export type Builtin =
   // one argument
@@ -150,20 +169,8 @@ export type Builtin =
   | "int_to_str"
   | "str_to_int"
   | "sorted"
-  | "bitnot"
-  | "neg"
-  | BuiltinBinop
-  // (num, num) => bool
-  | "lt"
-  | "leq"
-  | "eq"
-  | "geq"
-  | "gt"
   // other two argument
-  | "array_get"
-  | "list_get"
   | "str_get_byte"
-  | "str_concat"
   | "contains_key"
   | "contains_value"
   | "indexof"; // finds the first index of element in the array, or -1 if it is not present
