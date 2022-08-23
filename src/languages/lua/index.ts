@@ -1,4 +1,4 @@
-import { Language } from "../../common/Language";
+import { Language, defaultIdentGen } from "../../common/Language";
 import { removeMutatingBinaryOp } from "../../plugins/mutatingBinaryOps";
 
 import emitProgram from "./emit";
@@ -8,6 +8,7 @@ const luaLanguage: Language = {
   name: "Lua",
   plugins: [removeMutatingBinaryOp, transformBuiltins],
   emitter: emitProgram,
+  identGen: defaultIdentGen,
 };
 
 export default luaLanguage;
