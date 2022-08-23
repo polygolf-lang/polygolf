@@ -71,7 +71,7 @@ export default function emit(node: IR.Node): string {
       );
     case "MethodCall":
       return (
-        node.object +
+        emit(node.object) +
         ":" +
         node.method +
         "(" +

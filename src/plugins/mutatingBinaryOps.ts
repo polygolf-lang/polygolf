@@ -1,7 +1,7 @@
 import { assignment, binaryOp, mutatingBinaryOp, Path } from "../IR";
 
 // "a += b" --> "a = a + b"
-export var removeMutatingBinaryOp = {
+export const removeMutatingBinaryOp = {
   enter(path: Path) {
     const node = path.node;
     if (node.type === "MutatingBinaryOp") {
@@ -13,7 +13,7 @@ export var removeMutatingBinaryOp = {
 };
 
 // "a = a + b" --> "a += b"
-export var addMutatingBinaryOp = {
+export const addMutatingBinaryOp = {
   enter(path: Path) {
     const node = path.node;
     if (node.type === "Assignment" && node.expr.type === "BinaryOp") {
