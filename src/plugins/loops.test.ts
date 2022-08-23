@@ -1,6 +1,15 @@
 import * as loops from "./loops";
-import { arrayGet, IR, programToPath, Visitor } from "../IR";
-import { application, block, forRange, id, int, program } from "../IR/builders";
+import { IR } from "../IR";
+import { programToPath, Visitor } from "../common/traverse";
+import {
+  application,
+  arrayGet,
+  block,
+  forRange,
+  id,
+  int,
+  program,
+} from "../IR/builders";
 import debugEmit from "../languages/debug/emit";
 
 const loopProgram1 = program(
@@ -56,7 +65,7 @@ test("ForRange -> ForRangeInclusive", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToForRangeInclusive,
-    "{ for i in range(0,(10 sub 1),1) { (print x); }; }"
+    "{ for i in range(0,<=(10 sub 1),1) { (print x); }; }"
   ));
 test("ForRange -> WhileLoop", () =>
   expectTransform(

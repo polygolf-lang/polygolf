@@ -17,6 +17,6 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run test:formatting
-      - run: npm run test:lint
       - run: npm run test:typecheck
+      - run: npm run test:lint
       - run: npm run test:jest

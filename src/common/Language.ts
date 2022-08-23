@@ -1,4 +1,5 @@
-import { IR, Visitor } from "IR";
+import { IR } from "IR";
+import { Visitor } from "./traverse";
 
 export interface Language {
   name: string;

@@ -1,4 +1,5 @@
-import { binaryOp, int, Path } from "../IR";
+import { Path } from "../common/traverse";
+import { binaryOp, int } from "../IR";
 
 /**
  * Convert all indexing (ListGet, ArrayGet) to be one-indexed by adding 1

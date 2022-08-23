@@ -1,12 +1,5 @@
-import {
-  IR,
-  binaryOp,
-  functionCall,
-  int,
-  methodCall,
-  unaryOp,
-  Path,
-} from "../../IR";
+import { Path } from "../../common/traverse";
+import { IR, binaryOp, functionCall, int, methodCall, unaryOp } from "../../IR";
 
 /**
  * Replace all of the applications in `program` with the correct nodes:

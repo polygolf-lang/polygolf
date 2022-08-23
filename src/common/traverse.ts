@@ -1,4 +1,4 @@
-import { IR } from ".";
+import { IR } from "../IR";
 
 export class Path<N extends IR.Node = IR.Node> {
   _removed = false;

@@ -1,5 +1,6 @@
-import { IR, programToPath, Path } from "../IR";
-import { expandVariants } from "../IR/expandVariants";
+import { IR } from "../IR";
+import { expandVariants } from "./expandVariants";
+import { programToPath, Path } from "./traverse";
 import { Language, IdentifierGenerator } from "./Language";
 
 function applyLanguageToVariant(

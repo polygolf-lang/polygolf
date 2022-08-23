@@ -1,6 +1,6 @@
+import { Path } from "../common/traverse";
 import {
   forRange,
-  Path,
   binaryOp,
   int,
   varDeclaration,

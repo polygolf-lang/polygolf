@@ -1,4 +1,5 @@
-import { assignment, binaryOp, mutatingBinaryOp, Path } from "../IR";
+import { assignment, binaryOp, mutatingBinaryOp } from "../IR";
+import { Path } from "../common/traverse";
 
 // "a += b" --> "a = a + b"
 export const removeMutatingBinaryOp = {

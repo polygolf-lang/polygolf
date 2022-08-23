@@ -14,7 +14,7 @@
     "test:formatting": "prettier-check .",
     "test:lint": "eslint \"src/**\"",
     "test:jest": "jest --config jest.config.js",
-    "test": "npm run test:formatting && npm run test:lint && npm run test:typecheck && npm run test:jest",
+    "test": "npm run test:formatting && npm run test:typecheck && npm run test:lint && npm run test:jest",
     "cli": "npm run build && node --enable-source-maps dist/cli.js"
   },
   "repository": {
