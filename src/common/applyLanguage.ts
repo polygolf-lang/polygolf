@@ -1,6 +1,7 @@
-import { IR, programToPath } from "../IR";
+import { stripVTControlCharacters } from "util";
+import { IR, programToPath, Path } from "../IR";
 import { expandVariants } from "../IR/expandVariants";
-import { Language } from "./Language";
+import { Language, IdentifierGenerator } from "./Language";
 
 function applyLanguageToVariant(
   language: Language,
@@ -13,7 +14,67 @@ function applyLanguageToVariant(
   for (const visitor of language.plugins) {
     path.visit(visitor);
   }
+  var identMap = getIdentMap(path, language.identGen);
+  path.visit(nameIdents(identMap));
   return language.emitter(program);
+}
+
+function getIdentMap(
+  path: Path<IR.Program>,
+  identGen: IdentifierGenerator
+): Map<string, string> {
+  var inputNames = path.getUsedIdentifiers();
+  var outputNames = new Set<string>();
+  var result = new Map<string, string>();
+  for (let iv of inputNames) {
+    for (let preferred of identGen.preferred(iv)) {
+      if (!outputNames.has(preferred)) {
+        outputNames.add(preferred);
+        result.set(iv, preferred);
+        break;
+      }
+    }
+  }
+  var shortNames = identGen.short;
+  for (let iv of inputNames) {
+    if (!result.has(iv)) {
+      for (let short in shortNames) {
+        if (!outputNames.has(short)) {
+          outputNames.add(short);
+          result.set(iv, short);
+          break;
+        }
+      }
+    }
+  }
+  var i = 0;
+  for (let iv of inputNames) {
+    if (!result.has(iv)) {
+      while (true) {
+        let general = identGen.general(i++);
+        if (!outputNames.has(general)) {
+          outputNames.add(general);
+          result.set(iv, general);
+          break;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+function nameIdents(identMap: Map<string, string>) {
+  return {
+    enter(path: Path) {
+      if (path.node.type === "Identifier") {
+        var outputName = identMap.get(path.node.name);
+        if (outputName === undefined) {
+          throw new Error("Programming error. Incomplete identMap.");
+        }
+        path.node.name = outputName;
+      }
+    },
+  };
 }
 
 export function applyLanguageToVariants(
