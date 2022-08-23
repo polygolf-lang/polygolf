@@ -9,7 +9,7 @@
   "scripts": {
     "prettier": "prettier --write .",
     "eslint-fix": "eslint --fix \"src/**\"",
-    "build": "etsc --project tsconfig.build.json",
+    "build": "etsc",
     "test:typecheck": "tsc --noEmit",
     "test:formatting": "prettier-check .",
     "test:lint": "eslint \"src/**\"",
