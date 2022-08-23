@@ -23,6 +23,7 @@ function getIdentMap(
   path: Path<IR.Program>,
   identGen: IdentifierGenerator
 ): Map<string, string> {
+  //first, try mapping as many idents as possible to their preffered versions
   var inputNames = path.getUsedIdentifiers();
   var outputNames = new Set<string>();
   var result = new Map<string, string>();
@@ -35,6 +36,7 @@ function getIdentMap(
       }
     }
   }
+  //then, try mapping those that remained unmapped to one of the short ident names
   var shortNames = identGen.short;
   for (let iv of inputNames) {
     if (!result.has(iv)) {
@@ -47,6 +49,7 @@ function getIdentMap(
       }
     }
   }
+  //finally, map all remaining idents to some general ident
   var i = 0;
   for (let iv of inputNames) {
     if (!result.has(iv)) {
