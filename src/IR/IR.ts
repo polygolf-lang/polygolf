@@ -8,6 +8,7 @@ import {
   ArraySet,
   ArrayConstructor,
   ListConstructor,
+  StringGet,
   ListGet,
   ListPush,
   ListSet,
@@ -15,12 +16,12 @@ import {
   TableSet,
 } from "./collections";
 import {
-  Application,
   BinaryOp,
   ConditionalOp,
   FunctionCall,
   MethodCall,
   MutatingBinaryOp,
+  Print,
   UnaryOp,
 } from "./exprs";
 import {
@@ -65,7 +66,7 @@ export type Expr =
   | Argv
   | VarDeclaration
   | Assignment
-  | Application
+  | Print
   | FunctionCall
   | MethodCall
   | BinaryOp
@@ -75,6 +76,7 @@ export type Expr =
   | IntegerLiteral
   | ArrayConstructor
   | ListConstructor
+  | StringGet
   | TableGet
   | TableSet
   | ArrayGet

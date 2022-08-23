@@ -1,9 +1,18 @@
 import { Expr, id, Identifier } from "./IR";
 
+export interface StringGet {
+  type: "StringGet";
+  unicode: boolean;
+  string: Expr;
+  index: Expr;
+  oneIndexed: boolean;
+}
+
 export interface ArrayGet {
   type: "ArrayGet";
   array: Expr;
   index: Expr;
+  oneIndexed: boolean;
 }
 
 export interface ArraySet {
@@ -11,12 +20,14 @@ export interface ArraySet {
   array: Identifier;
   index: Expr;
   value: Expr;
+  oneIndexed: boolean;
 }
 
 export interface ListGet {
   type: "ListGet";
   list: Expr;
   index: Expr;
+  oneIndexed: boolean;
 }
 
 export interface ListSet {
@@ -24,6 +35,7 @@ export interface ListSet {
   list: Identifier;
   index: Expr;
   value: Expr;
+  oneIndexed: boolean;
 }
 
 export interface ListPush {
@@ -98,24 +110,39 @@ export function tableSet(
   };
 }
 
-export function arrayGet(array: Expr, index: Expr): ArrayGet {
-  return { type: "ArrayGet", array, index };
+export function stringGet(
+  string: Expr,
+  index: Expr,
+  unicode: boolean = false,
+  oneIndexed: boolean = false
+): StringGet {
+  return { type: "StringGet", string, index, unicode, oneIndexed };
 }
 
-export function listGet(list: Expr, index: Expr): ListGet {
-  return { type: "ListGet", list, index };
+export function arrayGet(
+  array: Expr,
+  index: Expr,
+  zeroIndexed = false
+): ArrayGet {
+  return { type: "ArrayGet", array, index, oneIndexed: zeroIndexed };
+}
+
+export function listGet(list: Expr, index: Expr, zeroIndexed = false): ListGet {
+  return { type: "ListGet", list, index, oneIndexed: zeroIndexed };
 }
 
 export function listSet(
   list: Identifier | string,
   index: Expr,
-  value: Expr
+  value: Expr,
+  zeroIndexed = false
 ): ListSet {
   return {
     type: "ListSet",
     list: typeof list === "string" ? id(list) : list,
     index,
     value,
+    oneIndexed: zeroIndexed,
   };
 }
 
@@ -130,12 +157,14 @@ export function listPush(list: Identifier | string, value: Expr): ListPush {
 export function arraySet(
   array: Identifier | string,
   index: Expr,
-  value: Expr
+  value: Expr,
+  zeroIndexed = false
 ): ArraySet {
   return {
     type: "ArraySet",
     array: typeof array === "string" ? id(array) : array,
     index,
     value,
+    oneIndexed: zeroIndexed,
   };
 }

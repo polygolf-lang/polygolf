@@ -8,8 +8,16 @@ import { binaryOp, int } from "../IR";
 export const oneIndexed = {
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "ListGet" || node.type === "ArrayGet") {
+    if (
+      (node.type === "StringGet" ||
+        node.type === "ListGet" ||
+        node.type === "ArrayGet" ||
+        node.type === "ListSet" ||
+        node.type === "ArraySet") &&
+      !node.oneIndexed
+    ) {
       path.replaceChild(binaryOp("add", node.index, int(1n)), "index");
+      node.oneIndexed = true;
     }
   },
 };

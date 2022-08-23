@@ -75,8 +75,6 @@ function emitExprNoParens(expr: IR.Expr): string {
   switch (expr.type) {
     case "Assignment":
       return `${emitExpr(expr.variable, expr)}=${emitExpr(expr.expr, expr)}`;
-    case "Application":
-      throw new Error("Applications should have been removed");
     case "Identifier":
       return expr.name;
     case "StringLiteral":
@@ -89,7 +87,7 @@ function emitExprNoParens(expr: IR.Expr): string {
       return (
         expr.func +
         "(" +
-        expr.args.map((arg) => emitExpr(arg, expr)).join(",") +
+        expr.args.map((arg: IR.Expr) => emitExpr(arg, expr)).join(",") +
         ")"
       );
     case "MethodCall":
@@ -98,7 +96,7 @@ function emitExprNoParens(expr: IR.Expr): string {
         ":" +
         expr.method +
         "(" +
-        expr.args.map((arg) => emitExpr(arg, expr)).join(",") +
+        expr.args.map((arg: IR.Expr) => emitExpr(arg, expr)).join(",") +
         ")"
       );
     case "BinaryOp":
@@ -108,11 +106,23 @@ function emitExprNoParens(expr: IR.Expr): string {
         emitExpr(expr.right, expr)
       );
     case "UnaryOp":
-      return (expr.op === "neg" ? "-" : "~") + emitExpr(expr.arg, expr);
+      return (
+        unaryopMap[expr.op as keyof typeof unaryopMap] +
+        emitExpr(expr.arg, expr)
+      );
     case "ArrayGet":
       return (
         emitExpr(expr.array, expr) + "[" + emitExpr(expr.index, expr) + "]"
       );
+    case "StringGet":
+      return `${emitExpr(expr.string, expr)}:byte(${emitExpr(
+        expr.index,
+        expr
+      )})`;
+    case "Print":
+      return expr.newline
+        ? `print(${emitExpr(expr.value, expr)})`
+        : `io.write(${emitExpr(expr.value, expr)})`;
     default:
       throw new Error(`Unexpected node while emitting Lua: ${expr.type}. `);
   }
@@ -134,4 +144,10 @@ const binopMap = {
   geq: ">=",
   gt: ">",
   str_concat: "..",
+};
+
+const unaryopMap = {
+  neg: "-",
+  bitnot: "~",
+  str_to_int: "~~",
 };

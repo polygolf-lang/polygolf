@@ -51,8 +51,6 @@ export default function emit(node: IR.Node): string {
       return `${emit(node.variable)}:${JSON.stringify(node.variableType)}`;
     case "Assignment":
       return `${emit(node.variable)}=${emit(node.expr)}`;
-    case "Application":
-      return "(" + node.name + " " + node.args.map(emit).join(" ") + ")";
     case "Identifier":
       return node.name;
     case "StringLiteral":
@@ -62,6 +60,10 @@ export default function emit(node: IR.Node): string {
     case "FunctionCall":
       return (
         node.func + "(" + node.args.map((arg) => emit(arg)).join(",") + ")"
+      );
+    case "Print":
+      return (
+        (node.newline ? "printnl" : "printnonl") + "(" + emit(node.value) + ")"
       );
     case "MethodCall":
       return (
@@ -77,7 +79,7 @@ export default function emit(node: IR.Node): string {
         "(" + emit(node.left) + " " + node.op + " " + emit(node.right) + ")"
       );
     case "UnaryOp":
-      return node.op + emit(node.arg);
+      return "(" + node.op + " " + emit(node.arg) + ")";
     case "ArrayGet":
       return emit(node.array) + "[" + emit(node.index) + "]";
     default:

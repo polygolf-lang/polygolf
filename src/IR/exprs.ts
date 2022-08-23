@@ -30,6 +30,11 @@ export type BuiltinBinop =
   | "eq"
   | "geq"
   | "gt"
+  // membership
+  | "inarray"
+  | "inlist"
+  | "inmap"
+  | "inset"
   // other
   | "str_concat";
 
@@ -52,7 +57,14 @@ export interface MutatingBinaryOp {
   right: Expr;
 }
 
-export type BuiltinUnary = "bitnot" | "neg";
+export type BuiltinUnary =
+  | "bitnot"
+  | "neg"
+  | "int_to_str"
+  | "str_to_int"
+  | "cardinality"
+  | "str_length"
+  | "sorted";
 
 export interface UnaryOp {
   type: "UnaryOp";
@@ -73,32 +85,11 @@ export interface ConditionalOp {
   alternate: Expr;
 }
 
-/**
- * A general function application, such as (+ a b) or (print x). Raw OK
- *
- * Every language frontend should convert *all* function applications to
- * narrower types such as FunctionCall, MethodCall, BinaryOp, or UnaryOp.
- */
-export interface Application {
-  type: "Application";
-  name: Builtin;
-  args: Expr[];
+export interface Print {
+  type: "Print";
+  newline: boolean;
+  value: Expr;
 }
-
-export type Builtin =
-  // one argument
-  | "print"
-  | "println"
-  | "str_length"
-  | "cardinality"
-  | "int_to_str"
-  | "str_to_int"
-  | "sorted"
-  // other two argument
-  | "str_get_byte"
-  | "contains_key"
-  | "contains_value"
-  | "indexof"; // finds the first index of element in the array, or -1 if it is not present
 
 export function functionCall(func: string, args: Expr[]): FunctionCall {
   return { type: "FunctionCall", func, args };
@@ -128,6 +119,6 @@ export function unaryOp(op: BuiltinUnary, arg: Expr): UnaryOp {
   return { type: "UnaryOp", op, arg };
 }
 
-export function application(name: Builtin, args: Expr[]): Application {
-  return { type: "Application", name, args };
+export function print(value: Expr, newline: boolean = true): Print {
+  return { type: "Print", newline, value };
 }

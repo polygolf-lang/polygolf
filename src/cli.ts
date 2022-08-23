@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import {
-  application,
   assignment,
   binaryOp,
   block,
@@ -11,6 +10,7 @@ import {
   mutatingBinaryOp,
   program,
   whileLoop,
+  print,
 } from "./IR";
 import { programToPath } from "./common/traverse";
 import lua from "./languages/lua";
@@ -38,7 +38,7 @@ const rawIR = program(
     whileLoop(
       binaryOp("lt", id("i"), int(32n)),
       block([
-        application("println", [id("a")]),
+        print(id("a")),
         assignment("t", binaryOp("add", id("a"), id("b"))),
         assignment("b", id("a")),
         assignment("a", id("t")),
@@ -51,14 +51,7 @@ console.log(applyLanguage(lua, rawIR));
 
 const loopTest = program(
   block([
-    forRange(
-      "i",
-      int(0n),
-      int(10n),
-      int(1n),
-      block([application("print", [id("x")])]),
-      false
-    ),
+    forRange("i", int(0n), int(10n), int(1n), block([print(id("x"))]), false),
   ])
 );
 

@@ -15,6 +15,9 @@ function applyLanguageToVariant(
     path.visit(visitor);
   }
   const identMap = getIdentMap(path, language.identGen);
+  if (language.opMap !== undefined) {
+    path.visit(mapOps(language.opMap));
+  }
   path.visit(nameIdents(identMap));
   return language.emitter(program);
 }
@@ -75,6 +78,22 @@ function nameIdents(identMap: Map<string, string>) {
           throw new Error("Programming error. Incomplete identMap.");
         }
         path.node.name = outputName;
+      }
+    },
+  };
+}
+
+function mapOps(opMap: Map<string, (arg: IR.Expr, arg2?: IR.Expr) => IR.Expr>) {
+  return {
+    enter(path: Path) {
+      const node = path.node;
+      if (node.type === "BinaryOp" && opMap.has(node.op)) {
+        const f = opMap.get(node.op)!;
+        path.replaceWith(f(node.left, node.right));
+      }
+      if (node.type === "UnaryOp" && opMap.has(node.op)) {
+        const f = opMap.get(node.op)!;
+        path.replaceWith(f(node.arg));
       }
     },
   };

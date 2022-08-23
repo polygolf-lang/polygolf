@@ -93,12 +93,11 @@ export const forRangeToForEachPair = {
       !node.inclusive &&
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
-      node.high.type === "Application" &&
-      node.high.args.length === 1 &&
-      node.high.name === "cardinality" &&
-      node.high.args[0].type === "Identifier"
+      node.high.type === "UnaryOp" &&
+      node.high.op === "cardinality" &&
+      node.high.arg.type === "Identifier"
     ) {
-      const collection = node.high.args[0];
+      const collection = node.high.arg;
       const elementIdentifier = id(path.getNewIdentifier());
       const bodyPath = new Path(node.body, path, "body");
       bodyPath.visit({
@@ -134,12 +133,11 @@ export const forRangeToForEach = {
       !node.inclusive &&
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
-      node.high.type === "Application" &&
-      node.high.args.length === 1 &&
-      node.high.name === "cardinality" &&
-      node.high.args[0].type === "Identifier"
+      node.high.type === "UnaryOp" &&
+      node.high.op === "cardinality" &&
+      node.high.arg.type === "Identifier"
     ) {
-      const collection = node.high.args[0];
+      const collection = node.high.arg;
       const elementIdentifier = id(path.getNewIdentifier());
       const bodyPath = new Path(node.body, path, "body");
       if (!isVariableUsedAlone(bodyPath, collection.name, node.variable.name)) {
