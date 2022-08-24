@@ -1,5 +1,6 @@
-import { IR, programToPath, Path } from "../IR";
-import { expandVariants } from "../IR/expandVariants";
+import { IR } from "../IR";
+import { expandVariants } from "./expandVariants";
+import { programToPath, Path } from "./traverse";
 import { Language, IdentifierGenerator } from "./Language";
 
 function applyLanguageToVariant(
@@ -13,9 +14,33 @@ function applyLanguageToVariant(
   for (const visitor of language.plugins) {
     path.visit(visitor);
   }
+  if (language.dependencyMap !== undefined) {
+    addDependencies(path, language.dependencyMap);
+  }
   const identMap = getIdentMap(path, language.identGen);
+  if (language.opMap !== undefined) {
+    path.visit(mapOps(language.opMap));
+  }
   path.visit(nameIdents(identMap));
   return language.emitter(program);
+}
+
+function addDependencies(
+  programPath: Path<IR.Program>,
+  dependecyMap: Map<string, string>
+) {
+  programPath.visit({
+    enter(path: Path) {
+      const node = path.node;
+      let op: string = node.type;
+      if (node.type === "BinaryOp" || node.type === "UnaryOp") op = node.op;
+      if (node.type === "FunctionCall") op = node.func;
+      if (node.type === "MethodCall") op = node.method;
+      if (dependecyMap.has(op)) {
+        programPath.node.dependencies.add(dependecyMap.get(op)!);
+      }
+    },
+  });
 }
 
 function getIdentMap(
@@ -74,6 +99,22 @@ function nameIdents(identMap: Map<string, string>) {
           throw new Error("Programming error. Incomplete identMap.");
         }
         path.node.name = outputName;
+      }
+    },
+  };
+}
+
+function mapOps(opMap: Map<string, (arg: IR.Expr, arg2?: IR.Expr) => IR.Expr>) {
+  return {
+    enter(path: Path) {
+      const node = path.node;
+      if (node.type === "BinaryOp" && opMap.has(node.op)) {
+        const f = opMap.get(node.op)!;
+        path.replaceWith(f(node.left, node.right));
+      }
+      if (node.type === "UnaryOp" && opMap.has(node.op)) {
+        const f = opMap.get(node.op)!;
+        path.replaceWith(f(node.arg));
       }
     },
   };

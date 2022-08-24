@@ -1,11 +1,14 @@
-import { IR, Visitor } from "IR";
+import { IR } from "IR";
+import { Visitor } from "./traverse";
 
 export interface Language {
   name: string;
   /** The visitors are applied in left-to-right order. */
   plugins: Visitor[];
-  emitter: Emitter;
+  opMap?: Map<string, (arg: IR.Expr, arg2?: IR.Expr) => IR.Expr>;
+  dependencyMap?: Map<string, string>;
   identGen: IdentifierGenerator;
+  emitter: Emitter;
 }
 
 export interface IdentifierGenerator {

@@ -1,6 +1,6 @@
+import { Path } from "../common/traverse";
 import {
-  forRangeInclusive,
-  Path,
+  forRange,
   binaryOp,
   int,
   varDeclaration,
@@ -14,19 +14,18 @@ import {
   IR,
 } from "../IR";
 
-// TODO: add loop plugin tests
-
 export const forRangeToForRangeInclusive = {
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "ForRange") {
+    if (node.type === "ForRange" && !node.inclusive) {
       path.replaceWith(
-        forRangeInclusive(
+        forRange(
           node.variable,
           node.low,
           binaryOp("sub", node.high, int(1n)),
           node.increment,
-          node.body
+          node.body,
+          true
         )
       );
     }
@@ -40,13 +39,16 @@ export const forRangeToWhile = {
       node.body.children.push(
         assignment(
           node.variable,
-          binaryOp("add", node.variable, node.increment ?? int(1n))
+          binaryOp("add", node.variable, node.increment)
         )
       );
       path.replaceWithMultiple([
         varDeclaration(node.variable, "number"),
         assignment(node.variable, node.low),
-        whileLoop(binaryOp("lt", node.variable, node.high), node.body),
+        whileLoop(
+          binaryOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+          node.body
+        ),
       ]);
     }
   },
@@ -63,7 +65,7 @@ export const forRangeToForCLike = {
             assignment(node.variable, node.low),
           ]),
           block([binaryOp("add", node.variable, node.increment ?? int(1n))]),
-          binaryOp("lt", node.variable, node.high),
+          binaryOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
           node.body
         )
       );
@@ -80,19 +82,20 @@ export const forRangeToForCLike = {
  * for i,x in enumerate(collection):
  *     commands(i, x)
  */
+// TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
 export const forRangeToForEachPair = {
   enter(path: Path) {
     const node = path.node;
     if (
       node.type === "ForRange" &&
+      !node.inclusive &&
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
-      node.high.type === "Application" &&
-      node.high.args.length === 1 &&
-      node.high.name === "cardinality" &&
-      node.high.args[0].type === "Identifier"
+      node.high.type === "UnaryOp" &&
+      node.high.op === "cardinality" &&
+      node.high.arg.type === "Identifier"
     ) {
-      const collection = node.high.args[0];
+      const collection = node.high.arg;
       const elementIdentifier = id(path.getNewIdentifier());
       const bodyPath = new Path(node.body, path, "body");
       bodyPath.visit({
@@ -125,14 +128,14 @@ export const forRangeToForEach = {
     const node = path.node;
     if (
       node.type === "ForRange" &&
+      !node.inclusive &&
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
-      node.high.type === "Application" &&
-      node.high.args.length === 1 &&
-      node.high.name === "cardinality" &&
-      node.high.args[0].type === "Identifier"
+      node.high.type === "UnaryOp" &&
+      node.high.op === "cardinality" &&
+      node.high.arg.type === "Identifier"
     ) {
-      const collection = node.high.args[0];
+      const collection = node.high.arg;
       const elementIdentifier = id(path.getNewIdentifier());
       const bodyPath = new Path(node.body, path, "body");
       if (!isVariableUsedAlone(bodyPath, collection.name, node.variable.name)) {
@@ -153,13 +156,13 @@ export const forRangeToForEach = {
 };
 
 function isArrayOrListGet(node: IR.Node, collection: string, index: string) {
+  if (node.type !== "ArrayGet" && node.type !== "ListGet") return false;
+  const obj = node.type === "ArrayGet" ? node.array : node.list;
   return (
-    node.type === "Application" &&
-    (node.name === "array_get" || node.name === "list_get") &&
-    node.args[0].type === "Identifier" &&
-    node.args[0].name === collection &&
-    node.args[1].type === "Identifier" &&
-    node.args[1].name === index
+    obj.type === "Identifier" &&
+    obj.name === collection &&
+    node.index.type === "Identifier" &&
+    node.index.name === index
   );
 }
 

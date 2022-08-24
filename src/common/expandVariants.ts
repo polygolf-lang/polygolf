@@ -1,4 +1,5 @@
-import { IR, Path, programToPath } from ".";
+import { IR } from "../IR";
+import { Path, programToPath } from "./traverse";
 
 /**
  * Expand all of the variant nodes in program to get a list of fully-
