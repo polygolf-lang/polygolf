@@ -1,4 +1,4 @@
-import { Expr, id, Identifier } from "./IR";
+import { Expr, id, Identifier, simpleType, ValueType } from "./IR";
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK
@@ -8,6 +8,7 @@ import { Expr, id, Identifier } from "./IR";
  */
 export interface Assignment {
   type: "Assignment";
+  valueType: ValueType;
   variable: Identifier;
   expr: Expr;
 }
@@ -19,6 +20,7 @@ export interface Assignment {
  */
 export interface ManyToManyAssignment {
   type: "ManyToManyAssignment";
+  valueType: ValueType;
   variables: Identifier[];
   exprs: Expr[];
 }
@@ -30,6 +32,7 @@ export interface ManyToManyAssignment {
  */
 export interface OneToManyAssignment {
   type: "OneToManyAssignment";
+  valueType: ValueType;
   variables: Identifier[];
   expr: Expr;
 }
@@ -42,6 +45,7 @@ export function assignment(
     type: "Assignment",
     variable: typeof variable === "string" ? id(variable) : variable,
     expr,
+    valueType: expr.valueType,
   };
 }
 
@@ -53,6 +57,7 @@ export function manyToManyAssignment(
     type: "ManyToManyAssignment",
     variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     exprs,
+    valueType: simpleType("void"),
   };
 }
 
@@ -64,5 +69,6 @@ export function oneToManyAssignment(
     type: "OneToManyAssignment",
     variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     expr,
+    valueType: expr.valueType,
   };
 }

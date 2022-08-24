@@ -1,4 +1,4 @@
-import { IR } from "../../IR";
+import { IR, ValueType } from "../../IR";
 
 export default function emit(node: IR.Node): string {
   switch (node.type) {
@@ -48,7 +48,7 @@ export default function emit(node: IR.Node): string {
     case "Variants":
       return "[ " + node.variants.map(emit).join(" | ") + " ]";
     case "VarDeclaration":
-      return `${emit(node.variable)}:${JSON.stringify(node.variableType)}`;
+      return `${emit(node.variable)}:${emitType(node.variableType)}`;
     case "Assignment":
       return `${emit(node.variable)}=${emit(node.expr)}`;
     case "Identifier":
@@ -84,5 +84,20 @@ export default function emit(node: IR.Node): string {
       return emit(node.array) + "[" + emit(node.index) + "]";
     default:
       throw new Error(`Unimplemented node for debug: ${node.type}. `);
+  }
+}
+
+function emitType(t: ValueType): string {
+  switch (t.type) {
+    case "Array":
+      return `Array(${emitType(t.member)}, ${t.length})`;
+    case "List":
+      return `List(${emitType(t.member)})`;
+    case "Set":
+      return `Set(${emitType(t.member)})`;
+    case "Table":
+      return `Table(${t.key}, ${emitType(t.value)})`;
+    default:
+      return t.type;
   }
 }

@@ -1,8 +1,10 @@
+import { listType, simpleType, ValueType } from "./IR";
 /**
  * Program input (array of strings) as niladic variable.
  */
 export interface Argv {
   type: "Argv";
+  valueType: ValueType;
 }
 
 /**
@@ -11,6 +13,7 @@ export interface Argv {
 export interface Identifier {
   type: "Identifier";
   name: string;
+  valueType: ValueType;
 }
 
 /**
@@ -19,6 +22,7 @@ export interface Identifier {
 export interface IntegerLiteral {
   type: "IntegerLiteral";
   value: BigInt;
+  valueType: ValueType;
 }
 
 /**
@@ -29,20 +33,21 @@ export interface IntegerLiteral {
 export interface StringLiteral {
   type: "StringLiteral";
   value: string;
+  valueType: ValueType;
 }
 
-export function id(name: string): Identifier {
-  return { type: "Identifier", name };
+export function id(name: string, valueType = simpleType("void")): Identifier {
+  return { type: "Identifier", name, valueType };
 }
 
 export function int(value: BigInt): IntegerLiteral {
-  return { type: "IntegerLiteral", value };
+  return { type: "IntegerLiteral", value, valueType: simpleType("number") };
 }
 
 export function stringLiteral(value: string): StringLiteral {
-  return { type: "StringLiteral", value };
+  return { type: "StringLiteral", value, valueType: simpleType("string") };
 }
 
 export function argv(): Argv {
-  return { type: "Argv" };
+  return { type: "Argv", valueType: listType("string") };
 }

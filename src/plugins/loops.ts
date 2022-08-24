@@ -12,6 +12,7 @@ import {
   forEach,
   id,
   IR,
+  simpleType,
 } from "../IR";
 
 export const forRangeToForRangeInclusive = {
@@ -43,7 +44,7 @@ export const forRangeToWhile = {
         )
       );
       path.replaceWithMultiple([
-        varDeclaration(node.variable, "number"),
+        varDeclaration(node.variable, simpleType("number")),
         assignment(node.variable, node.low),
         whileLoop(
           binaryOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
@@ -61,7 +62,7 @@ export const forRangeToForCLike = {
       path.replaceWith(
         forCLike(
           block([
-            varDeclaration(node.variable, "number"),
+            varDeclaration(node.variable, simpleType("number")),
             assignment(node.variable, node.low),
           ]),
           block([binaryOp("add", node.variable, node.increment ?? int(1n))]),

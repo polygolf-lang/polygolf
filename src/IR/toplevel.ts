@@ -1,4 +1,4 @@
-import { Expr, id, Identifier, Statement } from "./IR";
+import { Expr, id, Identifier, simpleType, Statement, ValueType } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
@@ -38,16 +38,6 @@ export interface IfStatement {
   alternate: Block;
 }
 
-/** The type of the value of a node when evaluated */
-export type ValueType =
-  | "number"
-  | "string"
-  | "boolean"
-  | { type: "List"; member: ValueType }
-  | { type: "Table"; key: "number" | "string"; value: ValueType }
-  | { type: "Array"; member: ValueType; length: number }
-  | { type: "Set"; member: ValueType };
-
 /**
  * Variable declaration.
  */
@@ -55,6 +45,7 @@ export interface VarDeclaration {
   type: "VarDeclaration";
   variable: Identifier;
   variableType: ValueType;
+  valueType: ValueType;
 }
 
 export function program(
@@ -85,6 +76,7 @@ export function varDeclaration(
     type: "VarDeclaration",
     variable: typeof variable === "string" ? id(variable) : variable,
     variableType,
+    valueType: simpleType("void"),
   };
 }
 

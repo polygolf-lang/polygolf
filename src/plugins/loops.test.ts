@@ -10,6 +10,7 @@ import {
   program,
   unaryOp,
   print,
+  arrayType,
 } from "../IR";
 import debugEmit from "../languages/debug/emit";
 
@@ -26,7 +27,11 @@ const loopProgram2 = program(
       int(0n),
       unaryOp("cardinality", id("collection")),
       int(1n),
-      block([print(arrayGet(id("collection"), id("i")))]),
+      block([
+        print(
+          arrayGet(id("collection", arrayType("number", 3)), id("i"), false)
+        ),
+      ]),
       false
     ),
   ])
@@ -39,7 +44,12 @@ const loopProgram3 = program(
       int(0n),
       unaryOp("cardinality", id("collection")),
       int(1n),
-      block([print(id("i")), print(arrayGet(id("collection"), id("i")))]),
+      block([
+        print(id("i")),
+        print(
+          arrayGet(id("collection", arrayType("number", 3)), id("i"), false)
+        ),
+      ]),
       false
     ),
   ])
@@ -62,13 +72,13 @@ test("ForRange -> WhileLoop", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToWhile,
-    '{ i:"number"; i=0; while (i lt 10) { printnl(x); i=(i add 1); }; }'
+    "{ i:number; i=0; while (i lt 10) { printnl(x); i=(i add 1); }; }"
   ));
 test("ForRange -> ForCLike", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToForCLike,
-    '{ for({ i:"number"; i=0; };(i lt 10);{ (i add 1); }){ printnl(x); }; }'
+    "{ for({ i:number; i=0; };(i lt 10);{ (i add 1); }){ printnl(x); }; }"
   ));
 
 test("ForRange -> ForEachPair", () =>

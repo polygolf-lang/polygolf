@@ -1,4 +1,12 @@
-import { Expr, id, Identifier } from "./IR";
+import {
+  arrayType,
+  Expr,
+  id,
+  Identifier,
+  listType,
+  simpleType,
+  ValueType,
+} from "./IR";
 
 export interface StringGet {
   type: "StringGet";
@@ -6,6 +14,7 @@ export interface StringGet {
   string: Expr;
   index: Expr;
   oneIndexed: boolean;
+  valueType: ValueType;
 }
 
 export interface ArrayGet {
@@ -13,6 +22,7 @@ export interface ArrayGet {
   array: Expr;
   index: Expr;
   oneIndexed: boolean;
+  valueType: ValueType;
 }
 
 export interface ArraySet {
@@ -21,6 +31,7 @@ export interface ArraySet {
   index: Expr;
   value: Expr;
   oneIndexed: boolean;
+  valueType: ValueType;
 }
 
 export interface ListGet {
@@ -28,6 +39,7 @@ export interface ListGet {
   list: Expr;
   index: Expr;
   oneIndexed: boolean;
+  valueType: ValueType;
 }
 
 export interface ListSet {
@@ -36,12 +48,14 @@ export interface ListSet {
   index: Expr;
   value: Expr;
   oneIndexed: boolean;
+  valueType: ValueType;
 }
 
 export interface ListPush {
   type: "ListPush";
   list: Identifier;
   value: Expr;
+  valueType: ValueType;
 }
 
 /**
@@ -51,6 +65,7 @@ export interface ListPush {
 export interface ArrayConstructor {
   type: "ArrayConstructor";
   exprs: Expr[];
+  valueType: ValueType;
 }
 
 /**
@@ -60,6 +75,7 @@ export interface ArrayConstructor {
 export interface ListConstructor {
   type: "ListConstructor";
   exprs: Expr[];
+  valueType: ValueType;
 }
 
 /**
@@ -71,6 +87,7 @@ export interface TableGet {
   type: "TableGet";
   table: Expr;
   key: Expr;
+  valueType: ValueType;
 }
 
 /**
@@ -83,18 +100,30 @@ export interface TableSet {
   table: Identifier;
   key: Expr;
   value: Expr;
+  valueType: ValueType;
 }
 
 export function arrayConstructor(exprs: Expr[]): ArrayConstructor {
-  return { type: "ArrayConstructor", exprs };
+  return {
+    type: "ArrayConstructor",
+    exprs,
+    valueType: arrayType(exprs[0].valueType, exprs.length),
+  };
 }
 
 export function listConstructor(exprs: Expr[]): ListConstructor {
-  return { type: "ListConstructor", exprs };
+  return {
+    type: "ListConstructor",
+    exprs,
+    valueType: listType(exprs[0].valueType),
+  };
 }
 
 export function tableGet(table: Expr, key: Expr): TableGet {
-  return { type: "TableGet", table, key };
+  if (table.valueType.type !== "Table") {
+    throw new Error("First arg of tableGet must be a table!");
+  }
+  return { type: "TableGet", table, key, valueType: table.valueType.value };
 }
 
 export function tableSet(
@@ -107,6 +136,7 @@ export function tableSet(
     table: typeof table === "string" ? id(table) : table,
     key,
     value,
+    valueType: simpleType("void"),
   };
 }
 
@@ -116,33 +146,59 @@ export function stringGet(
   unicode: boolean = false,
   oneIndexed: boolean = false
 ): StringGet {
-  return { type: "StringGet", string, index, unicode, oneIndexed };
+  return {
+    type: "StringGet",
+    string,
+    index,
+    unicode,
+    oneIndexed,
+    valueType: simpleType("string"),
+  };
 }
 
 export function arrayGet(
   array: Expr,
   index: Expr,
-  zeroIndexed = false
+  oneIndexed = false
 ): ArrayGet {
-  return { type: "ArrayGet", array, index, oneIndexed: zeroIndexed };
+  if (array.valueType instanceof String || array.valueType.type !== "Array") {
+    throw new Error("First arg of arrayGet must be an array!");
+  }
+  return {
+    type: "ArrayGet",
+    array,
+    index,
+    oneIndexed,
+    valueType: array.valueType.member,
+  };
 }
 
-export function listGet(list: Expr, index: Expr, zeroIndexed = false): ListGet {
-  return { type: "ListGet", list, index, oneIndexed: zeroIndexed };
+export function listGet(list: Expr, index: Expr, oneIndexed = false): ListGet {
+  if (list.valueType instanceof String || list.valueType.type !== "List") {
+    throw new Error("First arg of listGet must be a list!");
+  }
+  return {
+    type: "ListGet",
+    list,
+    index,
+    oneIndexed,
+    valueType: list.valueType.member,
+  };
 }
 
 export function listSet(
   list: Identifier | string,
   index: Expr,
   value: Expr,
-  zeroIndexed = false
+  oneIndexed = false
 ): ListSet {
   return {
     type: "ListSet",
     list: typeof list === "string" ? id(list) : list,
     index,
     value,
-    oneIndexed: zeroIndexed,
+    oneIndexed,
+    valueType: simpleType("void"),
   };
 }
 
@@ -151,6 +207,7 @@ export function listPush(list: Identifier | string, value: Expr): ListPush {
     type: "ListPush",
     list: typeof list === "string" ? id(list) : list,
     value,
+    valueType: simpleType("void"),
   };
 }
 
@@ -158,13 +215,14 @@ export function arraySet(
   array: Identifier | string,
   index: Expr,
   value: Expr,
-  zeroIndexed = false
+  oneIndexed = false
 ): ArraySet {
   return {
     type: "ArraySet",
     array: typeof array === "string" ? id(array) : array,
     index,
     value,
-    oneIndexed: zeroIndexed,
+    oneIndexed,
+    valueType: simpleType("void"),
   };
 }
