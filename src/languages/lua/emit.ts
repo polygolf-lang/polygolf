@@ -116,7 +116,7 @@ function emitExprNoParens(expr: IR.Expr): string {
       return (
         emitExpr(expr.array, expr) + "[" + emitExpr(expr.index, expr) + "]"
       );
-    case "StringGet":
+    case "StringGetByte":
       return `${emitExpr(expr.string, expr)}:byte(${emitExpr(
         expr.index,
         expr

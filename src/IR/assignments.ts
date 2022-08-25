@@ -1,4 +1,4 @@
-import { Expr, id, Identifier, simpleType, ValueType } from "./IR";
+import { BaseExpr, Expr, id, Identifier, simpleType, ValueType } from "./IR";
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK
@@ -6,9 +6,8 @@ import { Expr, id, Identifier, simpleType, ValueType } from "./IR";
  * Since many languages lack assignment expressions, assignments are
  * statement-level by default.
  */
-export interface Assignment {
+export interface Assignment extends BaseExpr {
   type: "Assignment";
-  valueType: ValueType;
   variable: Identifier;
   expr: Expr;
 }
@@ -18,9 +17,8 @@ export interface Assignment {
  *
  * (a,b)=(b,a).
  */
-export interface ManyToManyAssignment {
+export interface ManyToManyAssignment extends BaseExpr {
   type: "ManyToManyAssignment";
-  valueType: ValueType;
   variables: Identifier[];
   exprs: Expr[];
 }
@@ -30,9 +28,8 @@ export interface ManyToManyAssignment {
  *
  * a=b=c=1.
  */
-export interface OneToManyAssignment {
+export interface OneToManyAssignment extends BaseExpr {
   type: "OneToManyAssignment";
-  valueType: ValueType;
   variables: Identifier[];
   expr: Expr;
 }
@@ -45,7 +42,6 @@ export function assignment(
     type: "Assignment",
     variable: typeof variable === "string" ? id(variable) : variable,
     expr,
-    valueType: expr.valueType,
   };
 }
 
@@ -57,7 +53,6 @@ export function manyToManyAssignment(
     type: "ManyToManyAssignment",
     variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     exprs,
-    valueType: simpleType("void"),
   };
 }
 
@@ -69,6 +64,5 @@ export function oneToManyAssignment(
     type: "OneToManyAssignment",
     variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     expr,
-    valueType: expr.valueType,
   };
 }

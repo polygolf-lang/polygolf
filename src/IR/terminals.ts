@@ -1,28 +1,25 @@
-import { listType, simpleType, ValueType } from "./IR";
+import { BaseExpr, listType, simpleType, ValueType } from "./IR";
 /**
  * Program input (array of strings) as niladic variable.
  */
-export interface Argv {
+export interface Argv extends BaseExpr {
   type: "Argv";
-  valueType: ValueType;
 }
 
 /**
  * An identifier, such as referring to a global variable. Raw OK
  */
-export interface Identifier {
+export interface Identifier extends BaseExpr {
   type: "Identifier";
   name: string;
-  valueType: ValueType;
 }
 
 /**
  * An unbounded integer constant. Raw OK
  */
-export interface IntegerLiteral {
+export interface IntegerLiteral extends BaseExpr {
   type: "IntegerLiteral";
   value: BigInt;
-  valueType: ValueType;
 }
 
 /**
@@ -30,24 +27,23 @@ export interface IntegerLiteral {
  *
  * There is no distinction for byte vs unicode strings
  */
-export interface StringLiteral {
+export interface StringLiteral extends BaseExpr {
   type: "StringLiteral";
   value: string;
-  valueType: ValueType;
 }
 
-export function id(name: string, valueType = simpleType("void")): Identifier {
-  return { type: "Identifier", name, valueType };
+export function id(name: string): Identifier {
+  return { type: "Identifier", name };
 }
 
 export function int(value: BigInt): IntegerLiteral {
-  return { type: "IntegerLiteral", value, valueType: simpleType("number") };
+  return { type: "IntegerLiteral", value };
 }
 
 export function stringLiteral(value: string): StringLiteral {
-  return { type: "StringLiteral", value, valueType: simpleType("string") };
+  return { type: "StringLiteral", value };
 }
 
 export function argv(): Argv {
-  return { type: "Argv", valueType: listType("string") };
+  return { type: "Argv" };
 }

@@ -27,11 +27,7 @@ const loopProgram2 = program(
       int(0n),
       unaryOp("cardinality", id("collection")),
       int(1n),
-      block([
-        print(
-          arrayGet(id("collection", arrayType("number", 3)), id("i"), false)
-        ),
-      ]),
+      block([print(arrayGet(id("collection"), id("i"), false))]),
       false
     ),
   ])
@@ -46,9 +42,7 @@ const loopProgram3 = program(
       int(1n),
       block([
         print(id("i")),
-        print(
-          arrayGet(id("collection", arrayType("number", 3)), id("i"), false)
-        ),
+        print(arrayGet(id("collection"), id("i"), false)),
       ]),
       false
     ),

@@ -11,7 +11,7 @@ import {
   binaryOp,
   arrayGet,
   print,
-  stringGet,
+  stringGetByte,
   arrayType,
 } from "../../IR";
 import { applyLanguage } from "../../common/applyLanguage";
@@ -69,12 +69,8 @@ describe("Applications", () => {
   testBinaryOp("eq", id("x"), id("y"), "x==y");
   testBinaryOp("geq", id("x"), id("y"), "x>=y");
   testBinaryOp("gt", id("x"), id("y"), "x>y");
-  testStatement(
-    "ArrayGet",
-    arrayGet(id("x", arrayType("number", 3)), id("y")),
-    "x[y+1]"
-  );
-  testStatement("StringGet", stringGet(id("x"), id("y")), "x:byte(y+1)");
+  testStatement("ArrayGet", arrayGet(id("x"), id("y")), "x[y+1]");
+  testStatement("StringGet", stringGetByte(id("x"), id("y")), "x:byte(y+1)");
   testBinaryOp("str_concat", id("x"), id("y"), "x..y");
 });
 
@@ -86,7 +82,7 @@ describe("Parentheses", () => {
   );
   testStatement(
     "method call on ArrayGet",
-    unaryOp("str_length", arrayGet(id("A", arrayType("number", 3)), id("i"))),
+    unaryOp("str_length", arrayGet(id("A"), id("i"))),
     `A[i+1]:len()`
   );
   // TODO: operator precedence
