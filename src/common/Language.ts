@@ -1,11 +1,13 @@
 import { IR } from "IR";
 import { Visitor } from "./traverse";
 
+type OpTransformOutput = string | ((arg: IR.Expr, arg2?: IR.Expr) => IR.Expr);
+
 export interface Language {
   name: string;
   /** The visitors are applied in left-to-right order. */
   plugins: Visitor[];
-  opMap?: Map<string, (arg: IR.Expr, arg2?: IR.Expr) => IR.Expr>;
+  opMap: Map<string, OpTransformOutput>;
   dependencyMap?: Map<string, string>;
   identGen: IdentifierGenerator;
   emitter: Emitter;

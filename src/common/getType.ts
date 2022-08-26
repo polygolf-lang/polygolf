@@ -5,6 +5,10 @@ import {
   listType,
   simpleType,
   arrayType,
+  BinaryOp,
+  UnaryOp,
+  FunctionCall,
+  MethodCall,
 } from "../IR";
 
 function getType(expr: Expr, program: Program): ValueType {
@@ -25,13 +29,10 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "Print":
       return simpleType("void");
     case "FunctionCall":
-      return simpleType("void"); // TODO
     case "MethodCall":
-      return simpleType("void"); // TODO
     case "BinaryOp":
-      return simpleType("number"); // TODO
     case "UnaryOp":
-      return simpleType("number"); // TODO
+      return getOpCodeType(expr, program);
     case "Identifier":
       if (program.variables.has(expr.name)) {
         return program.variables.get(expr.name)!;
@@ -85,4 +86,42 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "OneToManyAssignment":
       return getType(expr.expr, program);
   }
+}
+
+function getOpCodeType(
+  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall,
+  program: Program
+): ValueType {
+  switch (expr.op) {
+    case "add":
+    case "sub":
+    case "mul":
+    case "div":
+    case "exp":
+    case "bitand":
+    case "bitor":
+    case "bitxor":
+    case "bitnot":
+    case "neg":
+    case "str_to_int":
+    case "cardinality":
+    case "str_length":
+      return simpleType("number");
+    case "lt":
+    case "leq":
+    case "eq":
+    case "geq":
+    case "gt":
+    case "inarray":
+    case "inlist":
+    case "inmap":
+    case "inset":
+      return simpleType("boolean");
+    case "str_concat":
+    case "int_to_str":
+      return simpleType("string");
+    case "sorted":
+      return getType(expr, program);
+  }
+  throw new Error("Unknown opcode.");
 }
