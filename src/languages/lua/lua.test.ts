@@ -12,7 +12,6 @@ import {
   arrayGet,
   print,
   stringGetByte,
-  arrayType,
 } from "../../IR";
 import { applyLanguage } from "../../common/applyLanguage";
 

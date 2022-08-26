@@ -1,4 +1,4 @@
-import { BaseExpr, Expr, id, Identifier, simpleType, ValueType } from "./IR";
+import { BaseExpr, Expr, id, Identifier } from "./IR";
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK

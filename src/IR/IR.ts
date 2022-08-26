@@ -1,6 +1,4 @@
 import { Path, programToPath } from "common/traverse";
-import { table } from "console";
-import path from "path";
 import {
   Assignment,
   ManyToManyAssignment,
@@ -17,17 +15,14 @@ import {
   ListSet,
   TableGet,
   TableSet,
-  stringGetByte,
 } from "./collections";
 import {
-  binaryOp,
   BinaryOp,
   ConditionalOp,
   FunctionCall,
   MethodCall,
   MutatingBinaryOp,
   Print,
-  unaryOp,
   UnaryOp,
 } from "./exprs";
 import {
@@ -185,28 +180,31 @@ export function calcType(expr: Expr, program: Program): ValueType {
       return listType(getType(expr.exprs[0], program));
     case "StringGetByte":
       return simpleType("string");
-    case "TableGet":
-      const tableT = getType(expr.table, program);
-      if (tableT.type !== "Table") {
+    case "TableGet": {
+      const tableType = getType(expr.table, program);
+      if (tableType.type !== "Table") {
         throw new Error("Type of TableGet must be used on a table");
       }
-      return tableT.value;
+      return tableType.value;
+    }
     case "TableSet":
       return simpleType("void");
-    case "ArrayGet":
-      const arrayT = getType(expr.array, program);
-      if (arrayT.type !== "Array") {
+    case "ArrayGet": {
+      const arrType = getType(expr.array, program);
+      if (arrType.type !== "Array") {
         throw new Error("Type of TableGet must be used on a table");
       }
-      return arrayT.member;
+      return arrType.member;
+    }
     case "ArraySet":
       return simpleType("void");
-    case "ListGet":
-      const listT = getType(expr.list, program);
-      if (listT.type !== "List") {
+    case "ListGet": {
+      const listType = getType(expr.list, program);
+      if (listType.type !== "List") {
         throw new Error("Type of TableGet must be used on a table");
       }
-      return listT.member;
+      return listType.member;
+    }
     case "ListSet":
       return simpleType("void");
     case "ListPush":
@@ -233,13 +231,13 @@ export interface Program {
 }
 
 export function program(block: Block): Program {
-  let result: Program = {
+  const result: Program = {
     type: "Program",
-    block: block,
+    block,
     dependencies: new Set<string>(),
     variables: new Map<string, ValueType>(),
   };
-  let path = programToPath(result);
+  const path = programToPath(result);
   path.visit({
     enter(path: Path) {
       const node = path.node;

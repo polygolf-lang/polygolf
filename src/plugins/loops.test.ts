@@ -10,7 +10,6 @@ import {
   program,
   unaryOp,
   print,
-  arrayType,
 } from "../IR";
 import debugEmit from "../languages/debug/emit";
 

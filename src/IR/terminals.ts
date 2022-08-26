@@ -1,4 +1,4 @@
-import { BaseExpr, listType, simpleType, ValueType } from "./IR";
+import { BaseExpr } from "./IR";
 /**
  * Program input (array of strings) as niladic variable.
  */

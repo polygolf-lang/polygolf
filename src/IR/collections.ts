@@ -1,13 +1,4 @@
-import {
-  arrayType,
-  BaseExpr,
-  Expr,
-  id,
-  Identifier,
-  listType,
-  simpleType,
-  ValueType,
-} from "./IR";
+import { BaseExpr, Expr, id, Identifier } from "./IR";
 
 export interface StringGetByte extends BaseExpr {
   type: "StringGetByte";
