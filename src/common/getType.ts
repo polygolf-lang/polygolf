@@ -51,7 +51,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "TableGet": {
       const tableType = getType(expr.table, program);
       if (tableType.type !== "Table") {
-        throw new Error("Type of TableGet must be used on a table");
+        throw new Error("TableGet must be used on a table");
       }
       return tableType.value;
     }
@@ -60,7 +60,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "ArrayGet": {
       const arrType = getType(expr.array, program);
       if (arrType.type !== "Array") {
-        throw new Error("Type of TableGet must be used on a table");
+        throw new Error("ArrayGet must be used on a table");
       }
       return arrType.member;
     }
@@ -69,7 +69,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "ListGet": {
       const listType = getType(expr.list, program);
       if (listType.type !== "List") {
-        throw new Error("Type of TableGet must be used on a table");
+        throw new Error("ListGet must be used on a table");
       }
       return listType.member;
     }
@@ -124,4 +124,17 @@ function getOpCodeType(
       return getType(expr, program);
   }
   throw new Error("Unknown opcode.");
+}
+
+export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
+  const exprType = getType(expr, program);
+  switch (exprType.type) {
+    case "Array":
+    case "List":
+    case "Set":
+      return [exprType.member];
+    case "Table":
+      return [simpleType(exprType.key), exprType.value];
+  }
+  throw new Error("Node is not a collection.");
 }

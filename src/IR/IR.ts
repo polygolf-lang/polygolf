@@ -1,3 +1,4 @@
+import { getCollectionTypes } from "common/getType";
 import { Path, programToPath } from "common/traverse";
 import {
   Assignment,
@@ -107,17 +108,31 @@ export function program(block: Block): Program {
     variables: new Map<string, ValueType>(),
   };
   const path = programToPath(result);
+  function setVar(name: string, type: ValueType) {
+    if (result.variables.has(name)) {
+      throw new Error(`Duplicate variable declaration: ${name}`!);
+    }
+    result.variables.set(name, type);
+  }
   path.visit({
     enter(path: Path) {
       const node = path.node;
       if (node.type === "ForRange") {
-        result.variables.set(node.variable.name, simpleType("number"));
+        setVar(node.variable.name, simpleType("number"));
       } else if (node.type === "ForEach") {
-        result.variables.set(node.variable.name, simpleType("number")); // TODO
+        setVar(
+          node.variable.name,
+          getCollectionTypes(node.collection, result)[0]
+        );
       } else if (node.type === "ForEachKey") {
-        result.variables.set(node.variable.name, simpleType("number")); // TODO
+        setVar(node.variable.name, getCollectionTypes(node.table, result)[0]);
       } else if (node.type === "ForEachPair") {
-        result.variables.set(node.valueVariable.name, simpleType("number")); // TODO
+        let types = getCollectionTypes(node.table, result);
+        if (types.length === 1) {
+          types = [simpleType("number"), types[0]];
+        }
+        setVar(node.keyVariable.name, types[0]);
+        setVar(node.valueVariable.name, types[1]);
       } else if (node.type === "VarDeclaration") {
         result.variables.set(node.variable.name, node.variableType);
         path.replaceWithMultiple([]); // TODO does this work?
