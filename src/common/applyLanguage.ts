@@ -27,7 +27,7 @@ function applyLanguageToVariant(
 
 function addDependencies(
   programPath: Path<IR.Program>,
-  dependecyMap: Map<string, string>
+  dependencyMap: Map<string, string>
 ) {
   programPath.visit({
     enter(path: Path) {
@@ -36,8 +36,8 @@ function addDependencies(
       if (node.type === "BinaryOp" || node.type === "UnaryOp") op = node.op;
       if (node.type === "FunctionCall") op = node.func;
       if (node.type === "MethodCall") op = node.method;
-      if (dependecyMap.has(op)) {
-        programPath.node.dependencies.add(dependecyMap.get(op)!);
+      if (dependencyMap.has(op)) {
+        programPath.node.dependencies.add(dependencyMap.get(op)!);
       }
     },
   });
