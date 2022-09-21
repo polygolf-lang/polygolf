@@ -11,7 +11,7 @@ import {
   binaryOp,
   arrayGet,
   print,
-  stringGet,
+  stringGetByte,
 } from "../../IR";
 import { applyLanguage } from "../../common/applyLanguage";
 
@@ -69,7 +69,7 @@ describe("Applications", () => {
   testBinaryOp("geq", id("x"), id("y"), "x>=y");
   testBinaryOp("gt", id("x"), id("y"), "x>y");
   testStatement("ArrayGet", arrayGet(id("x"), id("y")), "x[y+1]");
-  testStatement("StringGet", stringGet(id("x"), id("y")), "x:byte(y+1)");
+  testStatement("StringGet", stringGetByte(id("x"), id("y")), "x:byte(y+1)");
   testBinaryOp("str_concat", id("x"), id("y"), "x..y");
 });
 

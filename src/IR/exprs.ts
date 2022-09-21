@@ -1,16 +1,20 @@
-import { Expr, Identifier } from "./IR";
+import { Expr, Identifier, ValueType, simpleType } from "./IR";
 
 export interface FunctionCall {
   type: "FunctionCall";
-  func: string;
+  name: string;
+  op: OpCode;
   args: Expr[];
+  valueType: ValueType;
 }
 
 export interface MethodCall {
   type: "MethodCall";
-  method: string;
+  name: string;
+  op: OpCode;
   object: Expr;
   args: Expr[];
+  valueType: ValueType;
 }
 
 export type BuiltinBinop =
@@ -41,8 +45,10 @@ export type BuiltinBinop =
 export interface BinaryOp {
   type: "BinaryOp";
   op: BuiltinBinop;
+  name: string;
   left: Expr;
   right: Expr;
+  valueType: ValueType;
 }
 
 /**
@@ -55,6 +61,7 @@ export interface MutatingBinaryOp {
   op: BuiltinBinop;
   variable: Identifier;
   right: Expr;
+  valueType: ValueType;
 }
 
 export type BuiltinUnary =
@@ -66,10 +73,14 @@ export type BuiltinUnary =
   | "str_length"
   | "sorted";
 
+export type OpCode = BuiltinBinop | BuiltinUnary;
+
 export interface UnaryOp {
   type: "UnaryOp";
+  name: string;
   op: BuiltinUnary;
   arg: Expr;
+  valueType: ValueType;
 }
 
 /**
@@ -83,28 +94,60 @@ export interface ConditionalOp {
   condition: Expr;
   consequent: Expr;
   alternate: Expr;
+  valueType: ValueType;
 }
 
 export interface Print {
   type: "Print";
   newline: boolean;
   value: Expr;
+  valueType: ValueType;
 }
 
-export function functionCall(func: string, args: Expr[]): FunctionCall {
-  return { type: "FunctionCall", func, args };
+export function functionCall(
+  op: OpCode,
+  args: Expr[],
+  name: string
+): FunctionCall {
+  return {
+    type: "FunctionCall",
+    name,
+    op,
+    args,
+    valueType: simpleType("void"),
+  };
 }
 
 export function methodCall(
+  op: OpCode,
   object: Expr,
-  method: string,
-  args: Expr[]
+  args: Expr[],
+  name: string
 ): MethodCall {
-  return { type: "MethodCall", method, object, args };
+  return {
+    type: "MethodCall",
+    op,
+    name,
+    object,
+    args,
+    valueType: simpleType("void"),
+  };
 }
 
-export function binaryOp(op: BuiltinBinop, left: Expr, right: Expr): BinaryOp {
-  return { type: "BinaryOp", op, left, right };
+export function binaryOp(
+  op: BuiltinBinop,
+  left: Expr,
+  right: Expr,
+  name: string = ""
+): BinaryOp {
+  return {
+    type: "BinaryOp",
+    op,
+    left,
+    right,
+    valueType: simpleType("number"),
+    name,
+  };
 }
 
 export function mutatingBinaryOp(
@@ -112,13 +155,23 @@ export function mutatingBinaryOp(
   variable: Identifier,
   right: Expr
 ): MutatingBinaryOp {
-  return { type: "MutatingBinaryOp", op, variable, right };
+  return {
+    type: "MutatingBinaryOp",
+    op,
+    variable,
+    right,
+    valueType: simpleType("number"),
+  };
 }
 
-export function unaryOp(op: BuiltinUnary, arg: Expr): UnaryOp {
-  return { type: "UnaryOp", op, arg };
+export function unaryOp(
+  op: BuiltinUnary,
+  arg: Expr,
+  name: string = ""
+): UnaryOp {
+  return { type: "UnaryOp", op, arg, valueType: simpleType("void"), name };
 }
 
 export function print(value: Expr, newline: boolean = true): Print {
-  return { type: "Print", newline, value };
+  return { type: "Print", newline, value, valueType: simpleType("void") };
 }

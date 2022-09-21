@@ -9,7 +9,7 @@ export const oneIndexed = {
   enter(path: Path) {
     const node = path.node;
     if (
-      (node.type === "StringGet" ||
+      (node.type === "StringGetByte" ||
         node.type === "ListGet" ||
         node.type === "ArrayGet" ||
         node.type === "ListSet" ||

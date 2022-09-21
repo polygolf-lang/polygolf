@@ -27,17 +27,17 @@ function applyLanguageToVariant(
 
 function addDependencies(
   programPath: Path<IR.Program>,
-  dependecyMap: Map<string, string>
+  dependencyMap: Map<string, string>
 ) {
   programPath.visit({
     enter(path: Path) {
       const node = path.node;
       let op: string = node.type;
       if (node.type === "BinaryOp" || node.type === "UnaryOp") op = node.op;
-      if (node.type === "FunctionCall") op = node.func;
-      if (node.type === "MethodCall") op = node.method;
-      if (dependecyMap.has(op)) {
-        programPath.node.dependencies.add(dependecyMap.get(op)!);
+      if (node.type === "FunctionCall") op = node.name;
+      if (node.type === "MethodCall") op = node.name;
+      if (dependencyMap.has(op)) {
+        programPath.node.dependencies.add(dependencyMap.get(op)!);
       }
     },
   });
@@ -104,17 +104,24 @@ function nameIdents(identMap: Map<string, string>) {
   };
 }
 
-function mapOps(opMap: Map<string, (arg: IR.Expr, arg2?: IR.Expr) => IR.Expr>) {
+function mapOps(
+  opMap: Map<string, string | ((arg: IR.Expr, arg2?: IR.Expr) => IR.Expr)>
+) {
   return {
     enter(path: Path) {
       const node = path.node;
-      if (node.type === "BinaryOp" && opMap.has(node.op)) {
-        const f = opMap.get(node.op)!;
-        path.replaceWith(f(node.left, node.right));
-      }
-      if (node.type === "UnaryOp" && opMap.has(node.op)) {
-        const f = opMap.get(node.op)!;
-        path.replaceWith(f(node.arg));
+      if (node.type === "BinaryOp" || node.type === "UnaryOp") {
+        const f = opMap.get(node.op);
+        if (f === undefined) {
+          throw new Error(`Unsupported operator ${node.op}!`);
+        }
+        if (typeof f === "string") {
+          node.name = f;
+        } else if (node.type === "BinaryOp") {
+          path.replaceWith(f(node.left, node.right));
+        } else {
+          path.replaceWith(f(node.arg));
+        }
       }
     },
   };

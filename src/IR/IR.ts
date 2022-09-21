@@ -1,3 +1,5 @@
+import { getCollectionTypes } from "common/getType";
+import { Path, programToPath } from "common/traverse";
 import {
   Assignment,
   ManyToManyAssignment,
@@ -8,7 +10,7 @@ import {
   ArraySet,
   ArrayConstructor,
   ListConstructor,
-  StringGet,
+  StringGetByte,
   ListGet,
   ListPush,
   ListSet,
@@ -33,13 +35,8 @@ import {
   WhileLoop,
 } from "./loops";
 import { Argv, Identifier, IntegerLiteral, StringLiteral } from "./terminals";
-import {
-  Block,
-  IfStatement,
-  Program,
-  VarDeclaration,
-  Variants,
-} from "./toplevel";
+import { Block, IfStatement, VarDeclaration, Variants } from "./toplevel";
+import { simpleType, ValueType } from "./types";
 
 export * from "./assignments";
 export * from "./collections";
@@ -47,6 +44,11 @@ export * from "./exprs";
 export * from "./loops";
 export * from "./terminals";
 export * from "./toplevel";
+export * from "./types";
+
+export interface BaseExpr {
+  valueType?: ValueType;
+}
 
 export type Node = Program | Block | Statement;
 
@@ -75,7 +77,7 @@ export type Expr =
   | IntegerLiteral
   | ArrayConstructor
   | ListConstructor
-  | StringGet
+  | StringGetByte
   | TableGet
   | TableSet
   | ArrayGet
@@ -87,3 +89,55 @@ export type Expr =
   | ConditionalOp
   | ManyToManyAssignment
   | OneToManyAssignment;
+
+/**
+ * Program node. This should be the root node. Raw OK
+ */
+export interface Program {
+  type: "Program";
+  dependencies: Set<string>;
+  variables: Map<string, ValueType>;
+  block: Block;
+}
+
+export function program(block: Block): Program {
+  const result: Program = {
+    type: "Program",
+    block,
+    dependencies: new Set<string>(),
+    variables: new Map<string, ValueType>(),
+  };
+  const path = programToPath(result);
+  function setVar(name: string, type: ValueType) {
+    if (result.variables.has(name)) {
+      throw new Error(`Duplicate variable declaration: ${name}`!);
+    }
+    result.variables.set(name, type);
+  }
+  path.visit({
+    enter(path: Path) {
+      const node = path.node;
+      if (node.type === "ForRange") {
+        setVar(node.variable.name, simpleType("number"));
+      } else if (node.type === "ForEach") {
+        setVar(
+          node.variable.name,
+          getCollectionTypes(node.collection, result)[0]
+        );
+      } else if (node.type === "ForEachKey") {
+        setVar(node.variable.name, getCollectionTypes(node.table, result)[0]);
+      } else if (node.type === "ForEachPair") {
+        let types = getCollectionTypes(node.table, result);
+        if (types.length === 1) {
+          types = [simpleType("number"), types[0]];
+        }
+        setVar(node.keyVariable.name, types[0]);
+        setVar(node.valueVariable.name, types[1]);
+      } else if (node.type === "VarDeclaration") {
+        result.variables.set(node.variable.name, node.variableType);
+        path.replaceWithMultiple([]); // TODO does this work?
+      }
+    },
+  });
+  return result;
+}

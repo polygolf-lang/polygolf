@@ -1,4 +1,4 @@
-import { Expr, id, Identifier, Statement } from "./IR";
+import { BaseExpr, Expr, id, Identifier, Statement, ValueType } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
@@ -6,16 +6,6 @@ import { Expr, id, Identifier, Statement } from "./IR";
 export interface Variants {
   type: "Variants";
   variants: Block[];
-}
-
-/**
- * Program node. This should be the root node. Raw OK
- */
-export interface Program {
-  type: "Program";
-  dependencies: Set<string>;
-  varDeclarations: VarDeclaration[];
-  block: Block;
 }
 
 /**
@@ -38,31 +28,13 @@ export interface IfStatement {
   alternate: Block;
 }
 
-/** The type of the value of a node when evaluated */
-export type ValueType =
-  | "number"
-  | "string"
-  | "boolean"
-  | { type: "List"; member: ValueType }
-  | { type: "Table"; key: "number" | "string"; value: ValueType }
-  | { type: "Array"; member: ValueType; length: number }
-  | { type: "Set"; member: ValueType };
-
 /**
  * Variable declaration.
  */
-export interface VarDeclaration {
+export interface VarDeclaration extends BaseExpr {
   type: "VarDeclaration";
   variable: Identifier;
   variableType: ValueType;
-}
-
-export function program(
-  block: Block,
-  dependencies: Set<string> = new Set<string>(),
-  varDeclarations: VarDeclaration[] = []
-): Program {
-  return { type: "Program", block, dependencies, varDeclarations };
 }
 
 export function block(children: Statement[]): Block {

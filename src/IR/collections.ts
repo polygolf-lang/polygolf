@@ -1,21 +1,21 @@
-import { Expr, id, Identifier } from "./IR";
+import { BaseExpr, Expr, id, Identifier } from "./IR";
 
-export interface StringGet {
-  type: "StringGet";
+export interface StringGetByte extends BaseExpr {
+  type: "StringGetByte";
   unicode: boolean;
   string: Expr;
   index: Expr;
   oneIndexed: boolean;
 }
 
-export interface ArrayGet {
+export interface ArrayGet extends BaseExpr {
   type: "ArrayGet";
   array: Expr;
   index: Expr;
   oneIndexed: boolean;
 }
 
-export interface ArraySet {
+export interface ArraySet extends BaseExpr {
   type: "ArraySet";
   array: Identifier;
   index: Expr;
@@ -23,14 +23,14 @@ export interface ArraySet {
   oneIndexed: boolean;
 }
 
-export interface ListGet {
+export interface ListGet extends BaseExpr {
   type: "ListGet";
   list: Expr;
   index: Expr;
   oneIndexed: boolean;
 }
 
-export interface ListSet {
+export interface ListSet extends BaseExpr {
   type: "ListSet";
   list: Identifier;
   index: Expr;
@@ -38,7 +38,7 @@ export interface ListSet {
   oneIndexed: boolean;
 }
 
-export interface ListPush {
+export interface ListPush extends BaseExpr {
   type: "ListPush";
   list: Identifier;
   value: Expr;
@@ -48,7 +48,7 @@ export interface ListPush {
  * Array constructor. Raw OK
  *
  */
-export interface ArrayConstructor {
+export interface ArrayConstructor extends BaseExpr {
   type: "ArrayConstructor";
   exprs: Expr[];
 }
@@ -57,7 +57,7 @@ export interface ArrayConstructor {
  * List constructor. Raw OK
  *
  */
-export interface ListConstructor {
+export interface ListConstructor extends BaseExpr {
   type: "ListConstructor";
   exprs: Expr[];
 }
@@ -67,7 +67,7 @@ export interface ListConstructor {
  *
  * table[key]
  */
-export interface TableGet {
+export interface TableGet extends BaseExpr {
   type: "TableGet";
   table: Expr;
   key: Expr;
@@ -78,7 +78,7 @@ export interface TableGet {
  *
  * table[key] = value
  */
-export interface TableSet {
+export interface TableSet extends BaseExpr {
   type: "TableSet";
   table: Identifier;
   key: Expr;
@@ -86,11 +86,17 @@ export interface TableSet {
 }
 
 export function arrayConstructor(exprs: Expr[]): ArrayConstructor {
-  return { type: "ArrayConstructor", exprs };
+  return {
+    type: "ArrayConstructor",
+    exprs,
+  };
 }
 
 export function listConstructor(exprs: Expr[]): ListConstructor {
-  return { type: "ListConstructor", exprs };
+  return {
+    type: "ListConstructor",
+    exprs,
+  };
 }
 
 export function tableGet(table: Expr, key: Expr): TableGet {
@@ -110,39 +116,55 @@ export function tableSet(
   };
 }
 
-export function stringGet(
+export function stringGetByte(
   string: Expr,
   index: Expr,
   unicode: boolean = false,
   oneIndexed: boolean = false
-): StringGet {
-  return { type: "StringGet", string, index, unicode, oneIndexed };
+): StringGetByte {
+  return {
+    type: "StringGetByte",
+    string,
+    index,
+    unicode,
+    oneIndexed,
+  };
 }
 
 export function arrayGet(
   array: Expr,
   index: Expr,
-  zeroIndexed = false
+  oneIndexed = false
 ): ArrayGet {
-  return { type: "ArrayGet", array, index, oneIndexed: zeroIndexed };
+  return {
+    type: "ArrayGet",
+    array,
+    index,
+    oneIndexed,
+  };
 }
 
-export function listGet(list: Expr, index: Expr, zeroIndexed = false): ListGet {
-  return { type: "ListGet", list, index, oneIndexed: zeroIndexed };
+export function listGet(list: Expr, index: Expr, oneIndexed = false): ListGet {
+  return {
+    type: "ListGet",
+    list,
+    index,
+    oneIndexed,
+  };
 }
 
 export function listSet(
   list: Identifier | string,
   index: Expr,
   value: Expr,
-  zeroIndexed = false
+  oneIndexed = false
 ): ListSet {
   return {
     type: "ListSet",
     list: typeof list === "string" ? id(list) : list,
     index,
     value,
-    oneIndexed: zeroIndexed,
+    oneIndexed,
   };
 }
 
@@ -158,13 +180,13 @@ export function arraySet(
   array: Identifier | string,
   index: Expr,
   value: Expr,
-  zeroIndexed = false
+  oneIndexed = false
 ): ArraySet {
   return {
     type: "ArraySet",
     array: typeof array === "string" ? id(array) : array,
     index,
     value,
-    oneIndexed: zeroIndexed,
+    oneIndexed,
   };
 }

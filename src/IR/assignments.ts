@@ -1,4 +1,4 @@
-import { Expr, id, Identifier } from "./IR";
+import { BaseExpr, Expr, id, Identifier } from "./IR";
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK
@@ -6,7 +6,7 @@ import { Expr, id, Identifier } from "./IR";
  * Since many languages lack assignment expressions, assignments are
  * statement-level by default.
  */
-export interface Assignment {
+export interface Assignment extends BaseExpr {
   type: "Assignment";
   variable: Identifier;
   expr: Expr;
@@ -17,7 +17,7 @@ export interface Assignment {
  *
  * (a,b)=(b,a).
  */
-export interface ManyToManyAssignment {
+export interface ManyToManyAssignment extends BaseExpr {
   type: "ManyToManyAssignment";
   variables: Identifier[];
   exprs: Expr[];
@@ -28,7 +28,7 @@ export interface ManyToManyAssignment {
  *
  * a=b=c=1.
  */
-export interface OneToManyAssignment {
+export interface OneToManyAssignment extends BaseExpr {
   type: "OneToManyAssignment";
   variables: Identifier[];
   expr: Expr;
