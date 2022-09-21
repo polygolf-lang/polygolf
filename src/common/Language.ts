@@ -1,7 +1,9 @@
 import { IR } from "IR";
 import { Visitor } from "./traverse";
 
-type OpTransformOutput = string | ((arg: IR.Expr, arg2?: IR.Expr) => IR.Expr);
+export type OpTransformOutput =
+  | string
+  | ((arg: IR.Expr, arg2: IR.Expr) => IR.Expr);
 
 export interface Language {
   name: string;

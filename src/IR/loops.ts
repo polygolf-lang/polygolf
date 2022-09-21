@@ -89,7 +89,7 @@ export function forRange(
   high: Expr,
   increment: Expr,
   body: Block,
-  inclusive: boolean
+  inclusive: boolean = false
 ): ForRange {
   return {
     type: "ForRange",

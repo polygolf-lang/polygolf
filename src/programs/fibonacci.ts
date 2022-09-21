@@ -22,7 +22,7 @@ export default program(
     forRange(
       "i",
       int(0n),
-      int(30n),
+      int(31n),
       int(1n),
       block([
         print(id("a"), true),
@@ -39,8 +39,7 @@ export default program(
             assignment("a", binaryOp("sub", id("b"), id("a"))),
           ]),
         ]),
-      ]),
-      true
+      ])
     ),
   ])
 );

@@ -14,7 +14,7 @@ export default program(
     forRange(
       "y",
       int(450n),
-      int(600n),
+      int(601n),
       int(1n),
       block([
         ifStatement(
@@ -25,8 +25,7 @@ export default program(
           ),
           block([print(binaryOp("mul", int(4n), id("y")))])
         ),
-      ]),
-      true
+      ])
     ),
   ])
 );

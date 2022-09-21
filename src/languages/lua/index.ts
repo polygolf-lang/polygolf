@@ -11,9 +11,9 @@ const luaLanguage: Language = {
   plugins: [removeMutatingBinaryOp, forRangeToForRangeInclusive, oneIndexed],
   emitter: emitProgram,
   identGen: defaultIdentGen,
-  opMap: new Map<string, string | ((arg: IR.Expr, arg2?: IR.Expr) => IR.Expr)>([
-    ["str_length", (x) => methodCall("str_length", x, [], "len")],
-    ["int_to_str", (x) => functionCall("int_to_str", [x], "tostring")],
+  opMap: new Map<string, string | ((arg: IR.Expr, arg2: IR.Expr) => IR.Expr)>([
+    ["str_length", (x, _) => methodCall("str_length", x, [], "len")],
+    ["int_to_str", (x, _) => functionCall("int_to_str", [x], "tostring")],
     ["add", "+"],
     ["sub", "-"],
     ["mul", "*"],
@@ -28,8 +28,8 @@ const luaLanguage: Language = {
     ["eq", "=="],
     ["geq", ">="],
     ["gt", ">"],
-    ["and", " and "],
-    ["or", " or "],
+    ["and", "and"],
+    ["or", "or"],
     ["str_concat", ".."],
     ["neg", "-"],
     ["bitnot", "~"],

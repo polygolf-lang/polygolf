@@ -1,7 +1,7 @@
 import { IR } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { programToPath, Path } from "./traverse";
-import { Language, IdentifierGenerator } from "./Language";
+import { Language, IdentifierGenerator, OpTransformOutput } from "./Language";
 
 function applyLanguageToVariant(
   language: Language,
@@ -104,9 +104,7 @@ function nameIdents(identMap: Map<string, string>) {
   };
 }
 
-function mapOps(
-  opMap: Map<string, string | ((arg: IR.Expr, arg2?: IR.Expr) => IR.Expr)>
-) {
+function mapOps(opMap: Map<string, OpTransformOutput>) {
   return {
     enter(path: Path) {
       const node = path.node;
@@ -120,7 +118,7 @@ function mapOps(
         } else if (node.type === "BinaryOp") {
           path.replaceWith(f(node.left, node.right));
         } else {
-          path.replaceWith(f(node.arg));
+          path.replaceWith(f(node.arg, node.arg));
         }
       }
     },

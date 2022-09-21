@@ -122,6 +122,14 @@ function emitExprNoParens(expr: IR.Expr): string {
       return expr.newline
         ? `print(${emitExpr(expr.value, expr)})`
         : `io.write(${emitExpr(expr.value, expr)})`;
+    case "ListConstructor":
+      return "{" + expr.exprs.map(emitExprNoParens).join(",") + "}";
+    case "ListGet":
+      if (expr.oneIndexed)
+        return (
+          emitExprNoParens(expr.list) + "[" + emitExprNoParens(expr.index) + "]"
+        );
+      throw new Error("Lua only supports oneIndexed access.");
     default:
       throw new Error(`Unexpected node while emitting Lua: ${expr.type}. `);
   }

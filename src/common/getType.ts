@@ -116,6 +116,8 @@ function getOpCodeType(
     case "inlist":
     case "inmap":
     case "inset":
+    case "and":
+    case "or":
       return simpleType("boolean");
     case "str_concat":
     case "int_to_str":
