@@ -44,7 +44,7 @@ export function block(children: Statement[]): Block {
 export function ifStatement(
   condition: Expr,
   consequent: Block,
-  alternate: Block
+  alternate: Block = block([])
 ): IfStatement {
   return { type: "IfStatement", condition, consequent, alternate };
 }

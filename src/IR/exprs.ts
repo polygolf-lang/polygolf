@@ -34,6 +34,9 @@ export type BuiltinBinop =
   | "eq"
   | "geq"
   | "gt"
+  // (bool, bool) => bool
+  | "or"
+  | "and"
   // membership
   | "inarray"
   | "inlist"

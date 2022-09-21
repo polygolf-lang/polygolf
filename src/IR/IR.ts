@@ -1,5 +1,5 @@
-import { getCollectionTypes } from "common/getType";
-import { Path, programToPath } from "common/traverse";
+import { getCollectionTypes } from "../common/getType";
+import { Path, programToPath } from "../common/traverse";
 import {
   Assignment,
   ManyToManyAssignment,

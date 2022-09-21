@@ -33,8 +33,9 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string {
       return (
         `if ${emitExpr(stmt.condition, stmt)}then\n` +
         emitBlock(stmt.consequent) +
-        "\nelse\n" +
-        emitBlock(stmt.alternate) +
+        (stmt.alternate.children.length > 0
+          ? "\nelse\n" + emitBlock(stmt.alternate)
+          : "") +
         "\nend"
       );
     case "Variants":

@@ -28,6 +28,8 @@ const luaLanguage: Language = {
     ["eq", "=="],
     ["geq", ">="],
     ["gt", ">"],
+    ["and", " and "],
+    ["or", " or "],
     ["str_concat", ".."],
     ["neg", "-"],
     ["bitnot", "~"],
