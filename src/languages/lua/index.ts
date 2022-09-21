@@ -18,6 +18,7 @@ const luaLanguage: Language = {
   opMap: new Map<string, OpTransformOutput>([
     ["str_length", (x, _) => methodCall("str_length", x, [], "len")],
     ["int_to_str", (x, _) => functionCall("int_to_str", [x], "tostring")],
+    ["repeat", (x, y) => functionCall("repeat", [x, y], "string.rep")],
     ["add", "+"],
     ["sub", "-"],
     ["mul", "*"],

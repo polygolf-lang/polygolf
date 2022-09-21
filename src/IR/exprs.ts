@@ -43,6 +43,7 @@ export type BuiltinBinop =
   | "inset"
   // other
   | "str_concat"
+  | "repeat"
   | "not";
 
 export interface BinaryOp extends BaseExpr {
@@ -189,6 +190,7 @@ function getDefaultPrecedence(op: BuiltinBinop | BuiltinUnary): number {
       return 130;
     case "neg":
       return 120;
+    case "repeat":
     case "mul":
     case "div":
     case "mod":

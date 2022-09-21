@@ -1,4 +1,4 @@
-import { Expr, Block, Identifier, id } from "./IR";
+import { Expr, Block, Identifier, id, Statement, int, block } from "./IR";
 
 /**
  * A while loop. Raw OK
@@ -100,6 +100,24 @@ export function forRange(
     body,
     inclusive,
   };
+}
+
+export function forRangeCommon(
+  bounds: [string, Expr | number, Expr | number, (Expr | number)?, boolean?],
+  ...body: Statement[]
+): ForRange {
+  return forRange(
+    bounds[0],
+    typeof bounds[1] === "number" ? int(BigInt(bounds[1])) : bounds[1],
+    typeof bounds[2] === "number" ? int(BigInt(bounds[2])) : bounds[2],
+    bounds[3] === undefined
+      ? int(1n)
+      : typeof bounds[3] === "number"
+      ? int(BigInt(bounds[3]))
+      : bounds[3],
+    block(body),
+    bounds[4]
+  );
 }
 
 export function forEach(

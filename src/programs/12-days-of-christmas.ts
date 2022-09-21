@@ -1,7 +1,6 @@
 import {
   binaryOp,
   block,
-  forRange,
   id,
   int,
   program,
@@ -12,6 +11,7 @@ import {
   listType,
   listConstructor,
   listGet,
+  forRangeCommon,
 } from "../IR";
 
 export default program(
@@ -53,31 +53,23 @@ export default program(
         stringLiteral("A Partridge in a Pear Tree.\n"),
       ])
     ),
-    forRange(
-      "i",
-      int(0n),
-      int(12n),
-      int(1n),
-      block([
-        print(
+    forRangeCommon(
+      ["i", 0, 12],
+      print(
+        binaryOp(
+          "str_concat",
           binaryOp(
             "str_concat",
-            binaryOp(
-              "str_concat",
-              stringLiteral("On the "),
-              listGet(id("O"), id("i"))
-            ),
-            stringLiteral(" day of Christmas\nMy true love sent to me")
-          )
-        ),
-        forRange(
-          "j",
-          binaryOp("sub", int(11n), id("i")),
-          int(12n),
-          int(1n),
-          block([print(listGet(id("T"), id("j")))])
-        ),
-      ])
+            stringLiteral("On the "),
+            listGet(id("O"), id("i"))
+          ),
+          stringLiteral(" day of Christmas\nMy true love sent to me")
+        )
+      ),
+      forRangeCommon(
+        ["j", binaryOp("sub", int(11n), id("i")), 12],
+        print(listGet(id("T"), id("j")))
+      )
     ),
   ])
 );

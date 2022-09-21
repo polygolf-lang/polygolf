@@ -1,39 +1,34 @@
 import {
   binaryOp,
   block,
-  forRange,
   id,
   int,
   program,
   print,
   ifStatement,
+  forRangeCommon,
 } from "../IR";
 
 export default program(
   block([
-    forRange(
-      "i",
-      int(1n),
-      int(101n),
-      int(1n),
-      block([
-        ifStatement(
+    forRangeCommon(
+      ["i", 1, 101],
+      ifStatement(
+        binaryOp(
+          "lt",
           binaryOp(
-            "lt",
+            "mod",
+            id("i"),
             binaryOp(
-              "mod",
+              "sub",
               id("i"),
-              binaryOp(
-                "sub",
-                id("i"),
-                binaryOp("mul", binaryOp("div", id("i"), int(10n)), int(9n))
-              )
-            ),
-            int(1n)
+              binaryOp("mul", binaryOp("div", id("i"), int(10n)), int(9n))
+            )
           ),
-          block([print(id("i"), true)])
+          int(1n)
         ),
-      ])
+        block([print(id("i"), true)])
+      )
     ),
   ])
 );
