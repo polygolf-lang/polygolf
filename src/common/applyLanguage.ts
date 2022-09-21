@@ -115,6 +115,9 @@ function mapOps(opMap: Map<string, OpTransformOutput>) {
         }
         if (typeof f === "string") {
           node.name = f;
+        } else if (Array.isArray(f)) {
+          node.name = f[0];
+          node.precedence = f[1];
         } else if (node.type === "BinaryOp") {
           path.replaceWith(f(node.left, node.right));
         } else {

@@ -1,5 +1,9 @@
-import { functionCall, IR, methodCall } from "../../IR";
-import { Language, defaultIdentGen } from "../../common/Language";
+import { functionCall, methodCall } from "../../IR";
+import {
+  Language,
+  defaultIdentGen,
+  OpTransformOutput,
+} from "../../common/Language";
 import { removeMutatingBinaryOp } from "../../plugins/mutatingBinaryOps";
 import { oneIndexed } from "../../plugins/oneIndexed";
 import { forRangeToForRangeInclusive } from "../../plugins/loops";
@@ -11,7 +15,7 @@ const luaLanguage: Language = {
   plugins: [removeMutatingBinaryOp, forRangeToForRangeInclusive, oneIndexed],
   emitter: emitProgram,
   identGen: defaultIdentGen,
-  opMap: new Map<string, string | ((arg: IR.Expr, arg2: IR.Expr) => IR.Expr)>([
+  opMap: new Map<string, OpTransformOutput>([
     ["str_length", (x, _) => methodCall("str_length", x, [], "len")],
     ["int_to_str", (x, _) => functionCall("int_to_str", [x], "tostring")],
     ["add", "+"],
@@ -30,6 +34,7 @@ const luaLanguage: Language = {
     ["gt", ">"],
     ["and", "and"],
     ["or", "or"],
+    ["not", ["not", 120]],
     ["str_concat", ".."],
     ["neg", "-"],
     ["bitnot", "~"],

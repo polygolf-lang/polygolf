@@ -30,6 +30,7 @@ export type BuiltinBinop =
   | "lt"
   | "leq"
   | "eq"
+  | "neq"
   | "geq"
   | "gt"
   // (bool, bool) => bool
@@ -41,7 +42,8 @@ export type BuiltinBinop =
   | "inmap"
   | "inset"
   // other
-  | "str_concat";
+  | "str_concat"
+  | "not";
 
 export interface BinaryOp extends BaseExpr {
   type: "BinaryOp";
@@ -49,6 +51,8 @@ export interface BinaryOp extends BaseExpr {
   name: string;
   left: Expr;
   right: Expr;
+  precedence: number;
+  rightAssociative: boolean;
 }
 
 /**
@@ -79,6 +83,7 @@ export interface UnaryOp extends BaseExpr {
   name: string;
   op: BuiltinUnary;
   arg: Expr;
+  precedence: number;
 }
 
 /**
@@ -132,7 +137,8 @@ export function binaryOp(
   op: BuiltinBinop,
   left: Expr,
   right: Expr,
-  name: string = ""
+  name: string = "",
+  precedence?: number
 ): BinaryOp {
   return {
     type: "BinaryOp",
@@ -140,6 +146,8 @@ export function binaryOp(
     left,
     right,
     name,
+    precedence: precedence ?? getDefaultPrecedence(op),
+    rightAssociative: op === "exp" || op === "str_concat",
   };
 }
 
@@ -159,11 +167,61 @@ export function mutatingBinaryOp(
 export function unaryOp(
   op: BuiltinUnary,
   arg: Expr,
-  name: string = ""
+  name: string = "",
+  precedence?: number
 ): UnaryOp {
-  return { type: "UnaryOp", op, arg, name };
+  return {
+    type: "UnaryOp",
+    op,
+    arg,
+    name,
+    precedence: precedence ?? getDefaultPrecedence(op),
+  };
 }
 
 export function print(value: Expr, newline: boolean = true): Print {
   return { type: "Print", newline, value };
+}
+
+function getDefaultPrecedence(op: BuiltinBinop | BuiltinUnary): number {
+  switch (op) {
+    case "exp":
+      return 130;
+    case "neg":
+      return 120;
+    case "mul":
+    case "div":
+    case "mod":
+      return 110;
+    case "add":
+    case "sub":
+      return 100;
+    case "bitand":
+      return 80;
+    case "bitxor":
+      return 70;
+    case "bitor":
+      return 60;
+    case "str_concat":
+      return 50;
+    case "lt":
+    case "gt":
+    case "leq":
+    case "geq":
+    case "eq":
+    case "neq":
+    case "inarray":
+    case "inset":
+    case "inlist":
+    case "inmap":
+      return 40;
+    case "not":
+      return 30;
+    case "and":
+      return 20;
+    case "or":
+      return 10;
+    default:
+      return 0;
+  }
 }
