@@ -9,14 +9,14 @@ import {
   print,
   variants,
   varDeclaration,
-  simpleType,
   forRangeCommon,
+  integerType,
 } from "../IR";
 
 export default program(
   block([
-    varDeclaration("a", simpleType("number")),
-    varDeclaration("b", simpleType("number")),
+    varDeclaration("a", integerType(0, 1346269)),
+    varDeclaration("b", integerType(0, 1346269)),
     assignment("a", int(0n)),
     assignment("b", int(1n)),
     forRangeCommon(
@@ -24,7 +24,7 @@ export default program(
       print(id("a"), true),
       variants([
         block([
-          varDeclaration("t", simpleType("number")),
+          varDeclaration("t", integerType(0, 1346269)),
           assignment("t", binaryOp("add", id("a"), id("b"))),
           assignment("b", id("a")),
           assignment("a", id("t")),

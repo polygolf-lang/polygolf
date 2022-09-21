@@ -19,7 +19,7 @@ export interface Identifier extends BaseExpr {
  */
 export interface IntegerLiteral extends BaseExpr {
   type: "IntegerLiteral";
-  value: BigInt;
+  value: bigint;
 }
 
 /**
@@ -36,7 +36,7 @@ export function id(name: string): Identifier {
   return { type: "Identifier", name };
 }
 
-export function int(value: BigInt): IntegerLiteral {
+export function int(value: bigint): IntegerLiteral {
   return { type: "IntegerLiteral", value };
 }
 

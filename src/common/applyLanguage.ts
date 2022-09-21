@@ -1,7 +1,8 @@
-import { IR } from "../IR";
+import { Expr, IR, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { programToPath, Path } from "./traverse";
 import { Language, IdentifierGenerator, OpTransformOutput } from "./Language";
+import { getType } from "./getType";
 
 function applyLanguageToVariant(
   language: Language,
@@ -19,7 +20,7 @@ function applyLanguageToVariant(
   }
   const identMap = getIdentMap(path, language.identGen);
   if (language.opMap !== undefined) {
-    path.visit(mapOps(language.opMap));
+    path.visit(mapOps(language.opMap, program));
   }
   path.visit(nameIdents(identMap));
   return language.emitter(program);
@@ -104,7 +105,7 @@ function nameIdents(identMap: Map<string, string>) {
   };
 }
 
-function mapOps(opMap: Map<string, OpTransformOutput>) {
+function mapOps(opMap: Map<string, OpTransformOutput>, program: Program) {
   return {
     enter(path: Path) {
       const node = path.node;
@@ -118,10 +119,16 @@ function mapOps(opMap: Map<string, OpTransformOutput>) {
         } else if (Array.isArray(f)) {
           node.name = f[0];
           node.precedence = f[1];
-        } else if (node.type === "BinaryOp") {
-          path.replaceWith(f(node.left, node.right));
         } else {
-          path.replaceWith(f(node.arg, node.arg));
+          let replacement: Expr;
+          if (node.type === "BinaryOp") {
+            replacement = f(node.left, node.right);
+          } else {
+            replacement = f(node.arg, node.arg);
+          }
+          if ("op" in replacement) replacement.op = node.op;
+          replacement.valueType = getType(node, program);
+          path.replaceWith(replacement);
         }
       }
     },

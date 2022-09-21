@@ -65,13 +65,13 @@ test("ForRange -> WhileLoop", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToWhile,
-    "{ i:number; i=0; while (i lt 10) { printnl(x); i=(i add 1); }; }"
+    "{ i:integer; i=0; while (i lt 10) { printnl(x); i=(i add 1); }; }"
   ));
 test("ForRange -> ForCLike", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToForCLike,
-    "{ for({ i:number; i=0; };(i lt 10);{ (i add 1); }){ printnl(x); }; }"
+    "{ for({ i:integer; i=0; };(i lt 10);{ (i add 1); }){ printnl(x); }; }"
   ));
 
 test("ForRange -> ForEachPair", () =>

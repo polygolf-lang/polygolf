@@ -1,3 +1,4 @@
+import { getType } from "common/getType";
 import { Path } from "../common/traverse";
 import {
   forRange,
@@ -12,7 +13,7 @@ import {
   forEach,
   id,
   IR,
-  simpleType,
+  integerType,
 } from "../IR";
 
 export const forRangeToForRangeInclusive = {
@@ -37,6 +38,11 @@ export const forRangeToWhile = {
   enter(path: Path) {
     const node = path.node;
     if (node.type === "ForRange") {
+      const low = getType(node.low, path.root.node);
+      const high = getType(node.high, path.root.node);
+      if (low.type !== "integer" || high.type !== "integer") {
+        throw new Error(`Unexpected type (${low.type},${high.type})`);
+      }
       node.body.children.push(
         assignment(
           node.variable,
@@ -44,7 +50,15 @@ export const forRangeToWhile = {
         )
       );
       path.replaceWithMultiple([
-        varDeclaration(node.variable, simpleType("number")),
+        varDeclaration(
+          node.variable,
+          integerType(
+            low.low,
+            high.high === undefined
+              ? undefined
+              : high.high - (node.inclusive ? 0n : -1n)
+          )
+        ),
         assignment(node.variable, node.low),
         whileLoop(
           binaryOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
@@ -59,10 +73,23 @@ export const forRangeToForCLike = {
   enter(path: Path) {
     const node = path.node;
     if (node.type === "ForRange") {
+      const low = getType(node.low, path.root.node);
+      const high = getType(node.high, path.root.node);
+      if (low.type !== "integer" || high.type !== "integer") {
+        throw new Error(`Unexpected type (${low.type},${high.type})`);
+      }
       path.replaceWith(
         forCLike(
           block([
-            varDeclaration(node.variable, simpleType("number")),
+            varDeclaration(
+              node.variable,
+              integerType(
+                low.low,
+                high.high === undefined
+                  ? undefined
+                  : high.high - (node.inclusive ? 0n : -1n)
+              )
+            ),
             assignment(node.variable, node.low),
           ]),
           block([binaryOp("add", node.variable, node.increment ?? int(1n))]),
