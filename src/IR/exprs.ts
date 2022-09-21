@@ -1,20 +1,18 @@
-import { Expr, Identifier, ValueType, simpleType } from "./IR";
+import { Expr, Identifier, BaseExpr } from "./IR";
 
-export interface FunctionCall {
+export interface FunctionCall extends BaseExpr {
   type: "FunctionCall";
   name: string;
   op: OpCode;
   args: Expr[];
-  valueType: ValueType;
 }
 
-export interface MethodCall {
+export interface MethodCall extends BaseExpr {
   type: "MethodCall";
   name: string;
   op: OpCode;
   object: Expr;
   args: Expr[];
-  valueType: ValueType;
 }
 
 export type BuiltinBinop =
@@ -45,13 +43,12 @@ export type BuiltinBinop =
   // other
   | "str_concat";
 
-export interface BinaryOp {
+export interface BinaryOp extends BaseExpr {
   type: "BinaryOp";
   op: BuiltinBinop;
   name: string;
   left: Expr;
   right: Expr;
-  valueType: ValueType;
 }
 
 /**
@@ -59,12 +56,11 @@ export interface BinaryOp {
  *
  * a += 5
  */
-export interface MutatingBinaryOp {
+export interface MutatingBinaryOp extends BaseExpr {
   type: "MutatingBinaryOp";
   op: BuiltinBinop;
   variable: Identifier;
   right: Expr;
-  valueType: ValueType;
 }
 
 export type BuiltinUnary =
@@ -78,12 +74,11 @@ export type BuiltinUnary =
 
 export type OpCode = BuiltinBinop | BuiltinUnary;
 
-export interface UnaryOp {
+export interface UnaryOp extends BaseExpr {
   type: "UnaryOp";
   name: string;
   op: BuiltinUnary;
   arg: Expr;
-  valueType: ValueType;
 }
 
 /**
@@ -92,19 +87,17 @@ export interface UnaryOp {
  * Python: [alternate,consequent][condition].
  * C: condition?consequent:alternate.
  */
-export interface ConditionalOp {
+export interface ConditionalOp extends BaseExpr {
   type: "ConditionalOp";
   condition: Expr;
   consequent: Expr;
   alternate: Expr;
-  valueType: ValueType;
 }
 
-export interface Print {
+export interface Print extends BaseExpr {
   type: "Print";
   newline: boolean;
   value: Expr;
-  valueType: ValueType;
 }
 
 export function functionCall(
@@ -117,7 +110,6 @@ export function functionCall(
     name,
     op,
     args,
-    valueType: simpleType("void"),
   };
 }
 
@@ -133,7 +125,6 @@ export function methodCall(
     name,
     object,
     args,
-    valueType: simpleType("void"),
   };
 }
 
@@ -148,7 +139,6 @@ export function binaryOp(
     op,
     left,
     right,
-    valueType: simpleType("number"),
     name,
   };
 }
@@ -163,7 +153,6 @@ export function mutatingBinaryOp(
     op,
     variable,
     right,
-    valueType: simpleType("number"),
   };
 }
 
@@ -172,9 +161,9 @@ export function unaryOp(
   arg: Expr,
   name: string = ""
 ): UnaryOp {
-  return { type: "UnaryOp", op, arg, valueType: simpleType("void"), name };
+  return { type: "UnaryOp", op, arg, name };
 }
 
 export function print(value: Expr, newline: boolean = true): Print {
-  return { type: "Print", newline, value, valueType: simpleType("void") };
+  return { type: "Print", newline, value };
 }
