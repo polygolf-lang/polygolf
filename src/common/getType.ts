@@ -10,7 +10,7 @@ import {
   FunctionCall,
   MethodCall,
   integerType,
-  integerTypeFromMultipleBounds,
+  integerTypeIncludingAll,
 } from "../IR";
 
 export function getType(expr: Expr, program: Program): ValueType {
@@ -198,7 +198,7 @@ function getIntegerOpCodeType(
         right.high === undefined
       )
         return integerType();
-      return integerTypeFromMultipleBounds([
+      return integerTypeIncludingAll([
         left.low * right.low,
         left.low * right.high,
         left.high * right.low,

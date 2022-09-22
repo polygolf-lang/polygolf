@@ -69,8 +69,8 @@ export function integerType(
   };
 }
 
-export function integerTypeFromMultipleBounds(bounds: bigint[]) {
-  return integerType(...bigIntMinAndMax(bounds));
+export function integerTypeIncludingAll(values: bigint[]) {
+  return integerType(...bigIntMinAndMax(values));
 }
 
 function bigIntMinAndMax(args: bigint[]) {
