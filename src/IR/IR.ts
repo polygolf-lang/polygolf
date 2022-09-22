@@ -1,4 +1,4 @@
-import { getCollectionTypes } from "../common/getType";
+import { getCollectionTypes, getType } from "../common/getType";
 import { Path, programToPath } from "../common/traverse";
 import {
   Assignment,
@@ -36,7 +36,7 @@ import {
 } from "./loops";
 import { Argv, Identifier, IntegerLiteral, StringLiteral } from "./terminals";
 import { Block, IfStatement, VarDeclaration, Variants } from "./toplevel";
-import { simpleType, ValueType } from "./types";
+import { integerType, ValueType } from "./types";
 
 export * from "./assignments";
 export * from "./collections";
@@ -118,7 +118,20 @@ export function program(block: Block): Program {
     enter(path: Path) {
       const node = path.node;
       if (node.type === "ForRange") {
-        setVar(node.variable.name, simpleType("number"));
+        const low = getType(node.low, path.root.node);
+        const high = getType(node.high, path.root.node);
+        if (low.type !== "integer" || high.type !== "integer") {
+          throw new Error(`Unexpected type (${low.type},${high.type})`);
+        }
+        setVar(
+          node.variable.name,
+          integerType(
+            low.low,
+            high.high === undefined
+              ? undefined
+              : high.high - (node.inclusive ? 0n : -1n)
+          )
+        );
       } else if (node.type === "ForEach") {
         setVar(
           node.variable.name,
@@ -129,7 +142,7 @@ export function program(block: Block): Program {
       } else if (node.type === "ForEachPair") {
         let types = getCollectionTypes(node.table, result);
         if (types.length === 1) {
-          types = [simpleType("number"), types[0]];
+          types = [integerType(), types[0]];
         }
         setVar(node.keyVariable.name, types[0]);
         setVar(node.valueVariable.name, types[1]);

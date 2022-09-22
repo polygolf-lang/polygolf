@@ -9,9 +9,11 @@ import {
   UnaryOp,
   FunctionCall,
   MethodCall,
+  integerType,
+  integerTypeIncludingAll,
 } from "../IR";
 
-function getType(expr: Expr, program: Program): ValueType {
+export function getType(expr: Expr, program: Program): ValueType {
   if (expr.valueType === undefined) {
     expr.valueType = calcType(expr, program);
   }
@@ -41,7 +43,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "StringLiteral":
       return simpleType("string");
     case "IntegerLiteral":
-      return simpleType("number");
+      return integerType(expr.value, expr.value);
     case "ArrayConstructor":
       return arrayType(getType(expr.exprs[0], program), expr.exprs.length);
     case "ListConstructor":
@@ -97,6 +99,7 @@ function getOpCodeType(
     case "sub":
     case "mul":
     case "div":
+    case "mod":
     case "exp":
     case "bitand":
     case "bitor":
@@ -106,7 +109,7 @@ function getOpCodeType(
     case "str_to_int":
     case "cardinality":
     case "str_length":
-      return simpleType("number");
+      return getIntegerOpCodeType(expr, program);
     case "lt":
     case "leq":
     case "eq":
@@ -121,11 +124,100 @@ function getOpCodeType(
       return simpleType("boolean");
     case "str_concat":
     case "int_to_str":
+    case "repeat":
       return simpleType("string");
     case "sorted":
       return getType(expr, program);
   }
-  throw new Error("Unknown opcode.");
+  throw new Error(`Unknown opcode. ${expr.op}`);
+}
+
+function getIntegerOpCodeType(
+  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall,
+  program: Program
+): ValueType {
+  if (expr.op === "str_to_int") return integerType();
+  if (expr.op === "str_length" || expr.op === "cardinality")
+    return integerType(0, 1 << 31);
+  let left: ValueType | undefined;
+  let right: ValueType | undefined;
+  if (expr.type === "BinaryOp") {
+    left = getType(expr.left, program);
+    right = getType(expr.right, program);
+  } else if (expr.type === "UnaryOp") {
+    right = getType(expr.arg, program);
+  } else if (expr.type === "FunctionCall") {
+    left = getType(expr.args[0], program);
+    right = getType(expr.args[1], program);
+  } else if (expr.type === "MethodCall") {
+    left = getType(expr.object, program);
+    right = getType(expr.args[0], program);
+  }
+  if (right?.type !== "integer") {
+    throw new Error("Unexpected type.");
+  }
+  switch (expr.op) {
+    case "bitnot":
+      return integerType(
+        right.high === undefined ? undefined : -right.high - 1n,
+        right.low === undefined ? undefined : -right.low + 1n
+      );
+    case "neg":
+      return integerType(
+        right.high === undefined ? undefined : -right.high,
+        right.low === undefined ? undefined : -right.low
+      );
+  }
+  if (left?.type !== "integer") {
+    throw new Error("Unexpected type.");
+  }
+  switch (expr.op) {
+    case "add":
+      return integerType(
+        left.low === undefined || right.low === undefined
+          ? undefined
+          : left.low + right.low,
+        left.high === undefined || right.high === undefined
+          ? undefined
+          : left.high + right.high
+      );
+    case "sub":
+      return integerType(
+        left.low === undefined || right.high === undefined
+          ? undefined
+          : left.low - right.high,
+        left.high === undefined || right.low === undefined
+          ? undefined
+          : left.high - right.low
+      );
+    case "mul":
+      if (
+        left.low === undefined ||
+        left.high === undefined ||
+        right.low === undefined ||
+        right.high === undefined
+      )
+        return integerType();
+      return integerTypeIncludingAll([
+        left.low * right.low,
+        left.low * right.high,
+        left.high * right.low,
+        left.high * right.high,
+      ]);
+    case "div":
+      return integerType();
+    case "mod":
+      return integerType();
+    case "exp":
+      return integerType();
+    case "bitand":
+      return integerType();
+    case "bitor":
+      return integerType();
+    case "bitxor":
+      return integerType();
+  }
+  throw new Error(`Unknown opcode. ${expr.op}`);
 }
 
 export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
@@ -136,7 +228,7 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
     case "Set":
       return [exprType.member];
     case "Table":
-      return [simpleType(exprType.key), exprType.value];
+      return [exprType.key, exprType.value];
   }
   throw new Error("Node is not a collection.");
 }

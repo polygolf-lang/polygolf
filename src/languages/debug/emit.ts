@@ -96,7 +96,7 @@ function emitType(t: ValueType): string {
     case "Set":
       return `Set(${emitType(t.member)})`;
     case "Table":
-      return `Table(${t.key}, ${emitType(t.value)})`;
+      return `Table(${emitType(t.key)}, ${emitType(t.value)})`;
     default:
       return t.type;
   }
