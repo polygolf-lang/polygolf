@@ -1,5 +1,5 @@
 /** The type of the value of a node when evaluated */
-interface IntegerType {
+export interface IntegerType {
   type: "integer";
   low?: bigint;
   high?: bigint;
@@ -61,7 +61,7 @@ export function arrayType(
 export function integerType(
   low?: bigint | number,
   high?: bigint | number
-): ValueType {
+): IntegerType {
   return {
     type: "integer",
     low: typeof low === "number" ? BigInt(low) : low,
@@ -69,7 +69,7 @@ export function integerType(
   };
 }
 
-export function integerTypeIncludingAll(values: bigint[]) {
+export function integerTypeIncludingAll(values: bigint[]): IntegerType {
   return integerType(...bigIntMinAndMax(values));
 }
 

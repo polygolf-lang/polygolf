@@ -11,6 +11,7 @@ import {
   MethodCall,
   integerType,
   integerTypeIncludingAll,
+  IntegerType,
 } from "../IR";
 
 export function getType(expr: Expr, program: Program): ValueType {
@@ -100,6 +101,7 @@ function getOpCodeType(
     case "mul":
     case "div":
     case "mod":
+    case "rem":
     case "exp":
     case "bitand":
     case "bitor":
@@ -191,25 +193,19 @@ function getIntegerOpCodeType(
           : left.high - right.low
       );
     case "mul":
-      if (
-        left.low === undefined ||
-        left.high === undefined ||
-        right.low === undefined ||
-        right.high === undefined
-      )
-        return integerType();
-      return integerTypeIncludingAll([
-        left.low * right.low,
-        left.low * right.high,
-        left.high * right.low,
-        left.high * right.high,
-      ]);
+      return getIntegerTypeUsing(left, right, (a, b) => a * b);
     case "div":
-      return integerType();
+      return getIntegerTypeUsing(left, right, floorDiv);
     case "mod":
-      return integerType();
+      return getIntegerTypeMod(left, right);
+    case "rem":
+      return getIntegerTypeRem(left, right);
     case "exp":
-      return integerType();
+      return getIntegerTypeUsing(
+        left,
+        (right.low ?? 1n) < 0n ? integerType(0n, right.high) : right,
+        (a, b) => a ** b
+      );
     case "bitand":
       return integerType();
     case "bitor":
@@ -231,4 +227,58 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
       return [exprType.key, exprType.value];
   }
   throw new Error("Node is not a collection.");
+}
+
+function floorDiv(a: bigint, b: bigint): bigint {
+  const res = a / b;
+  return res < 0n ? res - 1n : res;
+}
+
+function getIntegerTypeUsing(
+  left: IntegerType,
+  right: IntegerType,
+  op: (a: bigint, b: bigint) => bigint
+): IntegerType {
+  if (
+    left.low === undefined ||
+    left.high === undefined ||
+    right.low === undefined ||
+    right.high === undefined
+  )
+    return integerType();
+  return integerTypeIncludingAll([
+    op(left.low, right.low),
+    op(left.low, right.high),
+    op(left.high, right.low),
+    op(left.high, right.high),
+  ]);
+}
+
+function getIntegerTypeMod(left: IntegerType, right: IntegerType): IntegerType {
+  if (right.low === undefined || right.high === undefined) {
+    if (left.low === undefined || left.high === undefined) {
+      return integerType();
+    }
+    const m = left.high > -left.low ? left.high : -left.low;
+    return integerType(-m, m);
+  }
+  if (
+    left.low === undefined ||
+    left.high === undefined ||
+    left.low <= 0n ||
+    left.high >= right.high
+  ) {
+    const values = [0n];
+    if (right.low < 0n) values.push(right.low + 1n);
+    if (right.high > 0n) values.push(right.high - 1n);
+  }
+  return left;
+}
+
+function getIntegerTypeRem(left: IntegerType, right: IntegerType): IntegerType {
+  if (right.low === undefined || right.high === undefined) {
+    return integerType();
+  }
+  const m = right.high > -right.low ? right.high : -right.low;
+  return integerType(-m, m);
 }

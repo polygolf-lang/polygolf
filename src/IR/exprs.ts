@@ -23,6 +23,7 @@ export type BuiltinBinop =
   | "div"
   | "exp"
   | "mod"
+  | "rem"
   | "bitand"
   | "bitor"
   | "bitxor"
