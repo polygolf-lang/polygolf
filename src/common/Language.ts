@@ -55,10 +55,21 @@ export function defaultDetokenizer(
   whitespace: WhitespaceInsertLogic = defaultWhitespaceInsertLogic
 ): Detokenizer {
   return function (tokens: string[]): string {
+    let indentLevel = 0;
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {
-      if (whitespace(tokens[i - 1], tokens[i])) result += " ";
-      result += tokens[i];
+      if (tokens[i] === "$INDENT$") indentLevel++;
+      else if (tokens[i] === "$DEDENT$") indentLevel--;
+      else {
+        if (
+          tokens[i - 1] !== "$INDENT$" &&
+          tokens[i - 1] !== "$DEDENT$" &&
+          whitespace(tokens[i - 1], tokens[i])
+        )
+          result += " ";
+        result +=
+          tokens[i] + (tokens[i] === "\n" ? " ".repeat(indentLevel) : "");
+      }
     }
     return result;
   };
