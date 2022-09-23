@@ -1,7 +1,13 @@
 import { Expr, IR, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { programToPath, Path } from "./traverse";
-import { Language, IdentifierGenerator, OpTransformOutput } from "./Language";
+import {
+  Language,
+  IdentifierGenerator,
+  OpTransformOutput,
+  defaultDetokenizer,
+  defaultIdentGen,
+} from "./Language";
 import { getType } from "./getType";
 
 function applyLanguageToVariant(
@@ -18,12 +24,14 @@ function applyLanguageToVariant(
   if (language.dependencyMap !== undefined) {
     addDependencies(path, language.dependencyMap);
   }
-  const identMap = getIdentMap(path, language.identGen);
+  const identMap = getIdentMap(path, language.identGen ?? defaultIdentGen);
   if (language.opMap !== undefined) {
     path.visit(mapOps(language.opMap, program));
   }
   path.visit(nameIdents(identMap));
-  return language.emitter(program);
+  return (language.detokenizer ?? defaultDetokenizer())(
+    language.emitter(program)
+  );
 }
 
 function addDependencies(
