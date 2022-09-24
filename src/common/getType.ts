@@ -86,6 +86,8 @@ export function calcType(expr: Expr, program: Program): ValueType {
       return getType(expr.consequent, program);
     case "ManyToManyAssignment":
       return simpleType("void");
+    case "ImportStatement":
+      return simpleType("void");
     case "OneToManyAssignment":
       return getType(expr.expr, program);
   }
