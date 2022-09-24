@@ -19,8 +19,8 @@ function hasBlockRequiringChild(
   for (const childPath of path.getChildPaths()) {
     const node = childPath.node;
     if (
-      (nodeTypes.includes("blocks") &&
-        ("consequent" in node || "children" in node)) ||
+      (nodeTypes.includes("Block") &&
+        ("consequent" in node || "children" in node || "body" in node)) ||
       nodeTypes.includes(node.type)
     ) {
       return true;

@@ -1,6 +1,6 @@
 import { getType } from "../common/getType";
 import { Path, Visitor } from "../common/traverse";
-import { binaryOp, IR } from "../IR";
+import { binaryOp } from "../IR";
 
 export const modToRem: Visitor = {
   exit(path: Path) {
@@ -9,12 +9,16 @@ export const modToRem: Visitor = {
     if (node.type === "BinaryOp" && node.op === "mod") {
       const rightType = getType(node.right, program);
       if (rightType.type !== "integer")
-        throw new Error(`Unexpected type ${rightType}.`);
+        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (rightType.low !== undefined && rightType.low >= 0n) {
         node.op = "rem";
       } else {
         path.replaceWith(
-          binaryOp("rem", binaryOp("add", binaryOp("rem", node.left, node.right), node.right), node.right)
+          binaryOp(
+            "rem",
+            binaryOp("add", binaryOp("rem", node.left, node.right), node.right),
+            node.right
+          )
         );
       }
     }
@@ -28,7 +32,7 @@ export const divToTruncdiv: Visitor = {
     if (node.type === "BinaryOp" && node.op === "div") {
       const rightType = getType(node.right, program);
       if (rightType.type !== "integer")
-        throw new Error(`Unexpected type ${rightType}.`);
+        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (rightType.low !== undefined && rightType.low >= 0n) {
         node.op = "truncdiv";
       } else {

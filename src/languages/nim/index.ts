@@ -6,6 +6,7 @@ import { requireBlockWhen } from "../../plugins/blocks";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { mapOps } from "../../plugins/ops";
 import { addDependencies } from "../../plugins/dependecies";
+import { addImports } from "./plugins";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -44,6 +45,7 @@ const nimLanguage: Language = {
         ["repeat", "strutils"],
       ])
     ),
+    addImports,
   ],
 };
 

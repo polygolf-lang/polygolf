@@ -159,14 +159,14 @@ export function mutatingBinaryOp(
   op: BuiltinBinop,
   variable: Identifier,
   right: Expr,
-  name: string = "",
+  name: string = ""
 ): MutatingBinaryOp {
   return {
     type: "MutatingBinaryOp",
     op,
     variable,
     right,
-    name
+    name,
   };
 }
 

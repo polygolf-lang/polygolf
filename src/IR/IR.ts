@@ -35,7 +35,13 @@ import {
   WhileLoop,
 } from "./loops";
 import { Argv, Identifier, IntegerLiteral, StringLiteral } from "./terminals";
-import { Block, IfStatement, VarDeclaration, Variants } from "./toplevel";
+import {
+  Block,
+  IfStatement,
+  ImportStatement,
+  VarDeclaration,
+  Variants,
+} from "./toplevel";
 import { integerType, ValueType } from "./types";
 
 export * from "./assignments";
@@ -61,7 +67,8 @@ export type Statement =
   | ForEachPair
   | ForCLike
   | IfStatement
-  | Variants;
+  | Variants
+  | ImportStatement;
 
 export type Expr =
   | Argv
@@ -88,7 +95,8 @@ export type Expr =
   | MutatingBinaryOp
   | ConditionalOp
   | ManyToManyAssignment
-  | OneToManyAssignment;
+  | OneToManyAssignment
+  | ImportStatement;
 
 /**
  * Program node. This should be the root node. Raw OK

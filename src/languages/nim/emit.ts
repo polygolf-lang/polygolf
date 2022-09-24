@@ -1,15 +1,27 @@
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {
-  return emitBlock(program.block);
+  return emitBlock(program.block, true);
 }
 
-function emitBlock(block: IR.Block): string[] {
-  if (block.requiresBlock){
-    return ["$INDENT$", "\n",...joinGroups(
-      block.children.map((stmt) => emitStatement(stmt, block)),
-      "\n"
-    ), "$DEDENT$", "\n"]
+function emitBlock(block: IR.Block, root: boolean = false): string[] {
+  if (block.requiresBlock) {
+    if (root) {
+      return joinGroups(
+        block.children.map((stmt) => emitStatement(stmt, block)),
+        "\n"
+      );
+    }
+    return [
+      "$INDENT$",
+      "\n",
+      ...joinGroups(
+        block.children.map((stmt) => emitStatement(stmt, block)),
+        "\n"
+      ),
+      "$DEDENT$",
+      "\n",
+    ];
   }
   return joinGroups(
     block.children.map((stmt) => emitStatement(stmt, block)),
@@ -19,12 +31,20 @@ function emitBlock(block: IR.Block): string[] {
 
 function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
   switch (stmt.type) {
+    case "ImportStatement":
+      return [
+        stmt.name,
+        ...joinGroups(
+          stmt.modules.map((x) => [x]),
+          ","
+        ),
+      ];
     case "WhileLoop":
       return [
         `while`,
         ...emitExpr(stmt.condition, stmt),
         ":",
-        ...emitBlock(stmt.body)
+        ...emitBlock(stmt.body),
       ];
     case "ForRange": {
       const increment = emitExpr(stmt.increment, stmt);
@@ -40,7 +60,7 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
           ...emitBlock(stmt.body),
         ];
       }
-      if(!stmt.inclusive){
+      if (!stmt.inclusive) {
         throw new Error("Ranges with steps must be inclusive in Nim.");
       }
       return [
@@ -56,7 +76,7 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
         ...emitExpr(stmt.increment, stmt),
         ")",
         ":",
-        ...emitBlock(stmt.body)
+        ...emitBlock(stmt.body),
       ];
     }
     case "IfStatement":
@@ -66,8 +86,8 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
         ":",
         ...emitBlock(stmt.consequent),
         ...(stmt.alternate.children.length > 0
-          ? ["else",":", ...emitBlock(stmt.alternate)]
-          : [])
+          ? ["else", ":", ...emitBlock(stmt.alternate)]
+          : []),
       ];
     case "Variants":
       throw new Error("Variants should have been instantiated.");
@@ -179,7 +199,12 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         ? ["echo", "(", ...emitExpr(expr.value, expr), ")"]
         : ["stdout", ".", "write", "(", ...emitExpr(expr.value, expr), ")"];
     case "ListConstructor":
-      return ["@", "[", ...joinGroups(expr.exprs.map(emitExprNoParens), ","), "]"];
+      return [
+        "@",
+        "[",
+        ...joinGroups(expr.exprs.map(emitExprNoParens), ","),
+        "]",
+      ];
     case "ListGet":
       if (expr.oneIndexed)
         throw new Error("Nim only supports zeroIndexed access.");

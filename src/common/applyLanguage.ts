@@ -1,14 +1,12 @@
-import { Expr, IR, Program } from "../IR";
+import { IR } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { programToPath, Path } from "./traverse";
 import {
   Language,
   IdentifierGenerator,
-  OpTransformOutput,
   defaultDetokenizer,
   defaultIdentGen,
 } from "./Language";
-import { getType } from "./getType";
 
 export function applyLanguageToVariant(
   language: Language,
@@ -93,6 +91,9 @@ export function applyLanguageToVariants(
   language: Language,
   programs: IR.Program[]
 ): string {
+  if (programs.length === 1) {
+    return applyLanguageToVariant(language, programs[0]);
+  }
   let result: string | null = null;
   const errors = new Map<string, number>();
   let mostCommonErrorCount = 0;
@@ -115,9 +116,8 @@ export function applyLanguageToVariants(
   });
   if (result !== null) return result;
   throw new Error(
-    (programs.length > 1
-      ? "No variant could be compiled. Most common error follows. "
-      : "") + mostCommonError
+    "No variant could be compiled. Most common error follows. " +
+      mostCommonError
   );
 }
 
