@@ -10,7 +10,7 @@ import {
 } from "./Language";
 import { getType } from "./getType";
 
-function applyLanguageToVariant(
+export function applyLanguageToVariant(
   language: Language,
   program: IR.Program
 ): string {
@@ -21,35 +21,11 @@ function applyLanguageToVariant(
   for (const visitor of language.plugins) {
     path.visit(visitor);
   }
-  if (language.dependencyMap !== undefined) {
-    addDependencies(path, language.dependencyMap);
-  }
   const identMap = getIdentMap(path, language.identGen ?? defaultIdentGen);
-  if (language.opMap !== undefined) {
-    path.visit(mapOps(language.opMap, program));
-  }
   path.visit(nameIdents(identMap));
   return (language.detokenizer ?? defaultDetokenizer())(
     language.emitter(program)
   );
-}
-
-function addDependencies(
-  programPath: Path<IR.Program>,
-  dependencyMap: Map<string, string>
-) {
-  programPath.visit({
-    enter(path: Path) {
-      const node = path.node;
-      let op: string = node.type;
-      if (node.type === "BinaryOp" || node.type === "UnaryOp") op = node.op;
-      if (node.type === "FunctionCall") op = node.name;
-      if (node.type === "MethodCall") op = node.name;
-      if (dependencyMap.has(op)) {
-        programPath.node.dependencies.add(dependencyMap.get(op)!);
-      }
-    },
-  });
 }
 
 function getIdentMap(
@@ -108,36 +84,6 @@ function nameIdents(identMap: Map<string, string>) {
           throw new Error("Programming error. Incomplete identMap.");
         }
         path.node.name = outputName;
-      }
-    },
-  };
-}
-
-function mapOps(opMap: Map<string, OpTransformOutput>, program: Program) {
-  return {
-    enter(path: Path) {
-      const node = path.node;
-      if (node.type === "BinaryOp" || node.type === "UnaryOp") {
-        const f = opMap.get(node.op);
-        if (f === undefined) {
-          throw new Error(`Unsupported operator ${node.op}!`);
-        }
-        if (typeof f === "string") {
-          node.name = f;
-        } else if (Array.isArray(f)) {
-          node.name = f[0];
-          node.precedence = f[1];
-        } else {
-          let replacement: Expr;
-          if (node.type === "BinaryOp") {
-            replacement = f(node.left, node.right);
-          } else {
-            replacement = f(node.arg, node.arg);
-          }
-          if ("op" in replacement) replacement.op = node.op;
-          replacement.valueType = getType(node, program);
-          path.replaceWith(replacement);
-        }
       }
     },
   };

@@ -21,6 +21,7 @@ export type BuiltinBinop =
   | "sub"
   | "mul"
   | "div"
+  | "truncdiv"
   | "exp"
   | "mod"
   | "rem"
@@ -65,6 +66,7 @@ export interface BinaryOp extends BaseExpr {
 export interface MutatingBinaryOp extends BaseExpr {
   type: "MutatingBinaryOp";
   op: BuiltinBinop;
+  name: string;
   variable: Identifier;
   right: Expr;
 }
@@ -156,13 +158,15 @@ export function binaryOp(
 export function mutatingBinaryOp(
   op: BuiltinBinop,
   variable: Identifier,
-  right: Expr
+  right: Expr,
+  name: string = "",
 ): MutatingBinaryOp {
   return {
     type: "MutatingBinaryOp",
     op,
     variable,
     right,
+    name
   };
 }
 

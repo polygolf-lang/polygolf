@@ -8,12 +8,10 @@ export type OpTransformOutput =
 
 export interface Language {
   name: string;
+  emitter: Emitter;
   /** The visitors are applied in left-to-right order. */
   plugins: Visitor[];
-  opMap: Map<string, OpTransformOutput>;
-  dependencyMap?: Map<string, string>;
   identGen?: IdentifierGenerator;
-  emitter: Emitter;
   detokenizer?: Detokenizer;
 }
 
