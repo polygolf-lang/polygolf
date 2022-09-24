@@ -39,7 +39,7 @@ export interface VarDeclaration extends BaseExpr {
 }
 
 export function block(children: Statement[]): Block {
-  return { type: "Block", children, requiresBlock: children.length > 1 };
+  return { type: "Block", children, requiresBlock: false };
 }
 
 export function ifStatement(

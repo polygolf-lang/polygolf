@@ -28,3 +28,12 @@ function hasBlockRequiringChild(
   }
   return false;
 }
+
+export const requireBlockWhenMultiple: Visitor = {
+  exit(path: Path) {
+    const node = path.node;
+    if (node.type === "Block") {
+      node.requiresBlock = node.children.length > 1;
+    }
+  },
+};

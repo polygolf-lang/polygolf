@@ -39,12 +39,7 @@ export const defaultIdentGen = {
 };
 
 function isAlphaNum(a: string, i: number): boolean {
-  const code = a.charCodeAt(i);
-  return (
-    (code > 47 && code < 58) || // numeric (0-9)
-    (code > 64 && code < 91) || // upper alpha (A-Z)
-    (code > 96 && code < 123)
-  ); // lower alpha (a-z)
+  return /[A-Za-z0-9]/.test(a[i]);
 }
 
 export function defaultWhitespaceInsertLogic(a: string, b: string): boolean {
