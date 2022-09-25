@@ -3,7 +3,8 @@ import { OpTransformOutput } from "../common/Language";
 import { Expr } from "../IR";
 import { getType } from "../common/getType";
 
-export function mapOps(opMap: Map<string, OpTransformOutput>) {
+export function mapOps(opMap0: [string, OpTransformOutput][]) {
+  const opMap = new Map<string, OpTransformOutput>(opMap0);
   return {
     enter(path: Path) {
       const node = path.node;

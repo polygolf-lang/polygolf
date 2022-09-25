@@ -4,6 +4,7 @@ import {
   Assignment,
   ManyToManyAssignment,
   OneToManyAssignment,
+  VarDeclarationWithAssignment,
 } from "./assignments";
 import {
   ArrayGet,
@@ -73,6 +74,7 @@ export type Statement =
 export type Expr =
   | Argv
   | VarDeclaration
+  | VarDeclarationWithAssignment
   | Assignment
   | Print
   | FunctionCall

@@ -31,6 +31,33 @@ function emitBlock(block: IR.Block, root: boolean = false): string[] {
 
 function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
   switch (stmt.type) {
+    case "VarDeclarationWithAssignment":
+      if (stmt.requiresBlock) {
+        const variables =
+          stmt.assignments.type === "Assignment"
+            ? [stmt.assignments.variable]
+            : stmt.assignments.variables;
+        const exprs =
+          stmt.assignments.type === "Assignment"
+            ? [stmt.assignments.expr]
+            : stmt.assignments.exprs;
+
+        return [
+          "var",
+          "$INDENT$",
+          "\n",
+          ...joinGroups(
+            variables.map((v, i) => [
+              v.name,
+              "=",
+              ...emitExprNoParens(exprs[i]),
+            ]),
+            "\n"
+          ),
+          "$DEDENT$",
+        ];
+      }
+      return ["var", ...emitExprNoParens(stmt.assignments)];
     case "ImportStatement":
       return [
         stmt.name,
@@ -136,6 +163,19 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         ...emitExpr(expr.variable, expr),
         "=",
         ...emitExpr(expr.expr, expr),
+      ];
+    case "ManyToManyAssignment":
+      return [
+        "(",
+        ...joinGroups(
+          expr.variables.map((v) => [v.name]),
+          ","
+        ),
+        ")",
+        "=",
+        "(",
+        ...joinGroups(expr.exprs.map(emitExprNoParens), ","),
+        ")",
       ];
     case "MutatingBinaryOp":
       return [

@@ -1,12 +1,7 @@
 import { IR } from "../IR";
 import { expandVariants } from "./expandVariants";
-import { programToPath, Path } from "./traverse";
-import {
-  Language,
-  IdentifierGenerator,
-  defaultDetokenizer,
-  defaultIdentGen,
-} from "./Language";
+import { programToPath } from "./traverse";
+import { Language, defaultDetokenizer } from "./Language";
 
 export function applyLanguageToVariant(
   language: Language,
@@ -19,72 +14,9 @@ export function applyLanguageToVariant(
   for (const visitor of language.plugins) {
     path.visit(visitor);
   }
-  const identMap = getIdentMap(path, language.identGen ?? defaultIdentGen);
-  path.visit(nameIdents(identMap));
   return (language.detokenizer ?? defaultDetokenizer())(
     language.emitter(program)
   );
-}
-
-function getIdentMap(
-  path: Path<IR.Program>,
-  identGen: IdentifierGenerator
-): Map<string, string> {
-  // First, try mapping as many idents as possible to their preferred versions
-  const inputNames = path.getUsedIdentifiers();
-  const outputNames = new Set<string>();
-  const result = new Map<string, string>();
-  for (const iv of inputNames) {
-    for (const preferred of identGen.preferred(iv)) {
-      if (!outputNames.has(preferred)) {
-        outputNames.add(preferred);
-        result.set(iv, preferred);
-        break;
-      }
-    }
-  }
-  // Then, try mapping those that remained unmapped to one of the short ident names
-  const shortNames = identGen.short;
-  for (const iv of inputNames) {
-    if (!result.has(iv)) {
-      for (const short of shortNames) {
-        if (!outputNames.has(short)) {
-          outputNames.add(short);
-          result.set(iv, short);
-          break;
-        }
-      }
-    }
-  }
-  // Finally, map all remaining idents to some general ident
-  let i = 0;
-  for (const iv of inputNames) {
-    if (!result.has(iv)) {
-      while (true) {
-        const general = identGen.general(i++);
-        if (!outputNames.has(general)) {
-          outputNames.add(general);
-          result.set(iv, general);
-          break;
-        }
-      }
-    }
-  }
-  return result;
-}
-
-function nameIdents(identMap: Map<string, string>) {
-  return {
-    enter(path: Path) {
-      if (path.node.type === "Identifier") {
-        const outputName = identMap.get(path.node.name);
-        if (outputName === undefined) {
-          throw new Error("Programming error. Incomplete identMap.");
-        }
-        path.node.name = outputName;
-      }
-    },
-  };
 }
 
 export function applyLanguageToVariants(

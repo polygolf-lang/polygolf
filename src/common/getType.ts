@@ -91,6 +91,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "OneToManyAssignment":
       return getType(expr.expr, program);
   }
+  throw new Error(`Unexpected node ${expr.type}.`);
 }
 
 function getOpCodeType(

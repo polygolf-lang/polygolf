@@ -1,4 +1,4 @@
-import { BaseExpr, Expr, id, Identifier } from "./IR";
+import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK
@@ -34,6 +34,16 @@ export interface OneToManyAssignment extends BaseExpr {
   expr: Expr;
 }
 
+/**
+ * Variable declaration with assignment
+ */
+export interface VarDeclarationWithAssignment extends BaseExpr {
+  type: "VarDeclarationWithAssignment";
+  assignments: Assignment | ManyToManyAssignment;
+  valueTypes?: ValueType[];
+  requiresBlock: boolean;
+}
+
 export function assignment(
   variable: Identifier | string,
   expr: Expr
@@ -64,5 +74,18 @@ export function oneToManyAssignment(
     type: "OneToManyAssignment",
     variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     expr,
+  };
+}
+
+export function varDeclarationWithAssignment(
+  assignments: Assignment | ManyToManyAssignment,
+  requiresBlock: boolean = true,
+  valueTypes?: ValueType[]
+): VarDeclarationWithAssignment {
+  return {
+    type: "VarDeclarationWithAssignment",
+    assignments,
+    requiresBlock,
+    valueTypes,
   };
 }

@@ -11,7 +11,6 @@ export interface Language {
   emitter: Emitter;
   /** The visitors are applied in left-to-right order. */
   plugins: Visitor[];
-  identGen?: IdentifierGenerator;
   detokenizer?: Detokenizer;
 }
 
@@ -25,16 +24,6 @@ export interface IdentifierGenerator {
 }
 
 export type Emitter = (program: IR.Program) => string[];
-
-export const defaultIdentGen = {
-  preferred(original: string) {
-    const lower = original[0].toLowerCase();
-    const upper = original[0].toUpperCase();
-    return [original[0], original[0] === lower ? upper : lower];
-  },
-  short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
-  general: (i: number) => "v" + i.toString(),
-};
 
 function isAlphaNum(a: string, i: number): boolean {
   const code = a.charCodeAt(i);

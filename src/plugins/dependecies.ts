@@ -1,6 +1,7 @@
 import { Path } from "../common/traverse";
 
-export function addDependencies(dependencyMap: Map<string, string>) {
+export function addDependencies(dependencyMap0: [string, string][]) {
+  const dependencyMap = new Map<string, string>(dependencyMap0);
   return {
     enter(path: Path) {
       const node = path.node;
