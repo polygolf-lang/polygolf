@@ -5,10 +5,16 @@ import { oneIndexed } from "../../plugins/oneIndexed";
 import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
 import emitProgram from "./emit";
+import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 
 const luaLanguage: Language = {
   name: "Lua",
-  plugins: [removeMutatingBinaryOp, forRangeToForRangeInclusive, oneIndexed],
+  plugins: [
+    removeMutatingBinaryOp,
+    forRangeToForRangeInclusive,
+    oneIndexed,
+    tempVarToMultipleAssignment,
+  ],
   emitter: emitProgram,
   opMap: new Map<string, OpTransformOutput>([
     ["str_length", (x, _) => methodCall("str_length", x, [], "len")],

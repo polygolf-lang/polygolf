@@ -21,6 +21,15 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
         ...emitBlock(stmt.body),
         "end",
       ];
+    case "ManyToManyAssignment":
+      return [
+        ...joinGroups(
+          stmt.variables.map((x) => [x.name]),
+          ","
+        ),
+        "=",
+        ...joinGroups(stmt.exprs.map(emitExprNoParens), ","),
+      ];
     case "ForRange": {
       if (!stmt.inclusive) throw new Error("Lua requires inclusive ForRange");
       let increment = [",", ...emitExpr(stmt.increment, stmt)];
