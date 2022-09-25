@@ -7,11 +7,13 @@ import { forRangeToForRangeInclusive } from "../../plugins/loops";
 import emitProgram from "./emit";
 import { mapOps } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
+import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 
 const luaLanguage: Language = {
   name: "Lua",
   emitter: emitProgram,
   plugins: [
+    tempVarToMultipleAssignment,
     removeMutatingBinaryOp,
     forRangeToForRangeInclusive,
     oneIndexed,

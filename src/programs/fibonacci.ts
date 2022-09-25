@@ -26,9 +26,8 @@ export default program(
         block([
           varDeclaration("t", integerType(0, 1346269)),
           assignment("t", binaryOp("add", id("a"), id("b"))),
-          assignment("b", id("a")),
-          assignment("a", id("t")),
-          mutatingBinaryOp("add", id("i"), int(1n)),
+          assignment("a", id("b")),
+          assignment("b", id("t")),
         ]),
         block([
           mutatingBinaryOp("add", id("b"), id("a")),
