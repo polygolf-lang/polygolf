@@ -6,7 +6,7 @@ import { requireBlockWhen } from "../../plugins/blocks";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { mapOps } from "../../plugins/ops";
 import { addDependencies } from "../../plugins/dependecies";
-import { addImports, addVarDeclarations } from "./plugins";
+import { addImports, addVarDeclarations, useUnsignedDivision } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 
 const nimLanguage: Language = {
@@ -38,6 +38,7 @@ const nimLanguage: Language = {
       ["neg", ["-", 150]],
       ["str_to_int", (x, _) => functionCall("int_to_str", [x], "parseInt")],
     ]),
+    useUnsignedDivision,
     addDependencies([
       ["^", "math"],
       ["repeat", "strutils"],

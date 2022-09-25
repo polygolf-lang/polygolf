@@ -8,6 +8,7 @@ import {
   varDeclarationWithAssignment,
 } from "../../IR";
 import { Path } from "../../common/traverse";
+import { getType } from "../../common/getType";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -106,3 +107,27 @@ function simplifyAssignments(
     ),
   ];
 }
+
+export const useUnsignedDivision = {
+  exit(path: Path) {
+    const node = path.node;
+    const program = path.root.node;
+    if (
+      node.type === "BinaryOp" &&
+      (node.op === "truncdiv" || node.op === "rem")
+    ) {
+      const right = getType(node.right, program);
+      const left = getType(node.left, program);
+      if (right.type !== "integer" || left.type !== "integer")
+        throw new Error(`Unexpected type ${JSON.stringify([left, right])}.`);
+      if (
+        left.low !== undefined &&
+        left.low >= 0n &&
+        right.low !== undefined &&
+        right.low >= 0n
+      ) {
+        node.name = node.op === "truncdiv" ? "/%" : "%%";
+      }
+    }
+  },
+};
