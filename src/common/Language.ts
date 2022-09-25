@@ -25,13 +25,18 @@ export interface IdentifierGenerator {
 
 export type Emitter = (program: IR.Program) => string[];
 
+export const defaultIdentGen = {
+  preferred(original: string) {
+    const lower = original[0].toLowerCase();
+    const upper = original[0].toUpperCase();
+    return [original[0], original[0] === lower ? upper : lower];
+  },
+  short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+  general: (i: number) => "v" + i.toString(),
+};
+
 function isAlphaNum(a: string, i: number): boolean {
-  const code = a.charCodeAt(i);
-  return (
-    (code > 47 && code < 58) || // numeric (0-9)
-    (code > 64 && code < 91) || // upper alpha (A-Z)
-    (code > 96 && code < 123)
-  ); // lower alpha (a-z)
+  return /[A-Za-z0-9]/.test(a[i]);
 }
 
 export function defaultWhitespaceInsertLogic(a: string, b: string): boolean {
