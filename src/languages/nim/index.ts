@@ -8,11 +8,13 @@ import { mapOps } from "../../plugins/ops";
 import { addDependencies } from "../../plugins/dependecies";
 import { addImports, addVarDeclarations, useUnsignedDivision } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
+import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 
 const nimLanguage: Language = {
   name: "Nim",
   emitter: emitProgram,
   plugins: [
+    tempVarToMultipleAssignment,
     modToRem,
     divToTruncdiv,
     requireBlockWhen(["Block"]),
