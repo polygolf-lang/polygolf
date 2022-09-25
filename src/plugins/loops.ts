@@ -1,4 +1,4 @@
-import { getType } from "common/getType";
+import { getType } from "../common/getType";
 import { Path } from "../common/traverse";
 import {
   forRange,
