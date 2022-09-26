@@ -129,7 +129,11 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
   }
 }
 
-function emitExpr(expr: IR.Expr, parent: IR.Node, fragment?: PathFragment): string[] {
+function emitExpr(
+  expr: IR.Expr,
+  parent: IR.Node,
+  fragment?: PathFragment
+): string[] {
   const inner = emitExprNoParens(expr);
   return needsParens(expr, parent, fragment) ? ["(", ...inner, ")"] : inner;
 }
@@ -138,20 +142,23 @@ function emitExpr(expr: IR.Expr, parent: IR.Node, fragment?: PathFragment): stri
  * Does expr need parens around it to override precedence?
  * This does not include needing parens for stuff like function calls
  */
-function needsParens(expr: IR.Expr, parent: IR.Node, fragment?: PathFragment): boolean {
-  if(parent.type === "UnaryOp"){
+function needsParens(
+  expr: IR.Expr,
+  parent: IR.Node,
+  fragment?: PathFragment
+): boolean {
+  if (parent.type === "UnaryOp") {
     return expr.type === "BinaryOp" && expr.precedence <= parent.precedence;
-  }
-  else if(parent.type === "BinaryOp" && expr.type === "BinaryOp"){
-    if(fragment === undefined) return true;
-    if(fragment === "right"){
-      if(expr.rightAssociative) return expr.precedence < parent.precedence;
+  } else if (parent.type === "BinaryOp" && expr.type === "BinaryOp") {
+    if (fragment === undefined) return true;
+    if (fragment === "right") {
+      if (expr.rightAssociative) return expr.precedence < parent.precedence;
       return expr.precedence <= parent.precedence;
     }
-    if(expr.rightAssociative) return expr.precedence <= parent.precedence;
+    if (expr.rightAssociative) return expr.precedence <= parent.precedence;
     return expr.precedence < parent.precedence;
   }
-  if(parent.type === "MethodCall" && fragment === "object"){
+  if (parent.type === "MethodCall" && fragment === "object") {
     return expr.type === "UnaryOp" || expr.type === "BinaryOp";
   }
   return false;
