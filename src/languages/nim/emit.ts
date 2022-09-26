@@ -134,7 +134,10 @@ function emitExpr(
   parent: IR.Node,
   fragment?: PathFragment
 ): string[] {
-  const inner = emitExprNoParens(expr);
+  const inner = emitExprNoParens(
+    expr,
+    parent.type === "BinaryOp" && fragment === "left"
+  );
   return needsParens(expr, parent, fragment) ? ["(", ...inner, ")"] : inner;
 }
 
@@ -168,7 +171,10 @@ function joinGroups(groups: string[][], ...sep: string[]): string[] {
   return groups.flatMap((x, i) => (i > 0 ? [...sep, ...x] : x));
 }
 
-function emitExprNoParens(expr: IR.Expr): string[] {
+function emitExprNoParens(
+  expr: IR.Expr,
+  expressionContinues: boolean = false
+): string[] {
   switch (expr.type) {
     case "Assignment":
       return [
@@ -186,7 +192,10 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         ")",
         "=",
         "(",
-        ...joinGroups(expr.exprs.map(emitExprNoParens), ","),
+        ...joinGroups(
+          expr.exprs.map((x) => emitExprNoParens(x)),
+          ","
+        ),
         ")",
       ];
     case "MutatingBinaryOp":
@@ -203,27 +212,54 @@ function emitExprNoParens(expr: IR.Expr): string[] {
     case "IntegerLiteral":
       return [expr.value.toString()];
     case "FunctionCall":
+      if (expressionContinues || expr.args.length > 1)
+        return [
+          expr.ident.name,
+          "(",
+          ...joinGroups(
+            expr.args.map((arg) => emitExpr(arg, expr, "args")),
+            ","
+          ),
+          ")",
+        ];
       return [
-        expr.name,
-        "(",
+        expr.ident.name,
         ...joinGroups(
-          expr.args.map((arg) => emitExpr(arg, expr)),
+          expr.args.map((arg) => emitExpr(arg, expr, "args")),
           ","
         ),
-        ")",
       ];
     case "MethodCall":
-      return [
-        ...emitExpr(expr.object, expr),
-        ".",
-        expr.name,
-        "(",
-        ...joinGroups(
-          expr.args.map((arg) => emitExpr(arg, expr)),
-          ","
-        ),
-        ")",
-      ];
+      if (expressionContinues || expr.args.length > 1)
+        return [
+          ...emitExpr(expr.object, expr),
+          ".",
+          expr.ident.name,
+          ...(expr.args.length > 0
+            ? [
+                "(",
+                ...joinGroups(
+                  expr.args.map((arg) => emitExpr(arg, expr)),
+                  ","
+                ),
+                ")",
+              ]
+            : []),
+        ];
+      else
+        return [
+          ...emitExpr(expr.object, expr),
+          ".",
+          expr.ident.name,
+          ...(expr.args.length > 0
+            ? [
+                ...joinGroups(
+                  expr.args.map((arg) => emitExpr(arg, expr)),
+                  ","
+                ),
+              ]
+            : []),
+        ];
     case "BinaryOp":
       return [
         ...emitExpr(expr.left, expr, "left"),
@@ -246,15 +282,14 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         ...emitExpr(expr.index, expr),
         "]",
       ];
-    case "Print":
-      return expr.newline
-        ? ["echo", "(", ...emitExpr(expr.value, expr), ")"]
-        : ["stdout", ".", "write", "(", ...emitExpr(expr.value, expr), ")"];
     case "ListConstructor":
       return [
         "@",
         "[",
-        ...joinGroups(expr.exprs.map(emitExprNoParens), ","),
+        ...joinGroups(
+          expr.exprs.map((x) => emitExprNoParens(x)),
+          ","
+        ),
         "]",
       ];
     case "ListGet":

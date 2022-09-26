@@ -56,7 +56,7 @@ export function renameIdents(identGen: IdentifierGenerator = defaultIdentGen) {
       if (path.node.type === "Program") {
         identMap = getIdentMap(path.root, identGen);
       }
-      if (path.node.type === "Identifier") {
+      if (path.node.type === "Identifier" && !path.node.builtin) {
         const outputName = identMap.get(path.node.name);
         if (outputName === undefined) {
           throw new Error("Programming error. Incomplete identMap.");

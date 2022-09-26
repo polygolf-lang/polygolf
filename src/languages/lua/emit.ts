@@ -118,7 +118,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
       return [expr.value.toString()];
     case "FunctionCall":
       return [
-        expr.name,
+        expr.ident.name,
         "(",
         ...joinGroups(
           expr.args.map((arg) => emitExpr(arg, expr)),
@@ -130,7 +130,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
       return [
         ...emitExpr(expr.object, expr),
         ":",
-        expr.name,
+        expr.ident.name,
         "(",
         ...joinGroups(
           expr.args.map((arg) => emitExpr(arg, expr)),

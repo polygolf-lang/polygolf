@@ -18,6 +18,9 @@ export function mapOps(opMap0: [string, OpTransformOutput][]) {
         } else if (Array.isArray(f)) {
           node.name = f[0];
           node.precedence = f[1];
+          if (node.type === "BinaryOp")
+            node.rightAssociative =
+              f[2] ?? (node.op === "exp" || node.op === "str_concat");
         } else {
           let replacement: Expr;
           if (node.type === "BinaryOp") {

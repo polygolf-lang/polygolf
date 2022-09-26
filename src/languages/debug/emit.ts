@@ -59,7 +59,10 @@ export default function emit(node: IR.Node): string {
       return node.value.toString();
     case "FunctionCall":
       return (
-        node.name + "(" + node.args.map((arg) => emit(arg)).join(",") + ")"
+        node.ident.name +
+        "(" +
+        node.args.map((arg) => emit(arg)).join(",") +
+        ")"
       );
     case "Print":
       return (
@@ -69,7 +72,7 @@ export default function emit(node: IR.Node): string {
       return (
         emit(node.object) +
         ":" +
-        node.name +
+        node.ident.name +
         "(" +
         node.args.map((arg) => emit(arg)).join(",") +
         ")"

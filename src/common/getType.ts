@@ -134,7 +134,7 @@ function getOpCodeType(
     case "sorted":
       return getType(expr, program);
   }
-  throw new Error(`Unknown opcode. ${expr.op}`);
+  throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
 }
 
 function getIntegerOpCodeType(
@@ -216,7 +216,7 @@ function getIntegerOpCodeType(
     case "bitxor":
       return integerType();
   }
-  throw new Error(`Unknown opcode. ${expr.op}`);
+  throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
 }
 
 export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {

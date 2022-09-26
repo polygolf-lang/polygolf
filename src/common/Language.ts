@@ -3,7 +3,7 @@ import { Visitor } from "./traverse";
 
 export type OpTransformOutput =
   | string
-  | [string, number]
+  | [string, number, boolean?]
   | ((arg: IR.Expr, arg2: IR.Expr) => IR.Expr);
 
 export interface Language {

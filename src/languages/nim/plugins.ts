@@ -1,8 +1,11 @@
 import {
   Assignment,
   block,
+  functionCall,
+  id,
   importStatement,
   manyToManyAssignment,
+  methodCall,
   Program,
   Statement,
   varDeclarationWithAssignment,
@@ -127,6 +130,37 @@ export const useUnsignedDivision = {
         right.low >= 0n
       ) {
         node.name = node.op === "truncdiv" ? "/%" : "%%";
+      }
+    }
+  },
+};
+
+export const printToFunctionCall = {
+  enter(path: Path) {
+    const node = path.node;
+    if (node.type === "Print") {
+      if (node.newline)
+        path.replaceWith(functionCall(null, [node.value], "echo"));
+      else
+        path.replaceWith(
+          functionCall(null, [id("stdout", true), node.value], "write")
+        );
+    }
+  },
+};
+
+export const useUFCS = {
+  exit(path: Path) {
+    const node = path.node;
+    if (node.type === "FunctionCall" && node.args.length > 0) {
+      const [obj, ...args] = node.args;
+      if (
+        obj.type !== "BinaryOp" &&
+        obj.type !== "UnaryOp" &&
+        (args.length !== 1 ||
+          (args[0].type !== "BinaryOp" && args[0].type !== "UnaryOp"))
+      ) {
+        path.replaceWith(methodCall(node.op, obj, args, node.ident));
       }
     }
   },
