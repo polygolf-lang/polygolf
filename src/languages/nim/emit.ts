@@ -1,3 +1,8 @@
+import {
+  emitStringLiteral,
+  joinGroups,
+  needsParensPrecedence,
+} from "../../common/emit";
 import { PathFragment } from "../../common/traverse";
 import { IR } from "../../IR";
 
@@ -156,25 +161,13 @@ function needsParens(
   parent: IR.Node,
   fragment?: PathFragment
 ): boolean {
-  if (parent.type === "UnaryOp") {
-    return expr.type === "BinaryOp" && expr.precedence <= parent.precedence;
-  } else if (parent.type === "BinaryOp" && expr.type === "BinaryOp") {
-    if (fragment === undefined) return true;
-    if (fragment === "right") {
-      if (expr.rightAssociative) return expr.precedence < parent.precedence;
-      return expr.precedence <= parent.precedence;
-    }
-    if (expr.rightAssociative) return expr.precedence <= parent.precedence;
-    return expr.precedence < parent.precedence;
+  if (needsParensPrecedence(expr, parent, fragment)) {
+    return true;
   }
   if (parent.type === "MethodCall" && fragment === "object") {
     return expr.type === "UnaryOp" || expr.type === "BinaryOp";
   }
   return false;
-}
-
-function joinGroups(groups: string[][], ...sep: string[]): string[] {
-  return groups.flatMap((x, i) => (i > 0 ? [...sep, ...x] : x));
 }
 
 function emitExprNoParens(
@@ -213,15 +206,32 @@ function emitExprNoParens(
     case "Identifier":
       return [expr.name];
     case "StringLiteral":
-      return [
-        `"` +
-          expr.value
-            .replace(`\\`, `\\\\`)
-            .replace(`\n`, `\\n`)
-            .replace(`\r`, `\\r`)
-            .replace(`"`, `\\"`) +
+      return emitStringLiteral(expr.value, [
+        [
           `"`,
-      ];
+          [
+            [`\\`, `\\\\`],
+            [`\n`, `\\n`],
+            [`\r`, `\\r`],
+            [`"`, `\\"`],
+          ],
+        ],
+        [
+          `"""`,
+          [
+            [`\\`, `\\\\`],
+            [`"""`, `\\"""`],
+          ],
+        ],
+        [
+          [`r"`, `"`],
+          [
+            [`"`, `""`],
+            [`\n`, null],
+            [`\r`, null],
+          ],
+        ],
+      ]);
     case "IntegerLiteral":
       return [expr.value.toString()];
     case "FunctionCall":
