@@ -207,8 +207,15 @@ function emitExprNoParens(
     case "Identifier":
       return [expr.name];
     case "StringLiteral":
-      // TODO: special string handling
-      return [JSON.stringify(expr.value)];
+      return [
+        `"` +
+          expr.value
+            .replace(`\\`, `\\\\`)
+            .replace(`\n`, `\\n`)
+            .replace(`\r`, `\\r`)
+            .replace(`"`, `\\"`) +
+          `"`,
+      ];
     case "IntegerLiteral":
       return [expr.value.toString()];
     case "FunctionCall":
