@@ -154,12 +154,7 @@ export const useUFCS = {
     const node = path.node;
     if (node.type === "FunctionCall" && node.args.length > 0) {
       const [obj, ...args] = node.args;
-      if (
-        obj.type !== "BinaryOp" &&
-        obj.type !== "UnaryOp" &&
-        (args.length !== 1 ||
-          (args[0].type !== "BinaryOp" && args[0].type !== "UnaryOp"))
-      ) {
+      if (obj.type !== "BinaryOp" && obj.type !== "UnaryOp") {
         path.replaceWith(methodCall(node.op, obj, args, node.ident));
       }
     }
