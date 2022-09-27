@@ -76,12 +76,18 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
       ];
     case "ForRange": {
       const increment = emitExpr(stmt.increment, stmt);
+      const low =
+        stmt.low.type === "IntegerLiteral" &&
+        stmt.low.value === 0n &&
+        stmt.inclusive
+          ? []
+          : emitExpr(stmt.low, stmt);
       if (increment.length === 1 && increment[0] === "1") {
         return [
           "for",
           ...emitExpr(stmt.variable, stmt),
           "in",
-          ...emitExpr(stmt.low, stmt),
+          ...low,
           stmt.inclusive ? ".." : "..<",
           ...emitExpr(stmt.high, stmt),
           ":",

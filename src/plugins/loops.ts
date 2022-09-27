@@ -34,6 +34,35 @@ export const forRangeToForRangeInclusive = {
   },
 };
 
+/**
+ * Only switch if it is shorter
+ */
+export const useInclusiveForRange = {
+  enter(path: Path) {
+    const node = path.node;
+    if (node.type === "ForRange" && !node.inclusive) {
+      if (node.high.type === "IntegerLiteral") {
+        node.inclusive = true;
+        node.high.value = node.high.value - 1n;
+      } else if (node.high.type === "BinaryOp" && node.high.op === "add") {
+        if (
+          node.high.right.type === "IntegerLiteral" &&
+          node.high.right.value === 1n
+        ) {
+          node.inclusive = true;
+          node.high = node.high.left;
+        } else if (
+          node.high.left.type === "IntegerLiteral" &&
+          node.high.left.value === 1n
+        ) {
+          node.inclusive = true;
+          node.high = node.high.right;
+        }
+      }
+    }
+  },
+};
+
 export const forRangeToWhile = {
   enter(path: Path) {
     const node = path.node;

@@ -15,6 +15,7 @@ import {
 } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
+import { useInclusiveForRange } from "../../plugins/loops";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -47,6 +48,7 @@ const nimLanguage: Language = {
       ["neg", ["-", 150]],
       ["str_to_int", (x, _) => functionCall("int_to_str", [x], "parseInt")],
     ]),
+    useInclusiveForRange,
     useUnsignedDivision,
     useUFCS,
     addDependencies([
