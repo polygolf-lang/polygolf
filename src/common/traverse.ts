@@ -32,10 +32,8 @@ export class Path<N extends IR.Node = IR.Node> {
             (child, i) => new Path(child, this, { prop: key, index: i })
           )
         );
-      } else {
-        if (typeof (value as any)?.type === "string") {
-          result.push(new Path(value, this, key));
-        }
+      } else if (typeof (value as any)?.type === "string") {
+        result.push(new Path(value, this, key));
       }
     }
     return result;
