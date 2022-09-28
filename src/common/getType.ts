@@ -239,7 +239,7 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
 
 function floorDiv(a: bigint, b: bigint): bigint {
   const res = a / b;
-  return (a < 0 !== b < 0) ? res - 1n : res;
+  return a < 0 !== b < 0 ? res - 1n : res;
 }
 
 /** Combines types `left` and `right` using the *convex* operator `op` */
