@@ -17,9 +17,6 @@ export function needsParensPrecedence(
     if (expr.rightAssociative) return expr.precedence <= parent.precedence;
     return expr.precedence < parent.precedence;
   }
-  if (parent.type === "MethodCall" && fragment === "object") {
-    return expr.type === "UnaryOp" || expr.type === "BinaryOp";
-  }
   return false;
 }
 
