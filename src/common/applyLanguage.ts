@@ -15,7 +15,7 @@ export function applyLanguage(
     maxBranches
   );
   const variantsPluginsIndeces = [...language.plugins.keys()].filter(
-    (i) => language.plugins[i].generatesVariants
+    (i) => language.plugins[i].generatesVariants === true
   );
   let lastAppliedPluginIndex = -1;
   for (const vpi of variantsPluginsIndeces) {
@@ -49,6 +49,7 @@ function emitVariants(
   for (const variant of variants) {
     const path = programToPath(variant);
     for (let i = lastAppliedPluginIndex + 1; i < language.plugins.length; i++) {
+      if (language.plugins[i].generatesVariants === true) continue;
       path.visit(language.plugins[i]);
     }
     try {
