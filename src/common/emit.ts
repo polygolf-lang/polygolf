@@ -76,7 +76,7 @@ function getChildren(node: IR.Node): IR.Node[] {
     const value = node[key as keyof typeof node] as any as IR.Node[] | IR.Node;
     if (Array.isArray(value)) {
       result.push(...value);
-    } else if (typeof (value as any)?.type === "string") {
+    } else if (typeof value?.type === "string") {
       result.push(value);
     }
   }
