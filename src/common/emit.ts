@@ -60,3 +60,25 @@ export function emitStringLiteral(
   }
   return [result];
 }
+
+export function hasChildWithBlock(node: IR.Node): boolean {
+  for (const child of getChildren(node)) {
+    if ("consequent" in child || "children" in child || "body" in child) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getChildren(node: IR.Node): IR.Node[] {
+  const result = [];
+  for (const key in node) {
+    const value = node[key as keyof typeof node] as any as IR.Node[] | IR.Node;
+    if (Array.isArray(value)) {
+      result.push(...value);
+    } else if (typeof (value as any)?.type === "string") {
+      result.push(value);
+    }
+  }
+  return result;
+}

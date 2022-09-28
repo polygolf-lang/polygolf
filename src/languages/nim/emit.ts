@@ -1,5 +1,6 @@
 import {
   emitStringLiteral,
+  hasChildWithBlock,
   joinGroups,
   needsParensPrecedence,
 } from "../../common/emit";
@@ -11,7 +12,7 @@ export default function emitProgram(program: IR.Program): string[] {
 }
 
 function emitBlock(block: IR.Block, root: boolean = false): string[] {
-  if (block.requiresBlock) {
+  if (hasChildWithBlock(block)) {
     if (root) {
       return joinGroups(
         block.children.map((stmt) => emitStatement(stmt, block)),
