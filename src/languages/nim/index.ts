@@ -4,7 +4,7 @@ import { defaultDetokenizer, Language } from "../../common/Language";
 import emitProgram from "./emit";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { mapOps } from "../../plugins/ops";
-import { addDependencies } from "../../plugins/dependecies";
+import { addDependencies } from "../../plugins/dependencies";
 import {
   addImports,
   addVarDeclarations,
