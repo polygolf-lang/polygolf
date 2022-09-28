@@ -103,6 +103,7 @@ function getOpCodeType(
     case "sub":
     case "mul":
     case "div":
+    case "truncdiv":
     case "mod":
     case "rem":
     case "exp":
@@ -117,6 +118,7 @@ function getOpCodeType(
       return getIntegerOpCodeType(expr, program);
     case "lt":
     case "leq":
+    case "neq":
     case "eq":
     case "geq":
     case "gt":
@@ -126,6 +128,7 @@ function getOpCodeType(
     case "inset":
     case "and":
     case "or":
+    case "not":
       return simpleType("boolean");
     case "str_concat":
     case "int_to_str":
@@ -199,6 +202,8 @@ function getIntegerOpCodeType(
       return getIntegerTypeUsing(left, right, (a, b) => a * b);
     case "div":
       return getIntegerTypeUsing(left, right, floorDiv);
+    case "truncdiv":
+      return getIntegerTypeUsing(left, right, (a, b) => a / b);
     case "mod":
       return getIntegerTypeMod(left, right);
     case "rem":
@@ -234,9 +239,10 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
 
 function floorDiv(a: bigint, b: bigint): bigint {
   const res = a / b;
-  return res < 0n ? res - 1n : res;
+  return (a < 0 !== b < 0) ? res - 1n : res;
 }
 
+/** Combines types `left` and `right` using the *convex* operator `op` */
 function getIntegerTypeUsing(
   left: IntegerType,
   right: IntegerType,
