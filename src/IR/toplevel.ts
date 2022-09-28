@@ -14,7 +14,6 @@ export interface Variants {
 export interface Block {
   type: "Block";
   children: Statement[];
-  requiresBlock: boolean;
 }
 
 /**
@@ -45,7 +44,7 @@ export interface ImportStatement extends BaseExpr {
 }
 
 export function block(children: Statement[]): Block {
-  return { type: "Block", children, requiresBlock: false };
+  return { type: "Block", children };
 }
 
 export function ifStatement(
