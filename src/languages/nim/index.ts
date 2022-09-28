@@ -2,7 +2,6 @@ import { functionCall } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { requireBlockWhen } from "../../plugins/blocks";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { mapOps } from "../../plugins/ops";
 import { addDependencies } from "../../plugins/dependecies";
@@ -25,7 +24,6 @@ const nimLanguage: Language = {
     tempVarToMultipleAssignment,
     modToRem,
     divToTruncdiv,
-    requireBlockWhen(["Block"]),
     mapOps([
       ["str_length", (x, _) => functionCall("str_length", [x], "len")],
       ["int_to_str", "$"],
