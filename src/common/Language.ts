@@ -3,17 +3,14 @@ import { Visitor } from "./traverse";
 
 export type OpTransformOutput =
   | string
-  | [string, number]
+  | [string, number, boolean?]
   | ((arg: IR.Expr, arg2: IR.Expr) => IR.Expr);
 
 export interface Language {
   name: string;
+  emitter: Emitter;
   /** The visitors are applied in left-to-right order. */
   plugins: Visitor[];
-  opMap: Map<string, OpTransformOutput>;
-  dependencyMap?: Map<string, string>;
-  identGen?: IdentifierGenerator;
-  emitter: Emitter;
   detokenizer?: Detokenizer;
 }
 

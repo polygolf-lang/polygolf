@@ -14,7 +14,6 @@ export interface Variants {
 export interface Block {
   type: "Block";
   children: Statement[];
-  requiresBlock: boolean;
 }
 
 /**
@@ -38,8 +37,14 @@ export interface VarDeclaration extends BaseExpr {
   variableType: ValueType;
 }
 
+export interface ImportStatement extends BaseExpr {
+  type: "ImportStatement";
+  name: string;
+  modules: string[];
+}
+
 export function block(children: Statement[]): Block {
-  return { type: "Block", children, requiresBlock: false };
+  return { type: "Block", children };
 }
 
 export function ifStatement(
@@ -63,4 +68,11 @@ export function varDeclaration(
 
 export function variants(variants: Block[]): Variants {
   return { type: "Variants", variants };
+}
+
+export function importStatement(
+  name: string,
+  modules: string[]
+): ImportStatement {
+  return { type: "ImportStatement", name, modules };
 }

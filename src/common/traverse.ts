@@ -32,7 +32,7 @@ export class Path<N extends IR.Node = IR.Node> {
             (child, i) => new Path(child, this, { prop: key, index: i })
           )
         );
-      } else if (typeof (value as any).type === "string") {
+      } else if (typeof value?.type === "string") {
         result.push(new Path(value, this, key));
       }
     }
@@ -160,7 +160,7 @@ export class Path<N extends IR.Node = IR.Node> {
     const result = new Set<string>();
     this.root.visit({
       enter(path: Path) {
-        if (path.node.type === "Identifier") {
+        if (path.node.type === "Identifier" && !path.node.builtin) {
           result.add(path.node.name);
         }
       },

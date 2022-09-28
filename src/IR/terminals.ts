@@ -12,6 +12,7 @@ export interface Argv extends BaseExpr {
 export interface Identifier extends BaseExpr {
   type: "Identifier";
   name: string;
+  builtin: boolean;
 }
 
 /**
@@ -32,8 +33,8 @@ export interface StringLiteral extends BaseExpr {
   value: string;
 }
 
-export function id(name: string): Identifier {
-  return { type: "Identifier", name };
+export function id(name: string, builtin: boolean = false): Identifier {
+  return { type: "Identifier", name, builtin };
 }
 
 export function int(value: bigint): IntegerLiteral {

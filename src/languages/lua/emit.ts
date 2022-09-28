@@ -1,3 +1,9 @@
+import { PathFragment } from "common/traverse";
+import {
+  emitStringLiteral,
+  joinGroups,
+  needsParensPrecedence,
+} from "../../common/emit";
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {
@@ -72,16 +78,27 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
   }
 }
 
-function emitExpr(expr: IR.Expr, parent: IR.Node): string[] {
+function emitExpr(
+  expr: IR.Expr,
+  parent: IR.Node,
+  fragment?: PathFragment
+): string[] {
   const inner = emitExprNoParens(expr);
-  return needsParens(expr, parent) ? ["(", ...inner, ")"] : inner;
+  return needsParens(expr, parent, fragment) ? ["(", ...inner, ")"] : inner;
 }
 
 /**
  * Does expr need parens around it to override precedence?
  * This does not include needing parens for stuff like function calls
  */
-function needsParens(expr: IR.Expr, parent: IR.Node): boolean {
+function needsParens(
+  expr: IR.Expr,
+  parent: IR.Node,
+  fragment?: PathFragment
+): boolean {
+  if (needsParensPrecedence(expr, parent, fragment)) {
+    return true;
+  }
   if (
     parent.type === "MethodCall" &&
     expr === parent.object &&
@@ -89,15 +106,7 @@ function needsParens(expr: IR.Expr, parent: IR.Node): boolean {
     expr.type !== "ArrayGet"
   )
     return true;
-  if (parent.type !== "BinaryOp") return false;
-  if (expr.type !== "BinaryOp") return false;
-  // over-parenthesizes here
-  // TODO: check precedence and stuff
-  return true;
-}
-
-function joinGroups(groups: string[][], ...sep: string[]): string[] {
-  return groups.flatMap((x, i) => (i > 0 ? [...sep, ...x] : x));
+  return false;
 }
 
 function emitExprNoParens(expr: IR.Expr): string[] {
@@ -111,14 +120,38 @@ function emitExprNoParens(expr: IR.Expr): string[] {
     case "Identifier":
       return [expr.name];
     case "StringLiteral":
-      // TODO: special string handling
-      return [JSON.stringify(expr.value)];
+      return emitStringLiteral(expr.value, [
+        [
+          `"`,
+          [
+            [`\\`, `\\\\`],
+            [`\n`, `\\n`],
+            [`\r`, `\\r`],
+            [`"`, `\\"`],
+          ],
+        ],
+        [
+          `'`,
+          [
+            [`\\`, `\\\\`],
+            [`\n`, `\\n`],
+            [`\r`, `\\r`],
+            [`'`, `\\'`],
+          ],
+        ],
+        [
+          [`[[`, `]]`],
+          [
+            [`[[`, null],
+            [`]]`, null],
+          ],
+        ],
+      ]);
     case "IntegerLiteral":
-      // TODO: avoid exponential notation e.g. 1e20
       return [expr.value.toString()];
     case "FunctionCall":
       return [
-        expr.name,
+        expr.ident.name,
         "(",
         ...joinGroups(
           expr.args.map((arg) => emitExpr(arg, expr)),
@@ -130,7 +163,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
       return [
         ...emitExpr(expr.object, expr),
         ":",
-        expr.name,
+        expr.ident.name,
         "(",
         ...joinGroups(
           expr.args.map((arg) => emitExpr(arg, expr)),
@@ -140,9 +173,9 @@ function emitExprNoParens(expr: IR.Expr): string[] {
       ];
     case "BinaryOp":
       return [
-        ...emitExpr(expr.left, expr),
+        ...emitExpr(expr.left, expr, "left"),
         expr.name,
-        ...emitExpr(expr.right, expr),
+        ...emitExpr(expr.right, expr, "right"),
       ];
     case "UnaryOp":
       return [expr.name, ...emitExpr(expr.arg, expr)];

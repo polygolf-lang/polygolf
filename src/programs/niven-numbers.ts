@@ -7,6 +7,7 @@ import {
   print,
   ifStatement,
   forRangeCommon,
+  integerType,
 } from "../IR";
 
 export default program(
@@ -16,15 +17,14 @@ export default program(
       ifStatement(
         binaryOp(
           "lt",
-          binaryOp(
-            "mod",
-            id("i"),
-            binaryOp(
+          binaryOp("mod", id("i"), {
+            ...binaryOp(
               "sub",
               id("i"),
               binaryOp("mul", binaryOp("div", id("i"), int(10n)), int(9n))
-            )
-          ),
+            ),
+            valueType: integerType(0n, 100n),
+          }),
           int(1n)
         ),
         block([print(id("i"), true)])

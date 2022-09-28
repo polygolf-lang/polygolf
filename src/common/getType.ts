@@ -86,9 +86,12 @@ export function calcType(expr: Expr, program: Program): ValueType {
       return getType(expr.consequent, program);
     case "ManyToManyAssignment":
       return simpleType("void");
+    case "ImportStatement":
+      return simpleType("void");
     case "OneToManyAssignment":
       return getType(expr.expr, program);
   }
+  throw new Error(`Unexpected node ${expr.type}.`);
 }
 
 function getOpCodeType(
@@ -100,6 +103,7 @@ function getOpCodeType(
     case "sub":
     case "mul":
     case "div":
+    case "truncdiv":
     case "mod":
     case "rem":
     case "exp":
@@ -114,6 +118,7 @@ function getOpCodeType(
       return getIntegerOpCodeType(expr, program);
     case "lt":
     case "leq":
+    case "neq":
     case "eq":
     case "geq":
     case "gt":
@@ -123,6 +128,7 @@ function getOpCodeType(
     case "inset":
     case "and":
     case "or":
+    case "not":
       return simpleType("boolean");
     case "str_concat":
     case "int_to_str":
@@ -131,7 +137,7 @@ function getOpCodeType(
     case "sorted":
       return getType(expr, program);
   }
-  throw new Error(`Unknown opcode. ${expr.op}`);
+  throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
 }
 
 function getIntegerOpCodeType(
@@ -196,6 +202,8 @@ function getIntegerOpCodeType(
       return getIntegerTypeUsing(left, right, (a, b) => a * b);
     case "div":
       return getIntegerTypeUsing(left, right, floorDiv);
+    case "truncdiv":
+      return getIntegerTypeUsing(left, right, (a, b) => a / b);
     case "mod":
       return getIntegerTypeMod(left, right);
     case "rem":
@@ -213,7 +221,7 @@ function getIntegerOpCodeType(
     case "bitxor":
       return integerType();
   }
-  throw new Error(`Unknown opcode. ${expr.op}`);
+  throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
 }
 
 export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
@@ -231,9 +239,10 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
 
 function floorDiv(a: bigint, b: bigint): bigint {
   const res = a / b;
-  return res < 0n ? res - 1n : res;
+  return a < 0 !== b < 0 ? res - 1n : res;
 }
 
+/** Combines types `left` and `right` using the *convex* operator `op` */
 function getIntegerTypeUsing(
   left: IntegerType,
   right: IntegerType,

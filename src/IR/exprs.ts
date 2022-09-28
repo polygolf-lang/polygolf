@@ -1,16 +1,16 @@
-import { Expr, Identifier, BaseExpr } from "./IR";
+import { Expr, Identifier, BaseExpr, id } from "./IR";
 
 export interface FunctionCall extends BaseExpr {
   type: "FunctionCall";
-  name: string;
-  op: OpCode;
+  ident: Identifier;
+  op: OpCode | null;
   args: Expr[];
 }
 
 export interface MethodCall extends BaseExpr {
   type: "MethodCall";
-  name: string;
-  op: OpCode;
+  ident: Identifier;
+  op: OpCode | null;
   object: Expr;
   args: Expr[];
 }
@@ -21,6 +21,7 @@ export type BuiltinBinop =
   | "sub"
   | "mul"
   | "div"
+  | "truncdiv"
   | "exp"
   | "mod"
   | "rem"
@@ -65,6 +66,7 @@ export interface BinaryOp extends BaseExpr {
 export interface MutatingBinaryOp extends BaseExpr {
   type: "MutatingBinaryOp";
   op: BuiltinBinop;
+  name: string;
   variable: Identifier;
   right: Expr;
 }
@@ -108,28 +110,28 @@ export interface Print extends BaseExpr {
 }
 
 export function functionCall(
-  op: OpCode,
+  op: OpCode | null,
   args: Expr[],
-  name: string
+  ident: string | Identifier
 ): FunctionCall {
   return {
     type: "FunctionCall",
-    name,
+    ident: typeof ident === "string" ? id(ident, true) : ident,
     op,
     args,
   };
 }
 
 export function methodCall(
-  op: OpCode,
+  op: OpCode | null,
   object: Expr,
   args: Expr[],
-  name: string
+  ident: string | Identifier
 ): MethodCall {
   return {
     type: "MethodCall",
     op,
-    name,
+    ident: typeof ident === "string" ? id(ident, true) : ident,
     object,
     args,
   };
@@ -140,7 +142,8 @@ export function binaryOp(
   left: Expr,
   right: Expr,
   name: string = "",
-  precedence?: number
+  precedence?: number,
+  rightAssociative?: boolean
 ): BinaryOp {
   return {
     type: "BinaryOp",
@@ -149,20 +152,22 @@ export function binaryOp(
     right,
     name,
     precedence: precedence ?? getDefaultPrecedence(op),
-    rightAssociative: op === "exp" || op === "str_concat",
+    rightAssociative: rightAssociative ?? (op === "exp" || op === "str_concat"),
   };
 }
 
 export function mutatingBinaryOp(
   op: BuiltinBinop,
   variable: Identifier,
-  right: Expr
+  right: Expr,
+  name: string = ""
 ): MutatingBinaryOp {
   return {
     type: "MutatingBinaryOp",
     op,
     variable,
     right,
+    name,
   };
 }
 
