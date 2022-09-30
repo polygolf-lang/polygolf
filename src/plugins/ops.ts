@@ -12,7 +12,7 @@ export function mapOps(opMap0: [string, OpTransformOutput][]) {
         const op = node.op;
         const f = opMap.get(op);
         if (f === undefined) {
-          throw new Error(`Unsupported operator ${op}!`);
+          return;
         }
         if (typeof f === "string") {
           if (BinaryOpCodeArray.includes(op))
