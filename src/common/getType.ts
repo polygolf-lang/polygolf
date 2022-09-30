@@ -12,6 +12,7 @@ import {
   integerType,
   integerTypeIncludingAll,
   IntegerType,
+  PolygolfOp,
 } from "../IR";
 
 export function getType(expr: Expr, program: Program): ValueType {
@@ -23,14 +24,11 @@ export function getType(expr: Expr, program: Program): ValueType {
 
 export function calcType(expr: Expr, program: Program): ValueType {
   switch (expr.type) {
-    case "Argv":
-      return listType("string");
     case "VarDeclaration":
       return simpleType("void");
     case "Assignment":
       return getType(expr.expr, program);
-    case "Print":
-      return simpleType("void");
+    case "PolygolfOp":
     case "FunctionCall":
     case "MethodCall":
     case "BinaryOp":
@@ -95,7 +93,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
 }
 
 function getOpCodeType(
-  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall,
+  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall | PolygolfOp,
   program: Program
 ): ValueType {
   switch (expr.op) {
@@ -115,6 +113,7 @@ function getOpCodeType(
     case "str_to_int":
     case "cardinality":
     case "str_length":
+    case "str_find":
       return getIntegerOpCodeType(expr, program);
     case "lt":
     case "leq":
@@ -136,12 +135,26 @@ function getOpCodeType(
       return simpleType("string");
     case "sorted":
       return getType(expr, program);
+    case "print":
+    case "printnl":
+      return simpleType("void");
+    case "argv":
+    case "str_split":
+      return listType("string");
+    case "str_replace":
+    case "str_substr":
+    case "join_using":
+    case "right_align":
+    case "int_to_bin_aligned":
+    case "int_to_hex_aligned":
+    case "simplify_fraction":
+      return simpleType("string");
   }
   throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
 }
 
 function getIntegerOpCodeType(
-  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall,
+  expr: PolygolfOp | BinaryOp | UnaryOp | FunctionCall | MethodCall,
   program: Program
 ): ValueType {
   if (expr.op === "str_to_int") return integerType();
@@ -149,7 +162,10 @@ function getIntegerOpCodeType(
     return integerType(0, 1 << 31);
   let left: ValueType | undefined;
   let right: ValueType | undefined;
-  if (expr.type === "BinaryOp") {
+  if (expr.type === "PolygolfOp") {
+    left = getType(expr.args[0], program);
+    right = getType(expr.args[1], program);
+  } else if (expr.type === "BinaryOp") {
     left = getType(expr.left, program);
     right = getType(expr.right, program);
   } else if (expr.type === "UnaryOp") {
@@ -180,6 +196,20 @@ function getIntegerOpCodeType(
     throw new Error("Unexpected type.");
   }
   switch (expr.op) {
+    case "gcd":
+      if (
+        left.low === undefined ||
+        left.high === undefined ||
+        right.high === undefined ||
+        right.low === undefined
+      )
+        return integerType(1n, undefined);
+      return integerType(
+        1n,
+        [left.low, left.high, right.low, right.high]
+          .map((x) => (x < 0 ? -x : x))
+          .reduce((a, b) => (a < b ? a : b))
+      );
     case "add":
       return integerType(
         left.low === undefined || right.low === undefined

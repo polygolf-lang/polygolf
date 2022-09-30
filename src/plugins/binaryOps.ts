@@ -1,17 +1,5 @@
-import { assignment, binaryOp, mutatingBinaryOp } from "../IR";
+import { mutatingBinaryOp } from "../IR";
 import { Path } from "../common/traverse";
-
-// "a += b" --> "a = a + b"
-export const removeMutatingBinaryOp = {
-  enter(path: Path) {
-    const node = path.node;
-    if (node.type === "MutatingBinaryOp") {
-      path.replaceWith(
-        assignment(node.variable, binaryOp(node.op, node.variable, node.right))
-      );
-    }
-  },
-};
 
 // "a = a + b" --> "a += b"
 export const addMutatingBinaryOp = {

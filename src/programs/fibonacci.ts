@@ -1,10 +1,9 @@
 import {
   assignment,
-  binaryOp,
+  polygolfOp,
   block,
   id,
   int,
-  mutatingBinaryOp,
   program,
   print,
   variants,
@@ -25,13 +24,13 @@ export default program(
       variants([
         block([
           varDeclaration("t", integerType(0, 1346269)),
-          assignment("t", binaryOp("add", id("a"), id("b"))),
+          assignment("t", polygolfOp("add", id("a"), id("b"))),
           assignment("a", id("b")),
           assignment("b", id("t")),
         ]),
         block([
-          mutatingBinaryOp("add", id("b"), id("a")),
-          assignment("a", binaryOp("sub", id("b"), id("a"))),
+          assignment("b", polygolfOp("add", id("b"), id("a"))),
+          assignment("a", polygolfOp("sub", id("b"), id("a"))),
         ]),
       ])
     ),

@@ -1,6 +1,5 @@
 import { functionCall, methodCall } from "../../IR";
 import { Language } from "../../common/Language";
-import { removeMutatingBinaryOp } from "../../plugins/mutatingBinaryOps";
 import { oneIndexed } from "../../plugins/oneIndexed";
 import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
@@ -14,13 +13,14 @@ const luaLanguage: Language = {
   emitter: emitProgram,
   plugins: [
     tempVarToMultipleAssignment,
-    removeMutatingBinaryOp,
     forRangeToForRangeInclusive,
     oneIndexed,
     mapOps([
-      ["str_length", (x, _) => methodCall("str_length", x, [], "len")],
-      ["int_to_str", (x, _) => functionCall("int_to_str", [x], "tostring")],
-      ["repeat", (x, y) => methodCall("repeat", x, [y], "rep")],
+      ["str_length", (x) => methodCall(x[0], [], "len")],
+      ["int_to_str", (x) => functionCall([x[0]], "tostring")],
+      ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
+      ["print", (x) => functionCall([x[0]], "io.write")],
+      ["printnl", (x) => functionCall([x[0]], "print")],
       ["add", "+"],
       ["sub", "-"],
       ["mul", "*"],

@@ -1,5 +1,5 @@
 import { Path } from "../common/traverse";
-import { binaryOp, int } from "../IR";
+import { int, polygolfOp } from "../IR";
 
 /**
  * Convert all indexing (ListGet, ArrayGet) to be one-indexed by adding 1
@@ -16,7 +16,7 @@ export const oneIndexed = {
         node.type === "ArraySet") &&
       !node.oneIndexed
     ) {
-      path.replaceChild(binaryOp("add", node.index, int(1n)), "index");
+      path.replaceChild(polygolfOp("add", node.index, int(1n)), "index");
       node.oneIndexed = true;
     }
   },

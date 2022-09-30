@@ -1,5 +1,5 @@
 import {
-  binaryOp,
+  polygolfOp,
   block,
   id,
   int,
@@ -14,12 +14,12 @@ export default program(
     forRangeCommon(
       ["y", 450, 601],
       ifStatement(
-        binaryOp(
+        polygolfOp(
           "or",
-          binaryOp("gt", binaryOp("mod", id("y"), int(25n)), int(0n)),
-          binaryOp("lt", binaryOp("mod", id("y"), int(100n)), int(1n))
+          polygolfOp("gt", polygolfOp("mod", id("y"), int(25n)), int(0n)),
+          polygolfOp("lt", polygolfOp("mod", id("y"), int(100n)), int(1n))
         ),
-        block([print(binaryOp("mul", int(4n), id("y")))])
+        block([print(polygolfOp("mul", int(4n), id("y")))])
       )
     ),
   ])

@@ -1,5 +1,5 @@
 import {
-  binaryOp,
+  polygolfOp,
   block,
   id,
   int,
@@ -56,9 +56,9 @@ export default program(
     forRangeCommon(
       ["i", 0, 12],
       print(
-        binaryOp(
+        polygolfOp(
           "str_concat",
-          binaryOp(
+          polygolfOp(
             "str_concat",
             stringLiteral("On the "),
             listGet(id("O"), id("i"))
@@ -67,7 +67,7 @@ export default program(
         )
       ),
       forRangeCommon(
-        ["j", binaryOp("sub", int(11n), id("i")), 12],
+        ["j", polygolfOp("sub", int(11n), id("i")), 12],
         print(listGet(id("T"), id("j")))
       )
     ),

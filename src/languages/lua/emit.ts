@@ -195,10 +195,6 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         ...emitExpr(expr.index, expr),
         ")",
       ];
-    case "Print":
-      return expr.newline
-        ? ["print", "(", ...emitExpr(expr.value, expr), ")"]
-        : ["io", ".", "write", "(", ...emitExpr(expr.value, expr), ")"];
     case "ListConstructor":
       return ["{", ...joinGroups(expr.exprs.map(emitExprNoParens), ","), "}"];
     case "ListGet":

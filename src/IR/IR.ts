@@ -19,12 +19,12 @@ import {
   TableSet,
 } from "./collections";
 import {
+  PolygolfOp,
   BinaryOp,
   ConditionalOp,
   FunctionCall,
   MethodCall,
   MutatingBinaryOp,
-  Print,
   UnaryOp,
 } from "./exprs";
 import {
@@ -35,7 +35,7 @@ import {
   ForCLike,
   WhileLoop,
 } from "./loops";
-import { Argv, Identifier, IntegerLiteral, StringLiteral } from "./terminals";
+import { Identifier, IntegerLiteral, StringLiteral } from "./terminals";
 import {
   Block,
   IfStatement,
@@ -72,11 +72,10 @@ export type Statement =
   | ImportStatement;
 
 export type Expr =
-  | Argv
+  | PolygolfOp
   | VarDeclaration
   | VarDeclarationWithAssignment
   | Assignment
-  | Print
   | FunctionCall
   | MethodCall
   | BinaryOp

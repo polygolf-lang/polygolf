@@ -8,7 +8,7 @@ import {
   id,
   int,
   program,
-  unaryOp,
+  polygolfOp,
   print,
 } from "../IR";
 import debugEmit from "../languages/debug/emit";
@@ -24,7 +24,7 @@ const loopProgram2 = program(
     forRange(
       "i",
       int(0n),
-      unaryOp("cardinality", id("collection")),
+      polygolfOp("cardinality", id("collection")),
       int(1n),
       block([print(arrayGet(id("collection"), id("i"), false))]),
       false
@@ -37,7 +37,7 @@ const loopProgram3 = program(
     forRange(
       "i",
       int(0n),
-      unaryOp("cardinality", id("collection")),
+      polygolfOp("cardinality", id("collection")),
       int(1n),
       block([
         print(id("i")),
@@ -59,19 +59,19 @@ test("ForRange -> ForRangeInclusive", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToForRangeInclusive,
-    "{ for i in range(0,<=(10 sub 1),1) { printnl(x); }; }"
+    "{ for i in range(0,<=sub(10,1),1) { printnl(x); }; }"
   ));
 test("ForRange -> WhileLoop", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToWhile,
-    "{ i:integer; i=0; while (i lt 10) { printnl(x); i=(i add 1); }; }"
+    "{ i:integer; i=0; while lt(i,10) { printnl(x); i=add(i,1); }; }"
   ));
 test("ForRange -> ForCLike", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToForCLike,
-    "{ for({ i:integer; i=0; };(i lt 10);{ (i add 1); }){ printnl(x); }; }"
+    "{ for({ i:integer; i=0; };lt(i,10);{ add(i,1); }){ printnl(x); }; }"
   ));
 
 test("ForRange -> ForEachPair", () =>
@@ -90,5 +90,5 @@ test("ForRange -> ForEach", () =>
   expectTransform(
     loopProgram3,
     loops.forRangeToForEach,
-    "{ for i in range(0,<(cardinality collection),1) { printnl(i); printnl(collection[i]); }; }"
+    "{ for i in range(0,<cardinality(collection),1) { printnl(i); printnl(collection[i]); }; }"
   ));

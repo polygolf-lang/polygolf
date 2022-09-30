@@ -1,4 +1,4 @@
-import { functionCall } from "../../IR";
+import { functionCall, id } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -8,7 +8,6 @@ import { addDependencies } from "../../plugins/dependencies";
 import {
   addImports,
   addVarDeclarations,
-  printToFunctionCall,
   useUFCS,
   useUnsignedDivision,
 } from "./plugins";
@@ -20,14 +19,14 @@ const nimLanguage: Language = {
   name: "Nim",
   emitter: emitProgram,
   plugins: [
-    printToFunctionCall,
     tempVarToMultipleAssignment,
     modToRem,
     divToTruncdiv,
+    useInclusiveForRange,
     mapOps([
-      ["str_length", (x, _) => functionCall("str_length", [x], "len")],
+      ["str_length", (x) => functionCall([x[0]], "len")],
       ["int_to_str", "$"],
-      ["repeat", (x, y) => functionCall("repeat", [x, y], "repeat")],
+      ["repeat", (x) => functionCall([x[0], x[0]], "repeat")],
       ["add", "+"],
       ["sub", "-"],
       ["mul", "*"],
@@ -44,11 +43,12 @@ const nimLanguage: Language = {
       ["str_concat", ["&", 150, false]],
       ["not", ["not", 150]],
       ["neg", ["-", 150]],
-      ["str_to_int", (x, _) => functionCall("int_to_str", [x], "parseInt")],
+      ["str_to_int", (x) => functionCall([x[0]], "parseInt")],
+      ["print", (x) => functionCall([id("stdout"), x[0]], "write")],
+      ["printnl", (x) => functionCall([x[0]], "echo")],
     ]),
-    useInclusiveForRange,
-    useUnsignedDivision,
     useUFCS,
+    useUnsignedDivision,
     addDependencies([
       ["^", "math"],
       ["repeat", "strutils"],

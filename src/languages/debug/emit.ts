@@ -57,16 +57,14 @@ export default function emit(node: IR.Node): string {
       return JSON.stringify(node.value);
     case "IntegerLiteral":
       return node.value.toString();
+    case "PolygolfOp":
+      return node.op + "(" + node.args.map((arg) => emit(arg)).join(",") + ")";
     case "FunctionCall":
       return (
         node.ident.name +
         "(" +
         node.args.map((arg) => emit(arg)).join(",") +
         ")"
-      );
-    case "Print":
-      return (
-        (node.newline ? "printnl" : "printnonl") + "(" + emit(node.value) + ")"
       );
     case "MethodCall":
       return (

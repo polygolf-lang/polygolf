@@ -1,5 +1,5 @@
 import {
-  binaryOp,
+  polygolfOp,
   block,
   id,
   int,
@@ -16,25 +16,25 @@ export default program(
       forRangeCommon(
         ["j", 0, id("i")],
         print(
-          binaryOp(
+          polygolfOp(
             "str_concat",
-            binaryOp(
+            polygolfOp(
               "repeat",
               stringLiteral(" "),
-              binaryOp("sub", id("i"), id("j"))
+              polygolfOp("sub", id("i"), id("j"))
             ),
-            binaryOp(
+            polygolfOp(
               "repeat",
               stringLiteral("*"),
-              binaryOp("add", binaryOp("mul", int(2n), id("j")), int(1n))
+              polygolfOp("add", polygolfOp("mul", int(2n), id("j")), int(1n))
             )
           )
         )
       ),
       print(
-        binaryOp(
+        polygolfOp(
           "str_concat",
-          binaryOp("repeat", stringLiteral(" "), id("i")),
+          polygolfOp("repeat", stringLiteral(" "), id("i")),
           stringLiteral("*\n")
         )
       )
