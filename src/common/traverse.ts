@@ -225,3 +225,40 @@ export interface Visitor {
   enter?: (path: Path) => void;
   exit?: (path: Path) => void;
 }
+
+export function getChildren(node: IR.Node): IR.Node[] {
+  const result = [];
+  for (const key in node) {
+    const value = node[key as keyof typeof node] as any as IR.Node[] | IR.Node;
+    if (Array.isArray(value)) {
+      result.push(...value);
+    } else if (typeof value?.type === "string") {
+      result.push(value);
+    }
+  }
+  return result;
+}
+
+/** Returns an array of all nodes of a given type or satistifing given predicate. */
+export function findNodes(
+  node: IR.Node,
+  predicate: string | ((x: IR.Node) => boolean)
+): IR.Node[] {
+  const result = [];
+  if (typeof predicate === "string") predicate = (x) => x.type === predicate;
+  if (predicate(node)) result.push(node);
+  for (const child of getChildren(node)) {
+    result.push(...findNodes(child, predicate));
+  }
+  return result;
+}
+
+/** Returns findNodes(node, predicate).length > 0 without enumerating all matches. */
+export function anyNode(
+  node: IR.Node,
+  predicate: string | ((x: IR.Node) => boolean)
+): boolean {
+  if (typeof predicate === "string") predicate = (x) => x.type === predicate;
+  if (predicate(node)) return true;
+  return getChildren(node).some((x) => anyNode(x, predicate));
+}

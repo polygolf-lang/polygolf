@@ -1,5 +1,5 @@
 import { IR } from "IR";
-import { PathFragment } from "./traverse";
+import { getChildren, PathFragment } from "./traverse";
 
 export function needsParensPrecedence(
   expr: IR.Expr,
@@ -65,17 +65,4 @@ export function hasChildWithBlock(node: IR.Node): boolean {
     }
   }
   return false;
-}
-
-function getChildren(node: IR.Node): IR.Node[] {
-  const result = [];
-  for (const key in node) {
-    const value = node[key as keyof typeof node] as any as IR.Node[] | IR.Node;
-    if (Array.isArray(value)) {
-      result.push(...value);
-    } else if (typeof value?.type === "string") {
-      result.push(value);
-    }
-  }
-  return result;
 }

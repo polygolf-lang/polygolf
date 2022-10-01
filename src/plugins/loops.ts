@@ -1,5 +1,6 @@
+import nodeTest from "node:test";
 import { getType } from "../common/getType";
-import { Path } from "../common/traverse";
+import { anyNode, Path } from "../common/traverse";
 import {
   forRange,
   binaryOp,
@@ -224,18 +225,11 @@ function isArrayOrListGet(node: IR.Node, collection: string, index: string) {
 }
 
 function isVariableUsedAlone(path: Path, collection: string, index: string) {
-  let result = false;
-  path.visit({
-    enter(path: Path) {
-      const node = path.node;
-      if (
-        node.type === "Identifier" &&
-        node.name === index &&
-        !isArrayOrListGet(path.parent!.node, collection, index)
-      ) {
-        result = true;
-      }
-    },
-  });
-  return result;
+  return anyNode(
+    path.node,
+    (x) =>
+      x.type === "Identifier" &&
+      nodeTest.name === index &&
+      !isArrayOrListGet(path.parent!.node, collection, index)
+  );
 }
