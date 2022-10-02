@@ -93,3 +93,52 @@ function packLowDecimalList(value: string): string {
   }
   return "";
 }
+
+export function packSource2to1(source: string): string {
+  let result = "";
+  for (let i = 0; i < source.length; i += 2) {
+    result += String.fromCharCode(
+      source.charCodeAt(i) * 256 + source.charCodeAt(i + 1)
+    );
+  }
+  return result;
+}
+
+export function packSource3to1(source: string): string {
+  let result = "";
+  for (let i = 0; i < source.length; i += 3) {
+    const a = [i, i + 1, i + 2].map((x) => source.charCodeAt(x) - 32);
+    result += String.fromCodePoint(crt(a, [97, 98, 99]));
+  }
+  return result;
+}
+
+function crt(num: number[], rem: number[]): number {
+  let sum = 0;
+  const prod = num.reduce((a, c) => a * c, 1);
+
+  for (let i = 0; i < num.length; i++) {
+    const [ni, ri] = [num[i], rem[i]];
+    const p = Math.floor(prod / ni);
+    sum += ri * p * mulInv(p, ni);
+  }
+  return sum % prod;
+}
+
+function mulInv(a: number, b: number) {
+  const b0 = b;
+  let [x0, x1] = [0, 1];
+
+  if (b === 1) {
+    return 1;
+  }
+  while (a > 1) {
+    const q = Math.floor(a / b);
+    [a, b] = [b, a % b];
+    [x0, x1] = [x1 - q * x0, x0];
+  }
+  if (x1 < 0) {
+    x1 += b0;
+  }
+  return x1;
+}
