@@ -244,6 +244,7 @@ export function programToPath(node: IR.Program) {
 export interface Visitor {
   enter?: (path: Path) => void;
   exit?: (path: Path) => void;
+  generatesVariants?: boolean;
 }
 
 export function getChildren(node: IR.Node): IR.Node[] {
