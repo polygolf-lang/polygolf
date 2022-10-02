@@ -98,7 +98,7 @@ export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
   return null;
 }
 
-export function negateOpCode(op: BinaryOpCode): BinaryOpCode | null {
+export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
     case "lt":
       return "geq";
