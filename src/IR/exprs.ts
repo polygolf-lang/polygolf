@@ -73,19 +73,13 @@ export type BinaryOpCode = typeof BinaryOpCodeArray[number];
 export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
     case "add":
-      return "add";
     case "mul":
-      return "mul";
     case "eq":
-      return "eq";
     case "neq":
-      return "neq";
     case "bitand":
-      return "bitand";
     case "bitor":
-      return "bitor";
     case "bitxor":
-      return "bitxor";
+      return op;
     case "lt":
       return "gt";
     case "gt":
