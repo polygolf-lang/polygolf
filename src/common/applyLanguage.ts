@@ -14,11 +14,11 @@ export function applyLanguage(
     expandVariants(program),
     maxBranches
   );
-  const variantsPluginsIndeces = [...language.plugins.keys()].filter(
+  const variantsPluginsIndices = [...language.plugins.keys()].filter(
     (i) => language.plugins[i].generatesVariants === true
   );
   let lastAppliedPluginIndex = -1;
-  for (const vpi of variantsPluginsIndeces) {
+  for (const vpi of variantsPluginsIndices) {
     for (let i = lastAppliedPluginIndex + 1; i < vpi; i++) {
       emittedVariants.forEach((v) => {
         const path = programToPath(v[0]);
