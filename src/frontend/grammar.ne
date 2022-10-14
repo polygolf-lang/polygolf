@@ -1,3 +1,11 @@
 @preprocessor typescript
-main -> (statement "\n" {% d => d[0] %}):+ {% d=> d[0] %}
-statement -> ("foo" | "bar") {% d => d[0][0] %}
+
+@{% import lexer from "./lexer"; %}
+
+@lexer lexer
+
+main -> multiplication {% id %} | trig {% id %}
+
+multiplication -> %number "*" %number {% ([first, _star, second]) => first * second %}
+
+trig -> "sin" multiplication {% ([, x]) => Math.sin(x) %}
