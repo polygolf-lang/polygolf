@@ -1,0 +1,13 @@
+assign $a:0..1346269 0
+assign $b:0..1346269 1
+forRange $i 0 31 1 [
+    println $a
+    {
+        assign $t:0..1346269 (add $a $b)
+        assign $a $b
+        assign $b $t
+    *
+        assign $b (add $b $a)
+        assign $a (sub $b $a)
+    }
+]

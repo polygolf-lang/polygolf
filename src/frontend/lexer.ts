@@ -1,9 +1,20 @@
 import moo from "moo";
 
 const tokenTable = {
-  number: /[0-9]+/,
-  sin: "sin",
-  times: "*",
+  integer: /[0-9]+/,
+  string: /"(?:\\.|[^"])*"/,
+  variable: /\$\w*/,
+  name: /\w+/,
+  lparen: "(",
+  rparen: ")",
+  lbracket: "[",
+  rbracket: "]",
+  lbrace: "{",
+  rbrace: "}",
+  star: "*",
+  colon: ":",
+  range: "..",
+  semicolon: ";",
   whitespace: {
     match: /\s/,
     lineBreaks: true,

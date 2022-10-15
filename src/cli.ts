@@ -1,29 +1,27 @@
 #!/usr/bin/env node
 
+import fs from "fs";
+import parse from "./frontend/parse";
+import path from "path";
+
 import lua from "./languages/lua";
 import nim from "./languages/nim";
 // import debugEmit from "./languages/debug/emit";
 import { applyLanguage } from "./common/applyLanguage";
-import fibonacciSolution from "./programs/fibonacci";
-import leapYearsSolution from "./programs/leap-years";
-import nivenNumbersSolution from "./programs/niven-numbers";
-import odiousNumbersSolution from "./programs/odious-numbers";
-import daysOfChristmasSolution from "./programs/12-days-of-christmas";
-import christmasTreesSolution from "./programs/christmas-trees";
 
-const testPrograms = [
-  fibonacciSolution,
-  leapYearsSolution,
-  nivenNumbersSolution,
-  odiousNumbersSolution,
-  daysOfChristmasSolution,
-  christmasTreesSolution,
-];
+const programsDir = "src/programs";
+
 const languages = { lua, nim };
 
 const lang = languages.nim;
 
-for (const prog of testPrograms) {
-  console.log(applyLanguage(lang, prog));
-  console.log();
+// for (const filename of fs.readdirSync(programsDir)) {
+for (const filename of ["fibonacci.polygolf"]) {
+  if (!filename.endsWith(".polygolf")) continue;
+  const filePath = path.join(programsDir, filename);
+  console.log("\nprocessing", filename);
+  const code = fs.readFileSync(filePath, { encoding: "utf-8" });
+  const prog = parse(code);
+  console.log(JSON.stringify(prog, null, 2));
+  // console.log(applyLanguage(lang, prog));
 }

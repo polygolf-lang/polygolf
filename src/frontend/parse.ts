@@ -1,4 +1,5 @@
 import nearley from "nearley";
+import { Program } from "../IR";
 import grammar from "./grammar";
 
 export default function parse(code: string) {
@@ -7,5 +8,5 @@ export default function parse(code: string) {
   const results = parser.results;
   if (results.length > 1) throw new Error("Ambiguous parse of code");
   if (results.length === 0) throw new Error("Unexpected end of code");
-  return results[0];
+  return results[0] as Program;
 }
