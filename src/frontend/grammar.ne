@@ -1,54 +1,54 @@
 @preprocessor typescript
 
-@{% import lexer from "./lexer"; %}
+@{%
+import lexer from "./lexer";
+import {
+  program,
+  block,
+  ifStatement,
+  forRange,
+  variants,
+  int,
+  stringLiteral,
+  id as identifier
+} from "../IR";
+import { sexpr } from "./parse";
+%}
 
 @lexer lexer
 
-main -> block_inner {% id %}
+main -> block_inner {% d => program(d[0]) %}
 
-block_inner -> statement:* {% d => ({type: "block", children: d}) %}
+block_inner -> statement:* {% d => block(d[0]) %}
 
 statement ->
-  sexpr_inner {% id %}
+  sexpr {% id %}
   | variants {% id %}
-  # the following cases can probably be combined into sexpr_inner
-  # by allowing expr -> block.
-  | "forRange" variable expr expr expr block {%
-    ([, variable, low, high, increment, block]) => ({
-      type: "forRange", variable, low, high, increment, block
-    })
-  %}
-  | "if" expr block {% d => ({type: "if", condition: d[1], consequent: d[2]}) %}
-  # TODO: while, if-else, for-keys, etc. Can be unified into sexpr_inner
 
+# TODO: more than 2 variants
 variants -> "{" block_inner "*" block_inner "}" {%
-    ([, var1, , var2, ]) => ({
-      type: "variants",
-      variants: [var1, var2]
-    })
+    ([, var1, , var2, ]) => variants([var1, var2])
   %}
-
-block -> "[" block_inner "]" {% d => d[1] %}
 
 expr ->
   integer {% id %}
-  | string
+  | string {% id %}
   | variable {% id %}
   | sexpr {% id %}
   | annotation {% id %}
+  | block {% id %}
 
-integer -> %integer {% d => ({type: "integer", value: parseInt(d[0])}) %}
+block -> "[" block_inner "]" {% d => d[1] %}
 
-variable -> %variable {% d => ({type: "variable", name: d[0].value}) %}
+integer -> %integer {% d => int(BigInt(d[0])) %}
 
-string -> %string {% d => ({type: "string", value: JSON.parse(d[0])}) %}
+variable -> %variable {% d => identifier(d[0].value.slice(1), false) %}
 
-sexpr -> "(" sexpr_inner ")" {% d => d[1] %}
+builtin -> %builtin {% d => identifier(d[0].value, true) %}
 
-# sexpr_inner includes:
-#  - div $i 10
-#  - assign $i (mul $i 2)
-#  - println $i
-sexpr_inner -> %name expr:+ {% d => ({type: "sexpr", callee: d[0].value, args: d[1]}) %}
+string -> %string {% d => stringLiteral(JSON.parse(d[0])) %}
 
-annotation -> expr ":" integer ".." integer {% ([expr, , min, , max]) => [expr, min, max] %}
+sexpr -> "(" (builtin | variable) expr:+  ")" {% d => sexpr(d[1][0], d[2]) %}
+
+# TODO: don't just ignore annotations
+annotation -> expr ":" integer ".." integer {% ([expr, , min, , max]) => expr %}

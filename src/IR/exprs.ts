@@ -15,38 +15,41 @@ export interface MethodCall extends BaseExpr {
   args: Expr[];
 }
 
-export type BuiltinBinop =
+export const builtinBinopArray = [
   // (num, num) => num
-  | "add"
-  | "sub"
-  | "mul"
-  | "div"
-  | "truncdiv"
-  | "exp"
-  | "mod"
-  | "rem"
-  | "bitand"
-  | "bitor"
-  | "bitxor"
+  "add",
+  "sub",
+  "mul",
+  "div",
+  "truncdiv",
+  "exp",
+  "mod",
+  "rem",
+  "bitand",
+  "bitor",
+  "bitxor",
+  "gcd",
   // (num, num) => bool
-  | "lt"
-  | "leq"
-  | "eq"
-  | "neq"
-  | "geq"
-  | "gt"
+  "lt",
+  "leq",
+  "eq",
+  "neq",
+  "geq",
+  "gt",
   // (bool, bool) => bool
-  | "or"
-  | "and"
+  "or",
+  "and",
   // membership
-  | "inarray"
-  | "inlist"
-  | "inmap"
-  | "inset"
+  "inarray",
+  "inlist",
+  "inmap",
+  "inset",
   // other
-  | "str_concat"
-  | "repeat"
-  | "not";
+  "str_concat",
+  "repeat",
+  "not",
+];
+export type BuiltinBinop = typeof builtinBinopArray[number];
 
 export interface BinaryOp extends BaseExpr {
   type: "BinaryOp";

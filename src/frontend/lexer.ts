@@ -4,7 +4,7 @@ const tokenTable = {
   integer: /[0-9]+/,
   string: /"(?:\\.|[^"])*"/,
   variable: /\$\w*/,
-  name: /\w+/,
+  builtin: /\w+/,
   lparen: "(",
   rparen: ")",
   lbracket: "[",

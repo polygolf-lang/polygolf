@@ -1,0 +1,5 @@
+(forRange $i 1 101 1 [
+    (if (lt (mod $i (sub $i (mul (div $i 10) 9)):0..100) 1) [
+        (println $i)
+    ])
+])

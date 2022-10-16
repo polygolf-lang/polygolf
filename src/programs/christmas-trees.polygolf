@@ -1,6 +1,6 @@
-forRange $i 3 10 1 [
-  forRange $j 0 $i 1 [
-    println (str_concat (repeat " " (sub $i $j)) (repeat "*" (add (mul 2 $j) 1)))
-  ]
-  println (str_concat (repeat " " $i) "\n")
-]
+(forRange $i 3 10 1 [
+  (forRange $j 0 $i 1 [
+    (println (str_concat (repeat " " (sub $i $j)) (repeat "*" (add (mul 2 $j) 1))))
+  ])
+  (println (str_concat (repeat " " $i) "*\n"))
+])

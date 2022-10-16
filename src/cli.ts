@@ -15,13 +15,19 @@ const languages = { lua, nim };
 
 const lang = languages.nim;
 
-// for (const filename of fs.readdirSync(programsDir)) {
-for (const filename of ["fibonacci.polygolf"]) {
+for (const filename of fs.readdirSync(programsDir)) {
   if (!filename.endsWith(".polygolf")) continue;
   const filePath = path.join(programsDir, filename);
-  console.log("\nprocessing", filename);
+  console.log("\n#", filename);
   const code = fs.readFileSync(filePath, { encoding: "utf-8" });
   const prog = parse(code);
-  console.log(JSON.stringify(prog, null, 2));
-  // console.log(applyLanguage(lang, prog));
+  // console.log(
+  //   JSON.stringify(
+  //     prog,
+  //     (key, value) =>
+  //       typeof value === "bigint" ? value.toString() + "n" : value,
+  //     2
+  //   )
+  // );
+  console.log(applyLanguage(lang, prog));
 }
