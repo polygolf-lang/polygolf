@@ -12,6 +12,9 @@ import {
   forRange,
   Block,
   ifStatement,
+  stringGetByte,
+  listConstructor,
+  listGet,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -84,6 +87,14 @@ export function sexpr(
       expectArity(2);
       assertIdentifier(args[0]);
       return assignment(args[0], args[1]);
+    case "stringGetByte":
+      expectArity(2);
+      return stringGetByte(args[0], args[1]);
+    case "list":
+      return listConstructor(args);
+    case "listGet":
+      expectArity(2);
+      return listGet(args[0], args[1]);
     default:
       throw new Error(`Unrecognized builtin: ${callee.name}`);
   }
