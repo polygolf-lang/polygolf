@@ -35,6 +35,8 @@ export interface IndexCall extends BaseExpr {
   oneIndexed: boolean;
 }
 
+export type LValue = Identifier | IndexCall;
+
 export const BinaryOpCodeArray = [
   // (num, num) => num
   "add",
@@ -169,7 +171,7 @@ export interface MutatingBinaryOp extends BaseExpr {
   type: "MutatingBinaryOp";
   op: BinaryOpCode;
   name: string;
-  variable: Identifier | IndexCall;
+  variable: LValue;
   right: Expr;
 }
 
@@ -266,7 +268,7 @@ export function binaryOp(
 
 export function mutatingBinaryOp(
   op: BinaryOpCode,
-  variable: Identifier | IndexCall,
+  variable: LValue,
   right: Expr,
   name: string = ""
 ): MutatingBinaryOp {

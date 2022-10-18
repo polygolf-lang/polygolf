@@ -1,4 +1,12 @@
-import { BaseExpr, Expr, id, Identifier, ValueType, IndexCall } from "./IR";
+import {
+  BaseExpr,
+  Expr,
+  id,
+  Identifier,
+  ValueType,
+  IndexCall,
+  LValue,
+} from "./IR";
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK
@@ -8,7 +16,7 @@ import { BaseExpr, Expr, id, Identifier, ValueType, IndexCall } from "./IR";
  */
 export interface Assignment extends BaseExpr {
   type: "Assignment";
-  variable: Identifier | IndexCall;
+  variable: LValue;
   expr: Expr;
 }
 
@@ -19,7 +27,7 @@ export interface Assignment extends BaseExpr {
  */
 export interface ManyToManyAssignment extends BaseExpr {
   type: "ManyToManyAssignment";
-  variables: (Identifier | IndexCall)[];
+  variables: LValue[];
   exprs: Expr[];
 }
 
@@ -30,7 +38,7 @@ export interface ManyToManyAssignment extends BaseExpr {
  */
 export interface OneToManyAssignment extends BaseExpr {
   type: "OneToManyAssignment";
-  variables: (Identifier | IndexCall)[];
+  variables: LValue[];
   expr: Expr;
 }
 
