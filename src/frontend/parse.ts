@@ -1,7 +1,5 @@
 import nearley from "nearley";
 import {
-  binaryOp,
-  builtinBinopArray,
   Expr,
   functionCall,
   Identifier,
@@ -12,9 +10,9 @@ import {
   forRange,
   Block,
   ifStatement,
-  stringGetByte,
   listConstructor,
-  listGet,
+  BinaryOpCodeArray,
+  polygolfOp,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -73,10 +71,10 @@ export function sexpr(
   }
   assertExprs(args);
   if (!callee.builtin) {
-    return functionCall(null, args, callee);
-  } else if (builtinBinopArray.includes(callee.name)) {
+    return functionCall(args, callee);
+  } else if (BinaryOpCodeArray.includes(callee.name)) {
     expectArity(2);
-    return binaryOp(callee.name, args[0], args[1]);
+    return polygolfOp(callee.name, args[0], args[1]);
   }
   switch (callee.name) {
     case "println":
@@ -87,14 +85,8 @@ export function sexpr(
       expectArity(2);
       assertIdentifier(args[0]);
       return assignment(args[0], args[1]);
-    case "stringGetByte":
-      expectArity(2);
-      return stringGetByte(args[0], args[1]);
     case "list":
       return listConstructor(args);
-    case "listGet":
-      expectArity(2);
-      return listGet(args[0], args[1]);
     default:
       throw new Error(`Unrecognized builtin: ${callee.name}`);
   }

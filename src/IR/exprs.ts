@@ -1,5 +1,17 @@
 import { Expr, Identifier, BaseExpr, id } from "./IR";
 
+/**
+ * All expressions start as a `PolygolfOp` node.
+ * Plugins (mainly `mapOps` plugin) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
+ * This node should never enter the emit phase.
+ */
+
+export interface PolygolfOp extends BaseExpr {
+  type: "PolygolfOp";
+  op: OpCode;
+  args: Expr[];
+}
+
 export interface FunctionCall extends BaseExpr {
   type: "FunctionCall";
   ident: Identifier;
@@ -15,7 +27,17 @@ export interface MethodCall extends BaseExpr {
   args: Expr[];
 }
 
-export const builtinBinopArray = [
+export interface IndexCall extends BaseExpr {
+  type: "IndexCall";
+  collection: Expr;
+  index: Expr;
+  op: OpCode | null;
+  oneIndexed: boolean;
+}
+
+export type LValue = Identifier | IndexCall;
+
+export const BinaryOpCodeArray = [
   // (num, num) => num
   "add",
   "sub",
@@ -44,16 +66,95 @@ export const builtinBinopArray = [
   "inlist",
   "inmap",
   "inset",
+  // collection get
+  "array_get",
+  "list_get",
+  "table_get",
+  "str_get_byte",
   // other
+  "list_push",
   "str_concat",
   "repeat",
-  "not",
+  "is_substr",
+  "str_find",
+  "str_split",
+  "join_using",
+  "right_align",
+  "int_to_bin_aligned",
+  "int_to_hex_aligned",
+  "simplify_fraction",
 ];
-export type BuiltinBinop = typeof builtinBinopArray[number];
+export type BinaryOpCode = typeof BinaryOpCodeArray[number];
+
+export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
+  switch (op) {
+    case "add":
+    case "mul":
+    case "eq":
+    case "neq":
+    case "bitand":
+    case "bitor":
+    case "bitxor":
+      return op;
+    case "lt":
+      return "gt";
+    case "gt":
+      return "lt";
+    case "leq":
+      return "geq";
+    case "geq":
+      return "leq";
+  }
+  return null;
+}
+
+export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
+  switch (op) {
+    case "lt":
+      return "geq";
+    case "gt":
+      return "leq";
+    case "leq":
+      return "gt";
+    case "geq":
+      return "lt";
+  }
+  return null;
+}
+
+export const UnaryOpCodeArray = [
+  "bitnot",
+  "neg",
+  "not",
+  "int_to_str",
+  "int_to_bin",
+  "int_to_hex",
+  "str_to_int",
+  "cardinality",
+  "str_length",
+  "str_split_whitespace",
+  "sorted",
+  "join",
+  "str_reversed",
+];
+export type UnaryOpCode = typeof UnaryOpCodeArray[number];
+
+export type OpCode =
+  | BinaryOpCode
+  | UnaryOpCode
+  | "argv"
+  | "print"
+  | "printnl"
+  | "str_replace"
+  | "str_substr"
+  // collection set
+  | "array_set"
+  | "list_set"
+  | "table_set";
 
 export interface BinaryOp extends BaseExpr {
   type: "BinaryOp";
-  op: BuiltinBinop;
+  op: BinaryOpCode;
   name: string;
   left: Expr;
   right: Expr;
@@ -68,27 +169,16 @@ export interface BinaryOp extends BaseExpr {
  */
 export interface MutatingBinaryOp extends BaseExpr {
   type: "MutatingBinaryOp";
-  op: BuiltinBinop;
+  op: BinaryOpCode;
   name: string;
-  variable: Identifier;
+  variable: LValue;
   right: Expr;
 }
-
-export type BuiltinUnary =
-  | "bitnot"
-  | "neg"
-  | "int_to_str"
-  | "str_to_int"
-  | "cardinality"
-  | "str_length"
-  | "sorted";
-
-export type OpCode = BuiltinBinop | BuiltinUnary;
 
 export interface UnaryOp extends BaseExpr {
   type: "UnaryOp";
   name: string;
-  op: BuiltinUnary;
+  op: UnaryOpCode;
   arg: Expr;
   precedence: number;
 }
@@ -106,42 +196,59 @@ export interface ConditionalOp extends BaseExpr {
   alternate: Expr;
 }
 
-export interface Print extends BaseExpr {
-  type: "Print";
-  newline: boolean;
-  value: Expr;
-}
-
-export function functionCall(
-  op: OpCode | null,
-  args: Expr[],
-  ident: string | Identifier
-): FunctionCall {
+export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
   return {
-    type: "FunctionCall",
-    ident: typeof ident === "string" ? id(ident, true) : ident,
+    type: "PolygolfOp",
     op,
     args,
   };
 }
 
+export function functionCall(
+  args: Expr[],
+  ident: string | Identifier,
+  op?: OpCode
+): FunctionCall {
+  return {
+    type: "FunctionCall",
+    ident: typeof ident === "string" ? id(ident, true) : ident,
+    op: op === undefined ? null : op,
+    args,
+  };
+}
+
 export function methodCall(
-  op: OpCode | null,
   object: Expr,
   args: Expr[],
-  ident: string | Identifier
+  ident: string | Identifier,
+  op?: OpCode
 ): MethodCall {
   return {
     type: "MethodCall",
-    op,
+    op: op === undefined ? null : op,
     ident: typeof ident === "string" ? id(ident, true) : ident,
     object,
     args,
   };
 }
 
+export function indexCall(
+  collection: string | Expr,
+  index: Expr,
+  op?: OpCode,
+  oneIndexed: boolean = false
+): IndexCall {
+  return {
+    type: "IndexCall",
+    op: op === undefined ? null : op,
+    collection: typeof collection === "string" ? id(collection) : collection,
+    index,
+    oneIndexed,
+  };
+}
+
 export function binaryOp(
-  op: BuiltinBinop,
+  op: BinaryOpCode,
   left: Expr,
   right: Expr,
   name: string = "",
@@ -160,8 +267,8 @@ export function binaryOp(
 }
 
 export function mutatingBinaryOp(
-  op: BuiltinBinop,
-  variable: Identifier,
+  op: BinaryOpCode,
+  variable: LValue,
   right: Expr,
   name: string = ""
 ): MutatingBinaryOp {
@@ -175,7 +282,7 @@ export function mutatingBinaryOp(
 }
 
 export function unaryOp(
-  op: BuiltinUnary,
+  op: UnaryOpCode,
   arg: Expr,
   name: string = "",
   precedence?: number
@@ -189,11 +296,11 @@ export function unaryOp(
   };
 }
 
-export function print(value: Expr, newline: boolean = true): Print {
-  return { type: "Print", newline, value };
+export function print(value: Expr, newline: boolean = true): PolygolfOp {
+  return polygolfOp(newline ? "printnl" : "print", value);
 }
 
-function getDefaultPrecedence(op: BuiltinBinop | BuiltinUnary): number {
+function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
   switch (op) {
     case "exp":
       return 130;

@@ -55,7 +55,7 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
           "\n",
           ...joinGroups(
             variables.map((v, i) => [
-              v.name,
+              ...emitExprNoParens(v),
               "=",
               ...emitExprNoParens(exprs[i]),
             ]),
@@ -186,7 +186,7 @@ function emitExprNoParens(
       return [
         "(",
         ...joinGroups(
-          expr.variables.map((v) => [v.name]),
+          expr.variables.map((v) => emitExprNoParens(v)),
           ","
         ),
         ")",
@@ -292,20 +292,6 @@ function emitExprNoParens(
       ];
     case "UnaryOp":
       return [expr.name, ...emitExpr(expr.arg, expr)];
-    case "ArrayGet":
-      return [
-        ...emitExpr(expr.array, expr),
-        "[",
-        ...emitExpr(expr.index, expr),
-        "]",
-      ];
-    case "StringGetByte":
-      return [
-        ...emitExpr(expr.string, expr),
-        "[",
-        ...emitExpr(expr.index, expr),
-        "]",
-      ];
     case "ListConstructor":
       return [
         "@",
@@ -316,17 +302,21 @@ function emitExprNoParens(
         ),
         "]",
       ];
-    case "ListGet":
+    case "IndexCall":
       if (expr.oneIndexed)
         throw new Error("Nim only supports zeroIndexed access.");
       return [
-        ...emitExprNoParens(expr.list),
+        ...emitExprNoParens(expr.collection),
         "[",
         ...emitExprNoParens(expr.index),
         "]",
       ];
 
     default:
-      throw new Error(`Unexpected node while emitting Nim: ${expr.type}. `);
+      throw new Error(
+        `Unexpected node while emitting Nim: ${expr.type}: ${
+          "op" in expr ? expr.op : ""
+        }. `
+      );
   }
 }

@@ -12,6 +12,7 @@ import {
   integerType,
   integerTypeIncludingAll,
   IntegerType,
+  PolygolfOp,
 } from "../IR";
 
 export function getType(expr: Expr, program: Program): ValueType {
@@ -23,14 +24,22 @@ export function getType(expr: Expr, program: Program): ValueType {
 
 export function calcType(expr: Expr, program: Program): ValueType {
   switch (expr.type) {
-    case "Argv":
-      return listType("string");
     case "VarDeclaration":
       return simpleType("void");
     case "Assignment":
       return getType(expr.expr, program);
-    case "Print":
-      return simpleType("void");
+    case "IndexCall": {
+      const collectionType = getType(expr.collection, program);
+      switch (collectionType.type) {
+        case "Array":
+        case "List":
+          return collectionType.member;
+        case "Table":
+          return collectionType.value;
+      }
+      throw new Error("IndexCall must be used on a collection");
+    }
+    case "PolygolfOp":
     case "FunctionCall":
     case "MethodCall":
     case "BinaryOp":
@@ -49,37 +58,6 @@ export function calcType(expr: Expr, program: Program): ValueType {
       return arrayType(getType(expr.exprs[0], program), expr.exprs.length);
     case "ListConstructor":
       return listType(getType(expr.exprs[0], program));
-    case "StringGetByte":
-      return simpleType("string");
-    case "TableGet": {
-      const tableType = getType(expr.table, program);
-      if (tableType.type !== "Table") {
-        throw new Error("TableGet must be used on a table");
-      }
-      return tableType.value;
-    }
-    case "TableSet":
-      return simpleType("void");
-    case "ArrayGet": {
-      const arrType = getType(expr.array, program);
-      if (arrType.type !== "Array") {
-        throw new Error("ArrayGet must be used on a table");
-      }
-      return arrType.member;
-    }
-    case "ArraySet":
-      return simpleType("void");
-    case "ListGet": {
-      const listType = getType(expr.list, program);
-      if (listType.type !== "List") {
-        throw new Error("ListGet must be used on a table");
-      }
-      return listType.member;
-    }
-    case "ListSet":
-      return simpleType("void");
-    case "ListPush":
-      return simpleType("void");
     case "MutatingBinaryOp":
       return simpleType("void");
     case "ConditionalOp":
@@ -94,10 +72,30 @@ export function calcType(expr: Expr, program: Program): ValueType {
   throw new Error(`Unexpected node ${expr.type}.`);
 }
 
+function arg0(
+  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall | PolygolfOp
+): Expr {
+  switch (expr.type) {
+    case "BinaryOp":
+      return expr.left;
+    case "UnaryOp":
+      return expr.arg;
+    case "FunctionCall":
+      return expr.args[0];
+    case "MethodCall":
+      return expr.object;
+    case "PolygolfOp":
+      return expr.args[0];
+  }
+}
+
 function getOpCodeType(
-  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall,
+  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall | PolygolfOp,
   program: Program
 ): ValueType {
+  function arg0Type() {
+    return getType(arg0(expr), program);
+  }
   switch (expr.op) {
     case "add":
     case "sub":
@@ -115,6 +113,7 @@ function getOpCodeType(
     case "str_to_int":
     case "cardinality":
     case "str_length":
+    case "str_find":
       return getIntegerOpCodeType(expr, program);
     case "lt":
     case "leq":
@@ -135,13 +134,50 @@ function getOpCodeType(
     case "repeat":
       return simpleType("string");
     case "sorted":
-      return getType(expr, program);
+      return arg0Type();
+    case "print":
+    case "printnl":
+      return simpleType("void");
+    case "argv":
+    case "str_split":
+      return listType("string");
+    case "str_replace":
+    case "str_substr":
+    case "join_using":
+    case "right_align":
+    case "int_to_bin_aligned":
+    case "int_to_hex_aligned":
+    case "simplify_fraction":
+      return simpleType("string");
+    case "str_get_byte":
+      return integerType(0, 255);
+    case "list_get": {
+      const collectionType = arg0Type();
+      if (collectionType.type !== "List") {
+        throw new Error("list_get must be used on a list");
+      }
+      return collectionType.member;
+    }
+    case "array_get": {
+      const collectionType = arg0Type();
+      if (collectionType.type !== "Array") {
+        throw new Error("array_get must be used on an array");
+      }
+      return collectionType.member;
+    }
+    case "table_get": {
+      const collectionType = arg0Type();
+      if (collectionType.type !== "Table") {
+        throw new Error("table_get must be used on a table");
+      }
+      return collectionType.value;
+    }
   }
   throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
 }
 
 function getIntegerOpCodeType(
-  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall,
+  expr: PolygolfOp | BinaryOp | UnaryOp | FunctionCall | MethodCall,
   program: Program
 ): ValueType {
   if (expr.op === "str_to_int") return integerType();
@@ -149,7 +185,10 @@ function getIntegerOpCodeType(
     return integerType(0, 1 << 31);
   let left: ValueType | undefined;
   let right: ValueType | undefined;
-  if (expr.type === "BinaryOp") {
+  if (expr.type === "PolygolfOp") {
+    left = getType(expr.args[0], program);
+    right = getType(expr.args[1], program);
+  } else if (expr.type === "BinaryOp") {
     left = getType(expr.left, program);
     right = getType(expr.right, program);
   } else if (expr.type === "UnaryOp") {
@@ -180,6 +219,20 @@ function getIntegerOpCodeType(
     throw new Error("Unexpected type.");
   }
   switch (expr.op) {
+    case "gcd":
+      if (
+        left.low === undefined ||
+        left.high === undefined ||
+        right.high === undefined ||
+        right.low === undefined
+      )
+        return integerType(1n, undefined);
+      return integerType(
+        1n,
+        [left.low, left.high, right.low, right.high]
+          .map((x) => (x < 0 ? -x : x))
+          .reduce((a, b) => (a < b ? a : b))
+      );
     case "add":
       return integerType(
         left.low === undefined || right.low === undefined
