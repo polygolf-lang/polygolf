@@ -1,8 +1,6 @@
 import {
   Assignment,
   block,
-  functionCall,
-  id,
   importStatement,
   manyToManyAssignment,
   methodCall,
@@ -78,7 +76,11 @@ export const addVarDeclarations = {
         }
       }
       for (const child of node.children) {
-        if (child.type !== "Assignment" || declared.has(child.variable.name)) {
+        if (
+          child.type !== "Assignment" ||
+          child.variable.type !== "Identifier" ||
+          declared.has(child.variable.name)
+        ) {
           processAssignments();
           newNodes.push(child);
         } else {
@@ -96,7 +98,9 @@ function simplifyAssignments(
   topLevel: boolean
 ): Statement[] {
   for (const v of assignments) {
-    declared.add(v.variable.name);
+    if (v.variable.type === "Identifier") {
+      declared.add(v.variable.name);
+    }
   }
   return [
     varDeclarationWithAssignment(
@@ -135,27 +139,15 @@ export const useUnsignedDivision = {
   },
 };
 
-export const printToFunctionCall = {
-  enter(path: Path) {
-    const node = path.node;
-    if (node.type === "Print") {
-      if (node.newline)
-        path.replaceWith(functionCall(null, [node.value], "echo"));
-      else
-        path.replaceWith(
-          functionCall(null, [id("stdout", true), node.value], "write")
-        );
-    }
-  },
-};
-
 export const useUFCS = {
   exit(path: Path) {
     const node = path.node;
     if (node.type === "FunctionCall" && node.args.length > 0) {
       const [obj, ...args] = node.args;
       if (obj.type !== "BinaryOp" && obj.type !== "UnaryOp") {
-        path.replaceWith(methodCall(node.op, obj, args, node.ident));
+        path.replaceWith(
+          methodCall(obj, args, node.ident, node.op ?? undefined)
+        );
       }
     }
   },

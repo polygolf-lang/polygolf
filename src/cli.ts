@@ -21,7 +21,7 @@ const testPrograms = [
 ];
 const languages = { lua, nim };
 
-const lang = languages.nim;
+const lang = languages.lua;
 
 for (const prog of testPrograms) {
   console.log(applyLanguage(lang, prog));

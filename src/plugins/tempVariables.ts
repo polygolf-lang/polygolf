@@ -19,8 +19,10 @@ export const tempVarToMultipleAssignment: Visitor = {
           b.type === "Assignment" &&
           c.type === "Assignment" &&
           b.expr.type === "Identifier" &&
+          c.variable.type === "Identifier" &&
           b.expr.name === c.variable.name &&
           c.expr.type === "Identifier" &&
+          a.variable.type === "Identifier" &&
           c.expr.name === a.variable.name
         ) {
           newNodes.push(

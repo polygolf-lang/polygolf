@@ -30,7 +30,7 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
     case "ManyToManyAssignment":
       return [
         ...joinGroups(
-          stmt.variables.map((x) => [x.name]),
+          stmt.variables.map((x) => emitExprNoParens(x)),
           ","
         ),
         "=",
@@ -103,7 +103,7 @@ function needsParens(
     parent.type === "MethodCall" &&
     expr === parent.object &&
     expr.type !== "Identifier" &&
-    expr.type !== "ArrayGet"
+    expr.type !== "IndexCall"
   )
     return true;
   return false;
@@ -179,39 +179,23 @@ function emitExprNoParens(expr: IR.Expr): string[] {
       ];
     case "UnaryOp":
       return [expr.name, ...emitExpr(expr.arg, expr)];
-    case "ArrayGet":
+    case "IndexCall":
+      if (!expr.oneIndexed)
+        throw new Error("Lua only supports one indexed access.");
       return [
-        ...emitExpr(expr.array, expr),
+        ...emitExpr(expr.collection, expr),
         "[",
         ...emitExpr(expr.index, expr),
         "]",
       ];
-    case "StringGetByte":
-      return [
-        ...emitExpr(expr.string, expr),
-        ":",
-        "byte",
-        "(",
-        ...emitExpr(expr.index, expr),
-        ")",
-      ];
-    case "Print":
-      return expr.newline
-        ? ["print", "(", ...emitExpr(expr.value, expr), ")"]
-        : ["io", ".", "write", "(", ...emitExpr(expr.value, expr), ")"];
     case "ListConstructor":
       return ["{", ...joinGroups(expr.exprs.map(emitExprNoParens), ","), "}"];
-    case "ListGet":
-      if (!expr.oneIndexed)
-        throw new Error("Lua only supports oneIndexed access.");
-      return [
-        ...emitExprNoParens(expr.list),
-        "[",
-        ...emitExprNoParens(expr.index),
-        "]",
-      ];
 
     default:
-      throw new Error(`Unexpected node while emitting Lua: ${expr.type}. `);
+      throw new Error(
+        `Unexpected node while emitting Lua: ${expr.type}: ${
+          "op" in expr ? expr.op : ""
+        }. `
+      );
   }
 }
