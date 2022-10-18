@@ -213,13 +213,17 @@ export const forRangeToForEach = {
 };
 
 function isArrayOrListGet(node: IR.Node, collection: string, index: string) {
-  if (node.type !== "ArrayGet" && node.type !== "ListGet") return false;
-  const obj = node.type === "ArrayGet" ? node.array : node.list;
+  if (
+    node.type !== "PolygolfOp" ||
+    (node.op !== "list_get" && node.op !== "array_get")
+  )
+    return false;
+  const args = node.args;
   return (
-    obj.type === "Identifier" &&
-    obj.name === collection &&
-    node.index.type === "Identifier" &&
-    node.index.name === index
+    args[0].type === "Identifier" &&
+    args[0].name === collection &&
+    args[1].type === "Identifier" &&
+    args[1].name === index
   );
 }
 

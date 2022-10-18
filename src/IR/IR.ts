@@ -6,18 +6,7 @@ import {
   OneToManyAssignment,
   VarDeclarationWithAssignment,
 } from "./assignments";
-import {
-  ArrayGet,
-  ArraySet,
-  ArrayConstructor,
-  ListConstructor,
-  StringGetByte,
-  ListGet,
-  ListPush,
-  ListSet,
-  TableGet,
-  TableSet,
-} from "./collections";
+import { ArrayConstructor, ListConstructor } from "./collections";
 import {
   PolygolfOp,
   BinaryOp,
@@ -26,6 +15,7 @@ import {
   MethodCall,
   MutatingBinaryOp,
   UnaryOp,
+  IndexCall,
 } from "./exprs";
 import {
   ForRange,
@@ -76,6 +66,7 @@ export type Expr =
   | VarDeclaration
   | VarDeclarationWithAssignment
   | Assignment
+  | IndexCall
   | FunctionCall
   | MethodCall
   | BinaryOp
@@ -85,14 +76,6 @@ export type Expr =
   | IntegerLiteral
   | ArrayConstructor
   | ListConstructor
-  | StringGetByte
-  | TableGet
-  | TableSet
-  | ArrayGet
-  | ArraySet
-  | ListGet
-  | ListSet
-  | ListPush
   | MutatingBinaryOp
   | ConditionalOp
   | ManyToManyAssignment

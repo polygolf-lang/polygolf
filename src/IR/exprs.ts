@@ -2,7 +2,7 @@ import { Expr, Identifier, BaseExpr, id } from "./IR";
 
 /**
  * All expressions start as a `PolygolfOp` node.
- * Plugins (mainly `mapOps`plugin) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
+ * Plugins (mainly `mapOps` plugin) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
  * This node should never enter the emit phase.
  */
 
@@ -25,6 +25,14 @@ export interface MethodCall extends BaseExpr {
   op: OpCode | null;
   object: Expr;
   args: Expr[];
+}
+
+export interface IndexCall extends BaseExpr {
+  type: "IndexCall";
+  collection: Expr;
+  index: Expr;
+  op: OpCode | null;
+  oneIndexed: boolean;
 }
 
 export const BinaryOpCodeArray = [
@@ -56,7 +64,13 @@ export const BinaryOpCodeArray = [
   "inlist",
   "inmap",
   "inset",
+  // collection get
+  "array_get",
+  "list_get",
+  "table_get",
+  "str_get_byte",
   // other
+  "list_push",
   "str_concat",
   "repeat",
   "is_substr",
@@ -130,7 +144,11 @@ export type OpCode =
   | "print"
   | "printnl"
   | "str_replace"
-  | "str_substr";
+  | "str_substr"
+  // collection set
+  | "array_set"
+  | "list_set"
+  | "table_set";
 
 export interface BinaryOp extends BaseExpr {
   type: "BinaryOp";
@@ -151,7 +169,7 @@ export interface MutatingBinaryOp extends BaseExpr {
   type: "MutatingBinaryOp";
   op: BinaryOpCode;
   name: string;
-  variable: Identifier;
+  variable: Identifier | IndexCall;
   right: Expr;
 }
 
@@ -212,6 +230,21 @@ export function methodCall(
   };
 }
 
+export function indexCall(
+  collection: string | Expr,
+  index: Expr,
+  op?: OpCode,
+  oneIndexed: boolean = false
+): IndexCall {
+  return {
+    type: "IndexCall",
+    op: op === undefined ? null : op,
+    collection: typeof collection === "string" ? id(collection) : collection,
+    index,
+    oneIndexed,
+  };
+}
+
 export function binaryOp(
   op: BinaryOpCode,
   left: Expr,
@@ -233,7 +266,7 @@ export function binaryOp(
 
 export function mutatingBinaryOp(
   op: BinaryOpCode,
-  variable: Identifier,
+  variable: Identifier | IndexCall,
   right: Expr,
   name: string = ""
 ): MutatingBinaryOp {

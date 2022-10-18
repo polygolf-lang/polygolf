@@ -8,9 +8,7 @@ import {
   stringLiteral,
   id,
   polygolfOp,
-  arrayGet,
   print,
-  stringGetByte,
 } from "../../IR";
 import { applyLanguage } from "../../common/applyLanguage";
 
@@ -66,8 +64,16 @@ describe("Applications", () => {
   testpolygolfOp("eq", ["x", "y"], "x==y");
   testpolygolfOp("geq", ["x", "y"], "x>=y");
   testpolygolfOp("gt", ["x", "y"], "x>y");
-  testStatement("ArrayGet", arrayGet(id("x"), id("y")), "x[y+1]");
-  testStatement("StringGet", stringGetByte(id("x"), id("y")), "x:byte(y+1)");
+  testStatement(
+    "ArrayGet",
+    polygolfOp("array_get", id("x"), id("y")),
+    "x[y+1]"
+  );
+  testStatement(
+    "StringGet",
+    polygolfOp("str_get_byte", id("x"), id("y")),
+    "x:byte(y+1)"
+  );
   testpolygolfOp("str_concat", ["x", "y"], "x..y");
 });
 
@@ -79,7 +85,7 @@ describe("Parentheses", () => {
   );
   testStatement(
     "method call on ArrayGet",
-    polygolfOp("str_length", arrayGet(id("A"), id("i"))),
+    polygolfOp("str_length", polygolfOp("array_get", id("A"), id("i"))),
     `A[i+1]:len()`
   );
   // TODO: operator precedence

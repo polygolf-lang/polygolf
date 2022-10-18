@@ -2,7 +2,6 @@ import * as loops from "./loops";
 import { programToPath, Visitor } from "../common/traverse";
 import {
   IR,
-  arrayGet,
   block,
   forRange,
   id,
@@ -26,7 +25,7 @@ const loopProgram2 = program(
       int(0n),
       polygolfOp("cardinality", id("collection")),
       int(1n),
-      block([print(arrayGet(id("collection"), id("i"), false))]),
+      block([print(polygolfOp("array_get", id("collection"), id("i")))]),
       false
     ),
   ])
@@ -41,7 +40,7 @@ const loopProgram3 = program(
       int(1n),
       block([
         print(id("i")),
-        print(arrayGet(id("collection"), id("i"), false)),
+        print(polygolfOp("array_get", id("collection"), id("i"))),
       ]),
       false
     ),
@@ -90,5 +89,5 @@ test("ForRange -> ForEach", () =>
   expectTransform(
     loopProgram3,
     loops.forRangeToForEach,
-    "{ for i in range(0,<cardinality(collection),1) { printnl(i); printnl(collection[i]); }; }"
+    "{ for i in range(0,<cardinality(collection),1) { printnl(i); printnl(array_get(collection,i)); }; }"
   ));

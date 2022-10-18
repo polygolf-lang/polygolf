@@ -28,6 +28,17 @@ export function calcType(expr: Expr, program: Program): ValueType {
       return simpleType("void");
     case "Assignment":
       return getType(expr.expr, program);
+    case "IndexCall": {
+      const collectionType = getType(expr.collection, program);
+      switch (collectionType.type) {
+        case "Array":
+        case "List":
+          return collectionType.member;
+        case "Table":
+          return collectionType.value;
+      }
+      throw new Error("IndexCall must be used on a collection");
+    }
     case "PolygolfOp":
     case "FunctionCall":
     case "MethodCall":
@@ -47,37 +58,6 @@ export function calcType(expr: Expr, program: Program): ValueType {
       return arrayType(getType(expr.exprs[0], program), expr.exprs.length);
     case "ListConstructor":
       return listType(getType(expr.exprs[0], program));
-    case "StringGetByte":
-      return simpleType("string");
-    case "TableGet": {
-      const tableType = getType(expr.table, program);
-      if (tableType.type !== "Table") {
-        throw new Error("TableGet must be used on a table");
-      }
-      return tableType.value;
-    }
-    case "TableSet":
-      return simpleType("void");
-    case "ArrayGet": {
-      const arrType = getType(expr.array, program);
-      if (arrType.type !== "Array") {
-        throw new Error("ArrayGet must be used on a table");
-      }
-      return arrType.member;
-    }
-    case "ArraySet":
-      return simpleType("void");
-    case "ListGet": {
-      const listType = getType(expr.list, program);
-      if (listType.type !== "List") {
-        throw new Error("ListGet must be used on a table");
-      }
-      return listType.member;
-    }
-    case "ListSet":
-      return simpleType("void");
-    case "ListPush":
-      return simpleType("void");
     case "MutatingBinaryOp":
       return simpleType("void");
     case "ConditionalOp":
@@ -92,10 +72,30 @@ export function calcType(expr: Expr, program: Program): ValueType {
   throw new Error(`Unexpected node ${expr.type}.`);
 }
 
+function arg0(
+  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall | PolygolfOp
+): Expr {
+  switch (expr.type) {
+    case "BinaryOp":
+      return expr.left;
+    case "UnaryOp":
+      return expr.arg;
+    case "FunctionCall":
+      return expr.args[0];
+    case "MethodCall":
+      return expr.object;
+    case "PolygolfOp":
+      return expr.args[0];
+  }
+}
+
 function getOpCodeType(
   expr: BinaryOp | UnaryOp | FunctionCall | MethodCall | PolygolfOp,
   program: Program
 ): ValueType {
+  function arg0Type() {
+    return getType(arg0(expr), program);
+  }
   switch (expr.op) {
     case "add":
     case "sub":
@@ -134,7 +134,7 @@ function getOpCodeType(
     case "repeat":
       return simpleType("string");
     case "sorted":
-      return getType(expr, program);
+      return arg0Type();
     case "print":
     case "printnl":
       return simpleType("void");
@@ -149,6 +149,29 @@ function getOpCodeType(
     case "int_to_hex_aligned":
     case "simplify_fraction":
       return simpleType("string");
+    case "str_get_byte":
+      return integerType(0, 255);
+    case "list_get": {
+      const collectionType = arg0Type();
+      if (collectionType.type !== "List") {
+        throw new Error("list_get must be used on a list");
+      }
+      return collectionType.member;
+    }
+    case "array_get": {
+      const collectionType = arg0Type();
+      if (collectionType.type !== "Array") {
+        throw new Error("array_get must be used on an array");
+      }
+      return collectionType.member;
+    }
+    case "table_get": {
+      const collectionType = arg0Type();
+      if (collectionType.type !== "Table") {
+        throw new Error("table_get must be used on a table");
+      }
+      return collectionType.value;
+    }
   }
   throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
 }

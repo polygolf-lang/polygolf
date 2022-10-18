@@ -10,7 +10,6 @@ import {
   assignment,
   listType,
   listConstructor,
-  listGet,
   forRangeCommon,
 } from "../IR";
 
@@ -61,14 +60,14 @@ export default program(
           polygolfOp(
             "str_concat",
             stringLiteral("On the "),
-            listGet(id("O"), id("i"))
+            polygolfOp("list_get", id("O"), id("i"))
           ),
           stringLiteral(" day of Christmas\nMy true love sent to me")
         )
       ),
       forRangeCommon(
         ["j", polygolfOp("sub", int(11n), id("i")), 12],
-        print(listGet(id("T"), id("j")))
+        print(polygolfOp("list_get", id("T"), id("j")))
       )
     ),
   ])

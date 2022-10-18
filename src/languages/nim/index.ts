@@ -1,9 +1,9 @@
-import { functionCall, id } from "../../IR";
+import { functionCall, id, indexCall } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
-import { mapOps } from "../../plugins/ops";
+import { mapOps, useIndexCalls } from "../../plugins/ops";
 import { addDependencies } from "../../plugins/dependencies";
 import {
   addImports,
@@ -23,7 +23,9 @@ const nimLanguage: Language = {
     modToRem,
     divToTruncdiv,
     useInclusiveForRange,
+    useIndexCalls(),
     mapOps([
+      ["str_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["str_length", (x) => functionCall([x[0]], "len")],
       ["int_to_str", "$"],
       ["repeat", (x) => functionCall([x[0], x[0]], "repeat")],

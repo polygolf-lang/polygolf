@@ -1,9 +1,20 @@
-import { Path } from "../common/traverse";
+import { Path, Visitor } from "../common/traverse";
 import { OpTransformOutput } from "../common/Language";
-import { binaryOp, BinaryOpCodeArray, unaryOp, UnaryOpCodeArray } from "../IR";
+import {
+  assignment,
+  binaryOp,
+  BinaryOpCodeArray,
+  IndexCall,
+  indexCall,
+  int,
+  OpCode,
+  polygolfOp,
+  unaryOp,
+  UnaryOpCodeArray,
+} from "../IR";
 import { getType } from "../common/getType";
 
-export function mapOps(opMap0: [string, OpTransformOutput][]) {
+export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
   const opMap = new Map<string, OpTransformOutput>(opMap0);
   return {
     enter(path: Path) {
@@ -46,6 +57,46 @@ export function mapOps(opMap0: [string, OpTransformOutput][]) {
           if ("op" in replacement) replacement.op = node.op;
           replacement.valueType = getType(node, path.root.node);
           path.replaceWith(replacement);
+        }
+      }
+    },
+  };
+}
+
+export function useIndexCalls(
+  oneIndexed: boolean = false,
+  ops: OpCode[] = [
+    "array_get",
+    "list_get",
+    "table_get",
+    "array_set",
+    "list_set",
+    "table_set",
+  ]
+): Visitor {
+  return {
+    enter(path: Path) {
+      const node = path.node;
+      if (
+        node.type === "PolygolfOp" &&
+        (ops.length === 0 || ops.includes(node.op)) &&
+        node.args[0].type === "Identifier"
+      ) {
+        let indexNode: IndexCall;
+        if (oneIndexed && !node.op.startsWith("table_")) {
+          indexNode = indexCall(
+            node.args[0],
+            polygolfOp("add", node.args[1], int(1n)),
+            node.op,
+            true
+          );
+        } else {
+          indexNode = indexCall(node.args[0], node.args[1], node.op);
+        }
+        if (node.op.endsWith("_get")) {
+          path.replaceWith(indexNode);
+        } else if (node.op.endsWith("_set")) {
+          path.replaceWith(assignment(indexNode, node.args[2]));
         }
       }
     },

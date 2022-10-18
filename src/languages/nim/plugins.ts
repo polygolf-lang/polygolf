@@ -76,7 +76,11 @@ export const addVarDeclarations = {
         }
       }
       for (const child of node.children) {
-        if (child.type !== "Assignment" || declared.has(child.variable.name)) {
+        if (
+          child.type !== "Assignment" ||
+          child.variable.type !== "Identifier" ||
+          declared.has(child.variable.name)
+        ) {
           processAssignments();
           newNodes.push(child);
         } else {
@@ -94,7 +98,9 @@ function simplifyAssignments(
   topLevel: boolean
 ): Statement[] {
   for (const v of assignments) {
-    declared.add(v.variable.name);
+    if (v.variable.type === "Identifier") {
+      declared.add(v.variable.name);
+    }
   }
   return [
     varDeclarationWithAssignment(

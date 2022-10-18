@@ -81,8 +81,8 @@ export default function emit(node: IR.Node): string {
       );
     case "UnaryOp":
       return "(" + node.op + " " + emit(node.arg) + ")";
-    case "ArrayGet":
-      return emit(node.array) + "[" + emit(node.index) + "]";
+    case "IndexCall":
+      return emit(node.collection) + "[" + emit(node.index) + "]";
     default:
       throw new Error(`Unimplemented node for debug: ${node.type}. `);
   }
