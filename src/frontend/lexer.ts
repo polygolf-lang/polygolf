@@ -11,7 +11,7 @@ const tokenTable = {
   rbracket: "]",
   lbrace: "{",
   rbrace: "}",
-  star: "*",
+  pipe: "|",
   colon: ":",
   range: "..",
   semicolon: ";",
