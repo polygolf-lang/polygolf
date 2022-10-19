@@ -25,9 +25,8 @@ statement ->
   sexpr {% id %}
   | variants {% id %}
 
-# TODO: more than 2 variants
-variants -> "{" block_inner "|" block_inner "}" {%
-    ([, var1, , var2, ]) => variants([var1, var2])
+variants -> "{" (block_inner "|"):+ block_inner "}" {%
+    ([, vars, var2, ]) => variants([...vars.map((d: any) => d[0]), var2])
   %}
 
 expr ->
