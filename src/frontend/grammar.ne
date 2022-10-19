@@ -22,7 +22,7 @@ main -> block_inner {% d => program(d[0]) %}
 block_inner -> statement:* {% d => block(d[0]) %}
 
 statement ->
-  sexpr {% id %}
+  sexpr_stmt {% id %}
   | variants {% id %}
 
 variants -> "{" (block_inner "|"):+ block_inner "}" {%
@@ -48,6 +48,8 @@ builtin -> %builtin {% d => identifier(d[0].value, true) %}
 string -> %string {% d => stringLiteral(JSON.parse(d[0])) %}
 
 sexpr -> "(" (builtin | variable) expr:+  ")" {% d => sexpr(d[1][0], d[2]) %}
+
+sexpr_stmt -> (builtin | variable) expr:+  ";" {% d => sexpr(d[0][0], d[1]) %}
 
 # TODO: don't just ignore annotations
 annotation -> expr ":" integer ".." integer {% ([expr, , min, , max]) => expr %}

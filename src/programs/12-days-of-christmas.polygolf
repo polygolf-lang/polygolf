@@ -1,19 +1,19 @@
-(assign $O (list
+assign $O (list
   "First" "Second" "Third" "Fourth" "Fifth" "Sixth"
   "Seventh" "Eighth" "Ninth" "Tenth" "Eleventh" "Twelfth"
-  ))
-(assign $T (list
+);
+assign $T (list
   "Twelve Drummers Drumming," "Eleven Pipers Piping," "Ten Lords-a-Leaping,"
   "Nine Ladies Dancing," "Eight Maids-a-Milking," "Seven Swans-a-Swimming,"
   "Six Geese-a-Laying," "Five Gold Rings," "Four Calling Birds,"
   "Three French Hens," "Two Turtle Doves, and" "A Partridge in a Pear Tree.\n"
-))
-(forRange $i 0 12 1 [
-  (println (str_concat
+);
+forRange $i 0 12 1 [
+  println (str_concat
     (str_concat "On the " (list_get $O $i))
     " day of Christmas\nMy true love sent to me"
-    ))
-  (forRange $j (sub 11 $i) 12 1 [
-    (println (list_get $T $j))
-  ])
-])
+  );
+  forRange $j (sub 11 $i) 12 1 [
+    println (list_get $T $j);
+  ];
+];

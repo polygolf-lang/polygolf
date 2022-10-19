@@ -1,8 +1,8 @@
-(forRange $y 450 601 1 [
-  (if (or
+forRange $y 450 601 1 [
+  if (or
     (gt (mod $y 25) 0)
     (lt (mod $y 100) 1)
   ) [
-    (println (mul 4 $y))
-  ])
-])
+    println (mul 4 $y);
+  ];
+];
