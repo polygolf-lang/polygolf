@@ -228,7 +228,6 @@ function isArrayOrListGet(node: IR.Node, collection: string, index: string) {
 }
 
 function isVariableUsedAlone(path: Path, collection: string, index: string) {
-  console.log(path.findNodes((x) => true));
   return path.anyNode(
     (x) =>
       x.node.type === "Identifier" &&
