@@ -12,7 +12,11 @@ import {
   stringLiteral,
   id as identifier
 } from "../IR";
-import { sexpr } from "./parse";
+import {
+  sexpr,
+  typeSexpr,
+  integerType,
+  annotate } from "./parse";
 %}
 
 @lexer lexer
@@ -29,13 +33,13 @@ variants -> "{" (block_inner "|"):+ block_inner "}" {%
     ([, vars, var2, ]) => variants([...vars.map((d: any) => d[0]), var2])
   %}
 
-expr ->
+expr_inner ->
   integer {% id %}
   | string {% id %}
   | variable {% id %}
   | sexpr {% id %}
-  | annotation {% id %}
   | block {% id %}
+  | builtin {% d => sexpr(d[0].value, []) %}
 
 block -> "[" block_inner "]" {% d => d[1] %}
 
@@ -51,5 +55,18 @@ sexpr -> "(" (builtin | variable) expr:+  ")" {% d => sexpr(d[1][0], d[2]) %}
 
 sexpr_stmt -> (builtin | variable) expr:+  ";" {% d => sexpr(d[0][0], d[1]) %}
 
-# TODO: don't just ignore annotations
-annotation -> expr ":" integer ".." integer {% ([expr, , min, , max]) => expr %}
+
+type_expr -> 
+  type_range {% id %}
+  | type_simple {% id %}
+  | type_sexpr {% id %}
+
+ninf -> %ninf {% d => d[0].value %}
+pinf -> %pinf {% d => d[0].value %}
+type_range -> (ninf | integer) ".." (pinf | integer) {% d => integerType(d[0][0], d[2][0]) %}
+
+type_simple -> %type {% d => typeSexpr(d[0].value, []) %}
+
+type_sexpr -> "(" %type (type_expr | integer):+ ")" {% d => typeSexpr(d[1].value, d[2].map((x:any) => x[0])) %}
+
+expr -> expr_inner (":" type_expr):? {% d => annotate(d[0], d[1]) %}

@@ -14,12 +14,26 @@ import {
   forRange,
   integerType,
   variants,
+  annotate,
+  simpleType,
+  listType,
+  arrayType,
 } from "../IR";
 import parse from "./parse";
 
+function stringify(x: any): string {
+  // Jest complains it cannot serialize bigint
+  return JSON.stringify(
+    x,
+    (key, value) =>
+      typeof value === "bigint" ? value.toString() + "n" : value,
+    2
+  );
+}
+
 function testBlockParse(desc: string, str: string, output: Statement[]) {
   test(desc, () => {
-    expect(parse(str).block.children).toEqual(output);
+    expect(stringify(parse(str).block.children)).toEqual(stringify(output));
   });
 }
 
@@ -61,7 +75,50 @@ describe("Parse s-expressions", () => {
   );
 });
 
+describe("Parse annotations", () => {
+  expectExprParse(
+    "integer -oo..oo",
+    "$a:-oo..oo",
+    annotate(id("a"), integerType())
+  );
+  expectExprParse(
+    "integer 0..oo",
+    "$a:0..oo",
+    annotate(id("a"), integerType(0, undefined))
+  );
+  expectExprParse(
+    "integer -10..10",
+    "$a:-10..10",
+    annotate(id("a"), integerType(-10, 10))
+  );
+  expectExprParse("text", "$a:Text", annotate(id("a"), simpleType("string")));
+  expectExprParse("bool", "$a:Bool", annotate(id("a"), simpleType("boolean")));
+  expectExprParse(
+    "array of 5 strings",
+    "$a:(Array Text 5)",
+    annotate(id("a"), arrayType("string", 5))
+  );
+  expectExprParse(
+    "list of strings",
+    "$a:(List Text)",
+    annotate(id("a"), listType("string"))
+  );
+  expectExprParse(
+    "list of lists of strings",
+    "$a:(List (List Text))",
+    annotate(id("a"), listType(listType("string")))
+  );
+  expectExprParse(
+    "list of ints",
+    "$a:(List -999..999)",
+    annotate(id("a"), listType(integerType(-999, 999)))
+  );
+});
+
 describe("Parse statements", () => {
+  testBlockParse("comment", `#one\nprintln 58;#two\n#println -3;`, [
+    print(int(58n), true),
+  ]);
   testStmtParse(
     "if",
     "if $x [ println $y; ];",

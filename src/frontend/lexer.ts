@@ -4,6 +4,9 @@ const tokenTable = {
   integer: /-?[0-9]+/,
   string: /"(?:\\.|[^"])*"/,
   variable: /\$\w*/,
+  type: ["Void", "Text", "Bool", "List", "Table", "Array", "Set"],
+  ninf: ["-oo", "-∞"],
+  pinf: ["oo", "∞"],
   builtin: /\w+/,
   lparen: "(",
   rparen: ")",
@@ -15,18 +18,22 @@ const tokenTable = {
   colon: ":",
   range: "..",
   semicolon: ";",
+  comment: {
+    match: /#.*?(?:$|\n)/,
+    lineBreaks: true,
+  },
   whitespace: {
     match: /\s/,
     lineBreaks: true,
   },
-} as const;
+};
 
 const lexer = moo.compile(tokenTable);
 // override next to skip whitespace
 const currNext = lexer.next.bind(lexer);
 lexer.next = function () {
   let next = currNext();
-  while (next?.type === "whitespace") {
+  while (next?.type === "whitespace" || next?.type === "comment") {
     next = currNext();
   }
   return next;

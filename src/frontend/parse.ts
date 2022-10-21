@@ -13,6 +13,14 @@ import {
   listConstructor,
   BinaryOpCodeArray,
   polygolfOp,
+  ValueType,
+  simpleType,
+  listType,
+  arrayType,
+  tableType,
+  setType,
+  integerType as intType,
+  IntegerLiteral,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -90,6 +98,78 @@ export function sexpr(
     default:
       throw new Error(`Unrecognized builtin: ${callee.name}`);
   }
+}
+
+export function typeSexpr(
+  callee: string,
+  args: (ValueType | IntegerLiteral)[]
+): ValueType {
+  function expectArity(n: number) {
+    if (args.length !== n) {
+      throw new Error(
+        `Invalid argument count in application of ${callee}: ` +
+          `Expected ${n} but got ${args.length}.`
+      );
+    }
+  }
+  function assertNumber(
+    e: ValueType | IntegerLiteral
+  ): asserts e is IntegerLiteral {
+    if (e.type !== "IntegerLiteral")
+      throw new Error(`Expected number, got type.`);
+  }
+  function assertType(e: ValueType | IntegerLiteral): asserts e is ValueType {
+    if (e.type === "IntegerLiteral")
+      throw new Error(`Expected type, got number.`);
+  }
+  switch (callee) {
+    case "Void":
+      expectArity(0);
+      return simpleType("void");
+    case "Text":
+      expectArity(0);
+      return simpleType("string");
+    case "Bool":
+      expectArity(0);
+      return simpleType("boolean");
+    case "Array":
+      expectArity(2);
+      assertType(args[0]);
+      assertNumber(args[1]);
+      return arrayType(args[0], Number(args[1].value));
+    case "List":
+      expectArity(1);
+      assertType(args[0]);
+      return listType(args[0]);
+    case "Table":
+      expectArity(2);
+      assertType(args[0]);
+      assertType(args[1]);
+      if (args[0].type === "integer") return tableType(args[0], args[1]);
+      if (args[0].type === "string") return tableType("string", args[1]);
+      throw new Error("Unexpected key type for table.");
+    case "Set":
+      expectArity(1);
+      assertType(args[0]);
+      return setType(args[0]);
+    default:
+      throw new Error(`Unrecognized type: ${callee}`);
+  }
+}
+
+export function annotate(expr: Expr, valueType: [any, ValueType] | null): Expr {
+  if (valueType === null) return expr;
+  return { ...expr, valueType: valueType[1] };
+}
+
+export function integerType(
+  low: "-oo" | "-∞" | IntegerLiteral,
+  high: "oo" | "∞" | IntegerLiteral
+): ValueType {
+  return intType(
+    typeof low === "string" ? undefined : low.value,
+    typeof high === "string" ? undefined : high.value
+  );
 }
 
 export default function parse(code: string) {
