@@ -9,11 +9,11 @@ assign $T (list
   "Three French Hens," "Two Turtle Doves, and" "A Partridge in a Pear Tree.\n"
 );
 forRange $i 0 12 [
-  println (str_concat
-    (str_concat "On the " (list_get $O $i))
+  println (&
+     "On the " (list_get $O $i)
     " day of Christmas\nMy true love sent to me"
   );
-  forRange $j (sub 11 $i) 12 [
+  forRange $j (- 11 $i) 12 [
     println (list_get $T $j);
   ];
 ];
