@@ -3,56 +3,64 @@ import { expandVariants } from "./expandVariants";
 import { programToPath } from "./traverse";
 import { Language, defaultDetokenizer } from "./Language";
 
-export function applyLanguageToVariant(
+export function applyLanguage(
   language: Language,
-  program: IR.Program
+  program: IR.Program,
+  maxBranches: number = 1000
 ): string {
-  const path = programToPath(program);
-  // Apply each visitor sequentially, re-walking the tree for each one
-  // A different option is to merge visitors together (like Babel) to apply
-  // them simultaneously, but be careful to go in order between the plugins
-  for (const visitor of language.plugins) {
-    path.visit(visitor);
-  }
-  return (language.detokenizer ?? defaultDetokenizer())(
-    language.emitter(program)
+  let emittedVariants: [IR.Program, string][] = emitVariants(
+    language,
+    -1,
+    expandVariants(program),
+    maxBranches
   );
-}
-
-export function applyLanguageToVariants(
-  language: Language,
-  programs: IR.Program[]
-): string {
-  if (programs.length === 1) {
-    return applyLanguageToVariant(language, programs[0]);
-  }
-  let result: string | null = null;
-  const errors = new Map<string, number>();
-  let mostCommonErrorCount = 0;
-  let mostCommonError = "";
-  programs.forEach((x) => {
-    try {
-      const compiled = applyLanguageToVariant(language, x);
-      if (result === null || result.length > compiled.length) {
-        result = compiled;
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        errors.set(err.message, (errors.get(err.message) ?? 0) + 1);
-        if (errors.get(err.message)! > mostCommonErrorCount) {
-          mostCommonErrorCount++;
-          mostCommonError = err.message;
-        }
+  const variantsPluginsIndices = [...language.plugins.keys()].filter(
+    (i) => language.plugins[i].generatesVariants === true
+  );
+  let lastAppliedPluginIndex = -1;
+  for (const vpi of variantsPluginsIndices) {
+    for (let i = lastAppliedPluginIndex + 1; i < vpi; i++) {
+      emittedVariants.forEach((v) => {
+        const path = programToPath(v[0]);
+        path.visit(language.plugins[i]);
+      });
+    }
+    const newVariants: IR.Program[] = [];
+    for (const variant of emittedVariants) {
+      const path = programToPath(variant[0]);
+      path.visit(language.plugins[vpi]);
+      for (const newVariant of expandVariants(variant[0])) {
+        newVariants.push(newVariant);
       }
     }
-  });
-  if (result !== null) return result;
-  throw new Error(
-    "No variant could be compiled. Most common error follows. " +
-      mostCommonError
-  );
+    lastAppliedPluginIndex = vpi;
+    emittedVariants = emitVariants(language, vpi, newVariants, maxBranches);
+  }
+  return emittedVariants[0][1];
 }
 
-export function applyLanguage(language: Language, program: IR.Program): string {
-  return applyLanguageToVariants(language, expandVariants(program));
+function emitVariants(
+  language: Language,
+  lastAppliedPluginIndex: number,
+  variants: IR.Program[],
+  maxBranches: number
+): [IR.Program, string][] {
+  const result: [IR.Program, string][] = [];
+  for (const variant of variants) {
+    const path = programToPath(variant);
+    for (let i = lastAppliedPluginIndex + 1; i < language.plugins.length; i++) {
+      if (language.plugins[i].generatesVariants === true) continue;
+      path.visit(language.plugins[i]);
+    }
+    try {
+      result.push([
+        variant,
+        (language.detokenizer ?? defaultDetokenizer())(
+          language.emitter(variant)
+        ),
+      ]);
+    } catch {}
+  }
+  result.sort((a, b) => a[1].length - b[1].length);
+  return result.slice(0, maxBranches);
 }

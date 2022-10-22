@@ -2,7 +2,6 @@ import { getType } from "../common/getType";
 import { Path } from "../common/traverse";
 import {
   forRange,
-  binaryOp,
   int,
   varDeclaration,
   assignment,
@@ -14,6 +13,7 @@ import {
   id,
   IR,
   integerType,
+  polygolfOp,
 } from "../IR";
 
 export const forRangeToForRangeInclusive = {
@@ -24,7 +24,7 @@ export const forRangeToForRangeInclusive = {
         forRange(
           node.variable,
           node.low,
-          binaryOp("sub", node.high, int(1n)),
+          polygolfOp("sub", node.high, int(1n)),
           node.increment,
           node.body,
           true
@@ -75,7 +75,7 @@ export const forRangeToWhile = {
       node.body.children.push(
         assignment(
           node.variable,
-          binaryOp("add", node.variable, node.increment)
+          polygolfOp("add", node.variable, node.increment)
         )
       );
       path.replaceWithMultiple([
@@ -90,7 +90,7 @@ export const forRangeToWhile = {
         ),
         assignment(node.variable, node.low),
         whileLoop(
-          binaryOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
           node.body
         ),
       ]);
@@ -121,8 +121,8 @@ export const forRangeToForCLike = {
             ),
             assignment(node.variable, node.low),
           ]),
-          block([binaryOp("add", node.variable, node.increment ?? int(1n))]),
-          binaryOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+          block([polygolfOp("add", node.variable, node.increment ?? int(1n))]),
+          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
           node.body
         )
       );
@@ -148,11 +148,11 @@ export const forRangeToForEachPair = {
       !node.inclusive &&
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
-      node.high.type === "UnaryOp" &&
+      node.high.type === "PolygolfOp" &&
       node.high.op === "cardinality" &&
-      node.high.arg.type === "Identifier"
+      node.high.args[0].type === "Identifier"
     ) {
-      const collection = node.high.arg;
+      const collection = node.high.args[0];
       const elementIdentifier = id(path.getNewIdentifier());
       const bodyPath = new Path(node.body, path, "body");
       bodyPath.visit({
@@ -188,11 +188,11 @@ export const forRangeToForEach = {
       !node.inclusive &&
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
-      node.high.type === "UnaryOp" &&
+      node.high.type === "PolygolfOp" &&
       node.high.op === "cardinality" &&
-      node.high.arg.type === "Identifier"
+      node.high.args[0].type === "Identifier"
     ) {
-      const collection = node.high.arg;
+      const collection = node.high.args[0];
       const elementIdentifier = id(path.getNewIdentifier());
       const bodyPath = new Path(node.body, path, "body");
       if (!isVariableUsedAlone(bodyPath, collection.name, node.variable.name)) {
@@ -213,29 +213,25 @@ export const forRangeToForEach = {
 };
 
 function isArrayOrListGet(node: IR.Node, collection: string, index: string) {
-  if (node.type !== "ArrayGet" && node.type !== "ListGet") return false;
-  const obj = node.type === "ArrayGet" ? node.array : node.list;
+  if (
+    node.type !== "PolygolfOp" ||
+    (node.op !== "list_get" && node.op !== "array_get")
+  )
+    return false;
+  const args = node.args;
   return (
-    obj.type === "Identifier" &&
-    obj.name === collection &&
-    node.index.type === "Identifier" &&
-    node.index.name === index
+    args[0].type === "Identifier" &&
+    args[0].name === collection &&
+    args[1].type === "Identifier" &&
+    args[1].name === index
   );
 }
 
 function isVariableUsedAlone(path: Path, collection: string, index: string) {
-  let result = false;
-  path.visit({
-    enter(path: Path) {
-      const node = path.node;
-      if (
-        node.type === "Identifier" &&
-        node.name === index &&
-        !isArrayOrListGet(path.parent!.node, collection, index)
-      ) {
-        result = true;
-      }
-    },
-  });
-  return result;
+  return path.anyNode(
+    (x) =>
+      x.node.type === "Identifier" &&
+      x.node.name === index &&
+      !isArrayOrListGet(x.parent!.node, collection, index)
+  );
 }

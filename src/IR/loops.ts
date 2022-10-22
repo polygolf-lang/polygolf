@@ -61,8 +61,8 @@ export interface ForEachKey {
 export interface ForCLike {
   type: "ForCLike";
   init: Block;
-  append: Block;
   condition: Expr;
+  append: Block;
   body: Block;
 }
 

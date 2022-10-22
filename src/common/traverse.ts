@@ -143,6 +143,26 @@ export class Path<N extends IR.Node = IR.Node> {
     visitor.exit?.(this);
   }
 
+  /** Returns an array of all nodes of a given type or satistifing given predicate. */
+  findNodes(predicate: string | ((x: Path) => boolean)): IR.Node[] {
+    const result = [];
+    if (typeof predicate === "string")
+      predicate = (x) => x.node.type === predicate;
+    if (predicate(this)) result.push(this.node);
+    for (const child of this.getChildPaths()) {
+      result.push(...child.findNodes(predicate));
+    }
+    return result;
+  }
+
+  /** Returns findNodes(predicate).length > 0 without enumerating all matches. */
+  anyNode(predicate: string | ((x: Path) => boolean)): boolean {
+    if (typeof predicate === "string")
+      predicate = (x) => x.node.type === predicate;
+    if (predicate(this)) return true;
+    return this.getChildPaths().some((x) => x.anyNode(predicate));
+  }
+
   printPath(): string {
     if (this.pathFragment === null || this.parent === null) return "";
     const fragString =
@@ -224,4 +244,18 @@ export function programToPath(node: IR.Program) {
 export interface Visitor {
   enter?: (path: Path) => void;
   exit?: (path: Path) => void;
+  generatesVariants?: boolean;
+}
+
+export function getChildren(node: IR.Node): IR.Node[] {
+  const result = [];
+  for (const key in node) {
+    const value = node[key as keyof typeof node] as any as IR.Node[] | IR.Node;
+    if (Array.isArray(value)) {
+      result.push(...value);
+    } else if (typeof value?.type === "string") {
+      result.push(value);
+    }
+  }
+  return result;
 }

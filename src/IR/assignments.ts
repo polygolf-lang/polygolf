@@ -1,4 +1,12 @@
-import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
+import {
+  BaseExpr,
+  Expr,
+  id,
+  Identifier,
+  ValueType,
+  IndexCall,
+  LValue,
+} from "./IR";
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK
@@ -8,7 +16,7 @@ import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
  */
 export interface Assignment extends BaseExpr {
   type: "Assignment";
-  variable: Identifier;
+  variable: LValue;
   expr: Expr;
 }
 
@@ -19,7 +27,7 @@ export interface Assignment extends BaseExpr {
  */
 export interface ManyToManyAssignment extends BaseExpr {
   type: "ManyToManyAssignment";
-  variables: Identifier[];
+  variables: LValue[];
   exprs: Expr[];
 }
 
@@ -30,7 +38,7 @@ export interface ManyToManyAssignment extends BaseExpr {
  */
 export interface OneToManyAssignment extends BaseExpr {
   type: "OneToManyAssignment";
-  variables: Identifier[];
+  variables: LValue[];
   expr: Expr;
 }
 
@@ -45,7 +53,7 @@ export interface VarDeclarationWithAssignment extends BaseExpr {
 }
 
 export function assignment(
-  variable: Identifier | string,
+  variable: Identifier | string | IndexCall,
   expr: Expr
 ): Assignment {
   return {
@@ -56,7 +64,7 @@ export function assignment(
 }
 
 export function manyToManyAssignment(
-  variables: (Identifier | string)[],
+  variables: (Identifier | string | IndexCall)[],
   exprs: Expr[]
 ): ManyToManyAssignment {
   return {
@@ -67,7 +75,7 @@ export function manyToManyAssignment(
 }
 
 export function oneToManyAssignment(
-  variables: (Identifier | string)[],
+  variables: (Identifier | string | IndexCall)[],
   expr: Expr
 ): OneToManyAssignment {
   return {
@@ -82,6 +90,16 @@ export function varDeclarationWithAssignment(
   requiresBlock: boolean = true,
   valueTypes?: ValueType[]
 ): VarDeclarationWithAssignment {
+  if (
+    (assignments.type === "Assignment"
+      ? [assignments.variable]
+      : assignments.variables
+    ).some((x) => x.type !== "Identifier")
+  ) {
+    throw new Error(
+      "VarDeclarationWithAssignment needs assignments to variables."
+    );
+  }
   return {
     type: "VarDeclarationWithAssignment",
     assignments,

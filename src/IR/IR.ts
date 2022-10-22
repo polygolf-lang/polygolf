@@ -6,26 +6,16 @@ import {
   OneToManyAssignment,
   VarDeclarationWithAssignment,
 } from "./assignments";
+import { ArrayConstructor, ListConstructor } from "./collections";
 import {
-  ArrayGet,
-  ArraySet,
-  ArrayConstructor,
-  ListConstructor,
-  StringGetByte,
-  ListGet,
-  ListPush,
-  ListSet,
-  TableGet,
-  TableSet,
-} from "./collections";
-import {
+  PolygolfOp,
   BinaryOp,
   ConditionalOp,
   FunctionCall,
   MethodCall,
   MutatingBinaryOp,
-  Print,
   UnaryOp,
+  IndexCall,
 } from "./exprs";
 import {
   ForRange,
@@ -35,7 +25,7 @@ import {
   ForCLike,
   WhileLoop,
 } from "./loops";
-import { Argv, Identifier, IntegerLiteral, StringLiteral } from "./terminals";
+import { Identifier, IntegerLiteral, StringLiteral } from "./terminals";
 import {
   Block,
   IfStatement,
@@ -72,11 +62,11 @@ export type Statement =
   | ImportStatement;
 
 export type Expr =
-  | Argv
+  | PolygolfOp
   | VarDeclaration
   | VarDeclarationWithAssignment
   | Assignment
-  | Print
+  | IndexCall
   | FunctionCall
   | MethodCall
   | BinaryOp
@@ -86,14 +76,6 @@ export type Expr =
   | IntegerLiteral
   | ArrayConstructor
   | ListConstructor
-  | StringGetByte
-  | TableGet
-  | TableSet
-  | ArrayGet
-  | ArraySet
-  | ListGet
-  | ListSet
-  | ListPush
   | MutatingBinaryOp
   | ConditionalOp
   | ManyToManyAssignment
