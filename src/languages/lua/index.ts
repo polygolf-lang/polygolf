@@ -23,7 +23,7 @@ const luaLanguage: Language = {
       ],
       ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
       ["print", (x) => functionCall([x[0]], "io.write")],
-      ["printnl", (x) => functionCall([x[0]], "print")],
+      ["println", (x) => functionCall([x[0]], "print")],
       ["add", "+"],
       ["sub", "-"],
       ["mul", "*"],

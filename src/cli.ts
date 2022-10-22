@@ -6,14 +6,15 @@ import path from "path";
 
 import lua from "./languages/lua";
 import nim from "./languages/nim";
+import python from "./languages/python";
 // import debugEmit from "./languages/debug/emit";
 import { applyLanguage } from "./common/applyLanguage";
 
 const programsDir = "src/programs";
 
-const languages = { lua, nim };
+const languages = { lua, nim, python };
 
-const lang = languages.lua;
+const lang = languages.python;
 
 for (const filename of fs.readdirSync(programsDir)) {
   if (!filename.endsWith(".polygolf")) continue;

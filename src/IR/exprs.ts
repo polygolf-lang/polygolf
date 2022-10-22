@@ -144,7 +144,7 @@ export type OpCode =
   | UnaryOpCode
   | "argv"
   | "print"
-  | "printnl"
+  | "println"
   | "str_replace"
   | "str_substr"
   // collection set
@@ -297,7 +297,7 @@ export function unaryOp(
 }
 
 export function print(value: Expr, newline: boolean = true): PolygolfOp {
-  return polygolfOp(newline ? "printnl" : "print", value);
+  return polygolfOp(newline ? "println" : "print", value);
 }
 
 function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {

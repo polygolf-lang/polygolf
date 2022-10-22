@@ -59,7 +59,9 @@ function emitVariants(
           language.emitter(variant)
         ),
       ]);
-    } catch {}
+    } catch (e) {
+      result.push([variant, String(e)]);
+    }
   }
   result.sort((a, b) => a[1].length - b[1].length);
   return result.slice(0, maxBranches);

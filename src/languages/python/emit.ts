@@ -38,33 +38,6 @@ function emitBlock(block: IR.Block, root: boolean = false): string[] {
 
 function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
   switch (stmt.type) {
-    case "VarDeclarationWithAssignment":
-      if (stmt.requiresBlock) {
-        const variables =
-          stmt.assignments.type === "Assignment"
-            ? [stmt.assignments.variable]
-            : stmt.assignments.variables;
-        const exprs =
-          stmt.assignments.type === "Assignment"
-            ? [stmt.assignments.expr]
-            : stmt.assignments.exprs;
-
-        return [
-          "var",
-          "$INDENT$",
-          "\n",
-          ...joinGroups(
-            variables.map((v, i) => [
-              v.name,
-              "=",
-              ...emitExprNoParens(exprs[i]),
-            ]),
-            "\n"
-          ),
-          "$DEDENT$",
-        ];
-      }
-      return ["var", ...emitExprNoParens(stmt.assignments)];
     case "ImportStatement":
       return [
         stmt.name,
@@ -81,39 +54,20 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
         ...emitBlock(stmt.body),
       ];
     case "ForRange": {
+      const low = emitExpr(stmt.low, stmt);
+      const low0 = low.length === 1 && low[0] === "0";
+      const high = emitExpr(stmt.high, stmt);
       const increment = emitExpr(stmt.increment, stmt);
-      const low =
-        stmt.low.type === "IntegerLiteral" &&
-        stmt.low.value === 0n &&
-        stmt.inclusive
-          ? []
-          : emitExpr(stmt.low, stmt);
-      if (increment.length === 1 && increment[0] === "1") {
-        return [
-          "for",
-          ...emitExpr(stmt.variable, stmt),
-          "in",
-          ...low,
-          stmt.inclusive ? ".." : "..<",
-          ...emitExpr(stmt.high, stmt),
-          ":",
-          ...emitBlock(stmt.body),
-        ];
-      }
-      if (!stmt.inclusive) {
-        throw new Error("Ranges with steps must be inclusive in Nim.");
-      }
+      const increment1 = increment.length === 1 && increment[0] === "1";
       return [
         "for",
         ...emitExpr(stmt.variable, stmt),
         "in",
-        "countup",
+        "range",
         "(",
-        ...emitExpr(stmt.low, stmt),
-        ",",
-        ...emitExpr(stmt.high, stmt),
-        ",",
-        ...emitExpr(stmt.increment, stmt),
+        ...(low0 && increment1 ? [] : [...low, ","]),
+        ...high,
+        ...(increment1 ? [] : [",", ...increment]),
         ")",
         ":",
         ...emitBlock(stmt.body),
@@ -135,7 +89,7 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.type}) while emitting Nim`);
+      throw new Error(`Unexpected node (${stmt.type}) while emitting Python`);
     default:
       return emitExpr(stmt, parent);
   }
@@ -146,10 +100,7 @@ function emitExpr(
   parent: IR.Node,
   fragment?: PathFragment
 ): string[] {
-  const inner = emitExprNoParens(
-    expr,
-    parent.type === "BinaryOp" && fragment === "left"
-  );
+  const inner = emitExprNoParens(expr);
   return needsParens(expr, parent, fragment) ? ["(", ...inner, ")"] : inner;
 }
 
@@ -171,10 +122,7 @@ function needsParens(
   return false;
 }
 
-function emitExprNoParens(
-  expr: IR.Expr,
-  expressionContinues: boolean = false
-): string[] {
+function emitExprNoParens(expr: IR.Expr): string[] {
   switch (expr.type) {
     case "Assignment":
       return [
@@ -184,19 +132,15 @@ function emitExprNoParens(
       ];
     case "ManyToManyAssignment":
       return [
-        "(",
         ...joinGroups(
-          expr.variables.map((v) => [v.name]),
+          expr.variables.map((v) => emitExprNoParens(v)),
           ","
         ),
-        ")",
         "=",
-        "(",
         ...joinGroups(
           expr.exprs.map((x) => emitExprNoParens(x)),
           ","
         ),
-        ")",
       ];
     case "MutatingBinaryOp":
       return [
@@ -224,66 +168,31 @@ function emitExprNoParens(
             [`"""`, `\\"""`],
           ],
         ],
-        [
-          [`r"`, `"`],
-          [
-            [`"`, `""`],
-            [`\n`, null],
-            [`\r`, null],
-          ],
-        ],
       ]);
     case "IntegerLiteral":
       return [expr.value.toString()];
     case "FunctionCall":
-      if (expressionContinues || expr.args.length > 1)
-        return [
-          expr.ident.name,
-          "(",
-          ...joinGroups(
-            expr.args.map((arg) => emitExpr(arg, expr, "args")),
-            ","
-          ),
-          ")",
-        ];
       return [
         expr.ident.name,
+        "(",
         ...joinGroups(
-          expr.args.map((arg) => emitExpr(arg, expr, "args")),
+          expr.args.map((arg) => emitExpr(arg, expr)),
           ","
         ),
+        ")",
       ];
     case "MethodCall":
-      if (expressionContinues || expr.args.length > 1)
-        return [
-          ...emitExpr(expr.object, expr),
-          ".",
-          expr.ident.name,
-          ...(expr.args.length > 0
-            ? [
-                "(",
-                ...joinGroups(
-                  expr.args.map((arg) => emitExpr(arg, expr)),
-                  ","
-                ),
-                ")",
-              ]
-            : []),
-        ];
-      else
-        return [
-          ...emitExpr(expr.object, expr),
-          ".",
-          expr.ident.name,
-          ...(expr.args.length > 0
-            ? [
-                ...joinGroups(
-                  expr.args.map((arg) => emitExpr(arg, expr)),
-                  ","
-                ),
-              ]
-            : []),
-        ];
+      return [
+        ...emitExpr(expr.object, expr),
+        ".",
+        expr.ident.name,
+        "(",
+        ...joinGroups(
+          expr.args.map((arg) => emitExpr(arg, expr)),
+          ","
+        ),
+        ")",
+      ];
     case "BinaryOp":
       return [
         ...emitExpr(expr.left, expr, "left"),
@@ -292,23 +201,8 @@ function emitExprNoParens(
       ];
     case "UnaryOp":
       return [expr.name, ...emitExpr(expr.arg, expr)];
-    case "ArrayGet":
-      return [
-        ...emitExpr(expr.array, expr),
-        "[",
-        ...emitExpr(expr.index, expr),
-        "]",
-      ];
-    case "StringGetByte":
-      return [
-        ...emitExpr(expr.string, expr),
-        "[",
-        ...emitExpr(expr.index, expr),
-        "]",
-      ];
     case "ListConstructor":
       return [
-        "@",
         "[",
         ...joinGroups(
           expr.exprs.map((x) => emitExprNoParens(x)),
@@ -316,17 +210,21 @@ function emitExprNoParens(
         ),
         "]",
       ];
-    case "ListGet":
+    case "IndexCall":
       if (expr.oneIndexed)
-        throw new Error("Nim only supports zeroIndexed access.");
+        throw new Error("Python only supports zeroIndexed access.");
       return [
-        ...emitExprNoParens(expr.list),
+        ...emitExprNoParens(expr.collection),
         "[",
         ...emitExprNoParens(expr.index),
         "]",
       ];
 
     default:
-      throw new Error(`Unexpected node while emitting Nim: ${expr.type}. `);
+      throw new Error(
+        `Unexpected node while emitting Python: ${expr.type}: ${
+          "op" in expr ? expr.op : ""
+        }. `
+      );
   }
 }
