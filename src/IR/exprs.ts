@@ -142,6 +142,8 @@ export type UnaryOpCode = typeof UnaryOpCodeArray[number];
 export const OpCodeArray = [
   ...BinaryOpCodeArray,
   ...UnaryOpCodeArray,
+  "true",
+  "false",
   "argv",
   "print",
   "println",

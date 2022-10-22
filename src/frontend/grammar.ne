@@ -39,7 +39,7 @@ expr_inner ->
   | variable {% id %}
   | sexpr {% id %}
   | block {% id %}
-  | builtin {% d => sexpr(d[0].value, []) %}
+  | builtin {% d => sexpr(d[0], []) %}
 
 block -> "[" block_inner "]" {% d => d[1] %}
 
