@@ -5,8 +5,6 @@ import {
   Identifier,
   Program,
   Statement,
-  print,
-  assignment,
   forRange,
   Block,
   ifStatement,
@@ -22,6 +20,11 @@ import {
   integerType as intType,
   IntegerLiteral,
   int,
+  UnaryOpCodeArray,
+  OpCodeArray,
+  assignment,
+  OpCode,
+  PolygolfOp,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -29,10 +32,11 @@ export function sexpr(
   callee: Identifier,
   args: (Expr | Block)[]
 ): Expr | Statement {
+  const opCode = canonicalOp(callee.name, args.length);
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
       throw new Error(
-        `Invalid argument count in application of ${callee.name}: ` +
+        `Invalid argument count in application of ${opCode}: ` +
           `Expected ${low}${low === high ? "" : ".." + String(high)} but got ${
             args.length
           }.`
@@ -47,9 +51,7 @@ export function sexpr(
   }
   function assertExpr(e: Expr | Block): asserts e is Expr {
     if (e.type === "Block")
-      throw new Error(
-        `Application ${callee.name} cannot take a block as argument`
-      );
+      throw new Error(`Application ${opCode} cannot take a block as argument`);
   }
   function assertExprs(e: (Expr | Block)[]): asserts e is Expr[] {
     e.forEach(assertExpr);
@@ -57,10 +59,10 @@ export function sexpr(
   function assertBlock(e: Expr | Block): asserts e is Block {
     if (e.type !== "Block")
       throw new Error(
-        `Application ${callee.name} requires a block where you passed a non-block`
+        `Application ${opCode} requires a block where you passed a non-block`
       );
   }
-  switch (callee.name) {
+  switch (opCode) {
     case "forRange": {
       expectArity(4, 5);
       let variable, low, high, increment, body: Expr | Block;
@@ -89,24 +91,66 @@ export function sexpr(
   assertExprs(args);
   if (!callee.builtin) {
     return functionCall(args, callee);
-  } else if (BinaryOpCodeArray.includes(callee.name)) {
-    expectArity(2);
-    return polygolfOp(callee.name, args[0], args[1]);
   }
-  switch (callee.name) {
-    case "println":
-    case "print":
-      expectArity(1);
-      return print(args[0], callee.name === "println");
+  switch (opCode) {
     case "assign":
       expectArity(2);
       assertIdentifier(args[0]);
       return assignment(args[0], args[1]);
     case "list":
       return listConstructor(args);
-    default:
-      throw new Error(`Unrecognized builtin: ${callee.name}`);
   }
+  if (OpCodeArray.includes(opCode)) {
+    if (UnaryOpCodeArray.includes(opCode)) {
+      expectArity(1);
+    } else if (BinaryOpCodeArray.includes(opCode)) {
+      const allowNary = ["add", "mul", "str_concat"].includes(opCode);
+      expectArity(2, allowNary ? 99 : 2);
+      return composedPolygolfOp(opCode, args);
+    }
+    return polygolfOp(opCode, ...args);
+  }
+  throw new Error(`Unrecognized builtin: ${opCode}`);
+}
+
+function canonicalOp(op: string, arity: number): string {
+  switch (op) {
+    case "+":
+      return "add";
+    case "-":
+      return arity < 2 ? "neg" : "sub";
+    case "*":
+      return "mul";
+    case "^":
+      return "exp";
+    case "<=":
+    case "≤":
+      return "leq";
+    case "<":
+      return "lt";
+    case ">=":
+    case "≥":
+      return "geq";
+    case ">":
+      return "gt";
+    case "=":
+      return "eq";
+    case "!=":
+    case "≠":
+      return "neq";
+    case "&":
+      return "str_concat";
+  }
+  return op;
+}
+
+function composedPolygolfOp(op: OpCode, args: Expr[]): PolygolfOp {
+  if (args.length < 3) return polygolfOp(op, ...args);
+  return polygolfOp(
+    op,
+    composedPolygolfOp(op, args.slice(0, -1)),
+    args[args.length - 1]
+  );
 }
 
 export function typeSexpr(

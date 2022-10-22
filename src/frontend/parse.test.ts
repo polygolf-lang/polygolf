@@ -73,6 +73,26 @@ describe("Parse s-expressions", () => {
     "(list 1 2 3)",
     listConstructor([int(1n), int(2n), int(3n)])
   );
+  expectExprParse(
+    "+",
+    "(+ $x $y $z $w)",
+    polygolfOp(
+      "add",
+      polygolfOp("add", polygolfOp("add", id("x"), id("y")), id("z")),
+      id("w")
+    )
+  );
+  expectExprParse(
+    "&",
+    "(& $x $y $z)",
+    polygolfOp(
+      "str_concat",
+      polygolfOp("str_concat", id("x"), id("y")),
+      id("z")
+    )
+  );
+  expectExprParse("- as neg", "(- $x)", polygolfOp("neg", id("x")));
+  expectExprParse("- as sub", "(- $x $y)", polygolfOp("sub", id("x"), id("y")));
 });
 
 describe("Parse annotations", () => {

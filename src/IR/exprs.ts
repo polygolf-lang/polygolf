@@ -139,18 +139,21 @@ export const UnaryOpCodeArray = [
 ];
 export type UnaryOpCode = typeof UnaryOpCodeArray[number];
 
-export type OpCode =
-  | BinaryOpCode
-  | UnaryOpCode
-  | "argv"
-  | "print"
-  | "printnl"
-  | "str_replace"
-  | "str_substr"
+export const OpCodeArray = [
+  ...BinaryOpCodeArray,
+  ...UnaryOpCodeArray,
+  "argv",
+  "print",
+  "println",
+  "str_replace",
+  "str_substr",
   // collection set
-  | "array_set"
-  | "list_set"
-  | "table_set";
+  "array_set",
+  "list_set",
+  "table_set",
+];
+
+export type OpCode = typeof OpCodeArray[number];
 
 export interface BinaryOp extends BaseExpr {
   type: "BinaryOp";
@@ -297,7 +300,7 @@ export function unaryOp(
 }
 
 export function print(value: Expr, newline: boolean = true): PolygolfOp {
-  return polygolfOp(newline ? "printnl" : "print", value);
+  return polygolfOp(newline ? "println" : "print", value);
 }
 
 function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {

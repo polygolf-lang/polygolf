@@ -47,7 +47,7 @@ integer -> %integer {% d => int(BigInt(d[0])) %}
 
 variable -> %variable {% d => identifier(d[0].value.slice(1), false) %}
 
-builtin -> %builtin {% d => identifier(d[0].value, true) %}
+builtin -> (%builtin | %opalias) {% d => identifier(d[0][0].value, true) %}
 
 string -> %string {% d => stringLiteral(JSON.parse(d[0])) %}
 

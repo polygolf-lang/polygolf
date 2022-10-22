@@ -136,7 +136,7 @@ function getOpCodeType(
     case "sorted":
       return arg0Type();
     case "print":
-    case "printnl":
+    case "println":
       return simpleType("void");
     case "argv":
     case "str_split":
