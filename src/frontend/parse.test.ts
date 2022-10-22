@@ -129,9 +129,9 @@ describe("Parse statements", () => {
     "forRange $x 1 20 1 [ println $x; ];",
     forRange(
       id("x"),
-      { ...int(1n), valueType: integerType(1, 1) },
-      { ...int(20n), valueType: integerType(20, 20) },
-      int(1n),
+      annotate(int(1n), integerType(1, 1)),
+      annotate(int(20n), integerType(20, 20)),
+      annotate(int(1n), integerType(1, 1)),
       block([print(id("x"), true)])
     )
   );

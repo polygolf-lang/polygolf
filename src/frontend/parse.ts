@@ -21,6 +21,7 @@ import {
   setType,
   integerType as intType,
   IntegerLiteral,
+  int,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -28,11 +29,13 @@ export function sexpr(
   callee: Identifier,
   args: (Expr | Block)[]
 ): Expr | Statement {
-  function expectArity(n: number) {
-    if (args.length !== n) {
+  function expectArity(low: number, high: number = low) {
+    if (args.length < low || args.length > high) {
       throw new Error(
         `Invalid argument count in application of ${callee.name}: ` +
-          `Expected ${n} but got ${args.length}.`
+          `Expected ${low}${low === high ? "" : ".." + String(high)} but got ${
+            args.length
+          }.`
       );
     }
   }
@@ -59,8 +62,14 @@ export function sexpr(
   }
   switch (callee.name) {
     case "forRange": {
-      expectArity(5);
-      const [variable, low, high, increment, body] = args;
+      expectArity(4, 5);
+      let variable, low, high, increment, body: Expr | Block;
+      if (args.length === 5) {
+        [variable, low, high, increment, body] = args;
+      } else {
+        [variable, low, high, body] = args;
+        increment = int(1n);
+      }
       assertIdentifier(variable);
       assertExpr(low);
       assertExpr(high);

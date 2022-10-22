@@ -112,7 +112,12 @@ export function program(block: Block): Program {
       if (node.type === "ForRange") {
         const low = getType(node.low, path.root.node);
         const high = getType(node.high, path.root.node);
-        if (low.type !== "integer" || high.type !== "integer") {
+        const step = getType(node.increment, path.root.node);
+        if (
+          low.type !== "integer" ||
+          high.type !== "integer" ||
+          step.type !== "integer"
+        ) {
           throw new Error(`Unexpected type (${low.type},${high.type})`);
         }
         setVar(
