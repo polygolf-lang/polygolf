@@ -6,6 +6,7 @@ import emitProgram from "./emit";
 import { mapOps, useIndexCalls } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
+import { evalStaticIntegers } from "../../plugins/static";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -46,6 +47,7 @@ const luaLanguage: Language = {
       ["bitnot", "~"],
       ["str_to_int", "~~"],
     ]),
+    evalStaticIntegers,
     renameIdents(),
   ],
 };

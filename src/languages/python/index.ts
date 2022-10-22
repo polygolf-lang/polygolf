@@ -7,7 +7,10 @@ import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
 import { addDependencies } from "../../plugins/dependencies";
-import { golfStringListLiteral } from "../../plugins/literals";
+import {
+  evalStaticIntegers,
+  golfStringListLiteral,
+} from "../../plugins/static";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -46,6 +49,7 @@ const pythonLanguage: Language = {
         (x) => functionCall([assignment(id("end", true), x[0])], "print"),
       ],
     ]),
+    evalStaticIntegers,
     addDependencies([["sys", "sys"]]),
     renameIdents(),
   ],

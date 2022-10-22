@@ -14,6 +14,7 @@ import {
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { useInclusiveForRange } from "../../plugins/loops";
+import { evalStaticIntegers } from "../../plugins/static";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -51,6 +52,7 @@ const nimLanguage: Language = {
     ]),
     useUFCS,
     useUnsignedDivision,
+    evalStaticIntegers,
     addDependencies([
       ["^", "math"],
       ["repeat", "strutils"],
