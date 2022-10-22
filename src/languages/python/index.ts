@@ -1,4 +1,4 @@
-import { assignment, functionCall, id, indexCall } from "../../IR";
+import { assignment, functionCall, id, indexCall, methodCall } from "../../IR";
 import { Language } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -7,18 +7,21 @@ import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
 import { addDependencies } from "../../plugins/dependencies";
+import { golfStringListLiteral } from "../../plugins/literals";
 
 const pythonLanguage: Language = {
   name: "Python",
   emitter: emitProgram,
   plugins: [
     tempVarToMultipleAssignment,
+    golfStringListLiteral,
     forRangeToForEach,
     useIndexCalls(),
     mapOps([
       ["str_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["str_length", (x) => functionCall([x[0]], "len")],
       ["int_to_str", (x) => functionCall([x[0]], "str")],
+      ["str_split", (x) => methodCall(x[0], [x[1]], "split")],
       ["repeat", "*"],
       ["add", "+"],
       ["sub", "-"],
