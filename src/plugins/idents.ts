@@ -1,6 +1,6 @@
 import { IdentifierGenerator } from "common/Language";
 import { Path } from "../common/traverse";
-import { IR } from "../IR";
+import { assignment, id, Identifier, IR, Statement } from "../IR";
 
 function getIdentMap(
   path: Path<IR.Program>,
@@ -76,3 +76,40 @@ const defaultIdentGen = {
   short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
   general: (i: number) => "v" + i.toString(),
 };
+
+function defaultShouldAlias(name: string, freq: number): boolean {
+  return 3 + name.length + freq < name.length * freq;
+}
+export function aliasBuiltins(
+  shouldAlias: (name: string, freq: number) => boolean = defaultShouldAlias
+) {
+  const usedBuiltins = new Map<string, Identifier[]>();
+  return {
+    enter(path: Path) {
+      const node = path.node;
+      if (node.type === "Identifier" && node.builtin) {
+        if (!usedBuiltins.has(node.name)) usedBuiltins.set(node.name, []);
+        usedBuiltins.get(node.name)?.push(node);
+      }
+    },
+    exit(path: Path) {
+      if (path.parent === null) {
+        const program = path.root.node;
+        const aliased: string[] = [];
+        usedBuiltins.forEach((identifiers: Identifier[], name: string) => {
+          if (shouldAlias(name, identifiers.length)) {
+            aliased.push(name);
+            for (const ident of identifiers) {
+              ident.builtin = false;
+              ident.name = name + "_alias";
+            }
+          }
+        });
+        program.block.children = aliased
+          .map((x) => assignment(x + "_alias", id(x, true)) as Statement)
+          .concat(program.block.children);
+        usedBuiltins.clear();
+      }
+    },
+  };
+}

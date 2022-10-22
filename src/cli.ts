@@ -14,7 +14,7 @@ const programsDir = "src/programs";
 
 const languages = { lua, nim, python };
 
-const lang = languages.nim;
+const lang = languages.python;
 
 for (const filename of fs.readdirSync(programsDir)) {
   if (!filename.endsWith(".polygolf")) continue;

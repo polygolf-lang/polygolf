@@ -12,7 +12,6 @@ import {
   variants,
 } from "../IR";
 import { Path, Visitor } from "../common/traverse";
-import { getType } from "common/getType";
 
 const golfedNodes = new WeakMap();
 export const golfStringListLiteral: Visitor = {
@@ -64,7 +63,11 @@ function getDelim(strings: string[]): string {
 export const evalStaticIntegers: Visitor = {
   exit(path: Path) {
     const node = path.node;
-    if ("op" in node && node.op && BinaryOpCodeArray.includes(node.op)) {
+    if (
+      "op" in node &&
+      node.op !== null &&
+      BinaryOpCodeArray.includes(node.op)
+    ) {
       let args: Expr[] = [];
       if (node.type === "BinaryOp") args = [node.left, node.right];
       else if (node.type === "UnaryOp") args = [node.arg];

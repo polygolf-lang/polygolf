@@ -3,7 +3,7 @@ import { Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import { mapOps, useIndexCalls } from "../../plugins/ops";
-import { renameIdents } from "../../plugins/idents";
+import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
 import { addDependencies } from "../../plugins/dependencies";
@@ -50,6 +50,7 @@ const pythonLanguage: Language = {
       ],
     ]),
     evalStaticIntegers,
+    aliasBuiltins(),
     addDependencies([["sys", "sys"]]),
     renameIdents(),
   ],
