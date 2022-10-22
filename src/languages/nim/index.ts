@@ -48,7 +48,7 @@ const nimLanguage: Language = {
       ["neg", ["-", 150]],
       ["str_to_int", (x) => functionCall([x[0]], "parseInt")],
       ["print", (x) => functionCall([id("stdout"), x[0]], "write")],
-      ["printnl", (x) => functionCall([x[0]], "echo")],
+      ["println", (x) => functionCall([x[0]], "echo")],
     ]),
     useUFCS,
     useUnsignedDivision,

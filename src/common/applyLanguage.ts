@@ -63,6 +63,10 @@ function emitVariants(
       result.push([variant, String(e)]);
     }
   }
-  result.sort((a, b) => a[1].length - b[1].length);
+  result.sort(
+    (a, b) =>
+      (a[1].startsWith("Error:") ? 9999999999 : a[1].length) -
+      (b[1].startsWith("Error:") ? 9999999999 : b[1].length)
+  );
   return result.slice(0, maxBranches);
 }
