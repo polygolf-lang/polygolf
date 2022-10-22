@@ -25,6 +25,8 @@ import {
   assignment,
   OpCode,
   PolygolfOp,
+  block,
+  whileLoop,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -80,13 +82,22 @@ export function sexpr(
       return forRange(variable, low, high, increment, body);
     }
     case "if": {
-      expectArity(2);
-      const [condition, consequent] = args;
+      expectArity(2, 3);
+      const condition = args[0];
+      const consequent = args[1];
+      const alternate = args[2] ?? block([]);
       assertExpr(condition);
       assertBlock(consequent);
-      return ifStatement(condition, consequent);
+      assertBlock(alternate);
+      return ifStatement(condition, consequent, alternate);
     }
-    // TODO: while, if-else, for-keys, etc.
+    case "while": {
+      expectArity(2);
+      const [condition, body] = args;
+      assertExpr(condition);
+      assertBlock(body);
+      return whileLoop(condition, body);
+    }
   }
   assertExprs(args);
   if (!callee.builtin) {
