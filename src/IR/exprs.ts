@@ -343,3 +343,22 @@ function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
       return 0;
   }
 }
+
+export function getArgs(
+  node: PolygolfOp | BinaryOp | UnaryOp | FunctionCall | MethodCall | IndexCall
+): Expr[] {
+  switch (node.type) {
+    case "BinaryOp":
+      return [node.left, node.right];
+    case "UnaryOp":
+      return [node.arg];
+    case "FunctionCall":
+      return node.args;
+    case "MethodCall":
+      return [node.object, ...node.args];
+    case "PolygolfOp":
+      return node.args;
+    case "IndexCall":
+      return [node.collection, node.index];
+  }
+}

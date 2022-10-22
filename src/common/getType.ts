@@ -13,6 +13,7 @@ import {
   integerTypeIncludingAll,
   IntegerType,
   PolygolfOp,
+  getArgs,
 } from "../IR";
 
 export function getType(expr: Expr, program: Program): ValueType {
@@ -183,88 +184,70 @@ function getIntegerOpCodeType(
   if (expr.op === "str_to_int") return integerType();
   if (expr.op === "str_length" || expr.op === "cardinality")
     return integerType(0, 1 << 31);
-  let left: ValueType | undefined;
-  let right: ValueType | undefined;
-  if (expr.type === "PolygolfOp") {
-    left = getType(expr.args[0], program);
-    right = getType(expr.args[1], program);
-  } else if (expr.type === "BinaryOp") {
-    left = getType(expr.left, program);
-    right = getType(expr.right, program);
-  } else if (expr.type === "UnaryOp") {
-    right = getType(expr.arg, program);
-  } else if (expr.type === "FunctionCall") {
-    left = getType(expr.args[0], program);
-    right = getType(expr.args[1], program);
-  } else if (expr.type === "MethodCall") {
-    left = getType(expr.object, program);
-    right = getType(expr.args[0], program);
-  }
-  if (right?.type !== "integer") {
+  const args = getArgs(expr);
+  const a = getType(args[0], program);
+  if (a?.type !== "integer") {
     throw new Error("Unexpected type.");
   }
   switch (expr.op) {
     case "bitnot":
       return integerType(
-        right.high === undefined ? undefined : -right.high - 1n,
-        right.low === undefined ? undefined : -right.low + 1n
+        a.high === undefined ? undefined : -a.high - 1n,
+        a.low === undefined ? undefined : -a.low + 1n
       );
     case "neg":
       return integerType(
-        right.high === undefined ? undefined : -right.high,
-        right.low === undefined ? undefined : -right.low
+        a.high === undefined ? undefined : -a.high,
+        a.low === undefined ? undefined : -a.low
       );
   }
-  if (left?.type !== "integer") {
+  const b = getType(args[1], program);
+  if (b?.type !== "integer") {
     throw new Error("Unexpected type.");
   }
   switch (expr.op) {
     case "gcd":
       if (
-        left.low === undefined ||
-        left.high === undefined ||
-        right.high === undefined ||
-        right.low === undefined
+        a.low === undefined ||
+        a.high === undefined ||
+        b.high === undefined ||
+        b.low === undefined
       )
         return integerType(1n, undefined);
       return integerType(
         1n,
-        [left.low, left.high, right.low, right.high]
+        [a.low, a.high, b.low, b.high]
           .map((x) => (x < 0 ? -x : x))
           .reduce((a, b) => (a < b ? a : b))
       );
     case "add":
       return integerType(
-        left.low === undefined || right.low === undefined
+        a.low === undefined || b.low === undefined ? undefined : a.low + b.low,
+        a.high === undefined || b.high === undefined
           ? undefined
-          : left.low + right.low,
-        left.high === undefined || right.high === undefined
-          ? undefined
-          : left.high + right.high
+          : a.high + b.high
       );
     case "sub":
       return integerType(
-        left.low === undefined || right.high === undefined
+        a.low === undefined || b.high === undefined
           ? undefined
-          : left.low - right.high,
-        left.high === undefined || right.low === undefined
-          ? undefined
-          : left.high - right.low
+          : a.low - b.high,
+        a.high === undefined || b.low === undefined ? undefined : a.high - b.low
       );
     case "mul":
-      return getIntegerTypeUsing(left, right, (a, b) => a * b);
+      return getIntegerTypeUsing(a, b, (a, b) => a * b);
     case "div":
-      return getIntegerTypeUsing(left, right, floorDiv);
+      return getIntegerTypeUsing(a, b, floorDiv);
     case "truncdiv":
-      return getIntegerTypeUsing(left, right, (a, b) => a / b);
+      return getIntegerTypeUsing(a, b, (a, b) => a / b);
     case "mod":
-      return getIntegerTypeMod(left, right);
+      return getIntegerTypeMod(a, b);
     case "rem":
-      return getIntegerTypeRem(left, right);
+      return getIntegerTypeRem(a, b);
     case "exp":
       return getIntegerTypeUsing(
-        left,
-        (right.low ?? 1n) < 0n ? integerType(0n, right.high) : right,
+        a,
+        (b.low ?? 1n) < 0n ? integerType(0n, b.high) : b,
         (a, b) => a ** b
       );
     case "bitand":

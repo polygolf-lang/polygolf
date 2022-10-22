@@ -2,7 +2,7 @@ import {
   assignment,
   BinaryOpCodeArray,
   block,
-  Expr,
+  getArgs,
   int,
   IntegerLiteral,
   OpCode,
@@ -66,14 +66,10 @@ export const evalStaticIntegers: Visitor = {
     if (
       "op" in node &&
       node.op !== null &&
-      BinaryOpCodeArray.includes(node.op)
+      BinaryOpCodeArray.includes(node.op) &&
+      node.type !== "MutatingBinaryOp"
     ) {
-      let args: Expr[] = [];
-      if (node.type === "BinaryOp") args = [node.left, node.right];
-      else if (node.type === "UnaryOp") args = [node.arg];
-      else if (node.type === "FunctionCall") args = node.args;
-      else if (node.type === "MethodCall") args = [node.object, ...node.args];
-      else if (node.type === "PolygolfOp") args = node.args;
+      const args = getArgs(node);
       if (args.every((x) => x.type === "IntegerLiteral")) {
         try {
           path.replaceWith(
