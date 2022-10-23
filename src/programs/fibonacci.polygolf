@@ -1,6 +1,6 @@
 $a:0..1346269 = 0;
 $b:0..1346269 = 1;
-forRange $i 0 31 [
+for $i 0 31 [
     println $a;
     {   % temp variable
         $t:0..1346269 = ($a + $b);

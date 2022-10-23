@@ -1,4 +1,4 @@
-forRange $i 1 101 [
+for $i 1 101 [
     if (($i mod ($i - (($i div 10) * 9)):0..100) < 1) [
         println $i;
     ];

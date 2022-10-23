@@ -65,7 +65,7 @@ export function sexpr(
       );
   }
   switch (opCode) {
-    case "forRange": {
+    case "for": {
       expectArity(4, 5);
       let variable, low, high, increment, body: Expr | Block;
       if (args.length === 5) {

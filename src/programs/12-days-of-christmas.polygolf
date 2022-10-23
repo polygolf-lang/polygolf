@@ -8,10 +8,10 @@ $days = (list
   "Six Geese-a-Laying," "Five Gold Rings," "Four Calling Birds,"
   "Three French Hens," "Two Turtle Doves, and" "A Partridge in a Pear Tree.\n"
 );
-forRange $i 0 12 [
+for $i 0 12 [
   println (.. "On the " (list_get $ordinals $i)
     " day of Christmas\nMy true love sent to me");
-  forRange $j (11 - $i) 12 [
+  for $j (11 - $i) 12 [
     println (list_get $days $j);
   ];
 ];
