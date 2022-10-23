@@ -139,7 +139,7 @@ export const canonicalOpTable: Record<string, OpCode> = {
   "^": "exp",
   "&": "bitand",
   "|": "bitor",
-  // bitxor, neg handled as special case in canonicalOp
+  // bitxor, bitnot handled as special case in canonicalOp
   "~": "",
   "==": "eq",
   "!=": "neq",
