@@ -1,4 +1,4 @@
-import { functionCall, id, indexCall } from "../../IR";
+import { functionCall, id, indexCall, int, polygolfOp } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -25,10 +25,16 @@ const nimLanguage: Language = {
     useInclusiveForRange,
     useIndexCalls(),
     mapOps([
+      [
+        "argv_get",
+        (x) => functionCall([polygolfOp("add", x[0], int(1n))], "paramStr"),
+      ],
+    ]),
+    mapOps([
       ["str_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
-      ["str_length", (x) => functionCall([x[0]], "len")],
+      ["str_length", (x) => functionCall(x, "len")],
       ["int_to_str", "$"],
-      ["repeat", (x) => functionCall([x[0], x[0]], "repeat")],
+      ["repeat", (x) => functionCall(x, "repeat")],
       ["add", "+"],
       ["sub", "-"],
       ["mul", "*"],
@@ -45,15 +51,21 @@ const nimLanguage: Language = {
       ["str_concat", ["&", 150, false]],
       ["not", ["not", 150]],
       ["neg", ["-", 150]],
-      ["str_to_int", (x) => functionCall([x[0]], "parseInt")],
+      ["str_to_int", (x) => functionCall(x, "parseInt")],
       ["print", (x) => functionCall([id("stdout"), x[0]], "write")],
-      ["printnl", (x) => functionCall([x[0]], "echo")],
+      ["printnl", (x) => functionCall(x, "echo")],
+      ["min", (x) => functionCall(x, "min")],
+      ["max", (x) => functionCall(x, "max")],
+      ["abs", (x) => functionCall(x, "abs")],
+      ["bool_to_int", (x) => functionCall(x, "int")],
+      ["byte_to_char", (x) => functionCall(x, "chr")],
     ]),
     useUFCS,
     useUnsignedDivision,
     addDependencies([
       ["^", "math"],
       ["repeat", "strutils"],
+      ["paramStr", "os"],
     ]),
     addImports,
     renameIdents(),
