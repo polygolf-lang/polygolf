@@ -1,6 +1,6 @@
 forRange $i 3 10 [
   forRange $j 0 $i [
-    println (& (repeat " " (- $i $j)) (repeat "*" (+ (* 2 $j) 1)));
+    println (.. (repeat " " (- $i $j)) (repeat "*" (+ (* 2 $j) 1)));
   ];
-  println (& (repeat " " $i) "*\n");
+  println (.. (repeat " " $i) "*\n");
 ];

@@ -115,7 +115,14 @@ export function sexpr(
     if (UnaryOpCodeArray.includes(opCode)) {
       expectArity(1);
     } else if (BinaryOpCodeArray.includes(opCode)) {
-      const allowNary = ["add", "mul", "str_concat"].includes(opCode);
+      const allowNary = [
+        "add",
+        "mul",
+        "bitand",
+        "bitor",
+        "bitxor",
+        "str_concat",
+      ].includes(opCode);
       expectArity(2, allowNary ? 99 : 2);
       return composedPolygolfOp(opCode, args);
     }
@@ -124,35 +131,30 @@ export function sexpr(
   throw new Error(`Unrecognized builtin: ${opCode}`);
 }
 
+export const canonicalOpTable: Record<string, OpCode> = {
+  "+": "add",
+  // neg, sub handled as special case in canonicalOp
+  "-": "",
+  "*": "mul",
+  "^": "exp",
+  "&": "bitand",
+  "|": "bitor",
+  // bitxor, neg handled as special case in canonicalOp
+  "~": "",
+  "==": "eq",
+  "!=": "neq",
+  "<=": "leq",
+  "<": "lt",
+  ">=": "geq",
+  ">": "gt",
+  "=": "assign",
+  "..": "str_concat",
+};
+
 function canonicalOp(op: string, arity: number): string {
-  switch (op) {
-    case "+":
-      return "add";
-    case "-":
-      return arity < 2 ? "neg" : "sub";
-    case "*":
-      return "mul";
-    case "^":
-      return "exp";
-    case "<=":
-    case "≤":
-      return "leq";
-    case "<":
-      return "lt";
-    case ">=":
-    case "≥":
-      return "geq";
-    case ">":
-      return "gt";
-    case "=":
-      return "eq";
-    case "!=":
-    case "≠":
-      return "neq";
-    case "&":
-      return "str_concat";
-  }
-  return op;
+  if (op === "-") return arity < 2 ? "neg" : "sub";
+  if (op === "~") return arity < 2 ? "bitnot" : "bitxor";
+  return canonicalOpTable[op] ?? op;
 }
 
 function composedPolygolfOp(op: OpCode, args: Expr[]): PolygolfOp {

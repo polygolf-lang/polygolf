@@ -21,13 +21,5 @@ for (const filename of fs.readdirSync(programsDir)) {
   console.log("\n#", filename);
   const code = fs.readFileSync(filePath, { encoding: "utf-8" });
   const prog = parse(code);
-  // console.log(
-  //   JSON.stringify(
-  //     prog,
-  //     (key, value) =>
-  //       typeof value === "bigint" ? value.toString() + "n" : value,
-  //     2
-  //   )
-  // );
   console.log(applyLanguage(lang, prog));
 }

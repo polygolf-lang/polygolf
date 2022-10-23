@@ -6,7 +6,7 @@ forRange $i 0 31 [
         assign $t:0..1346269 (+ $a $b);
         assign $a $b;
         assign $b $t;
-    |   # arithmetic trick
+    ||  # arithmetic trick
         assign $b (+ $b $a);
         assign $a (- $b $a);
     }

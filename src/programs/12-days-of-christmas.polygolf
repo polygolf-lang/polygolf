@@ -9,7 +9,7 @@ assign $T (list
   "Three French Hens," "Two Turtle Doves, and" "A Partridge in a Pear Tree.\n"
 );
 forRange $i 0 12 [
-  println (&
+  println (..
      "On the " (list_get $O $i)
     " day of Christmas\nMy true love sent to me"
   );

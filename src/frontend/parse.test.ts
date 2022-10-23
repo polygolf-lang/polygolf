@@ -85,8 +85,8 @@ describe("Parse s-expressions", () => {
     )
   );
   expectExprParse(
-    "&",
-    "(& $x $y $z)",
+    "..",
+    "(.. $x $y $z)",
     polygolfOp(
       "str_concat",
       polygolfOp("str_concat", id("x"), id("y")),
@@ -95,6 +95,12 @@ describe("Parse s-expressions", () => {
   );
   expectExprParse("- as neg", "(- $x)", polygolfOp("neg", id("x")));
   expectExprParse("- as sub", "(- $x $y)", polygolfOp("sub", id("x"), id("y")));
+  expectExprParse("~ as bitnot", "(~ $x)", polygolfOp("bitnot", id("x")));
+  expectExprParse(
+    "~ as bitxor",
+    "(~ $x $y)",
+    polygolfOp("bitxor", id("x"), id("y"))
+  );
 });
 
 describe("Parse annotations", () => {
@@ -162,7 +168,7 @@ describe("Parse statements", () => {
 describe("Parse variants", () => {
   testStmtParse(
     "Two variants",
-    `{ println $x; | print $x; print "\\n"; }`,
+    `{ println $x; || print $x; print "\\n"; }`,
     variants([
       block([print(id("x"), true)]),
       block([print(id("x"), false), print(stringLiteral("\n"), false)]),
@@ -170,7 +176,7 @@ describe("Parse variants", () => {
   );
   testStmtParse(
     "Three variants",
-    `{ println $x; | print $x; print "\\n"; | print $x; print "\\n"; }`,
+    `{ println $x; || print $x; print "\\n"; || print $x; print "\\n"; }`,
     variants([
       block([print(id("x"), true)]),
       block([print(id("x"), false), print(stringLiteral("\n"), false)]),
