@@ -1,4 +1,11 @@
-import { binaryOp, functionCall, int, methodCall } from "../../IR";
+import {
+  functionCall,
+  id,
+  indexCall,
+  int,
+  methodCall,
+  polygolfOp,
+} from "../../IR";
 import { Language } from "../../common/Language";
 import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
@@ -16,15 +23,21 @@ const luaLanguage: Language = {
     forRangeToForRangeInclusive,
     useIndexCalls(true),
     mapOps([
-      ["str_length", (x) => methodCall(x[0], [], "len")],
-      ["int_to_str", (x) => functionCall([x[0]], "tostring")],
+      [
+        "argv_get",
+        (x) => indexCall(id("arg", true), polygolfOp("add", x[0], int(1n))),
+      ],
       [
         "str_get_byte",
-        (x) => methodCall(x[0], [binaryOp("add", x[1], int(1n), "+")], "byte"),
+        (x) => methodCall(x[0], [polygolfOp("add", x[1], int(1n))], "byte"),
       ],
+    ]),
+    mapOps([
+      ["str_length", (x) => methodCall(x[0], [], "len")],
+      ["int_to_str", (x) => functionCall(x, "tostring")],
       ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
-      ["print", (x) => functionCall([x[0]], "io.write")],
-      ["println", (x) => functionCall([x[0]], "print")],
+      ["print", (x) => functionCall(x, "io.write")],
+      ["println", (x) => functionCall(x, "print")],
       ["add", "+"],
       ["sub", "-"],
       ["mul", "*"],
@@ -46,6 +59,11 @@ const luaLanguage: Language = {
       ["neg", "-"],
       ["bitnot", "~"],
       ["str_to_int", "~~"],
+      ["argv", (x) => id("argv", true)],
+      ["min", (x) => functionCall(x, "math.min")],
+      ["max", (x) => functionCall(x, "math.max")],
+      ["abs", (x) => functionCall(x, "math.abs")],
+      ["byte_to_char", (x) => functionCall(x, "string.char")],
     ]),
     evalStaticIntegers,
     renameIdents(),

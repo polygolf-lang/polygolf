@@ -51,6 +51,8 @@ export const BinaryOpCodeArray = [
   "bitor",
   "bitxor",
   "gcd",
+  "min",
+  "max",
   // (num, num) => bool
   "lt",
   "leq",
@@ -71,6 +73,7 @@ export const BinaryOpCodeArray = [
   "list_get",
   "table_get",
   "str_get_byte",
+  "argv_get",
   // other
   "list_push",
   "str_concat",
@@ -78,6 +81,7 @@ export const BinaryOpCodeArray = [
   "is_substr",
   "str_find",
   "str_split",
+  "str_get_char",
   "join_using",
   "right_align",
   "int_to_bin_aligned",
@@ -123,6 +127,7 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
 }
 
 export const UnaryOpCodeArray = [
+  "abs",
   "bitnot",
   "neg",
   "not",
@@ -130,6 +135,8 @@ export const UnaryOpCodeArray = [
   "int_to_bin",
   "int_to_hex",
   "str_to_int",
+  "bool_to_int",
+  "byte_to_char",
   "cardinality",
   "str_length",
   "str_split_whitespace",
