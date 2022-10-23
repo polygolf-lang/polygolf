@@ -1,13 +1,13 @@
-assign $a:0..1346269 0;
-assign $b:0..1346269 1;
+$a:0..1346269 = 0;
+$b:0..1346269 = 1;
 forRange $i 0 31 [
     println $a;
     {   # temp variable
-        assign $t:0..1346269 (+ $a $b);
-        assign $a $b;
-        assign $b $t;
+        $t:0..1346269 = ($a + $b);
+        $a = $b;
+        $b = $t;
     ||  # arithmetic trick
-        assign $b (+ $b $a);
-        assign $a (- $b $a);
+        $b = ($b + $a);
+        $a = ($b - $a);
     }
 ];

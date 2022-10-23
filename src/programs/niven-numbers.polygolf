@@ -1,5 +1,5 @@
 forRange $i 1 101 [
-    if (< (mod $i (- $i (* (div $i 10) 9)):0..100) 1) [
+    if (($i mod ($i - (($i div 10) * 9)):0..100) < 1) [
         println $i;
     ];
 ];

@@ -58,18 +58,34 @@ describe("Parse literals", () => {
 });
 
 describe("Parse s-expressions", () => {
-  expectExprParse("true nullary op", "true", polygolfOp("true"));
-  expectExprParse("argv nullary op", "argv", polygolfOp("argv"));
+  expectExprParse("true nullary op", "(true)", polygolfOp("true"));
+  expectExprParse("argv nullary op", "(argv)", polygolfOp("argv"));
   expectExprParse(
     "user function",
     "($f 1 2)",
     functionCall([int(1n), int(2n)], id("f"))
   );
+  expectExprParse(
+    "user function on variables",
+    "($f $x $y)",
+    functionCall([id("x"), id("y")], id("f"))
+  );
   expectExprParse("add", "(add $x $y)", polygolfOp("add", id("x"), id("y")));
+  expectExprParse(
+    "add infix",
+    "($x + $y)",
+    polygolfOp("add", id("x"), id("y"))
+  );
+  expectExprParse(
+    "mod infix",
+    "($x mod $y)",
+    polygolfOp("mod", id("x"), id("y"))
+  );
   expectExprParse("or", "(or $x $y)", polygolfOp("or", id("x"), id("y")));
   expectExprParse("println", "(println $x)", print(id("x"), true));
   expectExprParse("print", "(print $x)", print(id("x"), false));
   expectExprParse("assign", "(assign $x 5)", assignment(id("x"), int(5n)));
+  expectExprParse("assign infix", "($x = 5)", assignment(id("x"), int(5n)));
   expectExprParse(
     "list",
     "(list 1 2 3)",
@@ -147,6 +163,7 @@ describe("Parse statements", () => {
   testBlockParse("comment", `#one\nprintln 58;#two\n#println -3;`, [
     print(int(58n), true),
   ]);
+  testStmtParse("infix assignment", "$x = 5;", assignment(id("x"), int(5n)));
   testStmtParse(
     "if",
     "if $x [ println $y; ];",

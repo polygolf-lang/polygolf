@@ -39,7 +39,6 @@ expr_inner ->
   | variable {% id %}
   | sexpr {% id %}
   | block {% id %}
-  | builtin {% d => sexpr(d[0], []) %}
 
 block -> "[" block_inner "]" {% d => d[1] %}
 
@@ -51,10 +50,15 @@ builtin -> (%builtin | %opalias | "..") {% d => identifier(d[0][0].value, true) 
 
 string -> %string {% d => stringLiteral(JSON.parse(d[0])) %}
 
-sexpr -> "(" (builtin | variable) expr:+  ")" {% d => sexpr(d[1][0], d[2]) %}
+sexpr ->
+  "(" callee expr:* ")" {% d => sexpr(d[1], d[2]) %}
+  | "(" expr builtin expr ")" {% d => sexpr(d[2], [d[1], d[3]]) %}
 
-sexpr_stmt -> (builtin | variable) expr:+  ";" {% d => sexpr(d[0][0], d[1]) %}
+sexpr_stmt ->
+  callee expr:+ ";" {% d => sexpr(d[0], d[1]) %}
+  | expr builtin expr  ";"{% d => sexpr(d[1], [d[0], d[2]]) %}
 
+callee -> builtin {% id %} | variable {% id %}
 
 type_expr -> 
   type_range {% id %}

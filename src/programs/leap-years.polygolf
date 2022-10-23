@@ -1,8 +1,8 @@
 forRange $y 450 601 [
   if (or
-    (> (mod $y 25) 0)
-    (< (mod $y 100) 1)
+    (($y mod 25) > 0)
+    (($y mod 100) < 1)
   ) [
-    println (* 4 $y);
+    println (4 * $y);
   ];
 ];
