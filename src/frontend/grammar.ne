@@ -29,7 +29,7 @@ statement ->
   sexpr_stmt {% id %}
   | variants {% id %}
 
-variants -> "{" (block_inner "||"):+ block_inner "}" {%
+variants -> "{" (block_inner "/"):+ block_inner "}" {%
     ([, vars, var2, ]) => variants([...vars.map((d: any) => d[0]), var2])
   %}
 

@@ -7,7 +7,7 @@ const tokenTable = {
   type: ["Void", "Text", "Bool", "List", "Table", "Array", "Set"],
   ninf: ["-oo", "-∞"],
   pinf: ["oo", "∞"],
-  pipe: "||",
+  variant: "/",
   opalias: "+ - * ^ & | ~ == != <= < >= > =".split(" "),
   builtin: /\w+/,
   lparen: "(",

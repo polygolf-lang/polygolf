@@ -6,7 +6,7 @@ forRange $i 0 31 [
         $t:0..1346269 = ($a + $b);
         $a = $b;
         $b = $t;
-    ||  # arithmetic trick
+    /   # arithmetic trick
         $b = ($b + $a);
         $a = ($b - $a);
     }
