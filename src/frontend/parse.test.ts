@@ -85,7 +85,7 @@ describe("Parse s-expressions", () => {
   expectExprParse("println", "(println $x)", print(id("x"), true));
   expectExprParse("print", "(print $x)", print(id("x"), false));
   expectExprParse("assign", "(assign $x 5)", assignment(id("x"), int(5n)));
-  expectExprParse("assign infix", "($x = 5)", assignment(id("x"), int(5n)));
+  expectExprParse("assign infix", "($x <- 5)", assignment(id("x"), int(5n)));
   expectExprParse(
     "list",
     "(list 1 2 3)",
@@ -163,7 +163,7 @@ describe("Parse statements", () => {
   testBlockParse("comment", `%one\nprintln 58;%two\n%println -3;`, [
     print(int(58n), true),
   ]);
-  testStmtParse("infix assignment", "$x = 5;", assignment(id("x"), int(5n)));
+  testStmtParse("infix assignment", "$x <- 5;", assignment(id("x"), int(5n)));
   testStmtParse(
     "if",
     "if $x [ println $y; ];",

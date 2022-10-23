@@ -1,8 +1,8 @@
-$ordinals = (list
+$ordinals <- (list
   "First" "Second" "Third" "Fourth" "Fifth" "Sixth"
   "Seventh" "Eighth" "Ninth" "Tenth" "Eleventh" "Twelfth"
 );
-$days = (list
+$days <- (list
   "Twelve Drummers Drumming," "Eleven Pipers Piping," "Ten Lords-a-Leaping,"
   "Nine Ladies Dancing," "Eight Maids-a-Milking," "Seven Swans-a-Swimming,"
   "Six Geese-a-Laying," "Five Gold Rings," "Four Calling Birds,"
