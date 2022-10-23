@@ -1,17 +1,17 @@
-$O = (list
+$ordinals = (list
   "First" "Second" "Third" "Fourth" "Fifth" "Sixth"
   "Seventh" "Eighth" "Ninth" "Tenth" "Eleventh" "Twelfth"
 );
-$T = (list
+$days = (list
   "Twelve Drummers Drumming," "Eleven Pipers Piping," "Ten Lords-a-Leaping,"
   "Nine Ladies Dancing," "Eight Maids-a-Milking," "Seven Swans-a-Swimming,"
   "Six Geese-a-Laying," "Five Gold Rings," "Four Calling Birds,"
   "Three French Hens," "Two Turtle Doves, and" "A Partridge in a Pear Tree.\n"
 );
 forRange $i 0 12 [
-  println (.. "On the " (list_get $O $i)
+  println (.. "On the " (list_get $ordinals $i)
     " day of Christmas\nMy true love sent to me");
   forRange $j (11 - $i) 12 [
-    println (list_get $T $j);
+    println (list_get $days $j);
   ];
 ];
