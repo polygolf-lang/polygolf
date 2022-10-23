@@ -148,6 +148,7 @@ export const canonicalOpTable: Record<string, OpCode> = {
   ">=": "geq",
   ">": "gt",
   "=": "assign",
+  "#": "cardinality",
   "..": "str_concat",
 };
 

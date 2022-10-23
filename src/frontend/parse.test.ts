@@ -160,7 +160,7 @@ describe("Parse annotations", () => {
 });
 
 describe("Parse statements", () => {
-  testBlockParse("comment", `#one\nprintln 58;#two\n#println -3;`, [
+  testBlockParse("comment", `%one\nprintln 58;%two\n%println -3;`, [
     print(int(58n), true),
   ]);
   testStmtParse("infix assignment", "$x = 5;", assignment(id("x"), int(5n)));
