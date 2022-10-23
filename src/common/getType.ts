@@ -141,6 +141,7 @@ function getOpCodeType(
       return simpleType("void");
     case "argv":
     case "str_split":
+    case "str_split_whitespace":
       return listType("string");
     case "str_replace":
     case "str_substr":

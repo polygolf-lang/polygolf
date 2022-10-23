@@ -25,6 +25,7 @@ const pythonLanguage: Language = {
       ["str_length", (x) => functionCall([x[0]], "len")],
       ["int_to_str", (x) => functionCall([x[0]], "str")],
       ["str_split", (x) => methodCall(x[0], [x[1]], "split")],
+      ["str_split_whitespace", (x) => methodCall(x[0], [], "split")],
       ["repeat", "*"],
       ["add", "+"],
       ["sub", "-"],

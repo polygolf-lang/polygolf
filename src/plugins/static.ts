@@ -13,18 +13,18 @@ import {
 } from "../IR";
 import { Path, Visitor } from "../common/traverse";
 
-const golfedNodes = new WeakMap();
+const golfedStringListLiterals = new WeakMap();
 export const golfStringListLiteral: Visitor = {
   generatesVariants: true,
   exit(path: Path) {
     const node = path.node;
     if (
-      !golfedNodes.has(node) &&
       node.type === "Assignment" &&
       node.expr.type === "ListConstructor" &&
-      node.expr.exprs.every((x) => x.type === "StringLiteral")
+      node.expr.exprs.every((x) => x.type === "StringLiteral") &&
+      !golfedStringListLiterals.has(node)
     ) {
-      golfedNodes.set(node, true);
+      golfedStringListLiterals.set(node, true);
       const strings = (node.expr.exprs as StringLiteral[]).map((x) => x.value);
       const delim = getDelim(strings);
       path.replaceWith(
@@ -32,11 +32,16 @@ export const golfStringListLiteral: Visitor = {
           block([
             assignment(
               structuredClone(node.variable),
-              polygolfOp(
-                "str_split",
-                stringLiteral(strings.join(delim)),
-                stringLiteral(delim)
-              )
+              delim === " "
+                ? polygolfOp(
+                    "str_split_whitespace",
+                    stringLiteral(strings.join(delim))
+                  )
+                : polygolfOp(
+                    "str_split",
+                    stringLiteral(strings.join(delim)),
+                    stringLiteral(delim)
+                  )
             ),
           ]),
           block([node]),
@@ -47,14 +52,16 @@ export const golfStringListLiteral: Visitor = {
 };
 
 function getDelim(strings: string[]): string {
-  for (let i = 32; i < 127; i++) {
+  const string = strings.join();
+  if (!/\s/.test(string)) return " ";
+  for (let i = 33; i < 127; i++) {
     const c = String.fromCharCode(i);
-    if (strings.every((x) => !x.includes(c))) {
+    if (!string.includes(c)) {
       return c;
     }
   }
   let i = 0;
-  while (strings.some((x) => x.includes(String(i)))) {
+  while (string.includes(String(i))) {
     i++;
   }
   return String(i);
