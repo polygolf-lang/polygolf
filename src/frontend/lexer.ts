@@ -8,7 +8,7 @@ const tokenTable = {
   ninf: ["-oo", "-∞"],
   pinf: ["oo", "∞"],
   variant: "/",
-  opalias: "+ - * ^ & | ~ == != <= < >= > =".split(" "),
+  opalias: "+ - * ^ & | ~ == != <= < >= > = mod rem div truncdiv".split(" "),
   builtin: /\w+/,
   lparen: "(",
   rparen: ")",

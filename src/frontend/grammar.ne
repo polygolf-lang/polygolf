@@ -46,19 +46,20 @@ integer -> %integer {% d => int(BigInt(d[0])) %}
 
 variable -> %variable {% d => identifier(d[0].value.slice(1), false) %}
 
-builtin -> (%builtin | %opalias | "..") {% d => identifier(d[0][0].value, true) %}
+builtin -> %builtin {% d => identifier(d[0].value, true) %}
+opalias -> (%opalias | "..") {% d => identifier(d[0][0].value, true) %}
 
 string -> %string {% d => stringLiteral(JSON.parse(d[0])) %}
 
 sexpr ->
   "(" callee expr:* ")" {% d => sexpr(d[1], d[2]) %}
-  | "(" expr builtin expr ")" {% d => sexpr(d[2], [d[1], d[3]]) %}
+  | "(" expr opalias expr ")" {% d => sexpr(d[2], [d[1], d[3]]) %}
 
 sexpr_stmt ->
   callee expr:+ ";" {% d => sexpr(d[0], d[1]) %}
-  | expr builtin expr  ";"{% d => sexpr(d[1], [d[0], d[2]]) %}
+  | expr opalias expr  ";"{% d => sexpr(d[1], [d[0], d[2]]) %}
 
-callee -> builtin {% id %} | variable {% id %}
+callee -> builtin {% id %} | opalias {% id %} | variable {% id %}
 
 type_expr -> 
   type_range {% id %}
