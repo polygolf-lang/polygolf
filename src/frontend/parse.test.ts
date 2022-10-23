@@ -58,8 +58,8 @@ describe("Parse literals", () => {
 });
 
 describe("Parse s-expressions", () => {
-  expectExprParse("true nullary op", "(true)", polygolfOp("true"));
-  expectExprParse("argv nullary op", "(argv)", polygolfOp("argv"));
+  expectExprParse("true nullary op", "true", polygolfOp("true"));
+  expectExprParse("argv nullary op", "argv", polygolfOp("argv"));
   expectExprParse(
     "user function",
     "($f 1 2)",

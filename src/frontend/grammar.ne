@@ -37,6 +37,7 @@ expr_inner ->
   integer {% id %}
   | string {% id %}
   | variable {% id %}
+  | nullary {% id %}
   | sexpr {% id %}
   | block {% id %}
 
@@ -48,6 +49,7 @@ variable -> %variable {% d => identifier(d[0].value.slice(1), false) %}
 
 builtin -> %builtin {% d => identifier(d[0].value, true) %}
 opalias -> (%opalias | "..") {% d => identifier(d[0][0].value, true) %}
+nullary -> %nullary {% d => sexpr(identifier(d[0].value, true), []) %}
 
 string -> %string {% d => stringLiteral(JSON.parse(d[0])) %}
 

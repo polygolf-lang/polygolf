@@ -5,6 +5,7 @@ const tokenTable = {
   string: /"(?:\\.|[^"])*"/,
   variable: /\$\w*/,
   type: ["Void", "Text", "Bool", "List", "Table", "Array", "Set"],
+  nullary: ["argv", "true", "false"],
   ninf: ["-oo", "-∞"],
   pinf: ["oo", "∞"],
   variant: "/",
