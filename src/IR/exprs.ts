@@ -6,6 +6,7 @@ import {
   UnaryOpCode,
   BinaryOpCode,
   OpCode,
+  getDefaultPrecedence,
 } from "./IR";
 
 /**
@@ -191,48 +192,4 @@ export function unaryOp(
 
 export function print(value: Expr, newline: boolean = true): PolygolfOp {
   return polygolfOp(newline ? "println" : "print", value);
-}
-
-function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
-  switch (op) {
-    case "exp":
-      return 130;
-    case "neg":
-      return 120;
-    case "repeat":
-    case "mul":
-    case "div":
-    case "mod":
-      return 110;
-    case "add":
-    case "sub":
-      return 100;
-    case "bitand":
-      return 80;
-    case "bitxor":
-      return 70;
-    case "bitor":
-      return 60;
-    case "str_concat":
-      return 50;
-    case "lt":
-    case "gt":
-    case "leq":
-    case "geq":
-    case "eq":
-    case "neq":
-    case "inarray":
-    case "inset":
-    case "inlist":
-    case "inmap":
-      return 40;
-    case "not":
-      return 30;
-    case "and":
-      return 20;
-    case "or":
-      return 10;
-    default:
-      return 0;
-  }
 }

@@ -125,7 +125,7 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   return null;
 }
 
-function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
+export function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
   switch (op) {
     case "exp":
       return 130;
