@@ -88,9 +88,57 @@ Type expression is either
 
 Each variable must be first used in an assignment. Variable type is determined by the type annotation on the first assignment or the type of the value being assigned, if the annotation is missing.
 
-### Opcodes
+### Statements & control flow
 
-TODO
+Loop over half closed, hald opened integer range with optional step:  
+`for $i $low $high $step [print $i;];`  
+While loop:  
+`while $condition [$i <- ($i + 1);];`  
+If with optional else-branch:  
+`if $condition [print "Yes";][print "No";];`  
+Assignment:  
+`assign $x 5;` or `$x <- 5;`
+
+### Literals
+
+Integer literals are unbounded and written in base 10. String literals are JSON string literals.  
+List literals are written as n-ary s-expressions:  
+`(list 1 2 3 4 5)`  
+Array and set literals are similar:  
+`(array 1 2 3)`, `(set 1 2 3)`  
+Table literals are n-ary s-expressions taking variable number of key-value pairs:  
+`(table ("x" => 0) ("y" => 1) ("z" => 2))`
+
+### Operations
+
+All other expressions are Polygolf operators. Most of them return values, but some are used for I/O and some are used for setting values in collections.  
+[Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).  
+All of the Polygolf operators can be called using their name. In addition, several common ops are given symbolic aliases:
+
+| Op name       | alias |
+| ------------- | ----- |
+| add           | +     |
+| sub/neg       | -     |
+| mul           | \*    |
+| exp           | ^     |
+| bitand        | &     |
+| bitor         | \|    |
+| bitxor/bitnot | ~     |
+| eq            | ==    |
+| neq           | !=    |
+| leq           | <=    |
+| lt            | <     |
+| geq           | >=    |
+| gt            | >     |
+| assign        | <-    |
+| cardinality   | #     |
+| str_concat    | ..    |
+| key_value     | =>    |
+
+Notice how `-` and `~` both correspond to two ops - this is resolved by the used arity.
+These symbolic aliases can also be used in an infix matter: `(+ 2 3)` is the same as (`2 + 3)`.
+Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`bitand`,`bitor`,`bitxor`,`str_concat`.  
+For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
 
 ## Example
 
@@ -172,7 +220,7 @@ Builtin functions:
 - string ops: string concatenation, string split, print, length
 - sort
 
-[Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/IR.ts#L128).
+[Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).
 
 ## Idiom recognition (backend)
 
@@ -194,4 +242,4 @@ Planned idioms:
 
 ## Implementation plan
 
-Backend first. Only numbers, booleans, strings; add lists and tables later.
+Finalize syntax. Solve most code.golf solutions in Polygolf to see what ops we are missing and implement those. Add MVPs for as many imperative languages as possible. Think about how to approach transforms for other paradigms. Cry.
