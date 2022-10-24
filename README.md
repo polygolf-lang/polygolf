@@ -6,7 +6,7 @@ Design goals
 
 - a language (IR) that compiles to many languages (C, Lua, Java, etc.)
 - targeted languages are limited to those available on https://code.golf
-  1. C-like mutable imperative (easy): Bash, BASIC, C, C#, C++, COBOL, Crystal, D, Fortran, Go, Java, JavaScript, Julia, Lua, Nim, Pascal, Perl, PHP, PowerShell, Python, Raku, Ruby, Rust, Swift, V, Zig
+  1. C-like mutable imperative (easy): Bash, BASIC, C, C#, C++, COBOL, Crystal, D, Dart, Fortran, Go, Java, JavaScript, Julia, Lua, Nim, Pascal, Perl, PHP, PowerShell, Python, Raku, Ruby, Rust, Swift, V, Zig
   2. mostly functional: Elixir, F#, Haskell, Lisp
   3. other: Assembly, ><>, brainfuck, GolfScript, Hexagony, J, K, Prolog, sed, SQL, VimL
 - can compile PolyGolf to any language without language-specific annotations
@@ -49,30 +49,71 @@ The npm alias `npm run cli` is equivalent to `npm run build; node dist/cli.js`
 
 Some concepts (visitor, Path, etc.) are similar to those used by the JavaScript transpiler Babel, so the [Babel plugin handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md) is worth skimming.
 
+## Competitiveness
+
+PolyGolf is designed to be decent at golfing, so there's concern about making it public with applications to the competitive site https://code.golf. However, I will keep this repository and all PolyGolf features public with a few naive reference solutions. To avoid spoilers, solutions should not be shared unless they are naive/obvious solution to simple holes.
+
+## Syntax
+
+Program is a sequence of expressions.
+Expression is either
+* integer literal `58`,
+* text literal `"text literal\n another line"`,
+* variable `$very_important_var`,
+* block of expressions `[print "block contents";]`,
+* a choice of variants `{ variant1 / variant2 / variant3 }` or
+* s-expression
+
+S-expression takes one of the following forms:
+```opcode```
+or
+```(opcode arg1 arg2 arg3 ...)```
+or
+```(arg1 opsymbol arg2)```
+If the expression is top level or a direct child of a block, it is to be semicolon terminated instead:
+```opcode arg1 arg2 arg3 ...;```
+or
+```arg1 opsymbol arg2```
+
+Only symbols and division ops can be used in place of `opsymbol`.
+
+Each expression can optionally be annotated with a type expression like this: `"text":Text`.
+
+Type expression is either
+* Integer range `-10..10`, `-oo..oo`, `0..oo`,
+* Simple type `Text`, `Bool`, `Void` or
+* S-expression using type expressions `(List (Set 0..100))`
+
+Each variable must be first used in an assignment. Variable type is determined by the type annotation on the first assignment or the type of the value being assigned, if the annotation is missing.
+
+### Opcodes
+
+TODO
+
 ## Example
 
-Example naive Fibonacci (in a hypothetical lisp + imperative syntax):
+Example Fibonacci using variants
 
-```py
-(declare a integer)
-(declare b integer)
-(declare i integer)
-a = 0
-b = 1
-i = 1
-while (< i 31) {
-  (println a)
-  t = (add a b)
-  b = a
-  a = t
-  i = (add i 1)
-}
+```clojure
+$a:0..1346269 <- 0;
+$b:0..1346269 <- 1;
+for $i 0 31 [
+    println $a;
+    {   % temp variable
+        $t:0..1346269 <- ($a + $b);
+        $a <- $b;
+        $b <- $t;
+    /   % arithmetic trick
+        $b <- ($b + $a);
+        $a <- ($b - $a);
+    }
+];
 ```
 
 This could compile to the following in C
 
 ```c
-a;b=1;t;i=1;main(){for(;i++<31;t=a+b,b=a,a=t)printf("%d\n",a);}
+a;b=1;i=1;main(){for(;i++<31;b+=a;a=b-a)printf("%d\n",a);}
 ```
 
 Note the following C-specific features, besides the syntax:
@@ -93,14 +134,6 @@ Note the following Lua-specific features, besides the syntax:
 
 - foreach-range loop instead of a glorified while loop (!)
 - temporary variable replaced with simultaneous assignment (!)
-
-## Competitiveness
-
-PolyGolf is designed to be decent at golfing, so there's concern about making it public with applications to the competitive site https://code.golf. However, I will keep this repository and all PolyGolf features public with a few naive reference solutions. To avoid spoilers, solutions should not be shared unless they are naive/obvious solution to simple holes.
-
-## Frontend
-
-TODO. For now just create the unrefined IR directly. Worry about syntax later.
 
 ## Unrefined IR
 
