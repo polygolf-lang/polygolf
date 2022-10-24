@@ -57,32 +57,34 @@ PolyGolf is designed to be decent at golfing, so there's concern about making it
 
 Program is a sequence of expressions.
 Expression is either
-* integer literal `58`,
-* text literal `"text literal\n another line"`,
-* variable `$very_important_var`,
-* block of expressions `[print "block contents";]`,
-* a choice of variants `{ variant1 / variant2 / variant3 }` or
-* s-expression
+
+- integer literal `58`,
+- text literal `"text literal\n another line"`,
+- variable `$very_important_var`,
+- block of expressions `[print "block contents";]`,
+- a choice of variants `{ variant1 / variant2 / variant3 }` or
+- s-expression
 
 S-expression takes one of the following forms:
-```opcode```
+`opcode`
 or
-```(opcode arg1 arg2 arg3 ...)```
+`(opcode arg1 arg2 arg3 ...)`
 or
-```(arg1 opsymbol arg2)```
+`(arg1 opsymbol arg2)`
 If the expression is top level or a direct child of a block, it is to be semicolon terminated instead:
-```opcode arg1 arg2 arg3 ...;```
+`opcode arg1 arg2 arg3 ...;`
 or
-```arg1 opsymbol arg2```
+`arg1 opsymbol arg2`
 
 Only symbols and division ops can be used in place of `opsymbol`.
 
 Each expression can optionally be annotated with a type expression like this: `"text":Text`.
 
 Type expression is either
-* Integer range `-10..10`, `-oo..oo`, `0..oo`,
-* Simple type `Text`, `Bool`, `Void` or
-* S-expression using type expressions `(List (Set 0..100))`
+
+- Integer range `-10..10`, `-oo..oo`, `0..oo`,
+- Simple type `Text`, `Bool`, `Void` or
+- S-expression using type expressions `(List (Set 0..100))`
 
 Each variable must be first used in an assignment. Variable type is determined by the type annotation on the first assignment or the type of the value being assigned, if the annotation is missing.
 

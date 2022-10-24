@@ -36,6 +36,7 @@ import {
 import { integerType, ValueType } from "./types";
 
 export * from "./assignments";
+export * from "./opcodes";
 export * from "./collections";
 export * from "./exprs";
 export * from "./loops";
