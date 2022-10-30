@@ -24,10 +24,20 @@ const options = yargs()
       type: "string",
       demandOption: true,
     },
+    output: {
+      alias: "o",
+      describe: "output file",
+      type: "string",
+    },
   })
   .parseSync(process.argv.slice(2));
 
 const lang = languageTable[options.lang];
 const code = fs.readFileSync(options.input, { encoding: "utf-8" });
 const prog = parse(code);
-console.log(applyLanguage(lang, prog));
+const result = applyLanguage(lang, prog);
+if (options.output !== undefined) {
+  fs.writeFileSync(options.output, result);
+} else {
+  console.log(result);
+}

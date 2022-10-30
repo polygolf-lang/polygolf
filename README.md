@@ -43,6 +43,12 @@ The usage is currently simple. Just pick an input PolyGolf file and target langu
 polygolf -i src/programs/fibonacci.polygolf -l lua
 ```
 
+Use `-o` to specify an output file:
+
+```
+polygolf -i src/programs/fibonacci.polygolf -l lua -o fibonacci.lua
+```
+
 To uninstall, use `npm uninstall polygolf --location=global`
 
 ## Development
