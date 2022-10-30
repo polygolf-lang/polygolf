@@ -13,7 +13,7 @@ import {
 import { applyLanguage } from "../../common/applyLanguage";
 
 function expectTransform(program: IR.Program, output: string) {
-  expect(applyLanguage(lua, program)).toEqual(output);
+  expect(applyLanguage(lua, program, 1000, true)).toEqual(output);
 }
 
 function expectStatement(statement: IR.Statement, output: string) {

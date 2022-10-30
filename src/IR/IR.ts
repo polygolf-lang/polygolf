@@ -94,19 +94,22 @@ export interface Program {
 }
 
 export function program(block: Block): Program {
-  const result: Program = {
+  return {
     type: "Program",
     block,
     dependencies: new Set<string>(),
     variables: new Map<string, ValueType>(),
   };
-  const path = programToPath(result);
+}
+
+export function typesPass(program: Program) {
   function setVar(name: string, type: ValueType) {
-    if (result.variables.has(name)) {
+    if (program.variables.has(name)) {
       throw new Error(`Duplicate variable declaration: ${name}`!);
     }
-    result.variables.set(name, type);
+    program.variables.set(name, type);
   }
+  const path = programToPath(program);
   path.visit({
     enter(path: Path) {
       const node = path.node;
@@ -135,22 +138,31 @@ export function program(block: Block): Program {
       } else if (node.type === "ForEach") {
         setVar(
           node.variable.name,
-          getCollectionTypes(node.collection, result)[0]
+          getCollectionTypes(node.collection, program)[0]
         );
       } else if (node.type === "ForEachKey") {
-        setVar(node.variable.name, getCollectionTypes(node.table, result)[0]);
+        setVar(node.variable.name, getCollectionTypes(node.table, program)[0]);
       } else if (node.type === "ForEachPair") {
-        let types = getCollectionTypes(node.table, result);
+        let types = getCollectionTypes(node.table, program);
         if (types.length === 1) {
           types = [integerType(), types[0]];
         }
         setVar(node.keyVariable.name, types[0]);
         setVar(node.valueVariable.name, types[1]);
-      } else if (node.type === "VarDeclaration") {
-        result.variables.set(node.variable.name, node.variableType);
-        path.replaceWithMultiple([]); // TODO does this work?
+      } else if (
+        node.type === "Assignment" &&
+        node.variable.type === "Identifier"
+      ) {
+        const varType = node.variable.valueType ?? getType(node.expr, program);
+        program.variables.set(node.variable.name, varType);
+        path.replaceWithMultiple([]);
+      } else if (
+        node.type === "Identifier" &&
+        !node.builtin &&
+        !program.variables.has(node.name)
+      ) {
+        throw new Error(`Uninitialized variable ${node.name}!`);
       }
     },
   });
-  return result;
 }

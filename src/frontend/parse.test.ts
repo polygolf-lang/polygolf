@@ -172,13 +172,7 @@ describe("Parse statements", () => {
   testStmtParse(
     "forRange",
     "for $x 1 20 1 [ println $x; ];",
-    forRange(
-      id("x"),
-      annotate(int(1n), integerType(1, 1)),
-      annotate(int(20n), integerType(20, 20)),
-      annotate(int(1n), integerType(1, 1)),
-      block([print(id("x"), true)])
-    )
+    forRange(id("x"), int(1n), int(20n), int(1n), block([print(id("x"), true)]))
   );
 });
 

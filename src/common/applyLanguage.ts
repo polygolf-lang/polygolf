@@ -1,4 +1,4 @@
-import { IR } from "../IR";
+import { IR, typesPass } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { programToPath } from "./traverse";
 import { Language, defaultDetokenizer } from "./Language";
@@ -6,12 +6,19 @@ import { Language, defaultDetokenizer } from "./Language";
 export function applyLanguage(
   language: Language,
   program: IR.Program,
-  maxBranches: number = 1000
+  maxBranches: number = 1000,
+  skipTypesPass: boolean = false
 ): string {
+  const variants = expandVariants(program);
+  if (!skipTypesPass) {
+    for (const variant of variants) {
+      typesPass(variant);
+    }
+  }
   let emittedVariants: [IR.Program, string][] = emitVariants(
     language,
     -1,
-    expandVariants(program),
+    variants,
     maxBranches
   );
   const variantsPluginsIndices = [...language.plugins.keys()].filter(
