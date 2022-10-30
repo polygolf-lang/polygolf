@@ -36,6 +36,7 @@ import {
 import { integerType, ValueType } from "./types";
 
 export * from "./assignments";
+export * from "./opcodes";
 export * from "./collections";
 export * from "./exprs";
 export * from "./loops";
@@ -112,8 +113,15 @@ export function program(block: Block): Program {
       if (node.type === "ForRange") {
         const low = getType(node.low, path.root.node);
         const high = getType(node.high, path.root.node);
-        if (low.type !== "integer" || high.type !== "integer") {
-          throw new Error(`Unexpected type (${low.type},${high.type})`);
+        const step = getType(node.increment, path.root.node);
+        if (
+          low.type !== "integer" ||
+          high.type !== "integer" ||
+          step.type !== "integer"
+        ) {
+          throw new Error(
+            `Unexpected for range type (${low.type},${high.type},${step.type})`
+          );
         }
         setVar(
           node.variable.name,

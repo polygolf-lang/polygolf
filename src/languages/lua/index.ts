@@ -36,7 +36,7 @@ const luaLanguage: Language = {
       ["int_to_str", (x) => functionCall(x, "tostring")],
       ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
       ["print", (x) => functionCall(x, "io.write")],
-      ["printnl", (x) => functionCall(x, "print")],
+      ["println", (x) => functionCall(x, "print")],
       ["add", "+"],
       ["sub", "-"],
       ["mul", "*"],

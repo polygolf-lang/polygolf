@@ -1,3 +1,5 @@
+import { Expr } from "./IR";
+
 /** The type of the value of a node when evaluated */
 export interface IntegerType {
   type: "integer";
@@ -80,4 +82,8 @@ function bigIntMinAndMax(args: bigint[]) {
     },
     [args[0], args[0]]
   );
+}
+
+export function annotate(expr: Expr, valueType: ValueType): Expr {
+  return { ...expr, valueType };
 }

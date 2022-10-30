@@ -53,7 +53,7 @@ const nimLanguage: Language = {
       ["neg", ["-", 150]],
       ["str_to_int", (x) => functionCall(x, "parseInt")],
       ["print", (x) => functionCall([id("stdout"), x[0]], "write")],
-      ["printnl", (x) => functionCall(x, "echo")],
+      ["println", (x) => functionCall(x, "echo")],
       ["min", (x) => functionCall(x, "min")],
       ["max", (x) => functionCall(x, "max")],
       ["abs", (x) => functionCall(x, "abs")],
