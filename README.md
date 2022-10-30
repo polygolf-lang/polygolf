@@ -27,7 +27,7 @@ Processing pipeline
 
 Requires npm and node 17.0+ installed.
 
-To get started, clone the repository, then to install, run
+To get started, clone the repository, then run
 
 ```
 npm install
@@ -36,6 +36,18 @@ npm install . --location=global
 ```
 
 This will set up the `polygolf` command to point to the CLI script.
+
+The usage is currently simple. Just pick an input PolyGolf file and target language:
+
+```
+polygolf -i src/programs/fibonacci.polygolf -l lua
+```
+
+Use `-o` to specify an output file:
+
+```
+polygolf -i src/programs/fibonacci.polygolf -l lua -o fibonacci.lua
+```
 
 To uninstall, use `npm uninstall polygolf --location=global`
 
