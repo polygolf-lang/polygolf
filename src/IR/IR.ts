@@ -119,7 +119,9 @@ export function program(block: Block): Program {
           high.type !== "integer" ||
           step.type !== "integer"
         ) {
-          throw new Error(`Unexpected type (${low.type},${high.type})`);
+          throw new Error(
+            `Unexpected for range type (${low.type},${high.type},${step.type})`
+          );
         }
         setVar(
           node.variable.name,
