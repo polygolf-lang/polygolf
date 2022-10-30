@@ -90,12 +90,15 @@ Each variable must be first used in an assignment. Variable type is determined b
 
 ### Statements & control flow
 
-Loop over half closed, hald opened integer range with optional step:  
-`for $i $low $high $step [print $i;];`  
+Loop over half-open integer range (exclusive upper bound) with optional step:  
+`for $i $low $high [print $i;];`
+
+`for $i $low $high $step [print $i;];`
+
 While loop:  
 `while $condition [$i <- ($i + 1);];`  
 If with optional else-branch:  
-`if $condition [print "Yes";][print "No";];`  
+`if $condition [print "Yes";] [print "No";];`  
 Assignment:  
 `assign $x 5;` or `$x <- 5;`
 
@@ -106,7 +109,7 @@ List literals are written as n-ary s-expressions:
 `(list 1 2 3 4 5)`  
 Array and set literals are similar:  
 `(array 1 2 3)`, `(set 1 2 3)`  
-Table literals are n-ary s-expressions taking variable number of key-value pairs:  
+Table literals are n-ary s-expressions taking a variable number of key-value pairs:  
 `(table ("x" => 0) ("y" => 1) ("z" => 2))`
 
 ### Operations
@@ -197,7 +200,7 @@ Types:
 - `integer` (unbounded; domain annotations may help language-specific narrowing to 32-bit ints etc)
 - `string`
 - `List<?>` (0 indexed)
-- `Table<?,?>` (not implementing for now)
+- `Table<?,?>`
 
 Constant literals for each type.
 
@@ -210,6 +213,8 @@ Control Flow:
 Builtin constants
 
 - argv
+- true
+- false
 
 Builtin functions:
 
