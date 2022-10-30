@@ -1,25 +1,33 @@
 #!/usr/bin/env node
 
+import yargs from "yargs";
 import fs from "fs";
 import parse from "./frontend/parse";
-import path from "path";
+import { applyLanguage } from "./common/applyLanguage";
 
 import lua from "./languages/lua";
 import nim from "./languages/nim";
-// import debugEmit from "./languages/debug/emit";
-import { applyLanguage } from "./common/applyLanguage";
 
-const programsDir = "src/programs";
+const languageTable = { lua, nim };
 
-const languages = { lua, nim };
+const options = yargs()
+  .options({
+    lang: {
+      alias: "l",
+      describe: "language to target",
+      choices: Object.keys(languageTable) as (keyof typeof languageTable)[],
+      demandOption: true,
+    },
+    input: {
+      alias: "i",
+      describe: "input file",
+      type: "string",
+      demandOption: true,
+    },
+  })
+  .parseSync(process.argv.slice(2));
 
-const lang = languages.lua;
-
-for (const filename of fs.readdirSync(programsDir)) {
-  if (!filename.endsWith(".polygolf")) continue;
-  const filePath = path.join(programsDir, filename);
-  console.log("\n#", filename);
-  const code = fs.readFileSync(filePath, { encoding: "utf-8" });
-  const prog = parse(code);
-  console.log(applyLanguage(lang, prog));
-}
+const lang = languageTable[options.lang];
+const code = fs.readFileSync(options.input, { encoding: "utf-8" });
+const prog = parse(code);
+console.log(applyLanguage(lang, prog));
