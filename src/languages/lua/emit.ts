@@ -17,7 +17,7 @@ function emitBlock(block: IR.Block): string[] {
   );
 }
 
-function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
+function emitStatement(stmt: IR.Expr, parent: IR.Block): string[] {
   switch (stmt.type) {
     case "WhileLoop":
       return [

@@ -16,11 +16,11 @@ function expectTransform(program: IR.Program, output: string) {
   expect(applyLanguage(lua, program, 1000, true)).toEqual(output);
 }
 
-function expectStatement(statement: IR.Statement, output: string) {
+function expectStatement(statement: IR.Expr, output: string) {
   expectTransform(program(block([statement])), output);
 }
 
-function testStatement(desc: string, statement: IR.Statement, output: string) {
+function testStatement(desc: string, statement: IR.Expr, output: string) {
   test(desc, () => expectStatement(statement, output));
 }
 

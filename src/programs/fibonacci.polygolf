@@ -1,7 +1,7 @@
 $a:0..1346269 <- 0;
 $b:0..1346269 <- 1;
 for $i 0 31 [
-    println $a;
+    println { $a / 1 };
     {   % temp variable
         $t:0..1346269 <- ($a + $b);
         $a <- $b;

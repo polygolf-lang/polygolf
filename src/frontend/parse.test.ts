@@ -3,7 +3,6 @@ import {
   Expr,
   id,
   int,
-  Statement,
   stringLiteral,
   print,
   listConstructor,
@@ -18,6 +17,7 @@ import {
   simpleType,
   listType,
   arrayType,
+  Node,
 } from "../IR";
 import parse from "./parse";
 
@@ -31,13 +31,13 @@ function stringify(x: any): string {
   );
 }
 
-function testBlockParse(desc: string, str: string, output: Statement[]) {
+function testBlockParse(desc: string, str: string, output: Node[]) {
   test(desc, () => {
     expect(stringify(parse(str).block.children)).toEqual(stringify(output));
   });
 }
 
-function testStmtParse(desc: string, str: string, output: Statement) {
+function testStmtParse(desc: string, str: string, output: Node) {
   testBlockParse(desc, str, [output]);
 }
 
@@ -193,5 +193,10 @@ describe("Parse variants", () => {
       block([print(id("x"), false), print(stringLiteral("\n"), false)]),
       block([print(id("x"), false), print(stringLiteral("\n"), false)]),
     ])
+  );
+  testStmtParse(
+    "Expression variants",
+    `println { 0 / 1 };`,
+    print(variants([block([int(0n)]), block([int(1n)])]), true)
   );
 });

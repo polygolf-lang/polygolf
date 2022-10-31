@@ -29,7 +29,11 @@ statement ->
   sexpr_stmt {% id %}
   | variants {% id %}
 
-variants -> "{" (block_inner "/"):+ block_inner "}" {%
+variant ->
+  block_inner {% id %}
+  | expr {% d => block([d[0]]) %}
+          
+variants -> "{" (variant "/"):+ variant "}" {%
     ([, vars, var2, ]) => variants([...vars.map((d: any) => d[0]), var2])
   %}
 
@@ -40,6 +44,7 @@ expr_inner ->
   | nullary {% id %}
   | sexpr {% id %}
   | block {% id %}
+  | variants {% id %}
 
 block -> "[" block_inner "]" {% d => d[1] %}
 
@@ -59,7 +64,7 @@ sexpr ->
 
 sexpr_stmt ->
   callee expr:+ ";" {% d => sexpr(d[0], d[1]) %}
-  | expr opalias expr  ";"{% d => sexpr(d[1], [d[0], d[2]]) %}
+  | expr opalias expr ";" {% d => sexpr(d[1], [d[0], d[2]]) %}
 
 callee -> builtin {% id %} | opalias {% id %} | variable {% id %}
 

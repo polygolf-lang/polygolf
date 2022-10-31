@@ -48,21 +48,10 @@ export interface BaseExpr {
   valueType?: ValueType;
 }
 
-export type Node = Program | Block | Statement;
-
-export type Statement =
-  | Expr
-  | WhileLoop
-  | ForRange
-  | ForEach
-  | ForEachKey
-  | ForEachPair
-  | ForCLike
-  | IfStatement
-  | Variants
-  | ImportStatement;
+export type Node = Program | Block | Expr;
 
 export type Expr =
+  | Variants
   | PolygolfOp
   | VarDeclaration
   | VarDeclarationWithAssignment
@@ -81,7 +70,14 @@ export type Expr =
   | ConditionalOp
   | ManyToManyAssignment
   | OneToManyAssignment
-  | ImportStatement;
+  | ImportStatement
+  | WhileLoop
+  | ForRange
+  | ForEach
+  | ForEachKey
+  | ForEachPair
+  | ForCLike
+  | IfStatement;
 
 /**
  * Program node. This should be the root node. Raw OK

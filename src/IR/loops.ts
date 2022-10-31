@@ -1,11 +1,11 @@
-import { Expr, Block, Identifier, id, Statement, int, block } from "./IR";
+import { Expr, Block, Identifier, id, int, block, BaseExpr } from "./IR";
 
 /**
  * A while loop. Raw OK
  *
  * while (condition) { body }.
  */
-export interface WhileLoop {
+export interface WhileLoop extends BaseExpr {
   type: "WhileLoop";
   condition: Expr;
   body: Block;
@@ -19,7 +19,7 @@ export interface WhileLoop {
  *
  * Python: for variable in range(low, high, increment):body.
  */
-export interface ForRange {
+export interface ForRange extends BaseExpr {
   type: "ForRange";
   inclusive: boolean;
   variable: Identifier;
@@ -34,7 +34,7 @@ export interface ForRange {
  *
  * Python: for variable in collection:body.
  */
-export interface ForEach {
+export interface ForEach extends BaseExpr {
   type: "ForEach";
   variable: Identifier;
   collection: Expr;
@@ -46,7 +46,7 @@ export interface ForEach {
  *
  * Python: for variable in array:body.
  */
-export interface ForEachKey {
+export interface ForEachKey extends BaseExpr {
   type: "ForEachKey";
   variable: Identifier;
   table: Expr;
@@ -58,7 +58,7 @@ export interface ForEachKey {
  *
  * C: for(init;condition;append){body}.
  */
-export interface ForCLike {
+export interface ForCLike extends BaseExpr {
   type: "ForCLike";
   init: Block;
   condition: Expr;
@@ -71,7 +71,7 @@ export interface ForCLike {
  *
  * Python: for variable in array:body.
  */
-export interface ForEachPair {
+export interface ForEachPair extends BaseExpr {
   type: "ForEachPair";
   keyVariable: Identifier;
   valueVariable: Identifier;
@@ -104,7 +104,7 @@ export function forRange(
 
 export function forRangeCommon(
   bounds: [string, Expr | number, Expr | number, (Expr | number)?, boolean?],
-  ...body: Statement[]
+  ...body: Expr[]
 ): ForRange {
   return forRange(
     bounds[0],

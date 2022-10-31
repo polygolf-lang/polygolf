@@ -1,11 +1,11 @@
 import {
   Assignment,
   block,
+  Expr,
   importStatement,
   manyToManyAssignment,
   methodCall,
   Program,
-  Statement,
   varDeclarationWithAssignment,
 } from "../../IR";
 import { Path } from "../../common/traverse";
@@ -63,7 +63,7 @@ export const addVarDeclarations = {
     if (node.type === "Program") declared.clear();
     if (node.type === "Block") {
       let assignments: Assignment[] = [];
-      let newNodes: Statement[] = [];
+      let newNodes: Expr[] = [];
       function processAssignments() {
         if (assignments.length > 0) {
           newNodes = newNodes.concat(
@@ -96,7 +96,7 @@ export const addVarDeclarations = {
 function simplifyAssignments(
   assignments: Assignment[],
   topLevel: boolean
-): Statement[] {
+): Expr[] {
   for (const v of assignments) {
     if (v.variable.type === "Identifier") {
       declared.add(v.variable.name);

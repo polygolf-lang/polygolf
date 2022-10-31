@@ -1,9 +1,9 @@
-import { BaseExpr, Expr, id, Identifier, Statement, ValueType } from "./IR";
+import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
  */
-export interface Variants {
+export interface Variants extends BaseExpr {
   type: "Variants";
   variants: Block[];
 }
@@ -13,7 +13,7 @@ export interface Variants {
  */
 export interface Block {
   type: "Block";
-  children: Statement[];
+  children: Expr[];
 }
 
 /**
@@ -21,7 +21,7 @@ export interface Block {
  *
  * if (condition) { consequent } else { alternate }
  */
-export interface IfStatement {
+export interface IfStatement extends BaseExpr {
   type: "IfStatement";
   condition: Expr;
   consequent: Block;
@@ -43,7 +43,7 @@ export interface ImportStatement extends BaseExpr {
   modules: string[];
 }
 
-export function block(children: Statement[]): Block {
+export function block(children: Expr[]): Block {
   return { type: "Block", children };
 }
 

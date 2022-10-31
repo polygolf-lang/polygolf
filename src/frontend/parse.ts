@@ -4,7 +4,6 @@ import {
   functionCall,
   Identifier,
   Program,
-  Statement,
   forRange,
   Block,
   ifStatement,
@@ -30,10 +29,7 @@ import {
 } from "../IR";
 import grammar from "./grammar";
 
-export function sexpr(
-  callee: Identifier,
-  args: (Expr | Block)[]
-): Expr | Statement {
+export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
   const opCode = canonicalOp(callee.name, args.length);
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
