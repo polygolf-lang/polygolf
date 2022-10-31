@@ -151,7 +151,6 @@ export function typesPass(program: Program) {
       ) {
         const varType = node.variable.valueType ?? getType(node.expr, program);
         program.variables.set(node.variable.name, varType);
-        path.replaceWithMultiple([]);
       } else if (
         node.type === "Identifier" &&
         !node.builtin &&
