@@ -34,7 +34,6 @@ export const BinaryOpCodeArray = [
   "list_get",
   "table_get",
   "text_get_byte",
-  "argv_get",
   // other
   "list_push",
   "text_concat",
@@ -52,6 +51,7 @@ export const BinaryOpCodeArray = [
 export type BinaryOpCode = typeof BinaryOpCodeArray[number];
 
 export const UnaryOpCodeArray = [
+  "argv_get",
   "abs",
   "bit_not",
   "neg",
