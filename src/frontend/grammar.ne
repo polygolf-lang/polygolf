@@ -64,7 +64,7 @@ sexpr ->
   | "(" expr opalias expr ")" {% d => refSource(sexpr(d[2], [d[1], d[3]]), d[0]) %}
 
 sexpr_stmt ->
-  callee expr:+ ";" {% d => refSource(sexpr(d[0], d[1]), d[1]) %}
+  callee expr:+ ";" {% d => refSource(sexpr(d[0], d[1]), d[2]) %}
   | expr opalias expr ";" {% d => refSource(sexpr(d[1], [d[0], d[2]]), d[3]) %}
 
 callee -> builtin {% id %} | opalias {% id %} | variable {% id %}
