@@ -116,10 +116,10 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
       const allowNary = [
         "add",
         "mul",
-        "bitand",
-        "bitor",
-        "bitxor",
-        "str_concat",
+        "bit_and",
+        "bit_or",
+        "bit_xor",
+        "text_concat",
       ].includes(opCode);
       expectArity(2, allowNary ? 99 : 2);
       return composedPolygolfOp(opCode, args);
@@ -135,8 +135,8 @@ export const canonicalOpTable: Record<string, OpCode> = {
   "-": "",
   "*": "mul",
   "^": "exp",
-  "&": "bitand",
-  "|": "bitor",
+  "&": "bit_and",
+  "|": "bit_or",
   // bitxor, bitnot handled as special case in canonicalOp
   "~": "",
   "==": "eq",
@@ -147,12 +147,12 @@ export const canonicalOpTable: Record<string, OpCode> = {
   ">": "gt",
   "<-": "assign",
   "#": "cardinality",
-  "..": "str_concat",
+  "..": "text_concat",
 };
 
 function canonicalOp(op: string, arity: number): string {
   if (op === "-") return arity < 2 ? "neg" : "sub";
-  if (op === "~") return arity < 2 ? "bitnot" : "bitxor";
+  if (op === "~") return arity < 2 ? "bit_not" : "bit_xor";
   return canonicalOpTable[op] ?? op;
 }
 

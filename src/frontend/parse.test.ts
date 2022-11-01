@@ -105,18 +105,18 @@ describe("Parse s-expressions", () => {
     "..",
     "(.. $x $y $z)",
     polygolfOp(
-      "str_concat",
-      polygolfOp("str_concat", id("x"), id("y")),
+      "text_concat",
+      polygolfOp("text_concat", id("x"), id("y")),
       id("z")
     )
   );
   expectExprParse("- as neg", "(- $x)", polygolfOp("neg", id("x")));
   expectExprParse("- as sub", "(- $x $y)", polygolfOp("sub", id("x"), id("y")));
-  expectExprParse("~ as bitnot", "(~ $x)", polygolfOp("bitnot", id("x")));
+  expectExprParse("~ as bitnot", "(~ $x)", polygolfOp("bit_not", id("x")));
   expectExprParse(
     "~ as bitxor",
     "(~ $x $y)",
-    polygolfOp("bitxor", id("x"), id("y"))
+    polygolfOp("bit_xor", id("x"), id("y"))
   );
 });
 

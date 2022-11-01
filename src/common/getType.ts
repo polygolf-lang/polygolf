@@ -227,13 +227,13 @@ function getOpCodeType(
     case "sub":
     case "mul":
     case "div":
-    case "truncdiv":
+    case "trunc_div":
     case "exp":
     case "mod":
     case "rem":
-    case "bitand":
-    case "bitor":
-    case "bitxor":
+    case "bit_and":
+    case "bit_or":
+    case "bit_xor":
     case "gcd":
     case "min":
     case "max":
@@ -258,16 +258,16 @@ function getOpCodeType(
       expectType(booleanType, booleanType);
       return booleanType;
     // membership
-    case "inarray":
+    case "array_contains":
       expectGenericType("Array", ["T1", (x) => x[0]]);
       return booleanType;
-    case "inlist":
+    case "list_contains":
       expectGenericType("List", ["T1", (x) => x[0]]);
       return booleanType;
-    case "intable":
+    case "table_contains_key":
       expectGenericType("Table", ["T1", (x) => x[0]]);
       return booleanType;
-    case "inset":
+    case "set_contains":
       expectGenericType("Set", ["T1", (x) => x[0]]);
       return booleanType;
     // collection get
@@ -277,7 +277,7 @@ function getOpCodeType(
       return expectGenericType("List", ["0..oo", (_) => integerType(0)])[0];
     case "table_get":
       return expectGenericType("Table", ["T1", (x) => x[0]])[1];
-    case "str_get_byte":
+    case "text_get_byte":
       expectType(textType(), integerType(0));
       return integerType(0, 255);
     case "argv_get":
@@ -286,7 +286,7 @@ function getOpCodeType(
     // other
     case "list_push":
       return expectGenericType("List", ["T1", (x) => x[0]])[0];
-    case "str_concat": {
+    case "text_concat": {
       expectType(textType(), textType());
       const [t1, t2] = types as [TextType, TextType];
       return textType(
@@ -304,16 +304,16 @@ function getOpCodeType(
           : t.capacity * Number(i.high)
       );
     }
-    case "is_substr":
+    case "text_contains":
       expectType(textType(), textType());
       return booleanType;
-    case "str_find":
+    case "text_find":
       expectType(textType(), textType());
       return integerType(-1, (types[0] as TextType).capacity);
-    case "str_split":
+    case "text_split":
       expectType(textType(), textType());
       return listType(types[0]);
-    case "str_get_char":
+    case "text_get_char":
       expectType(textType(), integerType(0));
       return textType(1);
     case "join_using":
@@ -342,7 +342,7 @@ function getOpCodeType(
           : t.high
       );
     }
-    case "bitnot":
+    case "bit_not":
       expectType(integerType());
       return integerType();
     case "neg": {
@@ -356,12 +356,12 @@ function getOpCodeType(
     case "not":
       expectType(booleanType);
       return booleanType;
-    case "int_to_str":
+    case "int_to_text":
     case "int_to_bin":
     case "int_to_hex":
       expectType(integerType());
       return textType(); // TODO narrow this
-    case "str_to_int":
+    case "text_to_int":
       expectType(textType()); // TODO narrow this
       return integerType();
     case "bool_to_int":
@@ -372,10 +372,10 @@ function getOpCodeType(
       return integerType(0, 1);
     case "cardinality":
       throw new Error("TODO");
-    case "str_length":
+    case "text_length":
       expectType(textType());
       return integerType(0, (types[0] as TextType).capacity);
-    case "str_split_whitespace":
+    case "text_split_whitespace":
       expectType(textType());
       return listType(types[0]);
     case "sorted":
@@ -383,7 +383,7 @@ function getOpCodeType(
     case "join":
       expectType(listType(textType()));
       return textType();
-    case "str_reversed":
+    case "text_reversed":
       expectType(textType());
       return textType();
     // other
@@ -396,10 +396,10 @@ function getOpCodeType(
     case "print":
     case "println":
       return voidType;
-    case "str_replace":
+    case "text_replace":
       expectType(textType(), textType(), textType());
       return textType(); // TODO narrow this
-    case "str_substr": {
+    case "text_get_slice": {
       expectType(textType(), integerType(0), integerType(0));
       const [t, i1, i2] = types as [TextType, IntegerType, IntegerType];
       return textType(
@@ -474,7 +474,7 @@ function getArithmeticType(
       return getIntegerTypeUsing(left, right, (a, b) => a * b);
     case "div":
       return getIntegerTypeUsing(left, right, floorDiv);
-    case "truncdiv":
+    case "trunc_div":
       return getIntegerTypeUsing(left, right, (a, b) => a / b);
     case "mod":
       return getIntegerTypeMod(left, right);
@@ -486,11 +486,11 @@ function getArithmeticType(
         (right.low ?? 1n) < 0n ? integerType(0n, right.high) : right,
         (a, b) => a ** b
       );
-    case "bitand":
+    case "bit_and":
       return integerType();
-    case "bitor":
+    case "bit_or":
       return integerType();
-    case "bitxor":
+    case "bit_xor":
       return integerType();
   }
   throw new Error(`Unknown opcode. ${op ?? "null"}`);

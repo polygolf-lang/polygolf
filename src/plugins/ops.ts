@@ -43,7 +43,7 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
                 node.args[1],
                 f[0],
                 f[1],
-                f[2] ?? (op === "exp" || op === "str_concat")
+                f[2] ?? (op === "exp" || op === "text_concat")
               )
             );
           else if (UnaryOpCodeArray.includes(op))

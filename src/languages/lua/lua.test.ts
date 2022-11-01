@@ -60,10 +60,10 @@ test("Assignment", () => expectStatement(assignment("b", int(1n)), "b=1"));
 describe("Applications", () => {
   testpolygolfOp("println", ["t"], `print(t)`);
   testpolygolfOp("print", ["t"], `io.write(t)`);
-  testpolygolfOp("str_length", ["t"], `t:len()`);
-  testpolygolfOp("int_to_str", ["i"], "tostring(i)");
-  testpolygolfOp("str_to_int", ["t"], "~~t");
-  testpolygolfOp("bitnot", ["i"], "~i");
+  testpolygolfOp("text_length", ["t"], `t:len()`);
+  testpolygolfOp("int_to_text", ["i"], "tostring(i)");
+  testpolygolfOp("text_to_int", ["t"], "~~t");
+  testpolygolfOp("bit_not", ["i"], "~i");
   testpolygolfOp("neg", ["i"], "-i");
   testpolygolfOp("add", ["i", "I"], "i+I");
   testpolygolfOp("sub", ["i", "I"], "i-I");
@@ -71,22 +71,22 @@ describe("Applications", () => {
   testpolygolfOp("div", ["i", "I"], "i//I");
   testpolygolfOp("exp", ["i", "I"], "i^I");
   testpolygolfOp("mod", ["i", "I"], "i%I");
-  testpolygolfOp("bitand", ["i", "I"], "i&I");
-  testpolygolfOp("bitor", ["i", "I"], "i|I");
-  testpolygolfOp("bitxor", ["i", "I"], "i~I");
+  testpolygolfOp("bit_and", ["i", "I"], "i&I");
+  testpolygolfOp("bit_or", ["i", "I"], "i|I");
+  testpolygolfOp("bit_xor", ["i", "I"], "i~I");
   testpolygolfOp("lt", ["i", "I"], "i<I");
   testpolygolfOp("leq", ["i", "I"], "i<=I");
   testpolygolfOp("eq", ["i", "I"], "i==I");
   testpolygolfOp("geq", ["i", "I"], "i>=I");
   testpolygolfOp("gt", ["i", "I"], "i>I");
   testpolygolfOp("array_get", ["a", "i"], "a[i+1]");
-  testpolygolfOp("str_get_byte", ["t", "i"], "t:byte(i+1)");
-  testpolygolfOp("str_concat", ["t", "T"], "t..T");
-  testpolygolfOp("str_length", ["t"], "t:len()");
+  testpolygolfOp("text_get_byte", ["t", "i"], "t:byte(i+1)");
+  testpolygolfOp("text_concat", ["t", "T"], "t..T");
+  testpolygolfOp("text_length", ["t"], "t:len()");
 });
 
 describe("Parentheses", () => {
-  testpolygolfOp("str_length", [stringLiteral("abc")], `("abc"):len()`);
+  testpolygolfOp("text_length", [stringLiteral("abc")], `("abc"):len()`);
 });
 
 // TODO: Loops and some more tests

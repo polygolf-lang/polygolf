@@ -121,7 +121,7 @@ export const useUnsignedDivision = {
     const program = path.root.node;
     if (
       node.type === "BinaryOp" &&
-      (node.op === "truncdiv" || node.op === "rem")
+      (node.op === "trunc_div" || node.op === "rem")
     ) {
       const right = getType(node.right, program);
       const left = getType(node.left, program);
@@ -133,7 +133,7 @@ export const useUnsignedDivision = {
         right.low !== undefined &&
         right.low >= 0n
       ) {
-        node.name = node.op === "truncdiv" ? "/%" : "%%";
+        node.name = node.op === "trunc_div" ? "/%" : "%%";
       }
     }
   },
