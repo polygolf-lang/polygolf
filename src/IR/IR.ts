@@ -1,3 +1,4 @@
+import { PolygolfError } from "../common/errors";
 import { getCollectionTypes, getType } from "../common/getType";
 import { Path, programToPath } from "../common/traverse";
 import {
@@ -44,8 +45,17 @@ export * from "./terminals";
 export * from "./toplevel";
 export * from "./types";
 
-export interface BaseExpr {
+export interface BaseExpr extends BaseNode {
   valueType?: ValueType;
+}
+
+export interface BaseNode {
+  source?: SourcePointer;
+}
+
+export interface SourcePointer {
+  line: number;
+  column: number;
 }
 
 export type Node = Program | Block | Expr;
@@ -82,7 +92,7 @@ export type Expr =
 /**
  * Program node. This should be the root node. Raw OK
  */
-export interface Program {
+export interface Program extends BaseNode {
   type: "Program";
   dependencies: Set<string>;
   variables: Map<string, ValueType>;
@@ -99,16 +109,19 @@ export function program(block: Block): Program {
 }
 
 export function typesPass(program: Program) {
-  function setVar(name: string, type: ValueType) {
-    if (program.variables.has(name)) {
-      throw new Error(`Duplicate variable declaration: ${name}`!);
-    }
-    program.variables.set(name, type);
-  }
   const path = programToPath(program);
   path.visit({
     enter(path: Path) {
       const node = path.node;
+      function setVar(name: string, type: ValueType) {
+        if (program.variables.has(name)) {
+          throw new PolygolfError(
+            `Duplicate variable declaration: ${name}!`,
+            node.source
+          );
+        }
+        program.variables.set(name, type);
+      }
       if (node.type === "ForRange") {
         const low = getType(node.low, path.root.node);
         const high = getType(node.high, path.root.node);
@@ -118,8 +131,9 @@ export function typesPass(program: Program) {
           high.type !== "integer" ||
           step.type !== "integer"
         ) {
-          throw new Error(
-            `Unexpected for range type (${low.type},${high.type},${step.type})`
+          throw new PolygolfError(
+            `Unexpected for range type (${low.type},${high.type},${step.type})`,
+            node.source
           );
         }
         setVar(

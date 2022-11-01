@@ -11,7 +11,7 @@ import {
   arrayConstructor,
   Expr,
 } from "../../IR";
-import { applyLanguage } from "../../common/applyLanguage";
+import applyLanguage from "../../common/applyLanguage";
 
 function expectTransform(program: IR.Program, output: string) {
   expect(applyLanguage(lua, program)).toEqual(output);

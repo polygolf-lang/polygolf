@@ -134,7 +134,6 @@ export function toString(a: ValueType): string {
         a.high === undefined ? "oo" : a.high.toString()
       }`;
   }
-  throw new Error("Unknown type.");
 }
 
 export function union(a: ValueType, b: ValueType): ValueType {

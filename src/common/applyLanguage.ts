@@ -3,7 +3,7 @@ import { expandVariants } from "./expandVariants";
 import { programToPath } from "./traverse";
 import { Language, defaultDetokenizer } from "./Language";
 
-export function applyLanguage(
+export default function applyLanguage(
   language: Language,
   program: IR.Program,
   maxBranches: number = 1000,
@@ -53,28 +53,25 @@ function emitVariants(
   maxBranches: number
 ): [IR.Program, string][] {
   const result: [IR.Program, string][] = [];
+  let remaining = variants.length;
   for (const variant of variants) {
+    remaining--;
     const path = programToPath(variant);
     for (let i = lastAppliedPluginIndex + 1; i < language.plugins.length; i++) {
       if (language.plugins[i].generatesVariants === true) continue;
       path.visit(language.plugins[i]);
     }
-    if (variants.length > 1) {
-      try {
-        result.push([
-          variant,
-          (language.detokenizer ?? defaultDetokenizer())(
-            language.emitter(variant)
-          ),
-        ]);
-      } catch {}
-    } else {
+    try {
       result.push([
         variant,
         (language.detokenizer ?? defaultDetokenizer())(
           language.emitter(variant)
         ),
       ]);
+    } catch (e) {
+      if (remaining + result.length < 1) {
+        throw e;
+      }
     }
   }
   result.sort((a, b) => a[1].length - b[1].length);

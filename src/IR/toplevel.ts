@@ -1,4 +1,4 @@
-import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
+import { BaseExpr, BaseNode, Expr, id, Identifier, ValueType } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
@@ -11,7 +11,7 @@ export interface Variants extends BaseExpr {
 /**
  * A block of several statements. Raw OK
  */
-export interface Block {
+export interface Block extends BaseNode {
   type: "Block";
   children: Expr[];
 }

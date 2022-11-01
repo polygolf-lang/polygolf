@@ -21,7 +21,9 @@ import {
   TextType,
   booleanType,
   OpCode,
+  SourcePointer,
 } from "../IR";
+import { PolygolfError } from "./errors";
 
 export function getType(expr: Expr, program: Program): ValueType {
   if (expr.valueType === undefined) {
@@ -41,7 +43,10 @@ export function calcType(expr: Expr, program: Program): ValueType {
       if (isSubtype(b, a)) {
         return b;
       }
-      throw new Error(`Cannot assign ${toString(b)} to ${toString(a)}.`);
+      throw new PolygolfError(
+        `Type error. Cannot assign ${toString(b)} to ${toString(a)}.`,
+        expr.source
+      );
     }
     case "IndexCall": {
       const a = type(expr.collection);
@@ -66,12 +71,18 @@ export function calcType(expr: Expr, program: Program): ValueType {
           break;
         }
         default:
-          throw new Error("IndexCall must be used on a collection");
+          throw new PolygolfError(
+            "Type error. IndexCall must be used on a collection.",
+            expr.source
+          );
       }
       if (isSubtype(b, expectedIndex)) {
         return result;
       }
-      throw new Error(`Cannot index ${toString(a)} with ${toString(b)}.`);
+      throw new PolygolfError(
+        `Type error. Cannot index ${toString(a)} with ${toString(b)}.`,
+        expr.source
+      );
     }
     case "PolygolfOp":
     case "FunctionCall":
@@ -84,7 +95,10 @@ export function calcType(expr: Expr, program: Program): ValueType {
       if (program.variables.has(expr.name)) {
         return program.variables.get(expr.name)!;
       }
-      throw new Error(`Undeclared variable ${expr.name} encountered!`);
+      throw new PolygolfError(
+        `Type error. Undeclared variable ${expr.name} encountered!`,
+        expr.source
+      );
     case "StringLiteral":
       return textType(expr.value.length);
     case "IntegerLiteral":
@@ -109,7 +123,10 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "WhileLoop":
       return voidType;
   }
-  throw new Error(`Unexpected node ${expr.type}.`);
+  throw new PolygolfError(
+    `Type error. Unexpected node ${expr.type}.`,
+    expr.source
+  );
 }
 
 function getArgs(
@@ -153,10 +170,13 @@ function getOpCodeType(
       types.length !== expected.length ||
       types.every((x, i) => !isSubtype(x, expected[i]))
     ) {
-      throw new Error(
-        `Operator '${expr.op ?? "null"} type error. Expected [${expected
+      throw new PolygolfError(
+        `Type error. Operator '${
+          expr.op ?? "null"
+        } type error. Expected [${expected
           .map(toString)
-          .join(", ")}] but got [${types.map(toString).join(", ")}].`
+          .join(", ")}] but got [${types.map(toString).join(", ")}].`,
+        expr.source
       );
     }
   }
@@ -182,10 +202,13 @@ function getOpCodeType(
         }
         return e[0];
       });
-      throw new Error(
-        `Operator '${expr.op ?? "null"} type error. Expected [${expectedS.join(
-          ", "
-        )}] but got [${types.map(toString).join(", ")}].`
+      throw new PolygolfError(
+        `Type error. Operator '${
+          expr.op ?? "null"
+        } type error. Expected [${expectedS.join(", ")}] but got [${types
+          .map(toString)
+          .join(", ")}].`,
+        expr.source
       );
     }
     if (types.length !== expected.length) _throw();
@@ -241,7 +264,8 @@ function getOpCodeType(
       return getArithmeticType(
         expr.op,
         types[0] as IntegerType,
-        types[1] as IntegerType
+        types[1] as IntegerType,
+        expr.source
       );
     // (num, num) => bool
     case "lt":
@@ -429,13 +453,17 @@ function getOpCodeType(
         ["T2", (x) => x[1]]
       )[1];
   }
-  throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
+  throw new PolygolfError(
+    `Type error. Unknown opcode. ${expr.op ?? "null"}`,
+    expr.source
+  );
 }
 
 function getArithmeticType(
   op: OpCode,
   left: IntegerType,
-  right: IntegerType
+  right: IntegerType,
+  source?: SourcePointer
 ): ValueType {
   switch (op) {
     case "gcd":
@@ -493,7 +521,10 @@ function getArithmeticType(
     case "bit_xor":
       return integerType();
   }
-  throw new Error(`Unknown opcode. ${op ?? "null"}`);
+  throw new PolygolfError(
+    `Type error. Unknown opcode. ${op ?? "null"}`,
+    source
+  );
 }
 
 export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
@@ -506,7 +537,7 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
     case "Table":
       return [exprType.key, exprType.value];
   }
-  throw new Error("Node is not a collection.");
+  throw new PolygolfError("Type error. Node is not a collection.", expr.source);
 }
 
 function floorDiv(a: bigint, b: bigint): bigint {

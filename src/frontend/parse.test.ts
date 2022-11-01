@@ -27,7 +27,11 @@ function stringify(x: any): string {
   return JSON.stringify(
     x,
     (key, value) =>
-      typeof value === "bigint" ? value.toString() + "n" : value,
+      key === "source"
+        ? undefined
+        : typeof value === "bigint"
+        ? value.toString() + "n"
+        : value,
     2
   );
 }

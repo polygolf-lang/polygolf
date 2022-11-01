@@ -16,7 +16,8 @@ import {
   sexpr,
   typeSexpr,
   integerType,
-  annotate } from "./parse";
+  annotate,
+  refSource } from "./parse";
 %}
 
 @lexer lexer
@@ -34,7 +35,7 @@ variant ->
   | expr {% d => block([d[0]]) %}
           
 variants -> "{" (variant "/"):+ variant "}" {%
-    ([, vars, var2, ]) => variants([...vars.map((d: any) => d[0]), var2])
+    ([start, vars, var2, ]) => refSource(variants([...vars.map((d: any) => d[0]), var2]), start)
   %}
 
 expr_inner ->
@@ -46,25 +47,25 @@ expr_inner ->
   | block {% id %}
   | variants {% id %}
 
-block -> "[" block_inner "]" {% d => d[1] %}
+block -> "[" block_inner "]" {% d => refSource(d[1], d[0]) %}
 
-integer -> %integer {% d => int(BigInt(d[0])) %}
+integer -> %integer {% d => refSource(int(BigInt(d[0])), d[0]) %}
 
-variable -> %variable {% d => identifier(d[0].value.slice(1), false) %}
+variable -> %variable {% d => refSource(identifier(d[0].value.slice(1), false), d[0]) %}
 
-builtin -> %builtin {% d => identifier(d[0].value, true) %}
-opalias -> (%opalias | "..") {% d => identifier(d[0][0].value, true) %}
-nullary -> %nullary {% d => sexpr(identifier(d[0].value, true), []) %}
+builtin -> %builtin {% d => refSource(identifier(d[0].value, true), d[0]) %}
+opalias -> (%opalias | "..") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
+nullary -> %nullary {% d => refSource(sexpr(identifier(d[0].value, true), []), d[0]) %}
 
-string -> %string {% d => stringLiteral(JSON.parse(d[0])) %}
+string -> %string {% d => refSource(stringLiteral(JSON.parse(d[0])), d[0]) %}
 
 sexpr ->
-  "(" callee expr:* ")" {% d => sexpr(d[1], d[2]) %}
-  | "(" expr opalias expr ")" {% d => sexpr(d[2], [d[1], d[3]]) %}
+  "(" callee expr:* ")" {% d => refSource(sexpr(d[1], d[2]), d[0]) %}
+  | "(" expr opalias expr ")" {% d => refSource(sexpr(d[2], [d[1], d[3]]), d[0]) %}
 
 sexpr_stmt ->
-  callee expr:+ ";" {% d => sexpr(d[0], d[1]) %}
-  | expr opalias expr ";" {% d => sexpr(d[1], [d[0], d[2]]) %}
+  callee expr:+ ";" {% d => refSource(sexpr(d[0], d[1]), d[1]) %}
+  | expr opalias expr ";" {% d => refSource(sexpr(d[1], [d[0], d[2]]), d[3]) %}
 
 callee -> builtin {% id %} | opalias {% id %} | variable {% id %}
 
@@ -77,8 +78,8 @@ ninf -> %ninf {% d => d[0].value %}
 pinf -> %pinf {% d => d[0].value %}
 type_range -> (ninf | integer) ".." (pinf | integer) {% d => integerType(d[0][0], d[2][0]) %}
 
-type_simple -> %type {% d => typeSexpr(d[0].value, []) %}
+type_simple -> %type {% d => typeSexpr(d[0], []) %}
 
-type_sexpr -> "(" %type (type_expr | integer):+ ")" {% d => typeSexpr(d[1].value, d[2].map((x:any) => x[0])) %}
+type_sexpr -> "(" %type (type_expr | integer):+ ")" {% d => typeSexpr(d[1], d[2].map((x:any) => x[0])) %}
 
 expr -> expr_inner (":" type_expr):? {% d => annotate(d[0], d[1]) %}
