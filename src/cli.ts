@@ -2,6 +2,7 @@
 
 import yargs from "yargs";
 import fs from "fs";
+import path from "path";
 import parse from "./frontend/parse";
 import applyLanguage from "./common/applyLanguage";
 
@@ -39,6 +40,7 @@ const prog = parse(code);
 try {
   const result = applyLanguage(lang, prog);
   if (options.output !== undefined) {
+    fs.mkdirSync(path.dirname(options.output), { recursive: true });
     fs.writeFileSync(options.output, result);
   } else {
     console.log(result);
