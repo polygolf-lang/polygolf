@@ -583,6 +583,7 @@ function getIntegerTypeMod(left: IntegerType, right: IntegerType): IntegerType {
     const values = [0n];
     if (right.low < 0n) values.push(right.low + 1n);
     if (right.high > 0n) values.push(right.high - 1n);
+    return integerTypeIncludingAll(values);
   }
   return left;
 }
