@@ -30,6 +30,8 @@ const luaLanguage: Language = {
         "str_get_byte",
         (x) => methodCall(x[0], [polygolfOp("add", x[1], int(1n))], "byte"),
       ],
+      ["true", (_) => id("true", true)],
+      ["false", (_) => id("false", true)],
     ]),
     mapOps([
       ["str_length", (x) => methodCall(x[0], [], "len")],

@@ -11,7 +11,6 @@ import {
   BinaryOpCodeArray,
   polygolfOp,
   ValueType,
-  simpleType,
   listType,
   arrayType,
   tableType,
@@ -26,6 +25,9 @@ import {
   PolygolfOp,
   block,
   whileLoop,
+  voidType,
+  textType,
+  booleanType,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -167,11 +169,13 @@ export function typeSexpr(
   callee: string,
   args: (ValueType | IntegerLiteral)[]
 ): ValueType {
-  function expectArity(n: number) {
-    if (args.length !== n) {
+  function expectArity(low: number, high: number = low) {
+    if (args.length < low || args.length > high) {
       throw new Error(
         `Invalid argument count in application of ${callee}: ` +
-          `Expected ${n} but got ${args.length}.`
+          `Expected ${low}${low === high ? "" : ".." + String(high)} but got ${
+            args.length
+          }.`
       );
     }
   }
@@ -188,13 +192,15 @@ export function typeSexpr(
   switch (callee) {
     case "Void":
       expectArity(0);
-      return simpleType("void");
+      return voidType;
     case "Text":
-      expectArity(0);
-      return simpleType("string");
+      expectArity(0, 1);
+      if (args.length === 0) return textType();
+      assertNumber(args[0]);
+      return textType(Number(args[0].value));
     case "Bool":
       expectArity(0);
-      return simpleType("boolean");
+      return booleanType;
     case "Array":
       expectArity(2);
       assertType(args[0]);
@@ -209,7 +215,7 @@ export function typeSexpr(
       assertType(args[0]);
       assertType(args[1]);
       if (args[0].type === "integer") return tableType(args[0], args[1]);
-      if (args[0].type === "string") return tableType("string", args[1]);
+      if (args[0].type === "text") return tableType(args[0], args[1]);
       throw new Error("Unexpected key type for table.");
     case "Set":
       expectArity(1);

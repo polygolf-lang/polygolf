@@ -59,14 +59,23 @@ function emitVariants(
       if (language.plugins[i].generatesVariants === true) continue;
       path.visit(language.plugins[i]);
     }
-    try {
+    if (variants.length > 1) {
+      try {
+        result.push([
+          variant,
+          (language.detokenizer ?? defaultDetokenizer())(
+            language.emitter(variant)
+          ),
+        ]);
+      } catch {}
+    } else {
       result.push([
         variant,
         (language.detokenizer ?? defaultDetokenizer())(
           language.emitter(variant)
         ),
       ]);
-    } catch {}
+    }
   }
   result.sort((a, b) => a[1].length - b[1].length);
   return result.slice(0, maxBranches);

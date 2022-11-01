@@ -6,56 +6,71 @@ export interface IntegerType {
   low?: bigint;
   high?: bigint;
 }
+export interface TextType {
+  type: "text";
+  capacity?: number;
+}
 export type ValueType =
-  | { type: "void" }
   | IntegerType
-  | { type: "string" }
+  | TextType
+  | { type: "void" }
   | { type: "boolean" }
   | { type: "List"; member: ValueType }
-  | { type: "Table"; key: IntegerType | { type: "string" }; value: ValueType }
+  | { type: "Table"; key: IntegerType | TextType; value: ValueType }
   | { type: "Array"; member: ValueType; length: number }
   | { type: "Set"; member: ValueType };
 
-export function simpleType<T extends "void" | "string" | "boolean">(type: T) {
-  return { type };
-}
+export const booleanType: ValueType = { type: "boolean" };
+export const voidType: ValueType = { type: "void" };
 
 export function tableType(
-  key: IntegerType | "string",
-  value: ValueType | "void" | "string" | "boolean"
+  key: IntegerType | TextType,
+  value: ValueType | "void" | "boolean"
 ): ValueType {
   return {
     type: "Table",
-    key: key === "string" ? simpleType(key) : key,
-    value: typeof value === "string" ? simpleType(value) : value,
+    key,
+    value:
+      value === "boolean" ? booleanType : value === "void" ? voidType : value,
   };
 }
 
-export function setType(
-  member: ValueType | "void" | "string" | "boolean"
-): ValueType {
+export function setType(member: ValueType | "void" | "boolean"): ValueType {
   return {
     type: "Set",
-    member: typeof member === "string" ? simpleType(member) : member,
+    member:
+      member === "boolean"
+        ? booleanType
+        : member === "void"
+        ? voidType
+        : member,
   };
 }
 
-export function listType(
-  member: ValueType | "void" | "string" | "boolean"
-): ValueType {
+export function listType(member: ValueType | "void" | "boolean"): ValueType {
   return {
     type: "List",
-    member: typeof member === "string" ? simpleType(member) : member,
+    member:
+      member === "boolean"
+        ? booleanType
+        : member === "void"
+        ? voidType
+        : member,
   };
 }
 
 export function arrayType(
-  member: ValueType | "void" | "string" | "boolean",
+  member: ValueType | "void" | "boolean",
   length: number
 ): ValueType {
   return {
     type: "Array",
-    member: typeof member === "string" ? simpleType(member) : member,
+    member:
+      member === "boolean"
+        ? booleanType
+        : member === "void"
+        ? voidType
+        : member,
     length,
   };
 }
@@ -68,6 +83,16 @@ export function integerType(
     type: "integer",
     low: typeof low === "number" ? BigInt(low) : low,
     high: typeof high === "number" ? BigInt(high) : high,
+  };
+}
+
+export function textType(capacity?: bigint | number): TextType {
+  return {
+    type: "text",
+    capacity:
+      typeof capacity === "bigint"
+        ? Number(BigInt.asIntN(32, capacity))
+        : capacity,
   };
 }
 
@@ -100,13 +125,13 @@ export function toString(a: ValueType): string {
       return `(Table ${toString(a.key)} ${toString(a.value)})`;
     case "void":
       return "Void";
-    case "string":
-      return "Text";
+    case "text":
+      return a.capacity === undefined ? "Text" : `(Text ${a.capacity})`;
     case "boolean":
       return "Bool";
     case "integer":
       return `${a.low === undefined ? "-oo" : a.low.toString()}..${
-        a.low === undefined ? "oo" : a.low.toString()
+        a.high === undefined ? "oo" : a.high.toString()
       }`;
   }
   throw new Error("Unknown type.");
@@ -151,6 +176,14 @@ export function union(a: ValueType, b: ValueType): ValueType {
                 : a.high
             )
           : integerType();
+      case "text": {
+        const t2 = b as TextType;
+        return textType(
+          a.capacity === undefined || t2.capacity === undefined
+            ? undefined
+            : a.capacity + t2.capacity
+        );
+      }
       default:
         return a;
     }
@@ -185,6 +218,12 @@ export function isSubtype(a: ValueType, b: ValueType): boolean {
         b.type === "integer" &&
         (b.low === undefined || (a.low !== undefined && a.low >= b.low)) &&
         (b.high === undefined || (a.high !== undefined && b.high >= a.high))
+      );
+    case "text":
+      return (
+        b.type === "text" &&
+        (b.capacity === undefined ||
+          (a.capacity !== undefined && a.capacity <= b.capacity))
       );
     default:
       return true;

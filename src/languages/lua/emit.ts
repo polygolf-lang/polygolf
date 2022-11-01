@@ -189,6 +189,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         "]",
       ];
     case "ListConstructor":
+    case "ArrayConstructor":
       return ["{", ...joinGroups(expr.exprs.map(emitExprNoParens), ","), "}"];
 
     default:

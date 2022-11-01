@@ -27,7 +27,7 @@ export const BinaryOpCodeArray = [
   // membership
   "inarray",
   "inlist",
-  "inmap",
+  "intable",
   "inset",
   // collection get
   "array_get",

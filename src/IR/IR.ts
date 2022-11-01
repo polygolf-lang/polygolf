@@ -128,7 +128,7 @@ export function typesPass(program: Program) {
             low.low,
             high.high === undefined
               ? undefined
-              : high.high - (node.inclusive ? 0n : -1n)
+              : high.high - (node.inclusive ? 0n : 1n)
           )
         );
       } else if (node.type === "ForEach") {
@@ -149,14 +149,17 @@ export function typesPass(program: Program) {
         node.type === "Assignment" &&
         node.variable.type === "Identifier"
       ) {
-        const varType = node.variable.valueType ?? getType(node.expr, program);
-        program.variables.set(node.variable.name, varType);
-      } else if (
-        node.type === "Identifier" &&
-        !node.builtin &&
-        !program.variables.has(node.name)
-      ) {
-        throw new Error(`Uninitialized variable ${node.name}!`);
+        if (node.variable.valueType !== undefined)
+          setVar(node.variable.name, node.variable.valueType);
+        else {
+          if (!program.variables.has(node.variable.name))
+            setVar(node.variable.name, getType(node.expr, program));
+        }
+      }
+    },
+    exit(path: Path) {
+      if (path.node.type !== "Program" && path.node.type !== "Block") {
+        getType(path.node, program);
       }
     },
   });

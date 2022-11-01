@@ -14,10 +14,11 @@ import {
   integerType,
   variants,
   annotate,
-  simpleType,
   listType,
   arrayType,
   Node,
+  textType,
+  booleanType,
 } from "../IR";
 import parse from "./parse";
 
@@ -135,22 +136,27 @@ describe("Parse annotations", () => {
     "$a:-10..10",
     annotate(id("a"), integerType(-10, 10))
   );
-  expectExprParse("text", "$a:Text", annotate(id("a"), simpleType("string")));
-  expectExprParse("bool", "$a:Bool", annotate(id("a"), simpleType("boolean")));
+  expectExprParse("bool", "$a:Bool", annotate(id("a"), booleanType));
+  expectExprParse("text", "$a:Text", annotate(id("a"), textType()));
+  expectExprParse(
+    "text of max 120 length",
+    "$a:(Text 120)",
+    annotate(id("a"), textType(120))
+  );
   expectExprParse(
     "array of 5 strings",
     "$a:(Array Text 5)",
-    annotate(id("a"), arrayType("string", 5))
+    annotate(id("a"), arrayType(textType(), 5))
   );
   expectExprParse(
     "list of strings",
     "$a:(List Text)",
-    annotate(id("a"), listType("string"))
+    annotate(id("a"), listType(textType()))
   );
   expectExprParse(
     "list of lists of strings",
     "$a:(List (List Text))",
-    annotate(id("a"), listType(listType("string")))
+    annotate(id("a"), listType(listType(textType())))
   );
   expectExprParse(
     "list of ints",
