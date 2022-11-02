@@ -212,7 +212,7 @@ export function union(a: ValueType, b: ValueType): ValueType {
         return textType(
           a.capacity === undefined || t2.capacity === undefined
             ? undefined
-            : a.capacity + t2.capacity
+            : Math.max(a.capacity, t2.capacity)
         );
       }
       default:
