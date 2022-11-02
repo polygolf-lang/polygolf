@@ -432,8 +432,9 @@ function getOpCodeType(
     case "byte_to_char":
       expectType(integerType(0, 255));
       return integerType(0, 1);
-    case "cardinality":
-      throw new Error("TODO");
+    case "list_length":
+      expectGenericType("List");
+      return integerType(0);
     case "text_length":
       expectType(textType());
       return integerType(0, (types[0] as TextType).capacity);

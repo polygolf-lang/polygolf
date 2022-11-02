@@ -47,7 +47,7 @@ export const BinaryOpCodeArray = [
   "int_to_bin_aligned",
   "int_to_hex_aligned",
   "simplify_fraction",
-];
+] as const;
 export type BinaryOpCode = typeof BinaryOpCodeArray[number];
 
 export const UnaryOpCodeArray = [
@@ -62,13 +62,13 @@ export const UnaryOpCodeArray = [
   "text_to_int",
   "bool_to_int",
   "byte_to_char",
-  "cardinality",
+  "list_length",
   "text_length",
   "text_split_whitespace",
   "sorted",
   "join",
   "text_reversed",
-];
+] as const;
 export type UnaryOpCode = typeof UnaryOpCodeArray[number];
 
 export const OpCodeArray = [
@@ -85,9 +85,38 @@ export const OpCodeArray = [
   "array_set",
   "list_set",
   "table_set",
-];
+] as const;
 
 export type OpCode = typeof OpCodeArray[number];
+
+export function isOpCode(op: string): op is OpCode {
+  return OpCodeArray.includes(op as any);
+}
+export function isUnary(op: OpCode): op is UnaryOpCode {
+  return UnaryOpCodeArray.includes(op as any);
+}
+export function isBinary(op: OpCode): op is BinaryOpCode {
+  return BinaryOpCodeArray.includes(op as any);
+}
+export function arity(op: OpCode): number {
+  if (isUnary(op)) return 1;
+  if (isBinary(op)) return 2;
+  switch (op) {
+    case "true":
+    case "false":
+    case "argv":
+      return 0;
+    case "print":
+    case "println":
+      return 1;
+    case "text_replace":
+    case "text_get_slice":
+    case "array_set":
+    case "list_set":
+    case "table_set":
+      return 3;
+  }
+}
 
 export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
@@ -156,7 +185,7 @@ export function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
     case "array_contains":
     case "set_contains":
     case "list_contains":
-    case "inmap":
+    case "table_contains_key":
       return 40;
     case "not":
       return 30;

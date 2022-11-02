@@ -149,7 +149,7 @@ export const forRangeToForEachPair = {
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
       node.high.type === "PolygolfOp" &&
-      node.high.op === "cardinality" &&
+      node.high.op === "list_length" &&
       node.high.args[0].type === "Identifier"
     ) {
       const collection = node.high.args[0];
@@ -159,7 +159,7 @@ export const forRangeToForEachPair = {
         // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
         enter(path2: Path) {
           const node2 = path2.node;
-          if (isArrayOrListGet(node2, collection.name, node.variable.name)) {
+          if (isListGet(node2, collection.name, node.variable.name)) {
             path2.replaceWith(elementIdentifier);
           }
         },
@@ -189,7 +189,7 @@ export const forRangeToForEach = {
       node.low.type === "IntegerLiteral" &&
       node.low.value === 0n &&
       node.high.type === "PolygolfOp" &&
-      node.high.op === "cardinality" &&
+      node.high.op === "list_length" &&
       node.high.args[0].type === "Identifier"
     ) {
       const collection = node.high.args[0];
@@ -201,7 +201,7 @@ export const forRangeToForEach = {
           // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
           enter(path2: Path) {
             const node2 = path2.node;
-            if (isArrayOrListGet(node2, collection.name, node.variable.name)) {
+            if (isListGet(node2, collection.name, node.variable.name)) {
               path2.replaceWith(elementIdentifier);
             }
           },
@@ -212,12 +212,8 @@ export const forRangeToForEach = {
   },
 };
 
-function isArrayOrListGet(node: IR.Node, collection: string, index: string) {
-  if (
-    node.type !== "PolygolfOp" ||
-    (node.op !== "list_get" && node.op !== "array_get")
-  )
-    return false;
+function isListGet(node: IR.Node, collection: string, index: string) {
+  if (node.type !== "PolygolfOp" || node.op !== "list_get") return false;
   const args = node.args;
   return (
     args[0].type === "Identifier" &&
@@ -232,6 +228,6 @@ function isVariableUsedAlone(path: Path, collection: string, index: string) {
     (x) =>
       x.node.type === "Identifier" &&
       x.node.name === index &&
-      !isArrayOrListGet(x.parent!.node, collection, index)
+      !isListGet(x.parent!.node, collection, index)
   );
 }

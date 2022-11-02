@@ -3,14 +3,14 @@ import { OpTransformOutput } from "../common/Language";
 import {
   assignment,
   binaryOp,
-  BinaryOpCodeArray,
   IndexCall,
   indexCall,
   int,
+  isBinary,
+  isUnary,
   OpCode,
   polygolfOp,
   unaryOp,
-  UnaryOpCodeArray,
 } from "../IR";
 import { getType } from "../common/getType";
 
@@ -26,16 +26,15 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
           return;
         }
         if (typeof f === "string") {
-          if (BinaryOpCodeArray.includes(op))
+          if (isBinary(op))
             path.replaceWith(binaryOp(op, node.args[0], node.args[1], f));
-          else if (UnaryOpCodeArray.includes(op))
-            path.replaceWith(unaryOp(op, node.args[0], f));
+          else if (isUnary(op)) path.replaceWith(unaryOp(op, node.args[0], f));
           else
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
             );
         } else if (Array.isArray(f)) {
-          if (BinaryOpCodeArray.includes(op))
+          if (isBinary(op))
             path.replaceWith(
               binaryOp(
                 op,
@@ -46,7 +45,7 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
                 f[2] ?? (op === "exp" || op === "text_concat")
               )
             );
-          else if (UnaryOpCodeArray.includes(op))
+          else if (isUnary(op))
             path.replaceWith(unaryOp(op, node.args[0], f[0], f[1]));
           else
             throw new Error(

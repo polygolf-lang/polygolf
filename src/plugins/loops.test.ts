@@ -23,9 +23,9 @@ const loopProgram2 = program(
     forRange(
       "i",
       int(0n),
-      polygolfOp("cardinality", id("collection")),
+      polygolfOp("list_length", id("collection")),
       int(1n),
-      block([print(polygolfOp("array_get", id("collection"), id("i")))]),
+      block([print(polygolfOp("list_get", id("collection"), id("i")))]),
       false
     ),
   ])
@@ -36,11 +36,11 @@ const loopProgram3 = program(
     forRange(
       "i",
       int(0n),
-      polygolfOp("cardinality", id("collection")),
+      polygolfOp("list_length", id("collection")),
       int(1n),
       block([
         print(id("i")),
-        print(polygolfOp("array_get", id("collection"), id("i"))),
+        print(polygolfOp("list_get", id("collection"), id("i"))),
       ]),
       false
     ),
@@ -89,5 +89,5 @@ test("ForRange -> ForEach", () =>
   expectTransform(
     loopProgram3,
     loops.forRangeToForEach,
-    "{ for i in range(0,<cardinality(collection),1) { println(i); println(array_get(collection,i)); }; }"
+    "{ for i in range(0,<list_length(collection),1) { println(i); println(list_get(collection,i)); }; }"
   ));

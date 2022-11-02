@@ -10,7 +10,6 @@ import {
   Block,
   ifStatement,
   listConstructor,
-  BinaryOpCodeArray,
   polygolfOp,
   ValueType,
   listType,
@@ -20,8 +19,6 @@ import {
   integerType as intType,
   IntegerLiteral,
   int,
-  UnaryOpCodeArray,
-  OpCodeArray,
   assignment,
   OpCode,
   PolygolfOp,
@@ -35,6 +32,9 @@ import {
   setConstructor,
   tableConstructor,
   KeyValue,
+  isOpCode,
+  isBinary,
+  arity,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -142,10 +142,8 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
       assertKeyValues(args);
       return tableConstructor(args);
   }
-  if (OpCodeArray.includes(opCode)) {
-    if (UnaryOpCodeArray.includes(opCode)) {
-      expectArity(1);
-    } else if (BinaryOpCodeArray.includes(opCode)) {
+  if (isOpCode(opCode)) {
+    if (isBinary(opCode)) {
       const allowNary = [
         "add",
         "mul",
@@ -157,6 +155,7 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
       expectArity(2, allowNary ? Infinity : 2);
       return composedPolygolfOp(opCode, args);
     }
+    expectArity(arity(opCode));
     return polygolfOp(opCode, ...args);
   }
   throw new PolygolfError(
@@ -168,26 +167,24 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
 export const canonicalOpTable: Record<string, OpCode> = {
   "+": "add",
   // neg, sub handled as special case in canonicalOp
-  "-": "",
   "*": "mul",
   "^": "exp",
   "&": "bit_and",
   "|": "bit_or",
   // bitxor, bitnot handled as special case in canonicalOp
-  "~": "",
   "==": "eq",
   "!=": "neq",
   "<=": "leq",
   "<": "lt",
   ">=": "geq",
   ">": "gt",
-  "<-": "assign",
   "#": "list_length",
   "..": "text_concat",
-  "=>": "key_value",
 };
 
 function canonicalOp(op: string, arity: number): string {
+  if (op === "<-") return "assign";
+  if (op === "=>") return "key_value";
   if (op === "-") return arity < 2 ? "neg" : "sub";
   if (op === "~") return arity < 2 ? "bit_not" : "bit_xor";
   return canonicalOpTable[op] ?? op;
