@@ -157,67 +157,49 @@ export function toString(a: ValueType): string {
 }
 
 export function union(a: ValueType, b: ValueType): ValueType {
-  if (a.type !== b.type) {
-    throw new Error(`Cannot model union of ${toString(a)} and ${toString(b)}.`);
-  }
   try {
-    switch (a.type) {
-      case "List": {
-        if (a.member.type === "void") return b;
-        if ((b as any).member.type === "void") return a;
-        return listType(union(a.member, (b as any).member as ValueType));
-      }
-      case "Array":
-        if (a.length !== (b as any).length)
-          throw new Error(
-            `Cannot model union of ${toString(a)} and ${toString(b)}.`
-          );
-        return arrayType(
-          union(a.member, (b as any).member as ValueType),
-          a.length
-        );
-      case "Set":
-        if (a.member.type === "void") return b;
-        if ((b as any).member.type === "void") return a;
-        return setType(union(a.member, (b as any).member as ValueType));
-      case "KeyValue":
-        return keyValueType(
-          union(a.key, (b as any).key as ValueType) as any,
-          union(a.value, (b as any).value as ValueType)
-        );
-      case "Table":
-        if (a.value.type === "void") return b;
-        if ((b as any).value.type === "void") return a;
-        return tableType(
-          union(a.key, (b as any).key as ValueType) as any,
-          union(a.value, (b as any).value as ValueType)
-        );
-      case "integer":
-        return b.type === "integer"
-          ? integerType(
-              a.low === undefined || b.low === undefined
-                ? undefined
-                : a.low < b.low
-                ? a.low
-                : b.low,
-              a.high === undefined || b.high === undefined
-                ? undefined
-                : a.high < b.high
-                ? b.high
-                : a.high
-            )
-          : integerType();
-      case "text": {
-        const t2 = b as TextType;
-        return textType(
-          a.capacity === undefined || t2.capacity === undefined
-            ? undefined
-            : Math.max(a.capacity, t2.capacity)
-        );
-      }
-      default:
-        return a;
+    if (a.type === "List" && b.type === "List") {
+      if (a.member.type === "void") return b;
+      if (b.member.type === "void") return a;
+      return listType(union(a.member, b.member as ValueType));
+    } else if (a.type === "Array" && b.type === "Array") {
+      if (a.length === b.length)
+        return arrayType(union(a.member, b.member), a.length);
+    } else if (a.type === "Set" && b.type === "Set") {
+      if (a.member.type === "void") return b;
+      if (b.member.type === "void") return a;
+      return setType(union(a.member, b.member));
+    } else if (a.type === "KeyValue" && b.type === "KeyValue") {
+      return keyValueType(union(a.key, b.key) as any, union(a.value, b.value));
+    } else if (a.type === "Table" && b.type === "Table") {
+      if (a.value.type === "void") return b;
+      if (b.value.type === "void") return a;
+      return tableType(union(a.key, b.key) as any, union(a.value, b.value));
+    } else if (a.type === "integer" && b.type === "integer") {
+      return b.type === "integer"
+        ? integerType(
+            a.low === undefined || b.low === undefined
+              ? undefined
+              : a.low < b.low
+              ? a.low
+              : b.low,
+            a.high === undefined || b.high === undefined
+              ? undefined
+              : a.high < b.high
+              ? b.high
+              : a.high
+          )
+        : integerType();
+    } else if (a.type === "text" && b.type === "text") {
+      return textType(
+        a.capacity === undefined || b.capacity === undefined
+          ? undefined
+          : Math.max(a.capacity, b.capacity)
+      );
+    } else if (a.type === b.type) {
+      return a;
     }
+    throw new Error(`Cannot model union of ${toString(a)} and ${toString(b)}.`);
   } catch (e) {
     throw new Error(
       `Cannot model union of ${toString(a)} and ${toString(b)}.\n${
@@ -229,36 +211,31 @@ export function union(a: ValueType, b: ValueType): ValueType {
 
 /** Determines if `a` is a subtype of `b`. */
 export function isSubtype(a: ValueType, b: ValueType): boolean {
-  if (a.type !== b.type) {
-    return false;
+  if (
+    (a.type === "Set" && b.type === "Set") ||
+    (a.type === "List" && b.type === "List")
+  ) {
+    return a.member.type === "void" || isSubtype(a.member, b.member);
   }
-  switch (a.type) {
-    case "Set":
-    case "List":
-      return a.member.type === "void" || isSubtype(a.member, (b as any).member);
-    case "Array":
-      return (
-        a.length === (b as any).length && isSubtype(a.member, (b as any).member)
-      );
-    case "KeyValue":
-      return false;
-    case "Table":
-      return (
-        isSubtype(a.key, (b as any).key) && isSubtype(a.value, (b as any).value)
-      );
-    case "integer":
-      return (
-        b.type === "integer" &&
-        (b.low === undefined || (a.low !== undefined && a.low >= b.low)) &&
-        (b.high === undefined || (a.high !== undefined && b.high >= a.high))
-      );
-    case "text":
-      return (
-        b.type === "text" &&
-        (b.capacity === undefined ||
-          (a.capacity !== undefined && a.capacity <= b.capacity))
-      );
-    default:
-      return true;
+  if (a.type === "Array" && b.type === "Array") {
+    return a.length === b.length && isSubtype(a.member, b.member);
   }
+  if (a.type === "KeyValue" && b.type === "KeyValue") return false;
+  if (a.type === "Table" && b.type === "Table") {
+    return isSubtype(a.key, b.key) && isSubtype(a.value, b.value);
+  }
+  if (a.type === "integer" && b.type === "integer") {
+    return (
+      (b.low === undefined || (a.low !== undefined && a.low >= b.low)) &&
+      (b.high === undefined || (a.high !== undefined && b.high >= a.high))
+    );
+  }
+  if (a.type === "text" && b.type === "text") {
+    return (
+      b.type === "text" &&
+      (b.capacity === undefined ||
+        (a.capacity !== undefined && a.capacity <= b.capacity))
+    );
+  }
+  return a.type === b.type;
 }
