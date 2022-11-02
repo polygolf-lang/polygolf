@@ -31,6 +31,10 @@ import {
   textType,
   booleanType,
   Node,
+  keyValue,
+  setConstructor,
+  tableConstructor,
+  KeyValue,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -63,6 +67,15 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
   }
   function assertExprs(e: (Expr | Block)[]): asserts e is Expr[] {
     e.forEach(assertExpr);
+  }
+  function assertKeyValues(e: Expr[]): asserts e is KeyValue[] {
+    for (const x of e) {
+      if (x.type !== "KeyValue")
+        throw new PolygolfError(
+          `Syntax error. Application ${opCode} requires list of key-value pairs as argument`,
+          x.source
+        );
+    }
   }
   function assertBlock(e: Expr | Block): asserts e is Block {
     if (e.type !== "Block")
@@ -111,12 +124,23 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
     return functionCall(args, callee);
   }
   switch (opCode) {
+    case "key_value":
+      expectArity(2);
+      return keyValue(args[0], args[1]);
     case "assign":
       expectArity(2);
       assertIdentifier(args[0]);
       return assignment(args[0], args[1]);
     case "list":
       return listConstructor(args);
+    case "array":
+      expectArity(1, Infinity);
+      return listConstructor(args);
+    case "set":
+      return setConstructor(args);
+    case "table":
+      assertKeyValues(args);
+      return tableConstructor(args);
   }
   if (OpCodeArray.includes(opCode)) {
     if (UnaryOpCodeArray.includes(opCode)) {
@@ -130,7 +154,7 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
         "bit_xor",
         "text_concat",
       ].includes(opCode);
-      expectArity(2, allowNary ? 99 : 2);
+      expectArity(2, allowNary ? Infinity : 2);
       return composedPolygolfOp(opCode, args);
     }
     return polygolfOp(opCode, ...args);
@@ -158,8 +182,9 @@ export const canonicalOpTable: Record<string, OpCode> = {
   ">=": "geq",
   ">": "gt",
   "<-": "assign",
-  "#": "cardinality",
+  "#": "list_length",
   "..": "text_concat",
+  "=>": "key_value",
 };
 
 function canonicalOp(op: string, arity: number): string {

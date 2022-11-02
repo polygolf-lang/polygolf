@@ -7,7 +7,12 @@ import {
   OneToManyAssignment,
   VarDeclarationWithAssignment,
 } from "./assignments";
-import { ArrayConstructor, ListConstructor } from "./collections";
+import {
+  ArrayConstructor,
+  ListConstructor,
+  TableConstructor,
+  SetConstructor,
+} from "./collections";
 import {
   PolygolfOp,
   BinaryOp,
@@ -17,6 +22,7 @@ import {
   MutatingBinaryOp,
   UnaryOp,
   IndexCall,
+  KeyValue,
 } from "./exprs";
 import {
   ForRange,
@@ -62,6 +68,7 @@ export type Node = Program | Block | Expr;
 
 export type Expr =
   | Variants
+  | KeyValue
   | PolygolfOp
   | VarDeclaration
   | VarDeclarationWithAssignment
@@ -76,6 +83,8 @@ export type Expr =
   | IntegerLiteral
   | ArrayConstructor
   | ListConstructor
+  | SetConstructor
+  | TableConstructor
   | MutatingBinaryOp
   | ConditionalOp
   | ManyToManyAssignment

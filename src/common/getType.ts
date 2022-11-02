@@ -22,6 +22,10 @@ import {
   booleanType,
   OpCode,
   SourcePointer,
+  setType,
+  tableType,
+  KeyValueType,
+  keyValueType,
 } from "../IR";
 import { PolygolfError } from "./errors";
 
@@ -112,6 +116,38 @@ export function calcType(expr: Expr, program: Program): ValueType {
       return expr.exprs.length > 0
         ? listType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
         : listType("void");
+    case "SetConstructor":
+      return expr.exprs.length > 0
+        ? setType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+        : setType("void");
+    case "KeyValue": {
+      const k = type(expr.key);
+      const v = type(expr.value);
+      if (k.type === "integer" || k.type === "text") return keyValueType(k, v);
+      throw new PolygolfError(
+        `Type error. Operator 'key_value' error. Expected [-oo..oo | Text, T1] but got [${toString(
+          k
+        )}, ${toString(v)}].`,
+        expr.source
+      );
+    }
+    case "TableConstructor": {
+      const types = expr.kvPairs.map(type);
+      if (types.every((x) => x.type === "KeyValue")) {
+        const kvTypes = types as KeyValueType[];
+        const kTypes = kvTypes.map((x) => x.key);
+        const vTypes = kvTypes.map((x) => x.value);
+        return expr.kvPairs.length > 0
+          ? tableType(
+              kTypes.reduce((a, b) => union(a, b) as any),
+              vTypes.reduce((a, b) => union(a, b))
+            )
+          : tableType(integerType(), "void");
+      }
+      throw new Error(
+        "Programming error. Type of KeyValue nodes should always be KeyValue."
+      );
+    }
     case "ConditionalOp":
       return union(type(expr.consequent), type(expr.alternate));
     case "ManyToManyAssignment":

@@ -15,6 +15,12 @@ import {
  * This node should never enter the emit phase.
  */
 
+export interface KeyValue extends BaseExpr {
+  type: "KeyValue";
+  key: Expr;
+  value: Expr;
+}
+
 export interface PolygolfOp extends BaseExpr {
   type: "PolygolfOp";
   op: OpCode;
@@ -88,6 +94,14 @@ export interface ConditionalOp extends BaseExpr {
   condition: Expr;
   consequent: Expr;
   alternate: Expr;
+}
+
+export function keyValue(key: Expr, value: Expr): KeyValue {
+  return {
+    type: "KeyValue",
+    key,
+    value,
+  };
 }
 
 export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {

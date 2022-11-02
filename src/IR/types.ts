@@ -10,6 +10,11 @@ export interface TextType {
   type: "text";
   capacity?: number;
 }
+export interface KeyValueType {
+  type: "KeyValue";
+  key: IntegerType | TextType;
+  value: ValueType;
+}
 export type ValueType =
   | IntegerType
   | TextType
@@ -17,11 +22,24 @@ export type ValueType =
   | { type: "boolean" }
   | { type: "List"; member: ValueType }
   | { type: "Table"; key: IntegerType | TextType; value: ValueType }
+  | KeyValueType
   | { type: "Array"; member: ValueType; length: number }
   | { type: "Set"; member: ValueType };
 
 export const booleanType: ValueType = { type: "boolean" };
 export const voidType: ValueType = { type: "void" };
+
+export function keyValueType(
+  key: IntegerType | TextType,
+  value: ValueType | "void" | "boolean"
+): ValueType {
+  return {
+    type: "KeyValue",
+    key,
+    value:
+      value === "boolean" ? booleanType : value === "void" ? voidType : value,
+  };
+}
 
 export function tableType(
   key: IntegerType | TextType,
@@ -123,6 +141,8 @@ export function toString(a: ValueType): string {
       return `(Set ${toString(a.member)})`;
     case "Table":
       return `(Table ${toString(a.key)} ${toString(a.value)})`;
+    case "KeyValue":
+      return `(KeyValue ${toString(a.key)} ${toString(a.value)})`;
     case "void":
       return "Void";
     case "text":
@@ -157,8 +177,17 @@ export function union(a: ValueType, b: ValueType): ValueType {
           a.length
         );
       case "Set":
+        if (a.member.type === "void") return b;
+        if ((b as any).member.type === "void") return a;
         return setType(union(a.member, (b as any).member as ValueType));
+      case "KeyValue":
+        return keyValueType(
+          union(a.key, (b as any).key as ValueType) as any,
+          union(a.value, (b as any).value as ValueType)
+        );
       case "Table":
+        if (a.value.type === "void") return b;
+        if ((b as any).value.type === "void") return a;
         return tableType(
           union(a.key, (b as any).key as ValueType) as any,
           union(a.value, (b as any).value as ValueType)
@@ -211,6 +240,8 @@ export function isSubtype(a: ValueType, b: ValueType): boolean {
       return (
         a.length === (b as any).length && isSubtype(a.member, (b as any).member)
       );
+    case "KeyValue":
+      return false;
     case "Table":
       return (
         isSubtype(a.key, (b as any).key) && isSubtype(a.value, (b as any).value)
