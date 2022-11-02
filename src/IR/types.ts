@@ -142,8 +142,11 @@ export function union(a: ValueType, b: ValueType): ValueType {
   }
   try {
     switch (a.type) {
-      case "List":
+      case "List": {
+        if (a.member.type === "void") return b;
+        if ((b as any).member.type === "void") return a;
         return listType(union(a.member, (b as any).member as ValueType));
+      }
       case "Array":
         if (a.length !== (b as any).length)
           throw new Error(
@@ -203,7 +206,7 @@ export function isSubtype(a: ValueType, b: ValueType): boolean {
   switch (a.type) {
     case "Set":
     case "List":
-      return isSubtype(a.member, (b as any).member);
+      return a.member.type === "void" || isSubtype(a.member, (b as any).member);
     case "Array":
       return (
         a.length === (b as any).length && isSubtype(a.member, (b as any).member)

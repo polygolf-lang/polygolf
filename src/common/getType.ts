@@ -109,7 +109,9 @@ export function calcType(expr: Expr, program: Program): ValueType {
         expr.exprs.length
       );
     case "ListConstructor":
-      return listType(expr.exprs.map(type).reduce((a, b) => union(a, b)));
+      return expr.exprs.length > 0
+        ? listType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+        : listType("void");
     case "ConditionalOp":
       return union(type(expr.consequent), type(expr.alternate));
     case "ManyToManyAssignment":
