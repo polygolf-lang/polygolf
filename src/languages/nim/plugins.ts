@@ -143,6 +143,9 @@ export const useUFCS = {
   exit(path: Path) {
     const node = path.node;
     if (node.type === "FunctionCall" && node.args.length > 0) {
+      if (node.args.length === 1 && node.args[0].type === "StringLiteral") {
+        return;
+      }
       const [obj, ...args] = node.args;
       if (obj.type !== "BinaryOp" && obj.type !== "UnaryOp") {
         path.replaceWith(
