@@ -135,6 +135,8 @@ export function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
     case "mul":
     case "div":
     case "mod":
+    case "truncdiv":
+    case "rem":
       return 110;
     case "add":
     case "sub":
