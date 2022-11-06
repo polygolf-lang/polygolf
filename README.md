@@ -146,7 +146,7 @@ All of the Polygolf operators can be called using their name. In addition, sever
 | geq           | >=    |
 | gt            | >     |
 | assign        | <-    |
-| text_length   | #     |
+| list_length   | #     |
 | str_concat    | ..    |
 | key_value     | =>    |
 
