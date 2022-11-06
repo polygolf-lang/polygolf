@@ -87,6 +87,11 @@ describe("Applications", () => {
 
 describe("Parentheses", () => {
   testpolygolfOp("text_length", [stringLiteral("abc")], `("abc"):len()`);
+  testpolygolfOp(
+    "text_length",
+    [polygolfOp("array_get", id("a"), id("i"))],
+    `a[i+1]:len()`
+  );
 });
 
 // TODO: Loops and some more tests
