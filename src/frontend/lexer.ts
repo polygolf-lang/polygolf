@@ -3,13 +3,16 @@ import moo from "moo";
 const tokenTable = {
   integer: /-?[0-9]+/,
   string: /"(?:\\.|[^"])*"/,
-  variable: /\$\w*/,
+  variable: /\$\w+/,
   type: ["Void", "Text", "Bool", "List", "Table", "Array", "Set"],
+  argv_get: "argv_get",
   nullary: ["argv", "true", "false"],
   ninf: ["-oo", "-∞"],
   pinf: ["oo", "∞"],
   variant: "/",
-  opalias: "<- + - * ^ & | ~ == != <= < >= > # mod rem div truncdiv".split(" "),
+  opalias: "<- + - * ^ & | ~ == != <= < >= > => # mod rem div trunc_div".split(
+    " "
+  ),
   builtin: /\w+/,
   lparen: "(",
   rparen: ")",

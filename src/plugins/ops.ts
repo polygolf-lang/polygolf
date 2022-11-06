@@ -3,15 +3,15 @@ import { OpTransformOutput } from "../common/Language";
 import {
   assignment,
   binaryOp,
-  BinaryOpCodeArray,
   Expr,
   IndexCall,
   indexCall,
   int,
+  isBinary,
+  isUnary,
   OpCode,
   polygolfOp,
   unaryOp,
-  UnaryOpCodeArray,
 } from "../IR";
 import { getType } from "../common/getType";
 
@@ -28,10 +28,9 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
         }
         if (typeof f === "string") {
           let replacement: Expr;
-          if (BinaryOpCodeArray.includes(op))
+          if (isBinary(op))
             replacement = binaryOp(op, node.args[0], node.args[1], f);
-          else if (UnaryOpCodeArray.includes(op))
-            replacement = unaryOp(op, node.args[0], f);
+          else if (isUnary(op)) replacement = unaryOp(op, node.args[0], f);
           else
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
@@ -40,16 +39,16 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
           path.replaceWith(replacement);
         } else if (Array.isArray(f)) {
           let replacement: Expr;
-          if (BinaryOpCodeArray.includes(op)) {
+          if (isBinary(op)) {
             replacement = binaryOp(
               op,
               node.args[0],
               node.args[1],
               f[0],
               f[1],
-              f[2] ?? (op === "exp" || op === "str_concat")
+              f[2] ?? (op === "pow" || op === "text_concat")
             );
-          } else if (UnaryOpCodeArray.includes(op)) {
+          } else if (isUnary(op)) {
             replacement = unaryOp(op, node.args[0], f[0], f[1]);
           } else
             throw new Error(

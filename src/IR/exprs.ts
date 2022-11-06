@@ -15,6 +15,12 @@ import {
  * This node should never enter the emit phase.
  */
 
+export interface KeyValue extends BaseExpr {
+  type: "KeyValue";
+  key: Expr;
+  value: Expr;
+}
+
 export interface PolygolfOp extends BaseExpr {
   type: "PolygolfOp";
   op: OpCode;
@@ -90,6 +96,14 @@ export interface ConditionalOp extends BaseExpr {
   alternate: Expr;
 }
 
+export function keyValue(key: Expr, value: Expr): KeyValue {
+  return {
+    type: "KeyValue",
+    key,
+    value,
+  };
+}
+
 export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
   return {
     type: "PolygolfOp",
@@ -156,7 +170,8 @@ export function binaryOp(
     right,
     name,
     precedence: precedence ?? getDefaultPrecedence(op),
-    rightAssociative: rightAssociative ?? (op === "exp" || op === "str_concat"),
+    rightAssociative:
+      rightAssociative ?? (op === "pow" || op === "text_concat"),
   };
 }
 

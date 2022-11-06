@@ -34,7 +34,7 @@ export const divToTruncdiv: Visitor = {
       if (rightType.type !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (rightType.low !== undefined && rightType.low >= 0n) {
-        node.op = "truncdiv";
+        node.op = "trunc_div";
       } else {
         throw new Error("Not implemented.");
       }

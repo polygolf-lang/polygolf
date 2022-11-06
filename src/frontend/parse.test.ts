@@ -3,7 +3,6 @@ import {
   Expr,
   id,
   int,
-  Statement,
   stringLiteral,
   print,
   listConstructor,
@@ -15,9 +14,11 @@ import {
   integerType,
   variants,
   annotate,
-  simpleType,
   listType,
   arrayType,
+  Node,
+  textType,
+  booleanType,
 } from "../IR";
 import parse from "./parse";
 
@@ -26,18 +27,22 @@ function stringify(x: any): string {
   return JSON.stringify(
     x,
     (key, value) =>
-      typeof value === "bigint" ? value.toString() + "n" : value,
+      key === "source"
+        ? undefined
+        : typeof value === "bigint"
+        ? value.toString() + "n"
+        : value,
     2
   );
 }
 
-function testBlockParse(desc: string, str: string, output: Statement[]) {
+function testBlockParse(desc: string, str: string, output: Node[]) {
   test(desc, () => {
     expect(stringify(parse(str).block.children)).toEqual(stringify(output));
   });
 }
 
-function testStmtParse(desc: string, str: string, output: Statement) {
+function testStmtParse(desc: string, str: string, output: Node) {
   testBlockParse(desc, str, [output]);
 }
 
@@ -104,18 +109,18 @@ describe("Parse s-expressions", () => {
     "..",
     "(.. $x $y $z)",
     polygolfOp(
-      "str_concat",
-      polygolfOp("str_concat", id("x"), id("y")),
+      "text_concat",
+      polygolfOp("text_concat", id("x"), id("y")),
       id("z")
     )
   );
   expectExprParse("- as neg", "(- $x)", polygolfOp("neg", id("x")));
   expectExprParse("- as sub", "(- $x $y)", polygolfOp("sub", id("x"), id("y")));
-  expectExprParse("~ as bitnot", "(~ $x)", polygolfOp("bitnot", id("x")));
+  expectExprParse("~ as bitnot", "(~ $x)", polygolfOp("bit_not", id("x")));
   expectExprParse(
     "~ as bitxor",
     "(~ $x $y)",
-    polygolfOp("bitxor", id("x"), id("y"))
+    polygolfOp("bit_xor", id("x"), id("y"))
   );
 });
 
@@ -135,22 +140,27 @@ describe("Parse annotations", () => {
     "$a:-10..10",
     annotate(id("a"), integerType(-10, 10))
   );
-  expectExprParse("text", "$a:Text", annotate(id("a"), simpleType("string")));
-  expectExprParse("bool", "$a:Bool", annotate(id("a"), simpleType("boolean")));
+  expectExprParse("bool", "$a:Bool", annotate(id("a"), booleanType));
+  expectExprParse("text", "$a:Text", annotate(id("a"), textType()));
+  expectExprParse(
+    "text of max 120 length",
+    "$a:(Text 120)",
+    annotate(id("a"), textType(120))
+  );
   expectExprParse(
     "array of 5 strings",
     "$a:(Array Text 5)",
-    annotate(id("a"), arrayType("string", 5))
+    annotate(id("a"), arrayType(textType(), 5))
   );
   expectExprParse(
     "list of strings",
     "$a:(List Text)",
-    annotate(id("a"), listType("string"))
+    annotate(id("a"), listType(textType()))
   );
   expectExprParse(
     "list of lists of strings",
     "$a:(List (List Text))",
-    annotate(id("a"), listType(listType("string")))
+    annotate(id("a"), listType(listType(textType())))
   );
   expectExprParse(
     "list of ints",
@@ -172,13 +182,7 @@ describe("Parse statements", () => {
   testStmtParse(
     "forRange",
     "for $x 1 20 1 [ println $x; ];",
-    forRange(
-      id("x"),
-      annotate(int(1n), integerType(1, 1)),
-      annotate(int(20n), integerType(20, 20)),
-      annotate(int(1n), integerType(1, 1)),
-      block([print(id("x"), true)])
-    )
+    forRange(id("x"), int(1n), int(20n), int(1n), block([print(id("x"), true)]))
   );
 });
 
@@ -199,5 +203,10 @@ describe("Parse variants", () => {
       block([print(id("x"), false), print(stringLiteral("\n"), false)]),
       block([print(id("x"), false), print(stringLiteral("\n"), false)]),
     ])
+  );
+  testStmtParse(
+    "Expression variants",
+    `println { 0 / 1 };`,
+    print(variants([block([int(0n)]), block([int(1n)])]), true)
   );
 });

@@ -4,13 +4,13 @@ export const BinaryOpCodeArray = [
   "sub",
   "mul",
   "div",
-  "truncdiv",
-  "exp",
+  "trunc_div",
+  "pow",
   "mod",
   "rem",
-  "bitand",
-  "bitor",
-  "bitxor",
+  "bit_and",
+  "bit_or",
+  "bit_xor",
   "gcd",
   "min",
   "max",
@@ -25,50 +25,50 @@ export const BinaryOpCodeArray = [
   "or",
   "and",
   // membership
-  "inarray",
-  "inlist",
-  "inmap",
-  "inset",
+  "array_contains",
+  "list_contains",
+  "table_contains_key",
+  "set_contains",
   // collection get
   "array_get",
   "list_get",
   "table_get",
-  "str_get_byte",
-  "argv_get",
+  "text_get_byte",
   // other
   "list_push",
-  "str_concat",
+  "text_concat",
   "repeat",
-  "is_substr",
-  "str_find",
-  "str_split",
-  "str_get_char",
+  "text_contains",
+  "text_find",
+  "text_split",
+  "text_get_char",
   "join_using",
   "right_align",
   "int_to_bin_aligned",
   "int_to_hex_aligned",
   "simplify_fraction",
-];
+] as const;
 export type BinaryOpCode = typeof BinaryOpCodeArray[number];
 
 export const UnaryOpCodeArray = [
+  "argv_get",
   "abs",
-  "bitnot",
+  "bit_not",
   "neg",
   "not",
-  "int_to_str",
+  "int_to_text",
   "int_to_bin",
   "int_to_hex",
-  "str_to_int",
+  "text_to_int",
   "bool_to_int",
   "byte_to_char",
-  "cardinality",
-  "str_length",
-  "str_split_whitespace",
+  "list_length",
+  "text_length",
+  "text_split_whitespace",
   "sorted",
   "join",
-  "str_reversed",
-];
+  "text_reversed",
+] as const;
 export type UnaryOpCode = typeof UnaryOpCodeArray[number];
 
 export const OpCodeArray = [
@@ -79,15 +79,44 @@ export const OpCodeArray = [
   "argv",
   "print",
   "println",
-  "str_replace",
-  "str_substr",
+  "text_replace",
+  "text_get_slice",
   // collection set
   "array_set",
   "list_set",
   "table_set",
-];
+] as const;
 
 export type OpCode = typeof OpCodeArray[number];
+
+export function isOpCode(op: string): op is OpCode {
+  return OpCodeArray.includes(op as any);
+}
+export function isUnary(op: OpCode): op is UnaryOpCode {
+  return UnaryOpCodeArray.includes(op as any);
+}
+export function isBinary(op: OpCode): op is BinaryOpCode {
+  return BinaryOpCodeArray.includes(op as any);
+}
+export function arity(op: OpCode): number {
+  if (isUnary(op)) return 1;
+  if (isBinary(op)) return 2;
+  switch (op) {
+    case "true":
+    case "false":
+    case "argv":
+      return 0;
+    case "print":
+    case "println":
+      return 1;
+    case "text_replace":
+    case "text_get_slice":
+    case "array_set":
+    case "list_set":
+    case "table_set":
+      return 3;
+  }
+}
 
 export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
@@ -95,9 +124,9 @@ export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
     case "mul":
     case "eq":
     case "neq":
-    case "bitand":
-    case "bitor":
-    case "bitxor":
+    case "bit_and":
+    case "bit_or":
+    case "bit_xor":
       return op;
     case "lt":
       return "gt";
@@ -127,7 +156,7 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
 
 export function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
   switch (op) {
-    case "exp":
+    case "pow":
       return 130;
     case "neg":
       return 120;
@@ -135,19 +164,19 @@ export function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
     case "mul":
     case "div":
     case "mod":
-    case "truncdiv":
+    case "trunc_div":
     case "rem":
       return 110;
     case "add":
     case "sub":
       return 100;
-    case "bitand":
+    case "bit_and":
       return 80;
-    case "bitxor":
+    case "bit_xor":
       return 70;
-    case "bitor":
+    case "bit_or":
       return 60;
-    case "str_concat":
+    case "text_concat":
       return 50;
     case "lt":
     case "gt":
@@ -155,10 +184,10 @@ export function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
     case "geq":
     case "eq":
     case "neq":
-    case "inarray":
-    case "inset":
-    case "inlist":
-    case "inmap":
+    case "array_contains":
+    case "set_contains":
+    case "list_contains":
+    case "table_contains_key":
       return 40;
     case "not":
       return 30;
