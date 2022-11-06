@@ -29,6 +29,10 @@ export type ValueType =
 export const booleanType: ValueType = { type: "boolean" };
 export const voidType: ValueType = { type: "void" };
 
+function valueType(type: ValueType | "void" | "boolean"): ValueType {
+  return type === "boolean" ? booleanType : type === "void" ? voidType : type;
+}
+
 export function keyValueType(
   key: IntegerType | TextType,
   value: ValueType | "void" | "boolean"
@@ -36,8 +40,7 @@ export function keyValueType(
   return {
     type: "KeyValue",
     key,
-    value:
-      value === "boolean" ? booleanType : value === "void" ? voidType : value,
+    value: valueType(value),
   };
 }
 
@@ -48,32 +51,21 @@ export function tableType(
   return {
     type: "Table",
     key,
-    value:
-      value === "boolean" ? booleanType : value === "void" ? voidType : value,
+    value: valueType(value),
   };
 }
 
 export function setType(member: ValueType | "void" | "boolean"): ValueType {
   return {
     type: "Set",
-    member:
-      member === "boolean"
-        ? booleanType
-        : member === "void"
-        ? voidType
-        : member,
+    member: valueType(member),
   };
 }
 
 export function listType(member: ValueType | "void" | "boolean"): ValueType {
   return {
     type: "List",
-    member:
-      member === "boolean"
-        ? booleanType
-        : member === "void"
-        ? voidType
-        : member,
+    member: valueType(member),
   };
 }
 
@@ -83,12 +75,7 @@ export function arrayType(
 ): ValueType {
   return {
     type: "Array",
-    member:
-      member === "boolean"
-        ? booleanType
-        : member === "void"
-        ? voidType
-        : member,
+    member: valueType(member),
     length,
   };
 }
