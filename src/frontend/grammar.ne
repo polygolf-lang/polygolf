@@ -28,7 +28,7 @@ variant ->
   (sexpr_stmt | variants):* {% d => refSource(blockOrSingle(d[0].map(id)), d[0].length > 0 ? d[0][0] : undefined) %}
   | expr {% d => refSource(d[0], d[0]) %}
           
-variants -> "{" (variant "/"):+ variant "}" {%
+variants -> "{" (variant "/"):* variant "}" {%
     ([start, vars, var2, ]) => refSource(variants([...vars.map(id), var2]), start)
   %}
 
