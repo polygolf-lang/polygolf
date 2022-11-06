@@ -468,9 +468,12 @@ function getOpCodeType(
       return textType(
         t.capacity === undefined && i2.high === undefined
           ? undefined
-          : t.capacity === undefined
-          ? Number(i2.high! - i1.low!)
-          : t.capacity - Number(i1.low!)
+          : Math.max(
+              0,
+              t.capacity === undefined
+                ? Number(i2.high! - (i1.low ?? 0n))
+                : t.capacity - Number(i1.low ?? 0)
+            )
       );
     }
     case "array_set":
