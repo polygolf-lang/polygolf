@@ -130,29 +130,29 @@ All other expressions are Polygolf operators. Most of them return values, but so
 [Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).  
 All of the Polygolf operators can be called using their name. In addition, several common ops are given symbolic aliases:
 
-| Op name       | alias |
-| ------------- | ----- |
-| add           | +     |
-| sub/neg       | -     |
-| mul           | \*    |
-| pow           | ^     |
-| bitand        | &     |
-| bitor         | \|    |
-| bitxor/bitnot | ~     |
-| eq            | ==    |
-| neq           | !=    |
-| leq           | <=    |
-| lt            | <     |
-| geq           | >=    |
-| gt            | >     |
-| assign        | <-    |
-| list_length   | #     |
-| str_concat    | ..    |
-| key_value     | =>    |
+| Op name         | alias |
+| --------------- | ----- |
+| add             | +     |
+| sub/neg         | -     |
+| mul             | \*    |
+| pow             | ^     |
+| bit_and         | &     |
+| bit_or          | \|    |
+| bit_xor/bit_not | ~     |
+| eq              | ==    |
+| neq             | !=    |
+| leq             | <=    |
+| lt              | <     |
+| geq             | >=    |
+| gt              | >     |
+| assign          | <-    |
+| list_length     | #     |
+| text_concat     | ..    |
+| key_value       | =>    |
 
 Notice how `-` and `~` both correspond to two ops - this is resolved by the used arity.
 These symbolic aliases can also be used in an infix matter: `(+ 2 3)` is the same as (`2 + 3)`.
-Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`bitand`,`bitor`,`bitxor`,`str_concat`.  
+Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`bit_and`,`bit_or`,`bit_xor`,`text_concat`.  
 For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
 
 ## Example
