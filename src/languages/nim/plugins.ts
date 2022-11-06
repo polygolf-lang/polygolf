@@ -2,6 +2,7 @@ import {
   Assignment,
   block,
   Expr,
+  ImportStatement,
   importStatement,
   manyToManyAssignment,
   methodCall,
@@ -39,19 +40,18 @@ export const addImports = {
       const program: Program = path.node;
       const dependecies = [...program.dependencies];
       if (dependecies.length < 1) return;
+      let imports: ImportStatement;
       for (const include of includes) {
         if (dependecies.every((x) => include[1].includes(x))) {
-          program.block.children = [
-            importStatement("include", [include[0]]),
-            ...program.block.children,
-          ];
-          return;
+          imports = importStatement("include", [include[0]]);
+          break;
         }
       }
-      program.block.children = [
-        importStatement("import", dependecies),
-        ...program.block.children,
-      ];
+      imports ??= importStatement("import", dependecies);
+      program.body =
+        program.body.type === "Block"
+          ? block([imports, ...program.body.children])
+          : block([imports, program.body]);
     }
   },
 };

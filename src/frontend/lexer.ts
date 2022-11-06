@@ -16,8 +16,6 @@ const tokenTable = {
   builtin: /\w+/,
   lparen: "(",
   rparen: ")",
-  lbracket: "[",
-  rbracket: "]",
   lbrace: "{",
   rbrace: "}",
   colon: ":",

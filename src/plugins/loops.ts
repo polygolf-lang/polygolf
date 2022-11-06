@@ -3,7 +3,6 @@ import { Path } from "../common/traverse";
 import {
   forRange,
   int,
-  varDeclaration,
   assignment,
   whileLoop,
   forCLike,
@@ -12,7 +11,6 @@ import {
   forEach,
   id,
   IR,
-  integerType,
   polygolfOp,
 } from "../IR";
 
@@ -72,28 +70,21 @@ export const forRangeToWhile = {
       if (low.type !== "integer" || high.type !== "integer") {
         throw new Error(`Unexpected type (${low.type},${high.type})`);
       }
-      node.body.children.push(
-        assignment(
-          node.variable,
-          polygolfOp("add", node.variable, node.increment)
-        )
+      const increment = assignment(
+        node.variable,
+        polygolfOp("add", node.variable, node.increment)
       );
-      path.replaceWithMultiple([
-        varDeclaration(
-          node.variable,
-          integerType(
-            low.low,
-            high.high === undefined
-              ? undefined
-              : high.high - (node.inclusive ? 0n : -1n)
-          )
-        ),
-        assignment(node.variable, node.low),
-        whileLoop(
-          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
-          node.body
-        ),
-      ]);
+      path.replaceWith(
+        block([
+          assignment(node.variable, node.low),
+          whileLoop(
+            polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+            node.body.type === "Block"
+              ? block([...node.body.children, increment])
+              : block([node.body, increment])
+          ),
+        ])
+      );
     }
   },
 };
@@ -109,18 +100,7 @@ export const forRangeToForCLike = {
       }
       path.replaceWith(
         forCLike(
-          block([
-            varDeclaration(
-              node.variable,
-              integerType(
-                low.low,
-                high.high === undefined
-                  ? undefined
-                  : high.high - (node.inclusive ? 0n : -1n)
-              )
-            ),
-            assignment(node.variable, node.low),
-          ]),
+          assignment(node.variable, node.low),
           block([polygolfOp("add", node.variable, node.increment ?? int(1n))]),
           polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
           node.body

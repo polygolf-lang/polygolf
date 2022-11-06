@@ -3,7 +3,7 @@ import { IR, ValueType } from "../../IR";
 export default function emit(node: IR.Node): string {
   switch (node.type) {
     case "Program":
-      return emit(node.block);
+      return emit(node.body);
     case "Block":
       return (
         "{ " + node.children.map((stmt) => emit(stmt) + ";").join(" ") + " }"
@@ -42,7 +42,7 @@ export default function emit(node: IR.Node): string {
         `if ${emit(node)} \n` +
         emit(node.consequent) +
         "\nelse\n" +
-        emit(node.alternate) +
+        (node.alternate === undefined ? "" : emit(node.alternate)) +
         "\nend"
       );
     case "Variants":

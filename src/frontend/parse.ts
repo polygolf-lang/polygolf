@@ -22,7 +22,6 @@ import {
   assignment,
   OpCode,
   PolygolfOp,
-  block,
   whileLoop,
   voidType,
   textType,
@@ -77,13 +76,6 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
         );
     }
   }
-  function assertBlock(e: Expr | Block): asserts e is Block {
-    if (e.type !== "Block")
-      throw new PolygolfError(
-        `Syntax error. Application ${opCode} requires a block where you passed a non-block`,
-        e.source
-      );
-  }
   switch (opCode) {
     case "for": {
       expectArity(4, 5);
@@ -98,24 +90,20 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
       assertExpr(low);
       assertExpr(high);
       assertExpr(increment);
-      assertBlock(body);
       return forRange(variable, low, high, increment, body);
     }
     case "if": {
       expectArity(2, 3);
       const condition = args[0];
       const consequent = args[1];
-      const alternate = args[2] ?? block([]);
+      const alternate = args[2];
       assertExpr(condition);
-      assertBlock(consequent);
-      assertBlock(alternate);
       return ifStatement(condition, consequent, alternate);
     }
     case "while": {
       expectArity(2);
       const [condition, body] = args;
       assertExpr(condition);
-      assertBlock(body);
       return whileLoop(condition, body);
     }
   }
@@ -288,8 +276,10 @@ export function integerType(
   );
 }
 
-export function refSource(node: Node, token: Token): Node {
-  node.source = { line: token.line, column: token.col };
+export function refSource(node: Node, ref?: Token | Node): Node {
+  if (ref === undefined) return node;
+  if ("line" in ref) node.source = { line: ref.line, column: ref.col };
+  else node.source = ref.source;
   return node;
 }
 
@@ -297,7 +287,9 @@ export default function parse(code: string) {
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
   parser.feed(code);
   const results = parser.results;
-  if (results.length > 1) throw new Error("Ambiguous parse of code");
+  if (results.length > 1) {
+    throw new Error("Ambiguous parse of code");
+  }
   if (results.length === 0) throw new Error("Unexpected end of code");
   return results[0] as Program;
 }

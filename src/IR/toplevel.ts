@@ -1,17 +1,17 @@
-import { BaseExpr, BaseNode, Expr, id, Identifier, ValueType } from "./IR";
+import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
  */
 export interface Variants extends BaseExpr {
   type: "Variants";
-  variants: Block[];
+  variants: Expr[];
 }
 
 /**
  * A block of several statements. Raw OK
  */
-export interface Block extends BaseNode {
+export interface Block extends BaseExpr {
   type: "Block";
   children: Expr[];
 }
@@ -24,8 +24,8 @@ export interface Block extends BaseNode {
 export interface IfStatement extends BaseExpr {
   type: "IfStatement";
   condition: Expr;
-  consequent: Block;
-  alternate: Block;
+  consequent: Expr;
+  alternate?: Expr;
 }
 
 /**
@@ -47,10 +47,14 @@ export function block(children: Expr[]): Block {
   return { type: "Block", children };
 }
 
+export function blockOrSingle(children: Expr[]): Expr {
+  return children.length === 1 ? children[0] : block(children);
+}
+
 export function ifStatement(
   condition: Expr,
-  consequent: Block,
-  alternate: Block = block([])
+  consequent: Expr,
+  alternate?: Expr
 ): IfStatement {
   return { type: "IfStatement", condition, consequent, alternate };
 }
@@ -66,7 +70,7 @@ export function varDeclaration(
   };
 }
 
-export function variants(variants: Block[]): Variants {
+export function variants(variants: Expr[]): Variants {
   return { type: "Variants", variants };
 }
 
