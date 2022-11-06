@@ -1,10 +1,10 @@
 import {
   assignment,
-  BinaryOpCodeArray,
   block,
   getArgs,
   int,
   IntegerLiteral,
+  isOpCode,
   OpCode,
   polygolfOp,
   StringLiteral,
@@ -34,11 +34,11 @@ export const golfStringListLiteral: Visitor = {
               structuredClone(node.variable),
               delim === " "
                 ? polygolfOp(
-                    "str_split_whitespace",
+                    "text_split_whitespace",
                     stringLiteral(strings.join(delim))
                   )
                 : polygolfOp(
-                    "str_split",
+                    "text_split",
                     stringLiteral(strings.join(delim)),
                     stringLiteral(delim)
                   )
@@ -73,7 +73,7 @@ export const evalStaticIntegers: Visitor = {
     if (
       "op" in node &&
       node.op !== null &&
-      BinaryOpCodeArray.includes(node.op) &&
+      isOpCode(node.op) &&
       node.type !== "MutatingBinaryOp"
     ) {
       const args = getArgs(node);
@@ -98,7 +98,7 @@ function evalOp(op: OpCode, values: bigint[]): bigint {
   switch (op) {
     case "neg":
       return -a;
-    case "bitnot":
+    case "bit_not":
       return -1n - a;
   }
   const b = values[1];
@@ -111,7 +111,7 @@ function evalOp(op: OpCode, values: bigint[]): bigint {
       return a * b;
     case "div":
       return floorDiv(a, b);
-    case "truncdiv":
+    case "trunc_div":
       return a / b;
     case "mod":
       return a - b * floorDiv(a, b);
