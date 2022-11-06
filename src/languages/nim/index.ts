@@ -39,7 +39,7 @@ const nimLanguage: Language = {
       ["sub", "-"],
       ["mul", "*"],
       ["trunc_div", "div"],
-      ["exp", "^"],
+      ["pow", "^"],
       ["rem", "mod"],
       ["lt", "<"],
       ["leq", "<="],

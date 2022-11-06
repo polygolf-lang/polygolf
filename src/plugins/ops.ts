@@ -46,7 +46,7 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
               node.args[1],
               f[0],
               f[1],
-              f[2] ?? (op === "exp" || op === "text_concat")
+              f[2] ?? (op === "pow" || op === "text_concat")
             );
           } else if (isUnary(op)) {
             replacement = unaryOp(op, node.args[0], f[0], f[1]);

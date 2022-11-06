@@ -43,7 +43,7 @@ const luaLanguage: Language = {
       ["sub", "-"],
       ["mul", "*"],
       ["div", "//"],
-      ["exp", "^"],
+      ["pow", "^"],
       ["mod", "%"],
       ["bit_and", "&"],
       ["bit_or", "|"],

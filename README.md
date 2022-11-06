@@ -135,7 +135,7 @@ All of the Polygolf operators can be called using their name. In addition, sever
 | add           | +     |
 | sub/neg       | -     |
 | mul           | \*    |
-| exp           | ^     |
+| pow           | ^     |
 | bitand        | &     |
 | bitor         | \|    |
 | bitxor/bitnot | ~     |

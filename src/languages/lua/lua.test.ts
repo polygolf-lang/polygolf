@@ -69,7 +69,7 @@ describe("Applications", () => {
   testpolygolfOp("sub", ["i", "I"], "i-I");
   testpolygolfOp("mul", ["i", "I"], "i*I");
   testpolygolfOp("div", ["i", "I"], "i//I");
-  testpolygolfOp("exp", ["i", "I"], "i^I");
+  testpolygolfOp("pow", ["i", "I"], "i^I");
   testpolygolfOp("mod", ["i", "I"], "i%I");
   testpolygolfOp("bit_and", ["i", "I"], "i&I");
   testpolygolfOp("bit_or", ["i", "I"], "i|I");

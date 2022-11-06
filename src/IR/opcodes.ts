@@ -5,7 +5,7 @@ export const BinaryOpCodeArray = [
   "mul",
   "div",
   "trunc_div",
-  "exp",
+  "pow",
   "mod",
   "rem",
   "bit_and",
@@ -156,7 +156,7 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
 
 export function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
   switch (op) {
-    case "exp":
+    case "pow":
       return 130;
     case "neg":
       return 120;

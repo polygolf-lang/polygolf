@@ -289,7 +289,7 @@ function getOpCodeType(
     case "mul":
     case "div":
     case "trunc_div":
-    case "exp":
+    case "pow":
     case "mod":
     case "rem":
     case "bit_and":
@@ -547,7 +547,7 @@ function getArithmeticType(
       return getIntegerTypeMod(left, right);
     case "rem":
       return getIntegerTypeRem(left, right);
-    case "exp":
+    case "pow":
       return getIntegerTypeUsing(
         left,
         (right.low ?? 1n) < 0n ? integerType(0n, right.high) : right,

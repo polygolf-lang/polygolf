@@ -168,7 +168,7 @@ export const canonicalOpTable: Record<string, OpCode> = {
   "+": "add",
   // neg, sub handled as special case in canonicalOp
   "*": "mul",
-  "^": "exp",
+  "^": "pow",
   "&": "bit_and",
   "|": "bit_or",
   // bitxor, bitnot handled as special case in canonicalOp
