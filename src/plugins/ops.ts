@@ -3,14 +3,15 @@ import { OpTransformOutput } from "../common/Language";
 import {
   assignment,
   binaryOp,
-  BinaryOpCodeArray,
+  Expr,
   IndexCall,
   indexCall,
   int,
+  isBinary,
+  isUnary,
   OpCode,
   polygolfOp,
   unaryOp,
-  UnaryOpCodeArray,
 } from "../IR";
 import { getType } from "../common/getType";
 
@@ -26,32 +27,35 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
           return;
         }
         if (typeof f === "string") {
-          if (BinaryOpCodeArray.includes(op))
-            path.replaceWith(binaryOp(op, node.args[0], node.args[1], f));
-          else if (UnaryOpCodeArray.includes(op))
-            path.replaceWith(unaryOp(op, node.args[0], f));
+          let replacement: Expr;
+          if (isBinary(op))
+            replacement = binaryOp(op, node.args[0], node.args[1], f);
+          else if (isUnary(op)) replacement = unaryOp(op, node.args[0], f);
           else
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
             );
+          replacement.valueType = node.valueType;
+          path.replaceWith(replacement);
         } else if (Array.isArray(f)) {
-          if (BinaryOpCodeArray.includes(op))
-            path.replaceWith(
-              binaryOp(
-                op,
-                node.args[0],
-                node.args[1],
-                f[0],
-                f[1],
-                f[2] ?? (op === "exp" || op === "str_concat")
-              )
+          let replacement: Expr;
+          if (isBinary(op)) {
+            replacement = binaryOp(
+              op,
+              node.args[0],
+              node.args[1],
+              f[0],
+              f[1],
+              f[2] ?? (op === "pow" || op === "text_concat")
             );
-          else if (UnaryOpCodeArray.includes(op))
-            path.replaceWith(unaryOp(op, node.args[0], f[0], f[1]));
-          else
+          } else if (isUnary(op)) {
+            replacement = unaryOp(op, node.args[0], f[0], f[1]);
+          } else
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
             );
+          replacement.valueType = node.valueType;
+          path.replaceWith(replacement);
         } else {
           const replacement = f(node.args);
           if ("op" in replacement) replacement.op = node.op;

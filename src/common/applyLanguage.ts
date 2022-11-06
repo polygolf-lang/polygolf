@@ -1,17 +1,24 @@
-import { IR } from "../IR";
+import { IR, typesPass } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { programToPath } from "./traverse";
 import { Language, defaultDetokenizer } from "./Language";
 
-export function applyLanguage(
+export default function applyLanguage(
   language: Language,
   program: IR.Program,
-  maxBranches: number = 1000
+  maxBranches: number = 1000,
+  skipTypesPass: boolean = false
 ): string {
+  const variants = expandVariants(program);
+  if (!skipTypesPass) {
+    for (const variant of variants) {
+      typesPass(variant);
+    }
+  }
   let emittedVariants: [IR.Program, string][] = emitVariants(
     language,
     -1,
-    expandVariants(program),
+    variants,
     maxBranches
   );
   const variantsPluginsIndices = [...language.plugins.keys()].filter(
@@ -46,7 +53,9 @@ function emitVariants(
   maxBranches: number
 ): [IR.Program, string][] {
   const result: [IR.Program, string][] = [];
+  let remaining = variants.length;
   for (const variant of variants) {
+    remaining--;
     const path = programToPath(variant);
     for (let i = lastAppliedPluginIndex + 1; i < language.plugins.length; i++) {
       if (language.plugins[i].generatesVariants === true) continue;
@@ -60,13 +69,11 @@ function emitVariants(
         ),
       ]);
     } catch (e) {
-      result.push([variant, String(e)]);
+      if (remaining + result.length < 1) {
+        throw e;
+      }
     }
   }
-  result.sort(
-    (a, b) =>
-      (a[1].startsWith("Error:") ? 9999999999 : a[1].length) -
-      (b[1].startsWith("Error:") ? 9999999999 : b[1].length)
-  );
+  result.sort((a, b) => a[1].length - b[1].length);
   return result.slice(0, maxBranches);
 }

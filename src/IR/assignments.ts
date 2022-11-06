@@ -1,3 +1,4 @@
+import { PolygolfError } from "../common/errors";
 import {
   BaseExpr,
   Expr,
@@ -96,8 +97,9 @@ export function varDeclarationWithAssignment(
       : assignments.variables
     ).some((x) => x.type !== "Identifier")
   ) {
-    throw new Error(
-      "VarDeclarationWithAssignment needs assignments to variables."
+    throw new PolygolfError(
+      "VarDeclarationWithAssignment needs assignments to variables.",
+      assignments.source
     );
   }
   return {

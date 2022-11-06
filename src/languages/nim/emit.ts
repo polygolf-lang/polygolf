@@ -36,7 +36,7 @@ function emitBlock(block: IR.Block, root: boolean = false): string[] {
   );
 }
 
-function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
+function emitStatement(stmt: IR.Expr, parent: IR.Block): string[] {
   switch (stmt.type) {
     case "VarDeclarationWithAssignment":
       if (stmt.requiresBlock) {
@@ -236,12 +236,15 @@ function emitExprNoParens(
     case "IntegerLiteral":
       return [expr.value.toString()];
     case "FunctionCall":
+      if (expr.args.length === 1 && expr.args[0].type === "StringLiteral") {
+        return [expr.ident.name, "", ...emitExpr(expr.args[0], expr)];
+      }
       if (expressionContinues || expr.args.length > 1)
         return [
           expr.ident.name,
           "(",
           ...joinGroups(
-            expr.args.map((arg) => emitExpr(arg, expr, "args")),
+            expr.args.map((arg) => emitExpr(arg, expr)),
             ","
           ),
           ")",
@@ -249,14 +252,14 @@ function emitExprNoParens(
       return [
         expr.ident.name,
         ...joinGroups(
-          expr.args.map((arg) => emitExpr(arg, expr, "args")),
+          expr.args.map((arg) => emitExpr(arg, expr)),
           ","
         ),
       ];
     case "MethodCall":
       if (expressionContinues || expr.args.length > 1)
         return [
-          ...emitExpr(expr.object, expr),
+          ...emitExpr(expr.object, expr, "object"),
           ".",
           expr.ident.name,
           ...(expr.args.length > 0

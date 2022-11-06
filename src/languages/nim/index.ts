@@ -32,15 +32,15 @@ const nimLanguage: Language = {
       ],
     ]),
     mapOps([
-      ["str_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
-      ["str_length", (x) => functionCall(x, "len")],
-      ["int_to_str", "$"],
+      ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
+      ["text_length", (x) => functionCall(x, "len")],
+      ["int_to_text", "$"],
       ["repeat", (x) => functionCall(x, "repeat")],
       ["add", "+"],
       ["sub", "-"],
       ["mul", "*"],
-      ["truncdiv", "div"],
-      ["exp", "^"],
+      ["trunc_div", "div"],
+      ["pow", "^"],
       ["rem", "mod"],
       ["lt", "<"],
       ["leq", "<="],
@@ -49,10 +49,10 @@ const nimLanguage: Language = {
       ["gt", ">"],
       ["and", "and"],
       ["or", "or"],
-      ["str_concat", ["&", 150, false]],
+      ["text_concat", ["&", 150, false]],
       ["not", ["not", 150]],
       ["neg", ["-", 150]],
-      ["str_to_int", (x) => functionCall(x, "parseInt")],
+      ["text_to_int", (x) => functionCall(x, "parseInt")],
       ["print", (x) => functionCall([id("stdout"), x[0]], "write")],
       ["println", (x) => functionCall(x, "echo")],
       ["min", (x) => functionCall(x, "min")],
@@ -75,10 +75,12 @@ const nimLanguage: Language = {
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>
-      (/[A-Za-z0-9_]/.test(a[a.length - 1]) && /[A-Za-z0-9_]/.test(b[0])) ||
-      ("=+-*/<>@$~&%|!?^.:\\".includes(a[a.length - 1]) &&
-        "=+-*/<>@$~&%|!?^.:\\".includes(b[0])) ||
-      (/[A-Za-z]/.test(a[a.length - 1]) && b[0] === `"`)
+      a !== "" &&
+      b !== "" &&
+      ((/[A-Za-z0-9_]/.test(a[a.length - 1]) && /[A-Za-z0-9_]/.test(b[0])) ||
+        ("=+-*/<>@$~&%|!?^.:\\".includes(a[a.length - 1]) &&
+          "=+-*/<>@$~&%|!?^.:\\".includes(b[0])) ||
+        (/[A-Za-z]/.test(a[a.length - 1]) && b[0] === `"`))
   ),
 };
 

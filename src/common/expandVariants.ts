@@ -99,7 +99,11 @@ function instantiateProgram(
     enter(path) {
       const node = path.node;
       if (node.type === "Variants") {
-        path.replaceWithMultiple(node.variants[choices.pop()!].children);
+        if (path.parent?.node.type === "Block") {
+          path.replaceWithMultiple(node.variants[choices.pop()!].children);
+        } else {
+          path.replaceWith(node.variants[choices.pop()!].children[0]);
+        }
       }
     },
   });

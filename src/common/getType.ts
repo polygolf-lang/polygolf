@@ -3,7 +3,6 @@ import {
   Expr,
   ValueType,
   listType,
-  simpleType,
   arrayType,
   BinaryOp,
   UnaryOp,
@@ -13,8 +12,22 @@ import {
   integerTypeIncludingAll,
   IntegerType,
   PolygolfOp,
-  getArgs,
+  isSubtype,
+  union,
+  MutatingBinaryOp,
+  toString,
+  voidType,
+  textType,
+  TextType,
+  booleanType,
+  OpCode,
+  SourcePointer,
+  setType,
+  tableType,
+  KeyValueType,
+  keyValueType,
 } from "../IR";
+import { PolygolfError } from "./errors";
 
 export function getType(expr: Expr, program: Program): ValueType {
   if (expr.valueType === undefined) {
@@ -24,241 +37,536 @@ export function getType(expr: Expr, program: Program): ValueType {
 }
 
 export function calcType(expr: Expr, program: Program): ValueType {
+  const type = (e: Expr) => getType(e, program);
   switch (expr.type) {
     case "VarDeclaration":
-      return simpleType("void");
-    case "Assignment":
-      return getType(expr.expr, program);
-    case "IndexCall": {
-      const collectionType = getType(expr.collection, program);
-      switch (collectionType.type) {
-        case "Array":
-        case "List":
-          return collectionType.member;
-        case "Table":
-          return collectionType.value;
+      return voidType;
+    case "Assignment": {
+      const a = type(expr.variable);
+      const b = type(expr.expr);
+      if (isSubtype(b, a)) {
+        return b;
       }
-      throw new Error("IndexCall must be used on a collection");
+      throw new PolygolfError(
+        `Type error. Cannot assign ${toString(b)} to ${toString(a)}.`,
+        expr.source
+      );
+    }
+    case "IndexCall": {
+      const a = type(expr.collection);
+      const b = type(expr.index);
+      let expectedIndex: ValueType;
+      let result: ValueType;
+      switch (a.type) {
+        case "Array":
+          expectedIndex = expr.oneIndexed
+            ? integerType(1, a.length)
+            : integerType(0, a.length - 1);
+          result = a.member;
+          break;
+        case "List": {
+          expectedIndex = integerType(expr.oneIndexed ? 1 : 0, undefined);
+          result = a.member;
+          break;
+        }
+        case "Table": {
+          expectedIndex = a.key;
+          result = a.value;
+          break;
+        }
+        default:
+          throw new PolygolfError(
+            "Type error. IndexCall must be used on a collection.",
+            expr.source
+          );
+      }
+      if (isSubtype(b, expectedIndex)) {
+        return result;
+      }
+      throw new PolygolfError(
+        `Type error. Cannot index ${toString(a)} with ${toString(b)}.`,
+        expr.source
+      );
     }
     case "PolygolfOp":
     case "FunctionCall":
     case "MethodCall":
     case "BinaryOp":
     case "UnaryOp":
+    case "MutatingBinaryOp":
       return getOpCodeType(expr, program);
     case "Identifier":
       if (program.variables.has(expr.name)) {
         return program.variables.get(expr.name)!;
       }
-      throw new Error(`Undeclared variable ${expr.name} encountered!`);
+      throw new PolygolfError(
+        `Type error. Undeclared variable ${expr.name} encountered!`,
+        expr.source
+      );
     case "StringLiteral":
-      return simpleType("string");
+      return textType(expr.value.length);
     case "IntegerLiteral":
       return integerType(expr.value, expr.value);
     case "ArrayConstructor":
-      return arrayType(getType(expr.exprs[0], program), expr.exprs.length);
+      return arrayType(
+        expr.exprs.map(type).reduce((a, b) => union(a, b)),
+        expr.exprs.length
+      );
     case "ListConstructor":
-      return listType(getType(expr.exprs[0], program));
-    case "MutatingBinaryOp":
-      return simpleType("void");
+      return expr.exprs.length > 0
+        ? listType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+        : listType("void");
+    case "SetConstructor":
+      return expr.exprs.length > 0
+        ? setType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+        : setType("void");
+    case "KeyValue": {
+      const k = type(expr.key);
+      const v = type(expr.value);
+      if (k.type === "integer" || k.type === "text") return keyValueType(k, v);
+      throw new PolygolfError(
+        `Type error. Operator 'key_value' error. Expected [-oo..oo | Text, T1] but got [${toString(
+          k
+        )}, ${toString(v)}].`,
+        expr.source
+      );
+    }
+    case "TableConstructor": {
+      const types = expr.kvPairs.map(type);
+      if (types.every((x) => x.type === "KeyValue")) {
+        const kvTypes = types as KeyValueType[];
+        const kTypes = kvTypes.map((x) => x.key);
+        const vTypes = kvTypes.map((x) => x.value);
+        return expr.kvPairs.length > 0
+          ? tableType(
+              kTypes.reduce((a, b) => union(a, b) as any),
+              vTypes.reduce((a, b) => union(a, b))
+            )
+          : tableType(integerType(), "void");
+      }
+      throw new Error(
+        "Programming error. Type of KeyValue nodes should always be KeyValue."
+      );
+    }
     case "ConditionalOp":
-      return getType(expr.consequent, program);
+      return union(type(expr.consequent), type(expr.alternate));
     case "ManyToManyAssignment":
-      return simpleType("void");
+      return voidType;
     case "ImportStatement":
-      return simpleType("void");
+      return voidType;
     case "OneToManyAssignment":
-      return getType(expr.expr, program);
+      return type(expr.expr);
+    case "IfStatement":
+    case "ForRange":
+    case "WhileLoop":
+      return voidType;
   }
-  throw new Error(`Unexpected node ${expr.type}.`);
+  throw new PolygolfError(
+    `Type error. Unexpected node ${expr.type}.`,
+    expr.source
+  );
 }
 
-function arg0(
-  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall | PolygolfOp
-): Expr {
+function getArgs(
+  expr:
+    | BinaryOp
+    | MutatingBinaryOp
+    | UnaryOp
+    | FunctionCall
+    | MethodCall
+    | PolygolfOp
+): Expr[] {
   switch (expr.type) {
     case "BinaryOp":
-      return expr.left;
+      return [expr.left, expr.right];
     case "UnaryOp":
-      return expr.arg;
+      return [expr.arg];
     case "FunctionCall":
-      return expr.args[0];
+      return expr.args;
     case "MethodCall":
-      return expr.object;
+      return [expr.object, ...expr.args];
     case "PolygolfOp":
-      return expr.args[0];
+      return expr.args;
+    case "MutatingBinaryOp":
+      return [expr.variable, expr.right];
   }
 }
 
 function getOpCodeType(
-  expr: BinaryOp | UnaryOp | FunctionCall | MethodCall | PolygolfOp,
+  expr:
+    | BinaryOp
+    | MutatingBinaryOp
+    | UnaryOp
+    | FunctionCall
+    | MethodCall
+    | PolygolfOp,
   program: Program
 ): ValueType {
-  function arg0Type() {
-    return getType(arg0(expr), program);
+  const types = getArgs(expr).map((x) => getType(x, program));
+  function expectType(...expected: ValueType[]) {
+    if (
+      types.length !== expected.length ||
+      types.every((x, i) => !isSubtype(x, expected[i]))
+    ) {
+      throw new PolygolfError(
+        `Type error. Operator '${
+          expr.op ?? "null"
+        } type error. Expected [${expected
+          .map(toString)
+          .join(", ")}] but got [${types.map(toString).join(", ")}].`,
+        expr.source
+      );
+    }
   }
+  function expectGenericType(
+    ...expected: (
+      | "Set"
+      | "Array"
+      | "List"
+      | "Table"
+      | [string, (typeArgs: ValueType[]) => ValueType]
+    )[]
+  ): ValueType[] {
+    function _throw() {
+      let i = 1;
+      const expectedS = expected.map((e) => {
+        switch (e) {
+          case "List":
+          case "Set":
+            return `(${e} T${i++})`;
+          case "Array":
+          case "Table":
+            return `(${e} T${i++} T${i++})`;
+        }
+        return e[0];
+      });
+      throw new PolygolfError(
+        `Type error. Operator '${
+          expr.op ?? "null"
+        } type error. Expected [${expectedS.join(", ")}] but got [${types
+          .map(toString)
+          .join(", ")}].`,
+        expr.source
+      );
+    }
+    if (types.length !== expected.length) _throw();
+    const typeArgs: ValueType[] = [];
+    for (let i = 0; i < types.length; i++) {
+      const exp = expected[i];
+      const got = types[i];
+      if (typeof exp === "string") {
+        if (exp === "List" && got.type === "List") {
+          typeArgs.push(got.member);
+        } else if (exp === "Array" && got.type === "Array") {
+          typeArgs.push(got.member);
+          typeArgs.push(integerType(0, got.length - 1));
+        } else if (exp === "Set" && got.type === "Set") {
+          typeArgs.push(got.member);
+        } else if (exp === "Table" && got.type === "Table") {
+          typeArgs.push(got.key);
+          typeArgs.push(got.value);
+        } else {
+          _throw();
+        }
+      }
+    }
+    for (let i = 0; i < types.length; i++) {
+      const exp = expected[i];
+      const got = types[i];
+      if (typeof exp !== "string") {
+        const expInstantiated = exp[1](typeArgs);
+        if (!isSubtype(got, expInstantiated)) _throw();
+      }
+    }
+    return typeArgs;
+  }
+
   switch (expr.op) {
+    // binary
+    // (num, num) => num
     case "add":
     case "sub":
     case "mul":
     case "div":
-    case "truncdiv":
+    case "trunc_div":
+    case "pow":
     case "mod":
     case "rem":
-    case "exp":
-    case "bitand":
-    case "bitor":
-    case "bitxor":
-    case "bitnot":
-    case "neg":
-    case "str_to_int":
-    case "cardinality":
-    case "str_length":
-    case "str_find":
-      return getIntegerOpCodeType(expr, program);
+    case "bit_and":
+    case "bit_or":
+    case "bit_xor":
+    case "gcd":
+    case "min":
+    case "max":
+      expectType(integerType(), integerType());
+      return getArithmeticType(
+        expr.op,
+        types[0] as IntegerType,
+        types[1] as IntegerType,
+        expr.source
+      );
+    // (num, num) => bool
     case "lt":
     case "leq":
-    case "neq":
     case "eq":
+    case "neq":
     case "geq":
     case "gt":
-    case "inarray":
-    case "inlist":
-    case "inmap":
-    case "inset":
-    case "and":
+      expectType(integerType(), integerType());
+      return booleanType;
+    // (bool, bool) => bool
     case "or":
-    case "not":
-      return simpleType("boolean");
-    case "str_concat":
-    case "int_to_str":
-    case "repeat":
-      return simpleType("string");
-    case "sorted":
-      return arg0Type();
-    case "print":
-    case "println":
-      return simpleType("void");
-    case "argv":
-    case "str_split":
-    case "str_split_whitespace":
-      return listType("string");
-    case "str_replace":
-    case "str_substr":
+    case "and":
+      expectType(booleanType, booleanType);
+      return booleanType;
+    // membership
+    case "array_contains":
+      expectGenericType("Array", ["T1", (x) => x[0]]);
+      return booleanType;
+    case "list_contains":
+      expectGenericType("List", ["T1", (x) => x[0]]);
+      return booleanType;
+    case "table_contains_key":
+      expectGenericType("Table", ["T1", (x) => x[0]]);
+      return booleanType;
+    case "set_contains":
+      expectGenericType("Set", ["T1", (x) => x[0]]);
+      return booleanType;
+    // collection get
+    case "array_get":
+      return expectGenericType("Array", ["T2", (x) => x[1]])[0];
+    case "list_get":
+      return expectGenericType("List", ["0..oo", (_) => integerType(0)])[0];
+    case "table_get":
+      return expectGenericType("Table", ["T1", (x) => x[0]])[1];
+    case "text_get_byte":
+      expectType(textType(), integerType(0));
+      return integerType(0, 255);
+    case "argv_get":
+      expectType(integerType(0));
+      return textType();
+    // other
+    case "list_push":
+      return expectGenericType("List", ["T1", (x) => x[0]])[0];
+    case "text_concat": {
+      expectType(textType(), textType());
+      const [t1, t2] = types as [TextType, TextType];
+      return textType(
+        t1.capacity === undefined || t2.capacity === undefined
+          ? undefined
+          : t1.capacity + t2.capacity
+      );
+    }
+    case "repeat": {
+      expectType(textType(), integerType(0));
+      const [t, i] = types as [TextType, IntegerType];
+      return textType(
+        t.capacity === undefined || i.high === undefined
+          ? undefined
+          : t.capacity * Number(i.high)
+      );
+    }
+    case "text_contains":
+      expectType(textType(), textType());
+      return booleanType;
+    case "text_find":
+      expectType(textType(), textType());
+      return integerType(-1, (types[0] as TextType).capacity);
+    case "text_split":
+      expectType(textType(), textType());
+      return listType(types[0]);
+    case "text_get_char":
+      expectType(textType(), integerType(0));
+      return textType(1);
     case "join_using":
+      expectType(listType(textType()), textType());
+      return textType();
     case "right_align":
+      expectType(listType(textType()), integerType(0));
+      return textType(); // TODO narrow this
     case "int_to_bin_aligned":
     case "int_to_hex_aligned":
+      expectType(integerType(), textType());
+      return textType(); // TODO narrow this
     case "simplify_fraction":
-      return simpleType("string");
-    case "str_get_byte":
-      return integerType(0, 255);
-    case "list_get": {
-      const collectionType = arg0Type();
-      if (collectionType.type !== "List") {
-        throw new Error("list_get must be used on a list");
-      }
-      return collectionType.member;
+      expectType(integerType(), integerType());
+      return textType(); // TODO narrow this
+    // unary
+    case "abs": {
+      expectType(integerType());
+      const t = types[0] as IntegerType;
+      return integerType(
+        0,
+        t.low === undefined || t.high === undefined
+          ? undefined
+          : -t.low > t.high
+          ? -t.low
+          : t.high
+      );
     }
-    case "array_get": {
-      const collectionType = arg0Type();
-      if (collectionType.type !== "Array") {
-        throw new Error("array_get must be used on an array");
-      }
-      return collectionType.member;
+    case "bit_not":
+      expectType(integerType());
+      return integerType();
+    case "neg": {
+      expectType(integerType());
+      const t = types[0] as IntegerType;
+      return integerType(
+        t.high === undefined ? undefined : -t.high,
+        t.low === undefined ? undefined : -t.low
+      );
     }
-    case "table_get": {
-      const collectionType = arg0Type();
-      if (collectionType.type !== "Table") {
-        throw new Error("table_get must be used on a table");
-      }
-      return collectionType.value;
+    case "not":
+      expectType(booleanType);
+      return booleanType;
+    case "int_to_text":
+    case "int_to_bin":
+    case "int_to_hex":
+      expectType(integerType());
+      return textType(); // TODO narrow this
+    case "text_to_int":
+      expectType(textType()); // TODO narrow this
+      return integerType();
+    case "bool_to_int":
+      expectType(booleanType);
+      return integerType(0, 1);
+    case "byte_to_char":
+      expectType(integerType(0, 255));
+      return integerType(0, 1);
+    case "list_length":
+      expectGenericType("List");
+      return integerType(0);
+    case "text_length":
+      expectType(textType());
+      return integerType(0, (types[0] as TextType).capacity);
+    case "text_split_whitespace":
+      expectType(textType());
+      return listType(types[0]);
+    case "sorted":
+      return listType(expectGenericType("List")[0]);
+    case "join":
+      expectType(listType(textType()));
+      return textType();
+    case "text_reversed":
+      expectType(textType());
+      return textType();
+    // other
+    case "true":
+      return booleanType;
+    case "false":
+      return booleanType;
+    case "argv":
+      return listType(textType());
+    case "print":
+    case "println":
+      return voidType;
+    case "text_replace":
+      expectType(textType(), textType(), textType());
+      return textType(); // TODO narrow this
+    case "text_get_slice": {
+      expectType(textType(), integerType(0), integerType(0));
+      const [t, i1, i2] = types as [TextType, IntegerType, IntegerType];
+      return textType(
+        t.capacity === undefined && i2.high === undefined
+          ? undefined
+          : Math.max(
+              0,
+              t.capacity === undefined
+                ? Number(i2.high! - (i1.low ?? 0n))
+                : t.capacity - Number(i1.low ?? 0)
+            )
+      );
     }
+    case "array_set":
+      return expectGenericType(
+        "Array",
+        ["T2", (x) => x[1]],
+        ["T1", (x) => x[0]]
+      )[1];
+    case "list_set":
+      return expectGenericType(
+        "List",
+        ["0..oo", (_) => integerType(0)],
+        ["T1", (x) => x[0]]
+      )[1];
+    case "table_set":
+      return expectGenericType(
+        "Table",
+        ["T1", (x) => x[0]],
+        ["T2", (x) => x[1]]
+      )[1];
   }
-  throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
+  throw new PolygolfError(
+    `Type error. Unknown opcode. ${expr.op ?? "null"}`,
+    expr.source
+  );
 }
 
-function getIntegerOpCodeType(
-  expr: PolygolfOp | BinaryOp | UnaryOp | FunctionCall | MethodCall,
-  program: Program
+function getArithmeticType(
+  op: OpCode,
+  left: IntegerType,
+  right: IntegerType,
+  source?: SourcePointer
 ): ValueType {
-  if (expr.op === "str_to_int") return integerType();
-  if (expr.op === "str_length" || expr.op === "cardinality")
-    return integerType(0, 1 << 31);
-  const args = getArgs(expr);
-  const a = getType(args[0], program);
-  if (a?.type !== "integer") {
-    throw new Error("Unexpected type.");
-  }
-  switch (expr.op) {
-    case "bitnot":
-      return integerType(
-        a.high === undefined ? undefined : -a.high - 1n,
-        a.low === undefined ? undefined : -a.low + 1n
-      );
-    case "neg":
-      return integerType(
-        a.high === undefined ? undefined : -a.high,
-        a.low === undefined ? undefined : -a.low
-      );
-  }
-  const b = getType(args[1], program);
-  if (b?.type !== "integer") {
-    throw new Error("Unexpected type.");
-  }
-  switch (expr.op) {
+  switch (op) {
     case "gcd":
       if (
-        a.low === undefined ||
-        a.high === undefined ||
-        b.high === undefined ||
-        b.low === undefined
+        left.low === undefined ||
+        left.high === undefined ||
+        right.high === undefined ||
+        right.low === undefined
       )
         return integerType(1n, undefined);
       return integerType(
         1n,
-        [a.low, a.high, b.low, b.high]
+        [left.low, left.high, right.low, right.high]
           .map((x) => (x < 0 ? -x : x))
           .reduce((a, b) => (a < b ? a : b))
       );
     case "add":
       return integerType(
-        a.low === undefined || b.low === undefined ? undefined : a.low + b.low,
-        a.high === undefined || b.high === undefined
+        left.low === undefined || right.low === undefined
           ? undefined
-          : a.high + b.high
+          : left.low + right.low,
+        left.high === undefined || right.high === undefined
+          ? undefined
+          : left.high + right.high
       );
     case "sub":
       return integerType(
-        a.low === undefined || b.high === undefined
+        left.low === undefined || right.high === undefined
           ? undefined
-          : a.low - b.high,
-        a.high === undefined || b.low === undefined ? undefined : a.high - b.low
+          : left.low - right.high,
+        left.high === undefined || right.low === undefined
+          ? undefined
+          : left.high - right.low
       );
     case "mul":
-      return getIntegerTypeUsing(a, b, (a, b) => a * b);
+      return getIntegerTypeUsing(left, right, (a, b) => a * b);
     case "div":
-      return getIntegerTypeUsing(a, b, floorDiv);
-    case "truncdiv":
-      return getIntegerTypeUsing(a, b, (a, b) => a / b);
+      return getIntegerTypeUsing(left, right, floorDiv);
+    case "trunc_div":
+      return getIntegerTypeUsing(left, right, (a, b) => a / b);
     case "mod":
-      return getIntegerTypeMod(a, b);
+      return getIntegerTypeMod(left, right);
     case "rem":
-      return getIntegerTypeRem(a, b);
-    case "exp":
+      return getIntegerTypeRem(left, right);
+    case "pow":
       return getIntegerTypeUsing(
-        a,
-        (b.low ?? 1n) < 0n ? integerType(0n, b.high) : b,
+        left,
+        (right.low ?? 1n) < 0n ? integerType(0n, right.high) : right,
         (a, b) => a ** b
       );
-    case "bitand":
+    case "bit_and":
       return integerType();
-    case "bitor":
+    case "bit_or":
       return integerType();
-    case "bitxor":
+    case "bit_xor":
       return integerType();
   }
-  throw new Error(`Unknown opcode. ${expr.op ?? "null"}`);
+  throw new PolygolfError(
+    `Type error. Unknown opcode. ${op ?? "null"}`,
+    source
+  );
 }
 
 export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
@@ -271,7 +579,7 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
     case "Table":
       return [exprType.key, exprType.value];
   }
-  throw new Error("Node is not a collection.");
+  throw new PolygolfError("Type error. Node is not a collection.", expr.source);
 }
 
 function floorDiv(a: bigint, b: bigint): bigint {
@@ -317,6 +625,7 @@ function getIntegerTypeMod(left: IntegerType, right: IntegerType): IntegerType {
     const values = [0n];
     if (right.low < 0n) values.push(right.low + 1n);
     if (right.high > 0n) values.push(right.high - 1n);
+    return integerTypeIncludingAll(values);
   }
   return left;
 }

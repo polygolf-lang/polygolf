@@ -1,11 +1,11 @@
 import { Path, Visitor } from "../common/traverse";
-import { block, manyToManyAssignment, Statement } from "../IR";
+import { block, Expr, manyToManyAssignment } from "../IR";
 
 export const tempVarToMultipleAssignment: Visitor = {
   exit(path: Path) {
     const node = path.node;
     if (node.type === "Block") {
-      const newNodes: Statement[] = [];
+      const newNodes: Expr[] = [];
       for (let i = 0; i < node.children.length; i++) {
         const a = node.children[i];
         if (i >= node.children.length - 2) {

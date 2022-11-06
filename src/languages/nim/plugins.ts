@@ -1,11 +1,11 @@
 import {
   Assignment,
   block,
+  Expr,
   importStatement,
   manyToManyAssignment,
   methodCall,
   Program,
-  Statement,
   varDeclarationWithAssignment,
 } from "../../IR";
 import { Path } from "../../common/traverse";
@@ -63,7 +63,7 @@ export const addVarDeclarations = {
     if (node.type === "Program") declared.clear();
     if (node.type === "Block") {
       let assignments: Assignment[] = [];
-      let newNodes: Statement[] = [];
+      let newNodes: Expr[] = [];
       function processAssignments() {
         if (assignments.length > 0) {
           newNodes = newNodes.concat(
@@ -96,7 +96,7 @@ export const addVarDeclarations = {
 function simplifyAssignments(
   assignments: Assignment[],
   topLevel: boolean
-): Statement[] {
+): Expr[] {
   for (const v of assignments) {
     if (v.variable.type === "Identifier") {
       declared.add(v.variable.name);
@@ -121,7 +121,7 @@ export const useUnsignedDivision = {
     const program = path.root.node;
     if (
       node.type === "BinaryOp" &&
-      (node.op === "truncdiv" || node.op === "rem")
+      (node.op === "trunc_div" || node.op === "rem")
     ) {
       const right = getType(node.right, program);
       const left = getType(node.left, program);
@@ -133,7 +133,7 @@ export const useUnsignedDivision = {
         right.low !== undefined &&
         right.low >= 0n
       ) {
-        node.name = node.op === "truncdiv" ? "/%" : "%%";
+        node.name = node.op === "trunc_div" ? "/%" : "%%";
       }
     }
   },
@@ -143,6 +143,9 @@ export const useUFCS = {
   exit(path: Path) {
     const node = path.node;
     if (node.type === "FunctionCall" && node.args.length > 0) {
+      if (node.args.length === 1 && node.args[0].type === "StringLiteral") {
+        return;
+      }
       const [obj, ...args] = node.args;
       if (obj.type !== "BinaryOp" && obj.type !== "UnaryOp") {
         path.replaceWith(
