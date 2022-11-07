@@ -28,7 +28,6 @@ function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
         "\n"
       ),
       "$DEDENT$",
-      "\n",
     ];
   }
   return joinGroups(
