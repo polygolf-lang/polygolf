@@ -53,6 +53,6 @@ export function defaultDetokenizer(
           tokens[i] + (tokens[i] === "\n" ? " ".repeat(indentLevel) : "");
       }
     }
-    return result;
+    return result.trim();
   };
 }

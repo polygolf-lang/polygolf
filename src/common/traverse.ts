@@ -45,26 +45,30 @@ export class Path<N extends IR.Node = IR.Node> {
 
   /** Replace this node's child given by pathFragment with newChild */
   replaceChild(newChild: IR.Node, pathFragment: PathFragment): void {
-    const oldChild = getChild(this.node, pathFragment);
-    if (this.visitState != null) {
-      const queue = this.visitState.queue;
-      for (let i = queue.length - 1; i >= 0; i--) {
-        if (queue[i].node === oldChild) {
-          queue[i]._removed = true;
-          queue[i] = new Path(newChild, this, pathFragment);
-          break;
+    if (newChild.type === "Block" && this.node.type === "Block") {
+      this.replaceChildWithMultiple(newChild.children, pathFragment);
+    } else {
+      const oldChild = getChild(this.node, pathFragment);
+      if (this.visitState != null) {
+        const queue = this.visitState.queue;
+        for (let i = queue.length - 1; i >= 0; i--) {
+          if (queue[i].node === oldChild) {
+            queue[i]._removed = true;
+            queue[i] = new Path(newChild, this, pathFragment);
+            break;
+          }
         }
       }
-    }
-    if (typeof pathFragment === "string") {
-      (this.node as any)[pathFragment] = newChild;
-    } else {
-      (this.node as any)[pathFragment.prop][pathFragment.index] = newChild;
+      if (typeof pathFragment === "string") {
+        (this.node as any)[pathFragment] = newChild;
+      } else {
+        (this.node as any)[pathFragment.prop][pathFragment.index] = newChild;
+      }
     }
   }
 
   /** Replace this node's child given by pathFragment with newChildren */
-  replaceChildWithMultiple(
+  private replaceChildWithMultiple(
     newChildren: IR.Node[],
     pathFragment: PathFragment
   ): void {
@@ -104,14 +108,6 @@ export class Path<N extends IR.Node = IR.Node> {
     if (this.parent === null || this.pathFragment === null)
       throw new Error("Cannot replace the root node");
     return this.parent.replaceChild(newNode, this.pathFragment);
-  }
-
-  /** Replace this node with newNodes by mutating the parent */
-  replaceWithMultiple(newNodes: IR.Node[]): void {
-    this._removed = true;
-    if (this.parent === null || this.pathFragment === null)
-      throw new Error("Cannot replace the root node");
-    return this.parent.replaceChildWithMultiple(newNodes, this.pathFragment);
   }
 
   /**

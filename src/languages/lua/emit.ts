@@ -7,7 +7,7 @@ import {
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {
-  return emitBlock(program.block);
+  return emitStatement(program.body, program);
 }
 
 function emitBlock(block: IR.Block): string[] {
@@ -17,14 +17,16 @@ function emitBlock(block: IR.Block): string[] {
   );
 }
 
-function emitStatement(stmt: IR.Expr, parent: IR.Block): string[] {
+function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
   switch (stmt.type) {
+    case "Block":
+      return emitBlock(stmt);
     case "WhileLoop":
       return [
         `while`,
         ...emitExpr(stmt.condition, stmt),
         "do",
-        ...emitBlock(stmt.body),
+        ...emitStatement(stmt.body, stmt),
         "end",
       ];
     case "ManyToManyAssignment":
@@ -51,7 +53,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Block): string[] {
         ...emitExpr(stmt.high, stmt),
         ...increment,
         "do",
-        ...emitBlock(stmt.body),
+        ...emitStatement(stmt.body, stmt),
         "end",
       ];
     }
@@ -60,9 +62,9 @@ function emitStatement(stmt: IR.Expr, parent: IR.Block): string[] {
         "if",
         ...emitExpr(stmt.condition, stmt),
         "then",
-        ...emitBlock(stmt.consequent),
-        ...(stmt.alternate.children.length > 0
-          ? ["else", ...emitBlock(stmt.alternate)]
+        ...emitStatement(stmt.consequent, stmt),
+        ...(stmt.alternate !== undefined
+          ? ["else", ...emitStatement(stmt.alternate, stmt)]
           : []),
         "end",
       ];

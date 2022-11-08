@@ -39,6 +39,7 @@ export function getType(expr: Expr, program: Program): ValueType {
 export function calcType(expr: Expr, program: Program): ValueType {
   const type = (e: Expr) => getType(e, program);
   switch (expr.type) {
+    case "Block":
     case "VarDeclaration":
       return voidType;
     case "Assignment": {

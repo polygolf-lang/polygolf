@@ -59,7 +59,7 @@ export function emitStringLiteral(
 }
 
 export function hasChildWithBlock(node: IR.Node): boolean {
-  for (const child of getChildren(node)) {
+  for (const child of [node, ...getChildren(node)]) {
     if ("consequent" in child || "children" in child || "body" in child) {
       return true;
     }

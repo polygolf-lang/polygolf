@@ -79,8 +79,7 @@ Expression is either
 - integer literal `58`,
 - text literal `"text literal\n another line"`,
 - variable `$very_important_var`,
-- block of expressions `[print "block contents";]`,
-- a choice of variants `{ variant1 / variant2 / variant3 }` or
+- a block, potentially with multiple variants `{ variant1 / variant2 / variant3 }` or
 - s-expression
 
 S-expression takes one of the following forms:
@@ -109,14 +108,14 @@ Each variable must be first used in an assignment. Variable type is determined b
 ### Statements & control flow
 
 Loop over half-open integer range (exclusive upper bound) with optional step:  
-`for $i $low $high [print $i;];`
+`for $i $low $high {print $i;};`
 
-`for $i $low $high $step [print $i;];`
+`for $i $low $high $step {print $i;};`
 
 While loop:  
-`while $condition [$i <- ($i + 1);];`  
+`while $condition {$i <- ($i + 1);};`  
 If with optional else-branch:  
-`if $condition [print "Yes";] [print "No";];`  
+`if $condition {print "Yes";} {print "No";};`  
 Assignment:  
 `assign $x 5;` or `$x <- 5;`
 
@@ -166,19 +165,19 @@ For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
 Example Fibonacci using variants
 
 ```clojure
-$a:0..1346269 <- 0;
+$a:0..832040 <- 0;
 $b:0..1346269 <- 1;
-for $i 0 31 [
+for $i 0 31 {
     println $a;
     {   % temp variable
-        $t:0..1346269 <- ($a + $b);
-        $a <- $b;
+        $t:0..1346269 <- ($a + $b):0..1346269;
+        $a <- $b:0..832040;
         $b <- $t;
     /   % arithmetic trick
-        $b <- ($b + $a);
-        $a <- ($b - $a);
+        $b <- ($b + $a):0..1346269;
+        $a <- ($b - $a):0..832040;
     }
-];
+};
 ```
 
 This could compile to the following in C
