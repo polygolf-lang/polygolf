@@ -562,9 +562,9 @@ function getArithmeticType(
     case "mul":
       return getIntegerTypeUsing(left, right, (a, b) => a * b);
     case "div":
-      return getIntegerTypeUsing(left, right, floorDiv);
+      return integerType(); // TODO narrow this
     case "trunc_div":
-      return getIntegerTypeUsing(left, right, (a, b) => a / b);
+      return integerType(); // TODO narrow this
     case "mod":
       return getIntegerTypeMod(left, right);
     case "rem":
@@ -601,10 +601,12 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
   throw new PolygolfError("Type error. Node is not a collection.", expr.source);
 }
 
+/*
 function floorDiv(a: bigint, b: bigint): bigint {
   const res = a / b;
   return a < 0 !== b < 0 ? res - 1n : res;
 }
+*/
 
 /** Combines types `left` and `right` using the *convex* operator `op` */
 function getIntegerTypeUsing(
