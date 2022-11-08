@@ -1,5 +1,5 @@
 import { joinGroups } from "../../common/emit";
-import { block, Expr, IR, toString, Variants } from "../../IR";
+import { block, Expr, IR, toString, variants, Variants } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {
   return emitExpr(program.body, true);
@@ -170,9 +170,13 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
     case "ConditionalOp":
       return emitSexpr("@", expr.condition, expr.consequent, expr.alternate);
     case "ManyToManyAssignment":
-      return emitSexpr("@", block(expr.variables), block(expr.exprs));
+      return emitSexpr(
+        "@",
+        variants([block(expr.variables)]),
+        variants([block(expr.exprs)])
+      );
     case "OneToManyAssignment":
-      return emitSexpr("@", block(expr.variables), expr.expr);
+      return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
     case "ImportStatement":
       return emitSexpr(
         "@",
