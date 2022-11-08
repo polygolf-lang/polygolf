@@ -1,4 +1,4 @@
-import { PathFragment } from "common/traverse";
+import { PathFragment } from "../../common/traverse";
 import {
   emitStringLiteral,
   joinGroups,
@@ -196,9 +196,9 @@ function emitExprNoParens(expr: IR.Expr): string[] {
 
     default:
       throw new Error(
-        `Unexpected node while emitting Lua: ${expr.type}: ${
+        `Unexpected node while emitting Lua: ${expr.type}: ${String(
           "op" in expr ? expr.op : ""
-        }. `
+        )}. `
       );
   }
 }

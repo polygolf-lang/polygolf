@@ -1,6 +1,4 @@
 import {
-  assignment,
-  block,
   getArgs,
   int,
   IntegerLiteral,
@@ -19,32 +17,26 @@ export const golfStringListLiteral: Visitor = {
   exit(path: Path) {
     const node = path.node;
     if (
-      node.type === "Assignment" &&
-      node.expr.type === "ListConstructor" &&
-      node.expr.exprs.every((x) => x.type === "StringLiteral") &&
+      node.type === "ListConstructor" &&
+      node.exprs.every((x) => x.type === "StringLiteral") &&
       !golfedStringListLiterals.has(node)
     ) {
       golfedStringListLiterals.set(node, true);
-      const strings = (node.expr.exprs as StringLiteral[]).map((x) => x.value);
+      const strings = (node.exprs as StringLiteral[]).map((x) => x.value);
       const delim = getDelim(strings);
       path.replaceWith(
         variants([
-          block([
-            assignment(
-              structuredClone(node.variable),
-              delim === " "
-                ? polygolfOp(
-                    "text_split_whitespace",
-                    stringLiteral(strings.join(delim))
-                  )
-                : polygolfOp(
-                    "text_split",
-                    stringLiteral(strings.join(delim)),
-                    stringLiteral(delim)
-                  )
-            ),
-          ]),
-          block([node]),
+          node,
+          delim === " "
+            ? polygolfOp(
+                "text_split_whitespace",
+                stringLiteral(strings.join(delim))
+              )
+            : polygolfOp(
+                "text_split",
+                stringLiteral(strings.join(delim)),
+                stringLiteral(delim)
+              ),
         ])
       );
     }
@@ -100,9 +92,15 @@ function evalOp(op: OpCode, values: bigint[]): bigint {
       return -a;
     case "bit_not":
       return -1n - a;
+    case "abs":
+      return a < 0n ? -a : a;
   }
   const b = values[1];
   switch (op) {
+    case "min":
+      return a < b ? a : b;
+    case "max":
+      return a > b ? a : b;
     case "add":
       return a + b;
     case "sub":

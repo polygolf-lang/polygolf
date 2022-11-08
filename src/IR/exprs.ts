@@ -50,6 +50,16 @@ export interface IndexCall extends BaseExpr {
   oneIndexed: boolean;
 }
 
+export interface RangeIndexCall extends BaseExpr {
+  type: "RangeIndexCall";
+  collection: Expr;
+  low: Expr;
+  high: Expr;
+  step: Expr;
+  op: OpCode | null;
+  oneIndexed: boolean;
+}
+
 export type LValue = Identifier | IndexCall;
 
 export interface BinaryOp extends BaseExpr {
@@ -155,6 +165,25 @@ export function indexCall(
   };
 }
 
+export function rangeIndexCall(
+  collection: string | Expr,
+  low: Expr,
+  high: Expr,
+  step: Expr,
+  op?: OpCode,
+  oneIndexed: boolean = false
+): RangeIndexCall {
+  return {
+    type: "RangeIndexCall",
+    op: op === undefined ? null : op,
+    collection: typeof collection === "string" ? id(collection) : collection,
+    low,
+    high,
+    step,
+    oneIndexed,
+  };
+}
+
 export function binaryOp(
   op: BinaryOpCode,
   left: Expr,
@@ -210,11 +239,21 @@ export function print(value: Expr, newline: boolean = true): PolygolfOp {
 }
 
 export function getArgs(
-  node: PolygolfOp | BinaryOp | UnaryOp | FunctionCall | MethodCall | IndexCall
+  node:
+    | PolygolfOp
+    | BinaryOp
+    | MutatingBinaryOp
+    | UnaryOp
+    | FunctionCall
+    | MethodCall
+    | IndexCall
+    | RangeIndexCall
 ): Expr[] {
   switch (node.type) {
     case "BinaryOp":
       return [node.left, node.right];
+    case "MutatingBinaryOp":
+      return [node.variable, node.right];
     case "UnaryOp":
       return [node.arg];
     case "FunctionCall":
@@ -225,5 +264,7 @@ export function getArgs(
       return node.args;
     case "IndexCall":
       return [node.collection, node.index];
+    case "RangeIndexCall":
+      return [node.collection, node.low, node.high, node.step];
   }
 }

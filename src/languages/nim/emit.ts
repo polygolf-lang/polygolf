@@ -316,6 +316,19 @@ function emitExprNoParens(
         ...emitExprNoParens(expr.index),
         "]",
       ];
+    case "RangeIndexCall":
+      if (expr.oneIndexed)
+        throw new Error("Nim only supports zeroIndexed access.");
+      if (expr.step.type !== "IntegerLiteral" || expr.step.value !== 1n)
+        throw new Error("Nim doesn't support indexing with steps.");
+      return [
+        ...emitExprNoParens(expr.collection),
+        "[",
+        ...emitExprNoParens(expr.low),
+        "..",
+        ...emitExprNoParens(expr.high),
+        "]",
+      ];
 
     default:
       throw new Error(

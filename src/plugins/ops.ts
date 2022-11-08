@@ -106,3 +106,7 @@ export function useIndexCalls(
     },
   };
 }
+
+export function plus1(expr: Expr): Expr {
+  return polygolfOp("add", expr, int(1n));
+}

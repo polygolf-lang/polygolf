@@ -26,6 +26,7 @@ import {
   tableType,
   KeyValueType,
   keyValueType,
+  getArgs,
 } from "../IR";
 import { PolygolfError } from "./errors";
 
@@ -166,31 +167,6 @@ export function calcType(expr: Expr, program: Program): ValueType {
     `Type error. Unexpected node ${expr.type}.`,
     expr.source
   );
-}
-
-function getArgs(
-  expr:
-    | BinaryOp
-    | MutatingBinaryOp
-    | UnaryOp
-    | FunctionCall
-    | MethodCall
-    | PolygolfOp
-): Expr[] {
-  switch (expr.type) {
-    case "BinaryOp":
-      return [expr.left, expr.right];
-    case "UnaryOp":
-      return [expr.arg];
-    case "FunctionCall":
-      return expr.args;
-    case "MethodCall":
-      return [expr.object, ...expr.args];
-    case "PolygolfOp":
-      return expr.args;
-    case "MutatingBinaryOp":
-      return [expr.variable, expr.right];
-  }
 }
 
 function getOpCodeType(
@@ -523,6 +499,24 @@ function getArithmeticType(
           .map((x) => (x < 0 ? -x : x))
           .reduce((a, b) => (a < b ? a : b))
       );
+    case "min": {
+      let low;
+      let high;
+      if (left.low !== undefined && right.low !== undefined)
+        low = left.low < right.low ? left.low : right.low;
+      if (left.high !== undefined && right.high !== undefined)
+        high = left.high < right.high ? left.high : right.high;
+      return integerType(low, high);
+    }
+    case "max": {
+      let low;
+      let high;
+      if (left.low !== undefined && right.low !== undefined)
+        low = left.low > right.low ? left.low : right.low;
+      if (left.high !== undefined && right.high !== undefined)
+        high = left.high > right.high ? left.high : right.high;
+      return integerType(low, high);
+    }
     case "add":
       return integerType(
         left.low === undefined || right.low === undefined
@@ -544,9 +538,9 @@ function getArithmeticType(
     case "mul":
       return getIntegerTypeUsing(left, right, (a, b) => a * b);
     case "div":
-      return getIntegerTypeUsing(left, right, floorDiv);
+      return integerType(); // TODO narrow this
     case "trunc_div":
-      return getIntegerTypeUsing(left, right, (a, b) => a / b);
+      return integerType(); // TODO narrow this
     case "mod":
       return getIntegerTypeMod(left, right);
     case "rem":
@@ -583,10 +577,12 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
   throw new PolygolfError("Type error. Node is not a collection.", expr.source);
 }
 
+/*
 function floorDiv(a: bigint, b: bigint): bigint {
   const res = a / b;
   return a < 0 !== b < 0 ? res - 1n : res;
 }
+*/
 
 /** Combines types `left` and `right` using the *convex* operator `op` */
 function getIntegerTypeUsing(
