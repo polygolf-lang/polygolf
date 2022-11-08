@@ -523,6 +523,24 @@ function getArithmeticType(
           .map((x) => (x < 0 ? -x : x))
           .reduce((a, b) => (a < b ? a : b))
       );
+    case "min": {
+      let low;
+      let high;
+      if (left.low !== undefined && right.low !== undefined)
+        low = left.low < right.low ? left.low : right.low;
+      if (left.high !== undefined && right.high !== undefined)
+        high = left.high < right.high ? left.high : right.high;
+      return integerType(low, high);
+    }
+    case "max": {
+      let low;
+      let high;
+      if (left.low !== undefined && right.low !== undefined)
+        low = left.low > right.low ? left.low : right.low;
+      if (left.high !== undefined && right.high !== undefined)
+        high = left.high > right.high ? left.high : right.high;
+      return integerType(low, high);
+    }
     case "add":
       return integerType(
         left.low === undefined || right.low === undefined

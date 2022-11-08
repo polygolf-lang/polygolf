@@ -50,6 +50,16 @@ export interface IndexCall extends BaseExpr {
   oneIndexed: boolean;
 }
 
+export interface RangeIndexCall extends BaseExpr {
+  type: "RangeIndexCall";
+  collection: Expr;
+  low: Expr;
+  high: Expr;
+  step: Expr;
+  op: OpCode | null;
+  oneIndexed: boolean;
+}
+
 export type LValue = Identifier | IndexCall;
 
 export interface BinaryOp extends BaseExpr {
@@ -151,6 +161,25 @@ export function indexCall(
     op: op === undefined ? null : op,
     collection: typeof collection === "string" ? id(collection) : collection,
     index,
+    oneIndexed,
+  };
+}
+
+export function rangeIndexCall(
+  collection: string | Expr,
+  low: Expr,
+  high: Expr,
+  step: Expr,
+  op?: OpCode,
+  oneIndexed: boolean = false
+): RangeIndexCall {
+  return {
+    type: "RangeIndexCall",
+    op: op === undefined ? null : op,
+    collection: typeof collection === "string" ? id(collection) : collection,
+    low,
+    high,
+    step,
     oneIndexed,
   };
 }

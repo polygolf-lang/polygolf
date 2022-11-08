@@ -23,6 +23,7 @@ import {
   UnaryOp,
   IndexCall,
   KeyValue,
+  RangeIndexCall,
 } from "./exprs";
 import {
   ForRange,
@@ -75,6 +76,7 @@ export type Expr =
   | VarDeclarationWithAssignment
   | Assignment
   | IndexCall
+  | RangeIndexCall
   | FunctionCall
   | MethodCall
   | BinaryOp
