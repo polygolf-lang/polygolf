@@ -60,8 +60,10 @@ const stripTypesIfInferable: Visitor = {
           node.valueType = undefined;
         }
         initializedVariables.add(variable);
+        return;
       }
-    } else if ("valueType" in node && node.valueType !== undefined) {
+    }
+    if ("valueType" in node && node.valueType !== undefined) {
       if (isEqual(node.valueType, calcType(node, program))) {
         node.valueType = undefined;
       }

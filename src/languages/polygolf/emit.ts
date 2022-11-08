@@ -146,7 +146,12 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
       if (expr.builtin) {
         return emitSexpr("@BuiltinIdent", JSON.stringify(expr.name));
       } else {
-        return ["$" + expr.name];
+        return [
+          "$" + expr.name,
+          ...(expr.valueType === undefined
+            ? []
+            : [":", toString(expr.valueType)]),
+        ];
       }
     case "StringLiteral":
       return [JSON.stringify(expr.value)];
