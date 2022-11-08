@@ -6,14 +6,18 @@ export default function emitProgram(program: IR.Program): string[] {
 }
 
 function emitVariants(expr: Variants, indent = false): string[] {
-  if (indent) {
+  if (indent || expr.variants.some((x) => x.type === "Block")) {
     return [
       "{",
       "$INDENT$",
       "\n",
       ...joinGroups(
         expr.variants.map((x) => emitExpr(x, true)),
-        "/"
+        "$DEDENT$",
+        "\n",
+        "/",
+        "$INDENT$",
+        "\n"
       ),
       "$DEDENT$",
       "\n",

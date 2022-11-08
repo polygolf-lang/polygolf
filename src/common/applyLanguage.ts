@@ -9,7 +9,8 @@ export default function applyLanguage(
   maxBranches: number = 1000,
   skipTypesPass: boolean = false
 ): string {
-  const variants = expandVariants(program);
+  const variants =
+    language.name === "Polygolf" ? [program] : expandVariants(program);
   if (!skipTypesPass) {
     for (const variant of variants) {
       typesPass(variant);
