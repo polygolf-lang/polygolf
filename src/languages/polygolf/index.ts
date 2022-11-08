@@ -1,24 +1,27 @@
-import { isSubtype, ValueType, variants } from "../../IR";
-import { Language } from "../../common/Language";
+import { toString, ValueType, variants } from "../../IR";
+import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { Path, Visitor } from "common/traverse";
-import { calcType, getType } from "common/getType";
+import { Path, Visitor } from "../../common/traverse";
+import { calcType, getType } from "../../common/getType";
 
 function polygolfLanguage(stripTypes = false, forceBlocks = true): Language {
   const plugins: Visitor[] = [];
-  if (stripTypes) plugins.push(stripTypesIfInferable);
   if (forceBlocks) plugins.push(forceControlFlowBlocks);
   plugins.push(blocksAsVariants);
+  if (stripTypes) plugins.push(stripTypesIfInferable);
   return {
     name: "Polygolf",
     emitter: emitProgram,
     plugins,
+    detokenizer: defaultDetokenizer(
+      (a, b) => a !== "(" && b !== ")" && b !== ";" && b !== ":" && a !== ":"
+    ),
   };
 }
 
 function isEqual(a: ValueType, b: ValueType): boolean {
-  return isSubtype(a, b) && isSubtype(b, a);
+  return toString(a) === toString(b);
 }
 const initializedVariables = new Set<string>();
 const stripTypesIfInferable: Visitor = {
@@ -48,8 +51,8 @@ const stripTypesIfInferable: Visitor = {
         initializedVariables.add(variable);
       }
     } else if ("valueType" in node && node.valueType !== undefined) {
-      if (node.valueType === calcType(node, program)) {
-        node.valueType = undefined;
+      if (isEqual(node.valueType, calcType(node, program))) {
+        path.replaceWith({ ...node, valueType: undefined });
       }
     }
   },
@@ -76,7 +79,11 @@ const forceControlFlowBlocks: Visitor = {
 const blocksAsVariants: Visitor = {
   exit(path: Path) {
     const node = path.node;
-    if (node.type === "Block" && path.parent?.node.type !== "Variants") {
+    if (
+      node.type === "Block" &&
+      path.parent !== null &&
+      path.parent.node.type !== "Variants"
+    ) {
       path.replaceWith(variants([node]));
     }
   },
