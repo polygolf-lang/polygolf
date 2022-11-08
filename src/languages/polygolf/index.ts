@@ -15,7 +15,15 @@ function polygolfLanguage(stripTypes = false, forceBlocks = true): Language {
     emitter: emitProgram,
     plugins,
     detokenizer: defaultDetokenizer(
-      (a, b) => a !== "(" && b !== ")" && b !== ";" && b !== ":" && a !== ":"
+      (a, b) =>
+        a !== "(" &&
+        b !== ")" &&
+        b !== ";" &&
+        b !== ":" &&
+        a !== ":" &&
+        a !== "\n" &&
+        b !== "\n",
+      2
     ),
   };
 }
@@ -82,7 +90,8 @@ const blocksAsVariants: Visitor = {
     if (
       node.type === "Block" &&
       path.parent !== null &&
-      path.parent.node.type !== "Variants"
+      path.parent.node.type !== "Variants" &&
+      path.parent.node.type !== "Program"
     ) {
       path.replaceWith(variants([node]));
     }

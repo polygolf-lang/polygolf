@@ -15,8 +15,8 @@ function emitVariants(expr: Variants, indent = false): string[] {
         expr.variants.map((x) => emitExpr(x, true)),
         "/"
       ),
-      "\n",
       "$DEDENT$",
+      "\n",
       "}",
     ];
   }
@@ -30,11 +30,12 @@ function emitVariants(expr: Variants, indent = false): string[] {
   ];
 }
 
-function emitExpr(expr: Expr, asStatement = false): string[] {
+function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
   function emitSexpr(op: string, ...args: (string | Expr)[]): string[] {
     if (op === "@") op += expr.type;
     const result: string[] = [];
     if (!asStatement) result.push("(");
+    if (indent) result.push("$INDENT$", "\n");
     if (opAliases[op] !== undefined && args.length === 2) {
       result.push(
         ...(typeof args[0] === "string" ? [args[0]] : emitExpr(args[0]))
@@ -55,15 +56,12 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
     if (asStatement) {
       result.push(";");
     } else {
+      if (indent) result.push("$DEDENT$", "\n");
       result.push(")");
       if (expr.valueType !== undefined)
         result.push(":", toString(expr.valueType));
     }
     return result;
-  }
-  function emitIndent(expr: Expr): (string | Expr)[] {
-    if (expr.type === "Variants") return emitVariants(expr, true);
-    return ["$INDENT$", "\n", expr, "$DEDENT$"];
   }
   switch (expr.type) {
     case "Block":
@@ -74,7 +72,7 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
         ),
       ];
     case "Variants":
-      return emitVariants(expr);
+      return emitVariants(expr, indent);
     case "KeyValue":
       return emitSexpr("key_value", expr.key, expr.value);
     case "PolygolfOp":
@@ -172,7 +170,11 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
         ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x))
       );
     case "WhileLoop":
-      return emitSexpr("while", expr.condition, ...emitIndent(expr.body));
+      return emitSexpr(
+        "while",
+        expr.condition,
+        ...emitExpr(expr.body, false, true)
+      );
     case "ForRange":
       if (expr.inclusive) {
         return emitSexpr(
@@ -181,7 +183,7 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
           expr.low,
           expr.high,
           expr.increment,
-          ...emitIndent(expr.body)
+          ...emitExpr(expr.body, false, true)
         );
       }
       return emitSexpr(
@@ -193,21 +195,21 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
         expr.increment.value === 1n
           ? []
           : [expr.increment]),
-        ...emitIndent(expr.body)
+        ...emitExpr(expr.body, false, true)
       );
     case "ForEach":
       return emitSexpr(
         "@",
         expr.variable,
         expr.collection,
-        ...emitIndent(expr.body)
+        ...emitExpr(expr.body, false, true)
       );
     case "ForEachKey":
       return emitSexpr(
         "@",
         expr.variable,
         expr.table,
-        ...emitIndent(expr.body)
+        ...emitExpr(expr.body, false, true)
       );
     case "ForEachPair":
       return emitSexpr(
@@ -215,7 +217,7 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
         expr.keyVariable,
         expr.valueVariable,
         expr.table,
-        ...emitIndent(expr.body)
+        ...emitExpr(expr.body, false, true)
       );
     case "ForCLike":
       return emitSexpr(
@@ -223,14 +225,16 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
         expr.init,
         expr.condition,
         expr.append,
-        ...emitIndent(expr.body)
+        ...emitExpr(expr.body, false, true)
       );
     case "IfStatement":
       return emitSexpr(
         "if",
         expr.condition,
-        ...emitIndent(expr.consequent),
-        ...(expr.alternate === undefined ? [] : [...emitIndent(expr.alternate)])
+        ...emitExpr(expr.consequent, false, true),
+        ...(expr.alternate === undefined
+          ? []
+          : [...emitExpr(expr.alternate, false, true)])
       );
   }
 }
@@ -253,4 +257,6 @@ const opAliases: Record<string, string> = {
   text_concat: "..",
   assign: "<-",
   key_value: "=>",
+  mod: "mod",
+  div: "div",
 };
