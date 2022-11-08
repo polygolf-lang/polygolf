@@ -101,7 +101,10 @@ export const forRangeToForCLike = {
       path.replaceWith(
         forCLike(
           assignment(node.variable, node.low),
-          block([polygolfOp("add", node.variable, node.increment ?? int(1n))]),
+          assignment(
+            node.variable,
+            polygolfOp("add", node.variable, node.increment ?? int(1n))
+          ),
           polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
           node.body
         )

@@ -70,7 +70,7 @@ test("ForRange -> ForCLike", () =>
   expectTransform(
     loopProgram1,
     loops.forRangeToForCLike,
-    "{ for(i=0;lt(i,10);{ add(i,1); }){ println(x); }; }"
+    "{ for(i=0;lt(i,10);i=add(i,1)){ println(x); }; }"
   ));
 
 test("ForRange -> ForEachPair", () =>
