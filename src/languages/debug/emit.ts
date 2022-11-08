@@ -18,7 +18,7 @@ export default function emit(node: IR.Node): string {
       );
     case "ForEach":
       return (
-        `foreach ${emit(node.variable)} in ${emit(node.collection)}` +
+        `foreach ${emit(node.variable)} in ${emit(node.collection)} ` +
         emit(node.body)
       );
     case "ForEachPair":
@@ -29,8 +29,9 @@ export default function emit(node: IR.Node): string {
       );
     case "ForCLike":
       return (
-        `for(${emit(node.init)};${emit(node.condition)};${emit(node.append)})` +
-        emit(node.body)
+        `for(${emit(node.init)};${emit(node.condition)};${emit(
+          node.append
+        )}) ` + emit(node.body)
       );
     case "ForEachKey":
       return (
