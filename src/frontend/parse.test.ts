@@ -36,14 +36,10 @@ function stringify(x: any): string {
   );
 }
 
-function testBlockParse(desc: string, str: string, output: Node[]) {
-  test(desc, () => {
-    expect(stringify(parse(str).block.children)).toEqual(stringify(output));
-  });
-}
-
 function testStmtParse(desc: string, str: string, output: Node) {
-  testBlockParse(desc, str, [output]);
+  test(desc, () => {
+    expect(stringify(parse(str).body)).toEqual(stringify(output));
+  });
 }
 
 function expectExprParse(desc: string, str: string, output: Expr) {
@@ -170,19 +166,21 @@ describe("Parse annotations", () => {
 });
 
 describe("Parse statements", () => {
-  testBlockParse("comment", `%one\nprintln 58;%two\n%println -3;`, [
-    print(int(58n), true),
-  ]);
+  testStmtParse(
+    "comment",
+    `%one\nprintln 58;%two\n%println -3;`,
+    print(int(58n), true)
+  );
   testStmtParse("infix assignment", "$x <- 5;", assignment(id("x"), int(5n)));
   testStmtParse(
     "if",
-    "if $x [ println $y; ];",
-    ifStatement(id("x"), block([print(id("y"), true)]))
+    "if $x (println $y);",
+    ifStatement(id("x"), print(id("y"), true))
   );
   testStmtParse(
     "forRange",
-    "for $x 1 20 1 [ println $x; ];",
-    forRange(id("x"), int(1n), int(20n), int(1n), block([print(id("x"), true)]))
+    "for $x 1 20 1 (println $x);",
+    forRange(id("x"), int(1n), int(20n), int(1n), print(id("x"), true))
   );
 });
 
@@ -191,7 +189,7 @@ describe("Parse variants", () => {
     "Two variants",
     `{ println $x; / print $x; print "\\n"; }`,
     variants([
-      block([print(id("x"), true)]),
+      print(id("x"), true),
       block([print(id("x"), false), print(stringLiteral("\n"), false)]),
     ])
   );
@@ -199,7 +197,7 @@ describe("Parse variants", () => {
     "Three variants",
     `{ println $x; / print $x; print "\\n"; / print $x; print "\\n"; }`,
     variants([
-      block([print(id("x"), true)]),
+      print(id("x"), true),
       block([print(id("x"), false), print(stringLiteral("\n"), false)]),
       block([print(id("x"), false), print(stringLiteral("\n"), false)]),
     ])
@@ -207,6 +205,6 @@ describe("Parse variants", () => {
   testStmtParse(
     "Expression variants",
     `println { 0 / 1 };`,
-    print(variants([block([int(0n)]), block([int(1n)])]), true)
+    print(variants([int(0n), int(1n)]), true)
   );
 });

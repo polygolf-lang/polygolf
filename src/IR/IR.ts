@@ -64,9 +64,10 @@ export interface SourcePointer {
   column: number;
 }
 
-export type Node = Program | Block | Expr;
+export type Node = Program | Expr;
 
 export type Expr =
+  | Block
   | Variants
   | KeyValue
   | PolygolfOp
@@ -105,13 +106,13 @@ export interface Program extends BaseNode {
   type: "Program";
   dependencies: Set<string>;
   variables: Map<string, ValueType>;
-  block: Block;
+  body: Expr;
 }
 
-export function program(block: Block): Program {
+export function program(body: Expr): Program {
   return {
     type: "Program",
-    block,
+    body,
     dependencies: new Set<string>(),
     variables: new Map<string, ValueType>(),
   };

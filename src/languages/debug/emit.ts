@@ -3,7 +3,7 @@ import { IR, ValueType } from "../../IR";
 export default function emit(node: IR.Node): string {
   switch (node.type) {
     case "Program":
-      return emit(node.block);
+      return emit(node.body);
     case "Block":
       return (
         "{ " + node.children.map((stmt) => emit(stmt) + ";").join(" ") + " }"
@@ -18,7 +18,7 @@ export default function emit(node: IR.Node): string {
       );
     case "ForEach":
       return (
-        `foreach ${emit(node.variable)} in ${emit(node.collection)}` +
+        `foreach ${emit(node.variable)} in ${emit(node.collection)} ` +
         emit(node.body)
       );
     case "ForEachPair":
@@ -29,8 +29,9 @@ export default function emit(node: IR.Node): string {
       );
     case "ForCLike":
       return (
-        `for(${emit(node.init)};${emit(node.condition)};${emit(node.append)})` +
-        emit(node.body)
+        `for(${emit(node.init)};${emit(node.condition)};${emit(
+          node.append
+        )}) ` + emit(node.body)
       );
     case "ForEachKey":
       return (
@@ -42,7 +43,7 @@ export default function emit(node: IR.Node): string {
         `if ${emit(node)} \n` +
         emit(node.consequent) +
         "\nelse\n" +
-        emit(node.alternate) +
+        (node.alternate === undefined ? "" : emit(node.alternate)) +
         "\nend"
       );
     case "Variants":

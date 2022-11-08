@@ -1,4 +1,4 @@
-import { Expr, Block, Identifier, id, int, block, BaseExpr } from "./IR";
+import { Expr, Identifier, id, int, block, BaseExpr } from "./IR";
 
 /**
  * A while loop. Raw OK
@@ -8,7 +8,7 @@ import { Expr, Block, Identifier, id, int, block, BaseExpr } from "./IR";
 export interface WhileLoop extends BaseExpr {
   type: "WhileLoop";
   condition: Expr;
-  body: Block;
+  body: Expr;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface ForRange extends BaseExpr {
   low: Expr;
   high: Expr;
   increment: Expr;
-  body: Block;
+  body: Expr;
 }
 
 /**
@@ -38,7 +38,7 @@ export interface ForEach extends BaseExpr {
   type: "ForEach";
   variable: Identifier;
   collection: Expr;
-  body: Block;
+  body: Expr;
 }
 
 /**
@@ -50,7 +50,7 @@ export interface ForEachKey extends BaseExpr {
   type: "ForEachKey";
   variable: Identifier;
   table: Expr;
-  body: Block;
+  body: Expr;
 }
 
 /**
@@ -60,10 +60,10 @@ export interface ForEachKey extends BaseExpr {
  */
 export interface ForCLike extends BaseExpr {
   type: "ForCLike";
-  init: Block;
+  init: Expr;
   condition: Expr;
-  append: Block;
-  body: Block;
+  append: Expr;
+  body: Expr;
 }
 
 /**
@@ -76,10 +76,10 @@ export interface ForEachPair extends BaseExpr {
   keyVariable: Identifier;
   valueVariable: Identifier;
   table: Expr;
-  body: Block;
+  body: Expr;
 }
 
-export function whileLoop(condition: Expr, body: Block): WhileLoop {
+export function whileLoop(condition: Expr, body: Expr): WhileLoop {
   return { type: "WhileLoop", condition, body };
 }
 
@@ -88,7 +88,7 @@ export function forRange(
   low: Expr,
   high: Expr,
   increment: Expr,
-  body: Block,
+  body: Expr,
   inclusive: boolean = false
 ): ForRange {
   return {
@@ -115,7 +115,7 @@ export function forRangeCommon(
       : typeof bounds[3] === "number"
       ? int(BigInt(bounds[3]))
       : bounds[3],
-    block(body),
+    body.length > 1 ? block(body) : body[0],
     bounds[4]
   );
 }
@@ -123,7 +123,7 @@ export function forRangeCommon(
 export function forEach(
   variable: Identifier | string,
   collection: Expr,
-  body: Block
+  body: Expr
 ): ForEach {
   return {
     type: "ForEach",
@@ -136,7 +136,7 @@ export function forEach(
 export function forEachKey(
   variable: Identifier | string,
   table: Expr,
-  body: Block
+  body: Expr
 ): ForEachKey {
   return {
     type: "ForEachKey",
@@ -147,10 +147,10 @@ export function forEachKey(
 }
 
 export function forCLike(
-  init: Block,
-  append: Block,
+  init: Expr,
+  append: Expr,
   condition: Expr,
-  body: Block
+  body: Expr
 ): ForCLike {
   return {
     type: "ForCLike",
@@ -165,7 +165,7 @@ export function forEachPair(
   keyVariable: Identifier | string,
   valueVariable: Identifier | string,
   table: Expr,
-  body: Block
+  body: Expr
 ): ForEachPair {
   return {
     type: "ForEachPair",
