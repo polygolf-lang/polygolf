@@ -11,7 +11,7 @@ import lua from "./languages/lua";
 import nim from "./languages/nim";
 import polygolf from "./languages/polygolf";
 
-const languageTable = { lua, nim, polygolf: polygolf(true, false) };
+const languageTable = { lua, nim, polygolf: polygolf(true) };
 
 const options = yargs()
   .options({

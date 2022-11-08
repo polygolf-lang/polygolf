@@ -5,9 +5,8 @@ import emitProgram from "./emit";
 import { Path, Visitor } from "../../common/traverse";
 import { calcType, getType } from "../../common/getType";
 
-function polygolfLanguage(stripTypes = false, forceBlocks = true): Language {
+function polygolfLanguage(stripTypes = false): Language {
   const plugins: Visitor[] = [];
-  if (forceBlocks) plugins.push(forceControlFlowBlocks);
   plugins.push(blocksAsVariants);
   if (stripTypes) plugins.push(stripTypesIfInferable);
   return {
@@ -33,53 +32,39 @@ function isEqual(a: ValueType, b: ValueType): boolean {
 }
 const initializedVariables = new Set<string>();
 const stripTypesIfInferable: Visitor = {
-  exit(path: Path) {
+  enter(path: Path) {
     const program = path.root.node;
     const node = path.node;
-    if (node.type === "Program") {
+    if (path.node.type === "Program") {
       initializedVariables.clear();
     } else if (
-      node.type === "Assignment" &&
-      node.variable.type === "Identifier" &&
-      !node.variable.builtin
+      node.type === "Identifier" &&
+      !node.builtin &&
+      path.parent !== null &&
+      path.parent.node.type === "Assignment" &&
+      path.pathFragment === "variable"
     ) {
-      const variable = node.variable.name;
+      const variable = node.name;
       if (
         program.variables.has(variable) &&
         !initializedVariables.has(variable)
       ) {
         if (
           !isEqual(
-            getType(node.expr, program),
+            getType(path.parent.node.expr, program),
             program.variables.get(variable)!
           )
         ) {
-          node.variable.valueType = program.variables.get(variable);
+          node.valueType = program.variables.get(variable);
+        } else {
+          node.valueType = undefined;
         }
         initializedVariables.add(variable);
       }
     } else if ("valueType" in node && node.valueType !== undefined) {
       if (isEqual(node.valueType, calcType(node, program))) {
-        path.replaceWith({ ...node, valueType: undefined });
+        node.valueType = undefined;
       }
-    }
-  },
-};
-
-const forceControlFlowBlocks: Visitor = {
-  enter(path: Path) {
-    if (path.parent !== null) {
-      const node = path.node;
-      if ("consequent" in node && node.consequent.type !== "Block")
-        path.replaceChild(variants([node.consequent]), "consequent");
-      if (
-        "alternate" in node &&
-        node.alternate !== undefined &&
-        node.alternate.type !== "Block"
-      )
-        path.replaceChild(variants([node.alternate]), "alternate");
-      if ("body" in node && node.body.type !== "Block")
-        path.replaceChild(variants([node.body]), "body");
     }
   },
 };
