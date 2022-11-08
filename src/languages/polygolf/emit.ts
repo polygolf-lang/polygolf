@@ -1,31 +1,69 @@
 import { joinGroups } from "../../common/emit";
-import { block, Expr, IR, toString } from "../../IR";
+import { block, Expr, IR, toString, Variants } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {
   return emitExpr(program.body, true);
 }
 
+function emitVariants(expr: Variants, indent = false): string[] {
+  if (indent) {
+    return [
+      "{",
+      "$INDENT$",
+      "\n",
+      ...joinGroups(
+        expr.variants.map((x) => emitExpr(x, true)),
+        "/"
+      ),
+      "\n",
+      "$DEDENT$",
+      "}",
+    ];
+  }
+  return [
+    "{",
+    ...joinGroups(
+      expr.variants.map((x) => emitExpr(x, true)),
+      "/"
+    ),
+    "}",
+  ];
+}
+
 function emitExpr(expr: Expr, asStatement = false): string[] {
   function emitSexpr(op: string, ...args: (string | Expr)[]): string[] {
     if (op === "@") op += expr.type;
-    if (asStatement) {
-      return [
-        op,
+    const result: string[] = [];
+    if (!asStatement) result.push("(");
+    if (opAliases[op] !== undefined && args.length === 2) {
+      result.push(
+        ...(typeof args[0] === "string" ? [args[0]] : emitExpr(args[0]))
+      );
+      result.push(opAliases[op]);
+      result.push(
+        ...(typeof args[1] === "string" ? [args[1]] : emitExpr(args[1]))
+      );
+    } else {
+      op = opAliases[op] ?? op;
+      result.push(op);
+      result.push(
         ...joinGroups(
           args.map((x) => (typeof x === "string" ? [x] : emitExpr(x)))
-        ),
-        ";",
-      ];
+        )
+      );
     }
-    return [
-      "(",
-      op,
-      ...joinGroups(
-        args.map((x) => (typeof x === "string" ? [x] : emitExpr(x)))
-      ),
-      ")",
-      ...(expr.valueType === undefined ? [] : [":", toString(expr.valueType)]),
-    ];
+    if (asStatement) {
+      result.push(";");
+    } else {
+      result.push(")");
+      if (expr.valueType !== undefined)
+        result.push(":", toString(expr.valueType));
+    }
+    return result;
+  }
+  function emitIndent(expr: Expr): (string | Expr)[] {
+    if (expr.type === "Variants") return emitVariants(expr, true);
+    return ["$INDENT$", "\n", expr, "$DEDENT$"];
   }
   switch (expr.type) {
     case "Block":
@@ -36,14 +74,7 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
         ),
       ];
     case "Variants":
-      return [
-        "{",
-        ...joinGroups(
-          expr.variants.map((x) => emitExpr(x, true)),
-          "/"
-        ),
-        "}",
-      ];
+      return emitVariants(expr);
     case "KeyValue":
       return emitSexpr("key_value", expr.key, expr.value);
     case "PolygolfOp":
@@ -141,14 +172,7 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
         ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x))
       );
     case "WhileLoop":
-      return emitSexpr(
-        "while",
-        expr.condition,
-        "$INDENT$",
-        "\n",
-        expr.body,
-        "$DEDENT$"
-      );
+      return emitSexpr("while", expr.condition, ...emitIndent(expr.body));
     case "ForRange":
       if (expr.inclusive) {
         return emitSexpr(
@@ -157,10 +181,7 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
           expr.low,
           expr.high,
           expr.increment,
-          "$INDENT$",
-          "\n",
-          expr.body,
-          "$DEDENT$"
+          ...emitIndent(expr.body)
         );
       }
       return emitSexpr(
@@ -172,36 +193,64 @@ function emitExpr(expr: Expr, asStatement = false): string[] {
         expr.increment.value === 1n
           ? []
           : [expr.increment]),
-        "$INDENT$",
-        "\n",
-        expr.body,
-        "$DEDENT$"
+        ...emitIndent(expr.body)
       );
     case "ForEach":
-      return emitSexpr("@", expr.variable, expr.collection, expr.body);
+      return emitSexpr(
+        "@",
+        expr.variable,
+        expr.collection,
+        ...emitIndent(expr.body)
+      );
     case "ForEachKey":
-      return emitSexpr("@", expr.variable, expr.table, expr.body);
+      return emitSexpr(
+        "@",
+        expr.variable,
+        expr.table,
+        ...emitIndent(expr.body)
+      );
     case "ForEachPair":
       return emitSexpr(
         "@",
         expr.keyVariable,
         expr.valueVariable,
         expr.table,
-        expr.body
+        ...emitIndent(expr.body)
       );
     case "ForCLike":
-      return emitSexpr("@", expr.init, expr.condition, expr.append, expr.body);
+      return emitSexpr(
+        "@",
+        expr.init,
+        expr.condition,
+        expr.append,
+        ...emitIndent(expr.body)
+      );
     case "IfStatement":
       return emitSexpr(
         "if",
         expr.condition,
-        "$INDENT$",
-        "\n",
-        expr.consequent,
-        "$DEDENT$",
-        ...(expr.alternate === undefined
-          ? []
-          : ["$INDENT$", "\n", expr.alternate, "$DEDENT$"])
+        ...emitIndent(expr.consequent),
+        ...(expr.alternate === undefined ? [] : [...emitIndent(expr.alternate)])
       );
   }
 }
+
+const opAliases: Record<string, string> = {
+  add: "+",
+  neg: "-",
+  sub: "-",
+  mul: "*",
+  pow: "^",
+  bit_and: "&",
+  bit_or: "&",
+  eq: "==",
+  neq: "!=",
+  leq: "<=",
+  lt: "<",
+  geq: ">=",
+  gt: ">",
+  list_length: "#",
+  text_concat: "..",
+  assign: "<-",
+  key_value: "=>",
+};
