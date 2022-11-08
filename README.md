@@ -15,13 +15,19 @@ Design goals
 
 Processing pipeline
 
-1. Parse frontend to unrefined IR
-2. Detect all idioms required for the language, and replace in the IR
+1. Parse frontend to unrefined IR.
+2. Expand all user defined variants, obtaining a list of instantiated (variantless) programs.
+3. Type check each such program.
+4. Run language specific sequence of transforms - detecting idioms and replacing nodes in the IR.
 
-- if an idiom may or may not save bytes depending on some details, mark it as one of several alternatives. For example, a procedure or function used twice may or may not be shorter when inlined. Try both alternatives and compare
-- this might lead to exponential complexity, so there should be flags to avoid excessive branching. Similarly to -O3 in gcc spending more time compiling for faster output, our -O3 would spend more time compiling for shorter output
+- If an idiom may or may not save bytes depending on some details, the transform can create variant node containing both versions. For example, a procedure or function used twice may or may not be shorter when inlined.
 
-3. Emit to the desired language
+5. If some step creates variant blocks, expand them.
+
+- This might lead to exponential complexity, so there should be flags to avoid excessive branching. Similarly to -O3 in gcc spending more time compiling for faster output, our -O3 would spend more time compiling for shorter output.
+- This can be done by limiting the total amount of variants Polygolf is considering at a time. After each expansion of transform generated variants, emit the partial result (applying all remaining transforms that don't create variants) and order the candidates by the emitted length. Keep shortest ones only and go to the next step.
+
+6. Emit to the desired language.
 
 ## Usage
 
