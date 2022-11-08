@@ -226,7 +226,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
     default:
       throw new Error(
         `Unexpected node while emitting Python: ${expr.type}: ${
-          "op" in expr ? expr.op : ""
+          "op" in expr ? expr.op ?? "" : ""
         }. `
       );
   }
