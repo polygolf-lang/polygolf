@@ -8,14 +8,15 @@ import { PathFragment } from "../../common/traverse";
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {
-  return emitBlock(program.block, true);
+  return emitStatement(program.body, program);
 }
 
-function emitBlock(block: IR.Block, root: boolean = false): string[] {
+function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
+  const children = block.type === "Block" ? block.children : [block];
   if (hasChildWithBlock(block)) {
-    if (root) {
+    if (parent.type === "Program") {
       return joinGroups(
-        block.children.map((stmt) => emitStatement(stmt, block)),
+        children.map((stmt) => emitStatement(stmt, block)),
         "\n"
       );
     }
@@ -23,7 +24,7 @@ function emitBlock(block: IR.Block, root: boolean = false): string[] {
       "$INDENT$",
       "\n",
       ...joinGroups(
-        block.children.map((stmt) => emitStatement(stmt, block)),
+        children.map((stmt) => emitStatement(stmt, block)),
         "\n"
       ),
       "$DEDENT$",
@@ -31,13 +32,15 @@ function emitBlock(block: IR.Block, root: boolean = false): string[] {
     ];
   }
   return joinGroups(
-    block.children.map((stmt) => emitStatement(stmt, block)),
+    children.map((stmt) => emitStatement(stmt, block)),
     ";"
   );
 }
 
-function emitStatement(stmt: IR.Expr, parent: IR.Block): string[] {
+function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
   switch (stmt.type) {
+    case "Block":
+      return emitBlock(stmt, parent);
     case "ImportStatement":
       return [
         stmt.name,
@@ -51,7 +54,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Block): string[] {
         `while`,
         ...emitExpr(stmt.condition, stmt),
         ":",
-        ...emitBlock(stmt.body),
+        ...emitBlock(stmt.body, stmt),
       ];
     case "ForRange": {
       const low = emitExpr(stmt.low, stmt);
@@ -70,7 +73,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Block): string[] {
         ...(increment1 ? [] : [",", ...increment]),
         ")",
         ":",
-        ...emitBlock(stmt.body),
+        ...emitBlock(stmt.body, stmt),
       ];
     }
     case "IfStatement":
@@ -78,9 +81,9 @@ function emitStatement(stmt: IR.Expr, parent: IR.Block): string[] {
         "if",
         ...emitExpr(stmt.condition, stmt),
         ":",
-        ...emitBlock(stmt.consequent),
-        ...(stmt.alternate.children.length > 0
-          ? ["else", ":", ...emitBlock(stmt.alternate)]
+        ...emitBlock(stmt.consequent, stmt),
+        ...(stmt.alternate !== undefined
+          ? ["else", ":", ...emitBlock(stmt.alternate, stmt)]
           : []),
       ];
     case "Variants":

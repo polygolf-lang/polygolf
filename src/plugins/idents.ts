@@ -1,6 +1,6 @@
 import { IdentifierGenerator } from "common/Language";
 import { Path } from "../common/traverse";
-import { assignment, Expr, id, Identifier, IR } from "../IR";
+import { assignment, block, Expr, id, Identifier, IR } from "../IR";
 
 function getIdentMap(
   path: Path<IR.Program>,
@@ -105,9 +105,15 @@ export function aliasBuiltins(
             }
           }
         });
-        program.block.children = aliased
-          .map((x) => assignment(x + "_alias", id(x, true)) as Expr)
-          .concat(program.block.children);
+        program.body = block(
+          aliased
+            .map((x) => assignment(x + "_alias", id(x, true)) as Expr)
+            .concat(
+              program.body.type === "Block"
+                ? program.body.children
+                : [program.body]
+            )
+        );
         usedBuiltins.clear();
       }
     },
