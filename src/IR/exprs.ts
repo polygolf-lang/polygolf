@@ -237,3 +237,34 @@ export function unaryOp(
 export function print(value: Expr, newline: boolean = true): PolygolfOp {
   return polygolfOp(newline ? "println" : "print", value);
 }
+
+export function getArgs(
+  node:
+    | PolygolfOp
+    | BinaryOp
+    | MutatingBinaryOp
+    | UnaryOp
+    | FunctionCall
+    | MethodCall
+    | IndexCall
+    | RangeIndexCall
+): Expr[] {
+  switch (node.type) {
+    case "BinaryOp":
+      return [node.left, node.right];
+    case "MutatingBinaryOp":
+      return [node.variable, node.right];
+    case "UnaryOp":
+      return [node.arg];
+    case "FunctionCall":
+      return node.args;
+    case "MethodCall":
+      return [node.object, ...node.args];
+    case "PolygolfOp":
+      return node.args;
+    case "IndexCall":
+      return [node.collection, node.index];
+    case "RangeIndexCall":
+      return [node.collection, node.low, node.high, node.step];
+  }
+}

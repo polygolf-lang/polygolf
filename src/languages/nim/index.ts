@@ -21,6 +21,10 @@ import {
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { useInclusiveForRange } from "../../plugins/loops";
+import {
+  evalStaticIntegers,
+  golfStringListLiteral,
+} from "../../plugins/static";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -30,6 +34,7 @@ const nimLanguage: Language = {
     modToRem,
     divToTruncdiv,
     useInclusiveForRange,
+    golfStringListLiteral,
     useIndexCalls(),
     mapOps([
       [
@@ -40,7 +45,8 @@ const nimLanguage: Language = {
     mapOps([
       ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["text_get_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
-      ["text_get_split", (x) => functionCall(x, "split")],
+      ["text_split", (x) => functionCall(x, "split")],
+      ["text_split_whitespace", (x) => functionCall(x, "split")],
       ["text_length", (x) => functionCall(x, "len")],
       ["int_to_text", "$"],
       ["repeat", (x) => functionCall(x, "repeat")],
@@ -74,6 +80,7 @@ const nimLanguage: Language = {
     ]),
     useUFCS,
     useUnsignedDivision,
+    evalStaticIntegers,
     addDependencies([
       ["^", "math"],
       ["repeat", "strutils"],

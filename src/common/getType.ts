@@ -26,6 +26,7 @@ import {
   tableType,
   KeyValueType,
   keyValueType,
+  getArgs,
 } from "../IR";
 import { PolygolfError } from "./errors";
 
@@ -166,31 +167,6 @@ export function calcType(expr: Expr, program: Program): ValueType {
     `Type error. Unexpected node ${expr.type}.`,
     expr.source
   );
-}
-
-function getArgs(
-  expr:
-    | BinaryOp
-    | MutatingBinaryOp
-    | UnaryOp
-    | FunctionCall
-    | MethodCall
-    | PolygolfOp
-): Expr[] {
-  switch (expr.type) {
-    case "BinaryOp":
-      return [expr.left, expr.right];
-    case "UnaryOp":
-      return [expr.arg];
-    case "FunctionCall":
-      return expr.args;
-    case "MethodCall":
-      return [expr.object, ...expr.args];
-    case "PolygolfOp":
-      return expr.args;
-    case "MutatingBinaryOp":
-      return [expr.variable, expr.right];
-  }
 }
 
 function getOpCodeType(
