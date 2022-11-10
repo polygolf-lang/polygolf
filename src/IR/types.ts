@@ -3,12 +3,14 @@ import { Expr } from "./IR";
 /** The type of the value of a node when evaluated */
 export interface IntegerType {
   type: "integer";
-  low?: bigint;
-  high?: bigint;
+  low: IntegerBound;
+  high: IntegerBound;
 }
+export type IntegerBound = bigint | "-oo" | "oo";
+
 export interface TextType {
   type: "text";
-  capacity?: number;
+  capacity: number;
 }
 export interface KeyValueType {
   type: "KeyValue";
@@ -81,8 +83,8 @@ export function arrayType(
 }
 
 export function integerType(
-  low?: bigint | number,
-  high?: bigint | number
+  low: IntegerBound | number = "-oo",
+  high: IntegerBound | number = "oo"
 ): IntegerType {
   return {
     type: "integer",
@@ -91,24 +93,28 @@ export function integerType(
   };
 }
 
-export function textType(capacity?: bigint | number): TextType {
+export function textType(capacity: number | IntegerBound = Infinity): TextType {
   return {
     type: "text",
     capacity:
-      typeof capacity === "bigint"
-        ? Number(BigInt.asIntN(32, capacity))
-        : capacity,
+      typeof capacity === "number"
+        ? capacity
+        : isFinite(capacity) && capacity < 1 << 32
+        ? Number(capacity)
+        : Infinity,
   };
 }
 
-export function integerTypeIncludingAll(values: bigint[]): IntegerType {
-  return integerType(...bigIntMinAndMax(values));
+export function integerTypeIncludingAll(
+  ...values: IntegerBound[]
+): IntegerType {
+  return integerType(...integerBoundMinAndMax(values));
 }
 
-function bigIntMinAndMax(args: bigint[]) {
+function integerBoundMinAndMax(args: IntegerBound[]) {
   return args.reduce(
-    ([min, max], e) => {
-      return [e < min ? e : min, e > max ? e : max];
+    ([mn, mx], e) => {
+      return [min(mn, e), max(mx, e)];
     },
     [args[0], args[0]]
   );
@@ -164,18 +170,7 @@ export function union(a: ValueType, b: ValueType): ValueType {
       return tableType(union(a.key, b.key) as any, union(a.value, b.value));
     } else if (a.type === "integer" && b.type === "integer") {
       return b.type === "integer"
-        ? integerType(
-            a.low === undefined || b.low === undefined
-              ? undefined
-              : a.low < b.low
-              ? a.low
-              : b.low,
-            a.high === undefined || b.high === undefined
-              ? undefined
-              : a.high < b.high
-              ? b.high
-              : a.high
-          )
+        ? integerType(min(a.low, b.low), max(a.high, b.high))
         : integerType();
     } else if (a.type === "text" && b.type === "text") {
       return textType(
@@ -212,17 +207,73 @@ export function isSubtype(a: ValueType, b: ValueType): boolean {
     return isSubtype(a.key, b.key) && isSubtype(a.value, b.value);
   }
   if (a.type === "integer" && b.type === "integer") {
-    return (
-      (b.low === undefined || (a.low !== undefined && a.low >= b.low)) &&
-      (b.high === undefined || (a.high !== undefined && b.high >= a.high))
-    );
+    return leq(b.low, a.low) && leq(a.high, b.high);
   }
   if (a.type === "text" && b.type === "text") {
-    return (
-      b.type === "text" &&
-      (b.capacity === undefined ||
-        (a.capacity !== undefined && a.capacity <= b.capacity))
-    );
+    return a.capacity <= b.capacity;
   }
   return a.type === b.type;
+}
+
+export function abs(a: IntegerBound): IntegerBound {
+  return leq(a, 0n) ? -a : a;
+}
+export function min(a: IntegerBound, b: IntegerBound): IntegerBound {
+  return leq(a, b) ? a : b;
+}
+export function max(a: IntegerBound, b: IntegerBound): IntegerBound {
+  return leq(a, b) ? b : a;
+}
+export function leq(a: IntegerBound, b: IntegerBound): boolean {
+  return a === "-oo" || b === "oo" || (a !== "oo" && b !== "-oo" && a <= b);
+}
+export function lt(a: IntegerBound, b: IntegerBound): boolean {
+  return leq(a, b) && a !== b;
+}
+export function neg(a: IntegerBound): IntegerBound {
+  return a === "oo" ? "-oo" : a === "-oo" ? "oo" : -a;
+}
+export function add(a: IntegerBound, b: IntegerBound): IntegerBound {
+  if (leq(b, a)) [a, b] = [b, a];
+  if (a === "-oo" && b === "oo")
+    throw new Error("Indeterminate result of -oo + oo.");
+  if (a === "-oo") return a;
+  if (b === "oo") return b;
+  return (a as bigint) + (b as bigint);
+}
+export function sub(a: IntegerBound, b: IntegerBound): IntegerBound {
+  return add(a, neg(b));
+}
+export function mul(a: IntegerBound, b: IntegerBound): IntegerBound {
+  if (leq(b, a)) [a, b] = [b, a];
+  if ((a === "-oo" && b === 0n) || (b === "oo" && a === 0n))
+    throw new Error("Indeterminate result of 0 * oo.");
+  if (a === "-oo") return lt(b, 0n) ? "oo" : "-oo";
+  if (b === "oo") return lt(b, 0n) ? "-oo" : "oo";
+  return (a as bigint) * (b as bigint);
+}
+export function floorDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
+  const res = truncDiv(a, b);
+  return lt(a, 0n) !== lt(b, 0n) ? sub(res, 1n) : res;
+}
+export function truncDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
+  if (b === 0n) throw new Error("Indeterminate result of x / 0.");
+  if (!isFinite(a) && !isFinite(b))
+    throw new Error("Indeterminate result of +-oo / +-oo.");
+  if (a === "-oo") return "-oo";
+  if (a === "oo") return "oo";
+  if (b === "-oo" || b === "oo") return 0n;
+  return a / b;
+}
+
+export function isFinite(a: IntegerBound): a is bigint {
+  return typeof a === "bigint";
+}
+interface FiniteIntegerType {
+  type: "integer";
+  low: bigint;
+  high: bigint;
+}
+export function isFiniteType(a: IntegerType): a is FiniteIntegerType {
+  return isFinite(a.low) && isFinite(a.high);
 }

@@ -41,7 +41,7 @@ import {
   VarDeclaration,
   Variants,
 } from "./toplevel";
-import { integerType, ValueType } from "./types";
+import { integerType, sub, ValueType } from "./types";
 
 export * from "./assignments";
 export * from "./opcodes";
@@ -150,12 +150,7 @@ export function typesPass(program: Program) {
         }
         setVar(
           node.variable.name,
-          integerType(
-            low.low,
-            high.high === undefined
-              ? undefined
-              : high.high - (node.inclusive ? 0n : 1n)
-          )
+          integerType(low.low, sub(high.high, node.inclusive ? 0n : 1n))
         );
       } else if (node.type === "ForEach") {
         setVar(

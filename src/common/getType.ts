@@ -27,6 +27,19 @@ import {
   KeyValueType,
   keyValueType,
   getArgs,
+  IntegerBound,
+  max,
+  min,
+  add,
+  mul,
+  lt,
+  floorDiv,
+  truncDiv,
+  sub,
+  isFinite,
+  isFiniteType,
+  abs,
+  neg,
 } from "../IR";
 import { PolygolfError } from "./errors";
 
@@ -362,14 +375,36 @@ function getOpCodeType(
       return textType();
     case "right_align":
       expectType(listType(textType()), integerType(0));
-      return textType(); // TODO narrow this
+      return textType();
     case "int_to_bin_aligned":
-    case "int_to_hex_aligned":
-      expectType(integerType(), textType());
-      return textType(); // TODO narrow this
-    case "simplify_fraction":
+    case "int_to_hex_aligned": {
+      expectType(integerType(0), integerType(0));
+      const t1 = types[0] as IntegerType;
+      const t2 = types[0] as IntegerType;
+      if (isFiniteType(t1) && isFiniteType(t2)) {
+        return textType(
+          max(
+            BigInt(
+              t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16).length
+            ),
+            t2.high
+          )
+        );
+      }
+      return textType();
+    }
+    case "simplify_fraction": {
       expectType(integerType(), integerType());
-      return textType(); // TODO narrow this
+      const t1 = types[0] as IntegerType;
+      const t2 = types[0] as IntegerType;
+      if (isFiniteType(t1) && isFiniteType(t2))
+        return textType(
+          1 +
+            Math.max(t1.low.toString().length, t1.high.toString().length) +
+            Math.max(t2.low.toString().length, t2.high.toString().length)
+        );
+      return textType();
+    }
     // unary
     case "abs": {
       expectType(integerType());
@@ -383,28 +418,43 @@ function getOpCodeType(
           : t.high
       );
     }
-    case "bit_not":
+    case "bit_not": {
       expectType(integerType());
-      return integerType();
+      const t = types[0] as IntegerType;
+      return integerType(sub(-1n, t.high), sub(-1n, t.low));
+    }
     case "neg": {
       expectType(integerType());
       const t = types[0] as IntegerType;
-      return integerType(
-        t.high === undefined ? undefined : -t.high,
-        t.low === undefined ? undefined : -t.low
-      );
+      return integerType(neg(t.high), neg(t.low));
     }
     case "not":
       expectType(booleanType);
       return booleanType;
     case "int_to_text":
     case "int_to_bin":
-    case "int_to_hex":
+    case "int_to_hex": {
       expectType(integerType());
-      return textType(); // TODO narrow this
-    case "text_to_int":
-      expectType(textType()); // TODO narrow this
+      const t = types[0] as IntegerType;
+      if (isFiniteType(t))
+        return textType(
+          BigInt(
+            t.high.toString(
+              expr.op === "int_to_bin" ? 2 : expr.op === "int_to_hex" ? 16 : 10
+            ).length
+          )
+        );
       return integerType();
+    }
+    case "text_to_int": {
+      expectType(textType());
+      const t = types[0] as TextType;
+      if (t.capacity === Infinity) return integerType();
+      return integerType(
+        1n - 10n ** BigInt(t.capacity - 1),
+        10n ** BigInt(t.capacity) - 1n
+      );
+    }
     case "bool_to_int":
       expectType(booleanType);
       return integerType(0, 1);
@@ -444,16 +494,14 @@ function getOpCodeType(
     case "text_get_slice": {
       expectType(textType(), integerType(0), integerType(0));
       const [t, i1, i2] = types as [TextType, IntegerType, IntegerType];
-      return textType(
-        t.capacity === undefined && i2.high === undefined
-          ? undefined
-          : Math.max(
-              0,
-              t.capacity === undefined
-                ? Number(i2.high! - (i1.low ?? 0n))
-                : t.capacity - Number(i1.low ?? 0)
-            )
+      const c = max(
+        0n,
+        sub(
+          min(t.capacity === Infinity ? "oo" : BigInt(t.capacity), i2.high),
+          i1.low
+        )
       );
+      return textType(c);
     }
     case "array_set":
       return expectGenericType(
@@ -482,83 +530,150 @@ function getOpCodeType(
 
 function getArithmeticType(
   op: OpCode,
-  left: IntegerType,
-  right: IntegerType,
+  a: IntegerType, // left argument
+  b: IntegerType, // right argument
   source?: SourcePointer
 ): ValueType {
   switch (op) {
     case "gcd":
-      if (
-        left.low === undefined ||
-        left.high === undefined ||
-        right.high === undefined ||
-        right.low === undefined
-      )
-        return integerType(1n, undefined);
       return integerType(
         1n,
-        [left.low, left.high, right.low, right.high]
-          .map((x) => (x < 0 ? -x : x))
-          .reduce((a, b) => (a < b ? a : b))
+        min(max(abs(a.low), abs(a.high)), max(abs(b.low), abs(b.high)))
       );
-    case "min": {
-      let low;
-      let high;
-      if (left.low !== undefined && right.low !== undefined)
-        low = left.low < right.low ? left.low : right.low;
-      if (left.high !== undefined && right.high !== undefined)
-        high = left.high < right.high ? left.high : right.high;
-      return integerType(low, high);
-    }
-    case "max": {
-      let low;
-      let high;
-      if (left.low !== undefined && right.low !== undefined)
-        low = left.low > right.low ? left.low : right.low;
-      if (left.high !== undefined && right.high !== undefined)
-        high = left.high > right.high ? left.high : right.high;
-      return integerType(low, high);
-    }
+    case "min":
+      return integerType(min(a.low, b.low), min(a.high, b.high));
+    case "max":
+      return integerType(max(a.low, b.low), max(a.high, b.high));
     case "add":
-      return integerType(
-        left.low === undefined || right.low === undefined
-          ? undefined
-          : left.low + right.low,
-        left.high === undefined || right.high === undefined
-          ? undefined
-          : left.high + right.high
-      );
+      return integerType(add(a.low, b.low), add(a.high, b.high));
     case "sub":
-      return integerType(
-        left.low === undefined || right.high === undefined
-          ? undefined
-          : left.low - right.high,
-        left.high === undefined || right.low === undefined
-          ? undefined
-          : left.high - right.low
-      );
+      return integerType(sub(a.low, b.high), sub(a.high, b.low));
     case "mul":
-      return getIntegerTypeUsing(left, right, (a, b) => a * b);
-    case "div":
-      return integerType(); // TODO narrow this
-    case "trunc_div":
-      return integerType(); // TODO narrow this
-    case "mod":
-      return getIntegerTypeMod(left, right);
-    case "rem":
-      return getIntegerTypeRem(left, right);
-    case "pow":
-      return getIntegerTypeUsing(
-        left,
-        (right.low ?? 1n) < 0n ? integerType(0n, right.high) : right,
-        (a, b) => a ** b
+      return integerTypeIncludingAll(
+        a.low === "-oo" ? "-oo" : mul(a.low, b.low),
+        a.low === "-oo" ? "-oo" : mul(a.low, b.high),
+        a.high === "oo" ? "oo" : mul(a.low, b.low),
+        a.high === "oo" ? "oo" : mul(a.high, b.high)
       );
-    case "bit_and":
+    case "div": {
+      const values: IntegerBound[] = [];
+      if (lt(b.low, 0n)) {
+        // b includes -1
+        values.push(floorDiv(a.low, -1n), floorDiv(a.high, -1n));
+      }
+      if (lt(0n, b.high)) {
+        // b includes +1
+        values.push(floorDiv(a.low, 1n), floorDiv(a.high, 1n));
+      }
+      if (
+        (b.low === "-oo" && lt(a.low, 0n)) ||
+        (b.high === "oo" && lt(0n, a.high))
+      )
+        values.push(0n);
+      else if (
+        (b.low === "-oo" && lt(0n, a.high)) ||
+        (b.high === "oo" && lt(a.low, 0n))
+      )
+        values.push(-1n);
+      else
+        values.push(
+          floorDiv(a.low, b.low),
+          floorDiv(a.low, b.high),
+          floorDiv(a.high, b.low),
+          floorDiv(a.high, b.high)
+        );
+      return integerTypeIncludingAll(...values);
+    }
+    case "trunc_div": {
+      const values: IntegerBound[] = [];
+      if (lt(b.low, 0n)) {
+        // b includes -1
+        values.push(truncDiv(a.low, -1n), truncDiv(a.high, -1n));
+      }
+      if (lt(0n, b.high)) {
+        // b includes +1
+        values.push(truncDiv(a.low, 1n), truncDiv(a.high, 1n));
+      }
+      if (b.low === "-oo" || b.high === "oo") values.push(0n);
+      else
+        values.push(
+          truncDiv(a.low, b.low),
+          truncDiv(a.low, b.high),
+          truncDiv(a.high, b.low),
+          truncDiv(a.high, b.high)
+        );
+      return integerTypeIncludingAll(...values);
+    }
+    case "mod":
+      return getIntegerTypeMod(a, b);
+    case "rem":
+      return getIntegerTypeRem(a, b);
+    case "pow": {
+      if (lt(b.low, 0n))
+        throw new PolygolfError(
+          `Type error. Operator 'pow' expected [-oo..oo, 0..oo] but got [${toString(
+            a
+          )}, ${toString(b)}].`,
+          source
+        );
+      const values: IntegerBound[] = [];
+      if (b.high === "oo") {
+        values.push("oo");
+        if (a.low === -1n) values.push(-1n, 1n);
+        if (lt(a.low, -1n)) values.push("-oo");
+      }
+      if (a.low === "-oo") values.push("-oo");
+      if (a.high === "oo") values.push("oo");
+      if (b.low === b.high) {
+        if (isFinite(a.low) && isFinite(b.low)) values.push(a.low ** b.low);
+        if (isFinite(a.low) && isFinite(b.high)) values.push(a.low ** b.high);
+        if (isFinite(a.high) && isFinite(b.low)) values.push(a.high ** b.low);
+        if (isFinite(a.high) && isFinite(b.high)) values.push(a.high ** b.high);
+        if (a.low === "-oo" && isFinite(b.high) && b.high % 2n === 2n)
+          values.push("oo");
+      } else {
+        if (isFinite(a.low) && isFinite(b.low))
+          values.push(a.low ** (b.low + 1n));
+        if (isFinite(a.low) && isFinite(b.high))
+          values.push(a.low ** (b.high - 1n));
+        if (isFinite(a.high) && isFinite(b.low))
+          values.push(a.high ** (b.low + 1n));
+        if (isFinite(a.high) && isFinite(b.high))
+          values.push(a.high ** (b.high - 1n));
+        if (a.low === "-oo") values.push("oo");
+      }
+      return integerTypeIncludingAll(...values);
+    }
+    case "bit_and": {
+      const left = max(abs(a.low), abs(a.high));
+      const right = max(abs(b.low), abs(b.high));
+      if (isFinite(left) && isFinite(right)) {
+        const lesser = lt(left, right) ? left : right;
+        if (lt(-1n, a.low) && lt(-1n, b.low)) return integerType(0n, lesser);
+        return integerType(neg(lesser), lesser);
+      }
+      if (isFinite(left)) {
+        if (lt(-1n, a.low)) return integerType(0n, left);
+        return integerType(neg(left), left);
+      }
+      if (isFinite(right)) {
+        if (lt(-1n, b.low)) return integerType(0n, right);
+        return integerType(neg(right), right);
+      }
       return integerType();
+    }
     case "bit_or":
+    case "bit_xor": {
+      const left = max(abs(a.low), abs(a.high));
+      const right = max(abs(b.low), abs(b.high));
+      if (isFinite(left) && isFinite(right)) {
+        const larger = lt(left, right) ? left : right;
+        const lim = 2n ** BigInt(larger.toString(2).length);
+        if (lt(-1n, a.low) && lt(-1n, b.low)) return integerType(0n, lim);
+        return integerType(neg(lim), lim);
+      }
       return integerType();
-    case "bit_xor":
-      return integerType();
+    }
   }
   throw new PolygolfError(
     `Type error. Unknown opcode. ${op ?? "null"}`,
@@ -579,60 +694,17 @@ export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
   throw new PolygolfError("Type error. Node is not a collection.", expr.source);
 }
 
-/*
-function floorDiv(a: bigint, b: bigint): bigint {
-  const res = a / b;
-  return a < 0 !== b < 0 ? res - 1n : res;
-}
-*/
-
-/** Combines types `left` and `right` using the *convex* operator `op` */
-function getIntegerTypeUsing(
-  left: IntegerType,
-  right: IntegerType,
-  op: (a: bigint, b: bigint) => bigint
-): IntegerType {
-  if (
-    left.low === undefined ||
-    left.high === undefined ||
-    right.low === undefined ||
-    right.high === undefined
-  )
-    return integerType();
-  return integerTypeIncludingAll([
-    op(left.low, right.low),
-    op(left.low, right.high),
-    op(left.high, right.low),
-    op(left.high, right.high),
-  ]);
+function getIntegerTypeMod(a: IntegerType, b: IntegerType): IntegerType {
+  const values: IntegerBound[] = [];
+  if (lt(b.low, 0n))
+    values.push(sub(1n, min(b.low, min(abs(a.low), abs(a.high)))));
+  if (lt(0n, b.high))
+    values.push(sub(min(b.low, min(abs(a.low), abs(a.high))), 1n));
+  values.push(0n);
+  return integerTypeIncludingAll(...values);
 }
 
-function getIntegerTypeMod(left: IntegerType, right: IntegerType): IntegerType {
-  if (right.low === undefined || right.high === undefined) {
-    if (left.low === undefined || left.high === undefined) {
-      return integerType();
-    }
-    const m = left.high > -left.low ? left.high : -left.low;
-    return integerType(-m, m);
-  }
-  if (
-    left.low === undefined ||
-    left.high === undefined ||
-    left.low <= 0n ||
-    left.high >= right.high
-  ) {
-    const values = [0n];
-    if (right.low < 0n) values.push(right.low + 1n);
-    if (right.high > 0n) values.push(right.high - 1n);
-    return integerTypeIncludingAll(values);
-  }
-  return left;
-}
-
-function getIntegerTypeRem(left: IntegerType, right: IntegerType): IntegerType {
-  if (right.low === undefined || right.high === undefined) {
-    return integerType();
-  }
-  const m = right.high > -right.low ? right.high : -right.low;
-  return integerType(-m, m);
+function getIntegerTypeRem(a: IntegerType, b: IntegerType): IntegerType {
+  const m = max(abs(b.low), abs(b.high));
+  return integerType(neg(m), m);
 }
