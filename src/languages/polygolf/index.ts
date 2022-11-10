@@ -62,6 +62,21 @@ const stripTypesIfInferable: Visitor = {
         initializedVariables.add(variable);
         return;
       }
+    } else if (
+      node.type === "Identifier" &&
+      !node.builtin &&
+      path.parent !== null &&
+      path.parent.node.type === "Function" &&
+      path.pathFragment !== "expr"
+    ) {
+      const variable = node.name;
+      if (
+        program.variables.has(variable) &&
+        !initializedVariables.has(variable)
+      ) {
+        node.valueType = program.variables.get(variable);
+        return;
+      }
     }
     if ("valueType" in node && node.valueType !== undefined) {
       if (isEqual(node.valueType, calcType(node, program))) {

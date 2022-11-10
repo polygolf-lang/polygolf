@@ -52,7 +52,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
         program.variables.set(name, type);
       }
       for (const arg of expr.args) {
-        if (arg.valueType !== undefined) {
+        if (arg.valueType !== undefined && expr.valueType === undefined) {
           setVar(arg.name, arg.valueType);
         }
       }

@@ -91,6 +91,8 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
       );
     case "Assignment":
       return emitSexpr("assign", expr.variable, expr.expr);
+    case "Function":
+      return emitSexpr("func", ...expr.args, expr.expr);
     case "IndexCall":
       return emitSexpr(
         "@",
@@ -110,12 +112,15 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
         expr.step
       );
     case "FunctionCall":
-      return emitSexpr(
-        "@",
-        expr.op ?? "?",
-        ...emitExpr(expr.ident),
-        ...expr.args
-      );
+      if (expr.ident.builtin) {
+        return emitSexpr(
+          "@",
+          expr.op ?? "?",
+          ...emitExpr(expr.ident),
+          ...expr.args
+        );
+      }
+      return emitSexpr("$" + expr.ident.name, ...expr.args);
     case "MethodCall":
       return emitSexpr(
         "@",
