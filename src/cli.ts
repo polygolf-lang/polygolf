@@ -5,13 +5,14 @@ import fs from "fs";
 import path from "path";
 import parse from "./frontend/parse";
 import applyLanguage from "./common/applyLanguage";
+import { PolygolfError } from "./common/errors";
 
 import lua from "./languages/lua";
 import nim from "./languages/nim";
 import python from "./languages/python";
-import { PolygolfError } from "./common/errors";
+import polygolf from "./languages/polygolf";
 
-const languageTable = { lua, nim, python };
+const languageTable = { lua, nim, python, polygolf: polygolf(true) };
 
 const options = yargs()
   .options({
