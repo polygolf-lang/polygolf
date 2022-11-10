@@ -96,7 +96,7 @@ export interface UnaryOp extends BaseExpr {
 /**
  * Conditional ternary operator.
  *
- * Python: [alternate,consequent][condition].
+ * Python: [alternate,consequent][condition] or consequent if condition else alternate
  * C: condition?consequent:alternate.
  */
 export interface ConditionalOp extends BaseExpr {
@@ -104,6 +104,7 @@ export interface ConditionalOp extends BaseExpr {
   condition: Expr;
   consequent: Expr;
   alternate: Expr;
+  isSafe: boolean; //whether both branches can be safely evaluated (allows for more golfing)
 }
 
 export interface Function extends BaseExpr {
@@ -237,6 +238,21 @@ export function unaryOp(
     arg,
     name,
     precedence: precedence ?? getDefaultPrecedence(op),
+  };
+}
+
+export function conditional(
+  condition: Expr,
+  consequent: Expr,
+  alternate: Expr,
+  isSafe: boolean
+): ConditionalOp {
+  return {
+    type: "ConditionalOp",
+    condition,
+    consequent,
+    alternate,
+    isSafe,
   };
 }
 

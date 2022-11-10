@@ -36,6 +36,7 @@ import {
   arity,
   functionType,
   func,
+  conditional,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -128,6 +129,10 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
     case "key_value":
       expectArity(2);
       return keyValue(args[0], args[1]);
+    case "conditional":
+    case "unsafe_conditional":
+      expectArity(3);
+      return conditional(args[0], args[1], args[2], opCode === "conditional");
     case "assign":
       expectArity(2);
       assertIdentifier(args[0]);

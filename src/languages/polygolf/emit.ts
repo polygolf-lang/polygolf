@@ -173,7 +173,12 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
     case "MutatingBinaryOp":
       return emitSexpr("@", expr.op, expr.name, expr.variable, expr.right);
     case "ConditionalOp":
-      return emitSexpr("@", expr.condition, expr.consequent, expr.alternate);
+      return emitSexpr(
+        expr.isSafe ? "conditional" : "unsafe_conditional",
+        expr.condition,
+        expr.consequent,
+        expr.alternate
+      );
     case "ManyToManyAssignment":
       return emitSexpr(
         "@",

@@ -190,8 +190,21 @@ export function calcType(expr: Expr, program: Program): ValueType {
         "Programming error. Type of KeyValue nodes should always be KeyValue."
       );
     }
-    case "ConditionalOp":
-      return union(type(expr.consequent), type(expr.alternate));
+    case "ConditionalOp": {
+      const conditionType = type(expr.condition);
+      if (isSubtype(conditionType, booleanType))
+        return union(type(expr.consequent), type(expr.alternate));
+      throw new PolygolfError(
+        `Type error. Operator '${
+          expr.isSafe ? "conditional" : "unsafe_conditional"
+        }' error. Expected [Boolean, T1, T1] but got [${toString(
+          conditionType
+        )}, ${toString(type(expr.condition))}, ${toString(
+          type(expr.alternate)
+        )}].`,
+        expr.source
+      );
+    }
     case "ManyToManyAssignment":
       return voidType;
     case "ImportStatement":
