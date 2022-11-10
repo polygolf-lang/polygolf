@@ -43,6 +43,8 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "Block":
     case "VarDeclaration":
       return voidType;
+    case "Variants":
+      return expr.variants.map(type).reduce(union);
     case "Assignment": {
       const a = type(expr.variable);
       const b = type(expr.expr);
