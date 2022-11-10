@@ -528,7 +528,7 @@ function getOpCodeType(
   );
 }
 
-function getArithmeticType(
+export function getArithmeticType(
   op: OpCode,
   a: IntegerType, // left argument
   b: IntegerType, // right argument
