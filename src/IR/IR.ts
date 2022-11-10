@@ -24,6 +24,7 @@ import {
   IndexCall,
   KeyValue,
   RangeIndexCall,
+  Function,
 } from "./exprs";
 import {
   ForRange,
@@ -71,6 +72,7 @@ export type Expr =
   | Block
   | Variants
   | KeyValue
+  | Function
   | PolygolfOp
   | VarDeclaration
   | VarDeclarationWithAssignment

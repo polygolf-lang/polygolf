@@ -34,6 +34,8 @@ import {
   isOpCode,
   isBinary,
   arity,
+  functionType,
+  func,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -57,6 +59,9 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
         e.source
       );
   }
+  function assertIdentifiers(e: (Expr | Block)[]): asserts e is Identifier[] {
+    e.forEach(assertIdentifier);
+  }
   function assertExpr(e: Expr | Block): asserts e is Expr {
     if (e.type === "Block")
       throw new PolygolfError(
@@ -77,6 +82,14 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
     }
   }
   switch (opCode) {
+    case "func": {
+      expectArity(1, Infinity);
+      const idents = args.slice(0, args.length - 1);
+      const expr = args[args.length - 1];
+      assertIdentifiers(idents);
+      assertExpr(expr);
+      return func(idents, expr);
+    }
     case "for": {
       expectArity(4, 5);
       let variable, low, high, increment, body: Expr | Block;
@@ -211,6 +224,11 @@ export function typeSexpr(
         column: callee.col,
       });
   }
+  function assertTypes(
+    e: (ValueType | IntegerLiteral)[]
+  ): asserts e is ValueType[] {
+    e.forEach(assertType);
+  }
   function assertType(e: ValueType | IntegerLiteral): asserts e is ValueType {
     if (e.type === "IntegerLiteral")
       throw new PolygolfError(`Syntax error. Expected type, got number.`, {
@@ -250,6 +268,13 @@ export function typeSexpr(
       expectArity(1);
       assertType(args[0]);
       return setType(args[0]);
+    case "Func":
+      expectArity(1, Infinity);
+      assertTypes(args);
+      return functionType(
+        args.slice(0, args.length - 1),
+        args[args.length - 1]
+      );
     default:
       throw new PolygolfError(
         `Syntax error. Unrecognized type: ${callee.value}`,

@@ -15,7 +15,13 @@ export interface KeyValueType {
   key: IntegerType | TextType;
   value: ValueType;
 }
+export interface FunctionType {
+  type: "Function";
+  arguments: ValueType[];
+  result: ValueType;
+}
 export type ValueType =
+  | FunctionType
   | IntegerType
   | TextType
   | { type: "void" }
@@ -31,6 +37,17 @@ export const voidType: ValueType = { type: "void" };
 
 function valueType(type: ValueType | "void" | "boolean"): ValueType {
   return type === "boolean" ? booleanType : type === "void" ? voidType : type;
+}
+
+export function functionType(
+  args: ValueType[],
+  result: ValueType
+): FunctionType {
+  return {
+    type: "Function",
+    arguments: args,
+    result,
+  };
 }
 
 export function keyValueType(
@@ -120,6 +137,10 @@ export function annotate(expr: Expr, valueType: ValueType): Expr {
 
 export function toString(a: ValueType): string {
   switch (a.type) {
+    case "Function":
+      return `(Func ${a.arguments.map(toString).join(" ")} ${toString(
+        a.result
+      )})`;
     case "List":
       return `(List ${toString(a.member)})`;
     case "Array":
@@ -145,7 +166,12 @@ export function toString(a: ValueType): string {
 
 export function union(a: ValueType, b: ValueType): ValueType {
   try {
-    if (a.type === "List" && b.type === "List") {
+    if (a.type === "Function" && b.type === "Function") {
+      return functionType(
+        a.arguments.map((t, i) => union(t, b.arguments[i])),
+        union(a.result, b.result)
+      );
+    } else if (a.type === "List" && b.type === "List") {
       if (a.member.type === "void") return b;
       if (b.member.type === "void") return a;
       return listType(union(a.member, b.member as ValueType));
@@ -198,6 +224,12 @@ export function union(a: ValueType, b: ValueType): ValueType {
 
 /** Determines if `a` is a subtype of `b`. */
 export function isSubtype(a: ValueType, b: ValueType): boolean {
+  if (a.type === "Function" && b.type === "Function") {
+    return (
+      a.arguments.every((t, i) => isSubtype(t, b.arguments[i])) &&
+      isSubtype(a.result, b.result)
+    );
+  }
   if (
     (a.type === "Set" && b.type === "Set") ||
     (a.type === "List" && b.type === "List")

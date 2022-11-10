@@ -106,6 +106,12 @@ export interface ConditionalOp extends BaseExpr {
   alternate: Expr;
 }
 
+export interface Function extends BaseExpr {
+  type: "Function";
+  args: Identifier[];
+  expr: Expr;
+}
+
 export function keyValue(key: Expr, value: Expr): KeyValue {
   return {
     type: "KeyValue",
@@ -231,6 +237,14 @@ export function unaryOp(
     arg,
     name,
     precedence: precedence ?? getDefaultPrecedence(op),
+  };
+}
+
+export function func(args: (string | Identifier)[], expr: Expr): Function {
+  return {
+    type: "Function",
+    args: args.map((x) => (typeof x === "string" ? id(x) : x)),
+    expr,
   };
 }
 

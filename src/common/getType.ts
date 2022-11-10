@@ -27,6 +27,7 @@ import {
   KeyValueType,
   keyValueType,
   getArgs,
+  functionType,
 } from "../IR";
 import { PolygolfError } from "./errors";
 
@@ -40,6 +41,23 @@ export function getType(expr: Expr, program: Program): ValueType {
 export function calcType(expr: Expr, program: Program): ValueType {
   const type = (e: Expr) => getType(e, program);
   switch (expr.type) {
+    case "Function": {
+      function setVar(name: string, type: ValueType) {
+        if (program.variables.has(name)) {
+          throw new PolygolfError(
+            `Duplicate variable declaration: ${name}!`,
+            expr.source
+          );
+        }
+        program.variables.set(name, type);
+      }
+      for (const arg of expr.args) {
+        if (arg.valueType !== undefined) {
+          setVar(arg.name, arg.valueType);
+        }
+      }
+      return functionType(expr.args.map(type), type(expr.expr));
+    }
     case "Block":
     case "VarDeclaration":
       return voidType;
