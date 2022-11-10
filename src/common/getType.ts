@@ -114,7 +114,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "UnaryOp":
     case "MutatingBinaryOp":
       return getOpCodeType(expr, program);
-    case "FunctionCall":
+    case "FunctionCall": {
       if (expr.ident.builtin) return getOpCodeType(expr, program);
       const fType = type(expr.ident);
       if (fType.type !== "Function") {
@@ -134,6 +134,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
           .join(", ")}].`,
         expr.source
       );
+    }
     case "Identifier":
       if (program.variables.has(expr.name)) {
         return program.variables.get(expr.name)!;

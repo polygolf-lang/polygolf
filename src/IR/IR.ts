@@ -136,6 +136,9 @@ export function typesPass(program: Program) {
         }
         program.variables.set(name, type);
       }
+      if (node.type === "Function") {
+        getType(node, program);
+      }
       if (node.type === "ForRange") {
         const low = getType(node.low, path.root.node);
         const high = getType(node.high, path.root.node);
