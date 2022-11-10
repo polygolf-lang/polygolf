@@ -53,7 +53,8 @@ const stripTypesIfInferable: Visitor = {
           !isEqual(
             getType(path.parent.node.expr, program),
             program.variables.get(variable)!
-          )
+          ) ||
+          program.variables.get(variable)?.type === "Function"
         ) {
           node.valueType = program.variables.get(variable);
         } else {

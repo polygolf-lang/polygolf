@@ -104,7 +104,7 @@ export interface ConditionalOp extends BaseExpr {
   condition: Expr;
   consequent: Expr;
   alternate: Expr;
-  isSafe: boolean; //whether both branches can be safely evaluated (allows for more golfing)
+  isSafe: boolean; // whether both branches can be safely evaluated (allows for more golfing)
 }
 
 export interface Function extends BaseExpr {
