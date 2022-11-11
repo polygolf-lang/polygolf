@@ -105,7 +105,7 @@ export type Expr =
  * Program node. This should be the root node. Raw OK
  */
 export interface Program extends BaseNode {
-  type: "Program";
+  kind: "Program";
   dependencies: Set<string>;
   variables: Map<string, ValueType>;
   body: Expr;
@@ -113,7 +113,7 @@ export interface Program extends BaseNode {
 
 export function program(body: Expr): Program {
   return {
-    type: "Program",
+    kind: "Program",
     body,
     dependencies: new Set<string>(),
     variables: new Map<string, ValueType>(),
@@ -134,17 +134,17 @@ export function typesPass(program: Program) {
         }
         program.variables.set(name, type);
       }
-      if (node.type === "ForRange") {
+      if (node.kind === "ForRange") {
         const low = getType(node.low, path.root.node);
         const high = getType(node.high, path.root.node);
         const step = getType(node.increment, path.root.node);
         if (
-          low.type !== "integer" ||
-          high.type !== "integer" ||
-          step.type !== "integer"
+          low.kind !== "integer" ||
+          high.kind !== "integer" ||
+          step.kind !== "integer"
         ) {
           throw new PolygolfError(
-            `Unexpected for range type (${low.type},${high.type},${step.type})`,
+            `Unexpected for range type (${low.kind},${high.kind},${step.kind})`,
             node.source
           );
         }
@@ -152,14 +152,14 @@ export function typesPass(program: Program) {
           node.variable.name,
           integerType(low.low, sub(high.high, node.inclusive ? 0n : 1n))
         );
-      } else if (node.type === "ForEach") {
+      } else if (node.kind === "ForEach") {
         setVar(
           node.variable.name,
           getCollectionTypes(node.collection, program)[0]
         );
-      } else if (node.type === "ForEachKey") {
+      } else if (node.kind === "ForEachKey") {
         setVar(node.variable.name, getCollectionTypes(node.table, program)[0]);
-      } else if (node.type === "ForEachPair") {
+      } else if (node.kind === "ForEachPair") {
         let types = getCollectionTypes(node.table, program);
         if (types.length === 1) {
           types = [integerType(), types[0]];
@@ -167,8 +167,8 @@ export function typesPass(program: Program) {
         setVar(node.keyVariable.name, types[0]);
         setVar(node.valueVariable.name, types[1]);
       } else if (
-        node.type === "Assignment" &&
-        node.variable.type === "Identifier"
+        node.kind === "Assignment" &&
+        node.variable.kind === "Identifier"
       ) {
         if (node.variable.valueType !== undefined)
           setVar(node.variable.name, node.variable.valueType);
@@ -179,7 +179,7 @@ export function typesPass(program: Program) {
       }
     },
     exit(path: Path) {
-      if (path.node.type !== "Program" && path.node.type !== "Block") {
+      if (path.node.kind !== "Program" && path.node.kind !== "Block") {
         getType(path.node, program);
       }
     },

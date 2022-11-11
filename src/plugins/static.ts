@@ -17,8 +17,8 @@ export const golfStringListLiteral: Visitor = {
   exit(path: Path) {
     const node = path.node;
     if (
-      node.type === "ListConstructor" &&
-      node.exprs.every((x) => x.type === "StringLiteral") &&
+      node.kind === "ListConstructor" &&
+      node.exprs.every((x) => x.kind === "StringLiteral") &&
       !golfedStringListLiterals.has(node)
     ) {
       golfedStringListLiterals.set(node, true);
@@ -66,10 +66,10 @@ export const evalStaticIntegers: Visitor = {
       "op" in node &&
       node.op !== null &&
       isOpCode(node.op) &&
-      node.type !== "MutatingBinaryOp"
+      node.kind !== "MutatingBinaryOp"
     ) {
       const args = getArgs(node);
-      if (args.every((x) => x.type === "IntegerLiteral")) {
+      if (args.every((x) => x.kind === "IntegerLiteral")) {
         try {
           path.replaceWith(
             int(

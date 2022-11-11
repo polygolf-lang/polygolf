@@ -20,7 +20,7 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
   return {
     enter(path: Path) {
       const node = path.node;
-      if (node.type === "PolygolfOp") {
+      if (node.kind === "PolygolfOp") {
         const op = node.op;
         const f = opMap.get(op);
         if (f === undefined) {
@@ -82,9 +82,9 @@ export function useIndexCalls(
     enter(path: Path) {
       const node = path.node;
       if (
-        node.type === "PolygolfOp" &&
+        node.kind === "PolygolfOp" &&
         (ops.length === 0 || ops.includes(node.op)) &&
-        node.args[0].type === "Identifier"
+        node.args[0].kind === "Identifier"
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.startsWith("table_")) {

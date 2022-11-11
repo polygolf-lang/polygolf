@@ -16,7 +16,7 @@ import {
  * statement-level by default.
  */
 export interface Assignment extends BaseExpr {
-  type: "Assignment";
+  kind: "Assignment";
   variable: LValue;
   expr: Expr;
 }
@@ -27,7 +27,7 @@ export interface Assignment extends BaseExpr {
  * (a,b)=(b,a).
  */
 export interface ManyToManyAssignment extends BaseExpr {
-  type: "ManyToManyAssignment";
+  kind: "ManyToManyAssignment";
   variables: LValue[];
   exprs: Expr[];
 }
@@ -38,7 +38,7 @@ export interface ManyToManyAssignment extends BaseExpr {
  * a=b=c=1.
  */
 export interface OneToManyAssignment extends BaseExpr {
-  type: "OneToManyAssignment";
+  kind: "OneToManyAssignment";
   variables: LValue[];
   expr: Expr;
 }
@@ -47,7 +47,7 @@ export interface OneToManyAssignment extends BaseExpr {
  * Variable declaration with assignment
  */
 export interface VarDeclarationWithAssignment extends BaseExpr {
-  type: "VarDeclarationWithAssignment";
+  kind: "VarDeclarationWithAssignment";
   assignments: Assignment | ManyToManyAssignment;
   valueTypes?: ValueType[];
   requiresBlock: boolean;
@@ -58,7 +58,7 @@ export function assignment(
   expr: Expr
 ): Assignment {
   return {
-    type: "Assignment",
+    kind: "Assignment",
     variable: typeof variable === "string" ? id(variable) : variable,
     expr,
   };
@@ -69,7 +69,7 @@ export function manyToManyAssignment(
   exprs: Expr[]
 ): ManyToManyAssignment {
   return {
-    type: "ManyToManyAssignment",
+    kind: "ManyToManyAssignment",
     variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     exprs,
   };
@@ -80,7 +80,7 @@ export function oneToManyAssignment(
   expr: Expr
 ): OneToManyAssignment {
   return {
-    type: "OneToManyAssignment",
+    kind: "OneToManyAssignment",
     variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     expr,
   };
@@ -92,10 +92,10 @@ export function varDeclarationWithAssignment(
   valueTypes?: ValueType[]
 ): VarDeclarationWithAssignment {
   if (
-    (assignments.type === "Assignment"
+    (assignments.kind === "Assignment"
       ? [assignments.variable]
       : assignments.variables
-    ).some((x) => x.type !== "Identifier")
+    ).some((x) => x.kind !== "Identifier")
   ) {
     throw new PolygolfError(
       "VarDeclarationWithAssignment needs assignments to variables.",
@@ -103,7 +103,7 @@ export function varDeclarationWithAssignment(
     );
   }
   return {
-    type: "VarDeclarationWithAssignment",
+    kind: "VarDeclarationWithAssignment",
     assignments,
     requiresBlock,
     valueTypes,

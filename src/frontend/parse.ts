@@ -51,14 +51,14 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
     }
   }
   function assertIdentifier(e: Expr | Block): asserts e is Identifier {
-    if (e.type !== "Identifier")
+    if (e.kind !== "Identifier")
       throw new PolygolfError(
-        `Syntax error. Application first argument must be identifier, but got ${args[0].type}`,
+        `Syntax error. Application first argument must be identifier, but got ${args[0].kind}`,
         e.source
       );
   }
   function assertExpr(e: Expr | Block): asserts e is Expr {
-    if (e.type === "Block")
+    if (e.kind === "Block")
       throw new PolygolfError(
         `Syntax error. Application ${opCode} cannot take a block as argument`,
         e.source
@@ -69,7 +69,7 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
   }
   function assertKeyValues(e: Expr[]): asserts e is KeyValue[] {
     for (const x of e) {
-      if (x.type !== "KeyValue")
+      if (x.kind !== "KeyValue")
         throw new PolygolfError(
           `Syntax error. Application ${opCode} requires list of key-value pairs as argument`,
           x.source
@@ -205,14 +205,14 @@ export function typeSexpr(
   function assertNumber(
     e: ValueType | IntegerLiteral
   ): asserts e is IntegerLiteral {
-    if (e.type !== "IntegerLiteral")
+    if (e.kind !== "IntegerLiteral")
       throw new PolygolfError(`Syntax error. Expected number, got type.`, {
         line: callee.line,
         column: callee.col,
       });
   }
   function assertType(e: ValueType | IntegerLiteral): asserts e is ValueType {
-    if (e.type === "IntegerLiteral")
+    if (e.kind === "IntegerLiteral")
       throw new PolygolfError(`Syntax error. Expected type, got number.`, {
         line: callee.line,
         column: callee.col,
@@ -243,8 +243,8 @@ export function typeSexpr(
       expectArity(2);
       assertType(args[0]);
       assertType(args[1]);
-      if (args[0].type === "integer") return tableType(args[0], args[1]);
-      if (args[0].type === "text") return tableType(args[0], args[1]);
+      if (args[0].kind === "integer") return tableType(args[0], args[1]);
+      if (args[0].kind === "text") return tableType(args[0], args[1]);
       throw new PolygolfError("Unexpected key type for table.");
     case "Set":
       expectArity(1);

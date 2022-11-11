@@ -1,7 +1,7 @@
 import { IR, ValueType } from "../../IR";
 
 export default function emit(node: IR.Node): string {
-  switch (node.type) {
+  switch (node.kind) {
     case "Program":
       return emit(node.body);
     case "Block":
@@ -85,12 +85,12 @@ export default function emit(node: IR.Node): string {
     case "IndexCall":
       return emit(node.collection) + "[" + emit(node.index) + "]";
     default:
-      throw new Error(`Unimplemented node for debug: ${node.type}. `);
+      throw new Error(`Unimplemented node for debug: ${node.kind}. `);
   }
 }
 
 function emitType(t: ValueType): string {
-  switch (t.type) {
+  switch (t.kind) {
     case "Array":
       return `Array(${emitType(t.member)}, ${t.length})`;
     case "List":
@@ -100,6 +100,6 @@ function emitType(t: ValueType): string {
     case "Table":
       return `Table(${emitType(t.key)}, ${emitType(t.value)})`;
     default:
-      return t.type;
+      return t.kind;
   }
 }

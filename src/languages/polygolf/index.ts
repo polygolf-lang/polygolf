@@ -35,13 +35,13 @@ const stripTypesIfInferable: Visitor = {
   enter(path: Path) {
     const program = path.root.node;
     const node = path.node;
-    if (path.node.type === "Program") {
+    if (path.node.kind === "Program") {
       initializedVariables.clear();
     } else if (
-      node.type === "Identifier" &&
+      node.kind === "Identifier" &&
       !node.builtin &&
       path.parent !== null &&
-      path.parent.node.type === "Assignment" &&
+      path.parent.node.kind === "Assignment" &&
       path.pathFragment === "variable"
     ) {
       const variable = node.name;
@@ -75,10 +75,10 @@ const blocksAsVariants: Visitor = {
   exit(path: Path) {
     const node = path.node;
     if (
-      node.type === "Block" &&
+      node.kind === "Block" &&
       path.parent !== null &&
-      path.parent.node.type !== "Variants" &&
-      path.parent.node.type !== "Program"
+      path.parent.node.kind !== "Variants" &&
+      path.parent.node.kind !== "Program"
     ) {
       path.replaceWith(variants([node]));
     }

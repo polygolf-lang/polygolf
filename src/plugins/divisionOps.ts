@@ -6,9 +6,9 @@ export const modToRem: Visitor = {
   exit(path: Path) {
     const node = path.node;
     const program = path.root.node;
-    if (node.type === "PolygolfOp" && node.op === "mod") {
+    if (node.kind === "PolygolfOp" && node.op === "mod") {
       const rightType = getType(node.args[1], program);
-      if (rightType.type !== "integer")
+      if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (leq(0n, rightType.low)) {
         node.op = "rem";
@@ -29,9 +29,9 @@ export const divToTruncdiv: Visitor = {
   exit(path: Path) {
     const node = path.node;
     const program = path.root.node;
-    if (node.type === "PolygolfOp" && node.op === "div") {
+    if (node.kind === "PolygolfOp" && node.op === "div") {
       const rightType = getType(node.args[1], program);
-      if (rightType.type !== "integer")
+      if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (rightType.low !== undefined && rightType.low >= 0n) {
         node.op = "trunc_div";

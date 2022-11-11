@@ -53,10 +53,10 @@ let identMap: Map<string, string>;
 export function renameIdents(identGen: IdentifierGenerator = defaultIdentGen) {
   return {
     enter(path: Path) {
-      if (path.node.type === "Program") {
+      if (path.node.kind === "Program") {
         identMap = getIdentMap(path.root, identGen);
       }
-      if (path.node.type === "Identifier" && !path.node.builtin) {
+      if (path.node.kind === "Identifier" && !path.node.builtin) {
         const outputName = identMap.get(path.node.name);
         if (outputName === undefined) {
           throw new Error("Programming error. Incomplete identMap.");

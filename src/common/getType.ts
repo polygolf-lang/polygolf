@@ -52,7 +52,7 @@ export function getType(expr: Expr, program: Program): ValueType {
 
 export function calcType(expr: Expr, program: Program): ValueType {
   const type = (e: Expr) => getType(e, program);
-  switch (expr.type) {
+  switch (expr.kind) {
     case "Block":
     case "VarDeclaration":
       return voidType;
@@ -74,7 +74,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
       const b = type(expr.index);
       let expectedIndex: ValueType;
       let result: ValueType;
-      switch (a.type) {
+      switch (a.kind) {
         case "Array":
           expectedIndex = expr.oneIndexed
             ? integerType(1, a.length)
@@ -140,7 +140,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "KeyValue": {
       const k = type(expr.key);
       const v = type(expr.value);
-      if (k.type === "integer" || k.type === "text") return keyValueType(k, v);
+      if (k.kind === "integer" || k.kind === "text") return keyValueType(k, v);
       throw new PolygolfError(
         `Type error. Operator 'key_value' error. Expected [-oo..oo | Text, T1] but got [${toString(
           k
@@ -150,7 +150,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
     }
     case "TableConstructor": {
       const types = expr.kvPairs.map(type);
-      if (types.every((x) => x.type === "KeyValue")) {
+      if (types.every((x) => x.kind === "KeyValue")) {
         const kvTypes = types as KeyValueType[];
         const kTypes = kvTypes.map((x) => x.key);
         const vTypes = kvTypes.map((x) => x.value);
@@ -179,7 +179,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
       return voidType;
   }
   throw new PolygolfError(
-    `Type error. Unexpected node ${expr.type}.`,
+    `Type error. Unexpected node ${expr.kind}.`,
     expr.source
   );
 }
@@ -247,14 +247,14 @@ function getOpCodeType(
       const exp = expected[i];
       const got = types[i];
       if (typeof exp === "string") {
-        if (exp === "List" && got.type === "List") {
+        if (exp === "List" && got.kind === "List") {
           typeArgs.push(got.member);
-        } else if (exp === "Array" && got.type === "Array") {
+        } else if (exp === "Array" && got.kind === "Array") {
           typeArgs.push(got.member);
           typeArgs.push(integerType(0, got.length - 1));
-        } else if (exp === "Set" && got.type === "Set") {
+        } else if (exp === "Set" && got.kind === "Set") {
           typeArgs.push(got.member);
-        } else if (exp === "Table" && got.type === "Table") {
+        } else if (exp === "Table" && got.kind === "Table") {
           typeArgs.push(got.key);
           typeArgs.push(got.value);
         } else {
@@ -706,7 +706,7 @@ export function getArithmeticType(
 
 export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
   const exprType = getType(expr, program);
-  switch (exprType.type) {
+  switch (exprType.kind) {
     case "Array":
     case "List":
     case "Set":

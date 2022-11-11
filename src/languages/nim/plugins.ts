@@ -36,7 +36,7 @@ const includes: [string, string[]][] = [
 
 export const addImports = {
   exit(path: Path) {
-    if (path.node.type === "Program") {
+    if (path.node.kind === "Program") {
       const program: Program = path.node;
       const dependecies = [...program.dependencies];
       if (dependecies.length < 1) return;
@@ -49,7 +49,7 @@ export const addImports = {
       }
       imports ??= importStatement("import", dependecies);
       program.body =
-        program.body.type === "Block"
+        program.body.kind === "Block"
           ? block([imports, ...program.body.children])
           : block([imports, program.body]);
     }
@@ -60,8 +60,8 @@ const declared: Set<string> = new Set<string>();
 export const addVarDeclarations = {
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "Program") declared.clear();
-    if (node.type === "Block") {
+    if (node.kind === "Program") declared.clear();
+    if (node.kind === "Block") {
       let assignments: Assignment[] = [];
       let newNodes: Expr[] = [];
       function processAssignments() {
@@ -69,7 +69,7 @@ export const addVarDeclarations = {
           newNodes = newNodes.concat(
             simplifyAssignments(
               assignments,
-              path.parent?.node.type === "Program" && assignments.length > 1
+              path.parent?.node.kind === "Program" && assignments.length > 1
             )
           );
           assignments = [];
@@ -77,8 +77,8 @@ export const addVarDeclarations = {
       }
       for (const child of node.children) {
         if (
-          child.type !== "Assignment" ||
-          child.variable.type !== "Identifier" ||
+          child.kind !== "Assignment" ||
+          child.variable.kind !== "Identifier" ||
           declared.has(child.variable.name)
         ) {
           processAssignments();
@@ -98,7 +98,7 @@ function simplifyAssignments(
   topLevel: boolean
 ): Expr[] {
   for (const v of assignments) {
-    if (v.variable.type === "Identifier") {
+    if (v.variable.kind === "Identifier") {
       declared.add(v.variable.name);
     }
   }
@@ -120,12 +120,12 @@ export const useUnsignedDivision = {
     const node = path.node;
     const program = path.root.node;
     if (
-      node.type === "BinaryOp" &&
+      node.kind === "BinaryOp" &&
       (node.op === "trunc_div" || node.op === "rem")
     ) {
       const right = getType(node.right, program);
       const left = getType(node.left, program);
-      if (right.type !== "integer" || left.type !== "integer")
+      if (right.kind !== "integer" || left.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify([left, right])}.`);
       if (
         left.low !== undefined &&
@@ -142,12 +142,12 @@ export const useUnsignedDivision = {
 export const useUFCS = {
   exit(path: Path) {
     const node = path.node;
-    if (node.type === "FunctionCall" && node.args.length > 0) {
-      if (node.args.length === 1 && node.args[0].type === "StringLiteral") {
+    if (node.kind === "FunctionCall" && node.args.length > 0) {
+      if (node.args.length === 1 && node.args[0].kind === "StringLiteral") {
         return;
       }
       const [obj, ...args] = node.args;
-      if (obj.type !== "BinaryOp" && obj.type !== "UnaryOp") {
+      if (obj.kind !== "BinaryOp" && obj.kind !== "UnaryOp") {
         path.replaceWith(
           methodCall(obj, args, node.ident, node.op ?? undefined)
         );

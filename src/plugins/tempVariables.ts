@@ -4,7 +4,7 @@ import { block, Expr, manyToManyAssignment } from "../IR";
 export const tempVarToMultipleAssignment: Visitor = {
   exit(path: Path) {
     const node = path.node;
-    if (node.type === "Block") {
+    if (node.kind === "Block") {
       const newNodes: Expr[] = [];
       for (let i = 0; i < node.children.length; i++) {
         const a = node.children[i];
@@ -15,14 +15,14 @@ export const tempVarToMultipleAssignment: Visitor = {
         const b = node.children[i + 1];
         const c = node.children[i + 2];
         if (
-          a.type === "Assignment" &&
-          b.type === "Assignment" &&
-          c.type === "Assignment" &&
-          b.expr.type === "Identifier" &&
-          c.variable.type === "Identifier" &&
+          a.kind === "Assignment" &&
+          b.kind === "Assignment" &&
+          c.kind === "Assignment" &&
+          b.expr.kind === "Identifier" &&
+          c.variable.kind === "Identifier" &&
           b.expr.name === c.variable.name &&
-          c.expr.type === "Identifier" &&
-          a.variable.type === "Identifier" &&
+          c.expr.kind === "Identifier" &&
+          a.variable.kind === "Identifier" &&
           c.expr.name === a.variable.name
         ) {
           newNodes.push(
