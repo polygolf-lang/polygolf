@@ -1,6 +1,6 @@
 import { getType } from "../common/getType";
 import { Path, Visitor } from "../common/traverse";
-import { polygolfOp } from "../IR";
+import { leq, polygolfOp } from "../IR";
 
 export const modToRem: Visitor = {
   exit(path: Path) {
@@ -10,7 +10,7 @@ export const modToRem: Visitor = {
       const rightType = getType(node.args[1], program);
       if (rightType.type !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
-      if (rightType.low !== undefined && rightType.low >= 0n) {
+      if (leq(0n, rightType.low)) {
         node.op = "rem";
       } else {
         path.replaceWith(

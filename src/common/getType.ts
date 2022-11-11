@@ -82,7 +82,7 @@ export function calcType(expr: Expr, program: Program): ValueType {
           result = a.member;
           break;
         case "List": {
-          expectedIndex = integerType(expr.oneIndexed ? 1 : 0, undefined);
+          expectedIndex = integerType(expr.oneIndexed ? 1 : 0, "oo");
           result = a.member;
           break;
         }
@@ -198,7 +198,7 @@ function getOpCodeType(
   function expectType(...expected: ValueType[]) {
     if (
       types.length !== expected.length ||
-      types.every((x, i) => !isSubtype(x, expected[i]))
+      types.some((x, i) => !isSubtype(x, expected[i]))
     ) {
       throw new PolygolfError(
         `Type error. Operator '${
@@ -343,27 +343,19 @@ function getOpCodeType(
     case "text_concat": {
       expectType(textType(), textType());
       const [t1, t2] = types as [TextType, TextType];
-      return textType(
-        t1.capacity === undefined || t2.capacity === undefined
-          ? undefined
-          : t1.capacity + t2.capacity
-      );
+      return textType(t1.capacity + t2.capacity);
     }
     case "repeat": {
       expectType(textType(), integerType(0));
       const [t, i] = types as [TextType, IntegerType];
-      return textType(
-        t.capacity === undefined || i.high === undefined
-          ? undefined
-          : t.capacity * Number(i.high)
-      );
+      return textType(mul(BigInt(t.capacity), i.high));
     }
     case "text_contains":
       expectType(textType(), textType());
       return booleanType;
     case "text_find":
       expectType(textType(), textType());
-      return integerType(-1, (types[0] as TextType).capacity);
+      return integerType(-1, (types[0] as TextType).capacity - 1);
     case "text_split":
       expectType(textType(), textType());
       return listType(types[0]);
@@ -374,7 +366,7 @@ function getOpCodeType(
       expectType(listType(textType()), textType());
       return textType();
     case "right_align":
-      expectType(listType(textType()), integerType(0));
+      expectType(textType(), integerType(0));
       return textType();
     case "int_to_bin_aligned":
     case "int_to_hex_aligned": {
@@ -409,13 +401,11 @@ function getOpCodeType(
     case "abs": {
       expectType(integerType());
       const t = types[0] as IntegerType;
+      if (lt(t.low, 0n) && lt(0n, t.high))
+        return integerType(0, max(neg(t.low), t.high));
       return integerType(
-        0,
-        t.low === undefined || t.high === undefined
-          ? undefined
-          : -t.low > t.high
-          ? -t.low
-          : t.high
+        min(abs(t.low), abs(t.high)),
+        max(abs(t.low), abs(t.high))
       );
     }
     case "bit_not": {

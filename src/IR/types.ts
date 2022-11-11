@@ -86,10 +86,15 @@ export function integerType(
   low: IntegerBound | number = "-oo",
   high: IntegerBound | number = "oo"
 ): IntegerType {
+  function toIntegerBound(x: IntegerBound | number): IntegerBound {
+    if (x === -Infinity || x === "-oo") return "-oo";
+    if (x === Infinity || x === "oo") return "oo";
+    return BigInt(x);
+  }
   return {
     type: "integer",
-    low: typeof low === "number" ? BigInt(low) : low,
-    high: typeof high === "number" ? BigInt(high) : high,
+    low: toIntegerBound(low),
+    high: toIntegerBound(high),
   };
 }
 
@@ -139,13 +144,11 @@ export function toString(a: ValueType): string {
     case "void":
       return "Void";
     case "text":
-      return a.capacity === undefined ? "Text" : `(Text ${a.capacity})`;
+      return a.capacity === Infinity ? "Text" : `(Text ${a.capacity})`;
     case "boolean":
       return "Bool";
     case "integer":
-      return `${a.low === undefined ? "-oo" : a.low.toString()}..${
-        a.high === undefined ? "oo" : a.high.toString()
-      }`;
+      return `${a.low.toString()}..${a.high.toString()}`;
   }
 }
 
@@ -173,11 +176,7 @@ export function union(a: ValueType, b: ValueType): ValueType {
         ? integerType(min(a.low, b.low), max(a.high, b.high))
         : integerType();
     } else if (a.type === "text" && b.type === "text") {
-      return textType(
-        a.capacity === undefined || b.capacity === undefined
-          ? undefined
-          : Math.max(a.capacity, b.capacity)
-      );
+      return textType(Math.max(a.capacity, b.capacity));
     } else if (a.type === b.type) {
       return a;
     }
@@ -216,7 +215,7 @@ export function isSubtype(a: ValueType, b: ValueType): boolean {
 }
 
 export function abs(a: IntegerBound): IntegerBound {
-  return leq(a, 0n) ? -a : a;
+  return leq(a, 0n) ? neg(a) : a;
 }
 export function min(a: IntegerBound, b: IntegerBound): IntegerBound {
   return leq(a, b) ? a : b;
