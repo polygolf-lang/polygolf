@@ -103,8 +103,10 @@ export function textType(capacity: number | IntegerBound = Infinity): TextType {
     type: "text",
     capacity:
       typeof capacity === "number"
-        ? capacity
-        : isFinite(capacity) && capacity < 1 << 32
+        ? Math.max(0, capacity)
+        : lt(capacity, 0n)
+        ? 0
+        : isFinite(capacity) && capacity < BigInt(2 ** 32)
         ? Number(capacity)
         : Infinity,
   };
@@ -248,19 +250,21 @@ export function mul(a: IntegerBound, b: IntegerBound): IntegerBound {
   if ((a === "-oo" && b === 0n) || (b === "oo" && a === 0n))
     throw new Error("Indeterminate result of 0 * oo.");
   if (a === "-oo") return lt(b, 0n) ? "oo" : "-oo";
-  if (b === "oo") return lt(b, 0n) ? "-oo" : "oo";
+  if (b === "oo") return lt(a, 0n) ? "-oo" : "oo";
   return (a as bigint) * (b as bigint);
 }
 export function floorDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
   const res = truncDiv(a, b);
-  return lt(a, 0n) !== lt(b, 0n) ? sub(res, 1n) : res;
+  return mul(res, b) !== a && lt(a, 0n) !== lt(b, 0n) ? sub(res, 1n) : res;
 }
 export function truncDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
   if (b === 0n) throw new Error("Indeterminate result of x / 0.");
   if (!isFinite(a) && !isFinite(b))
     throw new Error("Indeterminate result of +-oo / +-oo.");
-  if (a === "-oo") return "-oo";
-  if (a === "oo") return "oo";
+  if (!isFinite(a)) {
+    if (lt(a, 0n) === lt(b, 0n)) return "oo";
+    else return "-oo";
+  }
   if (b === "-oo" || b === "oo") return 0n;
   return a / b;
 }

@@ -33,8 +33,7 @@ import { calcType } from "./getType";
 function stringify(x: any): string {
   return JSON.stringify(
     x,
-    (key, value) =>
-      typeof value === "bigint" ? value.toString() + "n" : value,
+    (_, value) => (typeof value === "bigint" ? value.toString() : value),
     2
   );
 }
@@ -73,8 +72,7 @@ function describePolygolfOp(
   describe("OpCode " + op, () => {
     for (const [args, result] of tests) {
       testPolygolfOp(
-        op +
-          "::(" +
+        "(" +
           args.map(toString).join(", ") +
           ") -> " +
           (result === "error" ? "error" : toString(result)),
@@ -188,6 +186,27 @@ describe("Literals", () => {
 
 // TODO add conditional op once functions are merged
 
+describeArithmeticOp("gcd", [
+  [[int()], "error"],
+  [[int(), int()], int(1)],
+  [[int(), int(-10, 10)], int(1, 10)],
+  [[int(30, 200), int(-100, 10)], int(1, 100)],
+]);
+
+describeArithmeticOp("min", [
+  [[int()], "error"],
+  [[int(), int()], int()],
+  [[int(), int(-10, 10)], int("-oo", 10)],
+  [[int(), int(-10)], int()],
+]);
+
+describeArithmeticOp("max", [
+  [[int()], "error"],
+  [[int(), int()], int()],
+  [[int(), int(-10, 10)], int(-10)],
+  [[int(), int("-oo", 10)], int()],
+]);
+
 describeArithmeticOp("add", [
   [[int()], "error"],
   [[int(), int()], int()],
@@ -204,12 +223,57 @@ describeArithmeticOp("sub", [
   [[int(30, 30), int(-100, -100)], int(130, 130)],
 ]);
 
-describeArithmeticOp("add", [
+describeArithmeticOp("mul", [
   [[int()], "error"],
   [[int(), int()], int()],
   [[int(), int(-10, 10)], int()],
-  [[int(30, 200), int(-100, 10)], int(-70, 210)],
-  [[int(30, 30), int(-100, -100)], int(-70, -70)],
+  [[int(0), int(-10, 10)], int()],
+  [[int(0), int(0, 10)], int(0)],
+  [[int(0), int(-1, 1)], int()],
+  [[int(3, 20), int(-10, 1)], int(-200, 20)],
+  [[int(-3, 20), int(-10, 1)], int(-200, 30)],
+  [[int(3, 3), int(-10, -10)], int(-30, -30)],
+]);
+
+describeArithmeticOp("div", [
+  [[int()], "error"],
+  [[int(), int()], int()],
+  [[int(), int(-10, 10)], int()],
+  [[int(-10, 10), int()], int(-10, 10)],
+  [[int(-10, 10), int(5, 10)], int(-2, 2)],
+  [[int(0), int(-10, 10)], int()],
+  [[int(0), int(0, 10)], int(0)],
+  [[int(0), int(-1, 1)], int()],
+  [[int(30, 200), int(-10, 1)], int(-200, 200)],
+  [[int(30, 200), int(-10, -5)], int(-40, -3)],
+  [[int(31, 31), int(-10, -10)], int(-4, -4)],
+  [[int(-31, -31), int(10, 10)], int(-4, -4)],
+]);
+
+describeArithmeticOp("trunc_div", [
+  [[int()], "error"],
+  [[int(), int()], int()],
+  [[int(), int(-10, 10)], int()],
+  [[int(-10, 10), int()], int(-10, 10)],
+  [[int(-10, 10), int(5, 10)], int(-2, 2)],
+  [[int(0), int(-10, 10)], int()],
+  [[int(0), int(0, 10)], int(0)],
+  [[int(0), int(-1, 1)], int()],
+  [[int(30, 200), int(-10, 1)], int(-200, 200)],
+  [[int(30, 200), int(-10, -5)], int(-40, -3)],
+  [[int(31, 31), int(-10, -10)], int(-3, -3)],
+  [[int(-31, -31), int(10, 10)], int(-3, -3)],
+]);
+
+describeArithmeticOp("pow", [
+  [[int()], "error"],
+  [[int(), int()], "error"],
+  [[int(), int(0)], int()],
+  [[int(0), int(0)], int(0)],
+  [[int(), int(2, 2)], int(0)],
+  [[int("-oo", 0), int(3, 3)], int("-oo", 0)],
+  [[int(-3, -3), int(1, 4)], int(-27, 81)],
+  [[int(-3), int(1, 4)], int(-27)],
 ]);
 
 describePolygolfOp("or", [
@@ -354,4 +418,140 @@ describeArithmeticOp("neg", [
   [[int()], int()],
   [[int("-oo", 10)], int(-10)],
   [[int(-20, "oo")], int("-oo", 20)],
+]);
+
+describePolygolfOp("not", [
+  [[bool, bool], "error"],
+  [[int()], "error"],
+  [[int(0, 1)], "error"],
+  [[bool], bool],
+]);
+
+describePolygolfOp("int_to_text", [
+  [[bool], "error"],
+  [[text()], "error"],
+  [[int()], text()],
+  [[int(-300, 5)], text(4)],
+  [[int(-5, 500)], text(3)],
+  [[int(-5, 5)], text(2)],
+]);
+
+describePolygolfOp("int_to_bin", [
+  [[bool], "error"],
+  [[text()], "error"],
+  [[int()], "error"],
+  [[int(0)], text()],
+  [[int(0, 0b1111)], text(4)],
+  [[int(0, 0b10000)], text(5)],
+]);
+
+describePolygolfOp("int_to_hex", [
+  [[bool], "error"],
+  [[text()], "error"],
+  [[int()], "error"],
+  [[int(0)], text()],
+  [[int(0, 0xffff)], text(4)],
+  [[int(0, 0x10000)], text(5)],
+]);
+
+describePolygolfOp("text_to_int", [
+  [[bool], "error"],
+  [[int()], "error"],
+  [[text(1)], int(0, 9)],
+  [[text(3)], int(-99, 999)],
+  [[text(5)], int(-9999, 99999)],
+]);
+
+describePolygolfOp("bool_to_int", [
+  [[int()], "error"],
+  [[bool], int(0, 1)],
+]);
+
+describePolygolfOp("list_length", [
+  [[list(int()), int()], "error"],
+  [[array(int(), 10)], "error"],
+  [[list(int())], int(0)],
+]);
+
+describePolygolfOp("text_length", [
+  [[list(int())], "error"],
+  [[text(58)], int(0, 58)],
+]);
+
+describePolygolfOp("text_split_whitespace", [
+  [[list(text())], "error"],
+  [[text(58)], list(text(58))],
+]);
+
+describePolygolfOp("sorted", [
+  [[array(text(), 5)], "error"],
+  [[set(text())], "error"],
+  [[table(text(), text())], "error"],
+  [[text()], "error"],
+  [[list(int())], list(int())],
+  [[list(text())], list(text())],
+]);
+
+describePolygolfOp("join", [
+  [[list(int())], "error"],
+  [[list(text()), text()], "error"],
+  [[list(text())], text()],
+]);
+
+describePolygolfOp("text_reversed", [
+  [[list(text())], "error"],
+  [[text()], text()],
+]);
+
+describePolygolfOp("argv", [
+  [[int(0)], "error"],
+  [[], list(text())],
+]);
+
+describePolygolfOp("text_replace", [
+  [[text(), text()], "error"],
+  [[text(), text(), text()], text()],
+  [[text(58), text(), text()], text()],
+  [[text(), text(), text(58)], text()],
+  [[text(58), text(), text(58)], text(58 * 58)],
+]);
+
+describePolygolfOp("text_replace", [
+  [[text(), text()], "error"],
+  [[text(), text(), text()], text()],
+  [[text(58), text(), text()], text()],
+  [[text(), text(), text(58)], text()],
+  [[text(58), text(), text(58)], text(58 * 58)],
+]);
+
+describePolygolfOp("text_get_slice", [
+  [[text(), int(0)], "error"],
+  [[text(), int(), int()], "error"],
+  [[text(), int(0), int(0)], text()],
+  [[text(58), int(0), int(0)], text(58)],
+  [[text(), int(0), int(0, 58)], text(58)],
+  [[text(), int(30, 200), int(0, 58)], text(28)],
+]);
+
+describePolygolfOp("array_set", [
+  [[array(int(), 4), text(), int()], "error"],
+  [[array(int(), 4), int(), int()], "error"],
+  [[array(int(), 4), int(1, 4), int()], "error"],
+  [[array(int(-300, 300), 4), int(0, 3), text()], "error"],
+  [[array(int(-300, 300), 4), int(0, 3), int(10, 20)], int(-300, 300)],
+]);
+
+describePolygolfOp("list_set", [
+  [[list(int()), text(), int()], "error"],
+  [[list(int()), int(), int()], "error"],
+  [[list(int(-300, 300)), int(0), text()], "error"],
+  [[list(int(-300, 300)), int(0), int(10, 20)], int(-300, 300)],
+]);
+
+describePolygolfOp("table_set", [
+  [[table(text(), int()), int(), text()], "error"],
+  [[table(text(5), int()), text(), int()], "error"],
+  [[table(text(5), int(0)), text(5), int()], "error"],
+  [[table(text(5), int(0)), text(), int(0)], "error"],
+  [[table(text(5), int(0)), text(4), int(100)], int(0)],
 ]);

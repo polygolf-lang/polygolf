@@ -424,17 +424,24 @@ function getOpCodeType(
     case "int_to_text":
     case "int_to_bin":
     case "int_to_hex": {
-      expectType(integerType());
+      expectType(integerType(expr.op === "int_to_text" ? "-oo" : 0));
       const t = types[0] as IntegerType;
       if (isFiniteType(t))
         return textType(
-          BigInt(
-            t.high.toString(
-              expr.op === "int_to_bin" ? 2 : expr.op === "int_to_hex" ? 16 : 10
-            ).length
+          Math.max(
+            ...[t.low, t.high].map(
+              (x) =>
+                x.toString(
+                  expr.op === "int_to_bin"
+                    ? 2
+                    : expr.op === "int_to_hex"
+                    ? 16
+                    : 10
+                ).length
+            )
           )
         );
-      return integerType();
+      return textType();
     }
     case "text_to_int": {
       expectType(textType());
@@ -474,13 +481,17 @@ function getOpCodeType(
     case "false":
       return booleanType;
     case "argv":
+      expectType();
       return listType(textType());
     case "print":
     case "println":
       return voidType;
-    case "text_replace":
+    case "text_replace": {
       expectType(textType(), textType(), textType());
-      return textType(); // TODO narrow this
+      const a = types[0] as TextType;
+      const c = types[2] as TextType;
+      return textType(a.capacity * c.capacity);
+    }
     case "text_get_slice": {
       expectType(textType(), integerType(0), integerType(0));
       const [t, i1, i2] = types as [TextType, IntegerType, IntegerType];
@@ -498,13 +509,13 @@ function getOpCodeType(
         "Array",
         ["T2", (x) => x[1]],
         ["T1", (x) => x[0]]
-      )[1];
+      )[0];
     case "list_set":
       return expectGenericType(
         "List",
         ["0..oo", (_) => integerType(0)],
         ["T1", (x) => x[0]]
-      )[1];
+      )[0];
     case "table_set":
       return expectGenericType(
         "Table",
@@ -538,22 +549,34 @@ export function getArithmeticType(
       return integerType(add(a.low, b.low), add(a.high, b.high));
     case "sub":
       return integerType(sub(a.low, b.high), sub(a.high, b.low));
-    case "mul":
+    case "mul": {
+      const M = (x: IntegerBound, y: IntegerBound) => {
+        try {
+          return mul(x, y);
+        } catch {
+          return 0n;
+        }
+      };
       return integerTypeIncludingAll(
-        a.low === "-oo" ? "-oo" : mul(a.low, b.low),
-        a.low === "-oo" ? "-oo" : mul(a.low, b.high),
-        a.high === "oo" ? "oo" : mul(a.low, b.low),
-        a.high === "oo" ? "oo" : mul(a.high, b.high)
+        M(a.low, b.low),
+        M(a.low, b.high),
+        M(a.high, b.low),
+        M(a.high, b.high)
       );
+    }
     case "div": {
       const values: IntegerBound[] = [];
       if (lt(b.low, 0n)) {
-        // b includes -1
-        values.push(floorDiv(a.low, -1n), floorDiv(a.high, -1n));
+        values.push(
+          floorDiv(a.low, min(-1n, b.high)),
+          floorDiv(a.high, min(-1n, b.high))
+        );
       }
       if (lt(0n, b.high)) {
-        // b includes +1
-        values.push(floorDiv(a.low, 1n), floorDiv(a.high, 1n));
+        values.push(
+          floorDiv(a.low, max(1n, b.low)),
+          floorDiv(a.high, max(1n, b.low))
+        );
       }
       if (
         (b.low === "-oo" && lt(a.low, 0n)) ||
@@ -565,33 +588,34 @@ export function getArithmeticType(
         (b.high === "oo" && lt(a.low, 0n))
       )
         values.push(-1n);
-      else
-        values.push(
-          floorDiv(a.low, b.low),
-          floorDiv(a.low, b.high),
-          floorDiv(a.high, b.low),
-          floorDiv(a.high, b.high)
-        );
+      else {
+        if (b.low !== 0n)
+          values.push(floorDiv(a.low, b.low), floorDiv(a.high, b.low));
+        if (b.high !== 0n)
+          values.push(floorDiv(a.low, b.high), floorDiv(a.high, b.high));
+      }
       return integerTypeIncludingAll(...values);
     }
     case "trunc_div": {
       const values: IntegerBound[] = [];
       if (lt(b.low, 0n)) {
-        // b includes -1
-        values.push(truncDiv(a.low, -1n), truncDiv(a.high, -1n));
+        values.push(
+          truncDiv(a.low, min(-1n, b.high)),
+          truncDiv(a.high, min(-1n, b.high))
+        );
       }
       if (lt(0n, b.high)) {
-        // b includes +1
-        values.push(truncDiv(a.low, 1n), truncDiv(a.high, 1n));
+        values.push(
+          truncDiv(a.low, max(1n, b.low)),
+          truncDiv(a.high, max(1n, b.low))
+        );
       }
       if (b.low === "-oo" || b.high === "oo") values.push(0n);
-      else
-        values.push(
-          truncDiv(a.low, b.low),
-          truncDiv(a.low, b.high),
-          truncDiv(a.high, b.low),
-          truncDiv(a.high, b.high)
-        );
+      else if (b.low !== 0n && isFinite(b.low))
+        values.push(truncDiv(a.low, b.low), truncDiv(a.high, b.low));
+      if (b.high !== 0n && isFinite(b.high))
+        values.push(truncDiv(a.low, b.high), truncDiv(a.high, b.high));
+
       return integerTypeIncludingAll(...values);
     }
     case "mod":
@@ -612,16 +636,14 @@ export function getArithmeticType(
         if (a.low === -1n) values.push(-1n, 1n);
         if (lt(a.low, -1n)) values.push("-oo");
       }
-      if (a.low === "-oo") values.push("-oo");
       if (a.high === "oo") values.push("oo");
-      if (b.low === b.high) {
-        if (isFinite(a.low) && isFinite(b.low)) values.push(a.low ** b.low);
-        if (isFinite(a.low) && isFinite(b.high)) values.push(a.low ** b.high);
-        if (isFinite(a.high) && isFinite(b.low)) values.push(a.high ** b.low);
-        if (isFinite(a.high) && isFinite(b.high)) values.push(a.high ** b.high);
-        if (a.low === "-oo" && isFinite(b.high) && b.high % 2n === 2n)
-          values.push("oo");
-      } else {
+      if (isFinite(a.low) && isFinite(b.low)) values.push(a.low ** b.low);
+      if (isFinite(a.low) && isFinite(b.high)) values.push(a.low ** b.high);
+      if (isFinite(a.high) && isFinite(b.low)) values.push(a.high ** b.low);
+      if (isFinite(a.high) && isFinite(b.high)) values.push(a.high ** b.high);
+      if (a.low === "-oo" && isFinite(b.high) && b.high % 2n === 2n)
+        values.push("oo");
+      if (b.low !== b.high) {
         if (isFinite(a.low) && isFinite(b.low))
           values.push(a.low ** (b.low + 1n));
         if (isFinite(a.low) && isFinite(b.high))
@@ -631,7 +653,18 @@ export function getArithmeticType(
         if (isFinite(a.high) && isFinite(b.high))
           values.push(a.high ** (b.high - 1n));
         if (a.low === "-oo") values.push("oo");
+        if (a.high === "oo") values.push("oo");
+      } else {
+        if (a.low === "-oo" && isFinite(b.low)) {
+          if (b.low % 2n === 1n) {
+            values.push("-oo");
+          } else {
+            values.push("oo");
+            values.push(lt(a.high, 0n) ? (a.high as bigint) ** b.low : 0n);
+          }
+        }
       }
+
       return integerTypeIncludingAll(...values);
     }
     case "bit_and": {
