@@ -30,14 +30,6 @@ import {
 } from "IR";
 import { calcType } from "./getType";
 
-function stringify(x: any): string {
-  return JSON.stringify(
-    x,
-    (_, value) => (typeof value === "bigint" ? value.toString() : value),
-    2
-  );
-}
-
 function e(type: ValueType): Identifier {
   // returns identifier expression of given type
   const result = id("", true);
@@ -50,8 +42,8 @@ function testExpr(name: string, expr: Expr, result: ValueType | "error") {
     if (result === "error")
       expect(() => calcType(expr, program(block([])))).toThrow();
     else
-      expect(stringify(calcType(expr, program(block([]))))).toEqual(
-        stringify(result)
+      expect(toString(calcType(expr, program(block([]))))).toEqual(
+        toString(result)
       );
   });
 }
