@@ -35,7 +35,7 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
             );
-          replacement.valueType = node.valueType;
+          replacement.type = node.type;
           path.replaceWith(replacement);
         } else if (Array.isArray(f)) {
           let replacement: Expr;
@@ -54,12 +54,12 @@ export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
             );
-          replacement.valueType = node.valueType;
+          replacement.type = node.type;
           path.replaceWith(replacement);
         } else {
           const replacement = f(node.args);
           if ("op" in replacement) replacement.op = node.op;
-          replacement.valueType = getType(node, path.root.node);
+          replacement.type = getType(node, path.root.node);
           path.replaceWith(replacement);
         }
       }

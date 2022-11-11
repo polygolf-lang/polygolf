@@ -32,7 +32,7 @@ export class Path<N extends IR.Node = IR.Node> {
             (child, i) => new Path(child, this, { prop: key, index: i })
           )
         );
-      } else if (typeof value?.kind === "string" && key !== "valueType") {
+      } else if (typeof value?.kind === "string" && key !== "type") {
         result.push(new Path(value, this, key));
       }
     }
@@ -249,7 +249,7 @@ export function getChildren(node: IR.Node): IR.Node[] {
     const value = node[key as keyof typeof node] as any as IR.Node[] | IR.Node;
     if (Array.isArray(value)) {
       result.push(...value);
-    } else if (typeof value?.kind === "string" && key !== "valueType") {
+    } else if (typeof value?.kind === "string" && key !== "type") {
       result.push(value);
     }
   }

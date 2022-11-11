@@ -263,7 +263,7 @@ export function typeSexpr(
 
 export function annotate(expr: Expr, valueType: [any, ValueType] | null): Expr {
   if (valueType === null) return expr;
-  return { ...expr, valueType: valueType[1] };
+  return { ...expr, type: valueType[1] };
 }
 
 export function integerType(

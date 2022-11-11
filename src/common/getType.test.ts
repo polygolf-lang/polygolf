@@ -33,7 +33,7 @@ import { calcType } from "./getType";
 function e(type: ValueType): Identifier {
   // returns identifier expression of given type
   const result = id("", true);
-  result.valueType = type;
+  result.type = type;
   return result;
 }
 

@@ -128,7 +128,7 @@ function integerBoundMinAndMax(args: IntegerBound[]) {
 }
 
 export function annotate(expr: Expr, valueType: ValueType): Expr {
-  return { ...expr, valueType };
+  return { ...expr, type: valueType };
 }
 
 export function toString(a: ValueType): string {

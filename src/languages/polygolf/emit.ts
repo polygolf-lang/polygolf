@@ -62,8 +62,7 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
     } else {
       if (indent) result.push("$DEDENT$", "\n");
       result.push(")");
-      if (expr.valueType !== undefined)
-        result.push(":", toString(expr.valueType));
+      if (expr.type !== undefined) result.push(":", toString(expr.type));
     }
     return result;
   }
@@ -148,9 +147,7 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
       } else {
         return [
           "$" + expr.name,
-          ...(expr.valueType === undefined
-            ? []
-            : [":", toString(expr.valueType)]),
+          ...(expr.type === undefined ? [] : [":", toString(expr.type)]),
         ];
       }
     case "StringLiteral":

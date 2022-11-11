@@ -41,7 +41,7 @@ import {
   VarDeclaration,
   Variants,
 } from "./toplevel";
-import { integerType, sub, ValueType } from "./types";
+import { integerType, sub, ValueType as Type } from "./types";
 
 export * from "./assignments";
 export * from "./opcodes";
@@ -53,7 +53,7 @@ export * from "./toplevel";
 export * from "./types";
 
 export interface BaseExpr extends BaseNode {
-  valueType?: ValueType;
+  type?: Type;
 }
 
 export interface BaseNode {
@@ -107,7 +107,7 @@ export type Expr =
 export interface Program extends BaseNode {
   kind: "Program";
   dependencies: Set<string>;
-  variables: Map<string, ValueType>;
+  variables: Map<string, Type>;
   body: Expr;
 }
 
@@ -116,7 +116,7 @@ export function program(body: Expr): Program {
     kind: "Program",
     body,
     dependencies: new Set<string>(),
-    variables: new Map<string, ValueType>(),
+    variables: new Map<string, Type>(),
   };
 }
 
@@ -125,7 +125,7 @@ export function typesPass(program: Program) {
   path.visit({
     enter(path: Path) {
       const node = path.node;
-      function setVar(name: string, type: ValueType) {
+      function setVar(name: string, type: Type) {
         if (program.variables.has(name)) {
           throw new PolygolfError(
             `Duplicate variable declaration: ${name}!`,
@@ -170,8 +170,8 @@ export function typesPass(program: Program) {
         node.kind === "Assignment" &&
         node.variable.kind === "Identifier"
       ) {
-        if (node.variable.valueType !== undefined)
-          setVar(node.variable.name, node.variable.valueType);
+        if (node.variable.type !== undefined)
+          setVar(node.variable.name, node.variable.type);
         else {
           if (!program.variables.has(node.variable.name))
             setVar(node.variable.name, getType(node.expr, program));

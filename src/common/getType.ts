@@ -44,10 +44,10 @@ import {
 import { PolygolfError } from "./errors";
 
 export function getType(expr: Expr, program: Program): ValueType {
-  if (expr.valueType === undefined) {
-    expr.valueType = calcType(expr, program);
+  if (expr.type === undefined) {
+    expr.type = calcType(expr, program);
   }
-  return expr.valueType;
+  return expr.type;
 }
 
 export function calcType(expr: Expr, program: Program): ValueType {
