@@ -38,16 +38,22 @@ export const addMutatingBinaryOp: Visitor = {
 };
 
 // "a + b; --> {a + b; b + a}"
+const flippedOps = new WeakMap();
 export const flipBinaryOps: Visitor = {
   generatesVariants: true,
   exit(path: Path) {
     const node = path.node;
-    if (node.type === "PolygolfOp" && isBinary(node.op)) {
-      const flipped = flipOpCode(node.op);
-      if (flipped !== null) {
-        path.replaceWith(
-          variants([node, polygolfOp(flipped, node.args[1], node.args[0])])
-        );
+    if (
+      node.type === "PolygolfOp" &&
+      isBinary(node.op) &&
+      !flippedOps.has(node)
+    ) {
+      const flippedOpCode = flipOpCode(node.op);
+      if (flippedOpCode !== null) {
+        const flippedOp = polygolfOp(flippedOpCode, node.args[1], node.args[0]);
+        flippedOps.set(node, true);
+        flippedOps.set(flippedOp, true);
+        path.replaceWith(variants([node, flippedOp]));
       }
     }
   },

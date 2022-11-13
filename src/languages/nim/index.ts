@@ -25,11 +25,13 @@ import {
   evalStaticIntegers,
   golfStringListLiteral,
 } from "../../plugins/static";
+import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 
 const nimLanguage: Language = {
   name: "Nim",
   emitter: emitProgram,
   plugins: [
+    flipBinaryOps,
     tempVarToMultipleAssignment,
     modToRem,
     divToTruncdiv,
@@ -78,6 +80,7 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_char", (x) => functionCall(x, "chr")],
     ]),
+    addMutatingBinaryOp,
     useUFCS,
     useUnsignedDivision,
     evalStaticIntegers,

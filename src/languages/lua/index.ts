@@ -7,11 +7,13 @@ import { mapOps, plus1, useIndexCalls } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { evalStaticIntegers } from "../../plugins/static";
+import { flipBinaryOps } from "../../plugins/binaryOps";
 
 const luaLanguage: Language = {
   name: "Lua",
   emitter: emitProgram,
   plugins: [
+    flipBinaryOps,
     tempVarToMultipleAssignment,
     forRangeToForRangeInclusive,
     useIndexCalls(true),
