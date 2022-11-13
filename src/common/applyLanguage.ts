@@ -10,7 +10,9 @@ export default function applyLanguage(
   skipTypesPass: boolean = false
 ): string {
   const variants =
-    language.name === "Polygolf" ? [program] : expandVariants(program);
+    language.name === "Polygolf"
+      ? [structuredClone(program)]
+      : expandVariants(program);
   if (!skipTypesPass) {
     for (const variant of variants) {
       typesPass(variant);
