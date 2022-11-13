@@ -57,7 +57,8 @@ function emitVariants(
   let remaining = variants.length;
   for (const variant of variants) {
     remaining--;
-    const path = programToPath(variant);
+    const variantClone = structuredClone(variant);
+    const path = programToPath(variantClone);
     for (let i = lastAppliedPluginIndex + 1; i < language.plugins.length; i++) {
       if (language.plugins[i].generatesVariants === true) continue;
       path.visit(language.plugins[i]);
@@ -66,7 +67,7 @@ function emitVariants(
       result.push([
         variant,
         (language.detokenizer ?? defaultDetokenizer())(
-          language.emitter(variant)
+          language.emitter(variantClone)
         ),
       ]);
     } catch (e) {
