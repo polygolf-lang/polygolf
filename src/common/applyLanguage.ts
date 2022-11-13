@@ -9,15 +9,34 @@ export default function applyLanguage(
   maxBranches: number = 1000,
   skipTypesPass: boolean = false
 ): string {
-  const variants =
-    language.name === "Polygolf"
-      ? [structuredClone(program)]
-      : expandVariants(program);
-  if (!skipTypesPass) {
+  return applyLanguages([language], program, maxBranches, skipTypesPass)[0];
+}
+
+export function applyLanguages(
+  languages: Language[],
+  program: IR.Program,
+  maxBranches: number = 1000,
+  skipTypesPass: boolean = false
+): string[] {
+  const variants = expandVariants(program);
+  if (!skipTypesPass)
     for (const variant of variants) {
       typesPass(variant);
     }
-  }
+  return languages.map((x) =>
+    applyLanguageToVariants(
+      x,
+      structuredClone(x.name === "Polygolf" ? [program] : variants),
+      maxBranches
+    )
+  );
+}
+
+export function applyLanguageToVariants(
+  language: Language,
+  variants: IR.Program[],
+  maxBranches: number = 1000
+): string {
   let emittedVariants: [IR.Program, string][] = emitVariants(
     language,
     -1,
