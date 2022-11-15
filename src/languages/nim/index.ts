@@ -21,10 +21,7 @@ import {
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { useInclusiveForRange } from "../../plugins/loops";
-import {
-  evalStaticIntegers,
-  golfStringListLiteral,
-} from "../../plugins/static";
+import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 
 const nimLanguage: Language = {
@@ -83,7 +80,7 @@ const nimLanguage: Language = {
     addMutatingBinaryOp,
     useUFCS,
     useUnsignedDivision,
-    evalStaticIntegers,
+    evalStaticExpr,
     addDependencies([
       ["^", "math"],
       ["repeat", "strutils"],

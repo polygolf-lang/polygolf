@@ -9,6 +9,7 @@ import {
   stringLiteral,
   variants,
 } from "../IR";
+import { calcType } from "../common/getType";
 import { Path, Visitor } from "../common/traverse";
 
 const golfedStringListLiterals = new WeakMap();
@@ -59,7 +60,7 @@ function getDelim(strings: string[]): string {
   return String(i);
 }
 
-export const evalStaticIntegers: Visitor = {
+export const evalStaticExpr: Visitor = {
   exit(path: Path) {
     const node = path.node;
     if (
@@ -71,21 +72,23 @@ export const evalStaticIntegers: Visitor = {
       const args = getArgs(node);
       if (args.every((x) => x.type === "IntegerLiteral")) {
         try {
-          path.replaceWith(
-            int(
-              evalOp(
-                node.op,
-                args.map((x) => (x as IntegerLiteral).value)
-              )
-            )
+          const type = calcType(node, path.root.node); // performs type checking
+          const val = evalOp(
+            node.op,
+            args.map((x) => (x as IntegerLiteral | StringLiteral).value)
           );
+          if (type.type === "integer" || type.type === "text") {
+            path.replaceWith(
+              type.type === "integer" ? int(val) : stringLiteral(val)
+            );
+          }
         } catch {}
       }
     }
   },
 };
 
-function evalOp(op: OpCode, values: bigint[]): bigint {
+function evalOp(op: OpCode, values: any[]): any {
   const a = values[0];
   switch (op) {
     case "neg":
@@ -102,7 +105,7 @@ function evalOp(op: OpCode, values: bigint[]): bigint {
     case "max":
       return a > b ? a : b;
     case "add":
-      return a + b;
+      return (a as bigint) + (b as bigint);
     case "sub":
       return a - b;
     case "mul":
@@ -115,6 +118,10 @@ function evalOp(op: OpCode, values: bigint[]): bigint {
       return a - b * floorDiv(a, b);
     case "rem":
       return a - b * (a / b);
+    case "pow":
+      return a ** b;
+    case "text_concat":
+      return a.concat(b);
   }
   throw new Error(`Unsupported op ${op}.`);
 }
