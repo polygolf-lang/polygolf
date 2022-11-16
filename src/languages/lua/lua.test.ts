@@ -11,6 +11,7 @@ import {
   arrayConstructor,
   Expr,
   print,
+  integerType,
 } from "../../IR";
 import applyLanguage from "../../common/applyLanguage";
 
@@ -31,13 +32,16 @@ function testpolygolfOp(
     expectTransform(
       program(
         block([
-          assignment("i", int(0n)),
+          assignment({ ...id("i"), valueType: integerType(0, 1) }, int(0n)),
           assignment("I", int(4n)),
           assignment("t", stringLiteral("abc")),
           assignment("T", stringLiteral("DEF")),
           assignment("b", polygolfOp("true")),
           assignment("B", polygolfOp("false")),
-          assignment("a", arrayConstructor([stringLiteral("xy")])),
+          assignment(
+            "a",
+            arrayConstructor([stringLiteral("xy"), stringLiteral("abc")])
+          ),
           polygolfOp(
             op,
             ...args.map((x) => (typeof x === "string" ? id(x) : x))
@@ -50,7 +54,7 @@ t="abc"
 T="DEF"
 b=true
 B=false
-a={"xy"}
+a={"xy","abc"}
 ${output}`
     )
   );
