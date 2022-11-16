@@ -23,6 +23,7 @@ import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { useInclusiveForRange } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
+import { golfLastPrint } from "../../plugins/print";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -35,6 +36,7 @@ const nimLanguage: Language = {
     useInclusiveForRange,
     golfStringListLiteral,
     useIndexCalls(),
+    golfLastPrint(),
     mapOps([
       [
         "argv_get",

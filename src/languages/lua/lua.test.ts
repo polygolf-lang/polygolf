@@ -10,6 +10,7 @@ import {
   polygolfOp,
   arrayConstructor,
   Expr,
+  print,
 } from "../../IR";
 import applyLanguage from "../../common/applyLanguage";
 
@@ -18,7 +19,7 @@ function expectTransform(program: IR.Program, output: string) {
 }
 
 function expectStatement(statement: IR.Expr, output: string) {
-  expectTransform(program(block([statement])), output);
+  expectTransform(program(statement), output);
 }
 
 function testpolygolfOp(
@@ -55,11 +56,16 @@ ${output}`
   );
 }
 
-test("Assignment", () => expectStatement(assignment("b", int(1n)), "b=1"));
-
 describe("Applications", () => {
-  testpolygolfOp("println", ["t"], `print(t)`);
-  testpolygolfOp("print", ["t"], `io.write(t)`);
+  test("Assignment", () => expectStatement(assignment("b", int(1n)), "b=1"));
+  test("Prints", () =>
+    expectStatement(
+      block([
+        print(stringLiteral("x"), false),
+        print(stringLiteral("y"), true),
+      ]),
+      `io.write("x")\nprint("y")`
+    ));
   testpolygolfOp("text_length", ["t"], `t:len()`);
   testpolygolfOp("int_to_text", ["i"], "tostring(i)");
   testpolygolfOp("text_to_int", ["t"], "~~t");

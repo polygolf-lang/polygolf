@@ -8,6 +8,7 @@ import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
+import { golfLastPrint } from "../../plugins/print";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -17,6 +18,7 @@ const luaLanguage: Language = {
     tempVarToMultipleAssignment,
     forRangeToForRangeInclusive,
     useIndexCalls(true),
+    golfLastPrint(),
     mapOps([
       [
         "argv_get",
