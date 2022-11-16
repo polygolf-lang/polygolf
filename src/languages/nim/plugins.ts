@@ -42,6 +42,7 @@ export const addImports = {
       if (dependecies.length < 1) return;
       let imports: ImportStatement;
       for (const include of includes) {
+        if (include[0].length > dependecies.join().length - 1) break;
         if (dependecies.every((x) => include[1].includes(x))) {
           imports = importStatement("include", [include[0]]);
           break;
@@ -61,12 +62,19 @@ export const addVarDeclarations = {
   enter(path: Path) {
     const node = path.node;
     if (node.kind === "Program") declared.clear();
-    if (node.kind === "Block") {
+    else if (
+      path.parent?.node.kind !== "Block" &&
+      node.kind === "Assignment" &&
+      node.variable.kind === "Identifier" &&
+      !declared.has(node.variable.name)
+    ) {
+      path.replaceWith(simplifyAssignments([node], false));
+    } else if (node.kind === "Block") {
       let assignments: Assignment[] = [];
-      let newNodes: Expr[] = [];
+      const newNodes: Expr[] = [];
       function processAssignments() {
         if (assignments.length > 0) {
-          newNodes = newNodes.concat(
+          newNodes.push(
             simplifyAssignments(
               assignments,
               path.parent?.node.kind === "Program" && assignments.length > 1
@@ -96,23 +104,21 @@ export const addVarDeclarations = {
 function simplifyAssignments(
   assignments: Assignment[],
   topLevel: boolean
-): Expr[] {
+): Expr {
   for (const v of assignments) {
     if (v.variable.kind === "Identifier") {
       declared.add(v.variable.name);
     }
   }
-  return [
-    varDeclarationWithAssignment(
-      assignments.length > 1
-        ? manyToManyAssignment(
-            assignments.map((x) => x.variable),
-            assignments.map((x) => x.expr)
-          )
-        : assignments[0],
-      topLevel
-    ),
-  ];
+  return varDeclarationWithAssignment(
+    assignments.length > 1
+      ? manyToManyAssignment(
+          assignments.map((x) => x.variable),
+          assignments.map((x) => x.expr)
+        )
+      : assignments[0],
+    topLevel
+  );
 }
 
 export const useUnsignedDivision = {

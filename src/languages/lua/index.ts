@@ -6,15 +6,19 @@ import emitProgram from "./emit";
 import { mapOps, plus1, useIndexCalls } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
-import { evalStaticIntegers } from "../../plugins/static";
+import { evalStaticExpr } from "../../plugins/static";
+import { flipBinaryOps } from "../../plugins/binaryOps";
+import { golfLastPrint } from "../../plugins/print";
 
 const luaLanguage: Language = {
   name: "Lua",
   emitter: emitProgram,
   plugins: [
+    flipBinaryOps,
     tempVarToMultipleAssignment,
     forRangeToForRangeInclusive,
     useIndexCalls(true),
+    golfLastPrint(),
     mapOps([
       [
         "argv_get",
@@ -61,7 +65,7 @@ const luaLanguage: Language = {
       ["abs", (x) => functionCall(x, "math.abs")],
       ["byte_to_char", (x) => functionCall(x, "string.char")],
     ]),
-    evalStaticIntegers,
+    evalStaticExpr,
     renameIdents(),
   ],
 };

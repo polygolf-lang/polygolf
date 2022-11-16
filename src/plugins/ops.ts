@@ -15,7 +15,7 @@ import {
 } from "../IR";
 import { getType } from "../common/getType";
 
-export function mapOps(opMap0: [string, OpTransformOutput][]): Visitor {
+export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Visitor {
   const opMap = new Map<string, OpTransformOutput>(opMap0);
   return {
     enter(path: Path) {

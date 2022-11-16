@@ -21,21 +21,22 @@ import {
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { useInclusiveForRange } from "../../plugins/loops";
-import {
-  evalStaticIntegers,
-  golfStringListLiteral,
-} from "../../plugins/static";
+import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
+import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
+import { golfLastPrint } from "../../plugins/print";
 
 const nimLanguage: Language = {
   name: "Nim",
   emitter: emitProgram,
   plugins: [
+    flipBinaryOps,
     tempVarToMultipleAssignment,
     modToRem,
     divToTruncdiv,
     useInclusiveForRange,
     golfStringListLiteral,
     useIndexCalls(),
+    golfLastPrint(),
     mapOps([
       [
         "argv_get",
@@ -70,7 +71,7 @@ const nimLanguage: Language = {
       ["not", ["not", 150]],
       ["neg", ["-", 150]],
       ["text_to_int", (x) => functionCall(x, "parseInt")],
-      ["print", (x) => functionCall([id("stdout"), x[0]], "write")],
+      ["print", (x) => functionCall([id("stdout", true), x[0]], "write")],
       ["println", (x) => functionCall(x, "echo")],
       ["min", (x) => functionCall(x, "min")],
       ["max", (x) => functionCall(x, "max")],
@@ -78,9 +79,10 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_char", (x) => functionCall(x, "chr")],
     ]),
+    addMutatingBinaryOp,
     useUFCS,
     useUnsignedDivision,
-    evalStaticIntegers,
+    evalStaticExpr,
     addDependencies([
       ["^", "math"],
       ["repeat", "strutils"],
