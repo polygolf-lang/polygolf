@@ -7,10 +7,8 @@ import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
 import { addDependencies } from "../../plugins/dependencies";
-import {
-  evalStaticIntegers,
-  golfStringListLiteral,
-} from "../../plugins/static";
+import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
+import { golfLastPrint } from "../../plugins/print";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -20,6 +18,7 @@ const pythonLanguage: Language = {
     golfStringListLiteral,
     forRangeToForEach,
     useIndexCalls(),
+    golfLastPrint(),
     mapOps([
       ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["text_length", (x) => functionCall([x[0]], "len")],
@@ -31,7 +30,7 @@ const pythonLanguage: Language = {
       ["sub", "-"],
       ["mul", "*"],
       ["div", "//"],
-      ["exp", "**"],
+      ["pow", "**"],
       ["mod", "%"],
       ["lt", "<"],
       ["leq", "<="],
@@ -50,7 +49,7 @@ const pythonLanguage: Language = {
         (x) => functionCall([assignment(id("end", true), x[0])], "print"),
       ],
     ]),
-    evalStaticIntegers,
+    evalStaticExpr,
     aliasBuiltins(),
     addDependencies([["sys", "sys"]]),
     renameIdents(),
