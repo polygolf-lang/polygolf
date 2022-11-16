@@ -44,7 +44,7 @@ export const flipBinaryOps: Visitor = {
   exit(path: Path) {
     const node = path.node;
     if (
-      node.type === "PolygolfOp" &&
+      node.kind === "PolygolfOp" &&
       isBinary(node.op) &&
       !flippedOps.has(node)
     ) {

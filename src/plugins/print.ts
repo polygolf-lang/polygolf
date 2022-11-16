@@ -18,17 +18,17 @@ export function golfLastPrint(toPrintln = true): Visitor {
   return {
     exit(path: Path) {
       const node = path.node;
-      if (node.type === "Program") {
+      if (node.kind === "Program") {
         if (
-          node.body.type === "PolygolfOp" &&
+          node.body.kind === "PolygolfOp" &&
           (node.body.op === "print" || node.body.op === "println")
         ) {
           node.body.op = toPrintln ? "println" : "print";
-        } else if (node.body.type === "Block") {
+        } else if (node.body.kind === "Block") {
           const lastStatement =
             node.body.children[node.body.children.length - 1];
           if (
-            lastStatement.type === "PolygolfOp" &&
+            lastStatement.kind === "PolygolfOp" &&
             (lastStatement.op === "print" || lastStatement.op === "println")
           ) {
             lastStatement.op = toPrintln ? "println" : "print";

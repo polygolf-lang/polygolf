@@ -32,8 +32,8 @@ function testpolygolfOp(
     expectTransform(
       program(
         block([
-          assignment({ ...id("i"), valueType: integerType(0, 1) }, int(0n)),
-          assignment("I", int(4n)),
+          assignment({ ...id("i"), type: integerType(0, 1) }, int(0n)),
+          assignment({ ...id("I"), type: integerType(0, 4) }, int(4n)),
           assignment("t", stringLiteral("abc")),
           assignment("T", stringLiteral("DEF")),
           assignment("b", polygolfOp("true")),
