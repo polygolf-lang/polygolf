@@ -1,7 +1,7 @@
 import {
   Program,
   Expr,
-  ValueType,
+  Type,
   listType,
   arrayType,
   BinaryOp,
@@ -43,14 +43,14 @@ import {
 } from "../IR";
 import { PolygolfError } from "./errors";
 
-export function getType(expr: Expr, program: Program): ValueType {
+export function getType(expr: Expr, program: Program): Type {
   if (expr.type === undefined) {
     expr.type = calcType(expr, program);
   }
   return expr.type;
 }
 
-export function calcType(expr: Expr, program: Program): ValueType {
+export function calcType(expr: Expr, program: Program): Type {
   const type = (e: Expr) => getType(e, program);
   switch (expr.kind) {
     case "Block":
@@ -72,8 +72,8 @@ export function calcType(expr: Expr, program: Program): ValueType {
     case "IndexCall": {
       const a = type(expr.collection);
       const b = type(expr.index);
-      let expectedIndex: ValueType;
-      let result: ValueType;
+      let expectedIndex: Type;
+      let result: Type;
       switch (a.kind) {
         case "Array":
           expectedIndex = expr.oneIndexed
@@ -193,9 +193,9 @@ function getOpCodeType(
     | MethodCall
     | PolygolfOp,
   program: Program
-): ValueType {
+): Type {
   const types = getArgs(expr).map((x) => getType(x, program));
-  function expectType(...expected: ValueType[]) {
+  function expectType(...expected: Type[]) {
     if (
       types.length !== expected.length ||
       types.some((x, i) => !isSubtype(x, expected[i]))
@@ -216,9 +216,9 @@ function getOpCodeType(
       | "Array"
       | "List"
       | "Table"
-      | [string, (typeArgs: ValueType[]) => ValueType]
+      | [string, (typeArgs: Type[]) => Type]
     )[]
-  ): ValueType[] {
+  ): Type[] {
     function _throw() {
       let i = 1;
       const expectedS = expected.map((e) => {
@@ -242,7 +242,7 @@ function getOpCodeType(
       );
     }
     if (types.length !== expected.length) _throw();
-    const typeArgs: ValueType[] = [];
+    const typeArgs: Type[] = [];
     for (let i = 0; i < types.length; i++) {
       const exp = expected[i];
       const got = types[i];
@@ -534,7 +534,7 @@ export function getArithmeticType(
   a: IntegerType, // left argument
   b: IntegerType, // right argument
   source?: SourcePointer
-): ValueType {
+): Type {
   switch (op) {
     case "gcd":
       return integerType(
@@ -704,7 +704,7 @@ export function getArithmeticType(
   );
 }
 
-export function getCollectionTypes(expr: Expr, program: Program): ValueType[] {
+export function getCollectionTypes(expr: Expr, program: Program): Type[] {
   const exprType = getType(expr, program);
   switch (exprType.kind) {
     case "Array":

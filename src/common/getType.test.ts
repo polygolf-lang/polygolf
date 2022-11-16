@@ -14,7 +14,7 @@ import {
   OpCode,
   polygolfOp,
   program,
-  ValueType,
+  Type,
   listConstructor,
   variants,
   toString,
@@ -30,14 +30,14 @@ import {
 } from "IR";
 import { calcType } from "./getType";
 
-function e(type: ValueType): Identifier {
+function e(type: Type): Identifier {
   // returns identifier expression of given type
   const result = id("", true);
   result.type = type;
   return result;
 }
 
-function testExpr(name: string, expr: Expr, result: ValueType | "error") {
+function testExpr(name: string, expr: Expr, result: Type | "error") {
   test(name, () => {
     if (result === "error")
       expect(() => calcType(expr, program(block([])))).toThrow();
@@ -51,16 +51,13 @@ function testExpr(name: string, expr: Expr, result: ValueType | "error") {
 function testPolygolfOp(
   name: string,
   op: OpCode,
-  args: ValueType[],
-  result: ValueType | "error"
+  args: Type[],
+  result: Type | "error"
 ) {
   testExpr(name, polygolfOp(op, ...args.map(e)), result);
 }
 
-function describePolygolfOp(
-  op: OpCode,
-  tests: [ValueType[], ValueType | "error"][]
-) {
+function describePolygolfOp(op: OpCode, tests: [Type[], Type | "error"][]) {
   describe("OpCode " + op, () => {
     for (const [args, result] of tests) {
       testPolygolfOp(
@@ -76,10 +73,7 @@ function describePolygolfOp(
   });
 }
 
-function describeArithmeticOp(
-  op: OpCode,
-  tests: [ValueType[], ValueType | "error"][]
-) {
+function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
   describePolygolfOp(op, [
     [[text(), text()], "error"],
     [[int(), bool], "error"],

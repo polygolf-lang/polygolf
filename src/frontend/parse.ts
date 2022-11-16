@@ -11,7 +11,7 @@ import {
   ifStatement,
   listConstructor,
   polygolfOp,
-  ValueType,
+  Type,
   listType,
   arrayType,
   tableType,
@@ -189,8 +189,8 @@ function composedPolygolfOp(op: OpCode, args: Expr[]): PolygolfOp {
 
 export function typeSexpr(
   callee: Token,
-  args: (ValueType | IntegerLiteral)[]
-): ValueType {
+  args: (Type | IntegerLiteral)[]
+): Type {
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
       throw new PolygolfError(
@@ -202,16 +202,14 @@ export function typeSexpr(
       );
     }
   }
-  function assertNumber(
-    e: ValueType | IntegerLiteral
-  ): asserts e is IntegerLiteral {
+  function assertNumber(e: Type | IntegerLiteral): asserts e is IntegerLiteral {
     if (e.kind !== "IntegerLiteral")
       throw new PolygolfError(`Syntax error. Expected number, got type.`, {
         line: callee.line,
         column: callee.col,
       });
   }
-  function assertType(e: ValueType | IntegerLiteral): asserts e is ValueType {
+  function assertType(e: Type | IntegerLiteral): asserts e is Type {
     if (e.kind === "IntegerLiteral")
       throw new PolygolfError(`Syntax error. Expected type, got number.`, {
         line: callee.line,
@@ -261,7 +259,7 @@ export function typeSexpr(
   }
 }
 
-export function annotate(expr: Expr, valueType: [any, ValueType] | null): Expr {
+export function annotate(expr: Expr, valueType: [any, Type] | null): Expr {
   if (valueType === null) return expr;
   return { ...expr, type: valueType[1] };
 }
@@ -269,7 +267,7 @@ export function annotate(expr: Expr, valueType: [any, ValueType] | null): Expr {
 export function integerType(
   low: "-oo" | "-∞" | IntegerLiteral,
   high: "oo" | "∞" | IntegerLiteral
-): ValueType {
+): Type {
   return intType(
     typeof low === "string" ? undefined : low.value,
     typeof high === "string" ? undefined : high.value

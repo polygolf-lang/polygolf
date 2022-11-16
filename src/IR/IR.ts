@@ -41,7 +41,7 @@ import {
   VarDeclaration,
   Variants,
 } from "./toplevel";
-import { integerType, sub, ValueType as Type } from "./types";
+import { integerType, sub, Type } from "./types";
 
 export * from "./assignments";
 export * from "./opcodes";

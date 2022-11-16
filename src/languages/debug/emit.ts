@@ -1,4 +1,4 @@
-import { IR, ValueType } from "../../IR";
+import { IR, Type } from "../../IR";
 
 export default function emit(node: IR.Node): string {
   switch (node.kind) {
@@ -89,7 +89,7 @@ export default function emit(node: IR.Node): string {
   }
 }
 
-function emitType(t: ValueType): string {
+function emitType(t: Type): string {
   switch (t.kind) {
     case "Array":
       return `Array(${emitType(t.member)}, ${t.length})`;

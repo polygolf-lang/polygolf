@@ -1,13 +1,5 @@
 import { PolygolfError } from "../common/errors";
-import {
-  BaseExpr,
-  Expr,
-  id,
-  Identifier,
-  ValueType,
-  IndexCall,
-  LValue,
-} from "./IR";
+import { BaseExpr, Expr, id, Identifier, Type, IndexCall, LValue } from "./IR";
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK
@@ -49,7 +41,7 @@ export interface OneToManyAssignment extends BaseExpr {
 export interface VarDeclarationWithAssignment extends BaseExpr {
   kind: "VarDeclarationWithAssignment";
   assignments: Assignment | ManyToManyAssignment;
-  valueTypes?: ValueType[];
+  valueTypes?: Type[];
   requiresBlock: boolean;
 }
 
@@ -89,7 +81,7 @@ export function oneToManyAssignment(
 export function varDeclarationWithAssignment(
   assignments: Assignment | ManyToManyAssignment,
   requiresBlock: boolean = true,
-  valueTypes?: ValueType[]
+  valueTypes?: Type[]
 ): VarDeclarationWithAssignment {
   if (
     (assignments.kind === "Assignment"

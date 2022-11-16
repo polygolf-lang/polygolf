@@ -1,4 +1,4 @@
-import { toString, ValueType, variants } from "../../IR";
+import { toString, Type, variants } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -27,7 +27,7 @@ function polygolfLanguage(stripTypes = false): Language {
   };
 }
 
-function isEqual(a: ValueType, b: ValueType): boolean {
+function isEqual(a: Type, b: Type): boolean {
   return toString(a) === toString(b);
 }
 const initializedVariables = new Set<string>();

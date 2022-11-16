@@ -15,30 +15,30 @@ export interface TextType {
 export interface KeyValueType {
   kind: "KeyValue";
   key: IntegerType | TextType;
-  value: ValueType;
+  value: Type;
 }
-export type ValueType =
+export type Type =
   | IntegerType
   | TextType
   | { kind: "void" }
   | { kind: "boolean" }
-  | { kind: "List"; member: ValueType }
-  | { kind: "Table"; key: IntegerType | TextType; value: ValueType }
+  | { kind: "List"; member: Type }
+  | { kind: "Table"; key: IntegerType | TextType; value: Type }
   | KeyValueType
-  | { kind: "Array"; member: ValueType; length: number }
-  | { kind: "Set"; member: ValueType };
+  | { kind: "Array"; member: Type; length: number }
+  | { kind: "Set"; member: Type };
 
-export const booleanType: ValueType = { kind: "boolean" };
-export const voidType: ValueType = { kind: "void" };
+export const booleanType: Type = { kind: "boolean" };
+export const voidType: Type = { kind: "void" };
 
-function valueType(type: ValueType | "void" | "boolean"): ValueType {
+function valueType(type: Type | "void" | "boolean"): Type {
   return type === "boolean" ? booleanType : type === "void" ? voidType : type;
 }
 
 export function keyValueType(
   key: IntegerType | TextType,
-  value: ValueType | "void" | "boolean"
-): ValueType {
+  value: Type | "void" | "boolean"
+): Type {
   return {
     kind: "KeyValue",
     key,
@@ -48,8 +48,8 @@ export function keyValueType(
 
 export function tableType(
   key: IntegerType | TextType,
-  value: ValueType | "void" | "boolean"
-): ValueType {
+  value: Type | "void" | "boolean"
+): Type {
   return {
     kind: "Table",
     key,
@@ -57,14 +57,14 @@ export function tableType(
   };
 }
 
-export function setType(member: ValueType | "void" | "boolean"): ValueType {
+export function setType(member: Type | "void" | "boolean"): Type {
   return {
     kind: "Set",
     member: valueType(member),
   };
 }
 
-export function listType(member: ValueType | "void" | "boolean"): ValueType {
+export function listType(member: Type | "void" | "boolean"): Type {
   return {
     kind: "List",
     member: valueType(member),
@@ -72,9 +72,9 @@ export function listType(member: ValueType | "void" | "boolean"): ValueType {
 }
 
 export function arrayType(
-  member: ValueType | "void" | "boolean",
+  member: Type | "void" | "boolean",
   length: number
-): ValueType {
+): Type {
   return {
     kind: "Array",
     member: valueType(member),
@@ -127,11 +127,11 @@ function integerBoundMinAndMax(args: IntegerBound[]) {
   );
 }
 
-export function annotate(expr: Expr, valueType: ValueType): Expr {
+export function annotate(expr: Expr, valueType: Type): Expr {
   return { ...expr, type: valueType };
 }
 
-export function toString(a: ValueType): string {
+export function toString(a: Type): string {
   switch (a.kind) {
     case "List":
       return `(List ${toString(a.member)})`;
@@ -154,12 +154,12 @@ export function toString(a: ValueType): string {
   }
 }
 
-export function union(a: ValueType, b: ValueType): ValueType {
+export function union(a: Type, b: Type): Type {
   try {
     if (a.kind === "List" && b.kind === "List") {
       if (a.member.kind === "void") return b;
       if (b.member.kind === "void") return a;
-      return listType(union(a.member, b.member as ValueType));
+      return listType(union(a.member, b.member as Type));
     } else if (a.kind === "Array" && b.kind === "Array") {
       if (a.length === b.length)
         return arrayType(union(a.member, b.member), a.length);
@@ -193,7 +193,7 @@ export function union(a: ValueType, b: ValueType): ValueType {
 }
 
 /** Determines if `a` is a subtype of `b`. */
-export function isSubtype(a: ValueType, b: ValueType): boolean {
+export function isSubtype(a: Type, b: Type): boolean {
   if (
     (a.kind === "Set" && b.kind === "Set") ||
     (a.kind === "List" && b.kind === "List")

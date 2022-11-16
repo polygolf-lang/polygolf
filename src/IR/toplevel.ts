@@ -1,4 +1,4 @@
-import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
+import { BaseExpr, Expr, id, Identifier, Type } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
@@ -34,7 +34,7 @@ export interface IfStatement extends BaseExpr {
 export interface VarDeclaration extends BaseExpr {
   kind: "VarDeclaration";
   variable: Identifier;
-  variableType: ValueType;
+  variableType: Type;
 }
 
 export interface ImportStatement extends BaseExpr {
@@ -61,7 +61,7 @@ export function ifStatement(
 
 export function varDeclaration(
   variable: Identifier | string,
-  variableType: ValueType
+  variableType: Type
 ): VarDeclaration {
   return {
     kind: "VarDeclaration",
