@@ -6,7 +6,7 @@ export function addDependencies(dependencyMap0: [string, string][]) {
     enter(path: Path) {
       const node = path.node;
       let op: string = node.type;
-      if (node.type === "BinaryOp" || node.type === "UnaryOp") op = node.op;
+      if (node.type === "BinaryOp" || node.type === "UnaryOp") op = node.name;
       if (node.type === "FunctionCall") op = node.ident.name;
       if (node.type === "MethodCall") op = node.ident.name;
       if (dependencyMap.has(op)) {

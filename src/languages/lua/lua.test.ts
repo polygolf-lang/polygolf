@@ -10,6 +10,8 @@ import {
   polygolfOp,
   arrayConstructor,
   Expr,
+  print,
+  integerType,
 } from "../../IR";
 import applyLanguage from "../../common/applyLanguage";
 
@@ -18,7 +20,7 @@ function expectTransform(program: IR.Program, output: string) {
 }
 
 function expectStatement(statement: IR.Expr, output: string) {
-  expectTransform(program(block([statement])), output);
+  expectTransform(program(statement), output);
 }
 
 function testpolygolfOp(
@@ -30,13 +32,16 @@ function testpolygolfOp(
     expectTransform(
       program(
         block([
-          assignment("i", int(0n)),
+          assignment({ ...id("i"), valueType: integerType(0, 1) }, int(0n)),
           assignment("I", int(4n)),
           assignment("t", stringLiteral("abc")),
           assignment("T", stringLiteral("DEF")),
           assignment("b", polygolfOp("true")),
           assignment("B", polygolfOp("false")),
-          assignment("a", arrayConstructor([stringLiteral("xy")])),
+          assignment(
+            "a",
+            arrayConstructor([stringLiteral("xy"), stringLiteral("abc")])
+          ),
           polygolfOp(
             op,
             ...args.map((x) => (typeof x === "string" ? id(x) : x))
@@ -49,17 +54,22 @@ t="abc"
 T="DEF"
 b=true
 B=false
-a={"xy"}
+a={"xy","abc"}
 ${output}`
     )
   );
 }
 
-test("Assignment", () => expectStatement(assignment("b", int(1n)), "b=1"));
-
 describe("Applications", () => {
-  testpolygolfOp("println", ["t"], `print(t)`);
-  testpolygolfOp("print", ["t"], `io.write(t)`);
+  test("Assignment", () => expectStatement(assignment("b", int(1n)), "b=1"));
+  test("Prints", () =>
+    expectStatement(
+      block([
+        print(stringLiteral("x"), false),
+        print(stringLiteral("y"), true),
+      ]),
+      `io.write("x")\nprint("y")`
+    ));
   testpolygolfOp("text_length", ["t"], `t:len()`);
   testpolygolfOp("int_to_text", ["i"], "tostring(i)");
   testpolygolfOp("text_to_int", ["t"], "~~t");
