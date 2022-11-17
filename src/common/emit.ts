@@ -49,7 +49,7 @@ export function emitStringLiteral(
     let current = value;
     for (const [c, d] of escapes) {
       if (d === null) continue;
-      current = current.replace(c, d);
+      current = current.replaceAll(c, d);
     }
     if (typeof delim === "string") current = delim + current + delim;
     else current = delim[0] + current + delim[1];
