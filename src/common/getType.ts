@@ -40,6 +40,7 @@ import {
   isFiniteType,
   abs,
   neg,
+  typeContains,
 } from "../IR";
 import { PolygolfError } from "./errors";
 
@@ -629,44 +630,53 @@ export function getArithmeticType(
       if (lt(b.low, 0n))
         throw new PolygolfError(
           `Type error. Operator 'pow' expected [-oo..oo, 0..oo] but got ` +
-          `[${toString(a)}, ${toString(b)}].`,
+            `[${toString(a)}, ${toString(b)}].`,
           source
         );
       const values: IntegerBound[] = [];
+
+      // For unbounded b, the result must contain the following values:
       if (b.high === "oo") {
-        values.push("oo");
-        if (a.low === -1n) values.push(-1n, 1n);
-        if (lt(a.low, -1n)) values.push("-oo");
-      }
-      if (a.high === "oo") values.push("oo");
-      if (isFiniteBound(a.low) && isFiniteBound(b.low))
-        values.push(a.low ** b.low);
-      if (isFiniteBound(a.low) && isFiniteBound(b.high))
-        values.push(a.low ** b.high);
-      if (isFiniteBound(a.high) && isFiniteBound(b.low))
-        values.push(a.high ** b.low);
-      if (isFiniteBound(a.high) && isFiniteBound(b.high))
-        values.push(a.high ** b.high);
-      if (a.low === "-oo" && isFiniteBound(b.high) && b.high % 2n === 0n)
-        values.push("oo");
-      if (b.low !== b.high) {
-        if (isFiniteBound(a.low) && isFiniteBound(b.low))
-          values.push(a.low ** (b.low + 1n));
-        if (isFiniteBound(a.low) && isFiniteBound(b.high))
-          values.push(a.low ** (b.high - 1n));
-        if (isFiniteBound(a.high) && isFiniteBound(b.low))
-          values.push(a.high ** (b.low + 1n));
-        if (isFiniteBound(a.high) && isFiniteBound(b.high))
-          values.push(a.high ** (b.high - 1n));
-        if (a.low === "-oo") values.push("oo");
-        if (a.high === "oo") values.push("oo");
-      } else {
-        if (a.low === "-oo" && isFiniteBound(b.low)) {
-          if (b.low % 2n === 1n) {
-            values.push("-oo");
-          } else {
-            values.push("oo");
-            values.push(lt(a.high, 0n) ? (a.high as bigint) ** b.low : 0n);
+        if (typeContains(a, -1n)) values.push(-1n, 1n);
+        if (typeContains(a, 0n)) values.push(0n);
+        if (typeContains(a, 1n)) values.push(1n);
+        if (lt(a.low, -1n)) values.push("-oo", "oo");
+        else if (lt(1n, a.high)) {
+          values.push("oo");
+          values.push((a.low as bigint) ** (b.low as bigint));
+        }
+      } else if (isFiniteType(b)) {
+        // Unbounded a results in unbounded output, unless b is known to be 0.
+        if (a.high === "oo") values.push(b.high === 0n ? 1n : "oo");
+        // For finite bounds, the extreme might lie at the power of the extremes.
+        if (isFiniteBound(a.low)) values.push(a.low ** b.low);
+        if (isFiniteBound(a.low)) values.push(a.low ** b.high);
+        if (isFiniteBound(a.high)) values.push(a.high ** b.low);
+        if (isFiniteBound(a.high)) values.push(a.high ** b.high);
+        if (b.low !== b.high) {
+          // The parity of b might switch the sign
+          // meaning the extreme might arise from multiplying by b that is one away from the extreme
+          if (isFiniteBound(a.low)) values.push(a.low ** (b.low + 1n));
+          if (isFiniteBound(a.low)) values.push(a.low ** (b.high - 1n));
+          if (isFiniteBound(a.high)) values.push(a.high ** (b.low + 1n));
+          if (isFiniteBound(a.high)) values.push(a.high ** (b.high - 1n));
+          // Negative unbounded a results in an unbounded output in both directions,
+          // unless b is known to be 0.
+          if (a.low === "-oo")
+            values.push(
+              ...(b.high === 0n ? [1n] : (["-oo", "oo"] as IntegerBound[]))
+            );
+        } else {
+          // If the parity of b is fixed, negative unbounded a results
+          // in an unbounded output in a single direction
+          if (a.low === "-oo") {
+            if (b.low % 2n === 1n) {
+              values.push(b.high === 0n ? 1n : "-oo");
+              values.push(isFiniteBound(a.high) ? a.high ** b.low : "oo");
+            } else {
+              values.push(b.high === 0n ? 1n : "oo");
+              values.push(lt(a.high, 0n) ? (a.high as bigint) ** b.low : 0n);
+            }
           }
         }
       }

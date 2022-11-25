@@ -257,7 +257,12 @@ describeArithmeticOp("pow", [
   [[int(), int(0)], int()],
   [[int(0), int(0)], int(0)],
   [[int(), int(2, 2)], int(0)],
+  [[int(0, 0), int(0)], int(0, 0)],
+  [[int(1, 1), int(0)], int(1, 1)],
+  [[int(0, 0), int(0)], int(0, 0)],
+  [[int(-1, 1), int(0)], int(-1, 1)],
   [[int("-oo", 0), int(3, 3)], int("-oo", 0)],
+  [[int("-oo", 3), int(3, 3)], int("-oo", 27)],
   [[int(-3, -3), int(1, 4)], int(-27, 81)],
   [[int(-3), int(1, 4)], int(-27)],
 ]);

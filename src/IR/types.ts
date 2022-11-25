@@ -118,6 +118,10 @@ export function integerTypeIncludingAll(
   return integerType(...integerBoundMinAndMax(values));
 }
 
+export function typeContains(type: IntegerType, value: IntegerBound): boolean {
+  return leq(type.low, value) && leq(value, type.high);
+}
+
 function integerBoundMinAndMax(args: IntegerBound[]) {
   return args.reduce(
     ([cMin, cMax], e) => {
