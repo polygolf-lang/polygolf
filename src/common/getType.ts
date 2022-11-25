@@ -185,6 +185,10 @@ export function calcType(expr: Expr, program: Program): Type {
   );
 }
 
+function getTypeBitNot(t: IntegerType): IntegerType {
+  return integerType(sub(-1n, t.high), sub(-1n, t.low));
+}
+
 function getOpCodeType(
   expr:
     | BinaryOp
@@ -412,7 +416,7 @@ function getOpCodeType(
     case "bit_not": {
       expectType(integerType());
       const t = types[0] as IntegerType;
-      return integerType(sub(-1n, t.high), sub(-1n, t.low));
+      return getTypeBitNot(t);
     }
     case "neg": {
       expectType(integerType());
@@ -535,7 +539,7 @@ export function getArithmeticType(
   a: IntegerType, // left argument
   b: IntegerType, // right argument
   source?: SourcePointer
-): Type {
+): IntegerType {
   switch (op) {
     case "gcd":
       return integerType(
@@ -683,24 +687,10 @@ export function getArithmeticType(
 
       return integerTypeIncludingAll(...values);
     }
-    case "bit_and": {
-      const left = max(abs(a.low), abs(a.high));
-      const right = max(abs(b.low), abs(b.high));
-      if (isFiniteBound(left) && isFiniteBound(right)) {
-        const lesser = lt(left, right) ? left : right;
-        if (lt(-1n, a.low) && lt(-1n, b.low)) return integerType(0n, lesser);
-        return integerType(neg(lesser), lesser);
-      }
-      if (isFiniteBound(left)) {
-        if (lt(-1n, a.low)) return integerType(0n, left);
-        return integerType(neg(left), left);
-      }
-      if (isFiniteBound(right)) {
-        if (lt(-1n, b.low)) return integerType(0n, right);
-        return integerType(neg(right), right);
-      }
-      return integerType();
-    }
+    case "bit_and":
+      return getTypeBitNot(
+        getArithmeticType("bit_or", getTypeBitNot(a), getTypeBitNot(b))
+      );
     case "bit_or":
     case "bit_xor": {
       const left = max(abs(a.low), abs(a.high));
