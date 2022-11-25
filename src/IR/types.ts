@@ -106,7 +106,7 @@ export function textType(capacity: number | IntegerBound = Infinity): TextType {
         ? Math.max(0, capacity)
         : lt(capacity, 0n)
         ? 0
-        : isFinite(capacity) && capacity < BigInt(2 ** 32)
+        : isFiniteBound(capacity) && capacity < BigInt(2 ** 32)
         ? Number(capacity)
         : Infinity,
   };
@@ -259,9 +259,9 @@ export function floorDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
 }
 export function truncDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
   if (b === 0n) throw new Error("Indeterminate result of x / 0.");
-  if (!isFinite(a) && !isFinite(b))
+  if (!isFiniteBound(a) && !isFiniteBound(b))
     throw new Error("Indeterminate result of +-oo / +-oo.");
-  if (!isFinite(a)) {
+  if (!isFiniteBound(a)) {
     if (lt(a, 0n) === lt(b, 0n)) return "oo";
     else return "-oo";
   }
@@ -269,7 +269,7 @@ export function truncDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
   return a / b;
 }
 
-export function isFinite(a: IntegerBound): a is bigint {
+export function isFiniteBound(a: IntegerBound): a is bigint {
   return typeof a === "bigint";
 }
 interface FiniteIntegerType {
@@ -278,5 +278,5 @@ interface FiniteIntegerType {
   high: bigint;
 }
 export function isFiniteType(a: IntegerType): a is FiniteIntegerType {
-  return isFinite(a.low) && isFinite(a.high);
+  return isFiniteBound(a.low) && isFiniteBound(a.high);
 }

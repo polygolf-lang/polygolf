@@ -1,7 +1,7 @@
 import {
   getArgs,
   int,
-  isFinite,
+  isFiniteBound,
   isOpCode,
   polygolfOp,
   StringLiteral,
@@ -78,7 +78,7 @@ export const evalStaticExpr: Visitor = {
       if (
         // if the inferred type of the node is a constant integer, replace it with a literal node
         type.kind === "integer" &&
-        isFinite(type.low) &&
+        isFiniteBound(type.low) &&
         type.low === type.high
       ) {
         path.replaceWith(int(type.low));

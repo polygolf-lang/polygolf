@@ -36,7 +36,7 @@ import {
   floorDiv,
   truncDiv,
   sub,
-  isFinite,
+  isFiniteBound,
   isFiniteType,
   abs,
   neg,
@@ -611,9 +611,9 @@ export function getArithmeticType(
         );
       }
       if (b.low === "-oo" || b.high === "oo") values.push(0n);
-      else if (b.low !== 0n && isFinite(b.low))
+      else if (b.low !== 0n && isFiniteBound(b.low))
         values.push(truncDiv(a.low, b.low), truncDiv(a.high, b.low));
-      if (b.high !== 0n && isFinite(b.high))
+      if (b.high !== 0n && isFiniteBound(b.high))
         values.push(truncDiv(a.low, b.high), truncDiv(a.high, b.high));
 
       return integerTypeIncludingAll(...values);
@@ -637,25 +637,29 @@ export function getArithmeticType(
         if (lt(a.low, -1n)) values.push("-oo");
       }
       if (a.high === "oo") values.push("oo");
-      if (isFinite(a.low) && isFinite(b.low)) values.push(a.low ** b.low);
-      if (isFinite(a.low) && isFinite(b.high)) values.push(a.low ** b.high);
-      if (isFinite(a.high) && isFinite(b.low)) values.push(a.high ** b.low);
-      if (isFinite(a.high) && isFinite(b.high)) values.push(a.high ** b.high);
-      if (a.low === "-oo" && isFinite(b.high) && b.high % 2n === 2n)
+      if (isFiniteBound(a.low) && isFiniteBound(b.low))
+        values.push(a.low ** b.low);
+      if (isFiniteBound(a.low) && isFiniteBound(b.high))
+        values.push(a.low ** b.high);
+      if (isFiniteBound(a.high) && isFiniteBound(b.low))
+        values.push(a.high ** b.low);
+      if (isFiniteBound(a.high) && isFiniteBound(b.high))
+        values.push(a.high ** b.high);
+      if (a.low === "-oo" && isFiniteBound(b.high) && b.high % 2n === 2n)
         values.push("oo");
       if (b.low !== b.high) {
-        if (isFinite(a.low) && isFinite(b.low))
+        if (isFiniteBound(a.low) && isFiniteBound(b.low))
           values.push(a.low ** (b.low + 1n));
-        if (isFinite(a.low) && isFinite(b.high))
+        if (isFiniteBound(a.low) && isFiniteBound(b.high))
           values.push(a.low ** (b.high - 1n));
-        if (isFinite(a.high) && isFinite(b.low))
+        if (isFiniteBound(a.high) && isFiniteBound(b.low))
           values.push(a.high ** (b.low + 1n));
-        if (isFinite(a.high) && isFinite(b.high))
+        if (isFiniteBound(a.high) && isFiniteBound(b.high))
           values.push(a.high ** (b.high - 1n));
         if (a.low === "-oo") values.push("oo");
         if (a.high === "oo") values.push("oo");
       } else {
-        if (a.low === "-oo" && isFinite(b.low)) {
+        if (a.low === "-oo" && isFiniteBound(b.low)) {
           if (b.low % 2n === 1n) {
             values.push("-oo");
           } else {
@@ -670,16 +674,16 @@ export function getArithmeticType(
     case "bit_and": {
       const left = max(abs(a.low), abs(a.high));
       const right = max(abs(b.low), abs(b.high));
-      if (isFinite(left) && isFinite(right)) {
+      if (isFiniteBound(left) && isFiniteBound(right)) {
         const lesser = lt(left, right) ? left : right;
         if (lt(-1n, a.low) && lt(-1n, b.low)) return integerType(0n, lesser);
         return integerType(neg(lesser), lesser);
       }
-      if (isFinite(left)) {
+      if (isFiniteBound(left)) {
         if (lt(-1n, a.low)) return integerType(0n, left);
         return integerType(neg(left), left);
       }
-      if (isFinite(right)) {
+      if (isFiniteBound(right)) {
         if (lt(-1n, b.low)) return integerType(0n, right);
         return integerType(neg(right), right);
       }
@@ -689,7 +693,7 @@ export function getArithmeticType(
     case "bit_xor": {
       const left = max(abs(a.low), abs(a.high));
       const right = max(abs(b.low), abs(b.high));
-      if (isFinite(left) && isFinite(right)) {
+      if (isFiniteBound(left) && isFiniteBound(right)) {
         const larger = lt(left, right) ? left : right;
         const lim = 2n ** BigInt(larger.toString(2).length);
         if (lt(-1n, a.low) && lt(-1n, b.low)) return integerType(0n, lim);
