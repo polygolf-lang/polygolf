@@ -120,8 +120,8 @@ export function integerTypeIncludingAll(
 
 function integerBoundMinAndMax(args: IntegerBound[]) {
   return args.reduce(
-    ([min, max], e) => {
-      return [min(min, e), max(max, e)];
+    ([cMin, cMax], e) => {
+      return [min(cMin, e), max(cMax, e)];
     },
     [args[0], args[0]]
   );
