@@ -735,5 +735,5 @@ function getIntegerTypeMod(a: IntegerType, b: IntegerType): IntegerType {
 
 function getIntegerTypeRem(a: IntegerType, b: IntegerType): IntegerType {
   const m = max(abs(b.low), abs(b.high));
-  return integerType(neg(m), m);
+  return integerType(lt(a.low, 0n) ? neg(m) : 0n, m);
 }
