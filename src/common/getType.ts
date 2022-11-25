@@ -550,6 +550,9 @@ export function getArithmeticType(
     case "sub":
       return integerType(sub(a.low, b.high), sub(a.high, b.low));
     case "mul": {
+      // Extreme values of a product arise from multiplying the extremes of the inputs.
+      // The single case were simple multiplication of the bounds is not defined, corresponds to multiplying
+      // zero by an unbounded value which always results in zero.
       const M = (x: IntegerBound, y: IntegerBound) => {
         try {
           return mul(x, y);
@@ -645,7 +648,7 @@ export function getArithmeticType(
         values.push(a.high ** b.low);
       if (isFiniteBound(a.high) && isFiniteBound(b.high))
         values.push(a.high ** b.high);
-      if (a.low === "-oo" && isFiniteBound(b.high) && b.high % 2n === 2n)
+      if (a.low === "-oo" && isFiniteBound(b.high) && b.high % 2n === 0n)
         values.push("oo");
       if (b.low !== b.high) {
         if (isFiniteBound(a.low) && isFiniteBound(b.low))
