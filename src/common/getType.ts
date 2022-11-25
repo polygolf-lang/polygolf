@@ -477,8 +477,8 @@ function getOpCodeType(
       return textType();
     // other
     case "true":
-      return booleanType;
     case "false":
+      expectType();
       return booleanType;
     case "argv":
       expectType();
