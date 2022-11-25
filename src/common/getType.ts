@@ -628,9 +628,8 @@ export function getArithmeticType(
     case "pow": {
       if (lt(b.low, 0n))
         throw new PolygolfError(
-          `Type error. Operator 'pow' expected [-oo..oo, 0..oo] but got [${toString(
-            a
-          )}, ${toString(b)}].`,
+          `Type error. Operator 'pow' expected [-oo..oo, 0..oo] but got ` +
+          `[${toString(a)}, ${toString(b)}].`,
           source
         );
       const values: IntegerBound[] = [];
