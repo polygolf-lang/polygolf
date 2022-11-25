@@ -388,7 +388,7 @@ function getOpCodeType(
     case "simplify_fraction": {
       expectType(integerType(), integerType());
       const t1 = types[0] as IntegerType;
-      const t2 = types[0] as IntegerType;
+      const t2 = types[1] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2))
         return textType(
           1 +
