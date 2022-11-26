@@ -98,6 +98,14 @@ export function integerType(
   };
 }
 
+export function constantIntegerType(c: bigint): FiniteIntegerType {
+  return {
+    kind: "integer",
+    low: c,
+    high: c,
+  };
+}
+
 export function textType(capacity: number | IntegerBound = Infinity): TextType {
   return {
     kind: "text",
@@ -276,11 +284,14 @@ export function truncDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
 export function isFiniteBound(a: IntegerBound): a is bigint {
   return typeof a === "bigint";
 }
-interface FiniteIntegerType {
+export interface FiniteIntegerType {
   kind: "integer";
   low: bigint;
   high: bigint;
 }
 export function isFiniteType(a: IntegerType): a is FiniteIntegerType {
   return isFiniteBound(a.low) && isFiniteBound(a.high);
+}
+export function isConstantType(a: IntegerType): a is FiniteIntegerType {
+  return isFiniteType(a) && a.low === a.high;
 }

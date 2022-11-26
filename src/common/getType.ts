@@ -41,6 +41,8 @@ import {
   abs,
   neg,
   typeContains,
+  isConstantType,
+  constantIntegerType,
 } from "../IR";
 import { PolygolfError } from "./errors";
 
@@ -724,16 +726,22 @@ export function getCollectionTypes(expr: Expr, program: Program): Type[] {
 }
 
 function getIntegerTypeMod(a: IntegerType, b: IntegerType): IntegerType {
+  if (isConstantType(a) && isConstantType(b)) {
+    return constantIntegerType(
+      a.low - b.low * (floorDiv(a.low, b.low) as bigint)
+    );
+  }
   const values: IntegerBound[] = [];
-  if (lt(b.low, 0n))
-    values.push(sub(1n, min(b.low, min(abs(a.low), abs(a.high)))));
-  if (lt(0n, b.high))
-    values.push(sub(min(b.low, min(abs(a.low), abs(a.high))), 1n));
+  if (lt(b.low, 0n)) values.push(sub(b.low, -1n));
+  if (lt(0n, b.high)) values.push(sub(b.high, 1n));
   values.push(0n);
   return integerTypeIncludingAll(...values);
 }
 
 function getIntegerTypeRem(a: IntegerType, b: IntegerType): IntegerType {
+  if (isConstantType(a) && isConstantType(b)) {
+    return constantIntegerType(a.low % b.low);
+  }
   const m = max(abs(b.low), abs(b.high));
   return integerType(lt(a.low, 0n) ? neg(m) : 0n, m);
 }

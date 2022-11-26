@@ -236,6 +236,14 @@ describeArithmeticOp("div", [
   [[int(-31, -31), int(10, 10)], int(-4, -4)],
 ]);
 
+describeArithmeticOp("mod", [
+  [[int()], "error"],
+  [[int(), int()], int()],
+  [[int(), int(-10, 10)], int(-9, 9)],
+  [[int(-2, 2), int(10, 10)], int(0, 9)],
+  [[int(17, 17), int(10, 10)], int(7, 7)],
+]);
+
 describeArithmeticOp("trunc_div", [
   [[int()], "error"],
   [[int(), int()], int()],
