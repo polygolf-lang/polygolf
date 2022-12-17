@@ -189,17 +189,58 @@ export function toString(a: Type): string {
   }
 }
 
+export function intersection(a: Type, b: Type): Type {
+  if (a.kind === "Function" && b.kind === "Function") {
+    return functionType(
+      a.arguments.map((t, i) => union(t, b.arguments[i])),
+      intersection(a.result, b.result)
+    );
+  } else if (a.kind === "List" && b.kind === "List") {
+    if (a.member.kind === "void") return b;
+    if (b.member.kind === "void") return a;
+    return listType(intersection(a.member, b.member));
+  } else if (a.kind === "Array" && b.kind === "Array") {
+    if (a.length === b.length)
+      return arrayType(intersection(a.member, b.member), a.length);
+  } else if (a.kind === "Set" && b.kind === "Set") {
+    if (a.member.kind === "void") return b;
+    if (b.member.kind === "void") return a;
+    return setType(intersection(a.member, b.member));
+  } else if (a.kind === "KeyValue" && b.kind === "KeyValue") {
+    return keyValueType(
+      intersection(a.key, b.key) as any,
+      intersection(a.value, b.value)
+    );
+  } else if (a.kind === "Table" && b.kind === "Table") {
+    if (a.value.kind === "void") return b;
+    if (b.value.kind === "void") return a;
+    return tableType(
+      intersection(a.key, b.key) as any,
+      intersection(a.value, b.value)
+    );
+  } else if (a.kind === "integer" && b.kind === "integer") {
+    const low = max(a.low, b.low);
+    const high = min(a.high, b.high);
+    if (leq(low, high)) return integerType(low, high);
+  } else if (a.kind === "text" && b.kind === "text") {
+    return textType(Math.min(a.capacity, b.capacity));
+  } else if (a.kind === b.kind) {
+    return a;
+  }
+  throw new Error("Empty intersection.");
+}
+
 export function union(a: Type, b: Type): Type {
   try {
     if (a.kind === "Function" && b.kind === "Function") {
       return functionType(
-        a.arguments.map((t, i) => union(t, b.arguments[i])),
+        a.arguments.map((t, i) => intersection(t, b.arguments[i])),
         union(a.result, b.result)
       );
     } else if (a.kind === "List" && b.kind === "List") {
       if (a.member.kind === "void") return b;
       if (b.member.kind === "void") return a;
-      return listType(union(a.member, b.member as Type));
+      return listType(union(a.member, b.member));
     } else if (a.kind === "Array" && b.kind === "Array") {
       if (a.length === b.length)
         return arrayType(union(a.member, b.member), a.length);
@@ -236,7 +277,7 @@ export function union(a: Type, b: Type): Type {
 export function isSubtype(a: Type, b: Type): boolean {
   if (a.kind === "Function" && b.kind === "Function") {
     return (
-      a.arguments.every((t, i) => isSubtype(t, b.arguments[i])) &&
+      a.arguments.every((t, i) => isSubtype(b.arguments[i], t)) &&
       isSubtype(a.result, b.result)
     );
   }
