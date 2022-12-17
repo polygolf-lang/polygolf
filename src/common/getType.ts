@@ -283,6 +283,14 @@ function getOpCodeType(
   switch (expr.op) {
     // binary
     // (num, num) => num
+    case "gcd": {
+      expectType(integerType(), integerType(1));
+      const [a, b] = types as [IntegerType, IntegerType];
+      return integerType(
+        1n,
+        min(max(abs(a.low), abs(a.high)), max(abs(b.low), abs(b.high)))
+      );
+    }
     case "add":
     case "sub":
     case "mul":
@@ -294,7 +302,6 @@ function getOpCodeType(
     case "bit_and":
     case "bit_or":
     case "bit_xor":
-    case "gcd":
     case "min":
     case "max":
       expectType(integerType(), integerType());
@@ -543,11 +550,6 @@ export function getArithmeticType(
   source?: SourcePointer
 ): IntegerType {
   switch (op) {
-    case "gcd":
-      return integerType(
-        1n,
-        min(max(abs(a.low), abs(a.high)), max(abs(b.low), abs(b.high)))
-      );
     case "min":
       return integerType(min(a.low, b.low), min(a.high, b.high));
     case "max":

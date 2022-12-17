@@ -174,9 +174,9 @@ describe("Literals", () => {
 
 describeArithmeticOp("gcd", [
   [[int()], "error"],
-  [[int(), int()], int(1)],
-  [[int(), int(-10, 10)], int(1, 10)],
-  [[int(30, 200), int(-100, 10)], int(1, 100)],
+  [[int(), int(1)], int(1)],
+  [[int(), int(1, 10)], int(1, 10)],
+  [[int(-100, 10), int(30, 200)], int(1, 100)],
 ]);
 
 describeArithmeticOp("min", [

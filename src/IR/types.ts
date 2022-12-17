@@ -91,10 +91,15 @@ export function integerType(
     if (x === Infinity || x === "oo") return "oo";
     return BigInt(x);
   }
+  low = toIntegerBound(low);
+  high = toIntegerBound(high);
+  if (low === "oo" || high === "-oo" || lt(high, low)) {
+    throw Error(`Nonsensical integer range ${low}..${high}`);
+  }
   return {
     kind: "integer",
-    low: toIntegerBound(low),
-    high: toIntegerBound(high),
+    low,
+    high,
   };
 }
 
