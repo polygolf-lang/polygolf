@@ -12,9 +12,9 @@ export default function emitProgram(program: IR.Program): string[] {
 }
 
 function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
-  const children = block.type === "Block" ? block.children : [block];
+  const children = block.kind === "Block" ? block.children : [block];
   if (hasChildWithBlock(block)) {
-    if (parent.type === "Program") {
+    if (parent.kind === "Program") {
       return joinGroups(
         children.map((stmt) => emitStatement(stmt, block)),
         "\n"
@@ -38,7 +38,7 @@ function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
 }
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
-  switch (stmt.type) {
+  switch (stmt.kind) {
     case "Block":
       return emitBlock(stmt, parent);
     case "ImportStatement":
@@ -92,7 +92,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.type}) while emitting Python`);
+      throw new Error(`Unexpected node (${stmt.kind}) while emitting Python`);
     default:
       return emitExpr(stmt, parent);
   }
@@ -119,14 +119,14 @@ function needsParens(
   if (needsParensPrecedence(expr, parent, fragment)) {
     return true;
   }
-  if (parent.type === "MethodCall" && fragment === "object") {
-    return expr.type === "UnaryOp" || expr.type === "BinaryOp";
+  if (parent.kind === "MethodCall" && fragment === "object") {
+    return expr.kind === "UnaryOp" || expr.kind === "BinaryOp";
   }
   return false;
 }
 
 function emitExprNoParens(expr: IR.Expr): string[] {
-  switch (expr.type) {
+  switch (expr.kind) {
     case "Assignment":
       return [
         ...emitExpr(expr.variable, expr),
@@ -225,7 +225,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
 
     default:
       throw new Error(
-        `Unexpected node while emitting Python: ${expr.type}: ${
+        `Unexpected node while emitting Python: ${expr.kind}: ${
           "op" in expr ? expr.op ?? "" : ""
         }. `
       );

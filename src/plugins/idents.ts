@@ -87,7 +87,7 @@ export function aliasBuiltins(
   return {
     enter(path: Path) {
       const node = path.node;
-      if (node.type === "Identifier" && node.builtin) {
+      if (node.kind === "Identifier" && node.builtin) {
         if (!usedBuiltins.has(node.name)) usedBuiltins.set(node.name, []);
         usedBuiltins.get(node.name)?.push(node);
       }
@@ -109,7 +109,7 @@ export function aliasBuiltins(
           aliased
             .map((x) => assignment(x + "_alias", id(x, true)) as Expr)
             .concat(
-              program.body.type === "Block"
+              program.body.kind === "Block"
                 ? program.body.children
                 : [program.body]
             )
