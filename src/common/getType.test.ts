@@ -27,6 +27,8 @@ import {
   keyValue,
   tableConstructor,
   listType,
+  functionCall,
+  functionType,
 } from "IR";
 import { calcType } from "./getType";
 
@@ -37,14 +39,15 @@ function e(type: Type): Identifier {
   return result;
 }
 
-function testExpr(name: string, expr: Expr, result: Type | "error") {
+function testExpr(
+  name: string,
+  expr: Expr,
+  result: Type | "error",
+  prog = program(block([]))
+) {
   test(name, () => {
-    if (result === "error")
-      expect(() => calcType(expr, program(block([])))).toThrow();
-    else
-      expect(toString(calcType(expr, program(block([]))))).toEqual(
-        toString(result)
-      );
+    if (result === "error") expect(() => calcType(expr, prog)).toThrow();
+    else expect(toString(calcType(expr, prog))).toEqual(toString(result));
   });
 }
 
@@ -98,6 +101,27 @@ describe("Assignment", () => {
     "assign empty list",
     assignment(e(list(text())), listConstructor([])),
     list("void")
+  );
+});
+
+describe("Functions", () => {
+  testExpr(
+    "Function call",
+    functionCall([integerLiteral(1n)], id("f", false)),
+    int(0),
+    {
+      ...program(block([])),
+      variables: new Map<string, Type>([["f", functionType([int()], int(0))]]),
+    }
+  );
+  testExpr(
+    "Function call wrong types",
+    functionCall([integerLiteral(1n)], id("f", false)),
+    "error",
+    {
+      ...program(block([])),
+      variables: new Map<string, Type>([["f", functionType([text()], int())]]),
+    }
   );
 });
 
