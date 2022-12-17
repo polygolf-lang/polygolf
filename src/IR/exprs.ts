@@ -108,7 +108,7 @@ export interface ConditionalOp extends BaseExpr {
 }
 
 export interface Function extends BaseExpr {
-  type: "Function";
+  kind: "Function";
   args: Identifier[];
   expr: Expr;
 }
@@ -248,7 +248,7 @@ export function conditional(
   isSafe: boolean
 ): ConditionalOp {
   return {
-    type: "ConditionalOp",
+    kind: "ConditionalOp",
     condition,
     consequent,
     alternate,
@@ -258,7 +258,7 @@ export function conditional(
 
 export function func(args: (string | Identifier)[], expr: Expr): Function {
   return {
-    type: "Function",
+    kind: "Function",
     args: args.map((x) => (typeof x === "string" ? id(x) : x)),
     expr,
   };

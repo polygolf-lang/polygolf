@@ -58,7 +58,7 @@ export function calcType(expr: Expr, program: Program): Type {
   const type = (e: Expr) => getType(e, program);
   switch (expr.kind) {
     case "Function": {
-      function setVar(name: string, type: ValueType) {
+      function setVar(name: string, type: Type) {
         if (program.variables.has(name)) {
           throw new PolygolfError(
             `Duplicate variable declaration: ${name}!`,
@@ -68,8 +68,8 @@ export function calcType(expr: Expr, program: Program): Type {
         program.variables.set(name, type);
       }
       for (const arg of expr.args) {
-        if (arg.valueType !== undefined && expr.valueType === undefined) {
-          setVar(arg.name, arg.valueType);
+        if (arg.type !== undefined && expr.type === undefined) {
+          setVar(arg.name, arg.type);
         }
       }
       return functionType(expr.args.map(type), type(expr.expr));

@@ -54,7 +54,7 @@ const stripTypesIfInferable: Visitor = {
             getType(path.parent.node.expr, program),
             program.variables.get(variable)!
           ) ||
-          program.variables.get(variable)?.type === "Function"
+          program.variables.get(variable)?.kind === "Function"
         ) {
           node.type = program.variables.get(variable);
         } else {
@@ -64,10 +64,10 @@ const stripTypesIfInferable: Visitor = {
         return;
       }
     } else if (
-      node.type === "Identifier" &&
+      node.kind === "Identifier" &&
       !node.builtin &&
       path.parent !== null &&
-      path.parent.node.type === "Function" &&
+      path.parent.node.kind === "Function" &&
       path.pathFragment !== "expr"
     ) {
       const variable = node.name;
@@ -75,7 +75,7 @@ const stripTypesIfInferable: Visitor = {
         program.variables.has(variable) &&
         !initializedVariables.has(variable)
       ) {
-        node.valueType = program.variables.get(variable);
+        node.type = program.variables.get(variable);
         return;
       }
     }
