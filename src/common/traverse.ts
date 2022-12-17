@@ -138,7 +138,7 @@ export class Path<N extends IR.Node = IR.Node> {
     }
     if (i === 0)
       throw new Error(
-        "Tree visit limit hit. This is probably due to a misbehaving plugin."
+        `Tree visit limit hit. This is probably due to a misbehaving plugin (${visitor.name}).`
       );
     visitor.exit?.(this);
   }
@@ -179,6 +179,7 @@ export class Path<N extends IR.Node = IR.Node> {
   getUsedIdentifiers(): Set<string> {
     const result = new Set<string>();
     this.root.visit({
+      name: "anonymous",
       enter(path: Path) {
         if (path.node.kind === "Identifier" && !path.node.builtin) {
           result.add(path.node.name);
@@ -242,6 +243,7 @@ export function programToPath(node: IR.Program) {
 }
 
 export interface Visitor {
+  name: string;
   enter?: (path: Path) => void;
   exit?: (path: Path) => void;
   generatesVariants?: boolean;

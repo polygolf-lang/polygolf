@@ -32,6 +32,7 @@ function isEqual(a: Type, b: Type): boolean {
 }
 const initializedVariables = new Set<string>();
 const stripTypesIfInferable: Visitor = {
+  name: "stripTypesIfInferable",
   enter(path: Path) {
     const program = path.root.node;
     const node = path.node;
@@ -72,6 +73,7 @@ const stripTypesIfInferable: Visitor = {
 };
 
 const blocksAsVariants: Visitor = {
+  name: "blocksAsVariants",
   exit(path: Path) {
     const node = path.node;
     if (

@@ -123,6 +123,7 @@ export function program(body: Expr): Program {
 export function typesPass(program: Program) {
   const path = programToPath(program);
   path.visit({
+    name: "anonymous",
     enter(path: Path) {
       const node = path.node;
       function setVar(name: string, type: Type) {

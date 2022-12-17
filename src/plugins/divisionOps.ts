@@ -3,6 +3,7 @@ import { Path, Visitor } from "../common/traverse";
 import { leq, polygolfOp } from "../IR";
 
 export const modToRem: Visitor = {
+  name: "modToRem",
   exit(path: Path) {
     const node = path.node;
     const program = path.root.node;
@@ -26,6 +27,7 @@ export const modToRem: Visitor = {
 };
 
 export const divToTruncdiv: Visitor = {
+  name: "divToTruncdiv",
   exit(path: Path) {
     const node = path.node;
     const program = path.root.node;

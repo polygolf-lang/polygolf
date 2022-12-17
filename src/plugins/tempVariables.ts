@@ -2,6 +2,7 @@ import { Path, Visitor } from "../common/traverse";
 import { block, Expr, manyToManyAssignment } from "../IR";
 
 export const tempVarToMultipleAssignment: Visitor = {
+  name: "tempVarToMultipleAssignment",
   exit(path: Path) {
     const node = path.node;
     if (node.kind === "Block") {

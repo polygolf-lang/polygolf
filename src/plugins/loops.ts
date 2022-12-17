@@ -15,6 +15,7 @@ import {
 } from "../IR";
 
 export const forRangeToForRangeInclusive = {
+  name: "forRangeToForRangeInclusive",
   enter(path: Path) {
     const node = path.node;
     if (node.kind === "ForRange" && !node.inclusive) {
@@ -36,6 +37,7 @@ export const forRangeToForRangeInclusive = {
  * Only switch if it is shorter
  */
 export const useInclusiveForRange = {
+  name: "useInclusiveForRange",
   enter(path: Path) {
     const node = path.node;
     if (node.kind === "ForRange" && !node.inclusive) {
@@ -62,6 +64,7 @@ export const useInclusiveForRange = {
 };
 
 export const forRangeToWhile = {
+  name: "forRangeToWhile",
   enter(path: Path) {
     const node = path.node;
     if (node.kind === "ForRange") {
@@ -90,6 +93,7 @@ export const forRangeToWhile = {
 };
 
 export const forRangeToForCLike = {
+  name: "forRangeToForCLike",
   enter(path: Path) {
     const node = path.node;
     if (node.kind === "ForRange") {
@@ -124,6 +128,7 @@ export const forRangeToForCLike = {
  */
 // TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
 export const forRangeToForEachPair = {
+  name: "forRangeToForEachPair",
   enter(path: Path) {
     const node = path.node;
     if (
@@ -140,6 +145,7 @@ export const forRangeToForEachPair = {
       const bodyPath = new Path(node.body, path, "body");
       bodyPath.visit({
         // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
+        name: "anonymous",
         enter(path2: Path) {
           const node2 = path2.node;
           if (isListGet(node2, collection.name, node.variable.name)) {
@@ -164,6 +170,7 @@ export const forRangeToForEachPair = {
  *     commands(x)
  */
 export const forRangeToForEach = {
+  name: "forRangeToForEach",
   enter(path: Path) {
     const node = path.node;
     if (
@@ -182,6 +189,7 @@ export const forRangeToForEach = {
         // if the loop variable is only used to index the collection
         bodyPath.visit({
           // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
+          name: "anonymous",
           enter(path2: Path) {
             const node2 = path2.node;
             if (isListGet(node2, collection.name, node.variable.name)) {

@@ -9,7 +9,7 @@ import {
   Program,
   varDeclarationWithAssignment,
 } from "../../IR";
-import { Path } from "../../common/traverse";
+import { Path, Visitor } from "../../common/traverse";
 import { getType } from "../../common/getType";
 
 const includes: [string, string[]][] = [
@@ -34,7 +34,8 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-export const addImports = {
+export const addImports: Visitor = {
+  name: "addImports",
   exit(path: Path) {
     if (path.node.kind === "Program") {
       const program: Program = path.node;
@@ -58,7 +59,8 @@ export const addImports = {
 };
 
 const declared: Set<string> = new Set<string>();
-export const addVarDeclarations = {
+export const addVarDeclarations: Visitor = {
+  name: "addVarDeclarations",
   enter(path: Path) {
     const node = path.node;
     if (node.kind === "Program") declared.clear();
@@ -121,7 +123,8 @@ function simplifyAssignments(
   );
 }
 
-export const useUnsignedDivision = {
+export const useUnsignedDivision: Visitor = {
+  name: "useUnsignedDivision",
   exit(path: Path) {
     const node = path.node;
     const program = path.root.node;
@@ -145,7 +148,8 @@ export const useUnsignedDivision = {
   },
 };
 
-export const useUFCS = {
+export const useUFCS: Visitor = {
+  name: "useUFCS",
   exit(path: Path) {
     const node = path.node;
     if (node.kind === "FunctionCall" && node.args.length > 0) {
