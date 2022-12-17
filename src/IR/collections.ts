@@ -4,7 +4,7 @@ import { BaseExpr, Expr, KeyValue } from "./IR";
  *
  */
 export interface ArrayConstructor extends BaseExpr {
-  type: "ArrayConstructor";
+  kind: "ArrayConstructor";
   exprs: Expr[];
 }
 
@@ -13,44 +13,44 @@ export interface ArrayConstructor extends BaseExpr {
  *
  */
 export interface ListConstructor extends BaseExpr {
-  type: "ListConstructor";
+  kind: "ListConstructor";
   exprs: Expr[];
 }
 
 export interface SetConstructor extends BaseExpr {
-  type: "SetConstructor";
+  kind: "SetConstructor";
   exprs: Expr[];
 }
 
 export interface TableConstructor extends BaseExpr {
-  type: "TableConstructor";
+  kind: "TableConstructor";
   kvPairs: KeyValue[];
 }
 
 export function arrayConstructor(exprs: Expr[]): ArrayConstructor {
   return {
-    type: "ArrayConstructor",
+    kind: "ArrayConstructor",
     exprs,
   };
 }
 
 export function listConstructor(exprs: Expr[]): ListConstructor {
   return {
-    type: "ListConstructor",
+    kind: "ListConstructor",
     exprs,
   };
 }
 
 export function setConstructor(exprs: Expr[]): SetConstructor {
   return {
-    type: "SetConstructor",
+    kind: "SetConstructor",
     exprs,
   };
 }
 
 export function tableConstructor(kvPairs: KeyValue[]): TableConstructor {
   return {
-    type: "TableConstructor",
+    kind: "TableConstructor",
     kvPairs,
   };
 }

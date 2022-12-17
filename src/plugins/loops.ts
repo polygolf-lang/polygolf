@@ -17,7 +17,7 @@ import {
 export const forRangeToForRangeInclusive = {
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "ForRange" && !node.inclusive) {
+    if (node.kind === "ForRange" && !node.inclusive) {
       path.replaceWith(
         forRange(
           node.variable,
@@ -38,19 +38,19 @@ export const forRangeToForRangeInclusive = {
 export const useInclusiveForRange = {
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "ForRange" && !node.inclusive) {
-      if (node.high.type === "IntegerLiteral") {
+    if (node.kind === "ForRange" && !node.inclusive) {
+      if (node.high.kind === "IntegerLiteral") {
         node.inclusive = true;
         node.high.value = node.high.value - 1n;
-      } else if (node.high.type === "BinaryOp" && node.high.op === "add") {
+      } else if (node.high.kind === "BinaryOp" && node.high.op === "add") {
         if (
-          node.high.right.type === "IntegerLiteral" &&
+          node.high.right.kind === "IntegerLiteral" &&
           node.high.right.value === 1n
         ) {
           node.inclusive = true;
           node.high = node.high.left;
         } else if (
-          node.high.left.type === "IntegerLiteral" &&
+          node.high.left.kind === "IntegerLiteral" &&
           node.high.left.value === 1n
         ) {
           node.inclusive = true;
@@ -64,11 +64,11 @@ export const useInclusiveForRange = {
 export const forRangeToWhile = {
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "ForRange") {
+    if (node.kind === "ForRange") {
       const low = getType(node.low, path.root.node);
       const high = getType(node.high, path.root.node);
-      if (low.type !== "integer" || high.type !== "integer") {
-        throw new Error(`Unexpected type (${low.type},${high.type})`);
+      if (low.kind !== "integer" || high.kind !== "integer") {
+        throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
       const increment = assignment(
         node.variable,
@@ -79,7 +79,7 @@ export const forRangeToWhile = {
           assignment(node.variable, node.low),
           whileLoop(
             polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
-            node.body.type === "Block"
+            node.body.kind === "Block"
               ? block([...node.body.children, increment])
               : block([node.body, increment])
           ),
@@ -92,11 +92,11 @@ export const forRangeToWhile = {
 export const forRangeToForCLike = {
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "ForRange") {
+    if (node.kind === "ForRange") {
       const low = getType(node.low, path.root.node);
       const high = getType(node.high, path.root.node);
-      if (low.type !== "integer" || high.type !== "integer") {
-        throw new Error(`Unexpected type (${low.type},${high.type})`);
+      if (low.kind !== "integer" || high.kind !== "integer") {
+        throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
       path.replaceWith(
         forCLike(
@@ -127,13 +127,13 @@ export const forRangeToForEachPair = {
   enter(path: Path) {
     const node = path.node;
     if (
-      node.type === "ForRange" &&
+      node.kind === "ForRange" &&
       !node.inclusive &&
-      node.low.type === "IntegerLiteral" &&
+      node.low.kind === "IntegerLiteral" &&
       node.low.value === 0n &&
-      node.high.type === "PolygolfOp" &&
+      node.high.kind === "PolygolfOp" &&
       node.high.op === "list_length" &&
-      node.high.args[0].type === "Identifier"
+      node.high.args[0].kind === "Identifier"
     ) {
       const collection = node.high.args[0];
       const elementIdentifier = id(path.getNewIdentifier());
@@ -167,13 +167,13 @@ export const forRangeToForEach = {
   enter(path: Path) {
     const node = path.node;
     if (
-      node.type === "ForRange" &&
+      node.kind === "ForRange" &&
       !node.inclusive &&
-      node.low.type === "IntegerLiteral" &&
+      node.low.kind === "IntegerLiteral" &&
       node.low.value === 0n &&
-      node.high.type === "PolygolfOp" &&
+      node.high.kind === "PolygolfOp" &&
       node.high.op === "list_length" &&
-      node.high.args[0].type === "Identifier"
+      node.high.args[0].kind === "Identifier"
     ) {
       const collection = node.high.args[0];
       const elementIdentifier = id(path.getNewIdentifier());
@@ -196,12 +196,12 @@ export const forRangeToForEach = {
 };
 
 function isListGet(node: IR.Node, collection: string, index: string) {
-  if (node.type !== "PolygolfOp" || node.op !== "list_get") return false;
+  if (node.kind !== "PolygolfOp" || node.op !== "list_get") return false;
   const args = node.args;
   return (
-    args[0].type === "Identifier" &&
+    args[0].kind === "Identifier" &&
     args[0].name === collection &&
-    args[1].type === "Identifier" &&
+    args[1].kind === "Identifier" &&
     args[1].name === index
   );
 }
@@ -209,7 +209,7 @@ function isListGet(node: IR.Node, collection: string, index: string) {
 function isVariableUsedAlone(path: Path, collection: string, index: string) {
   return path.anyNode(
     (x) =>
-      x.node.type === "Identifier" &&
+      x.node.kind === "Identifier" &&
       x.node.name === index &&
       !isListGet(x.parent!.node, collection, index)
   );

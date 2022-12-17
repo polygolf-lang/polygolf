@@ -1,10 +1,10 @@
-import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
+import { BaseExpr, Expr, id, Identifier, Type } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
  */
 export interface Variants extends BaseExpr {
-  type: "Variants";
+  kind: "Variants";
   variants: Expr[];
 }
 
@@ -12,7 +12,7 @@ export interface Variants extends BaseExpr {
  * A block of several statements. Raw OK
  */
 export interface Block extends BaseExpr {
-  type: "Block";
+  kind: "Block";
   children: Expr[];
 }
 
@@ -22,7 +22,7 @@ export interface Block extends BaseExpr {
  * if (condition) { consequent } else { alternate }
  */
 export interface IfStatement extends BaseExpr {
-  type: "IfStatement";
+  kind: "IfStatement";
   condition: Expr;
   consequent: Expr;
   alternate?: Expr;
@@ -32,19 +32,19 @@ export interface IfStatement extends BaseExpr {
  * Variable declaration.
  */
 export interface VarDeclaration extends BaseExpr {
-  type: "VarDeclaration";
+  kind: "VarDeclaration";
   variable: Identifier;
-  variableType: ValueType;
+  variableType: Type;
 }
 
 export interface ImportStatement extends BaseExpr {
-  type: "ImportStatement";
+  kind: "ImportStatement";
   name: string;
   modules: string[];
 }
 
 export function block(children: Expr[]): Block {
-  return { type: "Block", children };
+  return { kind: "Block", children };
 }
 
 export function blockOrSingle(children: Expr[]): Expr {
@@ -56,27 +56,27 @@ export function ifStatement(
   consequent: Expr,
   alternate?: Expr
 ): IfStatement {
-  return { type: "IfStatement", condition, consequent, alternate };
+  return { kind: "IfStatement", condition, consequent, alternate };
 }
 
 export function varDeclaration(
   variable: Identifier | string,
-  variableType: ValueType
+  variableType: Type
 ): VarDeclaration {
   return {
-    type: "VarDeclaration",
+    kind: "VarDeclaration",
     variable: typeof variable === "string" ? id(variable) : variable,
     variableType,
   };
 }
 
 export function variants(variants: Expr[]): Variants {
-  return { type: "Variants", variants };
+  return { kind: "Variants", variants };
 }
 
 export function importStatement(
   name: string,
   modules: string[]
 ): ImportStatement {
-  return { type: "ImportStatement", name, modules };
+  return { kind: "ImportStatement", name, modules };
 }

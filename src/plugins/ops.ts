@@ -20,7 +20,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Visitor {
   return {
     enter(path: Path) {
       const node = path.node;
-      if (node.type === "PolygolfOp") {
+      if (node.kind === "PolygolfOp") {
         const op = node.op;
         const f = opMap.get(op);
         if (f === undefined) {
@@ -35,7 +35,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Visitor {
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
             );
-          replacement.valueType = node.valueType;
+          replacement.type = node.type;
           path.replaceWith(replacement);
         } else if (Array.isArray(f)) {
           let replacement: Expr;
@@ -54,12 +54,12 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Visitor {
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
             );
-          replacement.valueType = node.valueType;
+          replacement.type = node.type;
           path.replaceWith(replacement);
         } else {
           const replacement = f(node.args);
           if ("op" in replacement) replacement.op = node.op;
-          replacement.valueType = getType(node, path.root.node);
+          replacement.type = getType(node, path.root.node);
           path.replaceWith(replacement);
         }
       }
@@ -82,9 +82,9 @@ export function useIndexCalls(
     enter(path: Path) {
       const node = path.node;
       if (
-        node.type === "PolygolfOp" &&
+        node.kind === "PolygolfOp" &&
         (ops.length === 0 || ops.includes(node.op)) &&
-        node.args[0].type === "Identifier"
+        node.args[0].kind === "Identifier"
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.startsWith("table_")) {

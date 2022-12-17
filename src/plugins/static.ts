@@ -1,6 +1,7 @@
 import {
   getArgs,
   int,
+  isFiniteBound,
   isOpCode,
   polygolfOp,
   StringLiteral,
@@ -17,8 +18,8 @@ export const golfStringListLiteral: Visitor = {
   exit(path: Path) {
     const node = path.node;
     if (
-      node.type === "ListConstructor" &&
-      node.exprs.every((x) => x.type === "StringLiteral") &&
+      node.kind === "ListConstructor" &&
+      node.exprs.every((x) => x.kind === "StringLiteral") &&
       !golfedStringListLiterals.has(node)
     ) {
       golfedStringListLiterals.set(node, true);
@@ -66,7 +67,7 @@ export const evalStaticExpr: Visitor = {
       "op" in node &&
       node.op !== null &&
       isOpCode(node.op) &&
-      node.type !== "MutatingBinaryOp"
+      node.kind !== "MutatingBinaryOp"
     ) {
       const args = getArgs(node);
       let type = voidType;
@@ -76,12 +77,12 @@ export const evalStaticExpr: Visitor = {
       } catch {}
       if (
         // if the inferred type of the node is a constant integer, replace it with a literal node
-        type.type === "integer" &&
-        type.low === type.high &&
-        type.low !== undefined
+        type.kind === "integer" &&
+        isFiniteBound(type.low) &&
+        type.low === type.high
       ) {
         path.replaceWith(int(type.low));
-      } else if (args.every((x) => x.type === "StringLiteral")) {
+      } else if (args.every((x) => x.kind === "StringLiteral")) {
         const argsVals = args.map((x) => (x as StringLiteral).value);
         if (node.op === "text_concat")
           path.replaceWith(stringLiteral(argsVals[0].concat(argsVals[1])));

@@ -16,26 +16,26 @@ import {
  */
 
 export interface KeyValue extends BaseExpr {
-  type: "KeyValue";
+  kind: "KeyValue";
   key: Expr;
   value: Expr;
 }
 
 export interface PolygolfOp extends BaseExpr {
-  type: "PolygolfOp";
+  kind: "PolygolfOp";
   op: OpCode;
   args: Expr[];
 }
 
 export interface FunctionCall extends BaseExpr {
-  type: "FunctionCall";
+  kind: "FunctionCall";
   ident: Identifier;
   op: OpCode | null;
   args: Expr[];
 }
 
 export interface MethodCall extends BaseExpr {
-  type: "MethodCall";
+  kind: "MethodCall";
   ident: Identifier;
   op: OpCode | null;
   object: Expr;
@@ -43,7 +43,7 @@ export interface MethodCall extends BaseExpr {
 }
 
 export interface IndexCall extends BaseExpr {
-  type: "IndexCall";
+  kind: "IndexCall";
   collection: Expr;
   index: Expr;
   op: OpCode | null;
@@ -51,7 +51,7 @@ export interface IndexCall extends BaseExpr {
 }
 
 export interface RangeIndexCall extends BaseExpr {
-  type: "RangeIndexCall";
+  kind: "RangeIndexCall";
   collection: Expr;
   low: Expr;
   high: Expr;
@@ -63,7 +63,7 @@ export interface RangeIndexCall extends BaseExpr {
 export type LValue = Identifier | IndexCall;
 
 export interface BinaryOp extends BaseExpr {
-  type: "BinaryOp";
+  kind: "BinaryOp";
   op: BinaryOpCode;
   name: string;
   left: Expr;
@@ -78,7 +78,7 @@ export interface BinaryOp extends BaseExpr {
  * a += 5
  */
 export interface MutatingBinaryOp extends BaseExpr {
-  type: "MutatingBinaryOp";
+  kind: "MutatingBinaryOp";
   op: BinaryOpCode;
   name: string;
   variable: LValue;
@@ -86,7 +86,7 @@ export interface MutatingBinaryOp extends BaseExpr {
 }
 
 export interface UnaryOp extends BaseExpr {
-  type: "UnaryOp";
+  kind: "UnaryOp";
   name: string;
   op: UnaryOpCode;
   arg: Expr;
@@ -100,7 +100,7 @@ export interface UnaryOp extends BaseExpr {
  * C: condition?consequent:alternate.
  */
 export interface ConditionalOp extends BaseExpr {
-  type: "ConditionalOp";
+  kind: "ConditionalOp";
   condition: Expr;
   consequent: Expr;
   alternate: Expr;
@@ -115,7 +115,7 @@ export interface Function extends BaseExpr {
 
 export function keyValue(key: Expr, value: Expr): KeyValue {
   return {
-    type: "KeyValue",
+    kind: "KeyValue",
     key,
     value,
   };
@@ -123,7 +123,7 @@ export function keyValue(key: Expr, value: Expr): KeyValue {
 
 export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
   return {
-    type: "PolygolfOp",
+    kind: "PolygolfOp",
     op,
     args,
   };
@@ -135,7 +135,7 @@ export function functionCall(
   op?: OpCode
 ): FunctionCall {
   return {
-    type: "FunctionCall",
+    kind: "FunctionCall",
     ident: typeof ident === "string" ? id(ident, true) : ident,
     op: op === undefined ? null : op,
     args,
@@ -149,7 +149,7 @@ export function methodCall(
   op?: OpCode
 ): MethodCall {
   return {
-    type: "MethodCall",
+    kind: "MethodCall",
     op: op === undefined ? null : op,
     ident: typeof ident === "string" ? id(ident, true) : ident,
     object,
@@ -164,7 +164,7 @@ export function indexCall(
   oneIndexed: boolean = false
 ): IndexCall {
   return {
-    type: "IndexCall",
+    kind: "IndexCall",
     op: op === undefined ? null : op,
     collection: typeof collection === "string" ? id(collection) : collection,
     index,
@@ -181,7 +181,7 @@ export function rangeIndexCall(
   oneIndexed: boolean = false
 ): RangeIndexCall {
   return {
-    type: "RangeIndexCall",
+    kind: "RangeIndexCall",
     op: op === undefined ? null : op,
     collection: typeof collection === "string" ? id(collection) : collection,
     low,
@@ -200,7 +200,7 @@ export function binaryOp(
   rightAssociative?: boolean
 ): BinaryOp {
   return {
-    type: "BinaryOp",
+    kind: "BinaryOp",
     op,
     left,
     right,
@@ -218,7 +218,7 @@ export function mutatingBinaryOp(
   name: string = ""
 ): MutatingBinaryOp {
   return {
-    type: "MutatingBinaryOp",
+    kind: "MutatingBinaryOp",
     op,
     variable,
     right,
@@ -233,7 +233,7 @@ export function unaryOp(
   precedence?: number
 ): UnaryOp {
   return {
-    type: "UnaryOp",
+    kind: "UnaryOp",
     op,
     arg,
     name,
@@ -279,7 +279,7 @@ export function getArgs(
     | IndexCall
     | RangeIndexCall
 ): Expr[] {
-  switch (node.type) {
+  switch (node.kind) {
     case "BinaryOp":
       return [node.left, node.right];
     case "MutatingBinaryOp":

@@ -6,7 +6,7 @@ import { Expr, Identifier, id, int, block, BaseExpr } from "./IR";
  * while (condition) { body }.
  */
 export interface WhileLoop extends BaseExpr {
-  type: "WhileLoop";
+  kind: "WhileLoop";
   condition: Expr;
   body: Expr;
 }
@@ -20,7 +20,7 @@ export interface WhileLoop extends BaseExpr {
  * Python: for variable in range(low, high, increment):body.
  */
 export interface ForRange extends BaseExpr {
-  type: "ForRange";
+  kind: "ForRange";
   inclusive: boolean;
   variable: Identifier;
   low: Expr;
@@ -35,7 +35,7 @@ export interface ForRange extends BaseExpr {
  * Python: for variable in collection:body.
  */
 export interface ForEach extends BaseExpr {
-  type: "ForEach";
+  kind: "ForEach";
   variable: Identifier;
   collection: Expr;
   body: Expr;
@@ -47,7 +47,7 @@ export interface ForEach extends BaseExpr {
  * Python: for variable in array:body.
  */
 export interface ForEachKey extends BaseExpr {
-  type: "ForEachKey";
+  kind: "ForEachKey";
   variable: Identifier;
   table: Expr;
   body: Expr;
@@ -59,7 +59,7 @@ export interface ForEachKey extends BaseExpr {
  * C: for(init;condition;append){body}.
  */
 export interface ForCLike extends BaseExpr {
-  type: "ForCLike";
+  kind: "ForCLike";
   init: Expr;
   condition: Expr;
   append: Expr;
@@ -72,7 +72,7 @@ export interface ForCLike extends BaseExpr {
  * Python: for variable in array:body.
  */
 export interface ForEachPair extends BaseExpr {
-  type: "ForEachPair";
+  kind: "ForEachPair";
   keyVariable: Identifier;
   valueVariable: Identifier;
   table: Expr;
@@ -80,7 +80,7 @@ export interface ForEachPair extends BaseExpr {
 }
 
 export function whileLoop(condition: Expr, body: Expr): WhileLoop {
-  return { type: "WhileLoop", condition, body };
+  return { kind: "WhileLoop", condition, body };
 }
 
 export function forRange(
@@ -92,7 +92,7 @@ export function forRange(
   inclusive: boolean = false
 ): ForRange {
   return {
-    type: "ForRange",
+    kind: "ForRange",
     variable: typeof variable === "string" ? id(variable) : variable,
     low,
     high,
@@ -126,7 +126,7 @@ export function forEach(
   body: Expr
 ): ForEach {
   return {
-    type: "ForEach",
+    kind: "ForEach",
     variable: typeof variable === "string" ? id(variable) : variable,
     collection,
     body,
@@ -139,7 +139,7 @@ export function forEachKey(
   body: Expr
 ): ForEachKey {
   return {
-    type: "ForEachKey",
+    kind: "ForEachKey",
     variable: typeof variable === "string" ? id(variable) : variable,
     table,
     body,
@@ -153,7 +153,7 @@ export function forCLike(
   body: Expr
 ): ForCLike {
   return {
-    type: "ForCLike",
+    kind: "ForCLike",
     init,
     append,
     condition,
@@ -168,7 +168,7 @@ export function forEachPair(
   body: Expr
 ): ForEachPair {
   return {
-    type: "ForEachPair",
+    kind: "ForEachPair",
     keyVariable:
       typeof keyVariable === "string" ? id(keyVariable) : keyVariable,
     valueVariable:

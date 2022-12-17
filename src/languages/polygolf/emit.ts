@@ -6,7 +6,7 @@ export default function emitProgram(program: IR.Program): string[] {
 }
 
 function emitVariants(expr: Variants, indent = false): string[] {
-  if (indent || expr.variants.some((x) => x.type === "Block")) {
+  if (indent || expr.variants.some((x) => x.kind === "Block")) {
     return [
       "{",
       "$INDENT$",
@@ -36,7 +36,7 @@ function emitVariants(expr: Variants, indent = false): string[] {
 
 function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
   function emitSexpr(op: string, ...args: (string | Expr)[]): string[] {
-    if (op === "@") op += expr.type;
+    if (op === "@") op += expr.kind;
     const result: string[] = [];
     if (!asStatement) result.push("(");
     if (indent) result.push("$INDENT$", "\n");
@@ -62,12 +62,11 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
     } else {
       if (indent) result.push("$DEDENT$", "\n");
       result.push(")");
-      if (expr.valueType !== undefined)
-        result.push(":", toString(expr.valueType));
+      if (expr.type !== undefined) result.push(":", toString(expr.type));
     }
     return result;
   }
-  switch (expr.type) {
+  switch (expr.kind) {
     case "Block":
       return [
         ...joinGroups(
@@ -153,9 +152,7 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
       } else {
         return [
           "$" + expr.name,
-          ...(expr.valueType === undefined
-            ? []
-            : [":", toString(expr.valueType)]),
+          ...(expr.type === undefined ? [] : [":", toString(expr.type)]),
         ];
       }
     case "StringLiteral":
@@ -214,7 +211,7 @@ function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
         expr.variable,
         expr.low,
         expr.high,
-        ...(expr.increment.type === "IntegerLiteral" &&
+        ...(expr.increment.kind === "IntegerLiteral" &&
         expr.increment.value === 1n
           ? []
           : [expr.increment]),
