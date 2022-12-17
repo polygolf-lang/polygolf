@@ -12,9 +12,9 @@ export default function emitProgram(program: IR.Program): string[] {
 }
 
 function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
-  const children = block.type === "Block" ? block.children : [block];
+  const children = block.kind === "Block" ? block.children : [block];
   if (hasChildWithBlock(block)) {
-    if (parent.type === "Program") {
+    if (parent.kind === "Program") {
       return joinGroups(
         children.map((stmt) => emitStatement(stmt, block)),
         "\n"
@@ -37,17 +37,17 @@ function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
 }
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
-  switch (stmt.type) {
+  switch (stmt.kind) {
     case "Block":
       return emitBlock(stmt, parent);
     case "VarDeclarationWithAssignment":
       if (stmt.requiresBlock) {
         const variables =
-          stmt.assignments.type === "Assignment"
+          stmt.assignments.kind === "Assignment"
             ? [stmt.assignments.variable]
             : stmt.assignments.variables;
         const exprs =
-          stmt.assignments.type === "Assignment"
+          stmt.assignments.kind === "Assignment"
             ? [stmt.assignments.expr]
             : stmt.assignments.exprs;
 
@@ -85,7 +85,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
     case "ForRange": {
       const increment = emitExpr(stmt.increment, stmt);
       const low =
-        stmt.low.type === "IntegerLiteral" &&
+        stmt.low.kind === "IntegerLiteral" &&
         stmt.low.value === 0n &&
         stmt.inclusive
           ? []
@@ -137,7 +137,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.type}) while emitting Nim`);
+      throw new Error(`Unexpected node (${stmt.kind}) while emitting Nim`);
     default:
       return emitExpr(stmt, parent);
   }
@@ -150,7 +150,7 @@ function emitExpr(
 ): string[] {
   const inner = emitExprNoParens(
     expr,
-    parent.type === "BinaryOp" && fragment === "left"
+    parent.kind === "BinaryOp" && fragment === "left"
   );
   return needsParens(expr, parent, fragment) ? ["(", ...inner, ")"] : inner;
 }
@@ -167,8 +167,8 @@ function needsParens(
   if (needsParensPrecedence(expr, parent, fragment)) {
     return true;
   }
-  if (parent.type === "MethodCall" && fragment === "object") {
-    return expr.type === "UnaryOp" || expr.type === "BinaryOp";
+  if (parent.kind === "MethodCall" && fragment === "object") {
+    return expr.kind === "UnaryOp" || expr.kind === "BinaryOp";
   }
   return false;
 }
@@ -177,7 +177,7 @@ function emitExprNoParens(
   expr: IR.Expr,
   expressionContinues: boolean = false
 ): string[] {
-  switch (expr.type) {
+  switch (expr.kind) {
     case "Assignment":
       return [
         ...emitExpr(expr.variable, expr),
@@ -238,7 +238,7 @@ function emitExprNoParens(
     case "IntegerLiteral":
       return [expr.value.toString()];
     case "FunctionCall":
-      if (expr.args.length === 1 && expr.args[0].type === "StringLiteral") {
+      if (expr.args.length === 1 && expr.args[0].kind === "StringLiteral") {
         return [expr.ident.name, "", ...emitExpr(expr.args[0], expr)];
       }
       if (expressionContinues || expr.args.length > 1)
@@ -319,7 +319,7 @@ function emitExprNoParens(
     case "RangeIndexCall":
       if (expr.oneIndexed)
         throw new Error("Nim only supports zeroIndexed access.");
-      if (expr.step.type !== "IntegerLiteral" || expr.step.value !== 1n)
+      if (expr.step.kind !== "IntegerLiteral" || expr.step.value !== 1n)
         throw new Error("Nim doesn't support indexing with steps.");
       return [
         ...emitExprNoParens(expr.collection),
@@ -332,7 +332,7 @@ function emitExprNoParens(
 
     default:
       throw new Error(
-        `Unexpected node while emitting Nim: ${expr.type}: ${
+        `Unexpected node while emitting Nim: ${expr.kind}: ${
           "op" in expr ? expr.op : ""
         }. `
       );
