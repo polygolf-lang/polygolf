@@ -128,7 +128,7 @@ export class Path<N extends IR.Node = IR.Node> {
     this.visitState = {
       queue: this.getChildPaths().reverse(),
     };
-    let i = 10;
+    let i = 1e3;
     while (this.visitState.queue.length > 0 && --i > 0) {
       const path = this.visitState.queue.at(-1)!;
       path.visit(visitor);
@@ -136,6 +136,10 @@ export class Path<N extends IR.Node = IR.Node> {
         this.visitState.queue.pop();
       }
     }
+    if (i === 0)
+      throw new Error(
+        "Tree visit limit hit. This is probably due to a misbehaving plugin."
+      );
     visitor.exit?.(this);
   }
 
