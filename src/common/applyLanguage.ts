@@ -23,7 +23,7 @@ export function applyLanguages(
     for (const variant of variants) {
       typesPass(variant);
     }
-  let programClone = structuredClone(program);
+  const programClone = structuredClone(program);
   typesPass(programClone);
   return languages.map((x) =>
     applyLanguageToVariants(
