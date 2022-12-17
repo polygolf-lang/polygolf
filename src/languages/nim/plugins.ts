@@ -98,7 +98,7 @@ export const addVarDeclarations: Visitor = {
         }
       }
       processAssignments();
-      path.replaceWith(block(newNodes));
+      node.children = newNodes;
     }
   },
 };
