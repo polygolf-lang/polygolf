@@ -23,10 +23,16 @@ export function applyLanguages(
     for (const variant of variants) {
       typesPass(variant);
     }
+  const programClone = structuredClone(program);
+  typesPass(programClone);
   return languages.map((x) =>
     applyLanguageToVariants(
       x,
-      structuredClone(x.name === "Polygolf" ? [program] : variants),
+      structuredClone(
+        x.name === "Polygolf"
+          ? [skipTypesPass ? program : programClone]
+          : variants
+      ),
       maxBranches
     )
   );

@@ -71,7 +71,7 @@ interface Command {
 function getVariantsStructure(node: IR.Program): Variant {
   const result: Variant = { commands: [] };
   function visit(path: Path, parent: Variant = result): void {
-    if (path.node.type === "Variants") {
+    if (path.node.kind === "Variants") {
       const c: Command = { variants: [] };
       parent.commands.push(c);
       path.getChildPaths().forEach((x) => {
@@ -98,7 +98,7 @@ function instantiateProgram(
   programToPath(program).visit({
     enter(path) {
       const node = path.node;
-      if (node.type === "Variants") {
+      if (node.kind === "Variants") {
         path.replaceWith(node.variants[choices.pop()!]);
       }
     },

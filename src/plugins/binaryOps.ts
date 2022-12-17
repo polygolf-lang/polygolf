@@ -11,15 +11,15 @@ import { Path, Visitor } from "../common/traverse";
 export const addMutatingBinaryOp: Visitor = {
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "Assignment" && node.expr.type === "BinaryOp") {
+    if (node.kind === "Assignment" && node.expr.kind === "BinaryOp") {
       if (
-        (node.expr.left.type === "Identifier" &&
-          node.variable.type === "Identifier" &&
+        (node.expr.left.kind === "Identifier" &&
+          node.variable.kind === "Identifier" &&
           node.variable.name === node.expr.left.name) ||
-        (node.expr.left.type === "IndexCall" &&
-          node.expr.left.collection.type === "Identifier" &&
-          node.variable.type === "IndexCall" &&
-          node.variable.collection.type === "Identifier" &&
+        (node.expr.left.kind === "IndexCall" &&
+          node.expr.left.collection.kind === "Identifier" &&
+          node.variable.kind === "IndexCall" &&
+          node.variable.collection.kind === "Identifier" &&
           node.variable.collection.name === node.expr.left.collection.name &&
           JSON.stringify(node.variable.index) ===
             JSON.stringify(node.expr.left.index))
@@ -44,7 +44,7 @@ export const flipBinaryOps: Visitor = {
   exit(path: Path) {
     const node = path.node;
     if (
-      node.type === "PolygolfOp" &&
+      node.kind === "PolygolfOp" &&
       isBinary(node.op) &&
       !flippedOps.has(node)
     ) {

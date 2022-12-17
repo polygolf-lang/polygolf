@@ -18,7 +18,7 @@ function emitBlock(block: IR.Block): string[] {
 }
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
-  switch (stmt.type) {
+  switch (stmt.kind) {
     case "Block":
       return emitBlock(stmt);
     case "WhileLoop":
@@ -74,7 +74,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.type}) while emitting Lua`);
+      throw new Error(`Unexpected node (${stmt.kind}) while emitting Lua`);
     default:
       return emitExpr(stmt, parent);
   }
@@ -102,17 +102,17 @@ function needsParens(
     return true;
   }
   if (
-    parent.type === "MethodCall" &&
+    parent.kind === "MethodCall" &&
     expr === parent.object &&
-    expr.type !== "Identifier" &&
-    expr.type !== "IndexCall"
+    expr.kind !== "Identifier" &&
+    expr.kind !== "IndexCall"
   )
     return true;
   return false;
 }
 
 function emitExprNoParens(expr: IR.Expr): string[] {
-  switch (expr.type) {
+  switch (expr.kind) {
     case "Assignment":
       return [
         ...emitExpr(expr.variable, expr),
@@ -196,7 +196,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
 
     default:
       throw new Error(
-        `Unexpected node while emitting Lua: ${expr.type}: ${String(
+        `Unexpected node while emitting Lua: ${expr.kind}: ${String(
           "op" in expr ? expr.op : ""
         )}. `
       );

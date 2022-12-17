@@ -1,4 +1,4 @@
-import { toString, ValueType, variants } from "../../IR";
+import { toString, Type, variants } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -27,7 +27,7 @@ function polygolfLanguage(stripTypes = false): Language {
   };
 }
 
-function isEqual(a: ValueType, b: ValueType): boolean {
+function isEqual(a: Type, b: Type): boolean {
   return toString(a) === toString(b);
 }
 const initializedVariables = new Set<string>();
@@ -35,13 +35,13 @@ const stripTypesIfInferable: Visitor = {
   enter(path: Path) {
     const program = path.root.node;
     const node = path.node;
-    if (path.node.type === "Program") {
+    if (path.node.kind === "Program") {
       initializedVariables.clear();
     } else if (
-      node.type === "Identifier" &&
+      node.kind === "Identifier" &&
       !node.builtin &&
       path.parent !== null &&
-      path.parent.node.type === "Assignment" &&
+      path.parent.node.kind === "Assignment" &&
       path.pathFragment === "variable"
     ) {
       const variable = node.name;
@@ -55,17 +55,17 @@ const stripTypesIfInferable: Visitor = {
             program.variables.get(variable)!
           )
         ) {
-          node.valueType = program.variables.get(variable);
+          node.type = program.variables.get(variable);
         } else {
-          node.valueType = undefined;
+          node.type = undefined;
         }
         initializedVariables.add(variable);
         return;
       }
     }
-    if ("valueType" in node && node.valueType !== undefined) {
-      if (isEqual(node.valueType, calcType(node, program))) {
-        node.valueType = undefined;
+    if ("type" in node && node.type !== undefined) {
+      if (isEqual(node.type, calcType(node, program))) {
+        node.type = undefined;
       }
     }
   },
@@ -75,10 +75,10 @@ const blocksAsVariants: Visitor = {
   exit(path: Path) {
     const node = path.node;
     if (
-      node.type === "Block" &&
+      node.kind === "Block" &&
       path.parent !== null &&
-      path.parent.node.type !== "Variants" &&
-      path.parent.node.type !== "Program"
+      path.parent.node.kind !== "Variants" &&
+      path.parent.node.kind !== "Program"
     ) {
       path.replaceWith(variants([node]));
     }

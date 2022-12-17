@@ -6,9 +6,9 @@ export function needsParensPrecedence(
   parent: IR.Node,
   fragment?: PathFragment
 ): boolean {
-  if (parent.type === "UnaryOp") {
-    return expr.type === "BinaryOp" && expr.precedence <= parent.precedence;
-  } else if (parent.type === "BinaryOp" && expr.type === "BinaryOp") {
+  if (parent.kind === "UnaryOp") {
+    return expr.kind === "BinaryOp" && expr.precedence <= parent.precedence;
+  } else if (parent.kind === "BinaryOp" && expr.kind === "BinaryOp") {
     if (fragment === undefined) return true;
     if (fragment === "right") {
       if (expr.rightAssociative) return expr.precedence < parent.precedence;
@@ -49,7 +49,7 @@ export function emitStringLiteral(
     let current = value;
     for (const [c, d] of escapes) {
       if (d === null) continue;
-      current = current.replace(c, d);
+      current = current.replaceAll(c, d);
     }
     if (typeof delim === "string") current = delim + current + delim;
     else current = delim[0] + current + delim[1];
