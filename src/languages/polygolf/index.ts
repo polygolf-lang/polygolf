@@ -32,6 +32,7 @@ function isEqual(a: Type, b: Type): boolean {
 }
 const initializedVariables = new Set<string>();
 const stripTypesIfInferable: Visitor = {
+  name: "stripTypesIfInferable",
   enter(path: Path) {
     const program = path.root.node;
     const node = path.node;
@@ -53,13 +54,29 @@ const stripTypesIfInferable: Visitor = {
           !isEqual(
             getType(path.parent.node.expr, program),
             program.variables.get(variable)!
-          )
+          ) ||
+          program.variables.get(variable)?.kind === "Function"
         ) {
           node.type = program.variables.get(variable);
         } else {
           node.type = undefined;
         }
         initializedVariables.add(variable);
+        return;
+      }
+    } else if (
+      node.kind === "Identifier" &&
+      !node.builtin &&
+      path.parent !== null &&
+      path.parent.node.kind === "Function" &&
+      path.pathFragment !== "expr"
+    ) {
+      const variable = node.name;
+      if (
+        program.variables.has(variable) &&
+        !initializedVariables.has(variable)
+      ) {
+        node.type = program.variables.get(variable);
         return;
       }
     }
@@ -72,6 +89,7 @@ const stripTypesIfInferable: Visitor = {
 };
 
 const blocksAsVariants: Visitor = {
+  name: "blocksAsVariants",
   exit(path: Path) {
     const node = path.node;
     if (

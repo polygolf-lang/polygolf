@@ -16,6 +16,7 @@ export const printLnToprint = mapOps([
  */
 export function golfLastPrint(toPrintln = true): Visitor {
   return {
+    name: "golfLastPrint",
     exit(path: Path) {
       const node = path.node;
       if (node.kind === "Program") {

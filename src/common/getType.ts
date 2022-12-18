@@ -27,6 +27,7 @@ import {
   KeyValueType,
   keyValueType,
   getArgs,
+  functionType,
   IntegerBound,
   max,
   min,
@@ -56,6 +57,23 @@ export function getType(expr: Expr, program: Program): Type {
 export function calcType(expr: Expr, program: Program): Type {
   const type = (e: Expr) => getType(e, program);
   switch (expr.kind) {
+    case "Function": {
+      function setVar(name: string, type: Type) {
+        if (program.variables.has(name)) {
+          throw new PolygolfError(
+            `Duplicate variable declaration: ${name}!`,
+            expr.source
+          );
+        }
+        program.variables.set(name, type);
+      }
+      for (const arg of expr.args) {
+        if (arg.type !== undefined && expr.type === undefined) {
+          setVar(arg.name, arg.type);
+        }
+      }
+      return functionType(expr.args.map(type), type(expr.expr));
+    }
     case "Block":
     case "VarDeclaration":
       return voidType;
@@ -109,12 +127,32 @@ export function calcType(expr: Expr, program: Program): Type {
       );
     }
     case "PolygolfOp":
-    case "FunctionCall":
     case "MethodCall":
     case "BinaryOp":
     case "UnaryOp":
     case "MutatingBinaryOp":
       return getOpCodeType(expr, program);
+    case "FunctionCall": {
+      if (expr.ident.builtin) return getOpCodeType(expr, program);
+      const fType = type(expr.ident);
+      if (fType.kind !== "Function") {
+        throw new PolygolfError(
+          `Type error. Type ${toString(fType)} is not callable.`,
+          expr.source
+        );
+      }
+      if (expr.args.every((x, i) => isSubtype(type(x), fType.arguments[i]))) {
+        return fType.result;
+      }
+      throw new PolygolfError(
+        `Type error. Function '${expr.ident.name} expected [${fType.arguments
+          .map(toString)
+          .join(", ")}] but got [${expr.args
+          .map((x) => toString(type(x)))
+          .join(", ")}].`,
+        expr.source
+      );
+    }
     case "Identifier":
       if (program.variables.has(expr.name)) {
         return program.variables.get(expr.name)!;
@@ -168,8 +206,21 @@ export function calcType(expr: Expr, program: Program): Type {
         "Programming error. Type of KeyValue nodes should always be KeyValue."
       );
     }
-    case "ConditionalOp":
-      return union(type(expr.consequent), type(expr.alternate));
+    case "ConditionalOp": {
+      const conditionType = type(expr.condition);
+      if (isSubtype(conditionType, booleanType))
+        return union(type(expr.consequent), type(expr.alternate));
+      throw new PolygolfError(
+        `Type error. Operator '${
+          expr.isSafe ? "conditional" : "unsafe_conditional"
+        }' error. Expected [Boolean, T1, T1] but got [${toString(
+          conditionType
+        )}, ${toString(type(expr.condition))}, ${toString(
+          type(expr.alternate)
+        )}].`,
+        expr.source
+      );
+    }
     case "ManyToManyAssignment":
       return voidType;
     case "ImportStatement":

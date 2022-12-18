@@ -1,5 +1,5 @@
 import { IdentifierGenerator } from "common/Language";
-import { Path } from "../common/traverse";
+import { Path, Visitor } from "../common/traverse";
 import { assignment, block, Expr, id, Identifier, IR } from "../IR";
 
 function getIdentMap(
@@ -50,8 +50,11 @@ function getIdentMap(
 }
 
 let identMap: Map<string, string>;
-export function renameIdents(identGen: IdentifierGenerator = defaultIdentGen) {
+export function renameIdents(
+  identGen: IdentifierGenerator = defaultIdentGen
+): Visitor {
   return {
+    name: "renameIdents(...)",
     enter(path: Path) {
       if (path.node.kind === "Program") {
         identMap = getIdentMap(path.root, identGen);
@@ -82,9 +85,10 @@ function defaultShouldAlias(name: string, freq: number): boolean {
 }
 export function aliasBuiltins(
   shouldAlias: (name: string, freq: number) => boolean = defaultShouldAlias
-) {
+): Visitor {
   const usedBuiltins = new Map<string, Identifier[]>();
   return {
+    name: "aliasBuiltins(...)",
     enter(path: Path) {
       const node = path.node;
       if (node.kind === "Identifier" && node.builtin) {

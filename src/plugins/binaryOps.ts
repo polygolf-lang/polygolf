@@ -9,6 +9,7 @@ import { Path, Visitor } from "../common/traverse";
 
 // "a = a + b" --> "a += b"
 export const addMutatingBinaryOp: Visitor = {
+  name: "addMutatingBinaryOp",
   enter(path: Path) {
     const node = path.node;
     if (node.kind === "Assignment" && node.expr.kind === "BinaryOp") {
@@ -40,6 +41,7 @@ export const addMutatingBinaryOp: Visitor = {
 // "a + b; --> {a + b; b + a}"
 const flippedOps = new WeakMap();
 export const flipBinaryOps: Visitor = {
+  name: "flipBinaryOps",
   generatesVariants: true,
   exit(path: Path) {
     const node = path.node;

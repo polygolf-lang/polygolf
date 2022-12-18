@@ -18,6 +18,7 @@ import { getType } from "../common/getType";
 export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Visitor {
   const opMap = new Map<string, OpTransformOutput>(opMap0);
   return {
+    name: "mapOps(...)",
     enter(path: Path) {
       const node = path.node;
       if (node.kind === "PolygolfOp") {
@@ -79,6 +80,9 @@ export function useIndexCalls(
   ]
 ): Visitor {
   return {
+    name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
+      ops
+    )})`,
     enter(path: Path) {
       const node = path.node;
       if (
