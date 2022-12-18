@@ -1,4 +1,4 @@
-import { IR } from "../IR";
+import { IR, Program } from "../IR";
 
 export class Path<N extends IR.Node = IR.Node> {
   _removed = false;
@@ -132,6 +132,12 @@ export class Path<N extends IR.Node = IR.Node> {
   visit(visitor: Visitor): void {
     try {
       if (this._removed) return;
+      if (visitor.enterProgram !== undefined) {
+        const node = this.node;
+        if (node.kind === "Program") {
+          visitor.enterProgram(node);
+        }
+      }
       visitor.enter?.(this);
       if (this._removed) return;
       this.visitState = {
@@ -259,6 +265,7 @@ export function programToPath(node: IR.Program) {
 
 export interface Visitor {
   name: string;
+  enterProgram?: (program: Program) => void; // this is executed at the start of entering the root node
   enter?: (path: Path) => void;
   exit?: (path: Path) => void;
   generatesVariants?: boolean;

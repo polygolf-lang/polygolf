@@ -36,25 +36,22 @@ const includes: [string, string[]][] = [
 
 export const addImports: Visitor = {
   name: "addImports",
-  exit(path: Path) {
-    if (path.node.kind === "Program") {
-      const program: Program = path.node;
-      const dependecies = [...program.dependencies];
-      if (dependecies.length < 1) return;
-      let imports: ImportStatement;
-      for (const include of includes) {
-        if (include[0].length > dependecies.join().length - 1) break;
-        if (dependecies.every((x) => include[1].includes(x))) {
-          imports = importStatement("include", [include[0]]);
-          break;
-        }
+  enterProgram(program: Program) {
+    const dependecies = [...program.dependencies];
+    if (dependecies.length < 1) return;
+    let imports: ImportStatement;
+    for (const include of includes) {
+      if (include[0].length > dependecies.join().length - 1) break;
+      if (dependecies.every((x) => include[1].includes(x))) {
+        imports = importStatement("include", [include[0]]);
+        break;
       }
-      imports ??= importStatement("import", dependecies);
-      program.body =
-        program.body.kind === "Block"
-          ? block([imports, ...program.body.children])
-          : block([imports, program.body]);
     }
+    imports ??= importStatement("import", dependecies);
+    program.body =
+      program.body.kind === "Block"
+        ? block([imports, ...program.body.children])
+        : block([imports, program.body]);
   },
 };
 

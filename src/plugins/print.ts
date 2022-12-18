@@ -1,5 +1,5 @@
-import { Path, Visitor } from "common/traverse";
-import { polygolfOp, stringLiteral } from "../IR";
+import { Visitor } from "common/traverse";
+import { polygolfOp, Program, stringLiteral } from "../IR";
 import { mapOps } from "./ops";
 
 export const printLnToprint = mapOps([
@@ -17,23 +17,20 @@ export const printLnToprint = mapOps([
 export function golfLastPrint(toPrintln = true): Visitor {
   return {
     name: "golfLastPrint",
-    exit(path: Path) {
-      const node = path.node;
-      if (node.kind === "Program") {
+    enterProgram(program: Program) {
+      if (
+        program.body.kind === "PolygolfOp" &&
+        (program.body.op === "print" || program.body.op === "println")
+      ) {
+        program.body.op = toPrintln ? "println" : "print";
+      } else if (program.body.kind === "Block") {
+        const lastStatement =
+          program.body.children[program.body.children.length - 1];
         if (
-          node.body.kind === "PolygolfOp" &&
-          (node.body.op === "print" || node.body.op === "println")
+          lastStatement.kind === "PolygolfOp" &&
+          (lastStatement.op === "print" || lastStatement.op === "println")
         ) {
-          node.body.op = toPrintln ? "println" : "print";
-        } else if (node.body.kind === "Block") {
-          const lastStatement =
-            node.body.children[node.body.children.length - 1];
-          if (
-            lastStatement.kind === "PolygolfOp" &&
-            (lastStatement.op === "print" || lastStatement.op === "println")
-          ) {
-            lastStatement.op = toPrintln ? "println" : "print";
-          }
+          lastStatement.op = toPrintln ? "println" : "print";
         }
       }
     },
