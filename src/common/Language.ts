@@ -4,7 +4,7 @@ import { Visitor } from "./traverse";
 export type OpTransformOutput =
   | string
   | [string, number, boolean?]
-  | ((arg: IR.Expr, arg2: IR.Expr) => IR.Expr);
+  | ((args: IR.Expr[]) => IR.Expr);
 
 export interface Language {
   name: string;
@@ -34,7 +34,8 @@ export function defaultWhitespaceInsertLogic(a: string, b: string): boolean {
 }
 
 export function defaultDetokenizer(
-  whitespace: WhitespaceInsertLogic = defaultWhitespaceInsertLogic
+  whitespace: WhitespaceInsertLogic = defaultWhitespaceInsertLogic,
+  indent = 1
 ): Detokenizer {
   return function (tokens: string[]): string {
     let indentLevel = 0;
@@ -50,9 +51,10 @@ export function defaultDetokenizer(
         )
           result += " ";
         result +=
-          tokens[i] + (tokens[i] === "\n" ? " ".repeat(indentLevel) : "");
+          tokens[i] +
+          (tokens[i] === "\n" ? " ".repeat(indentLevel * indent) : "");
       }
     }
-    return result;
+    return result.trim();
   };
 }

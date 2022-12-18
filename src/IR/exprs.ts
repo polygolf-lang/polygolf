@@ -1,56 +1,70 @@
-import { Expr, Identifier, BaseExpr, id } from "./IR";
+import {
+  Expr,
+  Identifier,
+  BaseExpr,
+  id,
+  UnaryOpCode,
+  BinaryOpCode,
+  OpCode,
+  getDefaultPrecedence,
+} from "./IR";
+
+/**
+ * All expressions start as a `PolygolfOp` node.
+ * Plugins (mainly `mapOps` plugin) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
+ * This node should never enter the emit phase.
+ */
+
+export interface KeyValue extends BaseExpr {
+  kind: "KeyValue";
+  key: Expr;
+  value: Expr;
+}
+
+export interface PolygolfOp extends BaseExpr {
+  kind: "PolygolfOp";
+  op: OpCode;
+  args: Expr[];
+}
 
 export interface FunctionCall extends BaseExpr {
-  type: "FunctionCall";
+  kind: "FunctionCall";
   ident: Identifier;
   op: OpCode | null;
   args: Expr[];
 }
 
 export interface MethodCall extends BaseExpr {
-  type: "MethodCall";
+  kind: "MethodCall";
   ident: Identifier;
   op: OpCode | null;
   object: Expr;
   args: Expr[];
 }
 
-export type BuiltinBinop =
-  // (num, num) => num
-  | "add"
-  | "sub"
-  | "mul"
-  | "div"
-  | "truncdiv"
-  | "exp"
-  | "mod"
-  | "rem"
-  | "bitand"
-  | "bitor"
-  | "bitxor"
-  // (num, num) => bool
-  | "lt"
-  | "leq"
-  | "eq"
-  | "neq"
-  | "geq"
-  | "gt"
-  // (bool, bool) => bool
-  | "or"
-  | "and"
-  // membership
-  | "inarray"
-  | "inlist"
-  | "inmap"
-  | "inset"
-  // other
-  | "str_concat"
-  | "repeat"
-  | "not";
+export interface IndexCall extends BaseExpr {
+  kind: "IndexCall";
+  collection: Expr;
+  index: Expr;
+  op: OpCode | null;
+  oneIndexed: boolean;
+}
+
+export interface RangeIndexCall extends BaseExpr {
+  kind: "RangeIndexCall";
+  collection: Expr;
+  low: Expr;
+  high: Expr;
+  step: Expr;
+  op: OpCode | null;
+  oneIndexed: boolean;
+}
+
+export type LValue = Identifier | IndexCall;
 
 export interface BinaryOp extends BaseExpr {
-  type: "BinaryOp";
-  op: BuiltinBinop;
+  kind: "BinaryOp";
+  op: BinaryOpCode;
   name: string;
   left: Expr;
   right: Expr;
@@ -64,28 +78,17 @@ export interface BinaryOp extends BaseExpr {
  * a += 5
  */
 export interface MutatingBinaryOp extends BaseExpr {
-  type: "MutatingBinaryOp";
-  op: BuiltinBinop;
+  kind: "MutatingBinaryOp";
+  op: BinaryOpCode;
   name: string;
-  variable: Identifier;
+  variable: LValue;
   right: Expr;
 }
 
-export type BuiltinUnary =
-  | "bitnot"
-  | "neg"
-  | "int_to_str"
-  | "str_to_int"
-  | "cardinality"
-  | "str_length"
-  | "sorted";
-
-export type OpCode = BuiltinBinop | BuiltinUnary;
-
 export interface UnaryOp extends BaseExpr {
-  type: "UnaryOp";
+  kind: "UnaryOp";
   name: string;
-  op: BuiltinUnary;
+  op: UnaryOpCode;
   arg: Expr;
   precedence: number;
 }
@@ -93,52 +96,103 @@ export interface UnaryOp extends BaseExpr {
 /**
  * Conditional ternary operator.
  *
- * Python: [alternate,consequent][condition].
+ * Python: [alternate,consequent][condition] or consequent if condition else alternate
  * C: condition?consequent:alternate.
  */
 export interface ConditionalOp extends BaseExpr {
-  type: "ConditionalOp";
+  kind: "ConditionalOp";
   condition: Expr;
   consequent: Expr;
   alternate: Expr;
+  isSafe: boolean; // whether both branches can be safely evaluated (without creating side effects or errors - allows for more golfing)
 }
 
-export interface Print extends BaseExpr {
-  type: "Print";
-  newline: boolean;
-  value: Expr;
+export interface Function extends BaseExpr {
+  kind: "Function";
+  args: Identifier[];
+  expr: Expr;
 }
 
-export function functionCall(
-  op: OpCode | null,
-  args: Expr[],
-  ident: string | Identifier
-): FunctionCall {
+export function keyValue(key: Expr, value: Expr): KeyValue {
   return {
-    type: "FunctionCall",
-    ident: typeof ident === "string" ? id(ident, true) : ident,
+    kind: "KeyValue",
+    key,
+    value,
+  };
+}
+
+export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
+  return {
+    kind: "PolygolfOp",
     op,
     args,
   };
 }
 
+export function functionCall(
+  args: Expr[],
+  ident: string | Identifier,
+  op?: OpCode
+): FunctionCall {
+  return {
+    kind: "FunctionCall",
+    ident: typeof ident === "string" ? id(ident, true) : ident,
+    op: op === undefined ? null : op,
+    args,
+  };
+}
+
 export function methodCall(
-  op: OpCode | null,
   object: Expr,
   args: Expr[],
-  ident: string | Identifier
+  ident: string | Identifier,
+  op?: OpCode
 ): MethodCall {
   return {
-    type: "MethodCall",
-    op,
+    kind: "MethodCall",
+    op: op === undefined ? null : op,
     ident: typeof ident === "string" ? id(ident, true) : ident,
     object,
     args,
   };
 }
 
+export function indexCall(
+  collection: string | Expr,
+  index: Expr,
+  op?: OpCode,
+  oneIndexed: boolean = false
+): IndexCall {
+  return {
+    kind: "IndexCall",
+    op: op === undefined ? null : op,
+    collection: typeof collection === "string" ? id(collection) : collection,
+    index,
+    oneIndexed,
+  };
+}
+
+export function rangeIndexCall(
+  collection: string | Expr,
+  low: Expr,
+  high: Expr,
+  step: Expr,
+  op?: OpCode,
+  oneIndexed: boolean = false
+): RangeIndexCall {
+  return {
+    kind: "RangeIndexCall",
+    op: op === undefined ? null : op,
+    collection: typeof collection === "string" ? id(collection) : collection,
+    low,
+    high,
+    step,
+    oneIndexed,
+  };
+}
+
 export function binaryOp(
-  op: BuiltinBinop,
+  op: BinaryOpCode,
   left: Expr,
   right: Expr,
   name: string = "",
@@ -146,24 +200,25 @@ export function binaryOp(
   rightAssociative?: boolean
 ): BinaryOp {
   return {
-    type: "BinaryOp",
+    kind: "BinaryOp",
     op,
     left,
     right,
     name,
     precedence: precedence ?? getDefaultPrecedence(op),
-    rightAssociative: rightAssociative ?? (op === "exp" || op === "str_concat"),
+    rightAssociative:
+      rightAssociative ?? (op === "pow" || op === "text_concat"),
   };
 }
 
 export function mutatingBinaryOp(
-  op: BuiltinBinop,
-  variable: Identifier,
+  op: BinaryOpCode,
+  variable: LValue,
   right: Expr,
   name: string = ""
 ): MutatingBinaryOp {
   return {
-    type: "MutatingBinaryOp",
+    kind: "MutatingBinaryOp",
     op,
     variable,
     right,
@@ -172,13 +227,13 @@ export function mutatingBinaryOp(
 }
 
 export function unaryOp(
-  op: BuiltinUnary,
+  op: UnaryOpCode,
   arg: Expr,
   name: string = "",
   precedence?: number
 ): UnaryOp {
   return {
-    type: "UnaryOp",
+    kind: "UnaryOp",
     op,
     arg,
     name,
@@ -186,50 +241,60 @@ export function unaryOp(
   };
 }
 
-export function print(value: Expr, newline: boolean = true): Print {
-  return { type: "Print", newline, value };
+export function conditional(
+  condition: Expr,
+  consequent: Expr,
+  alternate: Expr,
+  isSafe: boolean
+): ConditionalOp {
+  return {
+    kind: "ConditionalOp",
+    condition,
+    consequent,
+    alternate,
+    isSafe,
+  };
 }
 
-function getDefaultPrecedence(op: BuiltinBinop | BuiltinUnary): number {
-  switch (op) {
-    case "exp":
-      return 130;
-    case "neg":
-      return 120;
-    case "repeat":
-    case "mul":
-    case "div":
-    case "mod":
-      return 110;
-    case "add":
-    case "sub":
-      return 100;
-    case "bitand":
-      return 80;
-    case "bitxor":
-      return 70;
-    case "bitor":
-      return 60;
-    case "str_concat":
-      return 50;
-    case "lt":
-    case "gt":
-    case "leq":
-    case "geq":
-    case "eq":
-    case "neq":
-    case "inarray":
-    case "inset":
-    case "inlist":
-    case "inmap":
-      return 40;
-    case "not":
-      return 30;
-    case "and":
-      return 20;
-    case "or":
-      return 10;
-    default:
-      return 0;
+export function func(args: (string | Identifier)[], expr: Expr): Function {
+  return {
+    kind: "Function",
+    args: args.map((x) => (typeof x === "string" ? id(x) : x)),
+    expr,
+  };
+}
+
+export function print(value: Expr, newline: boolean = true): PolygolfOp {
+  return polygolfOp(newline ? "println" : "print", value);
+}
+
+export function getArgs(
+  node:
+    | PolygolfOp
+    | BinaryOp
+    | MutatingBinaryOp
+    | UnaryOp
+    | FunctionCall
+    | MethodCall
+    | IndexCall
+    | RangeIndexCall
+): Expr[] {
+  switch (node.kind) {
+    case "BinaryOp":
+      return [node.left, node.right];
+    case "MutatingBinaryOp":
+      return [node.variable, node.right];
+    case "UnaryOp":
+      return [node.arg];
+    case "FunctionCall":
+      return node.args;
+    case "MethodCall":
+      return [node.object, ...node.args];
+    case "PolygolfOp":
+      return node.args;
+    case "IndexCall":
+      return [node.collection, node.index];
+    case "RangeIndexCall":
+      return [node.collection, node.low, node.high, node.step];
   }
 }

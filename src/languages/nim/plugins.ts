@@ -1,16 +1,15 @@
 import {
   Assignment,
   block,
-  functionCall,
-  id,
+  Expr,
+  ImportStatement,
   importStatement,
   manyToManyAssignment,
   methodCall,
   Program,
-  Statement,
   varDeclarationWithAssignment,
 } from "../../IR";
-import { Path } from "../../common/traverse";
+import { Path, Visitor } from "../../common/traverse";
 import { getType } from "../../common/getType";
 
 const includes: [string, string[]][] = [
@@ -35,50 +34,63 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-export const addImports = {
+export const addImports: Visitor = {
+  name: "addImports",
   exit(path: Path) {
-    if (path.node.type === "Program") {
+    if (path.node.kind === "Program") {
       const program: Program = path.node;
       const dependecies = [...program.dependencies];
       if (dependecies.length < 1) return;
+      let imports: ImportStatement;
       for (const include of includes) {
+        if (include[0].length > dependecies.join().length - 1) break;
         if (dependecies.every((x) => include[1].includes(x))) {
-          program.block.children = [
-            importStatement("include", [include[0]]),
-            ...program.block.children,
-          ];
-          return;
+          imports = importStatement("include", [include[0]]);
+          break;
         }
       }
-      program.block.children = [
-        importStatement("import", dependecies),
-        ...program.block.children,
-      ];
+      imports ??= importStatement("import", dependecies);
+      program.body =
+        program.body.kind === "Block"
+          ? block([imports, ...program.body.children])
+          : block([imports, program.body]);
     }
   },
 };
 
 const declared: Set<string> = new Set<string>();
-export const addVarDeclarations = {
+export const addVarDeclarations: Visitor = {
+  name: "addVarDeclarations",
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "Program") declared.clear();
-    if (node.type === "Block") {
+    if (node.kind === "Program") declared.clear();
+    else if (
+      path.parent?.node.kind !== "Block" &&
+      node.kind === "Assignment" &&
+      node.variable.kind === "Identifier" &&
+      !declared.has(node.variable.name)
+    ) {
+      path.replaceWith(simplifyAssignments([node], false));
+    } else if (node.kind === "Block") {
       let assignments: Assignment[] = [];
-      let newNodes: Statement[] = [];
+      const newNodes: Expr[] = [];
       function processAssignments() {
         if (assignments.length > 0) {
-          newNodes = newNodes.concat(
+          newNodes.push(
             simplifyAssignments(
               assignments,
-              path.parent?.node.type === "Program" && assignments.length > 1
+              path.parent?.node.kind === "Program" && assignments.length > 1
             )
           );
           assignments = [];
         }
       }
       for (const child of node.children) {
-        if (child.type !== "Assignment" || declared.has(child.variable.name)) {
+        if (
+          child.kind !== "Assignment" ||
+          child.variable.kind !== "Identifier" ||
+          declared.has(child.variable.name)
+        ) {
           processAssignments();
           newNodes.push(child);
         } else {
@@ -86,7 +98,7 @@ export const addVarDeclarations = {
         }
       }
       processAssignments();
-      path.replaceWith(block(newNodes));
+      node.children = newNodes;
     }
   },
 };
@@ -94,34 +106,35 @@ export const addVarDeclarations = {
 function simplifyAssignments(
   assignments: Assignment[],
   topLevel: boolean
-): Statement[] {
+): Expr {
   for (const v of assignments) {
-    declared.add(v.variable.name);
+    if (v.variable.kind === "Identifier") {
+      declared.add(v.variable.name);
+    }
   }
-  return [
-    varDeclarationWithAssignment(
-      assignments.length > 1
-        ? manyToManyAssignment(
-            assignments.map((x) => x.variable),
-            assignments.map((x) => x.expr)
-          )
-        : assignments[0],
-      topLevel
-    ),
-  ];
+  return varDeclarationWithAssignment(
+    assignments.length > 1
+      ? manyToManyAssignment(
+          assignments.map((x) => x.variable),
+          assignments.map((x) => x.expr)
+        )
+      : assignments[0],
+    topLevel
+  );
 }
 
-export const useUnsignedDivision = {
+export const useUnsignedDivision: Visitor = {
+  name: "useUnsignedDivision",
   exit(path: Path) {
     const node = path.node;
     const program = path.root.node;
     if (
-      node.type === "BinaryOp" &&
-      (node.op === "truncdiv" || node.op === "rem")
+      node.kind === "BinaryOp" &&
+      (node.op === "trunc_div" || node.op === "rem")
     ) {
       const right = getType(node.right, program);
       const left = getType(node.left, program);
-      if (right.type !== "integer" || left.type !== "integer")
+      if (right.kind !== "integer" || left.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify([left, right])}.`);
       if (
         left.low !== undefined &&
@@ -129,33 +142,25 @@ export const useUnsignedDivision = {
         right.low !== undefined &&
         right.low >= 0n
       ) {
-        node.name = node.op === "truncdiv" ? "/%" : "%%";
+        node.name = node.op === "trunc_div" ? "/%" : "%%";
       }
     }
   },
 };
 
-export const printToFunctionCall = {
-  enter(path: Path) {
-    const node = path.node;
-    if (node.type === "Print") {
-      if (node.newline)
-        path.replaceWith(functionCall(null, [node.value], "echo"));
-      else
-        path.replaceWith(
-          functionCall(null, [id("stdout", true), node.value], "write")
-        );
-    }
-  },
-};
-
-export const useUFCS = {
+export const useUFCS: Visitor = {
+  name: "useUFCS",
   exit(path: Path) {
     const node = path.node;
-    if (node.type === "FunctionCall" && node.args.length > 0) {
+    if (node.kind === "FunctionCall" && node.args.length > 0) {
+      if (node.args.length === 1 && node.args[0].kind === "StringLiteral") {
+        return;
+      }
       const [obj, ...args] = node.args;
-      if (obj.type !== "BinaryOp" && obj.type !== "UnaryOp") {
-        path.replaceWith(methodCall(node.op, obj, args, node.ident));
+      if (obj.kind !== "BinaryOp" && obj.kind !== "UnaryOp") {
+        path.replaceWith(
+          methodCall(obj, args, node.ident, node.op ?? undefined)
+        );
       }
     }
   },

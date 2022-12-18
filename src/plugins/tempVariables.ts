@@ -1,11 +1,13 @@
 import { Path, Visitor } from "../common/traverse";
-import { block, manyToManyAssignment, Statement } from "../IR";
+import { block, Expr, manyToManyAssignment } from "../IR";
 
 export const tempVarToMultipleAssignment: Visitor = {
+  name: "tempVarToMultipleAssignment",
   exit(path: Path) {
     const node = path.node;
-    if (node.type === "Block") {
-      const newNodes: Statement[] = [];
+    if (node.kind === "Block") {
+      const newNodes: Expr[] = [];
+      let changed = false;
       for (let i = 0; i < node.children.length; i++) {
         const a = node.children[i];
         if (i >= node.children.length - 2) {
@@ -15,23 +17,26 @@ export const tempVarToMultipleAssignment: Visitor = {
         const b = node.children[i + 1];
         const c = node.children[i + 2];
         if (
-          a.type === "Assignment" &&
-          b.type === "Assignment" &&
-          c.type === "Assignment" &&
-          b.expr.type === "Identifier" &&
+          a.kind === "Assignment" &&
+          b.kind === "Assignment" &&
+          c.kind === "Assignment" &&
+          b.expr.kind === "Identifier" &&
+          c.variable.kind === "Identifier" &&
           b.expr.name === c.variable.name &&
-          c.expr.type === "Identifier" &&
+          c.expr.kind === "Identifier" &&
+          a.variable.kind === "Identifier" &&
           c.expr.name === a.variable.name
         ) {
           newNodes.push(
             manyToManyAssignment([b.variable, c.variable], [b.expr, a.expr])
           );
+          changed = true;
           i += 2;
         } else {
           newNodes.push(a);
         }
       }
-      path.replaceWith(block(newNodes));
+      if (changed) path.replaceWith(block(newNodes));
     }
   },
 };

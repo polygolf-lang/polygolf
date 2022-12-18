@@ -1,3 +1,4 @@
+import { PolygolfError } from "../common/errors";
 import { getCollectionTypes, getType } from "../common/getType";
 import { Path, programToPath } from "../common/traverse";
 import {
@@ -7,25 +8,23 @@ import {
   VarDeclarationWithAssignment,
 } from "./assignments";
 import {
-  ArrayGet,
-  ArraySet,
   ArrayConstructor,
   ListConstructor,
-  StringGetByte,
-  ListGet,
-  ListPush,
-  ListSet,
-  TableGet,
-  TableSet,
+  TableConstructor,
+  SetConstructor,
 } from "./collections";
 import {
+  PolygolfOp,
   BinaryOp,
   ConditionalOp,
   FunctionCall,
   MethodCall,
   MutatingBinaryOp,
-  Print,
   UnaryOp,
+  IndexCall,
+  KeyValue,
+  RangeIndexCall,
+  Function,
 } from "./exprs";
 import {
   ForRange,
@@ -35,7 +34,7 @@ import {
   ForCLike,
   WhileLoop,
 } from "./loops";
-import { Argv, Identifier, IntegerLiteral, StringLiteral } from "./terminals";
+import { Identifier, IntegerLiteral, StringLiteral } from "./terminals";
 import {
   Block,
   IfStatement,
@@ -43,9 +42,10 @@ import {
   VarDeclaration,
   Variants,
 } from "./toplevel";
-import { integerType, ValueType } from "./types";
+import { integerType, sub, Type } from "./types";
 
 export * from "./assignments";
+export * from "./opcodes";
 export * from "./collections";
 export * from "./exprs";
 export * from "./loops";
@@ -53,30 +53,32 @@ export * from "./terminals";
 export * from "./toplevel";
 export * from "./types";
 
-export interface BaseExpr {
-  valueType?: ValueType;
+export interface BaseExpr extends BaseNode {
+  type?: Type;
 }
 
-export type Node = Program | Block | Statement;
+export interface BaseNode {
+  source?: SourcePointer;
+}
 
-export type Statement =
-  | Expr
-  | WhileLoop
-  | ForRange
-  | ForEach
-  | ForEachKey
-  | ForEachPair
-  | ForCLike
-  | IfStatement
-  | Variants
-  | ImportStatement;
+export interface SourcePointer {
+  line: number;
+  column: number;
+}
+
+export type Node = Program | Expr;
 
 export type Expr =
-  | Argv
+  | Block
+  | Variants
+  | KeyValue
+  | Function
+  | PolygolfOp
   | VarDeclaration
   | VarDeclarationWithAssignment
   | Assignment
-  | Print
+  | IndexCall
+  | RangeIndexCall
   | FunctionCall
   | MethodCall
   | BinaryOp
@@ -86,81 +88,106 @@ export type Expr =
   | IntegerLiteral
   | ArrayConstructor
   | ListConstructor
-  | StringGetByte
-  | TableGet
-  | TableSet
-  | ArrayGet
-  | ArraySet
-  | ListGet
-  | ListSet
-  | ListPush
+  | SetConstructor
+  | TableConstructor
   | MutatingBinaryOp
   | ConditionalOp
   | ManyToManyAssignment
   | OneToManyAssignment
-  | ImportStatement;
+  | ImportStatement
+  | WhileLoop
+  | ForRange
+  | ForEach
+  | ForEachKey
+  | ForEachPair
+  | ForCLike
+  | IfStatement;
 
 /**
  * Program node. This should be the root node. Raw OK
  */
-export interface Program {
-  type: "Program";
+export interface Program extends BaseNode {
+  kind: "Program";
   dependencies: Set<string>;
-  variables: Map<string, ValueType>;
-  block: Block;
+  variables: Map<string, Type>;
+  body: Expr;
 }
 
-export function program(block: Block): Program {
-  const result: Program = {
-    type: "Program",
-    block,
+export function program(body: Expr): Program {
+  return {
+    kind: "Program",
+    body,
     dependencies: new Set<string>(),
-    variables: new Map<string, ValueType>(),
+    variables: new Map<string, Type>(),
   };
-  const path = programToPath(result);
-  function setVar(name: string, type: ValueType) {
-    if (result.variables.has(name)) {
-      throw new Error(`Duplicate variable declaration: ${name}`!);
-    }
-    result.variables.set(name, type);
-  }
+}
+
+export function typesPass(program: Program) {
+  const path = programToPath(program);
   path.visit({
+    name: "anonymous",
     enter(path: Path) {
       const node = path.node;
-      if (node.type === "ForRange") {
+      function setVar(name: string, type: Type) {
+        if (program.variables.has(name)) {
+          throw new PolygolfError(
+            `Duplicate variable declaration: ${name}!`,
+            node.source
+          );
+        }
+        program.variables.set(name, type);
+      }
+      if (node.kind === "Function") {
+        getType(node, program);
+      }
+      if (node.kind === "ForRange") {
         const low = getType(node.low, path.root.node);
         const high = getType(node.high, path.root.node);
-        if (low.type !== "integer" || high.type !== "integer") {
-          throw new Error(`Unexpected type (${low.type},${high.type})`);
+        const step = getType(node.increment, path.root.node);
+        if (
+          low.kind !== "integer" ||
+          high.kind !== "integer" ||
+          step.kind !== "integer"
+        ) {
+          throw new PolygolfError(
+            `Unexpected for range type (${low.kind},${high.kind},${step.kind})`,
+            node.source
+          );
         }
         setVar(
           node.variable.name,
-          integerType(
-            low.low,
-            high.high === undefined
-              ? undefined
-              : high.high - (node.inclusive ? 0n : -1n)
-          )
+          integerType(low.low, sub(high.high, node.inclusive ? 0n : 1n))
         );
-      } else if (node.type === "ForEach") {
+      } else if (node.kind === "ForEach") {
         setVar(
           node.variable.name,
-          getCollectionTypes(node.collection, result)[0]
+          getCollectionTypes(node.collection, program)[0]
         );
-      } else if (node.type === "ForEachKey") {
-        setVar(node.variable.name, getCollectionTypes(node.table, result)[0]);
-      } else if (node.type === "ForEachPair") {
-        let types = getCollectionTypes(node.table, result);
+      } else if (node.kind === "ForEachKey") {
+        setVar(node.variable.name, getCollectionTypes(node.table, program)[0]);
+      } else if (node.kind === "ForEachPair") {
+        let types = getCollectionTypes(node.table, program);
         if (types.length === 1) {
           types = [integerType(), types[0]];
         }
         setVar(node.keyVariable.name, types[0]);
         setVar(node.valueVariable.name, types[1]);
-      } else if (node.type === "VarDeclaration") {
-        result.variables.set(node.variable.name, node.variableType);
-        path.replaceWithMultiple([]); // TODO does this work?
+      } else if (
+        node.kind === "Assignment" &&
+        node.variable.kind === "Identifier"
+      ) {
+        if (node.variable.type !== undefined)
+          setVar(node.variable.name, node.variable.type);
+        else {
+          if (!program.variables.has(node.variable.name))
+            setVar(node.variable.name, getType(node.expr, program));
+        }
+      }
+    },
+    exit(path: Path) {
+      if (path.node.kind !== "Program" && path.node.kind !== "Block") {
+        getType(path.node, program);
       }
     },
   });
-  return result;
 }

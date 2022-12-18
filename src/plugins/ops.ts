@@ -1,48 +1,116 @@
-import { Path } from "../common/traverse";
+import { Path, Visitor } from "../common/traverse";
 import { OpTransformOutput } from "../common/Language";
-import { Expr } from "../IR";
+import {
+  assignment,
+  binaryOp,
+  Expr,
+  IndexCall,
+  indexCall,
+  int,
+  isBinary,
+  isUnary,
+  OpCode,
+  polygolfOp,
+  unaryOp,
+} from "../IR";
 import { getType } from "../common/getType";
 
-export function mapOps(opMap0: [string, OpTransformOutput][]) {
+export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Visitor {
   const opMap = new Map<string, OpTransformOutput>(opMap0);
   return {
+    name: "mapOps(...)",
     enter(path: Path) {
       const node = path.node;
-      if (node.type === "BinaryOp" || node.type === "UnaryOp") {
-        const f = opMap.get(node.op);
+      if (node.kind === "PolygolfOp") {
+        const op = node.op;
+        const f = opMap.get(op);
         if (f === undefined) {
-          throw new Error(`Unsupported operator ${node.op}!`);
+          return;
         }
         if (typeof f === "string") {
-          node.name = f;
-        } else if (Array.isArray(f)) {
-          node.name = f[0];
-          node.precedence = f[1];
-          if (node.type === "BinaryOp")
-            node.rightAssociative =
-              f[2] ?? (node.op === "exp" || node.op === "str_concat");
-        } else {
           let replacement: Expr;
-          if (node.type === "BinaryOp") {
-            replacement = f(node.left, node.right);
-          } else {
-            replacement = f(node.arg, node.arg);
-          }
-          if ("op" in replacement) replacement.op = node.op;
-          replacement.valueType = getType(node, path.root.node);
+          if (isBinary(op))
+            replacement = binaryOp(op, node.args[0], node.args[1], f);
+          else if (isUnary(op)) replacement = unaryOp(op, node.args[0], f);
+          else
+            throw new Error(
+              `Only unary and binary operations can be mapped implicitly, got ${op}`
+            );
+          replacement.type = node.type;
           path.replaceWith(replacement);
-        }
-      } else if (node.type === "MutatingBinaryOp") {
-        const f = opMap.get(node.op);
-        if (f === undefined) {
-          throw new Error(`Unsupported operator ${node.op}!`);
-        }
-        if (typeof f === "string") {
-          node.name = f;
         } else if (Array.isArray(f)) {
-          node.name = f[0];
+          let replacement: Expr;
+          if (isBinary(op)) {
+            replacement = binaryOp(
+              op,
+              node.args[0],
+              node.args[1],
+              f[0],
+              f[1],
+              f[2] ?? (op === "pow" || op === "text_concat")
+            );
+          } else if (isUnary(op)) {
+            replacement = unaryOp(op, node.args[0], f[0], f[1]);
+          } else
+            throw new Error(
+              `Only unary and binary operations can be mapped implicitly, got ${op}`
+            );
+          replacement.type = node.type;
+          path.replaceWith(replacement);
+        } else {
+          const replacement = f(node.args);
+          if ("op" in replacement) replacement.op = node.op;
+          replacement.type = getType(node, path.root.node);
+          path.replaceWith(replacement);
         }
       }
     },
   };
+}
+
+export function useIndexCalls(
+  oneIndexed: boolean = false,
+  ops: OpCode[] = [
+    "array_get",
+    "list_get",
+    "table_get",
+    "array_set",
+    "list_set",
+    "table_set",
+  ]
+): Visitor {
+  return {
+    name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
+      ops
+    )})`,
+    enter(path: Path) {
+      const node = path.node;
+      if (
+        node.kind === "PolygolfOp" &&
+        (ops.length === 0 || ops.includes(node.op)) &&
+        node.args[0].kind === "Identifier"
+      ) {
+        let indexNode: IndexCall;
+        if (oneIndexed && !node.op.startsWith("table_")) {
+          indexNode = indexCall(
+            node.args[0],
+            polygolfOp("add", node.args[1], int(1n)),
+            node.op,
+            true
+          );
+        } else {
+          indexNode = indexCall(node.args[0], node.args[1], node.op);
+        }
+        if (node.op.endsWith("_get")) {
+          path.replaceWith(indexNode);
+        } else if (node.op.endsWith("_set")) {
+          path.replaceWith(assignment(indexNode, node.args[2]));
+        }
+      }
+    },
+  };
+}
+
+export function plus1(expr: Expr): Expr {
+  return polygolfOp("add", expr, int(1n));
 }

@@ -1,4 +1,4 @@
-import { PathFragment } from "common/traverse";
+import { PathFragment } from "../../common/traverse";
 import {
   emitStringLiteral,
   joinGroups,
@@ -7,7 +7,7 @@ import {
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {
-  return emitBlock(program.block);
+  return emitStatement(program.body, program);
 }
 
 function emitBlock(block: IR.Block): string[] {
@@ -17,20 +17,22 @@ function emitBlock(block: IR.Block): string[] {
   );
 }
 
-function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
-  switch (stmt.type) {
+function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
+  switch (stmt.kind) {
+    case "Block":
+      return emitBlock(stmt);
     case "WhileLoop":
       return [
         `while`,
         ...emitExpr(stmt.condition, stmt),
         "do",
-        ...emitBlock(stmt.body),
+        ...emitStatement(stmt.body, stmt),
         "end",
       ];
     case "ManyToManyAssignment":
       return [
         ...joinGroups(
-          stmt.variables.map((x) => [x.name]),
+          stmt.variables.map((x) => emitExprNoParens(x)),
           ","
         ),
         "=",
@@ -51,7 +53,7 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
         ...emitExpr(stmt.high, stmt),
         ...increment,
         "do",
-        ...emitBlock(stmt.body),
+        ...emitStatement(stmt.body, stmt),
         "end",
       ];
     }
@@ -60,9 +62,9 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
         "if",
         ...emitExpr(stmt.condition, stmt),
         "then",
-        ...emitBlock(stmt.consequent),
-        ...(stmt.alternate.children.length > 0
-          ? ["else", ...emitBlock(stmt.alternate)]
+        ...emitStatement(stmt.consequent, stmt),
+        ...(stmt.alternate !== undefined
+          ? ["else", ...emitStatement(stmt.alternate, stmt)]
           : []),
         "end",
       ];
@@ -72,7 +74,7 @@ function emitStatement(stmt: IR.Statement, parent: IR.Block): string[] {
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.type}) while emitting Lua`);
+      throw new Error(`Unexpected node (${stmt.kind}) while emitting Lua`);
     default:
       return emitExpr(stmt, parent);
   }
@@ -100,17 +102,17 @@ function needsParens(
     return true;
   }
   if (
-    parent.type === "MethodCall" &&
+    parent.kind === "MethodCall" &&
     expr === parent.object &&
-    expr.type !== "Identifier" &&
-    expr.type !== "ArrayGet"
+    expr.kind !== "Identifier" &&
+    expr.kind !== "IndexCall"
   )
     return true;
   return false;
 }
 
 function emitExprNoParens(expr: IR.Expr): string[] {
-  switch (expr.type) {
+  switch (expr.kind) {
     case "Assignment":
       return [
         ...emitExpr(expr.variable, expr),
@@ -179,39 +181,24 @@ function emitExprNoParens(expr: IR.Expr): string[] {
       ];
     case "UnaryOp":
       return [expr.name, ...emitExpr(expr.arg, expr)];
-    case "ArrayGet":
-      return [
-        ...emitExpr(expr.array, expr),
-        "[",
-        ...emitExpr(expr.index, expr),
-        "]",
-      ];
-    case "StringGetByte":
-      return [
-        ...emitExpr(expr.string, expr),
-        ":",
-        "byte",
-        "(",
-        ...emitExpr(expr.index, expr),
-        ")",
-      ];
-    case "Print":
-      return expr.newline
-        ? ["print", "(", ...emitExpr(expr.value, expr), ")"]
-        : ["io", ".", "write", "(", ...emitExpr(expr.value, expr), ")"];
-    case "ListConstructor":
-      return ["{", ...joinGroups(expr.exprs.map(emitExprNoParens), ","), "}"];
-    case "ListGet":
+    case "IndexCall":
       if (!expr.oneIndexed)
-        throw new Error("Lua only supports oneIndexed access.");
+        throw new Error("Lua only supports one indexed access.");
       return [
-        ...emitExprNoParens(expr.list),
+        ...emitExpr(expr.collection, expr),
         "[",
-        ...emitExprNoParens(expr.index),
+        ...emitExpr(expr.index, expr),
         "]",
       ];
+    case "ListConstructor":
+    case "ArrayConstructor":
+      return ["{", ...joinGroups(expr.exprs.map(emitExprNoParens), ","), "}"];
 
     default:
-      throw new Error(`Unexpected node while emitting Lua: ${expr.type}. `);
+      throw new Error(
+        `Unexpected node while emitting Lua: ${expr.kind}: ${String(
+          "op" in expr ? expr.op : ""
+        )}. `
+      );
   }
 }

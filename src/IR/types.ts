@@ -1,83 +1,372 @@
+import { Expr } from "./IR";
+
 /** The type of the value of a node when evaluated */
 export interface IntegerType {
-  type: "integer";
-  low?: bigint;
-  high?: bigint;
+  kind: "integer";
+  low: IntegerBound;
+  high: IntegerBound;
 }
-export type ValueType =
-  | { type: "void" }
-  | IntegerType
-  | { type: "string" }
-  | { type: "boolean" }
-  | { type: "List"; member: ValueType }
-  | { type: "Table"; key: IntegerType | { type: "string" }; value: ValueType }
-  | { type: "Array"; member: ValueType; length: number }
-  | { type: "Set"; member: ValueType };
+export type IntegerBound = bigint | "-oo" | "oo";
 
-export function simpleType<T extends "void" | "string" | "boolean">(type: T) {
-  return { type };
+export interface TextType {
+  kind: "text";
+  capacity: number;
+}
+export interface KeyValueType {
+  kind: "KeyValue";
+  key: IntegerType | TextType;
+  value: Type;
+}
+export interface FunctionType {
+  kind: "Function";
+  arguments: Type[];
+  result: Type;
+}
+export type Type =
+  | FunctionType
+  | IntegerType
+  | TextType
+  | { kind: "void" }
+  | { kind: "boolean" }
+  | { kind: "List"; member: Type }
+  | { kind: "Table"; key: IntegerType | TextType; value: Type }
+  | KeyValueType
+  | { kind: "Array"; member: Type; length: number }
+  | { kind: "Set"; member: Type };
+
+export const booleanType: Type = { kind: "boolean" };
+export const voidType: Type = { kind: "void" };
+
+function type(type: Type | "void" | "boolean"): Type {
+  return type === "boolean" ? booleanType : type === "void" ? voidType : type;
+}
+
+export function functionType(args: Type[], result: Type): FunctionType {
+  return {
+    kind: "Function",
+    arguments: args,
+    result,
+  };
+}
+
+export function keyValueType(
+  key: IntegerType | TextType,
+  value: Type | "void" | "boolean"
+): Type {
+  return {
+    kind: "KeyValue",
+    key,
+    value: type(value),
+  };
 }
 
 export function tableType(
-  key: IntegerType | "string",
-  value: ValueType | "void" | "string" | "boolean"
-): ValueType {
+  key: IntegerType | TextType,
+  value: Type | "void" | "boolean"
+): Type {
   return {
-    type: "Table",
-    key: key === "string" ? simpleType(key) : key,
-    value: typeof value === "string" ? simpleType(value) : value,
+    kind: "Table",
+    key,
+    value: type(value),
   };
 }
 
-export function setType(
-  member: ValueType | "void" | "string" | "boolean"
-): ValueType {
+export function setType(member: Type | "void" | "boolean"): Type {
   return {
-    type: "Set",
-    member: typeof member === "string" ? simpleType(member) : member,
+    kind: "Set",
+    member: type(member),
   };
 }
 
-export function listType(
-  member: ValueType | "void" | "string" | "boolean"
-): ValueType {
+export function listType(member: Type | "void" | "boolean"): Type {
   return {
-    type: "List",
-    member: typeof member === "string" ? simpleType(member) : member,
+    kind: "List",
+    member: type(member),
   };
 }
 
 export function arrayType(
-  member: ValueType | "void" | "string" | "boolean",
+  member: Type | "void" | "boolean",
   length: number
-): ValueType {
+): Type {
   return {
-    type: "Array",
-    member: typeof member === "string" ? simpleType(member) : member,
+    kind: "Array",
+    member: type(member),
     length,
   };
 }
 
 export function integerType(
-  low?: bigint | number,
-  high?: bigint | number
+  low: IntegerBound | number = "-oo",
+  high: IntegerBound | number = "oo"
 ): IntegerType {
+  function toIntegerBound(x: IntegerBound | number): IntegerBound {
+    if (x === -Infinity || x === "-oo") return "-oo";
+    if (x === Infinity || x === "oo") return "oo";
+    return BigInt(x);
+  }
+  low = toIntegerBound(low);
+  high = toIntegerBound(high);
+  if (low === "oo" || high === "-oo" || lt(high, low)) {
+    throw Error(`Nonsensical integer range ${low}..${high}`);
+  }
   return {
-    type: "integer",
-    low: typeof low === "number" ? BigInt(low) : low,
-    high: typeof high === "number" ? BigInt(high) : high,
+    kind: "integer",
+    low,
+    high,
   };
 }
 
-export function integerTypeIncludingAll(values: bigint[]): IntegerType {
-  return integerType(...bigIntMinAndMax(values));
+export function constantIntegerType(c: bigint): FiniteIntegerType {
+  return {
+    kind: "integer",
+    low: c,
+    high: c,
+  };
 }
 
-function bigIntMinAndMax(args: bigint[]) {
+export function textType(capacity: number | IntegerBound = Infinity): TextType {
+  return {
+    kind: "text",
+    capacity:
+      typeof capacity === "number"
+        ? Math.max(0, capacity)
+        : lt(capacity, 0n)
+        ? 0
+        : isFiniteBound(capacity) && capacity < BigInt(2 ** 32)
+        ? Number(capacity)
+        : Infinity,
+  };
+}
+
+export function integerTypeIncludingAll(
+  ...values: IntegerBound[]
+): IntegerType {
+  return integerType(...integerBoundMinAndMax(values));
+}
+
+export function typeContains(type: IntegerType, value: IntegerBound): boolean {
+  return leq(type.low, value) && leq(value, type.high);
+}
+
+function integerBoundMinAndMax(args: IntegerBound[]) {
   return args.reduce(
-    ([min, max], e) => {
-      return [e < min ? e : min, e > max ? e : max];
+    ([cMin, cMax], e) => {
+      return [min(cMin, e), max(cMax, e)];
     },
     [args[0], args[0]]
   );
+}
+
+export function annotate(expr: Expr, type: Type): Expr {
+  return { ...expr, type };
+}
+
+export function toString(a: Type): string {
+  switch (a.kind) {
+    case "Function":
+      return `(Func ${a.arguments.map(toString).join(" ")} ${toString(
+        a.result
+      )})`;
+    case "List":
+      return `(List ${toString(a.member)})`;
+    case "Array":
+      return `(Array ${toString(a.member)} ${a.length})`;
+    case "Set":
+      return `(Set ${toString(a.member)})`;
+    case "Table":
+      return `(Table ${toString(a.key)} ${toString(a.value)})`;
+    case "KeyValue":
+      return `(KeyValue ${toString(a.key)} ${toString(a.value)})`;
+    case "void":
+      return "Void";
+    case "text":
+      return a.capacity === Infinity ? "Text" : `(Text ${a.capacity})`;
+    case "boolean":
+      return "Bool";
+    case "integer":
+      return `${a.low.toString()}..${a.high.toString()}`;
+  }
+}
+
+export function intersection(a: Type, b: Type): Type {
+  if (a.kind === "Function" && b.kind === "Function") {
+    return functionType(
+      a.arguments.map((t, i) => union(t, b.arguments[i])),
+      intersection(a.result, b.result)
+    );
+  } else if (a.kind === "List" && b.kind === "List") {
+    if (a.member.kind === "void") return b;
+    if (b.member.kind === "void") return a;
+    return listType(intersection(a.member, b.member));
+  } else if (a.kind === "Array" && b.kind === "Array") {
+    if (a.length === b.length)
+      return arrayType(intersection(a.member, b.member), a.length);
+  } else if (a.kind === "Set" && b.kind === "Set") {
+    if (a.member.kind === "void") return b;
+    if (b.member.kind === "void") return a;
+    return setType(intersection(a.member, b.member));
+  } else if (a.kind === "KeyValue" && b.kind === "KeyValue") {
+    return keyValueType(
+      intersection(a.key, b.key) as any,
+      intersection(a.value, b.value)
+    );
+  } else if (a.kind === "Table" && b.kind === "Table") {
+    if (a.value.kind === "void") return b;
+    if (b.value.kind === "void") return a;
+    return tableType(
+      intersection(a.key, b.key) as any,
+      intersection(a.value, b.value)
+    );
+  } else if (a.kind === "integer" && b.kind === "integer") {
+    const low = max(a.low, b.low);
+    const high = min(a.high, b.high);
+    if (leq(low, high)) return integerType(low, high);
+  } else if (a.kind === "text" && b.kind === "text") {
+    return textType(Math.min(a.capacity, b.capacity));
+  } else if (a.kind === b.kind) {
+    return a;
+  }
+  throw new Error("Empty intersection.");
+}
+
+export function union(a: Type, b: Type): Type {
+  try {
+    if (a.kind === "Function" && b.kind === "Function") {
+      return functionType(
+        a.arguments.map((t, i) => intersection(t, b.arguments[i])),
+        union(a.result, b.result)
+      );
+    } else if (a.kind === "List" && b.kind === "List") {
+      if (a.member.kind === "void") return b;
+      if (b.member.kind === "void") return a;
+      return listType(union(a.member, b.member));
+    } else if (a.kind === "Array" && b.kind === "Array") {
+      if (a.length === b.length)
+        return arrayType(union(a.member, b.member), a.length);
+    } else if (a.kind === "Set" && b.kind === "Set") {
+      if (a.member.kind === "void") return b;
+      if (b.member.kind === "void") return a;
+      return setType(union(a.member, b.member));
+    } else if (a.kind === "KeyValue" && b.kind === "KeyValue") {
+      return keyValueType(union(a.key, b.key) as any, union(a.value, b.value));
+    } else if (a.kind === "Table" && b.kind === "Table") {
+      if (a.value.kind === "void") return b;
+      if (b.value.kind === "void") return a;
+      return tableType(union(a.key, b.key) as any, union(a.value, b.value));
+    } else if (a.kind === "integer" && b.kind === "integer") {
+      return b.kind === "integer"
+        ? integerType(min(a.low, b.low), max(a.high, b.high))
+        : integerType();
+    } else if (a.kind === "text" && b.kind === "text") {
+      return textType(Math.max(a.capacity, b.capacity));
+    } else if (a.kind === b.kind) {
+      return a;
+    }
+    throw new Error(`Cannot model union of ${toString(a)} and ${toString(b)}.`);
+  } catch (e) {
+    throw new Error(
+      `Cannot model union of ${toString(a)} and ${toString(b)}.\n${
+        e instanceof Error ? e.message : ""
+      }`
+    );
+  }
+}
+
+/** Determines if `a` is a subtype of `b`. */
+export function isSubtype(a: Type, b: Type): boolean {
+  if (a.kind === "Function" && b.kind === "Function") {
+    return (
+      a.arguments.every((t, i) => isSubtype(b.arguments[i], t)) &&
+      isSubtype(a.result, b.result)
+    );
+  }
+  if (
+    (a.kind === "Set" && b.kind === "Set") ||
+    (a.kind === "List" && b.kind === "List")
+  ) {
+    return a.member.kind === "void" || isSubtype(a.member, b.member);
+  }
+  if (a.kind === "Array" && b.kind === "Array") {
+    return a.length === b.length && isSubtype(a.member, b.member);
+  }
+  if (a.kind === "KeyValue" && b.kind === "KeyValue") return false;
+  if (a.kind === "Table" && b.kind === "Table") {
+    return isSubtype(a.key, b.key) && isSubtype(a.value, b.value);
+  }
+  if (a.kind === "integer" && b.kind === "integer") {
+    return leq(b.low, a.low) && leq(a.high, b.high);
+  }
+  if (a.kind === "text" && b.kind === "text") {
+    return a.capacity <= b.capacity;
+  }
+  return a.kind === b.kind;
+}
+
+export function abs(a: IntegerBound): IntegerBound {
+  return leq(a, 0n) ? neg(a) : a;
+}
+export function min(a: IntegerBound, b: IntegerBound): IntegerBound {
+  return leq(a, b) ? a : b;
+}
+export function max(a: IntegerBound, b: IntegerBound): IntegerBound {
+  return leq(a, b) ? b : a;
+}
+export function leq(a: IntegerBound, b: IntegerBound): boolean {
+  return a === "-oo" || b === "oo" || (a !== "oo" && b !== "-oo" && a <= b);
+}
+export function lt(a: IntegerBound, b: IntegerBound): boolean {
+  return leq(a, b) && a !== b;
+}
+export function neg(a: IntegerBound): IntegerBound {
+  return a === "oo" ? "-oo" : a === "-oo" ? "oo" : -a;
+}
+export function add(a: IntegerBound, b: IntegerBound): IntegerBound {
+  if (leq(b, a)) [a, b] = [b, a];
+  if (a === "-oo" && b === "oo")
+    throw new Error("Indeterminate result of -oo + oo.");
+  if (a === "-oo") return a;
+  if (b === "oo") return b;
+  return (a as bigint) + (b as bigint);
+}
+export function sub(a: IntegerBound, b: IntegerBound): IntegerBound {
+  return add(a, neg(b));
+}
+export function mul(a: IntegerBound, b: IntegerBound): IntegerBound {
+  if (leq(b, a)) [a, b] = [b, a];
+  if ((a === "-oo" && b === 0n) || (b === "oo" && a === 0n))
+    throw new Error("Indeterminate result of 0 * oo.");
+  if (a === "-oo") return lt(b, 0n) ? "oo" : "-oo";
+  if (b === "oo") return lt(a, 0n) ? "-oo" : "oo";
+  return (a as bigint) * (b as bigint);
+}
+export function floorDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
+  const res = truncDiv(a, b);
+  return mul(res, b) !== a && lt(a, 0n) !== lt(b, 0n) ? sub(res, 1n) : res;
+}
+export function truncDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
+  if (b === 0n) throw new Error("Indeterminate result of x / 0.");
+  if (!isFiniteBound(a) && !isFiniteBound(b))
+    throw new Error("Indeterminate result of +-oo / +-oo.");
+  if (!isFiniteBound(a)) {
+    if (lt(a, 0n) === lt(b, 0n)) return "oo";
+    else return "-oo";
+  }
+  if (b === "-oo" || b === "oo") return 0n;
+  return a / b;
+}
+
+export function isFiniteBound(a: IntegerBound): a is bigint {
+  return typeof a === "bigint";
+}
+export interface FiniteIntegerType {
+  kind: "integer";
+  low: bigint;
+  high: bigint;
+}
+export function isFiniteType(a: IntegerType): a is FiniteIntegerType {
+  return isFiniteBound(a.low) && isFiniteBound(a.high);
+}
+export function isConstantType(a: IntegerType): a is FiniteIntegerType {
+  return isFiniteType(a) && a.low === a.high;
 }

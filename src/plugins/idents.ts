@@ -1,5 +1,5 @@
 import { IdentifierGenerator } from "common/Language";
-import { Path } from "../common/traverse";
+import { Path, Visitor } from "../common/traverse";
 import { IR } from "../IR";
 
 function getIdentMap(
@@ -50,13 +50,16 @@ function getIdentMap(
 }
 
 let identMap: Map<string, string>;
-export function renameIdents(identGen: IdentifierGenerator = defaultIdentGen) {
+export function renameIdents(
+  identGen: IdentifierGenerator = defaultIdentGen
+): Visitor {
   return {
+    name: "renameIdents(...)",
     enter(path: Path) {
-      if (path.node.type === "Program") {
+      if (path.node.kind === "Program") {
         identMap = getIdentMap(path.root, identGen);
       }
-      if (path.node.type === "Identifier" && !path.node.builtin) {
+      if (path.node.kind === "Identifier" && !path.node.builtin) {
         const outputName = identMap.get(path.node.name);
         if (outputName === undefined) {
           throw new Error("Programming error. Incomplete identMap.");

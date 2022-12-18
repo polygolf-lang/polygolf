@@ -3,14 +3,14 @@ import { BaseExpr } from "./IR";
  * Program input (array of strings) as niladic variable.
  */
 export interface Argv extends BaseExpr {
-  type: "Argv";
+  kind: "Argv";
 }
 
 /**
  * An identifier, such as referring to a global variable. Raw OK
  */
 export interface Identifier extends BaseExpr {
-  type: "Identifier";
+  kind: "Identifier";
   name: string;
   builtin: boolean;
 }
@@ -19,7 +19,7 @@ export interface Identifier extends BaseExpr {
  * An unbounded integer constant. Raw OK
  */
 export interface IntegerLiteral extends BaseExpr {
-  type: "IntegerLiteral";
+  kind: "IntegerLiteral";
   value: bigint;
 }
 
@@ -29,22 +29,22 @@ export interface IntegerLiteral extends BaseExpr {
  * There is no distinction for byte vs unicode strings
  */
 export interface StringLiteral extends BaseExpr {
-  type: "StringLiteral";
+  kind: "StringLiteral";
   value: string;
 }
 
 export function id(name: string, builtin: boolean = false): Identifier {
-  return { type: "Identifier", name, builtin };
+  return { kind: "Identifier", name, builtin };
 }
 
 export function int(value: bigint): IntegerLiteral {
-  return { type: "IntegerLiteral", value };
+  return { kind: "IntegerLiteral", value };
 }
 
 export function stringLiteral(value: string): StringLiteral {
-  return { type: "StringLiteral", value };
+  return { kind: "StringLiteral", value };
 }
 
 export function argv(): Argv {
-  return { type: "Argv" };
+  return { kind: "Argv" };
 }

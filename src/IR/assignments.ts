@@ -1,4 +1,5 @@
-import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
+import { PolygolfError } from "../common/errors";
+import { BaseExpr, Expr, id, Identifier, Type, IndexCall, LValue } from "./IR";
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK
@@ -7,8 +8,8 @@ import { BaseExpr, Expr, id, Identifier, ValueType } from "./IR";
  * statement-level by default.
  */
 export interface Assignment extends BaseExpr {
-  type: "Assignment";
-  variable: Identifier;
+  kind: "Assignment";
+  variable: LValue;
   expr: Expr;
 }
 
@@ -18,8 +19,8 @@ export interface Assignment extends BaseExpr {
  * (a,b)=(b,a).
  */
 export interface ManyToManyAssignment extends BaseExpr {
-  type: "ManyToManyAssignment";
-  variables: Identifier[];
+  kind: "ManyToManyAssignment";
+  variables: LValue[];
   exprs: Expr[];
 }
 
@@ -29,8 +30,8 @@ export interface ManyToManyAssignment extends BaseExpr {
  * a=b=c=1.
  */
 export interface OneToManyAssignment extends BaseExpr {
-  type: "OneToManyAssignment";
-  variables: Identifier[];
+  kind: "OneToManyAssignment";
+  variables: LValue[];
   expr: Expr;
 }
 
@@ -38,40 +39,40 @@ export interface OneToManyAssignment extends BaseExpr {
  * Variable declaration with assignment
  */
 export interface VarDeclarationWithAssignment extends BaseExpr {
-  type: "VarDeclarationWithAssignment";
+  kind: "VarDeclarationWithAssignment";
   assignments: Assignment | ManyToManyAssignment;
-  valueTypes?: ValueType[];
+  valueTypes?: Type[];
   requiresBlock: boolean;
 }
 
 export function assignment(
-  variable: Identifier | string,
+  variable: Identifier | string | IndexCall,
   expr: Expr
 ): Assignment {
   return {
-    type: "Assignment",
+    kind: "Assignment",
     variable: typeof variable === "string" ? id(variable) : variable,
     expr,
   };
 }
 
 export function manyToManyAssignment(
-  variables: (Identifier | string)[],
+  variables: (Identifier | string | IndexCall)[],
   exprs: Expr[]
 ): ManyToManyAssignment {
   return {
-    type: "ManyToManyAssignment",
+    kind: "ManyToManyAssignment",
     variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     exprs,
   };
 }
 
 export function oneToManyAssignment(
-  variables: (Identifier | string)[],
+  variables: (Identifier | string | IndexCall)[],
   expr: Expr
 ): OneToManyAssignment {
   return {
-    type: "OneToManyAssignment",
+    kind: "OneToManyAssignment",
     variables: variables.map((v) => (typeof v === "string" ? id(v) : v)),
     expr,
   };
@@ -80,10 +81,21 @@ export function oneToManyAssignment(
 export function varDeclarationWithAssignment(
   assignments: Assignment | ManyToManyAssignment,
   requiresBlock: boolean = true,
-  valueTypes?: ValueType[]
+  valueTypes?: Type[]
 ): VarDeclarationWithAssignment {
+  if (
+    (assignments.kind === "Assignment"
+      ? [assignments.variable]
+      : assignments.variables
+    ).some((x) => x.kind !== "Identifier")
+  ) {
+    throw new PolygolfError(
+      "VarDeclarationWithAssignment needs assignments to variables.",
+      assignments.source
+    );
+  }
   return {
-    type: "VarDeclarationWithAssignment",
+    kind: "VarDeclarationWithAssignment",
     assignments,
     requiresBlock,
     valueTypes,

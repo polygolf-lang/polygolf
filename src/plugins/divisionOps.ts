@@ -1,23 +1,24 @@
 import { getType } from "../common/getType";
 import { Path, Visitor } from "../common/traverse";
-import { binaryOp } from "../IR";
+import { leq, polygolfOp } from "../IR";
 
 export const modToRem: Visitor = {
+  name: "modToRem",
   exit(path: Path) {
     const node = path.node;
     const program = path.root.node;
-    if (node.type === "BinaryOp" && node.op === "mod") {
-      const rightType = getType(node.right, program);
-      if (rightType.type !== "integer")
+    if (node.kind === "PolygolfOp" && node.op === "mod") {
+      const rightType = getType(node.args[1], program);
+      if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
-      if (rightType.low !== undefined && rightType.low >= 0n) {
+      if (leq(0n, rightType.low)) {
         node.op = "rem";
       } else {
         path.replaceWith(
-          binaryOp(
+          polygolfOp(
             "rem",
-            binaryOp("add", binaryOp("rem", node.left, node.right), node.right),
-            node.right
+            polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
+            node.args[1]
           )
         );
       }
@@ -26,15 +27,16 @@ export const modToRem: Visitor = {
 };
 
 export const divToTruncdiv: Visitor = {
+  name: "divToTruncdiv",
   exit(path: Path) {
     const node = path.node;
     const program = path.root.node;
-    if (node.type === "BinaryOp" && node.op === "div") {
-      const rightType = getType(node.right, program);
-      if (rightType.type !== "integer")
+    if (node.kind === "PolygolfOp" && node.op === "div") {
+      const rightType = getType(node.args[1], program);
+      if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (rightType.low !== undefined && rightType.low >= 0n) {
-        node.op = "truncdiv";
+        node.op = "trunc_div";
       } else {
         throw new Error("Not implemented.");
       }

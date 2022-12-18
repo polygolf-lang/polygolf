@@ -9,8 +9,9 @@
   "scripts": {
     "prettier": "prettier --write .",
     "eslint-fix": "eslint --fix \"src/**\"",
-    "build": "etsc",
-    "test:typecheck": "tsc --noEmit",
+    "build": "npm run build-nearley && etsc",
+    "build-nearley": "nearleyc src/frontend/grammar.ne -o src/frontend/grammar.ts",
+    "test:typecheck": "npm run build-nearley && tsc --noEmit",
     "test:formatting": "prettier-check .",
     "test:lint": "eslint \"src/**\"",
     "test:jest": "jest --config jest.config.js",
@@ -28,6 +29,8 @@
   "homepage": "https://github.com/jared-hughes/polygolf#readme",
   "devDependencies": {
     "@types/jest": "^28.1.7",
+    "@types/moo": "^0.5.5",
+    "@types/nearley": "^2.11.2",
     "@types/node": "^18.7.6",
     "@typescript-eslint/eslint-plugin": "^5.34.0",
     "esbuild": "^0.15.5",
@@ -40,5 +43,10 @@
     "prettier-check": "^2.0.0",
     "ts-jest": "^28.0.8",
     "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "moo": "^0.5.2",
+    "nearley": "^2.20.1",
+    "yargs": "^17.6.0"
   }
 }
