@@ -4,7 +4,7 @@ const tokenTable = {
   integer: /-?[0-9]+/,
   string: /"(?:\\.|[^"])*"/,
   variable: /\$\w+/,
-  type: ["Void", "Text", "Bool", "List", "Table", "Array", "Set"],
+  type: ["Void", "Text", "Bool", "List", "Table", "Array", "Set", "Func"],
   argv_get: "argv_get",
   nullary: ["argv", "true", "false"],
   ninf: ["-oo", "-∞"],

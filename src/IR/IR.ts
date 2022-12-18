@@ -24,6 +24,7 @@ import {
   IndexCall,
   KeyValue,
   RangeIndexCall,
+  Function,
 } from "./exprs";
 import {
   ForRange,
@@ -71,6 +72,7 @@ export type Expr =
   | Block
   | Variants
   | KeyValue
+  | Function
   | PolygolfOp
   | VarDeclaration
   | VarDeclarationWithAssignment
@@ -134,6 +136,9 @@ export function typesPass(program: Program) {
           );
         }
         program.variables.set(name, type);
+      }
+      if (node.kind === "Function") {
+        getType(node, program);
       }
       if (node.kind === "ForRange") {
         const low = getType(node.low, path.root.node);
