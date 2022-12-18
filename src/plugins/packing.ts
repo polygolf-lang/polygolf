@@ -2,59 +2,61 @@ import { Path, Visitor } from "common/traverse";
 import {
   assignment,
   binaryOp,
+  block,
   forRangeCommon,
-  functionCall,
   id,
   int,
+  polygolfOp,
   print,
-  simpleType,
-  stringGetByte,
   stringLiteral,
   unaryOp,
-  varDeclaration,
 } from "IR";
 
 export const useDecimalConstantPackedPrinter: Visitor = {
+  name: "useDecimalConstantPackedPrinter",
   enter(path: Path) {
     const node = path.node;
     if (
-      node.type === "Print" &&
-      node.value.type === "StringLiteral" &&
-      isLargeDecimalConstant(node.value.value)
+      node.kind === "PolygolfOp" &&
+      (node.op === "print" || node.op === "println") &&
+      node.args[0].kind === "StringLiteral" &&
+      isLargeDecimalConstant(node.args[0].value)
     ) {
-      const [prefix, main] = node.value.value.replace(".", ".,").split(",");
+      const [prefix, main] = node.args[0].value.replace(".", ".,").split(",");
       const packed = packDecimal(main);
-      path.replaceWithMultiple([
-        varDeclaration("result", simpleType("string")),
-        assignment("result", stringLiteral(prefix)),
-        forRangeCommon(
-          ["packindex", 0, packed.length],
-          assignment(
-            "result",
-            binaryOp(
-              "str_concat",
-              id("result"),
-              functionCall(
-                null,
-                [
+      path.replaceWith(
+        block([
+          assignment("result", stringLiteral(prefix)),
+          forRangeCommon(
+            ["packindex", 0, packed.length],
+            assignment(
+              "result",
+              binaryOp(
+                "text_concat",
+                id("result"),
+                polygolfOp(
+                  "text_get_slice",
                   unaryOp(
-                    "int_to_str",
+                    "int_to_text",
                     binaryOp(
                       "add",
                       int(72n),
-                      stringGetByte(stringLiteral(packed), id("packindex"))
+                      polygolfOp(
+                        "text_get_byte",
+                        stringLiteral(packed),
+                        id("packindex")
+                      )
                     )
                   ),
                   int(1n),
-                  int(2n),
-                ],
-                "substr"
+                  int(2n)
+                )
               )
             )
-          )
-        ),
-        print(id("result")),
-      ]);
+          ),
+          print(id("result")),
+        ])
+      );
     }
   },
 };
@@ -71,17 +73,27 @@ function packDecimal(decimal: string): string {
 }
 
 export const useLowDecimalListPackedPrinter: Visitor = {
+  name: "useLowDecimalListPackedPrinter",
   enter(path: Path) {
     const node = path.node;
-    if (node.type === "Print" && node.value.type === "StringLiteral") {
-      const packed = packLowDecimalList(node.value.value);
+    if (
+      node.kind === "PolygolfOp" &&
+      (node.op === "print" || node.op === "println") &&
+      node.args[0].kind === "StringLiteral"
+    ) {
+      const packed = packLowDecimalList(node.args[0].value);
       if (packed.length === 0) return;
-      path.replaceWithMultiple([
+      path.replaceWith(
         forRangeCommon(
           ["packindex", 0, packed.length],
-          print(stringGetByte(stringLiteral(packed), id("packindex")))
-        ),
-      ]);
+          print(
+            polygolfOp(
+              "text_get_byte",
+              (stringLiteral(packed), id("packindex"))
+            )
+          )
+        )
+      );
     }
   },
 };
