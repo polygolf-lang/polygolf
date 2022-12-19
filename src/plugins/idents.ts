@@ -1,6 +1,6 @@
 import { IdentifierGenerator } from "common/Language";
 import { Path, Visitor } from "../common/traverse";
-import { IR } from "../IR";
+import { id, IR } from "../IR";
 
 function getIdentMap(
   path: Path<IR.Program>,
@@ -64,7 +64,7 @@ export function renameIdents(
         if (outputName === undefined) {
           throw new Error("Programming error. Incomplete identMap.");
         }
-        path.node.name = outputName;
+        path.replaceWith(id(outputName), true);
       }
     },
   };
