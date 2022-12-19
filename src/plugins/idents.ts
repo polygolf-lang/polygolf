@@ -64,7 +64,7 @@ export function renameIdents(
         if (outputName === undefined) {
           throw new Error("Programming error. Incomplete identMap.");
         }
-        path.node.name = outputName;
+        path.replaceWith(id(outputName), true);
       }
     },
   };

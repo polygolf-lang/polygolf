@@ -1,4 +1,4 @@
-import { IR } from "../IR";
+import { IR, Program } from "../IR";
 
 export class Path<N extends IR.Node = IR.Node> {
   _removed = false;
@@ -44,7 +44,11 @@ export class Path<N extends IR.Node = IR.Node> {
   }
 
   /** Replace this node's child given by pathFragment with newChild */
-  replaceChild(newChild: IR.Node, pathFragment: PathFragment): void {
+  replaceChild(
+    newChild: IR.Node,
+    pathFragment: PathFragment,
+    skipNewNode = false
+  ): void {
     if (newChild.kind === "Block" && this.node.kind === "Block") {
       this.replaceChildWithMultiple(newChild.children, pathFragment);
     } else {
@@ -54,7 +58,11 @@ export class Path<N extends IR.Node = IR.Node> {
         for (let i = queue.length - 1; i >= 0; i--) {
           if (queue[i].node === oldChild) {
             queue[i]._removed = true;
-            queue[i] = new Path(newChild, this, pathFragment);
+            if (skipNewNode) {
+              queue.splice(i, 1);
+            } else {
+              queue[i] = new Path(newChild, this, pathFragment);
+            }
             break;
           }
         }
@@ -103,11 +111,11 @@ export class Path<N extends IR.Node = IR.Node> {
   }
 
   /** Replace this node with newNode by mutating the parent */
-  replaceWith(newNode: IR.Node): void {
+  replaceWith(newNode: IR.Node, skipNewNode = false): void {
     this._removed = true;
     if (this.parent === null || this.pathFragment === null)
       throw new Error("Cannot replace the root node");
-    return this.parent.replaceChild(newNode, this.pathFragment);
+    return this.parent.replaceChild(newNode, this.pathFragment, skipNewNode);
   }
 
   /**
@@ -122,25 +130,38 @@ export class Path<N extends IR.Node = IR.Node> {
    * - more mutation issues probably
    */
   visit(visitor: Visitor): void {
-    if (this._removed) return;
-    visitor.enter?.(this);
-    if (this._removed) return;
-    this.visitState = {
-      queue: this.getChildPaths().reverse(),
-    };
-    let i = 1e3;
-    while (this.visitState.queue.length > 0 && --i > 0) {
-      const path = this.visitState.queue.at(-1)!;
-      path.visit(visitor);
-      if (!path._removed) {
-        this.visitState.queue.pop();
+    try {
+      if (this._removed) return;
+      if (visitor.enterProgram !== undefined) {
+        const node = this.node;
+        if (node.kind === "Program") {
+          visitor.enterProgram(node);
+        }
       }
+      visitor.enter?.(this);
+      if (this._removed) return;
+      this.visitState = {
+        queue: this.getChildPaths().reverse(),
+      };
+      let i = 1e3;
+      while (this.visitState.queue.length > 0 && --i > 0) {
+        const path = this.visitState.queue.at(-1)!;
+        path.visit(visitor);
+        if (!path._removed) {
+          this.visitState.queue.pop();
+        }
+      }
+      if (i === 0)
+        throw new Error(
+          `Tree visit limit hit. This is probably due to a misbehaving plugin.`
+        );
+      visitor.exit?.(this);
+    } catch (e) {
+      if (e instanceof Error && this.node.kind === "Program") {
+        e.message = `Error in '${visitor.name}' visitor. ${e.message}`;
+      }
+      throw e;
     }
-    if (i === 0)
-      throw new Error(
-        `Tree visit limit hit. This is probably due to a misbehaving plugin (${visitor.name}).`
-      );
-    visitor.exit?.(this);
   }
 
   /** Returns an array of all nodes of a given type or satistifing given predicate. */
@@ -244,6 +265,7 @@ export function programToPath(node: IR.Program) {
 
 export interface Visitor {
   name: string;
+  enterProgram?: (program: Program) => void; // this is executed at the start of entering the root node
   enter?: (path: Path) => void;
   exit?: (path: Path) => void;
   generatesVariants?: boolean;
