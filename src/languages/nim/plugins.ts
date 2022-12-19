@@ -47,7 +47,7 @@ export const addImports: Visitor = {
         break;
       }
     }
-    imports ??= importStatement("import", dependecies);
+    imports ??= importStatement("import", dependencies);
     program.body =
       program.body.kind === "Block"
         ? block([imports, ...program.body.children])
