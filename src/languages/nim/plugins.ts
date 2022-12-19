@@ -37,12 +37,12 @@ const includes: [string, string[]][] = [
 export const addImports: Visitor = {
   name: "addImports",
   enterProgram(program: Program) {
-    const dependecies = [...program.dependencies];
-    if (dependecies.length < 1) return;
+    const dependencies = [...program.dependencies];
+    if (dependencies.length < 1) return;
     let imports: ImportStatement;
     for (const include of includes) {
-      if (include[0].length > dependecies.join().length - 1) break;
-      if (dependecies.every((x) => include[1].includes(x))) {
+      if (include[0].length > dependencies.join().length - 1) break;
+      if (dependencies.every((x) => include[1].includes(x))) {
         imports = importStatement("include", [include[0]]);
         break;
       }
