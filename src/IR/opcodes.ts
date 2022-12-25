@@ -159,6 +159,7 @@ export function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
   switch (op) {
     case "pow":
       return 130;
+    case "bit_not":
     case "neg":
       return 120;
     case "repeat":
