@@ -181,6 +181,14 @@ function emitExprNoParens(expr: IR.Expr): string[] {
       ];
     case "UnaryOp":
       return [expr.name, ...emitExpr(expr.arg, expr)];
+    case "ConditionalOp":
+      return [
+        ...emitExpr(expr.condition, expr),
+        "and",
+        ...emitExpr(expr.consequent, expr),
+        "or",
+        ...emitExpr(expr.alternate, expr),
+      ];
     case "IndexCall":
       if (!expr.oneIndexed)
         throw new Error("Lua only supports one indexed access.");

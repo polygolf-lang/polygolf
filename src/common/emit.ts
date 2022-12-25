@@ -16,6 +16,10 @@ export function needsParensPrecedence(
     }
     if (expr.rightAssociative) return expr.precedence <= parent.precedence;
     return expr.precedence < parent.precedence;
+  } else if (parent.kind === "BinaryOp" && expr.kind === "ConditionalOp") {
+    // Temporary. We probably need to give a precedence for every node to avoid
+    // this function being a huge branching mess.
+    return true;
   }
   return false;
 }
