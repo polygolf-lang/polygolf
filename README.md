@@ -13,21 +13,7 @@ Design goals
 - alternative options and domain annotations may help recognition of language-specific idioms
 - goal for each language target (vague): at most twice as long on average for all holes, aka score at least 500× number of holes
 
-Processing pipeline
-
-1. Parse frontend to unrefined IR.
-2. Expand all user defined variants, obtaining a list of instantiated (variantless) programs.
-3. Type check each such program.
-4. Run language specific sequence of transforms - detecting idioms and replacing nodes in the IR.
-
-- If an idiom may or may not save bytes depending on some details, the transform can create variant node containing both versions. For example, a procedure or function used twice may or may not be shorter when inlined.
-
-5. If some step creates variant blocks, expand them.
-
-- This might lead to exponential complexity, so there should be flags to avoid excessive branching. Similarly to -O3 in gcc spending more time compiling for faster output, our -O3 would spend more time compiling for shorter output.
-- This can be done by limiting the total amount of variants Polygolf is considering at a time. After each expansion of transform generated variants, emit the partial result (applying all remaining transforms that don't create variants) and order the candidates by the emitted length. Keep shortest ones only and go to the next step.
-
-6. Emit to the desired language.
+Read on for usage, or see [docs/architecture.md](docs/architecture.md) for the architecture.
 
 ## Usage
 
@@ -49,7 +35,7 @@ The usage is currently simple. Just pick an input PolyGolf file and target langu
 polygolf -i src/programs/fibonacci.polygolf -l lua
 ```
 
-Use `-o` to specify an output file:
+Use `-o` to specify an output file instead of stdout:
 
 ```
 polygolf -i src/programs/fibonacci.polygolf -l lua -o fibonacci.lua
