@@ -34,6 +34,11 @@ export function mapOps(opMap0: [OpCode, (args: Expr[]) => Expr][]): Visitor {
   };
 }
 
+/**
+ * Plugin transforming binary and unary ops to the name and precedence in the target lang.
+ * @param opMap0 Each group defines operators of the same precedence, higher precedence ones first.
+ * @returns The plugin closure.
+ */
 export function mapPrecedenceOps(
   ...opMap0: [UnaryOpCode | BinaryOpCode, string, boolean?][][]
 ): Visitor {
