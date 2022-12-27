@@ -127,7 +127,6 @@ export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
     case "bit_and":
     case "bit_or":
     case "bit_xor":
-    case "text_concat":
       return op;
     case "lt":
       return "gt";
