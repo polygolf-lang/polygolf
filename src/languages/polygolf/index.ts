@@ -12,7 +12,8 @@ function polygolfLanguage(stripTypes = false): Language {
   return {
     name: "Polygolf",
     emitter: emitProgram,
-    plugins,
+    golfPlugins: [],
+    emitPlugins: plugins,
     detokenizer: defaultDetokenizer(
       (a, b) =>
         a !== "(" &&

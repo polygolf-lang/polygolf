@@ -6,11 +6,24 @@ export type OpTransformOutput =
   | [string, number, boolean?]
   | ((args: IR.Expr[]) => IR.Expr);
 
+/** A language configuration.
+ *
+ * Somewhat declarative setup. `applyLanguage` always starts with a frontend IR
+ * and ends up with a string in the following sequence:
+ *
+ * (parse input) => IR
+ * => (golfPlugins and repeatable emitPlugins in any order) => IR
+ * => (emitPlugins in the order specified) => IR limited to nodes the emitter supports
+ * => (emitter) => token list
+ * => (detokenizer) => string
+ *
+ * A repeatable emitPlugin is one without `finalEmitOnly: true`
+ */
 export interface Language {
   name: string;
+  golfPlugins: Visitor[];
+  emitPlugins: Visitor[];
   emitter: Emitter;
-  /** The visitors are applied in left-to-right order. */
-  plugins: Visitor[];
   detokenizer?: Detokenizer;
 }
 

@@ -1,5 +1,5 @@
 import { getType } from "../common/getType";
-import { Path } from "../common/traverse";
+import { Path, Visitor } from "../common/traverse";
 import {
   forRange,
   int,
@@ -14,7 +14,7 @@ import {
   polygolfOp,
 } from "../IR";
 
-export const forRangeToForRangeInclusive = {
+export const forRangeToForRangeInclusive: Visitor = {
   name: "forRangeToForRangeInclusive",
   enter(path: Path) {
     const node = path.node;
@@ -36,7 +36,7 @@ export const forRangeToForRangeInclusive = {
 /**
  * Only switch if it is shorter
  */
-export const useInclusiveForRange = {
+export const useInclusiveForRange: Visitor = {
   name: "useInclusiveForRange",
   enter(path: Path) {
     const node = path.node;
@@ -63,7 +63,7 @@ export const useInclusiveForRange = {
   },
 };
 
-export const forRangeToWhile = {
+export const forRangeToWhile: Visitor = {
   name: "forRangeToWhile",
   enter(path: Path) {
     const node = path.node;
@@ -92,7 +92,7 @@ export const forRangeToWhile = {
   },
 };
 
-export const forRangeToForCLike = {
+export const forRangeToForCLike: Visitor = {
   name: "forRangeToForCLike",
   enter(path: Path) {
     const node = path.node;
@@ -127,7 +127,7 @@ export const forRangeToForCLike = {
  *     commands(i, x)
  */
 // TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
-export const forRangeToForEachPair = {
+export const forRangeToForEachPair: Visitor = {
   name: "forRangeToForEachPair",
   enter(path: Path) {
     const node = path.node;
@@ -169,7 +169,7 @@ export const forRangeToForEachPair = {
  * for x in collection:
  *     commands(x)
  */
-export const forRangeToForEach = {
+export const forRangeToForEach: Visitor = {
   name: "forRangeToForEach",
   enter(path: Path) {
     const node = path.node;

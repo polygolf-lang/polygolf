@@ -13,9 +13,9 @@ import { golfLastPrint } from "../../plugins/print";
 const pythonLanguage: Language = {
   name: "Python",
   emitter: emitProgram,
-  plugins: [
+  golfPlugins: [golfStringListLiteral],
+  emitPlugins: [
     tempVarToMultipleAssignment,
-    golfStringListLiteral,
     forRangeToForEach,
     useIndexCalls(),
     golfLastPrint(),

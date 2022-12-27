@@ -28,13 +28,12 @@ import { golfLastPrint } from "../../plugins/print";
 const nimLanguage: Language = {
   name: "Nim",
   emitter: emitProgram,
-  plugins: [
-    flipBinaryOps,
+  golfPlugins: [flipBinaryOps, golfStringListLiteral],
+  emitPlugins: [
     tempVarToMultipleAssignment,
     modToRem,
     divToTruncdiv,
     useInclusiveForRange,
-    golfStringListLiteral,
     useIndexCalls(),
     golfLastPrint(),
     mapOps([

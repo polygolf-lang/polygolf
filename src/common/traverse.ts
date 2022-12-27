@@ -269,6 +269,9 @@ export interface Visitor {
   enter?: (path: Path) => void;
   exit?: (path: Path) => void;
   generatesVariants?: boolean;
+  /** specify `finalEmitOnly: true` if the plugin is not idempotent or has
+   * some relationship with another plugin such as ordering */
+  finalEmitOnly?: boolean;
 }
 
 export function getChildren(node: IR.Node): IR.Node[] {
