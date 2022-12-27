@@ -3,7 +3,12 @@ import { Language } from "../../common/Language";
 import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
 import emitProgram from "./emit";
-import { mapOps, plus1, useIndexCalls } from "../../plugins/ops";
+import {
+  mapOps,
+  mapPrecedenceOps,
+  plus1,
+  useIndexCalls,
+} from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { evalStaticExpr } from "../../plugins/static";
@@ -38,34 +43,45 @@ const luaLanguage: Language = {
       ["min", (x) => functionCall(x, "math.min")],
       ["max", (x) => functionCall(x, "math.max")],
       ["abs", (x) => functionCall(x, "math.abs")],
-      ["add", "+"],
-      ["sub", "-"],
-      ["mul", "*"],
-      ["div", "//"],
-      ["pow", "^"],
-      ["mod", "%"],
-      ["bit_and", "&"],
-      ["bit_or", "|"],
-      ["bit_xor", "~"],
-      ["lt", "<"],
-      ["leq", "<="],
-      ["eq", "=="],
-      ["neq", "~="],
-      ["geq", ">="],
-      ["gt", ">"],
-      ["and", "and"],
-      ["or", "or"],
-      ["not", ["not", 120]],
-      ["text_concat", ".."],
-      ["neg", "-"],
-      ["bit_not", "~"],
-      ["text_to_int", "~~"],
       ["argv", (x) => id("argv", true)],
       ["min", (x) => functionCall(x, "math.min")],
       ["max", (x) => functionCall(x, "math.max")],
       ["abs", (x) => functionCall(x, "math.abs")],
       ["byte_to_char", (x) => functionCall(x, "string.char")],
     ]),
+    mapPrecedenceOps(
+      [["pow", "^"]],
+      [
+        ["not", "not"],
+        ["neg", "-"],
+        ["list_length", "#"],
+        ["bit_not", "~"],
+        ["text_to_int", "~~"],
+      ],
+      [
+        ["mul", "*"],
+        ["div", "//"],
+        ["mod", "%"],
+      ],
+      [
+        ["add", "+"],
+        ["sub", "-"],
+      ],
+      [["text_concat", ".."]],
+      [["bit_and", "&"]],
+      [["bit_xor", "~"]],
+      [["bit_or", "|"]],
+      [
+        ["lt", "<"],
+        ["leq", "<="],
+        ["eq", "=="],
+        ["neq", "~="],
+        ["geq", ">="],
+        ["gt", ">"],
+      ],
+      [["and", "and"]],
+      [["or", "or"]]
+    ),
     evalStaticExpr,
     renameIdents(),
   ],
