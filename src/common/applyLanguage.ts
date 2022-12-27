@@ -40,8 +40,11 @@ export function applyLanguageToVariants(
         }, ir)
       )
     );
+  const golfPlugins = language.golfPlugins.concat(
+    language.emitPlugins.filter((x) => x.finalEmitOnly !== true)
+  );
   return variants
-    .map((variant) => golfProgram(variant, language.golfPlugins, finalEmit))
+    .map((variant) => golfProgram(variant, golfPlugins, finalEmit))
     .reduce((a, b) => (a.length < b.length ? a : b));
 }
 
@@ -50,8 +53,27 @@ function golfProgram(
   golfPlugins: Visitor[],
   finalEmit: (ir: IR.Program) => string
 ): string {
-  // TODO: actually use golfPlugins
-  return finalEmit(program);
+  const pq: [IR.Program, number][] = [];
+  let shortestSoFar = finalEmit(program);
+  const pushToQueue = (prog: IR.Program) => {
+    const code = finalEmit(prog);
+    if (code.length < shortestSoFar.length) shortestSoFar = code;
+    pq.push([prog, code.length]);
+  };
+  pushToQueue(program);
+  // 1000 is super arbitrary temporary bound
+  while (pq.length > 0 && pq.length < 1000) {
+    // sort in reverse order and pop, as if we're popping from a min-heap.
+    pq.sort((a, b) => b[1] - a[1]);
+    const [prog] = pq.pop()!;
+    // Tons of duplication in the search space here
+    for (const plugin of golfPlugins) {
+      const program = structuredClone(prog);
+      programToPath(program).visit(plugin);
+      expandVariants(program).forEach(pushToQueue);
+    }
+  }
+  return shortestSoFar;
 }
 
 function validateLanguage(language: Language) {
