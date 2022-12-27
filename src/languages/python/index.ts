@@ -35,6 +35,7 @@ const pythonLanguage: Language = {
       ["lt", "<"],
       ["leq", "<="],
       ["eq", "=="],
+      ["neq", "!="],
       ["geq", ">="],
       ["gt", ">"],
       ["and", "and"],

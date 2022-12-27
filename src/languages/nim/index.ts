@@ -63,6 +63,7 @@ const nimLanguage: Language = {
       ["lt", "<"],
       ["leq", "<="],
       ["eq", "=="],
+      ["neq", "!="],
       ["geq", ">="],
       ["gt", ">"],
       ["and", "and"],
