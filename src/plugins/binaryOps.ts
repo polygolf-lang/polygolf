@@ -8,35 +8,41 @@ import {
 import { Path, Visitor } from "../common/traverse";
 
 // "a = a + b" --> "a += b"
-export const addMutatingBinaryOp: Visitor = {
-  name: "addMutatingBinaryOp",
-  enter(path: Path) {
-    const node = path.node;
-    if (node.kind === "Assignment" && node.expr.kind === "BinaryOp") {
+export function addMutatingBinaryOp(...ops: string[]): Visitor {
+  return {
+    name: `addMutatingBinaryOp(${ops.join(", ")})`,
+    enter(path: Path) {
+      const node = path.node;
       if (
-        (node.expr.left.kind === "Identifier" &&
-          node.variable.kind === "Identifier" &&
-          node.variable.name === node.expr.left.name) ||
-        (node.expr.left.kind === "IndexCall" &&
-          node.expr.left.collection.kind === "Identifier" &&
-          node.variable.kind === "IndexCall" &&
-          node.variable.collection.kind === "Identifier" &&
-          node.variable.collection.name === node.expr.left.collection.name &&
-          JSON.stringify(node.variable.index) ===
-            JSON.stringify(node.expr.left.index))
+        node.kind === "Assignment" &&
+        node.expr.kind === "BinaryOp" &&
+        ops.includes(node.expr.name)
       ) {
-        path.replaceWith(
-          mutatingBinaryOp(
-            node.expr.op,
-            node.variable,
-            node.expr.right,
-            node.expr.name
-          )
-        );
+        if (
+          (node.expr.left.kind === "Identifier" &&
+            node.variable.kind === "Identifier" &&
+            node.variable.name === node.expr.left.name) ||
+          (node.expr.left.kind === "IndexCall" &&
+            node.expr.left.collection.kind === "Identifier" &&
+            node.variable.kind === "IndexCall" &&
+            node.variable.collection.kind === "Identifier" &&
+            node.variable.collection.name === node.expr.left.collection.name &&
+            JSON.stringify(node.variable.index) ===
+              JSON.stringify(node.expr.left.index))
+        ) {
+          path.replaceWith(
+            mutatingBinaryOp(
+              node.expr.op,
+              node.variable,
+              node.expr.right,
+              node.expr.name
+            )
+          );
+        }
       }
-    }
-  },
-};
+    },
+  };
+}
 
 // "a + b; --> {a + b; b + a}"
 const flippedOps = new WeakMap();

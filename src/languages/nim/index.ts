@@ -80,7 +80,7 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_char", (x) => functionCall(x, "chr")],
     ]),
-    addMutatingBinaryOp,
+    addMutatingBinaryOp("+", "*", "-", "&"),
     useUFCS,
     useUnsignedDivision,
     evalStaticExpr,
