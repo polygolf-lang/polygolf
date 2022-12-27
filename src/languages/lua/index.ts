@@ -50,6 +50,7 @@ const luaLanguage: Language = {
       ["lt", "<"],
       ["leq", "<="],
       ["eq", "=="],
+      ["neq", "~="],
       ["geq", ">="],
       ["gt", ">"],
       ["and", "and"],
