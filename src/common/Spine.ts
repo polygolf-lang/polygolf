@@ -55,11 +55,9 @@ export class Spine<N extends imNode = imNode> {
   replacedWith(newNode: imNode): Spine {
     if (this.parent === null || this.pathFragment === null)
       throw new Error("Cannot replace the root node");
-    return this.parent.withChildReplaced(newNode, this.pathFragment);
-  }
-
-  replacedWithRoot(newNode: imNode) {
-    return this.replacedWith(newNode).root.node;
+    return this.parent
+      .withChildReplaced(newNode, this.pathFragment)
+      .getChild(this.pathFragment);
   }
 
   *visit<T>(
@@ -67,6 +65,30 @@ export class Spine<N extends imNode = imNode> {
   ): Generator<T, void, undefined> {
     yield* visitor(this);
     for (const child of this.getChildSpines()) yield* child.visit(visitor);
+  }
+
+  withReplacer(replacer: (spine: Spine) => Iterable<imNode>): Spine {
+    const repls = Array.from(replacer(this));
+    if (repls.length === 0) {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      let curr = this as Spine;
+      for (const child of this.getChildSpines()) {
+        const newChild = child.withReplacer(replacer);
+        if (newChild !== child) {
+          curr = curr.withChildReplaced(newChild.node, child.pathFragment!);
+          // Following line should be equivalent but doesn't work: (Bug?)
+          //    curr = child.replacedWith(newChild.node).parent!;
+        }
+      }
+      return curr;
+    } else if (repls.length === 1) {
+      return this.replacedWith(repls[0]).withReplacer(replacer);
+    } else {
+      throw new Error(
+        `An emitPlugin of type GolfPlugin cannot yield more than one node` +
+          `, but got ${repls.length} nodes yielded.`
+      );
+    }
   }
 }
 

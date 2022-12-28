@@ -56,7 +56,7 @@ export const flipBinaryOps: GolfPlugin = {
           node.args[1] as any as IR.Expr,
           node.args[0] as any as IR.Expr
         );
-        yield spine.replacedWithRoot(flippedOp);
+        yield flippedOp;
       }
     }
   },

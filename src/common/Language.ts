@@ -23,7 +23,8 @@ export type OpTransformOutput =
 export interface Language {
   name: string;
   golfPlugins: GolfPlugin[];
-  emitPlugins: Visitor[];
+  /** Any GolfPlugin in emitPlugins must yield at most one variation per node */
+  emitPlugins: (Visitor | GolfPlugin)[];
   emitter: Emitter;
   detokenizer?: Detokenizer;
 }
@@ -31,8 +32,8 @@ export interface Language {
 export interface GolfPlugin {
   tag: "golf";
   name: string;
-  /** visit should return an iterable of alternatives */
-  visit: (spine: Spine) => Iterable<IR.Program>;
+  /** visit should return an iterable of alternatives for this node */
+  visit: (spine: Spine) => Iterable<IR.Node>;
 }
 
 export type Detokenizer = (tokens: string[]) => string;

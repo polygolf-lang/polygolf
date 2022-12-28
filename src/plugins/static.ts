@@ -6,7 +6,6 @@ import {
   polygolfOp,
   StringLiteral,
   stringLiteral,
-  variants,
   voidType,
 } from "../IR";
 import { getType } from "../common/getType";
@@ -24,20 +23,16 @@ export const golfStringListLiteral: GolfPlugin = {
     ) {
       const strings = (node.exprs as StringLiteral[]).map((x) => x.value);
       const delim = getDelim(strings);
-      yield spine.replacedWithRoot(
-        variants(
-          delim === " "
-            ? (polygolfOp(
-                "text_split_whitespace",
-                stringLiteral(strings.join(delim))
-              ) as any) // temporary "as any" to delay making the whole code base immutable
-            : polygolfOp(
-                "text_split",
-                stringLiteral(strings.join(delim)),
-                stringLiteral(delim)
-              )
-        )
-      );
+      yield delim === " "
+        ? (polygolfOp(
+            "text_split_whitespace",
+            stringLiteral(strings.join(delim))
+          ) as any) // temporary "as any" to delay making the whole code base immutable
+        : polygolfOp(
+            "text_split",
+            stringLiteral(strings.join(delim)),
+            stringLiteral(delim)
+          );
     }
   },
 };
@@ -82,13 +77,11 @@ export const evalStaticExpr: GolfPlugin = {
         isFiniteBound(type.low) &&
         type.low === type.high
       ) {
-        yield spine.replacedWithRoot(int(type.low));
+        yield int(type.low);
       } else if (args.every((x) => x.kind === "StringLiteral")) {
         const argsVals = args.map((x) => (x as StringLiteral).value);
         if (node.op === "text_concat")
-          yield spine.replacedWithRoot(
-            stringLiteral(argsVals[0].concat(argsVals[1]))
-          );
+          yield stringLiteral(argsVals[0].concat(argsVals[1]));
       }
     }
   },

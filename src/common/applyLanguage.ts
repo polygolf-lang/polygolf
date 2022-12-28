@@ -32,9 +32,14 @@ function getFinalEmit(language: Language) {
     detokenizer(
       language.emitter(
         language.emitPlugins.reduce((a, plugin) => {
-          const clone = structuredClone(a);
-          programToPath(clone).visit(plugin);
-          return clone;
+          if (plugin.tag === "mutatingVisitor") {
+            const clone = structuredClone(a);
+            programToPath(clone).visit(plugin);
+            return clone;
+          } else {
+            return programToSpine(a).withReplacer(plugin.visit)
+              .node as IR.Program;
+          }
         }, ir)
       )
     );
@@ -47,7 +52,9 @@ export function applyLanguageToVariants(
   const finalEmit = getFinalEmit(language);
   const golfPlugins: (GolfPlugin | Visitor)[] = language.golfPlugins;
   golfPlugins.push(
-    ...language.emitPlugins.filter((x) => x.finalEmitOnly !== true)
+    ...language.emitPlugins.filter(
+      (x) => x.tag === "golf" || x.finalEmitOnly !== true
+    )
   );
   return variants
     .map((variant) => golfProgram(variant, golfPlugins, finalEmit))
@@ -92,7 +99,10 @@ function golfProgram(
     for (const plugin of golfPlugins) {
       const newHist = hist.concat([plugin.name]);
       if (plugin.tag === "golf") {
-        for (const altProgram of spine.visit(plugin.visit)) {
+        for (const altProgram of spine.visit(function* (s) {
+          for (const node of plugin.visit(s))
+            yield s.replacedWith(node).root.node;
+        })) {
           pushToQueue(altProgram, newHist);
         }
       } else {
