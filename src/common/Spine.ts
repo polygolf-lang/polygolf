@@ -52,8 +52,15 @@ export class Spine<N extends IR.Node = IR.Node> {
   }
 
   replacedWith(newNode: IR.Node): Spine {
-    if (this.parent === null || this.pathFragment === null)
-      throw new Error("Cannot replace the root node");
+    if (this.parent === null || this.pathFragment === null) {
+      if (newNode.kind !== "Program")
+        throw new Error(
+          `Programming error: attempt to replace the root node ` +
+            `with node of kind ${newNode.kind}`
+        );
+      // replace the root node
+      return new Spine(newNode, null, null);
+    }
     return this.parent
       .withChildReplaced(newNode, this.pathFragment)
       .getChild(this.pathFragment);
@@ -77,8 +84,11 @@ export class Spine<N extends IR.Node = IR.Node> {
     return false;
   }
 
-  withReplacer(replacer: (spine: Spine) => IR.Node | undefined): Spine {
-    const ret = replacer(this);
+  withReplacer(
+    replacer: (spine: Spine) => IR.Node | undefined,
+    skipThis?: boolean
+  ): Spine {
+    const ret = skipThis === true ? undefined : replacer(this);
     if (ret === undefined) {
       // recurse on children
       // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -93,8 +103,8 @@ export class Spine<N extends IR.Node = IR.Node> {
       }
       return curr;
     } else {
-      // replace this, then recurse on children
-      return this.replacedWith(ret).withReplacer(replacer);
+      // replace this, then recurse on children but not this
+      return this.replacedWith(ret).withReplacer(replacer, true);
     }
   }
 }

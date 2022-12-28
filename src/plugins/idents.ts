@@ -1,14 +1,14 @@
 import { GolfPlugin, IdentifierGenerator } from "common/Language";
+import { symbolTableRoot } from "../common/getSymbolTable";
 import { Spine } from "../common/Spine";
-import { Path, Visitor } from "../common/traverse";
 import { assignment, block, id, Identifier, IR } from "../IR";
 
 function getIdentMap(
-  path: Path<IR.Program>,
+  spine: Spine<IR.Program>,
   identGen: IdentifierGenerator
 ): Map<string, string> {
   // First, try mapping as many idents as possible to their preferred versions
-  const inputNames = path.getUsedIdentifiers();
+  const inputNames = symbolTableRoot(spine.node).keys();
   const outputNames = new Set<string>();
   const result = new Map<string, string>();
   for (const iv of inputNames) {
@@ -50,24 +50,23 @@ function getIdentMap(
   return result;
 }
 
-let identMap: Map<string, string>;
 export function renameIdents(
   identGen: IdentifierGenerator = defaultIdentGen
-): Visitor {
+): GolfPlugin {
   return {
-    tag: "mutatingVisitor",
+    tag: "golf",
     name: "renameIdents(...)",
-    enter(path: Path) {
-      if (path.node.kind === "Program") {
-        identMap = getIdentMap(path.root, identGen);
-      }
-      if (path.node.kind === "Identifier" && !path.node.builtin) {
-        const outputName = identMap.get(path.node.name);
-        if (outputName === undefined) {
-          throw new Error("Programming error. Incomplete identMap.");
+    visit(spine: Spine) {
+      if (spine.node.kind !== "Program") return;
+      const identMap = getIdentMap(spine.root, identGen);
+      return spine.withReplacer((s: Spine) => {
+        if (s.node.kind === "Identifier" && !s.node.builtin) {
+          const outputName = identMap.get(s.node.name);
+          if (outputName === undefined)
+            throw new Error("Programming error. Incomplete identMap.");
+          return id(outputName);
         }
-        path.replaceWith(id(outputName), true);
-      }
+      }).node;
     },
   };
 }
