@@ -1,6 +1,7 @@
-import { IdentifierGenerator } from "common/Language";
+import { GolfPlugin, IdentifierGenerator } from "common/Language";
+import { Spine } from "../common/Spine";
 import { Path, Visitor } from "../common/traverse";
-import { assignment, block, Expr, id, Identifier, IR } from "../IR";
+import { assignment, block, id, Identifier, IR } from "../IR";
 
 function getIdentMap(
   path: Path<IR.Program>,
@@ -86,42 +87,46 @@ function defaultShouldAlias(name: string, freq: number): boolean {
 }
 export function aliasBuiltins(
   shouldAlias: (name: string, freq: number) => boolean = defaultShouldAlias
-): Visitor {
-  const usedBuiltins = new Map<string, Identifier[]>();
+): GolfPlugin {
   return {
-    tag: "mutatingVisitor",
+    tag: "golf",
     name: "aliasBuiltins(...)",
-    enter(path: Path) {
-      const node = path.node;
-      if (node.kind === "Identifier" && node.builtin) {
-        if (!usedBuiltins.has(node.name)) usedBuiltins.set(node.name, []);
-        usedBuiltins.get(node.name)?.push(node);
-      }
-    },
-    exit(path: Path) {
-      if (path.parent === null) {
-        const program = path.root.node;
-        const aliased: string[] = [];
-        usedBuiltins.forEach((identifiers: Identifier[], name: string) => {
-          if (shouldAlias(name, identifiers.length)) {
-            aliased.push(name);
-            for (const ident of identifiers) {
-              ident.builtin = false;
-              ident.name = name + "_alias";
-            }
-          }
-        });
-        program.body = block(
-          aliased
-            .map((x) => assignment(x + "_alias", id(x, true)) as Expr)
-            .concat(
-              program.body.kind === "Block"
-                ? program.body.children
-                : [program.body]
-            )
-        );
-        usedBuiltins.clear();
-      }
+    visit(spine: Spine) {
+      const program = spine.node;
+      if (program.kind !== "Program") return;
+      // get frequency of each builtin
+      const timesUsed = new Map<string, number>();
+      spine.visit((s: Spine) => {
+        const node = s.node;
+        if (node.kind === "Identifier" && node.builtin) {
+          const freq = timesUsed.get(node.name) ?? 0;
+          timesUsed.set(node.name, freq + 1);
+        }
+      });
+      // apply
+      const assignments: (IR.Assignment & { variable: Identifier })[] = [];
+      const replacedDeep = spine.withReplacer((s: Spine) => {
+        const node = s.node;
+        if (
+          node.kind === "Identifier" &&
+          node.builtin &&
+          shouldAlias(node.name, timesUsed.get(node.name)!)
+        ) {
+          const alias = node.name + "_alias";
+          if (assignments.every((x) => x.variable.name !== alias))
+            assignments.push(assignment(alias, id(node.name, true)));
+          return { ...node, builtin: false, name: alias };
+        }
+      }).node as IR.Program;
+      return {
+        ...replacedDeep,
+        body: block([
+          ...assignments,
+          ...(program.body.kind === "Block"
+            ? program.body.children
+            : [program.body]),
+        ]),
+      };
     },
   };
 }

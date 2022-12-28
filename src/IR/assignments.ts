@@ -46,6 +46,14 @@ export interface VarDeclarationWithAssignment extends BaseExpr {
 }
 
 export function assignment(
+  variable: Identifier | string,
+  expr: Expr
+): Assignment & { variable: Identifier };
+export function assignment(
+  variable: IndexCall,
+  expr: Expr
+): Assignment & { variable: IndexCall };
+export function assignment(
   variable: Identifier | string | IndexCall,
   expr: Expr
 ): Assignment {

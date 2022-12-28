@@ -67,6 +67,16 @@ export class Spine<N extends IR.Node = IR.Node> {
     for (const child of this.getChildSpines()) yield* child.visit(visitor);
   }
 
+  everyNode(visitor: (spine: Spine) => boolean) {
+    for (const val of this.visit(visitor)) if (!val) return false;
+    return true;
+  }
+
+  someNode(visitor: (spine: Spine) => boolean) {
+    for (const val of this.visit(visitor)) if (val) return true;
+    return false;
+  }
+
   withReplacer(replacer: (spine: Spine) => IR.Node | undefined): Spine {
     const ret = replacer(this);
     if (ret === undefined) {

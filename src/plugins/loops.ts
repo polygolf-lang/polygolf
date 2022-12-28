@@ -1,7 +1,6 @@
 import { getType } from "../common/getType";
 import { GolfPlugin } from "../common/Language";
 import { Spine } from "../common/Spine";
-import { Path, Visitor } from "../common/traverse";
 import {
   forRange,
   int,
@@ -136,11 +135,11 @@ export const forRangeToForCLike: GolfPlugin = {
  *     commands(i, x)
  */
 // TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
-export const forRangeToForEachPair: Visitor = {
-  tag: "mutatingVisitor",
+export const forRangeToForEachPair: GolfPlugin = {
+  tag: "golf",
   name: "forRangeToForEachPair",
-  enter(path: Path) {
-    const node = path.node;
+  visit(spine: Spine) {
+    const node = spine.node;
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
@@ -151,22 +150,15 @@ export const forRangeToForEachPair: Visitor = {
       node.high.args[0].kind === "Identifier"
     ) {
       const collection = node.high.args[0];
-      const elementIdentifier = id(path.getNewIdentifier());
-      const bodyPath = new Path(node.body, path, "body");
-      bodyPath.visit({
-        tag: "mutatingVisitor",
-        // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
-        name: "anonymous",
-        enter(path2: Path) {
-          const node2 = path2.node;
-          if (isListGet(node2, collection.name, node.variable.name)) {
-            path2.replaceWith(elementIdentifier);
-          }
-        },
-      });
-      path.replaceWith(
-        forEachPair(node.variable, elementIdentifier, collection, node.body)
+      const elementIdentifier = id(
+        node.variable.name + "_forRangeToForEachPair"
       );
+      const newBody = spine.getChild("body").withReplacer((s: Spine) => {
+        const innerNode = s.node;
+        if (isListGet(innerNode, collection.name, node.variable.name))
+          return elementIdentifier;
+      }).node as IR.Expr;
+      return forEachPair(node.variable, elementIdentifier, collection, newBody);
     }
   },
 };
@@ -180,11 +172,11 @@ export const forRangeToForEachPair: Visitor = {
  * for x in collection:
  *     commands(x)
  */
-export const forRangeToForEach: Visitor = {
-  tag: "mutatingVisitor",
+export const forRangeToForEach: GolfPlugin = {
+  tag: "golf",
   name: "forRangeToForEach",
-  enter(path: Path) {
-    const node = path.node;
+  visit(spine: Spine) {
+    const node = spine.node;
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
@@ -195,22 +187,21 @@ export const forRangeToForEach: Visitor = {
       node.high.args[0].kind === "Identifier"
     ) {
       const collection = node.high.args[0];
-      const elementIdentifier = id(path.getNewIdentifier());
-      const bodyPath = new Path(node.body, path, "body");
-      if (!isVariableUsedAlone(bodyPath, collection.name, node.variable.name)) {
+      const elementIdentifier = id(node.variable.name + "_forRangeToForEach");
+      const bodySpine = spine.getChild("body");
+      const onlyUsedForCollectionAccess = bodySpine.everyNode(
+        (x) =>
+          x.node.kind !== "Identifier" ||
+          x.node.name !== node.variable.name ||
+          isListGet(x.parent!.node, collection.name, node.variable.name)
+      );
+      if (onlyUsedForCollectionAccess) {
         // if the loop variable is only used to index the collection
-        bodyPath.visit({
-          tag: "mutatingVisitor",
-          // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
-          name: "anonymous",
-          enter(path2: Path) {
-            const node2 = path2.node;
-            if (isListGet(node2, collection.name, node.variable.name)) {
-              path2.replaceWith(elementIdentifier);
-            }
-          },
-        });
-        path.replaceWith(forEach(elementIdentifier, collection, node.body));
+        const newBody = bodySpine.withReplacer((s: Spine) => {
+          if (isListGet(s.node, collection.name, node.variable.name))
+            return elementIdentifier;
+        }).node as IR.Expr;
+        return forEach(elementIdentifier, collection, newBody);
       }
     }
   },
@@ -224,14 +215,5 @@ function isListGet(node: IR.Node, collection: string, index: string) {
     args[0].name === collection &&
     args[1].kind === "Identifier" &&
     args[1].name === index
-  );
-}
-
-function isVariableUsedAlone(path: Path, collection: string, index: string) {
-  return path.anyNode(
-    (x) =>
-      x.node.kind === "Identifier" &&
-      x.node.name === index &&
-      !isListGet(x.parent!.node, collection, index)
   );
 }

@@ -1,11 +1,12 @@
-import { Path, Visitor } from "../common/traverse";
+import { GolfPlugin } from "../common/Language";
+import { Spine } from "../common/Spine";
 import { block, Expr, manyToManyAssignment } from "../IR";
 
-export const tempVarToMultipleAssignment: Visitor = {
-  tag: "mutatingVisitor",
+export const tempVarToMultipleAssignment: GolfPlugin = {
+  tag: "golf",
   name: "tempVarToMultipleAssignment",
-  exit(path: Path) {
-    const node = path.node;
+  visit(spine: Spine) {
+    const node = spine.node;
     if (node.kind === "Block") {
       const newNodes: Expr[] = [];
       let changed = false;
@@ -37,7 +38,7 @@ export const tempVarToMultipleAssignment: Visitor = {
           newNodes.push(a);
         }
       }
-      if (changed) path.replaceWith(block(newNodes));
+      if (changed) return block(newNodes);
     }
   },
 };

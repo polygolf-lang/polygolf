@@ -1,22 +1,23 @@
 import { variants } from "../../IR";
-import { defaultDetokenizer, Language } from "../../common/Language";
-
+import {
+  defaultDetokenizer,
+  GolfPlugin,
+  Language,
+} from "../../common/Language";
 import emitProgram from "./emit";
-import { Path, Visitor } from "../../common/traverse";
+import { Spine } from "../../common/Spine";
 
-const blocksAsVariants: Visitor = {
-  tag: "mutatingVisitor",
+const blocksAsVariants: GolfPlugin = {
+  tag: "golf",
   name: "blocksAsVariants",
-  exit(path: Path) {
-    const node = path.node;
+  visit(spine: Spine) {
     if (
-      node.kind === "Block" &&
-      path.parent !== null &&
-      path.parent.node.kind !== "Variants" &&
-      path.parent.node.kind !== "Program"
-    ) {
-      path.replaceWith(variants([node]));
-    }
+      spine.node.kind === "Block" &&
+      spine.parent !== null &&
+      spine.parent.node.kind !== "Variants" &&
+      spine.parent.node.kind !== "Program"
+    )
+      return variants([spine.node]);
   },
 };
 

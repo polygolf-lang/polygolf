@@ -6,10 +6,8 @@ import {
   importStatement,
   manyToManyAssignment,
   methodCall,
-  Program,
   varDeclarationWithAssignment,
 } from "../../IR";
-import { Path, Visitor } from "../../common/traverse";
 import { getType } from "../../common/getType";
 import { GolfPlugin } from "../../common/Language";
 import { Spine } from "../../common/Spine";
@@ -36,10 +34,12 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-export const addImports: Visitor = {
-  tag: "mutatingVisitor",
+export const addImports: GolfPlugin = {
+  tag: "golf",
   name: "addImports",
-  enterProgram(program: Program) {
+  visit(spine: Spine) {
+    const program = spine.node;
+    if (program.kind !== "Program") return;
     const dependencies = [...program.dependencies];
     if (dependencies.length < 1) return;
     let imports: ImportStatement;
@@ -51,27 +51,30 @@ export const addImports: Visitor = {
       }
     }
     imports ??= importStatement("import", dependencies);
-    program.body =
-      program.body.kind === "Block"
-        ? block([imports, ...program.body.children])
-        : block([imports, program.body]);
+    return {
+      ...program,
+      body:
+        program.body.kind === "Block"
+          ? block([imports, ...program.body.children])
+          : block([imports, program.body]),
+    };
   },
 };
 
 const declared: Set<string> = new Set<string>();
-export const addVarDeclarations: Visitor = {
-  tag: "mutatingVisitor",
+export const addVarDeclarations: GolfPlugin = {
+  tag: "golf",
   name: "addVarDeclarations",
-  enter(path: Path) {
-    const node = path.node;
+  visit(spine: Spine) {
+    const node = spine.node;
     if (node.kind === "Program") declared.clear();
     else if (
-      path.parent?.node.kind !== "Block" &&
+      spine.parent?.node.kind !== "Block" &&
       node.kind === "Assignment" &&
       node.variable.kind === "Identifier" &&
       !declared.has(node.variable.name)
     ) {
-      path.replaceWith(simplifyAssignments([node], false));
+      return simplifyAssignments([node], false);
     } else if (node.kind === "Block") {
       let assignments: Assignment[] = [];
       const newNodes: Expr[] = [];
@@ -80,7 +83,7 @@ export const addVarDeclarations: Visitor = {
           newNodes.push(
             simplifyAssignments(
               assignments,
-              path.parent?.node.kind === "Program" && assignments.length > 1
+              spine.parent?.node.kind === "Program" && assignments.length > 1
             )
           );
           assignments = [];
@@ -99,7 +102,10 @@ export const addVarDeclarations: Visitor = {
         }
       }
       processAssignments();
-      node.children = newNodes;
+      return {
+        ...node,
+        children: newNodes,
+      };
     }
   },
 };
