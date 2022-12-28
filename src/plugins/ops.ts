@@ -1,4 +1,4 @@
-import { GolfPlugin, OpTransformOutput } from "../common/Language";
+import { Plugin, OpTransformOutput } from "../common/Language";
 import {
   assignment,
   binaryOp,
@@ -15,10 +15,9 @@ import {
 import { getType } from "../common/getType";
 import { Spine } from "../common/Spine";
 
-export function mapOps(opMap0: [OpCode, OpTransformOutput][]): GolfPlugin {
+export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
   const opMap = new Map<string, OpTransformOutput>(opMap0);
   return {
-    tag: "golf",
     name: "mapOps(...)",
     allOrNothing: true,
     visit(spine: Spine) {
@@ -82,9 +81,8 @@ export function useIndexCalls(
     "list_set",
     "table_set",
   ]
-): GolfPlugin {
+): Plugin {
   return {
-    tag: "golf",
     name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
       ops
     )})`,

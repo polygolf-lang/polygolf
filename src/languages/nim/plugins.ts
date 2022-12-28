@@ -9,7 +9,7 @@ import {
   varDeclarationWithAssignment,
 } from "../../IR";
 import { getType } from "../../common/getType";
-import { GolfPlugin } from "../../common/Language";
+import { Plugin } from "../../common/Language";
 import { Spine } from "../../common/Spine";
 
 const includes: [string, string[]][] = [
@@ -34,10 +34,9 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-export function addImports(dependencyMap0: [string, string][]): GolfPlugin {
+export function addImports(dependencyMap0: [string, string][]): Plugin {
   const dependencyMap = new Map(dependencyMap0);
   return {
-    tag: "golf",
     name: "addImports",
     visit(spine: Spine) {
       const program = spine.node;
@@ -79,8 +78,7 @@ export function addImports(dependencyMap0: [string, string][]): GolfPlugin {
 }
 
 const declared: Set<string> = new Set<string>();
-export const addVarDeclarations: GolfPlugin = {
-  tag: "golf",
+export const addVarDeclarations: Plugin = {
   name: "addVarDeclarations",
   visit(spine: Spine) {
     const node = spine.node;
@@ -147,8 +145,7 @@ function simplifyAssignments(
   );
 }
 
-export const useUnsignedDivision: GolfPlugin = {
-  tag: "golf",
+export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
   visit(spine: Spine) {
     const node = spine.node;
@@ -178,8 +175,7 @@ export const useUnsignedDivision: GolfPlugin = {
   },
 };
 
-export const useUFCS: GolfPlugin = {
-  tag: "golf",
+export const useUFCS: Plugin = {
   name: "useUFCS",
   visit(spine: Spine) {
     const node = spine.node;

@@ -1,14 +1,9 @@
 import { variants } from "../../IR";
-import {
-  defaultDetokenizer,
-  GolfPlugin,
-  Language,
-} from "../../common/Language";
+import { defaultDetokenizer, Plugin, Language } from "../../common/Language";
 import emitProgram from "./emit";
 import { Spine } from "../../common/Spine";
 
-const blocksAsVariants: GolfPlugin = {
-  tag: "golf",
+const blocksAsVariants: Plugin = {
   name: "blocksAsVariants",
   visit(spine: Spine) {
     if (

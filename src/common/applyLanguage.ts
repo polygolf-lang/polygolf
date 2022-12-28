@@ -1,6 +1,6 @@
 import { IR } from "../IR";
 import { expandVariants } from "./expandVariants";
-import { Language, defaultDetokenizer, GolfPlugin } from "./Language";
+import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
 
@@ -31,7 +31,7 @@ function getFinalEmit(language: Language) {
 
 export const debugEmit = getFinalEmit(polygolfLanguage);
 
-function applyAll(program: IR.Program, visitor: GolfPlugin["visit"]) {
+function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
   return programToSpine(program).withReplacer(visitor).node as IR.Program;
 }
 
@@ -48,7 +48,7 @@ export function applyLanguageToVariants(
 
 function golfProgram(
   program: IR.Program,
-  golfPlugins: GolfPlugin[],
+  golfPlugins: Plugin[],
   finalEmit: (ir: IR.Program) => string
 ): string {
   const pq: [IR.Program, number, string[]][] = [];

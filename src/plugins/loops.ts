@@ -1,5 +1,5 @@
 import { getType } from "../common/getType";
-import { GolfPlugin } from "../common/Language";
+import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 import {
   forRange,
@@ -15,8 +15,7 @@ import {
   polygolfOp,
 } from "../IR";
 
-export const forRangeToForRangeInclusive: GolfPlugin = {
-  tag: "golf",
+export const forRangeToForRangeInclusive: Plugin = {
   name: "forRangeToForRangeInclusive",
   visit(spine: Spine) {
     const node = spine.node;
@@ -32,8 +31,7 @@ export const forRangeToForRangeInclusive: GolfPlugin = {
   },
 };
 
-export const useInclusiveForRange: GolfPlugin = {
-  tag: "golf",
+export const useInclusiveForRange: Plugin = {
   name: "useInclusiveForRange",
   visit(spine: Spine): IR.ForRange | undefined {
     const node = spine.node;
@@ -73,8 +71,7 @@ export const useInclusiveForRange: GolfPlugin = {
   },
 };
 
-export const forRangeToWhile: GolfPlugin = {
-  tag: "golf",
+export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
   visit(spine: Spine) {
     const node = spine.node;
@@ -101,8 +98,7 @@ export const forRangeToWhile: GolfPlugin = {
   },
 };
 
-export const forRangeToForCLike: GolfPlugin = {
-  tag: "golf",
+export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
   visit(spine: Spine) {
     const node = spine.node;
@@ -135,8 +131,7 @@ export const forRangeToForCLike: GolfPlugin = {
  *     commands(i, x)
  */
 // TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
-export const forRangeToForEachPair: GolfPlugin = {
-  tag: "golf",
+export const forRangeToForEachPair: Plugin = {
   name: "forRangeToForEachPair",
   visit(spine: Spine) {
     const node = spine.node;
@@ -172,8 +167,7 @@ export const forRangeToForEachPair: GolfPlugin = {
  * for x in collection:
  *     commands(x)
  */
-export const forRangeToForEach: GolfPlugin = {
-  tag: "golf",
+export const forRangeToForEach: Plugin = {
   name: "forRangeToForEach",
   visit(spine: Spine) {
     const node = spine.node;

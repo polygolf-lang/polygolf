@@ -21,15 +21,14 @@ export type OpTransformOutput =
  */
 export interface Language {
   name: string;
-  golfPlugins: GolfPlugin[];
-  emitPlugins: GolfPlugin[];
-  finalEmitPlugins?: GolfPlugin[];
+  golfPlugins: Plugin[];
+  emitPlugins: Plugin[];
+  finalEmitPlugins?: Plugin[];
   emitter: Emitter;
   detokenizer?: Detokenizer;
 }
 
-export interface GolfPlugin {
-  tag: "golf";
+export interface Plugin {
   name: string;
   /** visit should return a viable replacement node, or undefined to represent
    * no replacement. The replacement node should be different in value than

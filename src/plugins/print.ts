@@ -1,5 +1,5 @@
 import { replaceAtIndex } from "../common/immutable";
-import { GolfPlugin } from "../common/Language";
+import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 import { polygolfOp, stringLiteral } from "../IR";
 import { mapOps } from "./ops";
@@ -16,9 +16,8 @@ export const printLnToprint = mapOps([
  * Since code.golf strips output whitespace, for the last print,
  * it doesn't matter if print or println is used, so the shorter one should be used.
  */
-export function golfLastPrint(toPrintln = true): GolfPlugin {
+export function golfLastPrint(toPrintln = true): Plugin {
   return {
-    tag: "golf",
     name: "golfLastPrint",
     visit(spine: Spine) {
       const program = spine.node;

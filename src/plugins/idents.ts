@@ -1,4 +1,4 @@
-import { GolfPlugin, IdentifierGenerator } from "common/Language";
+import { Plugin, IdentifierGenerator } from "common/Language";
 import { symbolTableRoot } from "../common/getSymbolTable";
 import { Spine } from "../common/Spine";
 import { assignment, block, id, Identifier, IR } from "../IR";
@@ -52,9 +52,8 @@ function getIdentMap(
 
 export function renameIdents(
   identGen: IdentifierGenerator = defaultIdentGen
-): GolfPlugin {
+): Plugin {
   return {
-    tag: "golf",
     name: "renameIdents(...)",
     visit(spine: Spine) {
       if (spine.node.kind !== "Program") return;
@@ -86,9 +85,8 @@ function defaultShouldAlias(name: string, freq: number): boolean {
 }
 export function aliasBuiltins(
   shouldAlias: (name: string, freq: number) => boolean = defaultShouldAlias
-): GolfPlugin {
+): Plugin {
   return {
-    tag: "golf",
     name: "aliasBuiltins(...)",
     visit(spine: Spine) {
       const program = spine.node;

@@ -1,10 +1,9 @@
 import { getType } from "../common/getType";
-import { GolfPlugin } from "../common/Language";
+import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 import { leq, polygolfOp } from "../IR";
 
-export const modToRem: GolfPlugin = {
-  tag: "golf",
+export const modToRem: Plugin = {
   name: "modToRem",
   visit(spine: Spine) {
     const node = spine.node;
@@ -26,8 +25,7 @@ export const modToRem: GolfPlugin = {
   },
 };
 
-export const divToTruncdiv: GolfPlugin = {
-  tag: "golf",
+export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
   visit(spine: Spine) {
     const node = spine.node;

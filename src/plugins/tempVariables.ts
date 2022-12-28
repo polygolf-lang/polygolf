@@ -1,9 +1,8 @@
-import { GolfPlugin } from "../common/Language";
+import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 import { block, Expr, manyToManyAssignment } from "../IR";
 
-export const tempVarToMultipleAssignment: GolfPlugin = {
-  tag: "golf",
+export const tempVarToMultipleAssignment: Plugin = {
   name: "tempVarToMultipleAssignment",
   visit(spine: Spine) {
     const node = spine.node;

@@ -1,11 +1,10 @@
 import { flipOpCode, isBinary, mutatingBinaryOp, polygolfOp } from "../IR";
-import { GolfPlugin } from "../common/Language";
+import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 
 // "a = a + b" --> "a += b"
-export function addMutatingBinaryOp(...ops: string[]): GolfPlugin {
+export function addMutatingBinaryOp(...ops: string[]): Plugin {
   return {
-    tag: "golf",
     name: `addMutatingBinaryOp(${ops.join(", ")})`,
     visit(spine: Spine) {
       const node = spine.node;
@@ -39,8 +38,7 @@ export function addMutatingBinaryOp(...ops: string[]): GolfPlugin {
 }
 
 // (a + b) --> (b + a)
-export const flipBinaryOps: GolfPlugin = {
-  tag: "golf",
+export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
   visit(spine: Spine) {
     const node = spine.node;

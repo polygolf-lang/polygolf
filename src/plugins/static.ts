@@ -9,11 +9,10 @@ import {
   voidType,
 } from "../IR";
 import { getType } from "../common/getType";
-import { GolfPlugin } from "../common/Language";
+import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 
-export const golfStringListLiteral: GolfPlugin = {
-  tag: "golf",
+export const golfStringListLiteral: Plugin = {
   name: "golfStringListLiteral",
   visit(spine: Spine) {
     const node = spine.node;
@@ -53,8 +52,7 @@ function getDelim(strings: string[]): string {
   return String(i);
 }
 
-export const evalStaticExpr: GolfPlugin = {
-  tag: "golf",
+export const evalStaticExpr: Plugin = {
   name: "evalStaticExpr",
   visit(spine: Spine) {
     const node = spine.node;

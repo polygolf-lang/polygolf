@@ -10,7 +10,7 @@ import {
   print,
 } from "../IR";
 import debugEmit from "../languages/debug/emit";
-import { GolfPlugin } from "../common/Language";
+import { Plugin } from "../common/Language";
 import { programToSpine } from "../common/Spine";
 
 const loopProgram1 = program(
@@ -42,11 +42,7 @@ const loopProgram3 = program(
   )
 );
 
-function expectTransform(
-  program: IR.Program,
-  plugin: GolfPlugin,
-  output: string
-) {
+function expectTransform(program: IR.Program, plugin: Plugin, output: string) {
   expect(
     debugEmit(programToSpine(program).withReplacer(plugin.visit).node)
   ).toEqual(output);
