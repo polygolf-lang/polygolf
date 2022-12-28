@@ -241,7 +241,4 @@ export interface Visitor {
   enterProgram?: (program: Program) => void; // this is executed at the start of entering the root node
   enter?: (path: Path) => void;
   exit?: (path: Path) => void;
-  /** specify `finalEmitOnly: true` if the plugin is not idempotent or has
-   * some relationship with another plugin such as ordering */
-  finalEmitOnly?: boolean;
 }

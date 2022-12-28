@@ -1,6 +1,6 @@
 import { IR, typesPass } from "../IR";
 import { expandVariants } from "./expandVariants";
-import { programToPath, Visitor } from "./traverse";
+import { programToPath } from "./traverse";
 import { Language, defaultDetokenizer, GolfPlugin } from "./Language";
 import { programToSpine } from "./Spine";
 import { Immutable } from "./immutable";
@@ -28,21 +28,18 @@ export default function applyLanguage(
 
 function getFinalEmit(language: Language) {
   const detokenizer = language.detokenizer ?? defaultDetokenizer();
-  return (ir: IR.Program) =>
-    detokenizer(
-      language.emitter(
-        language.emitPlugins.reduce((a, plugin) => {
-          if (plugin.tag === "mutatingVisitor") {
-            const clone = structuredClone(a);
-            programToPath(clone).visit(plugin);
-            return clone;
-          } else {
-            return programToSpine(a).withReplacer(plugin.visit)
-              .node as IR.Program;
-          }
-        }, ir)
-      )
-    );
+  return (ir: IR.Program) => {
+    let program = structuredClone(ir);
+    language.emitPlugins.forEach((plugin) => {
+      if (plugin.tag === "mutatingVisitor") {
+        programToPath(program).visit(plugin);
+      } else {
+        program = programToSpine(program).withReplacer(plugin.visit)
+          .node as IR.Program;
+      }
+    });
+    return detokenizer(language.emitter(program));
+  };
 }
 
 export function applyLanguageToVariants(
@@ -50,11 +47,9 @@ export function applyLanguageToVariants(
   variants: IR.Program[]
 ): string {
   const finalEmit = getFinalEmit(language);
-  const golfPlugins: (GolfPlugin | Visitor)[] = language.golfPlugins;
+  const golfPlugins = language.golfPlugins;
   golfPlugins.push(
-    ...language.emitPlugins.filter(
-      (x) => x.tag === "golf" || x.finalEmitOnly !== true
-    )
+    ...(language.emitPlugins.filter((x) => x.tag === "golf") as GolfPlugin[])
   );
   return variants
     .map((variant) => golfProgram(variant, golfPlugins, finalEmit))
@@ -63,7 +58,7 @@ export function applyLanguageToVariants(
 
 function golfProgram(
   program: IR.Program,
-  golfPlugins: (GolfPlugin | Visitor)[],
+  golfPlugins: GolfPlugin[],
   finalEmit: (ir: IR.Program) => string
 ): string {
   const pq: [Immutable<IR.Program>, number, string[]][] = [];
@@ -98,17 +93,11 @@ function golfProgram(
     const spine = programToSpine(program);
     for (const plugin of golfPlugins) {
       const newHist = hist.concat([plugin.name]);
-      if (plugin.tag === "golf") {
-        for (const altProgram of spine.visit(function* (s) {
-          for (const node of plugin.visit(s))
-            yield s.replacedWith(node).root.node;
-        })) {
-          pushToQueue(altProgram, newHist);
-        }
-      } else {
-        const prog = structuredClone(program) as IR.Program;
-        programToPath(prog).visit(plugin);
-        expandVariants(prog).forEach((p) => pushToQueue(p, newHist));
+      for (const altProgram of spine.visit(function* (s) {
+        for (const node of plugin.visit(s))
+          yield s.replacedWith(node).root.node;
+      })) {
+        pushToQueue(altProgram, newHist);
       }
     }
   }

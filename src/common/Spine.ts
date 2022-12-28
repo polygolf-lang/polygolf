@@ -32,7 +32,7 @@ export class Spine<N extends imNode = imNode> {
     return new Spine(getChild(this.node, pathFragment), this, pathFragment);
   }
 
-  withChildReplaced(newChild: imNode, pathFragment: PathFragment): Spine {
+  withChildReplaced(newChild: imNode, pathFragment: PathFragment): Spine<N> {
     const node = (typeof pathFragment === "string"
       ? { ...this.node, [pathFragment]: newChild }
       : {
@@ -42,7 +42,7 @@ export class Spine<N extends imNode = imNode> {
             pathFragment.index,
             newChild
           ),
-        }) as any as imNode;
+        }) as any as N;
     return new Spine(
       node,
       this.parent === null || this.pathFragment === null
