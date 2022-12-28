@@ -23,12 +23,24 @@ export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
   }
 }
 
-export function* getChildFragments(node: IR.Node): Generator<PathFragment> {
+function* getChildKeys(node: IR.Node): Generator<string> {
   for (const key in node) {
+    const value = (node as any)[key];
+    if (
+      Array.isArray(value) ||
+      (typeof value?.kind === "string" && key !== "type")
+    ) {
+      yield key;
+    }
+  }
+}
+
+export function* getChildFragments(node: IR.Node): Generator<PathFragment> {
+  for (const key of getChildKeys(node)) {
     const value = (node as any)[key] as IR.Node[] | IR.Node;
     if (Array.isArray(value)) {
       for (const v of value.map((_, i) => ({ prop: key, index: i }))) yield v;
-    } else if (typeof value?.kind === "string" && key !== "type") {
+    } else {
       yield key;
     }
   }
@@ -37,4 +49,32 @@ export function* getChildFragments(node: IR.Node): Generator<PathFragment> {
 export function* getChildren(node: IR.Node): Generator<IR.Node> {
   for (const fragment of getChildFragments(node))
     yield getChild(node, fragment);
+}
+
+export function fromChildRemapFunc(
+  node: IR.Node,
+  func: (frag: PathFragment) => IR.Node
+) {
+  const newNode: any = { ...node };
+  let changed = false;
+  for (const key of getChildKeys(node)) {
+    const value = (node as any)[key] as IR.Node[] | IR.Node;
+    if (Array.isArray(value)) {
+      newNode[key] = [];
+      value.forEach((n, i) => {
+        const m = func({ prop: key, index: i });
+        if (m !== n) changed = true;
+        if (m.kind === "Block" && node.kind === "Block") {
+          newNode[key].push(...m.children);
+        } else {
+          newNode[key].push(m);
+        }
+      });
+    } else {
+      changed = true;
+      newNode[key] = func(key);
+    }
+  }
+  if (!changed) return node;
+  return newNode;
 }

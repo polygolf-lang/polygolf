@@ -1,6 +1,5 @@
 import { IR } from "IR";
 import { Spine } from "./Spine";
-import { Visitor } from "./traverse";
 
 export type OpTransformOutput =
   | string
@@ -23,7 +22,7 @@ export type OpTransformOutput =
 export interface Language {
   name: string;
   golfPlugins: GolfPlugin[];
-  emitPlugins: (Visitor | GolfPlugin)[];
+  emitPlugins: GolfPlugin[];
   finalEmitPlugins?: GolfPlugin[];
   emitter: Emitter;
   detokenizer?: Detokenizer;

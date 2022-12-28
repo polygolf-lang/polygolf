@@ -1,6 +1,5 @@
 import { IR } from "../IR";
 import { expandVariants } from "./expandVariants";
-import { programToPath } from "./traverse";
 import { Language, defaultDetokenizer, GolfPlugin } from "./Language";
 import { programToSpine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
@@ -24,11 +23,7 @@ function getFinalEmit(language: Language) {
     language.emitPlugins
       .concat(language.finalEmitPlugins ?? [])
       .forEach((plugin) => {
-        if (plugin.tag === "mutatingVisitor") {
-          programToPath(program).visit(plugin);
-        } else {
-          program = applyAll(program, plugin.visit);
-        }
+        program = applyAll(program, plugin.visit);
       });
     return detokenizer(language.emitter(program));
   };
@@ -45,10 +40,7 @@ export function applyLanguageToVariants(
   variants: IR.Program[]
 ): string {
   const finalEmit = getFinalEmit(language);
-  const golfPlugins = language.golfPlugins;
-  golfPlugins.push(
-    ...(language.emitPlugins.filter((x) => x.tag === "golf") as GolfPlugin[])
-  );
+  const golfPlugins = language.golfPlugins.concat(language.emitPlugins);
   return variants
     .map((variant) => golfProgram(variant, golfPlugins, finalEmit))
     .reduce((a, b) => (a.length < b.length ? a : b));

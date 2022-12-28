@@ -1,7 +1,7 @@
 import { IR, Program } from "../IR";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
 
-export class Path<N extends IR.Node = IR.Node> {
+class Path<N extends IR.Node = IR.Node> {
   _removed = false;
   visitState: VisitState | null = null;
   root: Path<IR.Program>;
@@ -227,11 +227,7 @@ interface VisitState {
   queue: Path[];
 }
 
-export function programToPath(node: IR.Program) {
-  return new Path(node, null, null);
-}
-
-export interface Visitor {
+interface Visitor {
   tag: "mutatingVisitor";
   name: string;
   enterProgram?: (program: Program) => void; // this is executed at the start of entering the root node

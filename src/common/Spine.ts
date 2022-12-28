@@ -31,6 +31,7 @@ export class Spine<N extends IR.Node = IR.Node> {
   }
 
   withChildReplaced(newChild: IR.Node, pathFragment: PathFragment): Spine<N> {
+    if (newChild === this.getChild(pathFragment).node) return this;
     const node =
       typeof pathFragment === "string"
         ? { ...this.node, [pathFragment]: newChild }
@@ -60,6 +61,11 @@ export class Spine<N extends IR.Node = IR.Node> {
         );
       // replace the root node
       return new Spine(newNode, null, null);
+    }
+    if (newNode.kind === "Block" && this.parent.node.kind === "Block") {
+      throw new Error(
+        `Programming error: attempt to insert a Block into a Block`
+      );
     }
     return this.parent
       .withChildReplaced(newNode, this.pathFragment)
