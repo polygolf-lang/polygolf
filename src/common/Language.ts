@@ -5,7 +5,7 @@ import { Visitor } from "./traverse";
 export type OpTransformOutput =
   | string
   | [string, number, boolean?]
-  | ((args: IR.Expr[]) => IR.Expr);
+  | ((args: readonly IR.Expr[]) => IR.Expr);
 
 /** A language configuration.
  *

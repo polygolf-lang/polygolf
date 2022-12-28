@@ -20,9 +20,8 @@ export const forRangeToForRangeInclusive: GolfPlugin = {
   tag: "golf",
   name: "forRangeToForRangeInclusive",
   visit(spine: Spine) {
-    // temporary "as any" to delay making the whole code base immutable;
-    const node = spine.node as any;
-    if (node.kind === "ForRange" && !(node.inclusive as boolean))
+    const node = spine.node;
+    if (node.kind === "ForRange" && !node.inclusive)
       return forRange(
         node.variable,
         node.low,
@@ -37,9 +36,7 @@ export const forRangeToForRangeInclusive: GolfPlugin = {
 export const useInclusiveForRange: GolfPlugin = {
   tag: "golf",
   name: "useInclusiveForRange",
-  // temporary "as any" to delay making the whole code base immutable
-  // should be visit(spine: Spine): IR.ForRange | undefined
-  visit(spine: Spine): any | undefined {
+  visit(spine: Spine): IR.ForRange | undefined {
     const node = spine.node;
     if (node.kind === "ForRange" && !node.inclusive) {
       if (node.high.kind === "IntegerLiteral") {
@@ -81,8 +78,7 @@ export const forRangeToWhile: GolfPlugin = {
   tag: "golf",
   name: "forRangeToWhile",
   visit(spine: Spine) {
-    // temporary "as any" to delay making the whole code base immutable;
-    const node = spine.node as any as IR.Node;
+    const node = spine.node;
     if (node.kind === "ForRange") {
       const low = getType(node.low, spine.root.node);
       const high = getType(node.high, spine.root.node);
@@ -110,8 +106,7 @@ export const forRangeToForCLike: GolfPlugin = {
   tag: "golf",
   name: "forRangeToForCLike",
   visit(spine: Spine) {
-    // temporary "as any" to delay making the whole code base immutable;
-    const node = spine.node as any as IR.ForRange;
+    const node = spine.node;
     if (node.kind === "ForRange") {
       const low = getType(node.low, spine.root.node);
       const high = getType(node.high, spine.root.node);

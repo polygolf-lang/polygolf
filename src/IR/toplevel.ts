@@ -4,16 +4,16 @@ import { BaseExpr, Expr, id, Identifier, Type } from "./IR";
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
  */
 export interface Variants extends BaseExpr {
-  kind: "Variants";
-  variants: Expr[];
+  readonly kind: "Variants";
+  readonly variants: readonly Expr[];
 }
 
 /**
  * A block of several statements. Raw OK
  */
 export interface Block extends BaseExpr {
-  kind: "Block";
-  children: Expr[];
+  readonly kind: "Block";
+  readonly children: readonly Expr[];
 }
 
 /**
@@ -22,32 +22,32 @@ export interface Block extends BaseExpr {
  * if (condition) { consequent } else { alternate }
  */
 export interface IfStatement extends BaseExpr {
-  kind: "IfStatement";
-  condition: Expr;
-  consequent: Expr;
-  alternate?: Expr;
+  readonly kind: "IfStatement";
+  readonly condition: Expr;
+  readonly consequent: Expr;
+  readonly alternate?: Expr;
 }
 
 /**
  * Variable declaration.
  */
 export interface VarDeclaration extends BaseExpr {
-  kind: "VarDeclaration";
-  variable: Identifier;
-  variableType: Type;
+  readonly kind: "VarDeclaration";
+  readonly variable: Identifier;
+  readonly variableType: Type;
 }
 
 export interface ImportStatement extends BaseExpr {
-  kind: "ImportStatement";
-  name: string;
-  modules: string[];
+  readonly kind: "ImportStatement";
+  readonly name: string;
+  readonly modules: readonly string[];
 }
 
-export function block(children: Expr[]): Block {
+export function block(children: readonly Expr[]): Block {
   return { kind: "Block", children };
 }
 
-export function blockOrSingle(children: Expr[]): Expr {
+export function blockOrSingle(children: readonly Expr[]): Expr {
   return children.length === 1 ? children[0] : block(children);
 }
 
@@ -70,13 +70,13 @@ export function varDeclaration(
   };
 }
 
-export function variants(variants: Expr[]): Variants {
+export function variants(variants: readonly Expr[]): Variants {
   return { kind: "Variants", variants };
 }
 
 export function importStatement(
   name: string,
-  modules: string[]
+  modules: readonly string[]
 ): ImportStatement {
   return { kind: "ImportStatement", name, modules };
 }

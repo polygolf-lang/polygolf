@@ -1,7 +1,4 @@
 import { IR } from "../IR";
-import { Immutable } from "./immutable";
-
-type imNode = Immutable<IR.Node>;
 
 /**
  * The edge in the tree taking a Path to its child
@@ -18,7 +15,7 @@ export type PathFragment =
       readonly index: number;
     };
 
-export function getChild(node: imNode, pathFragment: PathFragment): imNode {
+export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
   if (typeof pathFragment === "string") {
     return (node as any)[pathFragment];
   } else {
@@ -26,9 +23,9 @@ export function getChild(node: imNode, pathFragment: PathFragment): imNode {
   }
 }
 
-export function* getChildFragments(node: imNode): Generator<PathFragment> {
+export function* getChildFragments(node: IR.Node): Generator<PathFragment> {
   for (const key in node) {
-    const value = (node as any)[key] as imNode[] | imNode;
+    const value = (node as any)[key] as IR.Node[] | IR.Node;
     if (Array.isArray(value)) {
       for (const v of value.map((_, i) => ({ prop: key, index: i }))) yield v;
     } else if (typeof value?.kind === "string" && key !== "type") {
@@ -37,7 +34,7 @@ export function* getChildFragments(node: imNode): Generator<PathFragment> {
   }
 }
 
-export function* getChildren(node: imNode): Generator<imNode> {
+export function* getChildren(node: IR.Node): Generator<IR.Node> {
   for (const fragment of getChildFragments(node))
     yield getChild(node, fragment);
 }

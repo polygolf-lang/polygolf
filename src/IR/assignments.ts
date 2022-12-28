@@ -8,9 +8,9 @@ import { BaseExpr, Expr, id, Identifier, Type, IndexCall, LValue } from "./IR";
  * statement-level by default.
  */
 export interface Assignment extends BaseExpr {
-  kind: "Assignment";
-  variable: LValue;
-  expr: Expr;
+  readonly kind: "Assignment";
+  readonly variable: LValue;
+  readonly expr: Expr;
 }
 
 /**
@@ -19,9 +19,9 @@ export interface Assignment extends BaseExpr {
  * (a,b)=(b,a).
  */
 export interface ManyToManyAssignment extends BaseExpr {
-  kind: "ManyToManyAssignment";
-  variables: LValue[];
-  exprs: Expr[];
+  readonly kind: "ManyToManyAssignment";
+  readonly variables: readonly LValue[];
+  readonly exprs: readonly Expr[];
 }
 
 /**
@@ -30,19 +30,19 @@ export interface ManyToManyAssignment extends BaseExpr {
  * a=b=c=1.
  */
 export interface OneToManyAssignment extends BaseExpr {
-  kind: "OneToManyAssignment";
-  variables: LValue[];
-  expr: Expr;
+  readonly kind: "OneToManyAssignment";
+  readonly variables: readonly LValue[];
+  readonly expr: Expr;
 }
 
 /**
  * Variable declaration with assignment
  */
 export interface VarDeclarationWithAssignment extends BaseExpr {
-  kind: "VarDeclarationWithAssignment";
-  assignments: Assignment | ManyToManyAssignment;
-  valueTypes?: Type[];
-  requiresBlock: boolean;
+  readonly kind: "VarDeclarationWithAssignment";
+  readonly assignments: Assignment | ManyToManyAssignment;
+  readonly valueTypes?: readonly Type[];
+  readonly requiresBlock: boolean;
 }
 
 export function assignment(
@@ -58,7 +58,7 @@ export function assignment(
 
 export function manyToManyAssignment(
   variables: (Identifier | string | IndexCall)[],
-  exprs: Expr[]
+  exprs: readonly Expr[]
 ): ManyToManyAssignment {
   return {
     kind: "ManyToManyAssignment",
@@ -68,7 +68,7 @@ export function manyToManyAssignment(
 }
 
 export function oneToManyAssignment(
-  variables: (Identifier | string | IndexCall)[],
+  variables: readonly (Identifier | string | IndexCall)[],
   expr: Expr
 ): OneToManyAssignment {
   return {
@@ -81,7 +81,7 @@ export function oneToManyAssignment(
 export function varDeclarationWithAssignment(
   assignments: Assignment | ManyToManyAssignment,
   requiresBlock: boolean = true,
-  valueTypes?: Type[]
+  valueTypes?: readonly Type[]
 ): VarDeclarationWithAssignment {
   if (
     (assignments.kind === "Assignment"

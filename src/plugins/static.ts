@@ -24,10 +24,10 @@ export const golfStringListLiteral: GolfPlugin = {
       const strings = (node.exprs as StringLiteral[]).map((x) => x.value);
       const delim = getDelim(strings);
       return delim === " "
-        ? (polygolfOp(
+        ? polygolfOp(
             "text_split_whitespace",
             stringLiteral(strings.join(delim))
-          ) as any) // temporary "as any" to delay making the whole code base immutable
+          )
         : polygolfOp(
             "text_split",
             stringLiteral(strings.join(delim)),
@@ -64,12 +64,11 @@ export const evalStaticExpr: GolfPlugin = {
       isOpCode(node.op) &&
       node.kind !== "MutatingBinaryOp"
     ) {
-      // temporary "as any" to delay making the whole code base immutable
-      const args = getArgs(node as any);
+      const args = getArgs(node);
       let type = voidType;
       try {
         // encoutering nodes that we don't know the type of is fine
-        type = getType(node as any, spine.root.node);
+        type = getType(node, spine.root.node);
       } catch {}
       if (
         // if the inferred type of the node is a constant integer, replace it with a literal node

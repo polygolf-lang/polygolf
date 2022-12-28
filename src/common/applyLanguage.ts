@@ -3,7 +3,6 @@ import { expandVariants } from "./expandVariants";
 import { programToPath } from "./traverse";
 import { Language, defaultDetokenizer, GolfPlugin } from "./Language";
 import { programToSpine } from "./Spine";
-import { Immutable } from "./immutable";
 
 export default function applyLanguage(
   language: Language,
@@ -41,10 +40,7 @@ function getFinalEmit(language: Language) {
   };
 }
 
-function applyAll(
-  program: Immutable<IR.Program>,
-  visitor: GolfPlugin["visit"]
-) {
+function applyAll(program: IR.Program, visitor: GolfPlugin["visit"]) {
   return programToSpine(program).withReplacer(visitor).node as IR.Program;
 }
 
@@ -67,7 +63,7 @@ function golfProgram(
   golfPlugins: GolfPlugin[],
   finalEmit: (ir: IR.Program) => string
 ): string {
-  const pq: [Immutable<IR.Program>, number, string[]][] = [];
+  const pq: [IR.Program, number, string[]][] = [];
   let shortestSoFar = finalEmit(program);
   const visited = new Set<string>();
   const pushToQueue = (prog: IR.Program, hist: string[]) => {
@@ -84,9 +80,14 @@ function golfProgram(
     );
     if (visited.has(s)) return;
     visited.add(s);
-    const code = finalEmit(prog);
-    if (code.length < shortestSoFar.length) shortestSoFar = code;
-    pq.push([prog, code.length, hist]);
+    try {
+      const code = finalEmit(prog);
+      if (code.length < shortestSoFar.length) shortestSoFar = code;
+      pq.push([prog, code.length, hist]);
+    } catch {
+      // Ignore for now, assuming it's using an unsupported language feature
+      // A warning might be appropriate
+    }
   };
   pushToQueue(program, []);
   // BFS over the full search space

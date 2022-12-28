@@ -4,7 +4,6 @@ import {
   Expr,
   ImportStatement,
   importStatement,
-  IR,
   manyToManyAssignment,
   methodCall,
   Program,
@@ -129,8 +128,7 @@ export const useUnsignedDivision: GolfPlugin = {
   tag: "golf",
   name: "useUnsignedDivision",
   visit(spine: Spine) {
-    // temporary "as any" to delay making the whole code base immutable;
-    const node = spine.node as any as IR.Node;
+    const node = spine.node;
     const program = spine.root.node;
     if (
       node.kind === "BinaryOp" &&
@@ -161,8 +159,7 @@ export const useUFCS: GolfPlugin = {
   tag: "golf",
   name: "useUFCS",
   visit(spine: Spine) {
-    // temporary "as any" to delay making the whole code base immutable;
-    const node = spine.node as any as IR.Node;
+    const node = spine.node;
     if (node.kind === "FunctionCall" && node.args.length > 0) {
       if (node.args.length === 1 && node.args[0].kind === "StringLiteral") {
         return;

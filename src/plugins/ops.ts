@@ -6,7 +6,6 @@ import {
   IndexCall,
   indexCall,
   int,
-  IR,
   isBinary,
   isUnary,
   OpCode,
@@ -23,8 +22,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): GolfPlugin {
     name: "mapOps(...)",
     allOrNothing: true,
     visit(spine: Spine) {
-      // temporary "as any" to delay making the whole code base immutable;
-      const node = spine.node as any as IR.Node;
+      const node = spine.node;
       if (node.kind === "PolygolfOp") {
         const op = node.op;
         const f = opMap.get(op);
@@ -90,8 +88,7 @@ export function useIndexCalls(
     )})`,
     allOrNothing: true,
     visit(spine: Spine) {
-      // temporary "as any" to delay making the whole code base immutable;
-      const node = spine.node as any as IR.Node;
+      const node = spine.node;
       if (
         node.kind === "PolygolfOp" &&
         (ops.length === 0 || ops.includes(node.op)) &&

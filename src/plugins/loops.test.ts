@@ -50,10 +50,7 @@ function expectTransform(
 ) {
   if (plugin.tag === "golf") {
     expect(
-      debugEmit(
-        programToSpine(program).withReplacer(plugin.visit)
-          .node as any as IR.Node
-      )
+      debugEmit(programToSpine(program).withReplacer(plugin.visit).node)
     ).toEqual(output);
   } else {
     const programClone = structuredClone(program);

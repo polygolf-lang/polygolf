@@ -1,12 +1,10 @@
 import { IR } from "../IR";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
-import { Immutable, replaceAtIndex } from "./immutable";
-
-type imNode = Immutable<IR.Node>;
+import { replaceAtIndex } from "./immutable";
 
 /** A Spine is like a Path but immutable. It assumes
  * that no mutation is performed on itself or its members. */
-export class Spine<N extends imNode = imNode> {
+export class Spine<N extends IR.Node = IR.Node> {
   public readonly root: Spine<IR.Program>;
 
   constructor(
@@ -32,17 +30,18 @@ export class Spine<N extends imNode = imNode> {
     return new Spine(getChild(this.node, pathFragment), this, pathFragment);
   }
 
-  withChildReplaced(newChild: imNode, pathFragment: PathFragment): Spine<N> {
-    const node = (typeof pathFragment === "string"
-      ? { ...this.node, [pathFragment]: newChild }
-      : {
-          ...this.node,
-          [pathFragment.prop]: replaceAtIndex(
-            (this.node as any)[pathFragment.prop],
-            pathFragment.index,
-            newChild
-          ),
-        }) as any as N;
+  withChildReplaced(newChild: IR.Node, pathFragment: PathFragment): Spine<N> {
+    const node =
+      typeof pathFragment === "string"
+        ? { ...this.node, [pathFragment]: newChild }
+        : {
+            ...this.node,
+            [pathFragment.prop]: replaceAtIndex(
+              (this.node as any)[pathFragment.prop],
+              pathFragment.index,
+              newChild
+            ),
+          };
     return new Spine(
       node,
       this.parent === null || this.pathFragment === null
@@ -52,7 +51,7 @@ export class Spine<N extends imNode = imNode> {
     );
   }
 
-  replacedWith(newNode: imNode): Spine {
+  replacedWith(newNode: IR.Node): Spine {
     if (this.parent === null || this.pathFragment === null)
       throw new Error("Cannot replace the root node");
     return this.parent
@@ -68,7 +67,7 @@ export class Spine<N extends imNode = imNode> {
     for (const child of this.getChildSpines()) yield* child.visit(visitor);
   }
 
-  withReplacer(replacer: (spine: Spine) => imNode | undefined): Spine {
+  withReplacer(replacer: (spine: Spine) => IR.Node | undefined): Spine {
     const ret = replacer(this);
     if (ret === undefined) {
       // recurse on children
@@ -90,6 +89,6 @@ export class Spine<N extends imNode = imNode> {
   }
 }
 
-export function programToSpine(node: Immutable<IR.Program>) {
+export function programToSpine(node: IR.Program) {
   return new Spine(node, null, null);
 }

@@ -30,11 +30,7 @@ export class Path<N extends IR.Node = IR.Node> {
   }
 
   getChild(pathFragment: PathFragment): Path {
-    return new Path(
-      getChild(this.node, pathFragment) as IR.Node,
-      this,
-      pathFragment
-    );
+    return new Path(getChild(this.node, pathFragment), this, pathFragment);
   }
 
   /** Replace this node's child given by pathFragment with newChild */

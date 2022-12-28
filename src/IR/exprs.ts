@@ -16,60 +16,60 @@ import {
  */
 
 export interface KeyValue extends BaseExpr {
-  kind: "KeyValue";
-  key: Expr;
-  value: Expr;
+  readonly kind: "KeyValue";
+  readonly key: Expr;
+  readonly value: Expr;
 }
 
 export interface PolygolfOp extends BaseExpr {
-  kind: "PolygolfOp";
-  op: OpCode;
-  args: Expr[];
+  readonly kind: "PolygolfOp";
+  readonly op: OpCode;
+  readonly args: readonly Expr[];
 }
 
 export interface FunctionCall extends BaseExpr {
-  kind: "FunctionCall";
-  ident: Identifier;
-  op: OpCode | null;
-  args: Expr[];
+  readonly kind: "FunctionCall";
+  readonly ident: Identifier;
+  readonly op: OpCode | null;
+  readonly args: readonly Expr[];
 }
 
 export interface MethodCall extends BaseExpr {
-  kind: "MethodCall";
-  ident: Identifier;
-  op: OpCode | null;
-  object: Expr;
-  args: Expr[];
+  readonly kind: "MethodCall";
+  readonly ident: Identifier;
+  readonly op: OpCode | null;
+  readonly object: Expr;
+  readonly args: readonly Expr[];
 }
 
 export interface IndexCall extends BaseExpr {
-  kind: "IndexCall";
-  collection: Expr;
-  index: Expr;
-  op: OpCode | null;
-  oneIndexed: boolean;
+  readonly kind: "IndexCall";
+  readonly collection: Expr;
+  readonly index: Expr;
+  readonly op: OpCode | null;
+  readonly oneIndexed: boolean;
 }
 
 export interface RangeIndexCall extends BaseExpr {
-  kind: "RangeIndexCall";
-  collection: Expr;
-  low: Expr;
-  high: Expr;
-  step: Expr;
-  op: OpCode | null;
-  oneIndexed: boolean;
+  readonly kind: "RangeIndexCall";
+  readonly collection: Expr;
+  readonly low: Expr;
+  readonly high: Expr;
+  readonly step: Expr;
+  readonly op: OpCode | null;
+  readonly oneIndexed: boolean;
 }
 
 export type LValue = Identifier | IndexCall;
 
 export interface BinaryOp extends BaseExpr {
-  kind: "BinaryOp";
-  op: BinaryOpCode;
-  name: string;
-  left: Expr;
-  right: Expr;
-  precedence: number;
-  rightAssociative: boolean;
+  readonly kind: "BinaryOp";
+  readonly op: BinaryOpCode;
+  readonly name: string;
+  readonly left: Expr;
+  readonly right: Expr;
+  readonly precedence: number;
+  readonly rightAssociative: boolean;
 }
 
 /**
@@ -78,19 +78,19 @@ export interface BinaryOp extends BaseExpr {
  * a += 5
  */
 export interface MutatingBinaryOp extends BaseExpr {
-  kind: "MutatingBinaryOp";
-  op: BinaryOpCode;
-  name: string;
-  variable: LValue;
-  right: Expr;
+  readonly kind: "MutatingBinaryOp";
+  readonly op: BinaryOpCode;
+  readonly name: string;
+  readonly variable: LValue;
+  readonly right: Expr;
 }
 
 export interface UnaryOp extends BaseExpr {
-  kind: "UnaryOp";
-  name: string;
-  op: UnaryOpCode;
-  arg: Expr;
-  precedence: number;
+  readonly kind: "UnaryOp";
+  readonly name: string;
+  readonly op: UnaryOpCode;
+  readonly arg: Expr;
+  readonly precedence: number;
 }
 
 /**
@@ -100,17 +100,17 @@ export interface UnaryOp extends BaseExpr {
  * C: condition?consequent:alternate.
  */
 export interface ConditionalOp extends BaseExpr {
-  kind: "ConditionalOp";
-  condition: Expr;
-  consequent: Expr;
-  alternate: Expr;
-  isSafe: boolean; // whether both branches can be safely evaluated (without creating side effects or errors - allows for more golfing)
+  readonly kind: "ConditionalOp";
+  readonly condition: Expr;
+  readonly consequent: Expr;
+  readonly alternate: Expr;
+  readonly isSafe: boolean; // whether both branches can be safely evaluated (without creating side effects or errors - allows for more golfing)
 }
 
 export interface Function extends BaseExpr {
-  kind: "Function";
-  args: Identifier[];
-  expr: Expr;
+  readonly kind: "Function";
+  readonly args: readonly Identifier[];
+  readonly expr: Expr;
 }
 
 export function keyValue(key: Expr, value: Expr): KeyValue {
@@ -130,7 +130,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
 }
 
 export function functionCall(
-  args: Expr[],
+  args: readonly Expr[],
   ident: string | Identifier,
   op?: OpCode
 ): FunctionCall {
@@ -144,7 +144,7 @@ export function functionCall(
 
 export function methodCall(
   object: Expr,
-  args: Expr[],
+  args: readonly Expr[],
   ident: string | Identifier,
   op?: OpCode
 ): MethodCall {
@@ -278,7 +278,7 @@ export function getArgs(
     | MethodCall
     | IndexCall
     | RangeIndexCall
-): Expr[] {
+): readonly Expr[] {
   switch (node.kind) {
     case "BinaryOp":
       return [node.left, node.right];

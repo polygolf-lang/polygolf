@@ -54,16 +54,17 @@ export * from "./toplevel";
 export * from "./types";
 
 export interface BaseExpr extends BaseNode {
+  // temporary not readonly
   type?: Type;
 }
 
 export interface BaseNode {
-  source?: SourcePointer;
+  readonly source?: SourcePointer;
 }
 
 export interface SourcePointer {
-  line: number;
-  column: number;
+  readonly line: number;
+  readonly column: number;
 }
 
 export type Node = Program | Expr;
@@ -107,10 +108,12 @@ export type Expr =
  * Program node. This should be the root node. Raw OK
  */
 export interface Program extends BaseNode {
-  kind: "Program";
-  dependencies: Set<string>;
-  variables: Map<string, Type>;
-  body: Expr;
+  readonly kind: "Program";
+  // temporary not readonly
+  readonly dependencies: Set<string>;
+  // temporary not readonly
+  readonly variables: Map<string, Type>;
+  readonly body: Expr;
 }
 
 export function program(body: Expr): Program {
