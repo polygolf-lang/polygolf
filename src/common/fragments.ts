@@ -28,11 +28,7 @@ export function* getChildFragments(node: IR.Node): Generator<PathFragment> {
     const value = (node as any)[key] as IR.Node[] | IR.Node;
     if (Array.isArray(value)) {
       for (const v of value.map((_, i) => ({ prop: key, index: i }))) yield v;
-    } else if (
-      typeof value?.kind === "string" &&
-      key !== "type" &&
-      key !== "_type"
-    ) {
+    } else if (typeof value?.kind === "string" && key !== "type") {
       yield key;
     }
   }

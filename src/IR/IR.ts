@@ -55,8 +55,6 @@ export interface BaseExpr extends BaseNode {
   /** type: an uninferrable type, either annotated from the frontend or
    * inserted for language-specific op nodes */
   readonly type?: Type;
-  /** _type: cached type value */
-  _type?: Type;
 }
 
 export interface BaseNode {

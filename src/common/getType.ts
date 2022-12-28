@@ -48,9 +48,12 @@ import {
 import { PolygolfError } from "./errors";
 import { symbolTableRoot } from "./getSymbolTable";
 
+const cachedType = new WeakMap<Expr, Type>();
 export function getType(expr: Expr, program: Program): Type {
-  if (expr._type === undefined) expr._type = calcType(expr, program);
-  return expr._type;
+  if (cachedType.has(expr)) return cachedType.get(expr)!;
+  const t = calcType(expr, program);
+  cachedType.set(expr, t);
+  return t;
 }
 
 export function calcType(expr: Expr, program: Program): Type {

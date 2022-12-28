@@ -65,12 +65,8 @@ function golfProgram(
     //   1. finalEmit may error
     //   2. distinct program IRs can emit to the same target code (e.g
     //      `polygolfOp("+",a,b)` vs `functionCall("+",a,b)`)
-    const s = JSON.stringify(prog, (key, value) =>
-      key === "type" || key === "_type"
-        ? undefined
-        : typeof value === "bigint"
-        ? value.toString() + "n"
-        : value
+    const s = JSON.stringify(prog, (_, value) =>
+      typeof value === "bigint" ? value.toString() + "n" : value
     );
     if (visited.has(s)) return;
     visited.add(s);
