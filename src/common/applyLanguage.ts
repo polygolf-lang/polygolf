@@ -93,9 +93,9 @@ function golfProgram(
     const spine = programToSpine(program);
     for (const plugin of golfPlugins) {
       const newHist = hist.concat([plugin.name]);
-      for (const altProgram of spine.visit(function* (s) {
-        for (const node of plugin.visit(s))
-          yield s.replacedWith(node).root.node;
+      for (const altProgram of spine.visit((s) => {
+        const ret = plugin.visit(s);
+        if (ret !== undefined) return s.replacedWith(ret).root.node;
       })) {
         pushToQueue(altProgram, newHist);
       }

@@ -15,7 +15,7 @@ import { Spine } from "../common/Spine";
 export const golfStringListLiteral: GolfPlugin = {
   tag: "golf",
   name: "golfStringListLiteral",
-  *visit(spine: Spine) {
+  visit(spine: Spine) {
     const node = spine.node;
     if (
       node.kind === "ListConstructor" &&
@@ -23,7 +23,7 @@ export const golfStringListLiteral: GolfPlugin = {
     ) {
       const strings = (node.exprs as StringLiteral[]).map((x) => x.value);
       const delim = getDelim(strings);
-      yield delim === " "
+      return delim === " "
         ? (polygolfOp(
             "text_split_whitespace",
             stringLiteral(strings.join(delim))
@@ -56,7 +56,7 @@ function getDelim(strings: string[]): string {
 export const evalStaticExpr: GolfPlugin = {
   tag: "golf",
   name: "evalStaticExpr",
-  *visit(spine: Spine) {
+  visit(spine: Spine) {
     const node = spine.node;
     if (
       "op" in node &&
@@ -77,11 +77,11 @@ export const evalStaticExpr: GolfPlugin = {
         isFiniteBound(type.low) &&
         type.low === type.high
       ) {
-        yield int(type.low);
+        return int(type.low);
       } else if (args.every((x) => x.kind === "StringLiteral")) {
         const argsVals = args.map((x) => (x as StringLiteral).value);
         if (node.op === "text_concat")
-          yield stringLiteral(argsVals[0].concat(argsVals[1]));
+          return stringLiteral(argsVals[0].concat(argsVals[1]));
       }
     }
   },

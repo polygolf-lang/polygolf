@@ -33,7 +33,7 @@ export interface GolfPlugin {
   tag: "golf";
   name: string;
   /** visit should return an iterable of alternatives for this node */
-  visit: (spine: Spine) => Iterable<IR.Node>;
+  visit: (spine: Spine) => IR.Node | undefined;
 }
 
 export type Detokenizer = (tokens: string[]) => string;

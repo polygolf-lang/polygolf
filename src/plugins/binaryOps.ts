@@ -45,18 +45,17 @@ export function addMutatingBinaryOp(...ops: string[]): Visitor {
 export const flipBinaryOps: GolfPlugin = {
   tag: "golf",
   name: "flipBinaryOps",
-  *visit(spine: Spine) {
+  visit(spine: Spine) {
     const node = spine.node;
     if (node.kind === "PolygolfOp" && isBinary(node.op)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {
-        const flippedOp = polygolfOp(
+        return polygolfOp(
           flippedOpCode,
           // temporary "as any" to delay making the whole code base immutable
           node.args[1] as any as IR.Expr,
           node.args[0] as any as IR.Expr
         );
-        yield flippedOp;
       }
     }
   },

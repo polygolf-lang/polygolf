@@ -7,7 +7,7 @@ import { leq, polygolfOp } from "../IR";
 export const modToRem: GolfPlugin = {
   tag: "golf",
   name: "modToRem",
-  *visit(spine: Spine) {
+  visit(spine: Spine) {
     const node = spine.node;
     const program = spine.root.node;
     if (node.kind === "PolygolfOp" && node.op === "mod") {
@@ -17,9 +17,9 @@ export const modToRem: GolfPlugin = {
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (leq(0n, rightType.low)) {
         // temporary "as any" to delay making the whole code base immutable
-        yield polygolfOp("rem", ...(node.args as any));
+        return polygolfOp("rem", ...(node.args as any));
       } else {
-        yield polygolfOp(
+        return polygolfOp(
           "rem",
           // temporary "as any" to delay making the whole code base immutable
           polygolfOp(

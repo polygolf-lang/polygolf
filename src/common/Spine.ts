@@ -61,15 +61,17 @@ export class Spine<N extends imNode = imNode> {
   }
 
   *visit<T>(
-    visitor: (spine: Spine) => Iterable<T>
+    visitor: (spine: Spine) => T | undefined
   ): Generator<T, void, undefined> {
-    yield* visitor(this);
+    const ret = visitor(this);
+    if (ret !== undefined) yield ret;
     for (const child of this.getChildSpines()) yield* child.visit(visitor);
   }
 
-  withReplacer(replacer: (spine: Spine) => Iterable<imNode>): Spine {
-    const repls = Array.from(replacer(this));
-    if (repls.length === 0) {
+  withReplacer(replacer: (spine: Spine) => imNode | undefined): Spine {
+    const ret = replacer(this);
+    if (ret === undefined) {
+      // recurse on children
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let curr = this as Spine;
       for (const child of this.getChildSpines()) {
@@ -81,13 +83,9 @@ export class Spine<N extends imNode = imNode> {
         }
       }
       return curr;
-    } else if (repls.length === 1) {
-      return this.replacedWith(repls[0]).withReplacer(replacer);
     } else {
-      throw new Error(
-        `An emitPlugin of type GolfPlugin cannot yield more than one node` +
-          `, but got ${repls.length} nodes yielded.`
-      );
+      // replace this, then recurse on children
+      return this.replacedWith(ret).withReplacer(replacer);
     }
   }
 }
