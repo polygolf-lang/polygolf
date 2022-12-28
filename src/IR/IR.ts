@@ -125,6 +125,7 @@ export function program(body: Expr): Program {
 export function typesPass(program: Program) {
   const path = programToPath(program);
   path.visit({
+    tag: "mutatingVisitor",
     name: "anonymous",
     enter(path: Path) {
       const node = path.node;

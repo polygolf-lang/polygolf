@@ -18,6 +18,7 @@ import { getType } from "../common/getType";
 export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Visitor {
   const opMap = new Map<string, OpTransformOutput>(opMap0);
   return {
+    tag: "mutatingVisitor",
     name: "mapOps(...)",
     enter(path: Path) {
       const node = path.node;
@@ -80,6 +81,7 @@ export function useIndexCalls(
   ]
 ): Visitor {
   return {
+    tag: "mutatingVisitor",
     name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
       ops
     )})`,

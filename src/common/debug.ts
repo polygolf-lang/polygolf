@@ -8,6 +8,6 @@ export default function debug(
   skipTypesPass = true
 ) {
   console.log(
-    applyLanguage(polygolfLanguage(stripTypes), program, 1, skipTypesPass)
+    applyLanguage(polygolfLanguage(stripTypes), program, skipTypesPass)
   );
 }

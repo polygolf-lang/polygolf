@@ -1,14 +1,15 @@
 import { IR, typesPass } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { programToPath, Visitor } from "./traverse";
-import { Language, defaultDetokenizer } from "./Language";
+import { Language, defaultDetokenizer, GolfPlugin } from "./Language";
+import { programToSpine } from "./Spine";
+import { Immutable } from "./immutable";
 
 export default function applyLanguage(
   language: Language,
   program: IR.Program,
   skipTypesPass: boolean = false
 ): string {
-  validateLanguage(language);
   if (language.name === "Polygolf") {
     if (!skipTypesPass) {
       program = structuredClone(program);
@@ -25,12 +26,9 @@ export default function applyLanguage(
   }
 }
 
-export function applyLanguageToVariants(
-  language: Language,
-  variants: IR.Program[]
-): string {
+function getFinalEmit(language: Language) {
   const detokenizer = language.detokenizer ?? defaultDetokenizer();
-  const finalEmit = (ir: IR.Program) =>
+  return (ir: IR.Program) =>
     detokenizer(
       language.emitter(
         language.emitPlugins.reduce((a, plugin) => {
@@ -40,8 +38,16 @@ export function applyLanguageToVariants(
         }, ir)
       )
     );
-  const golfPlugins = language.golfPlugins.concat(
-    language.emitPlugins.filter((x) => x.finalEmitOnly !== true)
+}
+
+export function applyLanguageToVariants(
+  language: Language,
+  variants: IR.Program[]
+): string {
+  const finalEmit = getFinalEmit(language);
+  const golfPlugins: (GolfPlugin | Visitor)[] = language.golfPlugins;
+  golfPlugins.push(
+    ...language.emitPlugins.filter((x) => x.finalEmitOnly !== true)
   );
   return variants
     .map((variant) => golfProgram(variant, golfPlugins, finalEmit))
@@ -50,43 +56,51 @@ export function applyLanguageToVariants(
 
 function golfProgram(
   program: IR.Program,
-  golfPlugins: Visitor[],
+  golfPlugins: (GolfPlugin | Visitor)[],
   finalEmit: (ir: IR.Program) => string
 ): string {
-  const pq: [IR.Program, number][] = [];
+  const pq: [Immutable<IR.Program>, number, string[]][] = [];
   let shortestSoFar = finalEmit(program);
-  const pushToQueue = (prog: IR.Program) => {
+  const visited = new Set<string>();
+  const pushToQueue = (prog: IR.Program, hist: string[]) => {
+    // cache based on JSON.stringify instead of finalEmit because
+    //   1. finalEmit may error
+    //   2. distinct program IRs can emit to the same target code (e.g
+    //      `polygolfOp("+",a,b)` vs `functionCall("+",a,b)`)
+    const s = JSON.stringify(prog, (key, value) =>
+      key === "type"
+        ? undefined
+        : typeof value === "bigint"
+        ? value.toString() + "n"
+        : value
+    );
+    if (visited.has(s)) return;
+    visited.add(s);
     const code = finalEmit(prog);
+    // some logging helpful for debugging
+    // console.log("\n=======\n" + code);
+    // console.log("=======\n" + s);
+    // console.log("=======\n" + getFinalEmit(polygolfLanguage(false))(program));
     if (code.length < shortestSoFar.length) shortestSoFar = code;
-    pq.push([prog, code.length]);
+    pq.push([prog, code.length, hist]);
   };
-  pushToQueue(program);
-  // 1000 is super arbitrary temporary bound
-  while (pq.length > 0 && pq.length < 1000) {
-    // sort in reverse order and pop, as if we're popping from a min-heap.
-    pq.sort((a, b) => b[1] - a[1]);
-    const [prog] = pq.pop()!;
-    // Tons of duplication in the search space here
+  pushToQueue(program, []);
+  // BFS over the full search space
+  while (pq.length > 0) {
+    const [program, , hist] = pq.shift()!;
+    const spine = programToSpine(program);
     for (const plugin of golfPlugins) {
-      const program = structuredClone(prog);
-      programToPath(program).visit(plugin);
-      expandVariants(program).forEach(pushToQueue);
+      const newHist = hist.concat([plugin.name]);
+      if (plugin.tag === "golf") {
+        for (const altProgram of spine.visit(plugin.visit)) {
+          pushToQueue(altProgram, newHist);
+        }
+      } else {
+        const prog = structuredClone(program) as IR.Program;
+        programToPath(prog).visit(plugin);
+        expandVariants(prog).forEach((p) => pushToQueue(p, newHist));
+      }
     }
   }
   return shortestSoFar;
-}
-
-function validateLanguage(language: Language) {
-  const bad1 = language.golfPlugins.find((p) => p.generatesVariants !== true);
-  if (bad1 !== undefined)
-    throw new Error(
-      `Expected only generatesVariants golfPlugins in language ${language.name} ` +
-        `but found plugin ${bad1.name}`
-    );
-  const bad2 = language.emitPlugins.find((p) => p.generatesVariants);
-  if (bad2 !== undefined)
-    throw new Error(
-      `Expected no generatesVariants emitPlugins in language ${language.name} ` +
-        `but found plugin ${bad2.name}`
-    );
 }

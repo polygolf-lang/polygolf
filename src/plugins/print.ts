@@ -16,6 +16,7 @@ export const printLnToprint = mapOps([
  */
 export function golfLastPrint(toPrintln = true): Visitor {
   return {
+    tag: "mutatingVisitor",
     name: "golfLastPrint",
     enterProgram(program: Program) {
       if (

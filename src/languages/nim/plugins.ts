@@ -35,6 +35,7 @@ const includes: [string, string[]][] = [
 ];
 
 export const addImports: Visitor = {
+  tag: "mutatingVisitor",
   name: "addImports",
   enterProgram(program: Program) {
     const dependencies = [...program.dependencies];
@@ -57,6 +58,7 @@ export const addImports: Visitor = {
 
 const declared: Set<string> = new Set<string>();
 export const addVarDeclarations: Visitor = {
+  tag: "mutatingVisitor",
   name: "addVarDeclarations",
   enter(path: Path) {
     const node = path.node;
@@ -121,6 +123,7 @@ function simplifyAssignments(
 }
 
 export const useUnsignedDivision: Visitor = {
+  tag: "mutatingVisitor",
   name: "useUnsignedDivision",
   exit(path: Path) {
     const node = path.node;
@@ -146,6 +149,7 @@ export const useUnsignedDivision: Visitor = {
 };
 
 export const useUFCS: Visitor = {
+  tag: "mutatingVisitor",
   name: "useUFCS",
   exit(path: Path) {
     const node = path.node;

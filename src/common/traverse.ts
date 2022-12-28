@@ -1,4 +1,5 @@
 import { IR, Program } from "../IR";
+import { getChild, getChildFragments, PathFragment } from "./fragments";
 
 export class Path<N extends IR.Node = IR.Node> {
   _removed = false;
@@ -23,24 +24,17 @@ export class Path<N extends IR.Node = IR.Node> {
    * is any object entry that is an array or has a string .type.
    */
   getChildPaths(): Path[] {
-    const result = [];
-    for (const key in this.node) {
-      const value = this.node[key] as any as IR.Node[] | IR.Node;
-      if (Array.isArray(value)) {
-        result.push(
-          ...value.map(
-            (child, i) => new Path(child, this, { prop: key, index: i })
-          )
-        );
-      } else if (typeof value?.kind === "string" && key !== "type") {
-        result.push(new Path(value, this, key));
-      }
-    }
-    return result;
+    return Array.from(getChildFragments(this.node)).map((n) =>
+      this.getChild(n)
+    );
   }
 
   getChild(pathFragment: PathFragment): Path {
-    return new Path(getChild(this.node, pathFragment), this, pathFragment);
+    return new Path(
+      getChild(this.node, pathFragment) as IR.Node,
+      this,
+      pathFragment
+    );
   }
 
   /** Replace this node's child given by pathFragment with newChild */
@@ -200,6 +194,7 @@ export class Path<N extends IR.Node = IR.Node> {
   getUsedIdentifiers(): Set<string> {
     const result = new Set<string>();
     this.root.visit({
+      tag: "mutatingVisitor",
       name: "anonymous",
       enter(path: Path) {
         if (path.node.kind === "Identifier" && !path.node.builtin) {
@@ -236,53 +231,17 @@ interface VisitState {
   queue: Path[];
 }
 
-/**
- * The edge in the tree taking a Path to its child
- *
- * A string represents `node[prop]` such as `"block"` representing `program.block`
- *
- * The object represents `node[prop][index]` such as
- *  `{prop: "children", index: 3}` representing `block.children[3]`
- */
-export type PathFragment =
-  | string
-  | {
-      prop: string;
-      index: number;
-    };
-
-export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
-  if (typeof pathFragment === "string") {
-    return (node as any)[pathFragment];
-  } else {
-    return (node as any)[pathFragment.prop][pathFragment.index];
-  }
-}
-
 export function programToPath(node: IR.Program) {
   return new Path(node, null, null);
 }
 
 export interface Visitor {
+  tag: "mutatingVisitor";
   name: string;
   enterProgram?: (program: Program) => void; // this is executed at the start of entering the root node
   enter?: (path: Path) => void;
   exit?: (path: Path) => void;
-  generatesVariants?: boolean;
   /** specify `finalEmitOnly: true` if the plugin is not idempotent or has
    * some relationship with another plugin such as ordering */
   finalEmitOnly?: boolean;
-}
-
-export function getChildren(node: IR.Node): IR.Node[] {
-  const result = [];
-  for (const key in node) {
-    const value = node[key as keyof typeof node] as any as IR.Node[] | IR.Node;
-    if (Array.isArray(value)) {
-      result.push(...value);
-    } else if (typeof value?.kind === "string" && key !== "type") {
-      result.push(value);
-    }
-  }
-  return result;
 }

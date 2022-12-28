@@ -3,6 +3,7 @@ import { Path, Visitor } from "../common/traverse";
 export function addDependencies(dependencyMap0: [string, string][]): Visitor {
   const dependencyMap = new Map<string, string>(dependencyMap0);
   return {
+    tag: "mutatingVisitor",
     name: `addDependencies(${JSON.stringify(dependencyMap0)})`,
     enter(path: Path) {
       const node = path.node;

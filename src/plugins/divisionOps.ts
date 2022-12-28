@@ -3,6 +3,7 @@ import { Path, Visitor } from "../common/traverse";
 import { leq, polygolfOp } from "../IR";
 
 export const modToRem: Visitor = {
+  tag: "mutatingVisitor",
   name: "modToRem",
   exit(path: Path) {
     const node = path.node;
@@ -27,6 +28,7 @@ export const modToRem: Visitor = {
 };
 
 export const divToTruncdiv: Visitor = {
+  tag: "mutatingVisitor",
   name: "divToTruncdiv",
   exit(path: Path) {
     const node = path.node;

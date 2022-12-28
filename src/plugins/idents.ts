@@ -54,6 +54,7 @@ export function renameIdents(
   identGen: IdentifierGenerator = defaultIdentGen
 ): Visitor {
   return {
+    tag: "mutatingVisitor",
     name: "renameIdents(...)",
     enter(path: Path) {
       if (path.node.kind === "Program") {
@@ -88,6 +89,7 @@ export function aliasBuiltins(
 ): Visitor {
   const usedBuiltins = new Map<string, Identifier[]>();
   return {
+    tag: "mutatingVisitor",
     name: "aliasBuiltins(...)",
     enter(path: Path) {
       const node = path.node;

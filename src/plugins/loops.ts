@@ -15,6 +15,7 @@ import {
 } from "../IR";
 
 export const forRangeToForRangeInclusive: Visitor = {
+  tag: "mutatingVisitor",
   name: "forRangeToForRangeInclusive",
   enter(path: Path) {
     const node = path.node;
@@ -37,6 +38,7 @@ export const forRangeToForRangeInclusive: Visitor = {
  * Only switch if it is shorter
  */
 export const useInclusiveForRange: Visitor = {
+  tag: "mutatingVisitor",
   name: "useInclusiveForRange",
   enter(path: Path) {
     const node = path.node;
@@ -64,6 +66,7 @@ export const useInclusiveForRange: Visitor = {
 };
 
 export const forRangeToWhile: Visitor = {
+  tag: "mutatingVisitor",
   name: "forRangeToWhile",
   enter(path: Path) {
     const node = path.node;
@@ -93,6 +96,7 @@ export const forRangeToWhile: Visitor = {
 };
 
 export const forRangeToForCLike: Visitor = {
+  tag: "mutatingVisitor",
   name: "forRangeToForCLike",
   enter(path: Path) {
     const node = path.node;
@@ -128,6 +132,7 @@ export const forRangeToForCLike: Visitor = {
  */
 // TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
 export const forRangeToForEachPair: Visitor = {
+  tag: "mutatingVisitor",
   name: "forRangeToForEachPair",
   enter(path: Path) {
     const node = path.node;
@@ -144,6 +149,7 @@ export const forRangeToForEachPair: Visitor = {
       const elementIdentifier = id(path.getNewIdentifier());
       const bodyPath = new Path(node.body, path, "body");
       bodyPath.visit({
+        tag: "mutatingVisitor",
         // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
         name: "anonymous",
         enter(path2: Path) {
@@ -170,6 +176,7 @@ export const forRangeToForEachPair: Visitor = {
  *     commands(x)
  */
 export const forRangeToForEach: Visitor = {
+  tag: "mutatingVisitor",
   name: "forRangeToForEach",
   enter(path: Path) {
     const node = path.node;
@@ -188,6 +195,7 @@ export const forRangeToForEach: Visitor = {
       if (!isVariableUsedAlone(bodyPath, collection.name, node.variable.name)) {
         // if the loop variable is only used to index the collection
         bodyPath.visit({
+          tag: "mutatingVisitor",
           // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
           name: "anonymous",
           enter(path2: Path) {

@@ -1,4 +1,5 @@
 import { IR } from "IR";
+import { Spine } from "./Spine";
 import { Visitor } from "./traverse";
 
 export type OpTransformOutput =
@@ -21,10 +22,17 @@ export type OpTransformOutput =
  */
 export interface Language {
   name: string;
-  golfPlugins: Visitor[];
+  golfPlugins: GolfPlugin[];
   emitPlugins: Visitor[];
   emitter: Emitter;
   detokenizer?: Detokenizer;
+}
+
+export interface GolfPlugin {
+  tag: "golf";
+  name: string;
+  /** visit should return an iterable of alternatives */
+  visit: (spine: Spine) => Iterable<IR.Program>;
 }
 
 export type Detokenizer = (tokens: string[]) => string;

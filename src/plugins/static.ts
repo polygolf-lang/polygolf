@@ -10,36 +10,33 @@ import {
   voidType,
 } from "../IR";
 import { getType } from "../common/getType";
-import { Path, Visitor } from "../common/traverse";
+import { GolfPlugin } from "../common/Language";
+import { Spine } from "../common/Spine";
 
-const golfedStringListLiterals = new WeakMap();
-export const golfStringListLiteral: Visitor = {
+export const golfStringListLiteral: GolfPlugin = {
+  tag: "golf",
   name: "golfStringListLiteral",
-  generatesVariants: true,
-  exit(path: Path) {
-    const node = path.node;
+  *visit(spine: Spine) {
+    const node = spine.node;
     if (
       node.kind === "ListConstructor" &&
-      node.exprs.every((x) => x.kind === "StringLiteral") &&
-      !golfedStringListLiterals.has(node)
+      node.exprs.every((x) => x.kind === "StringLiteral")
     ) {
-      golfedStringListLiterals.set(node, true);
       const strings = (node.exprs as StringLiteral[]).map((x) => x.value);
       const delim = getDelim(strings);
-      path.replaceWith(
-        variants([
-          node,
+      yield spine.replacedWithRoot(
+        variants(
           delim === " "
-            ? polygolfOp(
+            ? (polygolfOp(
                 "text_split_whitespace",
                 stringLiteral(strings.join(delim))
-              )
+              ) as any) // temporary "as any" to delay making the whole code base immutable
             : polygolfOp(
                 "text_split",
                 stringLiteral(strings.join(delim)),
                 stringLiteral(delim)
-              ),
-        ])
+              )
+        )
       );
     }
   },
@@ -61,21 +58,23 @@ function getDelim(strings: string[]): string {
   return String(i);
 }
 
-export const evalStaticExpr: Visitor = {
+export const evalStaticExpr: GolfPlugin = {
+  tag: "golf",
   name: "evalStaticExpr",
-  enter(path: Path) {
-    const node = path.node;
+  *visit(spine: Spine) {
+    const node = spine.node;
     if (
       "op" in node &&
       node.op !== null &&
       isOpCode(node.op) &&
       node.kind !== "MutatingBinaryOp"
     ) {
-      const args = getArgs(node);
+      // temporary "as any" to delay making the whole code base immutable
+      const args = getArgs(node as any);
       let type = voidType;
       try {
         // encoutering nodes that we don't know the type of is fine
-        type = getType(node, path.root.node);
+        type = getType(node as any, spine.root.node);
       } catch {}
       if (
         // if the inferred type of the node is a constant integer, replace it with a literal node
@@ -83,11 +82,13 @@ export const evalStaticExpr: Visitor = {
         isFiniteBound(type.low) &&
         type.low === type.high
       ) {
-        path.replaceWith(int(type.low));
+        yield spine.replacedWithRoot(int(type.low));
       } else if (args.every((x) => x.kind === "StringLiteral")) {
         const argsVals = args.map((x) => (x as StringLiteral).value);
         if (node.op === "text_concat")
-          path.replaceWith(stringLiteral(argsVals[0].concat(argsVals[1])));
+          yield spine.replacedWithRoot(
+            stringLiteral(argsVals[0].concat(argsVals[1]))
+          );
       }
     }
   },

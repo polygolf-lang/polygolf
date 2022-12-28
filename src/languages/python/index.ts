@@ -13,7 +13,7 @@ import { golfLastPrint } from "../../plugins/print";
 const pythonLanguage: Language = {
   name: "Python",
   emitter: emitProgram,
-  golfPlugins: [golfStringListLiteral],
+  golfPlugins: [golfStringListLiteral, evalStaticExpr],
   emitPlugins: [
     tempVarToMultipleAssignment,
     forRangeToForEach,
@@ -50,7 +50,6 @@ const pythonLanguage: Language = {
         (x) => functionCall([assignment(id("end", true), x[0])], "print"),
       ],
     ]),
-    evalStaticExpr,
     aliasBuiltins(),
     addDependencies([["sys", "sys"]]),
     renameIdents(),

@@ -96,6 +96,7 @@ function instantiateProgram(
   program = structuredClone(program);
   choices.reverse();
   programToPath(program).visit({
+    tag: "mutatingVisitor",
     name: "anonymous",
     enter(path) {
       const node = path.node;

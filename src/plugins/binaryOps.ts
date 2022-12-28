@@ -1,15 +1,12 @@
-import {
-  flipOpCode,
-  isBinary,
-  mutatingBinaryOp,
-  polygolfOp,
-  variants,
-} from "../IR";
+import { flipOpCode, IR, isBinary, mutatingBinaryOp, polygolfOp } from "../IR";
 import { Path, Visitor } from "../common/traverse";
+import { GolfPlugin } from "../common/Language";
+import { Spine } from "../common/Spine";
 
 // "a = a + b" --> "a += b"
 export function addMutatingBinaryOp(...ops: string[]): Visitor {
   return {
+    tag: "mutatingVisitor",
     name: `addMutatingBinaryOp(${ops.join(", ")})`,
     enter(path: Path) {
       const node = path.node;
@@ -44,24 +41,22 @@ export function addMutatingBinaryOp(...ops: string[]): Visitor {
   };
 }
 
-// "a + b; --> {a + b; b + a}"
-const flippedOps = new WeakMap();
-export const flipBinaryOps: Visitor = {
+// (a + b) --> (b + a)
+export const flipBinaryOps: GolfPlugin = {
+  tag: "golf",
   name: "flipBinaryOps",
-  generatesVariants: true,
-  exit(path: Path) {
-    const node = path.node;
-    if (
-      node.kind === "PolygolfOp" &&
-      isBinary(node.op) &&
-      !flippedOps.has(node)
-    ) {
+  *visit(spine: Spine) {
+    const node = spine.node;
+    if (node.kind === "PolygolfOp" && isBinary(node.op)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {
-        const flippedOp = polygolfOp(flippedOpCode, node.args[1], node.args[0]);
-        flippedOps.set(node, true);
-        flippedOps.set(flippedOp, true);
-        path.replaceWith(variants([node, flippedOp]));
+        const flippedOp = polygolfOp(
+          flippedOpCode,
+          // temporary "as any" to delay making the whole code base immutable
+          node.args[1] as any as IR.Expr,
+          node.args[0] as any as IR.Expr
+        );
+        yield spine.replacedWithRoot(flippedOp);
       }
     }
   },
