@@ -11,7 +11,6 @@ import { defaultDetokenizer, Language } from "../../common/Language";
 import emitProgram from "./emit";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { mapOps, useIndexCalls } from "../../plugins/ops";
-import { addDependencies } from "../../plugins/dependencies";
 import {
   addImports,
   addVarDeclarations,
@@ -82,13 +81,14 @@ const nimLanguage: Language = {
     addMutatingBinaryOp("+", "*", "-", "&"),
     useUFCS,
     useUnsignedDivision,
-    addDependencies([
+  ],
+  finalEmitPlugins: [
+    addImports([
       ["^", "math"],
       ["repeat", "strutils"],
       ["paramStr", "os"],
       ["split", "strutils"],
     ]),
-    addImports,
     renameIdents(),
     addVarDeclarations,
   ],

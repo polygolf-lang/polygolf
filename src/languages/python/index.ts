@@ -6,7 +6,6 @@ import { mapOps, useIndexCalls } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
-import { addDependencies } from "../../plugins/dependencies";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 
@@ -51,7 +50,6 @@ const pythonLanguage: Language = {
       ],
     ]),
     aliasBuiltins(),
-    addDependencies([["sys", "sys"]]),
     renameIdents(),
   ],
 };

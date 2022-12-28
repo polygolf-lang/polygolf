@@ -23,8 +23,8 @@ export type OpTransformOutput =
 export interface Language {
   name: string;
   golfPlugins: GolfPlugin[];
-  /** Any GolfPlugin in emitPlugins must yield at most one variation per node */
   emitPlugins: (Visitor | GolfPlugin)[];
+  finalEmitPlugins?: GolfPlugin[];
   emitter: Emitter;
   detokenizer?: Detokenizer;
 }

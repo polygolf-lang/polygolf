@@ -34,32 +34,49 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-export const addImports: GolfPlugin = {
-  tag: "golf",
-  name: "addImports",
-  visit(spine: Spine) {
-    const program = spine.node;
-    if (program.kind !== "Program") return;
-    const dependencies = [...program.dependencies];
-    if (dependencies.length < 1) return;
-    let imports: ImportStatement;
-    for (const include of includes) {
-      if (include[0].length > dependencies.join().length - 1) break;
-      if (dependencies.every((x) => include[1].includes(x))) {
-        imports = importStatement("include", [include[0]]);
-        break;
+export function addImports(dependencyMap0: [string, string][]): GolfPlugin {
+  const dependencyMap = new Map(dependencyMap0);
+  return {
+    tag: "golf",
+    name: "addImports",
+    visit(spine: Spine) {
+      const program = spine.node;
+      if (program.kind !== "Program") return;
+      // get dependencies
+      // TODO: abstract this part for other languages
+      // TODO: cache, and maybe do recursive merging for performance
+      const dependenciesGen = spine.visit((s: Spine) => {
+        const node = s.node;
+        let op: string = node.kind;
+        if (node.kind === "BinaryOp" || node.kind === "UnaryOp") op = node.name;
+        if (node.kind === "FunctionCall") op = node.ident.name;
+        if (node.kind === "MethodCall") op = node.ident.name;
+        if (dependencyMap.has(op)) {
+          return dependencyMap.get(op)!;
+        }
+      });
+      const dependencies = [...new Set(dependenciesGen)];
+      if (dependencies.length < 1) return;
+      // now actually apply dependencies
+      let imports: ImportStatement;
+      for (const include of includes) {
+        if (include[0].length > dependencies.join().length - 1) break;
+        if (dependencies.every((x) => include[1].includes(x))) {
+          imports = importStatement("include", [include[0]]);
+          break;
+        }
       }
-    }
-    imports ??= importStatement("import", dependencies);
-    return {
-      ...program,
-      body:
-        program.body.kind === "Block"
-          ? block([imports, ...program.body.children])
-          : block([imports, program.body]),
-    };
-  },
-};
+      imports ??= importStatement("import", dependencies);
+      return {
+        ...program,
+        body:
+          program.body.kind === "Block"
+            ? block([imports, ...program.body.children])
+            : block([imports, program.body]),
+      };
+    },
+  };
+}
 
 const declared: Set<string> = new Set<string>();
 export const addVarDeclarations: GolfPlugin = {

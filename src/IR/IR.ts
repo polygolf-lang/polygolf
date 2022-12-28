@@ -108,8 +108,6 @@ export type Expr =
  */
 export interface Program extends BaseNode {
   readonly kind: "Program";
-  // temporary not readonly
-  readonly dependencies: Set<string>;
   readonly body: Expr;
 }
 
@@ -117,6 +115,5 @@ export function program(body: Expr): Program {
   return {
     kind: "Program",
     body,
-    dependencies: new Set<string>(),
   };
 }

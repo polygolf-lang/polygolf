@@ -21,13 +21,15 @@ function getFinalEmit(language: Language) {
   const detokenizer = language.detokenizer ?? defaultDetokenizer();
   return (ir: IR.Program) => {
     let program = structuredClone(ir);
-    language.emitPlugins.forEach((plugin) => {
-      if (plugin.tag === "mutatingVisitor") {
-        programToPath(program).visit(plugin);
-      } else {
-        program = applyAll(program, plugin.visit);
-      }
-    });
+    language.emitPlugins
+      .concat(language.finalEmitPlugins ?? [])
+      .forEach((plugin) => {
+        if (plugin.tag === "mutatingVisitor") {
+          programToPath(program).visit(plugin);
+        } else {
+          program = applyAll(program, plugin.visit);
+        }
+      });
     return detokenizer(language.emitter(program));
   };
 }
