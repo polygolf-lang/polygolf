@@ -1,4 +1,6 @@
 import { getType } from "../common/getType";
+import { GolfPlugin } from "../common/Language";
+import { Spine } from "../common/Spine";
 import { Path, Visitor } from "../common/traverse";
 import {
   forRange,
@@ -14,65 +16,76 @@ import {
   polygolfOp,
 } from "../IR";
 
-export const forRangeToForRangeInclusive: Visitor = {
-  tag: "mutatingVisitor",
+export const forRangeToForRangeInclusive: GolfPlugin = {
+  tag: "golf",
   name: "forRangeToForRangeInclusive",
-  enter(path: Path) {
-    const node = path.node;
-    if (node.kind === "ForRange" && !node.inclusive) {
-      path.replaceWith(
-        forRange(
-          node.variable,
-          node.low,
-          polygolfOp("sub", node.high, int(1n)),
-          node.increment,
-          node.body,
-          true
-        )
+  visit(spine: Spine) {
+    // temporary "as any" to delay making the whole code base immutable;
+    const node = spine.node as any;
+    if (node.kind === "ForRange" && !(node.inclusive as boolean))
+      return forRange(
+        node.variable,
+        node.low,
+        polygolfOp("sub", node.high, int(1n)),
+        node.increment,
+        node.body,
+        true
       );
-    }
   },
 };
 
-/**
- * Only switch if it is shorter
- */
-export const useInclusiveForRange: Visitor = {
-  tag: "mutatingVisitor",
+export const useInclusiveForRange: GolfPlugin = {
+  tag: "golf",
   name: "useInclusiveForRange",
-  enter(path: Path) {
-    const node = path.node;
+  // temporary "as any" to delay making the whole code base immutable
+  // should be visit(spine: Spine): IR.ForRange | undefined
+  visit(spine: Spine): any | undefined {
+    const node = spine.node;
     if (node.kind === "ForRange" && !node.inclusive) {
       if (node.high.kind === "IntegerLiteral") {
-        node.inclusive = true;
-        node.high.value = node.high.value - 1n;
+        const high = {
+          ...node.high,
+          value: node.high.value - 1n,
+        };
+        return {
+          ...node,
+          inclusive: true,
+          high,
+        };
       } else if (node.high.kind === "BinaryOp" && node.high.op === "add") {
         if (
           node.high.right.kind === "IntegerLiteral" &&
           node.high.right.value === 1n
         ) {
-          node.inclusive = true;
-          node.high = node.high.left;
+          return {
+            ...node,
+            inclusive: true,
+            high: node.high.left,
+          };
         } else if (
           node.high.left.kind === "IntegerLiteral" &&
           node.high.left.value === 1n
         ) {
-          node.inclusive = true;
-          node.high = node.high.right;
+          return {
+            ...node,
+            inclusive: true,
+            high: node.high.right,
+          };
         }
       }
     }
   },
 };
 
-export const forRangeToWhile: Visitor = {
-  tag: "mutatingVisitor",
+export const forRangeToWhile: GolfPlugin = {
+  tag: "golf",
   name: "forRangeToWhile",
-  enter(path: Path) {
-    const node = path.node;
+  visit(spine: Spine) {
+    // temporary "as any" to delay making the whole code base immutable;
+    const node = spine.node as any as IR.Node;
     if (node.kind === "ForRange") {
-      const low = getType(node.low, path.root.node);
-      const high = getType(node.high, path.root.node);
+      const low = getType(node.low, spine.root.node);
+      const high = getType(node.high, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
@@ -80,42 +93,39 @@ export const forRangeToWhile: Visitor = {
         node.variable,
         polygolfOp("add", node.variable, node.increment)
       );
-      path.replaceWith(
-        block([
-          assignment(node.variable, node.low),
-          whileLoop(
-            polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
-            node.body.kind === "Block"
-              ? block([...node.body.children, increment])
-              : block([node.body, increment])
-          ),
-        ])
-      );
+      return block([
+        assignment(node.variable, node.low),
+        whileLoop(
+          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+          node.body.kind === "Block"
+            ? block([...node.body.children, increment])
+            : block([node.body, increment])
+        ),
+      ]);
     }
   },
 };
 
-export const forRangeToForCLike: Visitor = {
-  tag: "mutatingVisitor",
+export const forRangeToForCLike: GolfPlugin = {
+  tag: "golf",
   name: "forRangeToForCLike",
-  enter(path: Path) {
-    const node = path.node;
+  visit(spine: Spine) {
+    // temporary "as any" to delay making the whole code base immutable;
+    const node = spine.node as any as IR.ForRange;
     if (node.kind === "ForRange") {
-      const low = getType(node.low, path.root.node);
-      const high = getType(node.high, path.root.node);
+      const low = getType(node.low, spine.root.node);
+      const high = getType(node.high, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
-      path.replaceWith(
-        forCLike(
-          assignment(node.variable, node.low),
-          assignment(
-            node.variable,
-            polygolfOp("add", node.variable, node.increment ?? int(1n))
-          ),
-          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
-          node.body
-        )
+      return forCLike(
+        assignment(node.variable, node.low),
+        assignment(
+          node.variable,
+          polygolfOp("add", node.variable, node.increment ?? int(1n))
+        ),
+        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+        node.body
       );
     }
   },

@@ -1,8 +1,7 @@
 import { getType } from "../common/getType";
 import { GolfPlugin } from "../common/Language";
 import { Spine } from "../common/Spine";
-import { Path, Visitor } from "../common/traverse";
-import { leq, polygolfOp } from "../IR";
+import { IR, leq, polygolfOp } from "../IR";
 
 export const modToRem: GolfPlugin = {
   tag: "golf",
@@ -34,18 +33,21 @@ export const modToRem: GolfPlugin = {
   },
 };
 
-export const divToTruncdiv: Visitor = {
-  tag: "mutatingVisitor",
+export const divToTruncdiv: GolfPlugin = {
+  tag: "golf",
   name: "divToTruncdiv",
-  exit(path: Path) {
-    const node = path.node;
-    const program = path.root.node;
+  visit(spine: Spine) {
+    const node = spine.node as any as IR.Node;
+    const program = spine.root.node;
     if (node.kind === "PolygolfOp" && node.op === "div") {
       const rightType = getType(node.args[1], program);
       if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (rightType.low !== undefined && rightType.low >= 0n) {
-        node.op = "trunc_div";
+        return {
+          ...node,
+          op: "trunc_div",
+        };
       } else {
         throw new Error("Not implemented.");
       }

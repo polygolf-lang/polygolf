@@ -4,6 +4,7 @@ import {
   Expr,
   ImportStatement,
   importStatement,
+  IR,
   manyToManyAssignment,
   methodCall,
   Program,
@@ -11,6 +12,8 @@ import {
 } from "../../IR";
 import { Path, Visitor } from "../../common/traverse";
 import { getType } from "../../common/getType";
+import { GolfPlugin } from "../../common/Language";
+import { Spine } from "../../common/Spine";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -122,12 +125,13 @@ function simplifyAssignments(
   );
 }
 
-export const useUnsignedDivision: Visitor = {
-  tag: "mutatingVisitor",
+export const useUnsignedDivision: GolfPlugin = {
+  tag: "golf",
   name: "useUnsignedDivision",
-  exit(path: Path) {
-    const node = path.node;
-    const program = path.root.node;
+  visit(spine: Spine) {
+    // temporary "as any" to delay making the whole code base immutable;
+    const node = spine.node as any as IR.Node;
+    const program = spine.root.node;
     if (
       node.kind === "BinaryOp" &&
       (node.op === "trunc_div" || node.op === "rem")
@@ -142,26 +146,30 @@ export const useUnsignedDivision: Visitor = {
         right.low !== undefined &&
         right.low >= 0n
       ) {
-        node.name = node.op === "trunc_div" ? "/%" : "%%";
+        const name = node.op === "trunc_div" ? "/%" : "%%";
+        if (name !== node.name)
+          return {
+            ...node,
+            name,
+          };
       }
     }
   },
 };
 
-export const useUFCS: Visitor = {
-  tag: "mutatingVisitor",
+export const useUFCS: GolfPlugin = {
+  tag: "golf",
   name: "useUFCS",
-  exit(path: Path) {
-    const node = path.node;
+  visit(spine: Spine) {
+    // temporary "as any" to delay making the whole code base immutable;
+    const node = spine.node as any as IR.Node;
     if (node.kind === "FunctionCall" && node.args.length > 0) {
       if (node.args.length === 1 && node.args[0].kind === "StringLiteral") {
         return;
       }
       const [obj, ...args] = node.args;
       if (obj.kind !== "BinaryOp" && obj.kind !== "UnaryOp") {
-        path.replaceWith(
-          methodCall(obj, args, node.ident, node.op ?? undefined)
-        );
+        return methodCall(obj, args, node.ident, node.op ?? undefined);
       }
     }
   },

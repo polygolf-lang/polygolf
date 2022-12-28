@@ -1,4 +1,5 @@
 import { IR } from "../IR";
+import { programToSpine } from "./Spine";
 import { Path, programToPath } from "./traverse";
 
 /**
@@ -93,17 +94,9 @@ function instantiateProgram(
   program: IR.Program,
   choices: number[]
 ): IR.Program {
-  program = structuredClone(program);
   choices.reverse();
-  programToPath(program).visit({
-    tag: "mutatingVisitor",
-    name: "anonymous",
-    enter(path) {
-      const node = path.node;
-      if (node.kind === "Variants") {
-        path.replaceWith(node.variants[choices.pop()!]);
-      }
-    },
-  });
-  return program;
+  return programToSpine(program).withReplacer((spine) => {
+    const node = spine.node;
+    if (node.kind === "Variants") return node.variants[choices.pop()!];
+  }).node as IR.Program;
 }

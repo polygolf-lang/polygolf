@@ -1,15 +1,15 @@
 import { flipOpCode, IR, isBinary, mutatingBinaryOp, polygolfOp } from "../IR";
-import { Path, Visitor } from "../common/traverse";
 import { GolfPlugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 
 // "a = a + b" --> "a += b"
-export function addMutatingBinaryOp(...ops: string[]): Visitor {
+export function addMutatingBinaryOp(...ops: string[]): GolfPlugin {
   return {
-    tag: "mutatingVisitor",
+    tag: "golf",
     name: `addMutatingBinaryOp(${ops.join(", ")})`,
-    enter(path: Path) {
-      const node = path.node;
+    visit(spine: Spine) {
+      // temporary "as any" to delay making the whole code base immutable;
+      const node = spine.node as any as IR.Node;
       if (
         node.kind === "Assignment" &&
         node.expr.kind === "BinaryOp" &&
@@ -27,13 +27,11 @@ export function addMutatingBinaryOp(...ops: string[]): Visitor {
             JSON.stringify(node.variable.index) ===
               JSON.stringify(node.expr.left.index))
         ) {
-          path.replaceWith(
-            mutatingBinaryOp(
-              node.expr.op,
-              node.variable,
-              node.expr.right,
-              node.expr.name
-            )
+          return mutatingBinaryOp(
+            node.expr.op,
+            node.variable,
+            node.expr.right,
+            node.expr.name
           );
         }
       }

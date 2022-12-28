@@ -34,12 +34,18 @@ function getFinalEmit(language: Language) {
       if (plugin.tag === "mutatingVisitor") {
         programToPath(program).visit(plugin);
       } else {
-        program = programToSpine(program).withReplacer(plugin.visit)
-          .node as IR.Program;
+        program = applyAll(program, plugin.visit);
       }
     });
     return detokenizer(language.emitter(program));
   };
+}
+
+function applyAll(
+  program: Immutable<IR.Program>,
+  visitor: GolfPlugin["visit"]
+) {
+  return programToSpine(program).withReplacer(visitor).node as IR.Program;
 }
 
 export function applyLanguageToVariants(
@@ -79,10 +85,6 @@ function golfProgram(
     if (visited.has(s)) return;
     visited.add(s);
     const code = finalEmit(prog);
-    // some logging helpful for debugging
-    // console.log("\n=======\n" + code);
-    // console.log("=======\n" + s);
-    // console.log("=======\n" + getFinalEmit(polygolfLanguage(false))(program));
     if (code.length < shortestSoFar.length) shortestSoFar = code;
     pq.push([prog, code.length, hist]);
   };
@@ -93,11 +95,15 @@ function golfProgram(
     const spine = programToSpine(program);
     for (const plugin of golfPlugins) {
       const newHist = hist.concat([plugin.name]);
-      for (const altProgram of spine.visit((s) => {
-        const ret = plugin.visit(s);
-        if (ret !== undefined) return s.replacedWith(ret).root.node;
-      })) {
-        pushToQueue(altProgram, newHist);
+      if (plugin.allOrNothing === true) {
+        pushToQueue(applyAll(program, plugin.visit), newHist);
+      } else {
+        for (const altProgram of spine.visit((s) => {
+          const ret = plugin.visit(s);
+          if (ret !== undefined) return s.replacedWith(ret).root.node;
+        })) {
+          pushToQueue(altProgram, newHist);
+        }
       }
     }
   }

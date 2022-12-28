@@ -11,6 +11,8 @@ import {
   print,
 } from "../IR";
 import debugEmit from "../languages/debug/emit";
+import { GolfPlugin } from "../common/Language";
+import { programToSpine } from "../common/Spine";
 
 const loopProgram1 = program(
   forRange("i", int(0n), int(10n), int(1n), print(id("x")), false)
@@ -41,11 +43,24 @@ const loopProgram3 = program(
   )
 );
 
-function expectTransform(program: IR.Program, plugin: Visitor, output: string) {
-  const programClone = structuredClone(program);
-  const path = programToPath(programClone);
-  path.visit(plugin);
-  expect(debugEmit(programClone)).toEqual(output);
+function expectTransform(
+  program: IR.Program,
+  plugin: Visitor | GolfPlugin,
+  output: string
+) {
+  if (plugin.tag === "golf") {
+    expect(
+      debugEmit(
+        programToSpine(program).withReplacer(plugin.visit)
+          .node as any as IR.Node
+      )
+    ).toEqual(output);
+  } else {
+    const programClone = structuredClone(program);
+    const path = programToPath(programClone);
+    path.visit(plugin);
+    expect(debugEmit(programClone)).toEqual(output);
+  }
 }
 
 test("ForRange -> ForRangeInclusive", () =>

@@ -32,8 +32,13 @@ export interface Language {
 export interface GolfPlugin {
   tag: "golf";
   name: string;
-  /** visit should return an iterable of alternatives for this node */
+  /** visit should return a viable replacement node, or undefined to represent
+   * no replacement. The replacement node should be different in value than
+   * the initial node if it compares different under reference equality */
   visit: (spine: Spine) => IR.Node | undefined;
+  /** Set `allOrNothing: true` to force all replacement nodes to be applied,
+   * or none. This is useful in cases such as renaming variables */
+  allOrNothing?: boolean;
 }
 
 export type Detokenizer = (tokens: string[]) => string;
