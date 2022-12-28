@@ -1,6 +1,3 @@
-import { PolygolfError } from "../common/errors";
-import { getCollectionTypes, getType } from "../common/getType";
-import { Path, programToPath } from "../common/traverse";
 import {
   Assignment,
   ManyToManyAssignment,
@@ -42,7 +39,7 @@ import {
   VarDeclaration,
   Variants,
 } from "./toplevel";
-import { integerType, sub, Type } from "./types";
+import { Type } from "./types";
 
 export * from "./assignments";
 export * from "./opcodes";
@@ -55,7 +52,11 @@ export * from "./types";
 
 export interface BaseExpr extends BaseNode {
   // temporary not readonly
-  type?: Type;
+  /** type: an uninferrable type, either annotated from the frontend or
+   * inserted for language-specific op nodes */
+  readonly type?: Type;
+  /** _type: cached type value */
+  _type?: Type;
 }
 
 export interface BaseNode {
@@ -111,8 +112,6 @@ export interface Program extends BaseNode {
   readonly kind: "Program";
   // temporary not readonly
   readonly dependencies: Set<string>;
-  // temporary not readonly
-  readonly variables: Map<string, Type>;
   readonly body: Expr;
 }
 
@@ -121,77 +120,5 @@ export function program(body: Expr): Program {
     kind: "Program",
     body,
     dependencies: new Set<string>(),
-    variables: new Map<string, Type>(),
   };
-}
-
-export function typesPass(program: Program) {
-  const path = programToPath(program);
-  path.visit({
-    tag: "mutatingVisitor",
-    name: "anonymous",
-    enter(path: Path) {
-      const node = path.node;
-      function setVar(name: string, type: Type) {
-        if (program.variables.has(name)) {
-          throw new PolygolfError(
-            `Duplicate variable declaration: ${name}!`,
-            node.source
-          );
-        }
-        program.variables.set(name, type);
-      }
-      if (node.kind === "Function") {
-        getType(node, program);
-      }
-      if (node.kind === "ForRange") {
-        const low = getType(node.low, path.root.node);
-        const high = getType(node.high, path.root.node);
-        const step = getType(node.increment, path.root.node);
-        if (
-          low.kind !== "integer" ||
-          high.kind !== "integer" ||
-          step.kind !== "integer"
-        ) {
-          throw new PolygolfError(
-            `Unexpected for range type (${low.kind},${high.kind},${step.kind})`,
-            node.source
-          );
-        }
-        setVar(
-          node.variable.name,
-          integerType(low.low, sub(high.high, node.inclusive ? 0n : 1n))
-        );
-      } else if (node.kind === "ForEach") {
-        setVar(
-          node.variable.name,
-          getCollectionTypes(node.collection, program)[0]
-        );
-      } else if (node.kind === "ForEachKey") {
-        setVar(node.variable.name, getCollectionTypes(node.table, program)[0]);
-      } else if (node.kind === "ForEachPair") {
-        let types = getCollectionTypes(node.table, program);
-        if (types.length === 1) {
-          types = [integerType(), types[0]];
-        }
-        setVar(node.keyVariable.name, types[0]);
-        setVar(node.valueVariable.name, types[1]);
-      } else if (
-        node.kind === "Assignment" &&
-        node.variable.kind === "Identifier"
-      ) {
-        if (node.variable.type !== undefined)
-          setVar(node.variable.name, node.variable.type);
-        else {
-          if (!program.variables.has(node.variable.name))
-            setVar(node.variable.name, getType(node.expr, program));
-        }
-      }
-    },
-    exit(path: Path) {
-      if (path.node.kind !== "Program" && path.node.kind !== "Block") {
-        getType(path.node, program);
-      }
-    },
-  });
 }

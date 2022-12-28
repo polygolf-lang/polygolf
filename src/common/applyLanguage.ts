@@ -1,26 +1,18 @@
-import { IR, typesPass } from "../IR";
+import { IR } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { programToPath } from "./traverse";
 import { Language, defaultDetokenizer, GolfPlugin } from "./Language";
 import { programToSpine } from "./Spine";
+import polygolfLanguage from "../languages/polygolf";
 
 export default function applyLanguage(
   language: Language,
-  program: IR.Program,
-  skipTypesPass: boolean = false
+  program: IR.Program
 ): string {
   if (language.name === "Polygolf") {
-    if (!skipTypesPass) {
-      program = structuredClone(program);
-      typesPass(program);
-    }
     return applyLanguageToVariants(language, [program]);
   } else {
     const variants = expandVariants(program);
-    if (!skipTypesPass)
-      for (const variant of variants) {
-        typesPass(variant);
-      }
     return applyLanguageToVariants(language, variants);
   }
 }
@@ -39,6 +31,8 @@ function getFinalEmit(language: Language) {
     return detokenizer(language.emitter(program));
   };
 }
+
+export const debugEmit = getFinalEmit(polygolfLanguage);
 
 function applyAll(program: IR.Program, visitor: GolfPlugin["visit"]) {
   return programToSpine(program).withReplacer(visitor).node as IR.Program;
@@ -72,7 +66,7 @@ function golfProgram(
     //   2. distinct program IRs can emit to the same target code (e.g
     //      `polygolfOp("+",a,b)` vs `functionCall("+",a,b)`)
     const s = JSON.stringify(prog, (key, value) =>
-      key === "type"
+      key === "type" || key === "_type"
         ? undefined
         : typeof value === "bigint"
         ? value.toString() + "n"

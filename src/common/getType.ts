@@ -46,34 +46,21 @@ import {
   constantIntegerType,
 } from "../IR";
 import { PolygolfError } from "./errors";
+import { symbolTableRoot } from "./getSymbolTable";
 
 export function getType(expr: Expr, program: Program): Type {
-  if (expr.type === undefined) {
-    expr.type = calcType(expr, program);
-  }
-  return expr.type;
+  if (expr._type === undefined) expr._type = calcType(expr, program);
+  return expr._type;
 }
 
 export function calcType(expr: Expr, program: Program): Type {
+  // user-annotated node
+  if (expr.type !== undefined) return expr.type;
+  // type inference
   const type = (e: Expr) => getType(e, program);
   switch (expr.kind) {
-    case "Function": {
-      function setVar(name: string, type: Type) {
-        if (program.variables.has(name)) {
-          throw new PolygolfError(
-            `Duplicate variable declaration: ${name}!`,
-            expr.source
-          );
-        }
-        program.variables.set(name, type);
-      }
-      for (const arg of expr.args) {
-        if (arg.type !== undefined && expr.type === undefined) {
-          setVar(arg.name, arg.type);
-        }
-      }
+    case "Function":
       return functionType(expr.args.map(type), type(expr.expr));
-    }
     case "Block":
     case "VarDeclaration":
       return voidType;
@@ -154,13 +141,7 @@ export function calcType(expr: Expr, program: Program): Type {
       );
     }
     case "Identifier":
-      if (program.variables.has(expr.name)) {
-        return program.variables.get(expr.name)!;
-      }
-      throw new PolygolfError(
-        `Type error. Undeclared variable ${expr.name} encountered!`,
-        expr.source
-      );
+      return symbolTableRoot(program).getRequired(expr.name);
     case "StringLiteral":
       return textType(expr.value.length);
     case "IntegerLiteral":

@@ -30,40 +30,42 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): GolfPlugin {
           return;
         }
         if (typeof f === "string") {
-          let replacement: Expr;
+          const type = getType(node, spine.root.node);
           if (isBinary(op))
-            replacement = binaryOp(op, node.args[0], node.args[1], f);
-          else if (isUnary(op)) replacement = unaryOp(op, node.args[0], f);
+            return { ...binaryOp(op, node.args[0], node.args[1], f), type };
+          else if (isUnary(op))
+            return { ...unaryOp(op, node.args[0], f), type };
           else
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
             );
-          replacement.type = node.type;
-          return replacement;
         } else if (Array.isArray(f)) {
-          let replacement: Expr;
+          const type = getType(node, spine.root.node);
           if (isBinary(op)) {
-            replacement = binaryOp(
-              op,
-              node.args[0],
-              node.args[1],
-              f[0],
-              f[1],
-              f[2] ?? (op === "pow" || op === "text_concat")
-            );
+            return {
+              ...binaryOp(
+                op,
+                node.args[0],
+                node.args[1],
+                f[0],
+                f[1],
+                f[2] ?? (op === "pow" || op === "text_concat")
+              ),
+              type,
+            };
           } else if (isUnary(op)) {
-            replacement = unaryOp(op, node.args[0], f[0], f[1]);
+            return { ...unaryOp(op, node.args[0], f[0], f[1]), type };
           } else
             throw new Error(
               `Only unary and binary operations can be mapped implicitly, got ${op}`
             );
-          replacement.type = node.type;
-          return replacement;
         } else {
-          const replacement = f(node.args);
-          if ("op" in replacement) replacement.op = node.op;
-          replacement.type = getType(node, spine.root.node);
-          return replacement;
+          let replacement = f(node.args);
+          if ("op" in replacement) {
+            // "as any" because TS doesn't do well with the "in" keyword
+            replacement = { ...(replacement as any), op: node.op };
+          }
+          return { ...replacement, type: getType(node, spine.root.node) };
         }
       }
     },

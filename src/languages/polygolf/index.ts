@@ -1,94 +1,8 @@
-import { toString, Type, variants } from "../../IR";
+import { variants } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import { Path, Visitor } from "../../common/traverse";
-import { calcType, getType } from "../../common/getType";
-
-function polygolfLanguage(stripTypes = false): Language {
-  const plugins: Visitor[] = [];
-  plugins.push(blocksAsVariants);
-  if (stripTypes) plugins.push(stripTypesIfInferable);
-  return {
-    name: "Polygolf",
-    emitter: emitProgram,
-    golfPlugins: [],
-    emitPlugins: plugins,
-    detokenizer: defaultDetokenizer(
-      (a, b) =>
-        a !== "(" &&
-        b !== ")" &&
-        b !== ";" &&
-        b !== ":" &&
-        a !== ":" &&
-        a !== "\n" &&
-        b !== "\n",
-      2
-    ),
-  };
-}
-
-function isEqual(a: Type, b: Type): boolean {
-  return toString(a) === toString(b);
-}
-const initializedVariables = new Set<string>();
-const stripTypesIfInferable: Visitor = {
-  tag: "mutatingVisitor",
-  name: "stripTypesIfInferable",
-  enter(path: Path) {
-    const program = path.root.node;
-    const node = path.node;
-    if (path.node.kind === "Program") {
-      initializedVariables.clear();
-    } else if (
-      node.kind === "Identifier" &&
-      !node.builtin &&
-      path.parent !== null &&
-      path.parent.node.kind === "Assignment" &&
-      path.pathFragment === "variable"
-    ) {
-      const variable = node.name;
-      if (
-        program.variables.has(variable) &&
-        !initializedVariables.has(variable)
-      ) {
-        if (
-          !isEqual(
-            getType(path.parent.node.expr, program),
-            program.variables.get(variable)!
-          ) ||
-          program.variables.get(variable)?.kind === "Function"
-        ) {
-          node.type = program.variables.get(variable);
-        } else {
-          node.type = undefined;
-        }
-        initializedVariables.add(variable);
-        return;
-      }
-    } else if (
-      node.kind === "Identifier" &&
-      !node.builtin &&
-      path.parent !== null &&
-      path.parent.node.kind === "Function" &&
-      path.pathFragment !== "expr"
-    ) {
-      const variable = node.name;
-      if (
-        program.variables.has(variable) &&
-        !initializedVariables.has(variable)
-      ) {
-        node.type = program.variables.get(variable);
-        return;
-      }
-    }
-    if ("type" in node && node.type !== undefined) {
-      if (isEqual(node.type, calcType(node, program))) {
-        node.type = undefined;
-      }
-    }
-  },
-};
 
 const blocksAsVariants: Visitor = {
   tag: "mutatingVisitor",
@@ -104,6 +18,24 @@ const blocksAsVariants: Visitor = {
       path.replaceWith(variants([node]));
     }
   },
+};
+
+const polygolfLanguage: Language = {
+  name: "Polygolf",
+  emitter: emitProgram,
+  golfPlugins: [],
+  emitPlugins: [blocksAsVariants],
+  detokenizer: defaultDetokenizer(
+    (a, b) =>
+      a !== "(" &&
+      b !== ")" &&
+      b !== ";" &&
+      b !== ":" &&
+      a !== ":" &&
+      a !== "\n" &&
+      b !== "\n",
+    2
+  ),
 };
 
 export default polygolfLanguage;

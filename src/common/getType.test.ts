@@ -28,15 +28,12 @@ import {
   tableConstructor,
   listType,
   functionCall,
-  functionType,
 } from "IR";
 import { calcType } from "./getType";
 
+/** returns identifier expression of given type */
 function e(type: Type): Identifier {
-  // returns identifier expression of given type
-  const result = id("", true);
-  result.type = type;
-  return result;
+  return { ...id("", true), type };
 }
 
 function testExpr(
@@ -109,19 +106,13 @@ describe("Functions", () => {
     "Function call",
     functionCall([integerLiteral(1n)], id("f", false)),
     int(0),
-    {
-      ...program(block([])),
-      variables: new Map<string, Type>([["f", functionType([int()], int(0))]]),
-    }
+    program(block([]))
   );
   testExpr(
     "Function call wrong types",
     functionCall([integerLiteral(1n)], id("f", false)),
     "error",
-    {
-      ...program(block([])),
-      variables: new Map<string, Type>([["f", functionType([text()], int())]]),
-    }
+    program(block([]))
   );
 });
 
