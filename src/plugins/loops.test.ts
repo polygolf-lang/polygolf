@@ -1,5 +1,4 @@
 import * as loops from "./loops";
-import { programToPath, Visitor } from "../common/traverse";
 import {
   IR,
   block,
@@ -45,19 +44,12 @@ const loopProgram3 = program(
 
 function expectTransform(
   program: IR.Program,
-  plugin: Visitor | GolfPlugin,
+  plugin: GolfPlugin,
   output: string
 ) {
-  if (plugin.tag === "golf") {
-    expect(
-      debugEmit(programToSpine(program).withReplacer(plugin.visit).node)
-    ).toEqual(output);
-  } else {
-    const programClone = structuredClone(program);
-    const path = programToPath(programClone);
-    path.visit(plugin);
-    expect(debugEmit(programClone)).toEqual(output);
-  }
+  expect(
+    debugEmit(programToSpine(program).withReplacer(plugin.visit).node)
+  ).toEqual(output);
 }
 
 test("ForRange -> ForRangeInclusive", () =>
