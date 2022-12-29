@@ -46,7 +46,7 @@ import {
   constantIntegerType,
 } from "../IR";
 import { PolygolfError } from "./errors";
-import { getIdentifierType } from "./getSymbolTable";
+import { getIdentifierType } from "./symbols";
 
 const cachedType = new WeakMap<Expr, Type>();
 export function getType(expr: Expr, program: Program): Type {
