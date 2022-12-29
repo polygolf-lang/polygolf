@@ -74,6 +74,17 @@ function parseSuite(markdown: string): Describe {
       }
     }
   }
+  function removeEmptyDescribes(describe: Describe) {
+    for (const child of describe.children) {
+      if ("children" in child) {
+        removeEmptyDescribes(child);
+      }
+    }
+    describe.children = describe.children.filter(
+      (x) => "input" in x || x.children.length > 0
+    );
+  }
+  removeEmptyDescribes(result);
   if (result.children.length === 1 && "children" in result.children[0])
     return result.children[0];
   return result;
@@ -84,18 +95,18 @@ function parseSuite(markdown: string): Describe {
  */
 function extractTags(markdown: string): (Header | CodeBlock)[] {
   const result: (Header | CodeBlock)[] = [];
-  const regex = /(#+)([^\n]*)\n|```([^`\n]+)\n([^`]*)\n```/gs;
+  const regex = /\n(#+)([^\n]+)\n|```([^`\n]*)\n([^`]*)\n```/gs;
   let m;
-  while ((m = regex.exec(markdown)) !== null) {
-    if (m[0].startsWith("#")) {
+  while ((m = regex.exec("\n" + markdown)) !== null) {
+    if (m[1] !== undefined) {
       result.push({
         kind: "Header",
         level: m[1].length,
         title: m[2].trim(),
       });
     } else {
-      const title = m[3].split(" ");
-      if (title.length === 0) {
+      const title = m[3].trim().split(" ");
+      if (m[3].trim().length === 0) {
         throw new Error(
           "Codeblocks are required to have language annotation. If a codeblock should not be included in testing, use `skip` command: `python skip`."
         );
@@ -149,7 +160,9 @@ function emitTest(test: Test): string {
 
 /** Compiles a single markdown test suite source to a Jest source. */
 function compileSuite(markdown: string): string {
-  return emitSuite(parseSuite(markdown));
+  const suite = parseSuite(markdown);
+  if (suite.children.length === 0) return "";
+  return emitSuite(suite);
 }
 
 function readdirSync(p: string, a: string[] = []) {
@@ -162,9 +175,9 @@ function readdirSync(p: string, a: string[] = []) {
 
 for (const file of readdirSync(process.cwd())) {
   if (file.endsWith(".test.md")) {
-    fs.writeFileSync(
-      file + ".ts",
-      compileSuite(fs.readFileSync(file).toString())
-    );
+    const suite = compileSuite(fs.readFileSync(file).toString());
+    if (suite !== "") {
+      fs.writeFileSync(file + ".ts", suite);
+    }
   }
 }
