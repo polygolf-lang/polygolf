@@ -1,6 +1,7 @@
 import { findLang } from "../languages/languages";
 import fs from "fs";
 import path from "path";
+import { emitStringLiteral } from "../common/emit";
 
 interface Test {
   input: string;
@@ -142,20 +143,53 @@ function emitNode(node: Describe | Test): string {
   return emitTest(node);
 }
 
+function stringify(x: string): string {
+  return emitStringLiteral(x, [
+    [
+      "`",
+      [
+        [`\\`, `\\\\`],
+        [`\n`, `\\n`],
+        [`\r`, `\\r`],
+        ["`", "\\`"],
+        ["$", "\\$"],
+      ],
+    ],
+    [
+      `"`,
+      [
+        [`\\`, `\\\\`],
+        [`\n`, `\\n`],
+        [`\r`, `\\r`],
+        [`"`, `\\"`],
+      ],
+    ],
+    [
+      `'`,
+      [
+        [`\\`, `\\\\`],
+        [`\n`, `\\n`],
+        [`\r`, `\\r`],
+        [`'`, `\\"`],
+      ],
+    ],
+  ])[0];
+}
+
 function emitDescribe(describe: Describe): string {
   return (
-    `describe(${JSON.stringify(describe.name)}, () => {\n${describe.children
+    `describe(${stringify(describe.name)}, () => {\n${describe.children
       .map(emitNode)
       .join("\n")}`.replaceAll("\n", "\n  ") + "\n});"
   );
 }
 
 function emitTest(test: Test): string {
-  return `t(${JSON.stringify(
+  return `t(${stringify(
     [test.language, ...test.commands].join(" ")
-  )}, ${JSON.stringify(test.language)}, ${JSON.stringify(
-    test.input
-  )}, ${JSON.stringify(test.output)})`;
+  )}, ${stringify(test.language)}, ${stringify(test.input)}, ${stringify(
+    test.output
+  )})`;
 }
 
 /** Compiles a single markdown test suite source to a Jest source. */
