@@ -1,4 +1,10 @@
-import { flipOpCode, isBinary, mutatingBinaryOp, polygolfOp } from "../IR";
+import {
+  flipOpCode,
+  isBinary,
+  mutatingBinaryOp,
+  polygolfOp,
+  copyType,
+} from "../IR";
 import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 
@@ -25,11 +31,14 @@ export function addMutatingBinaryOp(...ops: string[]): Plugin {
             JSON.stringify(node.variable.index) ===
               JSON.stringify(node.expr.left.index))
         ) {
-          return mutatingBinaryOp(
-            node.expr.op,
-            node.variable,
-            node.expr.right,
-            node.expr.name
+          return copyType(
+            node,
+            mutatingBinaryOp(
+              node.expr.op,
+              node.variable,
+              node.expr.right,
+              node.expr.name
+            )
           );
         }
       }
@@ -45,7 +54,10 @@ export const flipBinaryOps: Plugin = {
     if (node.kind === "PolygolfOp" && isBinary(node.op)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {
-        return polygolfOp(flippedOpCode, node.args[1], node.args[0]);
+        return copyType(
+          node,
+          polygolfOp(flippedOpCode, node.args[1], node.args[0])
+        );
       }
     }
   },

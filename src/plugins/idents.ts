@@ -1,7 +1,7 @@
 import { Plugin, IdentifierGenerator } from "common/Language";
 import { getDeclaredIdentifiers } from "../common/symbols";
 import { Spine } from "../common/Spine";
-import { assignment, block, id, Identifier, IR } from "../IR";
+import { assignment, block, copyType, id, Identifier, IR } from "../IR";
 
 function getIdentMap(
   spine: Spine<IR.Program>,
@@ -63,7 +63,7 @@ export function renameIdents(
           const outputName = identMap.get(s.node.name);
           if (outputName === undefined)
             throw new Error("Programming error. Incomplete identMap.");
-          return id(outputName);
+          return copyType(s.node, id(outputName));
         }
       }).node;
     },
