@@ -245,7 +245,7 @@ function getOpCodeType(
       throw new PolygolfError(
         `Type error. Operator '${
           expr.op ?? "null"
-        } type error. Expected [${expected
+        }' type error. Expected [${expected
           .map(toString)
           .join(", ")}] but got [${types.map(toString).join(", ")}].`,
         expr.source

@@ -63,6 +63,7 @@ try {
           "^"
       );
     }
+    process.exit(1);
   } else {
     throw e;
   }

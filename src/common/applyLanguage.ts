@@ -67,7 +67,9 @@ function golfProgram(
     try {
       const code = finalEmit(prog);
       if (code.length < shortestSoFar.length) shortestSoFar = code;
-      pq.push([prog, code.length, hist]);
+      // 200 is arbitrary limit for performance to stop the search, since we're
+      // currently using naive BFS with no pruning.
+      if (visited.size < 200) pq.push([prog, code.length, hist]);
     } catch {
       // Ignore for now, assuming it's using an unsupported language feature
       // A warning might be appropriate
