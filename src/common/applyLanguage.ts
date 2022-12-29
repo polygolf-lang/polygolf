@@ -17,12 +17,9 @@ export default function applyLanguage(
 function getFinalEmit(language: Language) {
   const detokenizer = language.detokenizer ?? defaultDetokenizer();
   return (ir: IR.Program) => {
-    let program = structuredClone(ir);
-    language.emitPlugins
+    const program = language.emitPlugins
       .concat(language.finalEmitPlugins ?? [])
-      .forEach((plugin) => {
-        program = applyAll(program, plugin.visit);
-      });
+      .reduce((program, plugin) => applyAll(program, plugin.visit), ir);
     return detokenizer(language.emitter(program));
   };
 }
