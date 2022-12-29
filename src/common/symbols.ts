@@ -27,7 +27,7 @@ function symbolTableRoot(program: IR.Program): SymbolTable {
   if (symbolTableCache.has(program)) return symbolTableCache.get(program)!;
   const existing = new Set<string>();
   const defs = [
-    ...programToSpine(program).visit((s) =>
+    ...programToSpine(program).visit((_, s) =>
       introducedSymbols(s, existing)?.map((name) => {
         existing.add(name);
         return [name, s] as const;

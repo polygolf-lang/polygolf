@@ -72,29 +72,27 @@ export class Spine<N extends IR.Node = IR.Node> {
       .getChild(this.pathFragment);
   }
 
-  *visit<T>(
-    visitor: (spine: Spine) => T | undefined
-  ): Generator<T, void, undefined> {
-    const ret = visitor(this);
+  *visit<T>(visitor: Visitor<T | undefined>): Generator<T, void, undefined> {
+    const ret = visitor(this.node, this);
     if (ret !== undefined) yield ret;
     for (const child of this.getChildSpines()) yield* child.visit(visitor);
   }
 
-  everyNode(visitor: (spine: Spine) => boolean) {
+  everyNode(visitor: Visitor<boolean>) {
     for (const val of this.visit(visitor)) if (!val) return false;
     return true;
   }
 
-  someNode(visitor: (spine: Spine) => boolean) {
+  someNode(visitor: Visitor<boolean>) {
     for (const val of this.visit(visitor)) if (val) return true;
     return false;
   }
 
   withReplacer(
-    replacer: (spine: Spine) => IR.Node | undefined,
+    replacer: Visitor<IR.Node | undefined>,
     skipThis?: boolean
   ): Spine {
-    const ret = skipThis === true ? undefined : replacer(this);
+    const ret = skipThis === true ? undefined : replacer(this.node, this);
     if (ret === undefined) {
       // recurse on children
       // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -114,6 +112,8 @@ export class Spine<N extends IR.Node = IR.Node> {
     }
   }
 }
+
+export type Visitor<T> = <N extends IR.Node>(node: N, spine: Spine<N>) => T;
 
 export function programToSpine(node: IR.Program) {
   return new Spine(node, null, null);

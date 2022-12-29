@@ -1,18 +1,17 @@
 import { variants } from "../../IR";
 import { defaultDetokenizer, Plugin, Language } from "../../common/Language";
 import emitProgram from "./emit";
-import { Spine } from "../../common/Spine";
 
 const blocksAsVariants: Plugin = {
   name: "blocksAsVariants",
-  visit(spine: Spine) {
+  visit(node, spine) {
     if (
-      spine.node.kind === "Block" &&
+      node.kind === "Block" &&
       spine.parent !== null &&
       spine.parent.node.kind !== "Variants" &&
       spine.parent.node.kind !== "Program"
     )
-      return variants([spine.node]);
+      return variants([node]);
   },
 };
 

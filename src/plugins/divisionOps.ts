@@ -1,12 +1,10 @@
 import { getType } from "../common/getType";
 import { Plugin } from "../common/Language";
-import { Spine } from "../common/Spine";
 import { copyType, leq, polygolfOp } from "../IR";
 
 export const modToRem: Plugin = {
   name: "modToRem",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node, spine) {
     const program = spine.root.node;
     if (node.kind === "PolygolfOp" && node.op === "mod") {
       const rightType = getType(node.args[1], program);
@@ -30,8 +28,7 @@ export const modToRem: Plugin = {
 
 export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node, spine) {
     const program = spine.root.node;
     if (node.kind === "PolygolfOp" && node.op === "div") {
       const rightType = getType(node.args[1], program);

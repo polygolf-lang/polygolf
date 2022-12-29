@@ -10,12 +10,10 @@ import {
 } from "../IR";
 import { getType } from "../common/getType";
 import { Plugin } from "../common/Language";
-import { Spine } from "../common/Spine";
 
 export const golfStringListLiteral: Plugin = {
   name: "golfStringListLiteral",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node) {
     if (
       node.kind === "ListConstructor" &&
       node.exprs.every((x) => x.kind === "StringLiteral")
@@ -54,8 +52,7 @@ function getDelim(strings: string[]): string {
 
 export const evalStaticExpr: Plugin = {
   name: "evalStaticExpr",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node, spine) {
     if (
       "op" in node &&
       node.op !== null &&

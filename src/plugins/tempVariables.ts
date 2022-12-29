@@ -1,11 +1,9 @@
 import { Plugin } from "../common/Language";
-import { Spine } from "../common/Spine";
 import { block, Expr, manyToManyAssignment } from "../IR";
 
 export const tempVarToMultipleAssignment: Plugin = {
   name: "tempVarToMultipleAssignment",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node) {
     if (node.kind === "Block") {
       const newNodes: Expr[] = [];
       let changed = false;

@@ -6,14 +6,12 @@ import {
   copyType,
 } from "../IR";
 import { Plugin } from "../common/Language";
-import { Spine } from "../common/Spine";
 
 // "a = a + b" --> "a += b"
 export function addMutatingBinaryOp(...ops: string[]): Plugin {
   return {
     name: `addMutatingBinaryOp(${ops.join(", ")})`,
-    visit(spine: Spine) {
-      const node = spine.node;
+    visit(node) {
       if (
         node.kind === "Assignment" &&
         node.expr.kind === "BinaryOp" &&
@@ -49,8 +47,7 @@ export function addMutatingBinaryOp(...ops: string[]): Plugin {
 // (a + b) --> (b + a)
 export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node) {
     if (node.kind === "PolygolfOp" && isBinary(node.op)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {

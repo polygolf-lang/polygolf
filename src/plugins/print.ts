@@ -1,6 +1,5 @@
 import { replaceAtIndex } from "../common/immutable";
 import { Plugin } from "../common/Language";
-import { Spine } from "../common/Spine";
 import { polygolfOp, stringLiteral } from "../IR";
 import { mapOps } from "./ops";
 
@@ -19,8 +18,7 @@ export const printLnToprint = mapOps([
 export function golfLastPrint(toPrintln = true): Plugin {
   return {
     name: "golfLastPrint",
-    visit(spine: Spine) {
-      const program = spine.node;
+    visit(program) {
       if (program.kind !== "Program") return;
       const newOp = toPrintln ? ("println" as const) : ("print" as const);
       const oldOp = toPrintln ? "print" : "println";

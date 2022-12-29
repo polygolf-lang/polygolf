@@ -55,15 +55,15 @@ export function renameIdents(
 ): Plugin {
   return {
     name: "renameIdents(...)",
-    visit(spine: Spine) {
-      if (spine.node.kind !== "Program") return;
+    visit(program, spine) {
+      if (program.kind !== "Program") return;
       const identMap = getIdentMap(spine.root, identGen);
-      return spine.withReplacer((s: Spine) => {
-        if (s.node.kind === "Identifier" && !s.node.builtin) {
-          const outputName = identMap.get(s.node.name);
+      return spine.withReplacer((node) => {
+        if (node.kind === "Identifier" && !node.builtin) {
+          const outputName = identMap.get(node.name);
           if (outputName === undefined)
             throw new Error("Programming error. Incomplete identMap.");
-          return copyType(s.node, id(outputName));
+          return copyType(node, id(outputName));
         }
       }).node;
     },
@@ -88,13 +88,11 @@ export function aliasBuiltins(
 ): Plugin {
   return {
     name: "aliasBuiltins(...)",
-    visit(spine: Spine) {
-      const program = spine.node;
+    visit(program, spine) {
       if (program.kind !== "Program") return;
       // get frequency of each builtin
       const timesUsed = new Map<string, number>();
-      spine.visit((s: Spine) => {
-        const node = s.node;
+      spine.visit((node) => {
         if (node.kind === "Identifier" && node.builtin) {
           const freq = timesUsed.get(node.name) ?? 0;
           timesUsed.set(node.name, freq + 1);
@@ -102,8 +100,7 @@ export function aliasBuiltins(
       });
       // apply
       const assignments: (IR.Assignment & { variable: Identifier })[] = [];
-      const replacedDeep = spine.withReplacer((s: Spine) => {
-        const node = s.node;
+      const replacedDeep = spine.withReplacer((node) => {
         if (
           node.kind === "Identifier" &&
           node.builtin &&

@@ -1,5 +1,5 @@
 import { IR } from "IR";
-import { Spine } from "./Spine";
+import { Visitor } from "./Spine";
 
 export type OpTransformOutput =
   | string
@@ -33,7 +33,7 @@ export interface Plugin {
   /** visit should return a viable replacement node, or undefined to represent
    * no replacement. The replacement node should be different in value than
    * the initial node if it compares different under reference equality */
-  visit: (spine: Spine) => IR.Node | undefined;
+  visit: Visitor<IR.Node | undefined>;
   /** Set `allOrNothing: true` to force all replacement nodes to be applied,
    * or none. This is useful in cases such as renaming variables */
   allOrNothing?: boolean;

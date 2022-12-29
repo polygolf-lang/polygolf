@@ -1,6 +1,5 @@
 import { getType } from "../common/getType";
 import { Plugin } from "../common/Language";
-import { Spine } from "../common/Spine";
 import {
   forRange,
   int,
@@ -17,8 +16,7 @@ import {
 
 export const forRangeToForRangeInclusive: Plugin = {
   name: "forRangeToForRangeInclusive",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node) {
     if (node.kind === "ForRange" && !node.inclusive)
       return forRange(
         node.variable,
@@ -33,8 +31,7 @@ export const forRangeToForRangeInclusive: Plugin = {
 
 export const useInclusiveForRange: Plugin = {
   name: "useInclusiveForRange",
-  visit(spine: Spine): IR.ForRange | undefined {
-    const node = spine.node;
+  visit(node): IR.ForRange | undefined {
     if (node.kind === "ForRange" && !node.inclusive) {
       if (node.high.kind === "IntegerLiteral") {
         const high = {
@@ -73,8 +70,7 @@ export const useInclusiveForRange: Plugin = {
 
 export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node, spine) {
     if (node.kind === "ForRange") {
       const low = getType(node.low, spine.root.node);
       const high = getType(node.high, spine.root.node);
@@ -100,8 +96,7 @@ export const forRangeToWhile: Plugin = {
 
 export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node, spine) {
     if (node.kind === "ForRange") {
       const low = getType(node.low, spine.root.node);
       const high = getType(node.high, spine.root.node);
@@ -133,8 +128,7 @@ export const forRangeToForCLike: Plugin = {
 // TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
 export const forRangeToForEachPair: Plugin = {
   name: "forRangeToForEachPair",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node, spine) {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
@@ -148,8 +142,7 @@ export const forRangeToForEachPair: Plugin = {
       const elementIdentifier = id(
         node.variable.name + "_forRangeToForEachPair"
       );
-      const newBody = spine.getChild("body").withReplacer((s: Spine) => {
-        const innerNode = s.node;
+      const newBody = spine.getChild("body").withReplacer((innerNode) => {
         if (isListGet(innerNode, collection.name, node.variable.name))
           return elementIdentifier;
       }).node as IR.Expr;
@@ -169,8 +162,7 @@ export const forRangeToForEachPair: Plugin = {
  */
 export const forRangeToForEach: Plugin = {
   name: "forRangeToForEach",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node, spine) {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
@@ -184,15 +176,15 @@ export const forRangeToForEach: Plugin = {
       const elementIdentifier = id(node.variable.name + "_forRangeToForEach");
       const bodySpine = spine.getChild("body");
       const onlyUsedForCollectionAccess = bodySpine.everyNode(
-        (x) =>
-          x.node.kind !== "Identifier" ||
-          x.node.name !== node.variable.name ||
-          isListGet(x.parent!.node, collection.name, node.variable.name)
+        (n, s) =>
+          n.kind !== "Identifier" ||
+          n.name !== node.variable.name ||
+          isListGet(s.parent!.node, collection.name, node.variable.name)
       );
       if (onlyUsedForCollectionAccess) {
         // if the loop variable is only used to index the collection
-        const newBody = bodySpine.withReplacer((s: Spine) => {
-          if (isListGet(s.node, collection.name, node.variable.name))
+        const newBody = bodySpine.withReplacer((n) => {
+          if (isListGet(n, collection.name, node.variable.name))
             return elementIdentifier;
         }).node as IR.Expr;
         return forEach(elementIdentifier, collection, newBody);

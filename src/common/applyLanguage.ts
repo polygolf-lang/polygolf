@@ -101,8 +101,8 @@ function golfProgram(
       if (plugin.allOrNothing === true) {
         pushToQueue(applyAll(program, plugin.visit), newHist);
       } else {
-        for (const altProgram of spine.visit((s) => {
-          const ret = plugin.visit(s);
+        for (const altProgram of spine.visit((n, s) => {
+          const ret = plugin.visit(n, s);
           if (ret !== undefined) return s.replacedWith(ret).root.node;
         })) {
           pushToQueue(altProgram, newHist);

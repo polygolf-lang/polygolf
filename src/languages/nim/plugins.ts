@@ -10,7 +10,6 @@ import {
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { Plugin } from "../../common/Language";
-import { Spine } from "../../common/Spine";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -38,14 +37,12 @@ export function addImports(dependencyMap0: [string, string][]): Plugin {
   const dependencyMap = new Map(dependencyMap0);
   return {
     name: "addImports",
-    visit(spine: Spine) {
-      const program = spine.node;
+    visit(program, spine) {
       if (program.kind !== "Program") return;
       // get dependencies
       // TODO: abstract this part for other languages
       // TODO: cache, and maybe do recursive merging for performance
-      const dependenciesGen = spine.visit((s: Spine) => {
-        const node = s.node;
+      const dependenciesGen = spine.visit((node) => {
         let op: string = node.kind;
         if (node.kind === "BinaryOp" || node.kind === "UnaryOp") op = node.name;
         if (node.kind === "FunctionCall") op = node.ident.name;
@@ -80,8 +77,7 @@ export function addImports(dependencyMap0: [string, string][]): Plugin {
 const declared: Set<string> = new Set<string>();
 export const addVarDeclarations: Plugin = {
   name: "addVarDeclarations",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node, spine) {
     if (node.kind === "Program") declared.clear();
     else if (
       spine.parent?.node.kind !== "Block" &&
@@ -147,8 +143,7 @@ function simplifyAssignments(
 
 export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node, spine) {
     const program = spine.root.node;
     if (
       node.kind === "BinaryOp" &&
@@ -177,8 +172,7 @@ export const useUnsignedDivision: Plugin = {
 
 export const useUFCS: Plugin = {
   name: "useUFCS",
-  visit(spine: Spine) {
-    const node = spine.node;
+  visit(node) {
     if (node.kind === "FunctionCall" && node.args.length > 0) {
       if (node.args.length === 1 && node.args[0].kind === "StringLiteral") {
         return;

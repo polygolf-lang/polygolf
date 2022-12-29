@@ -13,15 +13,13 @@ import {
   unaryOp,
 } from "../IR";
 import { getType } from "../common/getType";
-import { Spine } from "../common/Spine";
 
 export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
   const opMap = new Map<string, OpTransformOutput>(opMap0);
   return {
     name: "mapOps(...)",
     allOrNothing: true,
-    visit(spine: Spine) {
-      const node = spine.node;
+    visit(node, spine) {
       if (node.kind === "PolygolfOp") {
         const op = node.op;
         const f = opMap.get(op);
@@ -87,8 +85,7 @@ export function useIndexCalls(
       ops
     )})`,
     allOrNothing: true,
-    visit(spine: Spine) {
-      const node = spine.node;
+    visit(node) {
       if (
         node.kind === "PolygolfOp" &&
         (ops.length === 0 || ops.includes(node.op)) &&
