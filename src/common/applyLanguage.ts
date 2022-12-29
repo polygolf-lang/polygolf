@@ -8,12 +8,10 @@ export default function applyLanguage(
   language: Language,
   program: IR.Program
 ): string {
-  if (language.name === "Polygolf") {
-    return applyLanguageToVariants(language, [program]);
-  } else {
-    const variants = expandVariants(program);
-    return applyLanguageToVariants(language, variants);
-  }
+  return applyLanguageToVariants(
+    language,
+    language.name === "Polygolf" ? [program] : expandVariants(program)
+  );
 }
 
 function getFinalEmit(language: Language) {
@@ -35,24 +33,45 @@ function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
   return programToSpine(program).withReplacer(visitor).node as IR.Program;
 }
 
+function isError(x: any): x is Error {
+  return x instanceof Error;
+}
+
+/** Return the emitted form of the shortest non-error-throwing variant, or
+ * throw an error if every variant throws */
 export function applyLanguageToVariants(
   language: Language,
   variants: IR.Program[]
 ): string {
   const finalEmit = getFinalEmit(language);
   const golfPlugins = language.golfPlugins.concat(language.emitPlugins);
-  return variants
+  const ret = variants
     .map((variant) => golfProgram(variant, golfPlugins, finalEmit))
-    .reduce((a, b) => (a.length < b.length ? a : b));
+    .reduce((a, b) =>
+      isError(a) ? b : isError(b) ? a : a.length < b.length ? a : b
+    );
+  // no variant could be compiled
+  if (isError(ret)) {
+    ret.message = "No variant could be compiled: " + ret.message;
+    throw ret;
+  }
+  return ret;
 }
 
+/** Returns an error if the program cannot be emitted */
 function golfProgram(
   program: IR.Program,
   golfPlugins: Plugin[],
   finalEmit: (ir: IR.Program) => string
-): string {
+): string | Error {
   const pq: [IR.Program, number, string[]][] = [];
-  let shortestSoFar = finalEmit(program);
+  let shortestSoFar: string;
+  try {
+    shortestSoFar = finalEmit(program);
+  } catch (e) {
+    if (isError(e)) return e;
+    throw e;
+  }
   const visited = new Set<string>();
   const pushToQueue = (prog: IR.Program, hist: string[]) => {
     // cache based on JSON.stringify instead of finalEmit because
