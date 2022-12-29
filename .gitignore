@@ -1,4 +1,4 @@
 node_modules
 dist
 src/frontend/grammar.ts
-*.test.md.js
+*.test.md.ts
