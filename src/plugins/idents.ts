@@ -1,5 +1,5 @@
 import { Plugin, IdentifierGenerator } from "common/Language";
-import { symbolTableRoot } from "../common/getSymbolTable";
+import { getDeclaredIdentifiers } from "../common/getSymbolTable";
 import { Spine } from "../common/Spine";
 import { assignment, block, id, Identifier, IR } from "../IR";
 
@@ -8,7 +8,7 @@ function getIdentMap(
   identGen: IdentifierGenerator
 ): Map<string, string> {
   // First, try mapping as many idents as possible to their preferred versions
-  const inputNames = symbolTableRoot(spine.node).keys();
+  const inputNames = [...getDeclaredIdentifiers(spine.node)];
   const outputNames = new Set<string>();
   const result = new Map<string, string>();
   for (const iv of inputNames) {

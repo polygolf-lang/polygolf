@@ -1,12 +1,17 @@
-import { integerType, IR, sub, Type } from "../IR";
+import { Identifier, integerType, IR, isSubtype, sub, Type } from "../IR";
 import { PolygolfError } from "./errors";
 import { getCollectionTypes, getType } from "./getType";
 import { programToSpine, Spine } from "./Spine";
 
-class SymbolTable extends Map<string, Type> {
+/** Map from a name to the node that defines/binds it. */
+class SymbolTable extends Map<string, Spine> {
   getRequired(key: string) {
     const ret = this.get(key);
-    if (ret === undefined) throw new Error(`Symbol not found: ${key}`);
+    if (ret === undefined)
+      throw new Error(
+        `Symbol not found: ${key}. ` +
+          `Defined symbols: ${[...this.keys()].join(", ")}`
+      );
     return ret;
   }
 }
@@ -18,21 +23,72 @@ const symbolTableCache = new WeakMap<IR.Program, SymbolTable>();
  * symbols using a visitor, so performance can potentially be improved by
  * recursively merging symbol tables to avoid needing to re-traverse the whole
  * tree for every small change. */
-export function symbolTableRoot(program: IR.Program): SymbolTable {
+function symbolTableRoot(program: IR.Program): SymbolTable {
   if (symbolTableCache.has(program)) return symbolTableCache.get(program)!;
-  const defs = [...programToSpine(program).visit(introducedSymbols)].flat(1);
+  const existing = new Set<string>();
+  const defs = [
+    ...programToSpine(program).visit((s) =>
+      introducedSymbols(s, existing)?.map((name) => {
+        existing.add(name);
+        return [name, s] as const;
+      })
+    ),
+  ].flat(1);
   const table = new SymbolTable(defs);
-  // checks for a duplicate by seeing if the value in the table is different
-  // than the value expected.
-  // Assumes that annotating a variable twice with the same value is OK.
-  const duplicate = defs.find(([name, type]) => table.get(name) !== type);
-  if (duplicate !== undefined)
-    throw new Error(`Duplicate symbol: ${duplicate[0]}`);
+  // check for duplicate real quick
+  if (table.size < defs.length) {
+    const sortedNames = defs.map(([name]) => name).sort();
+    const duplicate = sortedNames.find(
+      (name, i) => i > 0 && sortedNames[i - 1] === name
+    );
+    if (duplicate !== undefined)
+      throw new Error(`Duplicate symbol: ${duplicate[0]}`);
+  }
   symbolTableCache.set(program, table);
   return table;
 }
 
-function introducedSymbols(spine: Spine): [string, Type][] | undefined {
+export function getDeclaredIdentifiers(program: IR.Program) {
+  return symbolTableRoot(program).keys();
+}
+
+export function getIdentifierType(
+  expr: IR.Identifier,
+  program: IR.Program
+): Type {
+  return getTypeFromBinding(
+    expr.name,
+    symbolTableRoot(program).getRequired(expr.name)
+  );
+}
+
+function introducedSymbols(
+  spine: Spine,
+  existing: Set<string>
+): string[] | undefined {
+  const node = spine.node;
+  switch (node.kind) {
+    case "ForRange":
+    case "ForEach":
+    case "ForEachKey":
+      return [node.variable.name];
+    case "ForEachPair":
+      return [node.keyVariable.name, node.valueVariable.name];
+    case "Assignment":
+      if (
+        node.variable.kind === "Identifier" &&
+        // for backwards-compatibility, treat the first assignment of each
+        // variable as a declaration. Otherwise we should:
+        //    // treat every user-annotated assignment as a declaration
+        //    node.variable.type !== undefined
+        !existing.has(node.variable.kind)
+      )
+        return [node.variable.name];
+      break;
+  }
+}
+
+function getTypeFromBinding(name: string, spine: Spine): Type {
   const node = spine.node;
   const program = spine.root.node;
   switch (node.kind) {
@@ -50,33 +106,34 @@ function introducedSymbols(spine: Spine): [string, Type][] | undefined {
           node.source
         );
       }
-      const t = integerType(low.low, sub(high.high, node.inclusive ? 0n : 1n));
-      return [[node.variable.name, t]];
+      return integerType(low.low, sub(high.high, node.inclusive ? 0n : 1n));
     }
-    case "ForEach": {
-      const t = getCollectionTypes(node.collection, program)[0];
-      return [[node.variable.name, t]];
-    }
-    case "ForEachKey": {
-      const t = getCollectionTypes(node.table, program)[0];
-      return [[node.variable.name, t]];
-    }
+    case "ForEach":
+      return getCollectionTypes(node.collection, program)[0];
+    case "ForEachKey":
+      return getCollectionTypes(node.table, program)[0];
     case "ForEachPair": {
       const _types = getCollectionTypes(node.table, program);
       const types = _types.length === 1 ? [integerType(), _types[0]] : _types;
-      return [
-        [node.keyVariable.name, types[0]],
-        [node.valueVariable.name, types[1]],
-      ];
+      return name === node.keyVariable.name ? types[0] : types[1];
     }
     case "Assignment": {
+      const assignedType = getType(node.expr, program);
       if (
-        node.variable.kind === "Identifier" &&
-        // treat every user-annotated assignment as a declaration
-        node.variable.type !== undefined
-      ) {
-        return [[node.variable.name, node.variable.type]];
-      }
+        node.variable.type !== undefined &&
+        !isSubtype(assignedType, node.variable.type)
+      )
+        throw new PolygolfError(
+          `Value of type ${assignedType.kind} cannot be assigned to ${
+            (node.variable as Identifier).name
+          } of type ${node.variable.type.kind}`,
+          node.source
+        );
+      return node.variable.type ?? assignedType;
     }
+    default:
+      throw new Error(
+        `Programming error: node of type ${node.kind} does not bind any symbol`
+      );
   }
 }

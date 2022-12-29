@@ -51,7 +51,6 @@ export * from "./toplevel";
 export * from "./types";
 
 export interface BaseExpr extends BaseNode {
-  // temporary not readonly
   /** type: an uninferrable type, either annotated from the frontend or
    * inserted for language-specific op nodes */
   readonly type?: Type;

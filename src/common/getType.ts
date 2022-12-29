@@ -46,7 +46,7 @@ import {
   constantIntegerType,
 } from "../IR";
 import { PolygolfError } from "./errors";
-import { symbolTableRoot } from "./getSymbolTable";
+import { getIdentifierType } from "./getSymbolTable";
 
 const cachedType = new WeakMap<Expr, Type>();
 export function getType(expr: Expr, program: Program): Type {
@@ -144,7 +144,7 @@ export function calcType(expr: Expr, program: Program): Type {
       );
     }
     case "Identifier":
-      return symbolTableRoot(program).getRequired(expr.name);
+      return getIdentifierType(expr, program);
     case "StringLiteral":
       return textType(expr.value.length);
     case "IntegerLiteral":

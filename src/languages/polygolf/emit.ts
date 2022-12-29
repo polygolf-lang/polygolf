@@ -34,7 +34,11 @@ function emitVariants(expr: Variants, indent = false): string[] {
   ];
 }
 
-function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
+export function emitExpr(
+  expr: Expr,
+  asStatement = false,
+  indent = false
+): string[] {
   function emitSexpr(op: string, ...args: (string | Expr)[]): string[] {
     if (op === "@") op += expr.kind;
     const result: string[] = [];
