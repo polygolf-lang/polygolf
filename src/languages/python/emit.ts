@@ -83,7 +83,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
         ":",
         ...emitBlock(stmt.consequent, stmt),
         ...(stmt.alternate !== undefined
-          ? ["else", ":", ...emitBlock(stmt.alternate, stmt)]
+          ? ["\n", "else", ":", ...emitBlock(stmt.alternate, stmt)]
           : []),
       ];
     case "Variants":
