@@ -103,12 +103,6 @@ describe("Assignment", () => {
 
 describe("Functions", () => {
   testExpr(
-    "Function call",
-    functionCall([integerLiteral(1n)], id("f", false)),
-    int(0),
-    program(block([]))
-  );
-  testExpr(
     "Function call wrong types",
     functionCall([integerLiteral(1n)], id("f", false)),
     "error",

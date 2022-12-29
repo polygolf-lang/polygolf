@@ -71,13 +71,13 @@ test("ForRange -> ForEachPair", () =>
   expectTransform(
     loopProgram3,
     loops.forRangeToForEachPair,
-    "foreach (i,a) in  collection{ println(i); println(a); }"
+    "foreach (i,i_forRangeToForEachPair) in  collection{ println(i); println(i_forRangeToForEachPair); }"
   ));
 test("ForRange -> ForEach", () =>
   expectTransform(
     loopProgram2,
     loops.forRangeToForEach,
-    "foreach a in collection println(a)"
+    "foreach i_forRangeToForEach in collection println(i_forRangeToForEach)"
   ));
 test("ForRange -> ForEach", () =>
   expectTransform(
