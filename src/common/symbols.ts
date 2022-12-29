@@ -42,7 +42,7 @@ function symbolTableRoot(program: IR.Program): SymbolTable {
       (name, i) => i > 0 && sortedNames[i - 1] === name
     );
     if (duplicate !== undefined)
-      throw new Error(`Duplicate symbol: ${duplicate[0]}`);
+      throw new Error(`Duplicate symbol: ${duplicate}`);
   }
   symbolTableCache.set(program, table);
   return table;
@@ -81,7 +81,7 @@ function introducedSymbols(
         // variable as a declaration. Otherwise we should:
         //    // treat every user-annotated assignment as a declaration
         //    node.variable.type !== undefined
-        !existing.has(node.variable.kind)
+        !existing.has(node.variable.name)
       )
         return [node.variable.name];
       break;
