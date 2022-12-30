@@ -49,9 +49,17 @@ import { PolygolfError } from "./errors";
 import { getIdentifierType } from "./symbols";
 
 const cachedType = new WeakMap<Expr, Type>();
+const currentlyFinding = new WeakSet<Expr>();
 export function getType(expr: Expr, program: Program): Type {
   if (cachedType.has(expr)) return cachedType.get(expr)!;
+  if (currentlyFinding.has(expr))
+    throw new PolygolfError(
+      `Expression defined in terms of itself`,
+      expr.source
+    );
+  currentlyFinding.add(expr);
   const t = calcType(expr, program);
+  currentlyFinding.delete(expr);
   cachedType.set(expr, t);
   return t;
 }

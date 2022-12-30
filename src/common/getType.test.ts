@@ -29,6 +29,7 @@ import {
   listType,
   functionCall,
 } from "IR";
+import { PolygolfError } from "./errors";
 import { calcType } from "./getType";
 
 /** returns identifier expression of given type */
@@ -99,6 +100,11 @@ describe("Assignment", () => {
     assignment(e(list(text())), listConstructor([])),
     list("void")
   );
+  test("Self-referential assignment", () => {
+    const aLHS = id("a");
+    const expr = assignment(aLHS, polygolfOp("add", id("a"), e(int(1))));
+    expect(() => calcType(aLHS, program(block([expr])))).toThrow(PolygolfError);
+  });
 });
 
 describe("Functions", () => {
