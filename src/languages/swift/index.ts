@@ -21,7 +21,7 @@ const swiftLanguage: Language = {
     useIndexCalls(),
     golfLastPrint(),
     mapOps([
-      ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
+      ["text_get_byte", (x) => functionCall([indexCall(functionCall([methodCall(x[0], [], "utf8", undefined, true)], "Array"), x[1])], "Int")],
       ["text_length", (x) => methodCall(x[0], [], "count", undefined, true)],
       //["text_length_chars", (x) => methodCall(x[0], [], "count", undefined, true)],
       //["text_length_bytes", (x) => methodCall(methodCall(x[0], [], "utf8", undefined, true), [], "count", undefined, true)]
