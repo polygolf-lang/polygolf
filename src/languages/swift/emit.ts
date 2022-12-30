@@ -254,7 +254,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
           ","
         ),
         ")",
-        expr.op === "text_to_int" || expr.ident.name == "UnicodeScalar"
+        expr.op === "text_to_int" || expr.ident.name === "UnicodeScalar"
           ? "!"
           : "",
       ];
