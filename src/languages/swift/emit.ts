@@ -31,22 +31,20 @@ function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
 function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
   switch (stmt.kind) {
     case "VarDeclarationWithAssignment":
-      const variables =
-        stmt.assignments.kind === "Assignment"
-          ? [stmt.assignments.variable]
-          : stmt.assignments.variables;
-      const exprs =
-        stmt.assignments.kind === "Assignment"
-          ? [stmt.assignments.expr]
-          : stmt.assignments.exprs;
-
       return [
         "var",
         ...joinGroups(
-          variables.map((v, i) => [
+          (stmt.assignments.kind === "Assignment"
+            ? [stmt.assignments.variable]
+            : stmt.assignments.variables
+          ).map((v, i) => [
             ...emitExprNoParens(v),
             "=",
-            ...emitExprNoParens(exprs[i]),
+            ...emitExprNoParens(
+              (stmt.assignments.kind === "Assignment"
+                ? [stmt.assignments.expr]
+                : stmt.assignments.exprs)[i]
+            ),
           ]),
           ","
         ),
@@ -259,7 +257,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         expr.op === "text_to_int" ? "!" : "",
       ];
     case "MethodCall":
-      if (expr.ident.name === "utf8" || expr.ident.name == "count") {
+      if (expr.ident.name === "utf8" || expr.ident.name === "count") {
         return [...emitExpr(expr.object, expr), ".", expr.ident.name];
       }
       return [

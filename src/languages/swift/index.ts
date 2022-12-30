@@ -59,8 +59,8 @@ const swiftLanguage: Language = {
           ),
       ],
       ["text_length", (x) => methodCall(x[0], [], "count")],
-      //["text_length_chars", (x) => methodCall(x[0], [], "count")],
-      //["text_length_bytes", (x) => methodCall(methodCall(x[0], [], "utf8"), [], "count")]
+      // ["text_length_chars", (x) => methodCall(x[0], [], "count")],
+      // ["text_length_bytes", (x) => methodCall(methodCall(x[0], [], "utf8"), [], "count")]
       ["int_to_text", (x) => functionCall([x[0]], "String")],
       ["text_split", (x) => methodCall(x[0], [x[1]], "split")],
       ["repeat", (x) => functionCall([x[0], x[1]], "String")],
