@@ -296,8 +296,6 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         "]",
       ];
     case "IndexCall":
-      if (expr.oneIndexed)
-        throw new Error("Python only supports zeroIndexed access.");
       return [
         ...emitExprNoParens(expr.collection),
         "[",

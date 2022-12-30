@@ -1,8 +1,8 @@
-import { functionCall, indexCall, methodCall } from "../../IR";
+import { functionCall, id, indexCall, methodCall } from "../../IR";
 import { Language } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { mapOps, useIndexCalls } from "../../plugins/ops";
+import { mapOps, plus1, useIndexCalls } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { addDependencies } from "../../plugins/dependencies";
 import { evalStaticExpr } from "../../plugins/static";
@@ -57,6 +57,10 @@ const swiftLanguage: Language = {
       ["println", (x) => functionCall([x[0]], "print")],
       ["print", (x) => functionCall([x[0]], "print")],
       ["text_to_int", (x) => functionCall([x[0]], "Int")],
+      [
+        "argv_get",
+        (x) => indexCall(id("CommandLine.arguments", true), plus1(x[0]), "argv_get", true),
+      ],
     ]),
     evalStaticExpr,
     addDependencies([["pow", "Foundation"]]),
