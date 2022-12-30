@@ -23,6 +23,9 @@ export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
   }
 }
 
+/** Get all keys of a node object corresponding to children nodes. This is the
+ * same sequence as `getChildFragments`, but this gives one key for each
+ * array prop, while `getChildFragments` gives a `PathFragment` for each entry */
 function* getChildKeys(node: IR.Node): Generator<string> {
   for (const key in node) {
     const value = (node as any)[key];
@@ -35,6 +38,8 @@ function* getChildKeys(node: IR.Node): Generator<string> {
   }
 }
 
+/** Get all `PathFragment`s pointing to child nodes, so `getChild(node, frag)`
+ * enumerates all children of `node` if `frag` loops over `getChildFragments(node)` */
 export function* getChildFragments(node: IR.Node): Generator<PathFragment> {
   for (const key of getChildKeys(node)) {
     const value = (node as any)[key] as IR.Node[] | IR.Node;
@@ -51,6 +56,8 @@ export function* getChildren(node: IR.Node): Generator<IR.Node> {
     yield getChild(node, fragment);
 }
 
+/** Get a new node by replacing all of `node`'s children, but preserve the rest
+ * of `node`'s properties such as boolean flags and string opcodes. */
 export function fromChildRemapFunc(
   node: IR.Node,
   func: (frag: PathFragment) => IR.Node

@@ -42,7 +42,7 @@ export function addImports(dependencyMap0: [string, string][]): Plugin {
       // get dependencies
       // TODO: abstract this part for other languages
       // TODO: cache, and maybe do recursive merging for performance
-      const dependenciesGen = spine.visit((node) => {
+      const dependenciesGen = spine.compactMap((node) => {
         let op: string = node.kind;
         if (node.kind === "BinaryOp" || node.kind === "UnaryOp") op = node.name;
         if (node.kind === "FunctionCall") op = node.ident.name;

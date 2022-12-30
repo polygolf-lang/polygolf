@@ -92,12 +92,12 @@ export function aliasBuiltins(
       if (program.kind !== "Program") return;
       // get frequency of each builtin
       const timesUsed = new Map<string, number>();
-      spine.visit((node) => {
-        if (node.kind === "Identifier" && node.builtin) {
-          const freq = timesUsed.get(node.name) ?? 0;
-          timesUsed.set(node.name, freq + 1);
-        }
-      });
+      for (const name of spine.compactMap((node) => {
+        if (node.kind === "Identifier" && node.builtin) return node.name;
+      })) {
+        const freq = timesUsed.get(name) ?? 0;
+        timesUsed.set(name, freq + 1);
+      }
       // apply
       const assignments: (IR.Assignment & { variable: Identifier })[] = [];
       const replacedDeep = spine.withReplacer((node) => {

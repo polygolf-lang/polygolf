@@ -1,4 +1,3 @@
-// some helpers
 export function replaceAtIndex<T>(
   arr: ReadonlyArray<T>,
   index: number,

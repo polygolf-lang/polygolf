@@ -36,13 +36,19 @@ The transpiler is expected to be sound*ish* (i.e., it doesn't break programs mos
 
 A part of the type system that helps with soundness is the interval number types. For example, a value with type `1..100` (integer from 1 to 100, inclusive) can be safely used for the same output in both modulo and remainder (C-style "mod"), as well as stored in small data types such as `u8` or C's `byte`.
 
+## Immutability
+
+All nodes in the IR are consistently immutable. For example, after construction of a node, `JSON.stringify(node)` should always give the same string. This is enforced in the type system (as well as it could) by marking all the properties as `readonly`. Do not circumvent this.
+
+Consistent immutability allows for two main performance improvements. First, it removes the need for cloning the entire program tree when one node changes. When a node gets replaced with a new node, only its parent (and ancestors, up to the program node) need to be replaced to get a new valid program state; the rest of the nodes in the old tree can be re-used in the new tree.
+
+Second, any function on a node can be cached using the reference to the node (`WeakMap`s are good for this because they allow for garbage collection of their keys, the nodes). This implies that the values of a function on a node should not depend on the ancestors of the node; in particular, the type of an expression should not depend on parent nodes. This is impossible due to global variables having a type, so we relax the constraint to only requiring that the type of a node should be the same for all program trees it could be in. If you change the type of a variable, swap out at minimum all the nodes the variable is used in.
+
 ## Variants
 
-A unique part of the Polygolf IR is variants. For example, one plugin introduces a variant that flips commutative binary operators such as addition. For example, it changes `(a + b)` to `{ (a + b) / (b + a) }`, read as "either `(a + b)` or `(b + a)`". This allows for the transpiler to pursue different golfing options. For example, `x=a+L[1]y=x^x` in Lua is one byte shorter than `x=L[1]+a y=x^x`.
+The key to golfing is considering alternatives which may or may not be shorter. Authors can specify variant options in the frontend by using variants. For example, `{ (5 div x) / (8 - (3 * x)) }` provides two variants for an expression that takes 1 and 2 to 5 and 2 respectively. A language in which floor division is short may end up picking the first variant, while other languages could pick the second variant. Variants are expanded `src/common/expandVariants` by trying all combinations of variants, which is acceptable for now because authors only introduce a few variants.
 
-Polygolf writers can also introduce variants directly in the language syntax.
-
-Variant expansion is currently done in `src/common/expandVariants` by trying all combinations of variants; a smarter approach is under discussion.
+The main time spent optimizing the output for each language does not use variant nodes in the sense of the frontend. Instead, plugins suggest new programs by providing a new node for an old node to be replaced with. The documentation for this is in the `Plugin` interface at `src/common/Language.ts`.
 
 ## Adding a language target
 
