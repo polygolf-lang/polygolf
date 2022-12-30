@@ -2,7 +2,7 @@ import { IR } from "../IR";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
 import { replaceAtIndex } from "./immutable";
 
-/** A Spine is like a Path but immutable. It assumes
+/** A Spine is a node and the node's parents. It assumes
  * that no mutation is performed on itself or its members. */
 export class Spine<N extends IR.Node = IR.Node> {
   public readonly root: Spine<IR.Program>;

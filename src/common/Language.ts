@@ -12,12 +12,11 @@ export type OpTransformOutput =
  * and ends up with a string in the following sequence:
  *
  * (parse input) => IR
- * => (golfPlugins and repeatable emitPlugins in any order) => IR
- * => (emitPlugins in the order specified) => IR limited to nodes the emitter supports
+ * => (golfPlugins and emitPlugins in any order) => IR
+ * => (emitPlugins in the order specified) => IR a little more limited
+ * => (finalEmitPlugins in the order specified) => IR limited to nodes the emitter supports
  * => (emitter) => token list
  * => (detokenizer) => string
- *
- * A repeatable emitPlugin is one without `finalEmitOnly: true`
  */
 export interface Language {
   name: string;

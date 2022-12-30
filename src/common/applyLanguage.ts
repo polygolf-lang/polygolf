@@ -47,7 +47,6 @@ export function applyLanguageToVariants(
     .reduce((a, b) =>
       isError(a) ? b : isError(b) ? a : a.length < b.length ? a : b
     );
-  // no variant could be compiled
   if (isError(ret)) {
     ret.message = "No variant could be compiled: " + ret.message;
     throw ret;
@@ -61,6 +60,8 @@ function golfProgram(
   golfPlugins: Plugin[],
   finalEmit: (ir: IR.Program) => string
 ): string | Error {
+  // room for improvement: use this as an actual priority queue
+  /** Array of [program, length, plugin hist] */
   const pq: [IR.Program, number, string[]][] = [];
   let shortestSoFar: string;
   try {
@@ -75,6 +76,8 @@ function golfProgram(
     //   1. finalEmit may error
     //   2. distinct program IRs can emit to the same target code (e.g
     //      `polygolfOp("+",a,b)` vs `functionCall("+",a,b)`)
+    // room for improvement? custom compare function. Might be able to
+    // O(log(nodes)) checking for duplicates instead of O(nodes) stringification
     const s = JSON.stringify(prog, (_, value) =>
       typeof value === "bigint" ? value.toString() + "n" : value
     );
@@ -85,6 +88,7 @@ function golfProgram(
       if (code.length < shortestSoFar.length) shortestSoFar = code;
       // 200 is arbitrary limit for performance to stop the search, since we're
       // currently using naive BFS with no pruning.
+      // room for improvement: prune bad options
       if (visited.size < 200) pq.push([prog, code.length, hist]);
     } catch {
       // Ignore for now, assuming it's using an unsupported language feature
