@@ -1,26 +1,51 @@
-import { assignment, functionCall, id, indexCall, methodCall } from "../../IR";
+import { functionCall, indexCall, methodCall } from "../../IR";
 import { Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import { mapOps, useIndexCalls } from "../../plugins/ops";
-import { aliasBuiltins, renameIdents } from "../../plugins/idents";
-import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
-import { forRangeToForEach } from "../../plugins/loops";
+import { renameIdents } from "../../plugins/idents";
 import { addDependencies } from "../../plugins/dependencies";
-import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
+import { evalStaticExpr } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { addImports } from "./plugins";
+import { addVarDeclarations } from "../nim/plugins";
 
 const swiftLanguage: Language = {
   name: "Swift",
   emitter: emitProgram,
   plugins: [
-    tempVarToMultipleAssignment,
-    golfStringListLiteral,
-    forRangeToForEach,
+ 
+    addVarDeclarations,
     useIndexCalls(),
     golfLastPrint(),
     mapOps([
+      ["not", ["!", 120]],
+      ["neg", ["-", 120]],
+      ["bit_not", ["~", 120]], 
+
+      ["mul", ["*", 110]],
+      ["div", ["/", 110]],
+      ["trunc_div", ["/", 110]], 
+      ["mod", ["%", 110]],
+      ["bit_and", ["&", 110]],
+
+      ["add", ["+", 100]],
+      ["sub", ["-", 100]],
+      ["bit_or", ["|", 100]],
+      ["bit_xor", ["^", 100]],
+      ["text_concat", ["+", 100]],
+      
+      ["lt", ["<", 40]],
+      ["leq", ["<=", 40]],
+      ["eq", ["==", 40]],
+      ["neq", ["!=", 40]],
+      ["geq", [">=", 40]],
+      ["gt", [">", 40]],
+      
+      ["and", ["&&", 20]],
+
+      ["or", ["||", 10]],
+
       ["text_get_byte", (x) => functionCall([indexCall(functionCall([methodCall(x[0], [], "utf8")], "Array"), x[1])], "Int")],
       ["text_length", (x) => methodCall(x[0], [], "count")],
       //["text_length_chars", (x) => methodCall(x[0], [], "count")],
@@ -31,31 +56,7 @@ const swiftLanguage: Language = {
       ["pow", (x) => functionCall([functionCall([functionCall([x[0]], "Double"), functionCall([x[1]], "Double")], "pow")], "Int")],
       ["println", (x) => functionCall([x[0]], "print")],
       ["print", (x) => functionCall([x[0]], "print")],
-
-      ["add",         ["+", 100]],
-      
-      ["sub",         ["-", 100]],
-      ["mul",         ["*", 100]],
-      ["div",         ["/", 100]],
-      ["trunc_div",   ["/", 100]],
-      
-      ["mod",         ["%", 100]],
-      ["bit_and",     ["&", 100]],
-      ["bit_or",      ["|", 100]],
-      ["bit_xor",     ["^", 100]],
-      ["bit_not",     ["~", 100]],
-      ["lt",          ["<", 100]],
-      ["leq",         ["<=", 100]],
-      ["eq",          ["==", 100]],
-      ["neq",         ["!=", 100]],
-      ["geq",         [">=", 100]],
-      ["gt",          [">", 100]],
-      ["and",         ["&&", 100]],
-      ["or",          ["||", 100]],
-      ["text_concat", ["+", 100]],
-      ["not",         ["!", 100]],
-      ["neg",         ["-", 100]], 
-      
+      ["text_to_int", (x) => functionCall([x[0]], "Int")],
     ]),
     evalStaticExpr,
     addDependencies([["pow", "Foundation"]]),
