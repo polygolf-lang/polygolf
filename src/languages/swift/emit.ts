@@ -134,9 +134,8 @@ function needsParens(
   if (needsParensPrecedence(expr, parent, fragment)) {
     return true;
   }
-  if (parent.kind === "MethodCall" && fragment === "object") {
-    return expr.kind === "UnaryOp" || expr.kind === "BinaryOp";
-  }
+  if (expr.kind === "ConditionalOp")
+    return parent.kind === "UnaryOp" || parent.kind === "BinaryOp";
   return false;
 }
 
