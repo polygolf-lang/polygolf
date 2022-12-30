@@ -18,7 +18,7 @@ function getFinalEmit(language: Language) {
   const detokenizer = language.detokenizer ?? defaultDetokenizer();
   return (ir: IR.Program) => {
     const program = language.emitPlugins
-      .concat(language.finalEmitPlugins ?? [])
+      .concat(language.finalEmitPlugins)
       .reduce((program, plugin) => applyAll(program, plugin.visit), ir);
     return detokenizer(language.emitter(program));
   };

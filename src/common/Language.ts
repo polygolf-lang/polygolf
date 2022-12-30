@@ -22,7 +22,7 @@ export interface Language {
   name: string;
   golfPlugins: Plugin[];
   emitPlugins: Plugin[];
-  finalEmitPlugins?: Plugin[];
+  finalEmitPlugins: Plugin[];
   emitter: Emitter;
   detokenizer?: Detokenizer;
 }

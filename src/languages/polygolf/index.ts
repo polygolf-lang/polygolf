@@ -19,7 +19,8 @@ const polygolfLanguage: Language = {
   name: "Polygolf",
   emitter: emitProgram,
   golfPlugins: [],
-  emitPlugins: [blocksAsVariants],
+  emitPlugins: [],
+  finalEmitPlugins: [blocksAsVariants],
   detokenizer: defaultDetokenizer(
     (a, b) =>
       a !== "(" &&

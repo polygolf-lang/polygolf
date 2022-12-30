@@ -13,12 +13,14 @@ import { golfLastPrint } from "../../plugins/print";
 const luaLanguage: Language = {
   name: "Lua",
   emitter: emitProgram,
-  golfPlugins: [flipBinaryOps, evalStaticExpr],
-  emitPlugins: [
-    tempVarToMultipleAssignment,
-    forRangeToForRangeInclusive,
-    useIndexCalls(true),
+  golfPlugins: [
+    flipBinaryOps,
+    evalStaticExpr,
     golfLastPrint(),
+    tempVarToMultipleAssignment,
+  ],
+  emitPlugins: [forRangeToForRangeInclusive, useIndexCalls(true)],
+  finalEmitPlugins: [
     mapOps([
       [
         "argv_get",

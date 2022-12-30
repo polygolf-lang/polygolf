@@ -12,12 +12,15 @@ import { golfLastPrint } from "../../plugins/print";
 const pythonLanguage: Language = {
   name: "Python",
   emitter: emitProgram,
-  golfPlugins: [golfStringListLiteral, evalStaticExpr],
-  emitPlugins: [
+  golfPlugins: [
+    golfStringListLiteral,
+    evalStaticExpr,
     tempVarToMultipleAssignment,
     forRangeToForEach,
-    useIndexCalls(),
     golfLastPrint(),
+  ],
+  emitPlugins: [useIndexCalls()],
+  finalEmitPlugins: [
     mapOps([
       ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["text_length", (x) => functionCall([x[0]], "len")],

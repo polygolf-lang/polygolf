@@ -27,14 +27,15 @@ import { golfLastPrint } from "../../plugins/print";
 const nimLanguage: Language = {
   name: "Nim",
   emitter: emitProgram,
-  golfPlugins: [flipBinaryOps, golfStringListLiteral, evalStaticExpr],
-  emitPlugins: [
-    tempVarToMultipleAssignment,
-    modToRem,
-    divToTruncdiv,
-    useInclusiveForRange,
-    useIndexCalls(),
+  golfPlugins: [
+    flipBinaryOps,
+    golfStringListLiteral,
+    evalStaticExpr,
     golfLastPrint(),
+    tempVarToMultipleAssignment,
+  ],
+  emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
+  finalEmitPlugins: [
     mapOps([
       [
         "argv_get",
@@ -81,8 +82,6 @@ const nimLanguage: Language = {
     addMutatingBinaryOp("+", "*", "-", "&"),
     useUFCS,
     useUnsignedDivision,
-  ],
-  finalEmitPlugins: [
     addImports([
       ["^", "math"],
       ["repeat", "strutils"],
