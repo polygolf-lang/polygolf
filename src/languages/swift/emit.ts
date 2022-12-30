@@ -1,6 +1,5 @@
 import {
   emitStringLiteral,
-  hasChildWithBlock,
   joinGroups,
   needsParensPrecedence,
 } from "../../common/emit";
@@ -31,6 +30,27 @@ function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
   switch (stmt.kind) {
+    case "VarDeclarationWithAssignment":
+      const variables =
+        stmt.assignments.kind === "Assignment"
+          ? [stmt.assignments.variable]
+          : stmt.assignments.variables;
+      const exprs =
+        stmt.assignments.kind === "Assignment"
+          ? [stmt.assignments.expr]
+          : stmt.assignments.exprs;
+
+      return [
+        "var",
+        ...joinGroups(
+          variables.map((v, i) => [
+            ...emitExprNoParens(v),
+            "=",
+            ...emitExprNoParens(exprs[i]),
+          ]),
+          ","
+        ),
+      ];
     case "Block":
       return emitBlock(stmt, parent);
     case "ImportStatement":
@@ -45,12 +65,10 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
       return [
         `while`,
         ...emitExpr(stmt.condition, stmt),
-        ":",
         ...emitBlock(stmt.body, stmt),
       ];
     case "ForRange": {
       const low = emitExpr(stmt.low, stmt);
-      const low0 = low.length === 1 && low[0] === "0";
       const high = emitExpr(stmt.high, stmt);
       const increment = emitExpr(stmt.increment, stmt);
       const increment1 = increment.length === 1 && increment[0] === "1";
@@ -58,13 +76,19 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
         "for",
         ...emitExpr(stmt.variable, stmt),
         "in",
-        "range",
-        "(",
-        ...(low0 && increment1 ? [] : [...low, ","]),
-        ...high,
-        ...(increment1 ? [] : [",", ...increment]),
-        ")",
-        ":",
+        ...(
+          increment1 ? 
+          [...low, "..<", ...high] :
+          [
+            "stride",
+            "(",
+            ...joinGroups(
+              [["from:", ...low],["to:", ...high],["by:", ...increment]],
+              ","
+            ),
+            ")"
+          ]
+        ),
         ...emitBlock(stmt.body, stmt),
       ];
     }
@@ -83,7 +107,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.kind}) while emitting Python`);
+      throw new Error(`Unexpected node (${stmt.kind}) while emitting Swift`);
     default:
       return emitExpr(stmt, parent);
   }
@@ -124,18 +148,6 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         "=",
         ...emitExpr(expr.expr, expr),
       ];
-    case "ManyToManyAssignment":
-      return [
-        ...joinGroups(
-          expr.variables.map((v) => emitExprNoParens(v)),
-          ","
-        ),
-        "=",
-        ...joinGroups(
-          expr.exprs.map((x) => emitExprNoParens(x)),
-          ","
-        ),
-      ];
     case "MutatingBinaryOp":
       return [
         ...emitExpr(expr.variable, expr),
@@ -151,17 +163,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
           [
             [`\\`, `\\\\`],
             [`\n`, `\\n`],
-            [`\r`, `\\r`],
             [`"`, `\\"`],
-          ],
-        ],
-        [
-          `'`,
-          [
-            [`\\`, `\\\\`],
-            [`\n`, `\\n`],
-            [`\r`, `\\r`],
-            [`'`, `\\'`],
           ],
         ],
         [
@@ -180,15 +182,16 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         "(",
         ...joinGroups(
           (
-            expr.op == "repeat" ?
+            expr.op === "repeat" ?
             [["repeating:",...emitExpr(expr.args[0], expr)],["count:",...emitExpr(expr.args[1], expr)]] :
-            expr.op == "print" ?
+            expr.op === "print" ?
             [[...emitExpr(expr.args[0], expr)],["terminator:","\"\""]] :
             expr.args.map((arg) => emitExpr(arg, expr))
           ),
           ","
         ),
         ")",
+        (expr.op === "text_to_int" ? "!" : ""),
       ];
     case "MethodCall":
       if (expr.ident.name === "utf8" || expr.ident.name == "count") {
@@ -205,7 +208,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         "(",
         ...joinGroups(
           (
-            expr.op == "text_split" ?
+            expr.op === "text_split" ?
             [["separator:",...emitExpr(expr.args[0], expr)]] :
             expr.args.map((arg) => emitExpr(arg, expr))
           ),
