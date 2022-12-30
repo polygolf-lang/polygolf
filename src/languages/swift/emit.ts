@@ -179,13 +179,19 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         expr.ident.name,
         "(",
         ...joinGroups(
-          expr.args.map((arg) => emitExpr(arg, expr)),
+          (
+            expr.op == "repeat" ?
+            [["repeating:",...emitExpr(expr.args[0], expr)],["count:",...emitExpr(expr.args[1], expr)]] :
+            expr.op == "print" ?
+            [[...emitExpr(expr.args[0], expr)],["terminator:","\"\""]] :
+            expr.args.map((arg) => emitExpr(arg, expr))
+          ),
           ","
         ),
         ")",
       ];
     case "MethodCall":
-      if (expr.property) {
+      if (expr.ident.name === "utf8" || expr.ident.name == "count") {
         return [
           ...emitExpr(expr.object, expr),
           ".",
