@@ -281,7 +281,11 @@ function emitExprNoParens(expr: IR.Expr): string[] {
     case "BinaryOp":
       return [
         ...emitExpr(expr.left, expr, "left"),
-        expr.name,
+        ...(
+          expr.op === "neq" ? // `!=` needs spaces on both sides in Swift
+          ["", expr.name, ""]:
+          expr.name
+        ),
         ...emitExpr(expr.right, expr, "right"),
       ];
     case "UnaryOp":
