@@ -1,9 +1,4 @@
-import {
-  block,
-  ImportStatement,
-  importStatement,
-  Program,
-} from "../../IR";
+import { block, ImportStatement, importStatement, Program } from "../../IR";
 import { Visitor } from "../../common/traverse";
 
 export const addImports: Visitor = {

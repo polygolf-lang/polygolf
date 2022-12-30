@@ -21,7 +21,7 @@ function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
   return [
     "{",
     ...joinGroups(
-      children.map((stmt) => emitStatement(stmt, block)), 
+      children.map((stmt) => emitStatement(stmt, block)),
       "\n"
     ),
     "}",
@@ -76,19 +76,21 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
         "for",
         ...emitExpr(stmt.variable, stmt),
         "in",
-        ...(
-          increment1 ? 
-          [...low, "..<", ...high] :
-          [
-            "stride",
-            "(",
-            ...joinGroups(
-              [["from:", ...low],["to:", ...high],["by:", ...increment]],
-              ","
-            ),
-            ")"
-          ]
-        ),
+        ...(increment1
+          ? [...low, "..<", ...high]
+          : [
+              "stride",
+              "(",
+              ...joinGroups(
+                [
+                  ["from:", ...low],
+                  ["to:", ...high],
+                  ["by:", ...increment],
+                ],
+                ","
+              ),
+              ")",
+            ]),
         ...emitBlock(stmt.body, stmt),
       ];
     }
@@ -193,7 +195,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
             [`\u{1d}`, `\\u{1d}`],
             [`\u{1e}`, `\\u{1e}`],
             [`\u{1f}`, `\\u{1f}`],
-            
+
             [`"`, `\\"`],
           ],
         ],
@@ -243,25 +245,22 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         expr.ident.name,
         "(",
         ...joinGroups(
-          (
-            expr.op === "repeat" ?
-            [["repeating:",...emitExpr(expr.args[0], expr)],["count:",...emitExpr(expr.args[1], expr)]] :
-            expr.op === "print" ?
-            [[...emitExpr(expr.args[0], expr)],["terminator:","\"\""]] :
-            expr.args.map((arg) => emitExpr(arg, expr))
-          ),
+          expr.op === "repeat"
+            ? [
+                ["repeating:", ...emitExpr(expr.args[0], expr)],
+                ["count:", ...emitExpr(expr.args[1], expr)],
+              ]
+            : expr.op === "print"
+            ? [[...emitExpr(expr.args[0], expr)], ["terminator:", '""']]
+            : expr.args.map((arg) => emitExpr(arg, expr)),
           ","
         ),
         ")",
-        (expr.op === "text_to_int" ? "!" : ""),
+        expr.op === "text_to_int" ? "!" : "",
       ];
     case "MethodCall":
       if (expr.ident.name === "utf8" || expr.ident.name == "count") {
-        return [
-          ...emitExpr(expr.object, expr),
-          ".",
-          expr.ident.name
-        ];
+        return [...emitExpr(expr.object, expr), ".", expr.ident.name];
       }
       return [
         ...emitExpr(expr.object, expr),
@@ -269,11 +268,9 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         expr.ident.name,
         "(",
         ...joinGroups(
-          (
-            expr.op === "text_split" ?
-            [["separator:",...emitExpr(expr.args[0], expr)]] :
-            expr.args.map((arg) => emitExpr(arg, expr))
-          ),
+          expr.op === "text_split"
+            ? [["separator:", ...emitExpr(expr.args[0], expr)]]
+            : expr.args.map((arg) => emitExpr(arg, expr)),
           ","
         ),
         ")",
@@ -281,11 +278,9 @@ function emitExprNoParens(expr: IR.Expr): string[] {
     case "BinaryOp":
       return [
         ...emitExpr(expr.left, expr, "left"),
-        ...(
-          expr.op === "neq" ? // `!=` needs spaces on both sides in Swift
-          ["", expr.name, ""]:
-          expr.name
-        ),
+        ...(expr.op === "neq" // `!=` needs spaces on both sides in Swift
+          ? ["", expr.name, ""]
+          : expr.name),
         ...emitExpr(expr.right, expr, "right"),
       ];
     case "UnaryOp":
