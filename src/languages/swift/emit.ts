@@ -254,7 +254,9 @@ function emitExprNoParens(expr: IR.Expr): string[] {
           ","
         ),
         ")",
-        expr.op === "text_to_int" ? "!" : "",
+        expr.op === "text_to_int" || expr.ident.name == "UnicodeScalar"
+          ? "!"
+          : "",
       ];
     case "MethodCall":
       if (expr.ident.name === "utf8" || expr.ident.name === "count") {
@@ -272,6 +274,15 @@ function emitExprNoParens(expr: IR.Expr): string[] {
           ","
         ),
         ")",
+      ];
+    case "ConditionalOp":
+      return [
+        ...emitExpr(expr.condition, expr),
+        "",
+        "?",
+        ...emitExpr(expr.consequent, expr),
+        ":",
+        ...emitExpr(expr.alternate, expr),
       ];
     case "BinaryOp":
       return [

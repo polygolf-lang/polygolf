@@ -58,6 +58,18 @@ const swiftLanguage: Language = {
             "Int"
           ),
       ],
+      [
+        "text_get_char",
+        (x) =>
+          functionCall(
+            [indexCall(functionCall([x[0]], "Array"), x[1])],
+            "String"
+          ),
+      ],
+      [
+        "byte_to_char",
+        (x) => functionCall([functionCall([x[0]], "UnicodeScalar")], "String"),
+      ],
       ["text_length", (x) => methodCall(x[0], [], "count")],
       // ["text_length_chars", (x) => methodCall(x[0], [], "count")],
       // ["text_length_bytes", (x) => methodCall(methodCall(x[0], [], "utf8"), [], "count")]
@@ -93,6 +105,11 @@ const swiftLanguage: Language = {
             true
           ),
       ],
+      ["max", (x) => functionCall(x, "max")],
+      ["min", (x) => functionCall(x, "min")],
+      ["abs", (x) => functionCall([x[0]], "math.abs")],
+      ["true", (_) => id("true", true)],
+      ["false", (_) => id("false", true)],
     ]),
     evalStaticExpr,
     addDependencies([["pow", "Foundation"]]),
