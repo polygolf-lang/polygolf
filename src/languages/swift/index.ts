@@ -9,6 +9,7 @@ import { evalStaticExpr } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { addImports } from "./plugins";
 import { addVarDeclarations } from "../nim/plugins";
+import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -115,6 +116,7 @@ const swiftLanguage: Language = {
     addDependencies([["pow", "Foundation"]]),
     addImports,
     renameIdents(),
+    addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^"),
   ],
 };
 
