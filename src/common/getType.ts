@@ -522,7 +522,7 @@ function getOpCodeType(
       return integerType(0, 1);
     case "byte_to_char":
       expectType(integerType(0, 255));
-      return integerType(0, 1);
+      return textType(1);
     case "list_length":
       expectGenericType("List");
       return integerType(0);
