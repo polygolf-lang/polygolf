@@ -6,12 +6,11 @@ import {
   UnaryOpCode,
   BinaryOpCode,
   OpCode,
-  getDefaultPrecedence,
 } from "./IR";
 
 /**
  * All expressions start as a `PolygolfOp` node.
- * Plugins (mainly `mapOps` plugin) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
+ * Plugins (mainly `mapOps, mapPrecedenceOps` plugins) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
  * This node should never enter the emit phase.
  */
 
@@ -196,7 +195,7 @@ export function binaryOp(
   left: Expr,
   right: Expr,
   name: string = "",
-  precedence?: number,
+  precedence: number,
   rightAssociative?: boolean
 ): BinaryOp {
   return {
@@ -205,7 +204,7 @@ export function binaryOp(
     left,
     right,
     name,
-    precedence: precedence ?? getDefaultPrecedence(op),
+    precedence,
     rightAssociative:
       rightAssociative ?? (op === "pow" || op === "text_concat"),
   };
@@ -230,14 +229,14 @@ export function unaryOp(
   op: UnaryOpCode,
   arg: Expr,
   name: string = "",
-  precedence?: number
+  precedence: number
 ): UnaryOp {
   return {
     kind: "UnaryOp",
     op,
     arg,
     name,
-    precedence: precedence ?? getDefaultPrecedence(op),
+    precedence,
   };
 }
 

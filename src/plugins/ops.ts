@@ -1,63 +1,29 @@
 import { Path, Visitor } from "../common/traverse";
-import { OpTransformOutput } from "../common/Language";
 import {
   assignment,
   binaryOp,
+  BinaryOpCode,
   Expr,
   IndexCall,
   indexCall,
   int,
   isBinary,
-  isUnary,
   OpCode,
   polygolfOp,
   unaryOp,
+  UnaryOpCode,
 } from "../IR";
 import { getType } from "../common/getType";
 
-export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Visitor {
-  const opMap = new Map<string, OpTransformOutput>(opMap0);
+export function mapOps(opMap0: [OpCode, (args: Expr[]) => Expr][]): Visitor {
+  const opMap = new Map<string, (args: Expr[]) => Expr>(opMap0);
   return {
     name: "mapOps(...)",
     enter(path: Path) {
       const node = path.node;
       if (node.kind === "PolygolfOp") {
-        const op = node.op;
-        const f = opMap.get(op);
-        if (f === undefined) {
-          return;
-        }
-        if (typeof f === "string") {
-          let replacement: Expr;
-          if (isBinary(op))
-            replacement = binaryOp(op, node.args[0], node.args[1], f);
-          else if (isUnary(op)) replacement = unaryOp(op, node.args[0], f);
-          else
-            throw new Error(
-              `Only unary and binary operations can be mapped implicitly, got ${op}`
-            );
-          replacement.type = node.type;
-          path.replaceWith(replacement);
-        } else if (Array.isArray(f)) {
-          let replacement: Expr;
-          if (isBinary(op)) {
-            replacement = binaryOp(
-              op,
-              node.args[0],
-              node.args[1],
-              f[0],
-              f[1],
-              f[2] ?? (op === "pow" || op === "text_concat")
-            );
-          } else if (isUnary(op)) {
-            replacement = unaryOp(op, node.args[0], f[0], f[1]);
-          } else
-            throw new Error(
-              `Only unary and binary operations can be mapped implicitly, got ${op}`
-            );
-          replacement.type = node.type;
-          path.replaceWith(replacement);
-        } else {
+        const f = opMap.get(node.op);
+        if (f !== undefined) {
           const replacement = f(node.args);
           if ("op" in replacement) replacement.op = node.op;
           replacement.type = getType(node, path.root.node);
@@ -65,6 +31,43 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Visitor {
         }
       }
     },
+  };
+}
+
+/**
+ * Plugin transforming binary and unary ops to the name and precedence in the target lang.
+ * @param opMap0 Each group defines operators of the same precedence, higher precedence ones first.
+ * @returns The plugin closure.
+ */
+export function mapPrecedenceOps(
+  ...opMap0: [UnaryOpCode | BinaryOpCode, string, boolean?][][]
+): Visitor {
+  function opTransform(
+    recipe: [UnaryOpCode | BinaryOpCode, string, boolean?],
+    precedence: number
+  ): [OpCode, (args: Expr[]) => Expr] {
+    const [op, name, rightAssociative] = recipe;
+    return [
+      op,
+      isBinary(op)
+        ? (x: Expr[]) =>
+            binaryOp(
+              op,
+              x[0],
+              x[1],
+              name,
+              precedence,
+              rightAssociative ?? (op === "pow" || op === "text_concat")
+            )
+        : (x: Expr[]) => unaryOp(op, x[0], name, precedence),
+    ];
+  }
+  const opMap = opMap0.flatMap((x, i) =>
+    x.map((recipe) => opTransform(recipe, opMap0.length - i))
+  );
+  return {
+    ...mapOps(opMap),
+    name: `mapPrecedenceOps(${JSON.stringify(opMap0)})`,
   };
 }
 

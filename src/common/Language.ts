@@ -1,11 +1,6 @@
 import { IR } from "IR";
 import { Visitor } from "./traverse";
 
-export type OpTransformOutput =
-  | string
-  | [string, number, boolean?]
-  | ((args: IR.Expr[]) => IR.Expr);
-
 export interface Language {
   name: string;
   emitter: Emitter;

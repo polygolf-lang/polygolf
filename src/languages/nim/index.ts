@@ -10,7 +10,7 @@ import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
-import { mapOps, useIndexCalls } from "../../plugins/ops";
+import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
 import { addDependencies } from "../../plugins/dependencies";
 import {
   addImports,
@@ -49,32 +49,10 @@ const nimLanguage: Language = {
       ["text_split", (x) => functionCall(x, "split")],
       ["text_split_whitespace", (x) => functionCall(x, "split")],
       ["text_length", (x) => functionCall(x, "len")],
-      ["int_to_text", "$"],
       ["repeat", (x) => functionCall(x, "repeat")],
       ["max", (x) => functionCall(x, "max")],
       ["min", (x) => functionCall(x, "min")],
       ["abs", (x) => functionCall(x, "abs")],
-      ["add", "+"],
-      ["sub", "-"],
-      ["mul", "*"],
-      ["trunc_div", "div"],
-      ["pow", "^"],
-      ["rem", "mod"],
-      ["lt", "<"],
-      ["leq", "<="],
-      ["eq", "=="],
-      ["neq", "!="],
-      ["geq", ">="],
-      ["bit_or", "or"],
-      ["bit_and", "and"],
-      ["bit_xor", "xor"],
-      ["bit_not", "not"],
-      ["gt", ">"],
-      ["and", "and"],
-      ["or", "or"],
-      ["text_concat", ["&", 150, false]],
-      ["not", ["not", 150]],
-      ["neg", ["-", 150]],
       ["text_to_int", (x) => functionCall(x, "parseInt")],
       ["print", (x) => functionCall([id("stdout", true), x[0]], "write")],
       ["println", (x) => functionCall(x, "echo")],
@@ -84,6 +62,42 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_char", (x) => functionCall(x, "chr")],
     ]),
+    mapPrecedenceOps(
+      [
+        ["bit_not", "not"],
+        ["not", "not"],
+        ["neg", "-"],
+        ["int_to_text", "$"],
+      ],
+      [["pow", "^"]],
+      [
+        ["mul", "*"],
+        ["trunc_div", "div"],
+        ["rem", "mod"],
+      ],
+      [
+        ["add", "+"],
+        ["sub", "-"],
+      ],
+      [["text_concat", "&", false]],
+      [
+        ["lt", "<"],
+        ["leq", "<="],
+        ["eq", "=="],
+        ["neq", "!="],
+        ["geq", ">="],
+        ["gt", ">"],
+      ],
+      [
+        ["and", "and"],
+        ["bit_and", "and"],
+      ],
+      [
+        ["or", "or"],
+        ["bit_or", "or"],
+        ["bit_xor", "xor"],
+      ]
+    ),
     addMutatingBinaryOp("+", "*", "-", "&"),
     useUFCS,
     useUnsignedDivision,
