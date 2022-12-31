@@ -148,7 +148,7 @@ export function methodCall(
   args: Expr[],
   ident: string | Identifier,
   op?: OpCode,
-  property?: boolean
+  property = false
 ): MethodCall {
   return {
     kind: "MethodCall",
@@ -156,7 +156,7 @@ export function methodCall(
     ident: typeof ident === "string" ? id(ident, true) : ident,
     object,
     args,
-    property: property === undefined ? false : property
+    property,
   };
 }
 
