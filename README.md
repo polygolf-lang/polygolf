@@ -84,7 +84,7 @@ or
 If the expression is top level or a direct child of a block, it is to be semicolon terminated instead:
 `opcode arg1 arg2 arg3 ...;`
 or
-`arg1 opsymbol arg2`
+`arg1 opsymbol arg2;`
 
 Only symbols and division ops can be used in place of `opsymbol`.
 
