@@ -36,6 +36,14 @@ The transpiler is expected to be sound*ish* (i.e., it doesn't break programs mos
 
 A part of the type system that helps with soundness is the interval number types. For example, a value with type `1..100` (integer from 1 to 100, inclusive) can be safely used for the same output in both modulo and remainder (C-style "mod"), as well as stored in small data types such as `u8` or C's `byte`.
 
+Types are expected to represent a superset of the values that an expression can take on. If `x` can take only one of the values 10, 35, or 46, then the best type to represent it is the number type `10..46`. Another valid type is `1..255`, as is `-5..50`. But these weaker types are less useful in optimizations: the first exceeds the range of an 8-bit signed char, and the second exceeds the range over which modulo is equivalent to remainder.
+
+It is best to annotate each frontend node with exactly the smallest possible type that contains all the possible values of the node, but this is impractical, so Polygolf infers the types of un-annotated nodes. The inference is not perfect as it often gives wider ranges than can occur (especially when two values interact), but this is often an acceptable issue when it does not affect golfing.
+
+If you annotate a node with a type which is too small to cover all of its runtime values, golfing optimizations may cause problems. For example, annotating `(($x):1..50 mod 8)` could cause an issue if `x` can take the value `-1`, for example. In certain languages, remainder is shorter than mod, so a golfing plugin (trusting the annotation) will convert the node to `(($x):1..50 rem 8)`, but `(-1 rem 8)` gives -1 instead of 7 as expected.
+
+A partial safeguard to this problem of too-small annotations is the interpreter (WIP), which runs the program, checking annotations along the way.
+
 ## Immutability
 
 All nodes in the IR are consistently immutable. For example, after construction of a node, `JSON.stringify(node)` should always give the same string. This is enforced in the type system (as well as it could) by marking all the properties as `readonly`. Do not circumvent this.
