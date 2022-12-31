@@ -91,7 +91,7 @@ const golfScriptLanguage: Language = {
       a !== "" &&
       b !== "" &&
       ((/[A-Za-z0-9_]/.test(a[a.length - 1]) && /[A-Za-z0-9_]/.test(b[0])) ||
-        (/-/.test(a[a.length - 1]) && /[0-9]/.test(b[0])))
+        ("-" ===  a[a.length - 1] && /[0-9]/.test(b[0])))
   ),
 };
 

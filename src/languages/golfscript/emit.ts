@@ -138,7 +138,7 @@ function emitExpr(expr: IR.Expr): string[] {
     default:
       throw new Error(
         `Unexpected node while emitting GolfScript: ${expr.kind}: ${
-          "op" in expr ? expr.op : ""
+            "op" in expr ? expr.op ?? "" : ""
         }. `
       );
   }

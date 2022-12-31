@@ -6,7 +6,7 @@ export const addImports: Visitor = {
   enterProgram(program: Program) {
     const dependencies = [...program.dependencies];
     if (dependencies.length < 1) return;
-    let imports: Assignment = assignment(dependencies[0], id("", true));
+    const imports: Assignment = assignment(dependencies[0], id("", true));
     program.body =
       program.body.kind === "Block"
         ? block([imports, ...program.body.children])
