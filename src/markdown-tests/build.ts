@@ -199,15 +199,15 @@ function compileSuite(markdown: string): string {
   return emitSuite(suite);
 }
 
-function readdirSync(p: string, a: string[] = []) {
+function readdirSyncRecursive(p: string, a: string[] = []) {
   if (fs.statSync(p).isDirectory())
     fs.readdirSync(p).map((f) =>
-      readdirSync(a[a.push(path.join(p, f)) - 1], a)
+      readdirSyncRecursive(a[a.push(path.join(p, f)) - 1], a)
     );
   return a;
 }
 
-for (const file of readdirSync(process.cwd())) {
+for (const file of readdirSyncRecursive(process.cwd())) {
   if (file.endsWith(".test.md")) {
     const suite = compileSuite(fs.readFileSync(file).toString());
     if (suite !== "") {
