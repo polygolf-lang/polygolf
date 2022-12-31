@@ -97,8 +97,7 @@ function parseSuite(markdown: string): Describe {
 function extractTags(markdown: string): (Header | CodeBlock)[] {
   const result: (Header | CodeBlock)[] = [];
   const regex = /\n(#+)([^\n]+)\n|```([^`\n]*)\n([^`]*)\n```/gs;
-  let m;
-  while ((m = regex.exec("\n" + markdown)) !== null) {
+  for (const m of ("\n" + markdown).matchAll(regex)) {
     if (m[1] !== undefined) {
       result.push({
         kind: "Header",
@@ -189,7 +188,7 @@ function emitTest(test: Test): string {
     [test.language, ...test.commands].join(" ")
   )}, ${stringify(test.language)}, ${stringify(test.input)}, ${stringify(
     test.output
-  )})`;
+  )});`;
 }
 
 /** Compiles a single markdown test suite source to a Jest source. */
