@@ -222,7 +222,7 @@ function emitTest(test: Test, imports: string[]): string {
   }
   return `testLang(${stringify(
     [test.language, ...test.args].join(" ")
-  )}, ${stringify(test.language)}, ${test.args[0] ?? "bytes"}, ${stringify(
+  )}, ${stringify(test.language)}, "${test.args[0] ?? "bytes"}", ${stringify(
     test.input
   )}, ${stringify(test.output)});`;
 }
