@@ -271,6 +271,8 @@ const opAliases: Record<string, string> = {
   pow: "^",
   bit_and: "&",
   bit_or: "|",
+  bit_xor: "~",
+  bit_not: "~",
   eq: "==",
   neq: "!=",
   leq: "<=",

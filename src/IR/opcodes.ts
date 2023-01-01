@@ -127,7 +127,6 @@ export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
     case "bit_and":
     case "bit_or":
     case "bit_xor":
-    case "text_concat":
       return op;
     case "lt":
       return "gt";
@@ -153,50 +152,4 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
       return "lt";
   }
   return null;
-}
-
-export function getDefaultPrecedence(op: BinaryOpCode | UnaryOpCode): number {
-  switch (op) {
-    case "pow":
-      return 130;
-    case "neg":
-      return 120;
-    case "repeat":
-    case "mul":
-    case "div":
-    case "mod":
-    case "trunc_div":
-    case "rem":
-      return 110;
-    case "add":
-    case "sub":
-      return 100;
-    case "bit_and":
-      return 80;
-    case "bit_xor":
-      return 70;
-    case "bit_or":
-      return 60;
-    case "text_concat":
-      return 50;
-    case "lt":
-    case "gt":
-    case "leq":
-    case "geq":
-    case "eq":
-    case "neq":
-    case "array_contains":
-    case "set_contains":
-    case "list_contains":
-    case "table_contains_key":
-      return 40;
-    case "not":
-      return 30;
-    case "and":
-      return 20;
-    case "or":
-      return 10;
-    default:
-      return 0;
-  }
 }

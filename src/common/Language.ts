@@ -1,10 +1,7 @@
 import { IR } from "IR";
 import { Visitor } from "./Spine";
 
-export type OpTransformOutput =
-  | string
-  | [string, number, boolean?]
-  | ((args: readonly IR.Expr[]) => IR.Expr);
+export type OpTransformOutput = (args: readonly IR.Expr[]) => IR.Expr;
 
 /** A language configuration.
  *

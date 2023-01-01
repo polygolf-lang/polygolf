@@ -2,15 +2,16 @@ import { Plugin, OpTransformOutput } from "../common/Language";
 import {
   assignment,
   binaryOp,
+  BinaryOpCode,
   Expr,
   IndexCall,
   indexCall,
   int,
   isBinary,
-  isUnary,
   OpCode,
   polygolfOp,
   unaryOp,
+  UnaryOpCode,
 } from "../IR";
 import { getType } from "../common/getType";
 
@@ -23,40 +24,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
       if (node.kind === "PolygolfOp") {
         const op = node.op;
         const f = opMap.get(op);
-        if (f === undefined) {
-          return;
-        }
-        if (typeof f === "string") {
-          const type = getType(node, spine.root.node);
-          if (isBinary(op))
-            return { ...binaryOp(op, node.args[0], node.args[1], f), type };
-          else if (isUnary(op))
-            return { ...unaryOp(op, node.args[0], f), type };
-          else
-            throw new Error(
-              `Only unary and binary operations can be mapped implicitly, got ${op}`
-            );
-        } else if (Array.isArray(f)) {
-          const type = getType(node, spine.root.node);
-          if (isBinary(op)) {
-            return {
-              ...binaryOp(
-                op,
-                node.args[0],
-                node.args[1],
-                f[0],
-                f[1],
-                f[2] ?? (op === "pow" || op === "text_concat")
-              ),
-              type,
-            };
-          } else if (isUnary(op)) {
-            return { ...unaryOp(op, node.args[0], f[0], f[1]), type };
-          } else
-            throw new Error(
-              `Only unary and binary operations can be mapped implicitly, got ${op}`
-            );
-        } else {
+        if (f !== undefined) {
           let replacement = f(node.args);
           if ("op" in replacement) {
             // "as any" because TS doesn't do well with the "in" keyword
@@ -66,6 +34,43 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
         }
       }
     },
+  };
+}
+
+/**
+ * Plugin transforming binary and unary ops to the name and precedence in the target lang.
+ * @param opMap0 Each group defines operators of the same precedence, higher precedence ones first.
+ * @returns The plugin closure.
+ */
+export function mapPrecedenceOps(
+  ...opMap0: [UnaryOpCode | BinaryOpCode, string, boolean?][][]
+): Plugin {
+  function opTransform(
+    recipe: [UnaryOpCode | BinaryOpCode, string, boolean?],
+    precedence: number
+  ): [OpCode, OpTransformOutput] {
+    const [op, name, rightAssociative] = recipe;
+    return [
+      op,
+      isBinary(op)
+        ? (x: readonly Expr[]) =>
+            binaryOp(
+              op,
+              x[0],
+              x[1],
+              name,
+              precedence,
+              rightAssociative ?? (op === "pow" || op === "text_concat")
+            )
+        : (x: readonly Expr[]) => unaryOp(op, x[0], name, precedence),
+    ];
+  }
+  const opMap = opMap0.flatMap((x, i) =>
+    x.map((recipe) => opTransform(recipe, opMap0.length - i))
+  );
+  return {
+    ...mapOps(opMap),
+    name: `mapPrecedenceOps(${JSON.stringify(opMap0)})`,
   };
 }
 
