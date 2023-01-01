@@ -6,19 +6,21 @@ import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
-import { addDependencies } from "../../plugins/dependencies";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 
 const pythonLanguage: Language = {
   name: "Python",
   emitter: emitProgram,
-  plugins: [
-    tempVarToMultipleAssignment,
+  golfPlugins: [
     golfStringListLiteral,
+    evalStaticExpr,
+    tempVarToMultipleAssignment,
     forRangeToForEach,
-    useIndexCalls(),
     golfLastPrint(),
+  ],
+  emitPlugins: [useIndexCalls()],
+  finalEmitPlugins: [
     mapOps([
       ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["text_length", (x) => functionCall([x[0]], "len")],
@@ -64,9 +66,7 @@ const pythonLanguage: Language = {
       [["and", "and"]],
       [["or", "or"]]
     ),
-    evalStaticExpr,
     aliasBuiltins(),
-    addDependencies([["sys", "sys"]]),
     renameIdents(),
   ],
 };

@@ -1,10 +1,9 @@
-import { Path, Visitor } from "../common/traverse";
+import { Plugin } from "../common/Language";
 import { block, Expr, manyToManyAssignment } from "../IR";
 
-export const tempVarToMultipleAssignment: Visitor = {
+export const tempVarToMultipleAssignment: Plugin = {
   name: "tempVarToMultipleAssignment",
-  exit(path: Path) {
-    const node = path.node;
+  visit(node) {
     if (node.kind === "Block") {
       const newNodes: Expr[] = [];
       let changed = false;
@@ -36,7 +35,7 @@ export const tempVarToMultipleAssignment: Visitor = {
           newNodes.push(a);
         }
       }
-      if (changed) path.replaceWith(block(newNodes));
+      if (changed) return block(newNodes);
     }
   },
 };

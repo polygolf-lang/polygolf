@@ -1,6 +1,6 @@
 for $i 3 10 {
   for $j 0 $i {
-    println ((repeat " " (- $i $j):0..10) .. (repeat "*" ((2 * $j) + 1)));
+    println ((repeat " " (- $i $j)) .. (repeat "*" ((2 * $j) + 1)));
   };
   println ((repeat " " $i) .. "*\n");
 };

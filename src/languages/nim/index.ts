@@ -11,7 +11,6 @@ import { defaultDetokenizer, Language } from "../../common/Language";
 import emitProgram from "./emit";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
-import { addDependencies } from "../../plugins/dependencies";
 import {
   addImports,
   addVarDeclarations,
@@ -28,15 +27,15 @@ import { golfLastPrint } from "../../plugins/print";
 const nimLanguage: Language = {
   name: "Nim",
   emitter: emitProgram,
-  plugins: [
+  golfPlugins: [
     flipBinaryOps,
-    tempVarToMultipleAssignment,
-    modToRem,
-    divToTruncdiv,
-    useInclusiveForRange,
     golfStringListLiteral,
-    useIndexCalls(),
+    evalStaticExpr,
     golfLastPrint(),
+    tempVarToMultipleAssignment,
+  ],
+  emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
+  finalEmitPlugins: [
     mapOps([
       [
         "argv_get",
@@ -101,14 +100,12 @@ const nimLanguage: Language = {
     addMutatingBinaryOp("+", "*", "-", "&"),
     useUFCS,
     useUnsignedDivision,
-    evalStaticExpr,
-    addDependencies([
+    addImports([
       ["^", "math"],
       ["repeat", "strutils"],
       ["paramStr", "os"],
       ["split", "strutils"],
     ]),
-    addImports,
     renameIdents(),
     addVarDeclarations,
   ],

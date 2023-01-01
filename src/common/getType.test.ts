@@ -28,15 +28,13 @@ import {
   tableConstructor,
   listType,
   functionCall,
-  functionType,
 } from "IR";
+import { PolygolfError } from "./errors";
 import { calcType } from "./getType";
 
+/** returns identifier expression of given type */
 function e(type: Type): Identifier {
-  // returns identifier expression of given type
-  const result = id("", true);
-  result.type = type;
-  return result;
+  return { ...id("", true), type };
 }
 
 function testExpr(
@@ -102,26 +100,19 @@ describe("Assignment", () => {
     assignment(e(list(text())), listConstructor([])),
     list("void")
   );
+  test("Self-referential assignment", () => {
+    const aLHS = id("a");
+    const expr = assignment(aLHS, polygolfOp("add", id("a"), e(int(1))));
+    expect(() => calcType(aLHS, program(block([expr])))).toThrow(PolygolfError);
+  });
 });
 
 describe("Functions", () => {
   testExpr(
-    "Function call",
-    functionCall([integerLiteral(1n)], id("f", false)),
-    int(0),
-    {
-      ...program(block([])),
-      variables: new Map<string, Type>([["f", functionType([int()], int(0))]]),
-    }
-  );
-  testExpr(
     "Function call wrong types",
     functionCall([integerLiteral(1n)], id("f", false)),
     "error",
-    {
-      ...program(block([])),
-      variables: new Map<string, Type>([["f", functionType([text()], int())]]),
-    }
+    program(block([]))
   );
 });
 

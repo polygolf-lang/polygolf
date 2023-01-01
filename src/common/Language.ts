@@ -1,12 +1,38 @@
 import { IR } from "IR";
-import { Visitor } from "./traverse";
+import { Visitor } from "./Spine";
 
+export type OpTransformOutput = (args: readonly IR.Expr[]) => IR.Expr;
+
+/** A language configuration.
+ *
+ * Somewhat declarative setup. `applyLanguage` always starts with a frontend IR
+ * and ends up with a string in the following sequence:
+ *
+ * (parse input) => IR
+ * => (golfPlugins and emitPlugins in any order) => IR
+ * => (emitPlugins in the order specified) => IR a little more limited
+ * => (finalEmitPlugins in the order specified) => IR limited to nodes the emitter supports
+ * => (emitter) => token list
+ * => (detokenizer) => string
+ */
 export interface Language {
   name: string;
+  golfPlugins: Plugin[];
+  emitPlugins: Plugin[];
+  finalEmitPlugins: Plugin[];
   emitter: Emitter;
-  /** The visitors are applied in left-to-right order. */
-  plugins: Visitor[];
   detokenizer?: Detokenizer;
+}
+
+export interface Plugin {
+  name: string;
+  /** visit should return a viable replacement node, or undefined to represent
+   * no replacement. The replacement node should be different in value than
+   * the initial node if it compares different under reference equality */
+  visit: Visitor<IR.Node | undefined>;
+  /** Set `allOrNothing: true` to force all replacement nodes to be applied,
+   * or none. This is useful in cases such as renaming variables */
+  allOrNothing?: boolean;
 }
 
 export type Detokenizer = (tokens: string[]) => string;

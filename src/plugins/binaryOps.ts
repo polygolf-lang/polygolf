@@ -1,18 +1,11 @@
-import {
-  flipOpCode,
-  isBinary,
-  mutatingBinaryOp,
-  polygolfOp,
-  variants,
-} from "../IR";
-import { Path, Visitor } from "../common/traverse";
+import { flipOpCode, isBinary, mutatingBinaryOp, polygolfOp } from "../IR";
+import { Plugin } from "../common/Language";
 
 // "a = a + b" --> "a += b"
-export function addMutatingBinaryOp(...ops: string[]): Visitor {
+export function addMutatingBinaryOp(...ops: string[]): Plugin {
   return {
     name: `addMutatingBinaryOp(${ops.join(", ")})`,
-    enter(path: Path) {
-      const node = path.node;
+    visit(node) {
       if (
         node.kind === "Assignment" &&
         node.expr.kind === "BinaryOp" &&
@@ -30,13 +23,11 @@ export function addMutatingBinaryOp(...ops: string[]): Visitor {
             JSON.stringify(node.variable.index) ===
               JSON.stringify(node.expr.left.index))
         ) {
-          path.replaceWith(
-            mutatingBinaryOp(
-              node.expr.op,
-              node.variable,
-              node.expr.right,
-              node.expr.name
-            )
+          return mutatingBinaryOp(
+            node.expr.op,
+            node.variable,
+            node.expr.right,
+            node.expr.name
           );
         }
       }
@@ -44,24 +35,14 @@ export function addMutatingBinaryOp(...ops: string[]): Visitor {
   };
 }
 
-// "a + b; --> {a + b; b + a}"
-const flippedOps = new WeakMap();
-export const flipBinaryOps: Visitor = {
+// (a + b) --> (b + a)
+export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
-  generatesVariants: true,
-  exit(path: Path) {
-    const node = path.node;
-    if (
-      node.kind === "PolygolfOp" &&
-      isBinary(node.op) &&
-      !flippedOps.has(node)
-    ) {
+  visit(node) {
+    if (node.kind === "PolygolfOp" && isBinary(node.op)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {
-        const flippedOp = polygolfOp(flippedOpCode, node.args[1], node.args[0]);
-        flippedOps.set(node, true);
-        flippedOps.set(flippedOp, true);
-        path.replaceWith(variants([node, flippedOp]));
+        return polygolfOp(flippedOpCode, node.args[1], node.args[0]);
       }
     }
   },

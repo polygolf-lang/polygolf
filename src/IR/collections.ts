@@ -1,54 +1,49 @@
 import { BaseExpr, Expr, KeyValue } from "./IR";
-/**
- * Array constructor. Raw OK
- *
- */
+
 export interface ArrayConstructor extends BaseExpr {
-  kind: "ArrayConstructor";
-  exprs: Expr[];
+  readonly kind: "ArrayConstructor";
+  readonly exprs: readonly Expr[];
 }
 
-/**
- * List constructor. Raw OK
- *
- */
 export interface ListConstructor extends BaseExpr {
-  kind: "ListConstructor";
-  exprs: Expr[];
+  readonly kind: "ListConstructor";
+  readonly exprs: readonly Expr[];
 }
 
 export interface SetConstructor extends BaseExpr {
-  kind: "SetConstructor";
-  exprs: Expr[];
+  readonly kind: "SetConstructor";
+  readonly exprs: readonly Expr[];
 }
 
 export interface TableConstructor extends BaseExpr {
-  kind: "TableConstructor";
-  kvPairs: KeyValue[];
+  readonly kind: "TableConstructor";
+  readonly kvPairs: readonly KeyValue[];
 }
 
-export function arrayConstructor(exprs: Expr[]): ArrayConstructor {
+export function arrayConstructor(exprs: readonly Expr[]): ArrayConstructor {
   return {
     kind: "ArrayConstructor",
     exprs,
   };
 }
 
-export function listConstructor(exprs: Expr[]): ListConstructor {
+export function listConstructor(exprs: readonly Expr[]): ListConstructor {
   return {
     kind: "ListConstructor",
     exprs,
   };
 }
 
-export function setConstructor(exprs: Expr[]): SetConstructor {
+export function setConstructor(exprs: readonly Expr[]): SetConstructor {
   return {
     kind: "SetConstructor",
     exprs,
   };
 }
 
-export function tableConstructor(kvPairs: KeyValue[]): TableConstructor {
+export function tableConstructor(
+  kvPairs: readonly KeyValue[]
+): TableConstructor {
   return {
     kind: "TableConstructor",
     kvPairs,

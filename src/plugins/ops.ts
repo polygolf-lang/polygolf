@@ -1,4 +1,4 @@
-import { Path, Visitor } from "../common/traverse";
+import { Plugin, OpTransformOutput } from "../common/Language";
 import {
   assignment,
   binaryOp,
@@ -15,19 +15,22 @@ import {
 } from "../IR";
 import { getType } from "../common/getType";
 
-export function mapOps(opMap0: [OpCode, (args: Expr[]) => Expr][]): Visitor {
-  const opMap = new Map<string, (args: Expr[]) => Expr>(opMap0);
+export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
+  const opMap = new Map<string, OpTransformOutput>(opMap0);
   return {
     name: "mapOps(...)",
-    enter(path: Path) {
-      const node = path.node;
+    allOrNothing: true,
+    visit(node, spine) {
       if (node.kind === "PolygolfOp") {
-        const f = opMap.get(node.op);
+        const op = node.op;
+        const f = opMap.get(op);
         if (f !== undefined) {
-          const replacement = f(node.args);
-          if ("op" in replacement) replacement.op = node.op;
-          replacement.type = getType(node, path.root.node);
-          path.replaceWith(replacement);
+          let replacement = f(node.args);
+          if ("op" in replacement) {
+            // "as any" because TS doesn't do well with the "in" keyword
+            replacement = { ...(replacement as any), op: node.op };
+          }
+          return { ...replacement, type: getType(node, spine.root.node) };
         }
       }
     },
@@ -41,16 +44,16 @@ export function mapOps(opMap0: [OpCode, (args: Expr[]) => Expr][]): Visitor {
  */
 export function mapPrecedenceOps(
   ...opMap0: [UnaryOpCode | BinaryOpCode, string, boolean?][][]
-): Visitor {
+): Plugin {
   function opTransform(
     recipe: [UnaryOpCode | BinaryOpCode, string, boolean?],
     precedence: number
-  ): [OpCode, (args: Expr[]) => Expr] {
+  ): [OpCode, OpTransformOutput] {
     const [op, name, rightAssociative] = recipe;
     return [
       op,
       isBinary(op)
-        ? (x: Expr[]) =>
+        ? (x: readonly Expr[]) =>
             binaryOp(
               op,
               x[0],
@@ -59,7 +62,7 @@ export function mapPrecedenceOps(
               precedence,
               rightAssociative ?? (op === "pow" || op === "text_concat")
             )
-        : (x: Expr[]) => unaryOp(op, x[0], name, precedence),
+        : (x: readonly Expr[]) => unaryOp(op, x[0], name, precedence),
     ];
   }
   const opMap = opMap0.flatMap((x, i) =>
@@ -81,13 +84,13 @@ export function useIndexCalls(
     "list_set",
     "table_set",
   ]
-): Visitor {
+): Plugin {
   return {
     name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
       ops
     )})`,
-    enter(path: Path) {
-      const node = path.node;
+    allOrNothing: true,
+    visit(node) {
       if (
         node.kind === "PolygolfOp" &&
         (ops.length === 0 || ops.includes(node.op)) &&
@@ -105,9 +108,9 @@ export function useIndexCalls(
           indexNode = indexCall(node.args[0], node.args[1], node.op);
         }
         if (node.op.endsWith("_get")) {
-          path.replaceWith(indexNode);
+          return indexNode;
         } else if (node.op.endsWith("_set")) {
-          path.replaceWith(assignment(indexNode, node.args[2]));
+          return assignment(indexNode, node.args[2]);
         }
       }
     },

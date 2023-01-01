@@ -4,7 +4,7 @@ import {
   joinGroups,
   needsParensPrecedence,
 } from "../../common/emit";
-import { PathFragment } from "../../common/traverse";
+import { PathFragment } from "../../common/fragments";
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {

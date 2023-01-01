@@ -1,5 +1,4 @@
 import * as loops from "./loops";
-import { programToPath, Visitor } from "../common/traverse";
 import {
   IR,
   block,
@@ -11,6 +10,8 @@ import {
   print,
 } from "../IR";
 import debugEmit from "../languages/debug/emit";
+import { Plugin } from "../common/Language";
+import { programToSpine } from "../common/Spine";
 
 const loopProgram1 = program(
   forRange("i", int(0n), int(10n), int(1n), print(id("x")), false)
@@ -41,11 +42,10 @@ const loopProgram3 = program(
   )
 );
 
-function expectTransform(program: IR.Program, plugin: Visitor, output: string) {
-  const programClone = structuredClone(program);
-  const path = programToPath(programClone);
-  path.visit(plugin);
-  expect(debugEmit(programClone)).toEqual(output);
+function expectTransform(program: IR.Program, plugin: Plugin, output: string) {
+  expect(
+    debugEmit(programToSpine(program).withReplacer(plugin.visit).node)
+  ).toEqual(output);
 }
 
 test("ForRange -> ForRangeInclusive", () =>
@@ -71,13 +71,13 @@ test("ForRange -> ForEachPair", () =>
   expectTransform(
     loopProgram3,
     loops.forRangeToForEachPair,
-    "foreach (i,a) in  collection{ println(i); println(a); }"
+    "foreach (i,i_forRangeToForEachPair) in  collection{ println(i); println(i_forRangeToForEachPair); }"
   ));
 test("ForRange -> ForEach", () =>
   expectTransform(
     loopProgram2,
     loops.forRangeToForEach,
-    "foreach a in collection println(a)"
+    "foreach i_forRangeToForEach in collection println(i_forRangeToForEach)"
   ));
 test("ForRange -> ForEach", () =>
   expectTransform(
