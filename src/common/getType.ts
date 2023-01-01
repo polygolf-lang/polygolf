@@ -429,7 +429,7 @@ function getOpCodeType(
     case "int_to_hex_aligned": {
       expectType(integerType(0), integerType(0));
       const t1 = types[0] as IntegerType;
-      const t2 = types[0] as IntegerType;
+      const t2 = types[1] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2)) {
         return textType(
           max(
@@ -514,7 +514,7 @@ function getOpCodeType(
       return integerType(0, 1);
     case "byte_to_char":
       expectType(integerType(0, 255));
-      return integerType(0, 1);
+      return textType(1);
     case "list_length":
       expectGenericType("List");
       return integerType(0);

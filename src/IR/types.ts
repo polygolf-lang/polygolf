@@ -1,6 +1,6 @@
 import { Expr } from "./IR";
 
-/** The type of the value of a node when evaluated */
+/** An integer from low to high, inclusive of both bounds unless infinite. */
 export interface IntegerType {
   readonly kind: "integer";
   readonly low: IntegerBound;
@@ -8,31 +8,76 @@ export interface IntegerType {
 }
 export type IntegerBound = bigint | "-oo" | "oo";
 
+/** A string of length at most capacity (bytes?) */
 export interface TextType {
   readonly kind: "text";
   readonly capacity: number;
 }
+
+/** A pair of (key, value), used for Table constructor */
 export interface KeyValueType {
   readonly kind: "KeyValue";
   readonly key: IntegerType | TextType;
   readonly value: Type;
 }
+
+/** A function value (...arguments) => result */
 export interface FunctionType {
   readonly kind: "Function";
   readonly arguments: readonly Type[];
   readonly result: Type;
 }
+
+/** The return type of nodes that do not return anything, such as for-loops. */
+export interface VoidType {
+  readonly kind: "void";
+}
+
+/** A boolean, simple true or false */
+export interface BooleanType {
+  readonly kind: "boolean";
+}
+
+/** A List<member>. Represents a consecutive list that can be pushed, popped */
+export interface ListType {
+  readonly kind: "List";
+  readonly member: Type;
+}
+
+/** A Table with integer or string keys. Use this instead of arrays for objects
+ * that need indexing with holes. */
+export interface TableType {
+  readonly kind: "Table";
+  readonly key: IntegerType | TextType;
+  readonly value: Type;
+}
+
+/** A fixed-length array. All values are filled by default. */
+export interface ArrayType {
+  kind: "Array";
+  member: Type;
+  length: number;
+}
+
+/** A set of objects. Equality is by value for integers and text, equality by
+ * reference for other objects. */
+export interface SetType {
+  kind: "Set";
+  member: Type;
+}
+
+/** The type of the value of a node when evaluated */
 export type Type =
   | FunctionType
   | IntegerType
   | TextType
-  | { kind: "void" }
-  | { kind: "boolean" }
-  | { kind: "List"; member: Type }
-  | { kind: "Table"; key: IntegerType | TextType; value: Type }
+  | VoidType
+  | BooleanType
+  | ListType
+  | TableType
   | KeyValueType
-  | { kind: "Array"; member: Type; length: number }
-  | { kind: "Set"; member: Type };
+  | ArrayType
+  | SetType;
 
 export const booleanType: Type = { kind: "boolean" };
 export const voidType: Type = { kind: "void" };

@@ -13,9 +13,11 @@ import {
   BooleanValue,
   integerValue,
   keyValueValue,
+  ListValue,
   listValue,
   setValue,
   tableValue,
+  TextValue,
   textValue,
   Value,
   voidValue,
@@ -54,13 +56,14 @@ class SymbolTable {
 class Interpreter {
   readonly globals = new SymbolTable();
   // stack: IR.Node[];
+  readonly argv: ListValue & { value: TextValue[] };
 
   constructor(
     readonly program: IR.Program,
-    readonly args: readonly string[],
+    argv: readonly string[],
     readonly write: (s: string) => void
   ) {
-    // this.stack = [program];
+    this.argv = listValue(argv.map(textValue));
   }
 
   run() {
@@ -130,7 +133,7 @@ class Interpreter {
           if (n.op === "println") this.write("\n");
           return voidValue;
         }
-        return calcOpResult(n, n.op, argValues);
+        return calcOpResult(n, n.op, argValues, this.argv);
       }
       // ====== modification ======
       case "Assignment": {
@@ -202,7 +205,11 @@ class Interpreter {
         return this.globals.getRequired(n.name);
       case "MutatingBinaryOp":
       case "OneToManyAssignment":
+        throw "todo";
       case "WhileLoop":
+        while (this.evalBoolean(n.condition).value) {
+          this.evalNode(n.body);
+        }
         return voidValue;
       // ===== unsupported =====
       case "RangeIndexCall":

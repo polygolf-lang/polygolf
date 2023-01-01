@@ -39,8 +39,10 @@ export const BinaryOpCodeArray = [
   "text_concat",
   "repeat",
   "text_contains",
+  /** -1 if not found, or the 0-based index if found */
   "text_find",
   "text_split",
+  /** 0-based indexing, returns a single char */
   "text_get_char",
   "join_using",
   "right_align",

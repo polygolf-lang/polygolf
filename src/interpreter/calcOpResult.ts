@@ -1,3 +1,6 @@
+// disable to allow comma-chaining asserts without too much TS magic
+/* eslint-disable no-sequences */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { PolygolfError } from "../common/errors";
 import { IR, OpCode } from "../IR";
 import {
@@ -5,32 +8,43 @@ import {
   BooleanValue,
   integerValue,
   IntegerValue,
+  ListValue,
+  listValue,
+  TextValue,
+  textValue,
   Value,
+  valuesEqual,
+  voidValue,
 } from "./value";
 
 export default function calcOpResult(
   node: IR.Node,
   op: OpCode,
-  args: Value[]
+  args: Value[],
+  argv: ListValue & { value: TextValue[] }
 ): Value {
+  const a = args[0] as Value | undefined;
+  const b = args[1] as Value | undefined;
+  const c = args[2] as Value | undefined;
   function bad(): never {
     throw new PolygolfError(`Bad arguments of ${op}`, node.source);
   }
-  function assertIntInt(args: Value[]): asserts args is IntegerValue[] {
-    if (
-      args.length !== 2 ||
-      args[0].kind !== "integer" ||
-      args[1].kind !== "integer"
-    )
-      bad();
+  function assert<K extends Value["kind"]>(
+    x: Value | undefined,
+    k: K
+  ): asserts x is Value & { kind: K } {
+    if (x?.kind !== k) bad();
   }
   function doIntInt(func: (a: bigint, b: bigint) => bigint): IntegerValue {
-    assertIntInt(args);
-    return integerValue(func(args[0].value, args[1].value));
+    assert(a, "integer"), assert(b, "integer");
+    return integerValue(func(a.value, b.value));
   }
   function doIntIntBool(func: (a: bigint, b: bigint) => boolean): BooleanValue {
-    assertIntInt(args);
-    return booleanValue(func(args[0].value, args[1].value));
+    assert(a, "integer"), assert(b, "integer");
+    return booleanValue(func(a.value, b.value));
+  }
+  function oob(): never {
+    throw new PolygolfError(`${op} out of bounds`, node.source);
   }
   switch (op) {
     // ===== binary =====
@@ -79,224 +93,206 @@ export default function calcOpResult(
     // (bool, bool) => bool
     case "or":
     case "and":
-      if (
-        args.length !== 2 ||
-        args[0].kind !== "boolean" ||
-        args[1].kind !== "boolean"
-      )
-        bad();
+      // TODO: `or` and `and` short-circuiting? Then group them with ConditionalOp
+      assert(a, "boolean"), assert(b, "boolean");
       return {
         kind: "boolean",
-        value:
-          op === "or"
-            ? args[0].value || args[1].value
-            : args[0].value && args[1].value,
+        value: op === "or" ? a.value || b.value : a.value && b.value,
       };
     // ===== unary =====
     case "abs":
     case "bit_not":
     case "neg":
-      if (args.length !== 1 || args[0].kind !== "integer") bad();
+      assert(a, "integer");
       return integerValue(
-        op === "abs"
-          ? abs(args[0].value)
-          : op === "bit_not"
-          ? ~args[0].value
-          : -args[0].value
+        op === "abs" ? abs(a.value) : op === "bit_not" ? ~a.value : -a.value
       );
     case "not":
-      if (args.length !== 1 || args[0].kind !== "boolean") bad();
-      return booleanValue(!args[0].value);
-    default:
-      throw "todo " + op;
-    //   // membership
-    //   case "array_contains":
-    //     expectGenericType("Array", ["T1", (x) => x[0]]);
-    //     return booleanType;
-    //   case "list_contains":
-    //     expectGenericType("List", ["T1", (x) => x[0]]);
-    //     return booleanType;
-    //   case "table_contains_key":
-    //     expectGenericType("Table", ["T1", (x) => x[0]]);
-    //     return booleanType;
-    //   case "set_contains":
-    //     expectGenericType("Set", ["T1", (x) => x[0]]);
-    //     return booleanType;
-    //   // collection get
-    //   case "array_get":
-    //     return expectGenericType("Array", ["T2", (x) => x[1]])[0];
-    //   case "list_get":
-    //     return expectGenericType("List", ["0..oo", (_) => integerType(0)])[0];
-    //   case "table_get":
-    //     return expectGenericType("Table", ["T1", (x) => x[0]])[1];
-    //   case "text_get_byte":
-    //     expectType(textType(), integerType(0));
-    //     return integerType(0, 255);
-    //   case "argv_get":
-    //     expectType(integerType(0));
-    //     return textType();
-    //   // other
-    //   case "list_push":
-    //     return expectGenericType("List", ["T1", (x) => x[0]])[0];
-    //   case "text_concat": {
-    //     expectType(textType(), textType());
-    //     const [t1, t2] = types as [TextType, TextType];
-    //     return textType(t1.capacity + t2.capacity);
-    //   }
-    //   case "repeat": {
-    //     expectType(textType(), integerType(0));
-    //     const [t, i] = types as [TextType, IntegerType];
-    //     return textType(mul(BigInt(t.capacity), i.high));
-    //   }
-    //   case "text_contains":
-    //     expectType(textType(), textType());
-    //     return booleanType;
-    //   case "text_find":
-    //     expectType(textType(), textType());
-    //     return integerType(-1, (types[0] as TextType).capacity - 1);
-    //   case "text_split":
-    //     expectType(textType(), textType());
-    //     return listType(types[0]);
-    //   case "text_get_char":
-    //     expectType(textType(), integerType(0));
-    //     return textType(1);
-    //   case "join_using":
-    //     expectType(listType(textType()), textType());
-    //     return textType();
-    //   case "right_align":
-    //     expectType(textType(), integerType(0));
-    //     return textType();
-    //   case "int_to_bin_aligned":
-    //   case "int_to_hex_aligned": {
-    //     expectType(integerType(0), integerType(0));
-    //     const t1 = types[0] as IntegerType;
-    //     const t2 = types[0] as IntegerType;
-    //     if (isFiniteType(t1) && isFiniteType(t2)) {
-    //       return textType(
-    //         max(
-    //           BigInt(
-    //             t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16).length
-    //           ),
-    //           t2.high
-    //         )
-    //       );
-    //     }
-    //     return textType();
-    //   }
-    //   case "simplify_fraction": {
-    //     expectType(integerType(), integerType());
-    //     const t1 = types[0] as IntegerType;
-    //     const t2 = types[1] as IntegerType;
-    //     if (isFiniteType(t1) && isFiniteType(t2))
-    //       return textType(
-    //         1 +
-    //           Math.max(t1.low.toString().length, t1.high.toString().length) +
-    //           Math.max(t2.low.toString().length, t2.high.toString().length)
-    //       );
-    //     return textType();
-    //   }
-    //   // unary
-    //   case "int_to_text":
-    //   case "int_to_bin":
-    //   case "int_to_hex": {
-    //     expectType(integerType(expr.op === "int_to_text" ? "-oo" : 0));
-    //     const t = types[0] as IntegerType;
-    //     if (isFiniteType(t))
-    //       return textType(
-    //         Math.max(
-    //           ...[t.low, t.high].map(
-    //             (x) =>
-    //               x.toString(
-    //                 expr.op === "int_to_bin"
-    //                   ? 2
-    //                   : expr.op === "int_to_hex"
-    //                   ? 16
-    //                   : 10
-    //               ).length
-    //           )
-    //         )
-    //       );
-    //     return textType();
-    //   }
-    //   case "text_to_int": {
-    //     expectType(textType());
-    //     const t = types[0] as TextType;
-    //     if (t.capacity === Infinity) return integerType();
-    //     return integerType(
-    //       1n - 10n ** BigInt(t.capacity - 1),
-    //       10n ** BigInt(t.capacity) - 1n
-    //     );
-    //   }
-    //   case "bool_to_int":
-    //     expectType(booleanType);
-    //     return integerType(0, 1);
-    //   case "byte_to_char":
-    //     expectType(integerType(0, 255));
-    //     return integerType(0, 1);
-    //   case "list_length":
-    //     expectGenericType("List");
-    //     return integerType(0);
-    //   case "text_length":
-    //     expectType(textType());
-    //     return integerType(0, (types[0] as TextType).capacity);
-    //   case "text_split_whitespace":
-    //     expectType(textType());
-    //     return listType(types[0]);
-    //   case "sorted":
-    //     return listType(expectGenericType("List")[0]);
-    //   case "join":
-    //     expectType(listType(textType()));
-    //     return textType();
-    //   case "text_reversed":
-    //     expectType(textType());
-    //     return textType();
-    //   // other
-    //   case "true":
-    //   case "false":
-    //     expectType();
-    //     return booleanType;
-    //   case "argv":
-    //     expectType();
-    //     return listType(textType());
-    //   case "print":
-    //   case "println":
-    //     return voidType;
-    //   case "text_replace": {
-    //     expectType(textType(), textType(), textType());
-    //     const a = types[0] as TextType;
-    //     const c = types[2] as TextType;
-    //     return textType(a.capacity * c.capacity);
-    //   }
-    //   case "text_get_slice": {
-    //     expectType(textType(), integerType(0), integerType(0));
-    //     const [t, i1, i2] = types as [TextType, IntegerType, IntegerType];
-    //     const c = max(
-    //       0n,
-    //       sub(
-    //         min(t.capacity === Infinity ? "oo" : BigInt(t.capacity), i2.high),
-    //         i1.low
-    //       )
-    //     );
-    //     return textType(c);
-    //   }
-    //   case "array_set":
-    //     return expectGenericType(
-    //       "Array",
-    //       ["T2", (x) => x[1]],
-    //       ["T1", (x) => x[0]]
-    //     )[0];
-    //   case "list_set":
-    //     return expectGenericType(
-    //       "List",
-    //       ["0..oo", (_) => integerType(0)],
-    //       ["T1", (x) => x[0]]
-    //     )[0];
-    //   case "table_set":
-    //     return expectGenericType(
-    //       "Table",
-    //       ["T1", (x) => x[0]],
-    //       ["T2", (x) => x[1]]
-    //     )[1];
+      assert(a, "boolean");
+      return booleanValue(!a.value);
+    // ===== membership =====
+    case "array_contains":
+      // TODO check member type
+      assert(a, "Array");
+      if (b === undefined || b.kind === "void") bad();
+      return booleanValue(a.value.some((x) => valuesEqual(x, b)));
+    case "list_contains":
+      // TODO check member type
+      assert(a, "List");
+      if (b === undefined || b.kind === "void") bad();
+      return booleanValue(a.value.some((x) => valuesEqual(x, b)));
+    case "set_contains":
+      // TODO check member type
+      assert(a, "Set");
+      if (b === undefined || b.kind === "void") bad();
+      return booleanValue([...a.value].some((x) => valuesEqual(x, b)));
+    case "table_contains_key":
+      // TODO check member type
+      assert(a, "Table");
+      if (b === undefined || b.kind === "void") bad();
+      return booleanValue(
+        [...a.value.keys()].some((x) =>
+          valuesEqual(typeof x === "string" ? textValue(x) : integerValue(x), b)
+        )
+      );
+    case "array_get":
+    case "list_get":
+      assert(b, "integer");
+      if (a?.kind !== "Array" && a?.kind !== "List") bad();
+      if (b.value < 0 || b.value >= a.value.length) oob();
+      return a.value[Number(b.value)];
+    case "table_get": {
+      // TODO check key type
+      assert(a, "Table");
+      if (b?.kind !== "text" && b?.kind !== "integer") bad();
+      const ret = a.value.get(b.value);
+      if (ret === undefined)
+        throw new PolygolfError(`Table missing key ${b.value}`, node.source);
+      return ret;
+    }
+    case "text_get_byte": {
+      assert(a, "text"), assert(b, "integer");
+      // Assuming ASCII-only. charCodeAt indexes based on UTF-16?
+      if (b.value < 0 || b.value >= a.value.length) oob();
+      return integerValue(BigInt(a.value.charCodeAt(Number(b.value))));
+    }
+    case "argv_get":
+      assert(a, "integer");
+      if (a.value < 0 || a.value >= argv.value.length) oob();
+      return argv.value[Number(a.value)];
+    case "list_push":
+      // WARNING: MUTATING
+      assert(a, "List");
+      if (b === undefined) bad();
+      a.value.push(b);
+      return voidValue;
+    // ===== text =====
+    case "text_concat":
+      assert(a, "text"), assert(b, "text");
+      return textValue(a.value + b.value);
+    case "repeat":
+      assert(a, "text"), assert(b, "integer");
+      return textValue([...Array(Number(b.value))].map(() => a.value).join(""));
+    case "text_contains":
+      assert(a, "text"), assert(b, "text");
+      return booleanValue(a.value.includes(b.value));
+    case "text_find":
+      assert(a, "text"), assert(b, "text");
+      return integerValue(BigInt(a.value.indexOf(b.value)));
+    case "text_split":
+      assert(a, "text"), assert(b, "text");
+      return listValue(a.value.split(b.value).map(textValue));
+    case "text_split_whitespace":
+      assert(a, "text");
+      return listValue(
+        a.value
+          .split(" ")
+          // filter out both inner and trailing empty strings
+          .filter((x) => x !== "")
+          .map(textValue)
+      );
+    case "text_get_char":
+      assert(a, "text"), assert(b, "integer");
+      // Assuming ASCII-only.
+      return textValue(a.value[Number(b.value)]);
+    case "join_using":
+      assert(a, "List"), assert(b, "text");
+      return textValue(
+        a.value.map((x) => (assert(x, "text"), x.value)).join(b.value)
+      );
+    case "join":
+      assert(a, "List");
+      return textValue(a.value.map((x) => assert(x, "text")).join(""));
+    case "int_to_text":
+    case "int_to_bin":
+    case "int_to_hex":
+      assert(a, "integer");
+      return textValue(
+        a.value.toString(
+          op === "int_to_text" ? 10 : op === "int_to_bin" ? 2 : 16
+        )
+      );
+    case "text_to_int":
+      assert(a, "text");
+      return integerValue(BigInt(a.value));
+    case "bool_to_int":
+      assert(a, "boolean");
+      return integerValue(a.value ? 1n : 0n);
+    case "byte_to_char":
+      assert(a, "integer");
+      // assuming ASCII, but not really (assuming 8-bit)
+      if (a.value < 0 || a.value > 255) oob();
+      return textValue(String.fromCharCode(Number(a.value)));
+    case "list_length":
+      assert(a, "List");
+      return integerValue(BigInt(a.value.length));
+    case "text_length":
+      assert(a, "text");
+      return integerValue(BigInt(a.value.length));
+    case "sorted":
+      assert(a, "List");
+      if (a.value.every((x) => x.kind === "integer"))
+        return listValue(
+          a.value
+            .map((u) => (u as IntegerValue).value)
+            .sort((x, y) => Number(x - y))
+            .map(integerValue)
+        );
+      else if (a.value.every((x) => x.kind === "text"))
+        return listValue(
+          a.value
+            .map((u) => (u as TextValue).value)
+            .sort()
+            .map(textValue)
+        );
+      else return bad();
+    case "text_reversed":
+      assert(a, "text");
+      // Assumes ASCII
+      return textValue([...a.value].reverse().join(""));
+    case "true":
+      return booleanValue(true);
+    case "false":
+      return booleanValue(false);
+    case "argv":
+      return argv;
+    // ===== three-way ops =====
+    case "text_replace":
+      assert(a, "text"), assert(b, "text"), assert(c, "text");
+      // might assume ASCII?
+      return textValue(a.value.replaceAll(b.value, c.value));
+    case "text_get_slice":
+      assert(a, "text"), assert(b, "integer"), assert(c, "integer");
+      if (b.value < 0 || c.value < 0) oob();
+      // allow out-of-bounds to the right. The string stops, no problem.
+      return textValue(a.value.slice(Number(b.value), Number(c.value)));
+    case "array_set":
+    case "list_set":
+      // TODO: check member type
+      if (a?.kind !== "List" && a?.kind !== "Array") bad();
+      assert(b, "integer");
+      if (c === undefined || c.kind === "void") bad();
+      if (b.value < 0 || b.value >= a.value.length) oob();
+      a.value[Number(b.value)] = b;
+      return b;
+    case "table_set":
+      // TODO: check member type
+      assert(a, "Table");
+      if (b?.kind !== "text" && b?.kind !== "integer") bad();
+      if (c === undefined || c.kind === "void") bad();
+      a.value.set(b.value, c);
+      return c;
+    // ===== other =====
+    case "print":
+    case "println":
+      throw new PolygolfError(
+        `Op ${op} unexpected; should have been handled in main interpreter`
+      );
+    case "right_align":
+    case "int_to_bin_aligned":
+    case "int_to_hex_aligned":
+    case "simplify_fraction":
+      throw new PolygolfError("Not yet implemented");
   }
 }
 

@@ -1,7 +1,10 @@
 // TODO: include the original Type information for checking
 
+import { PolygolfError } from "../common/errors";
+
 export interface FunctionValue {
   kind: "function";
+  value: any;
   // params:
   // TODO
 }
@@ -35,20 +38,23 @@ export function booleanValue(value: boolean): BooleanValue {
   return { kind: "boolean", value };
 }
 
-export interface ListValue {
+export interface ListValue<T extends Value = Value> {
   kind: "List";
-  value: Value[];
+  value: T[];
 }
-export function listValue(value: Value[]): ListValue {
+export function listValue<T extends Value>(value: T[]): ListValue<T> {
   return { kind: "List", value };
 }
 
-export interface ArrayValue {
+export interface ArrayValue<T extends Value = Value> {
   kind: "Array";
-  value: Value[];
+  value: T[];
   length: number;
 }
-export function arrayValue(value: Value[], length: number): ArrayValue {
+export function arrayValue<T extends Value>(
+  value: T[],
+  length: number
+): ArrayValue<T> {
   return { kind: "Array", value, length };
 }
 
@@ -91,3 +97,15 @@ export type Value =
   | TableValue
   | KeyValueValue
   | SetValue;
+
+export function valuesEqual(a: Value, b: Value): boolean {
+  if (a.kind === "integer" && b.kind === "integer") {
+    return a.value === b.value;
+  } else if (a.kind === "text" && b.kind === "text") {
+    return a.value === b.value;
+  } else if (a.kind === "boolean" && b.kind === "boolean") {
+    return a.value === b.value;
+  } else {
+    throw new PolygolfError(`Incomparable: ${a.kind} and ${b.kind}`);
+  }
+}
