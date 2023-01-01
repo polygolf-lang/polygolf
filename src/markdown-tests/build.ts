@@ -6,7 +6,7 @@ import { emitStringLiteral } from "../common/emit";
 interface Test {
   input: string;
   language: string;
-  commands: string[];
+  args: string[];
   output: string;
 }
 
@@ -56,6 +56,9 @@ function parseSuite(markdown: string): Describe {
       currentDescribe.children.push(newDescribe);
       currentDescribe = newDescribe;
     } else if (!tag.args.includes("skip")) {
+      if (tag.args.length > 1) {
+        throw new Error("Codeblocks expect at most one argument.");
+      }
       if (tag.language === "polygolf" && tag.args.length === 0) {
         lastInput = tag;
       } else {
@@ -69,7 +72,7 @@ function parseSuite(markdown: string): Describe {
         currentDescribe.children.push({
           input: lastInput.content,
           language: lang.name,
-          commands: tag.args,
+          args: tag.args,
           output: tag.content,
         });
       }
@@ -124,23 +127,39 @@ function extractTags(markdown: string): (Header | CodeBlock)[] {
 
 /** Emits a single markdown test. */
 function emitSuite(describe: Describe): string {
+  const imports: string[] = [];
+  const tests = emitDescribe(describe, imports);
+  const importSet = new Set<string>();
+  for (const x of imports) importSet.add(x);
+
   // The `@/` path is defined relatively in `tsconfig.json`, pointing to the `src` directory.
   return `import parse from "frontend/parse";
-import applyLanguage from "@/common/applyLanguage";
+import applyLanguage, { searchOptions, applyAll } from "@/common/applyLanguage";
 import { findLang } from "@/languages/languages";
+import polygolfLanguage from "@/languages/polygolf";
+import { Plugin } from "@/common/Language";
+${[...importSet]
+  .map((x) => `import * as ${x.split("/").at(-1)!} from "./${x}";`)
+  .join("\n")}
 
-function t(name: string, lang: string, input: string, output: string) {
+function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars", input: string, output: string) {
   test(name, () =>
-    expect(applyLanguage(findLang(lang)!, parse(input))).toEqual(output)
+    expect(applyLanguage(findLang(lang)!, parse(input), searchOptions(obj === "nogolf" ? "none" : "full", obj === "chars" ? "chars" : "bytes"))).toEqual(output)
   );
 }
 
-${emitDescribe(describe)}`;
+function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
+  test(name, () =>
+    expect(applyLanguage(polygolfLanguage, applyAll(parse(input), plugin.visit), searchOptions("none", "bytes"))).toEqual(output)
+  );
 }
 
-function emitNode(node: Describe | Test): string {
-  if ("children" in node) return emitDescribe(node);
-  return emitTest(node);
+${tests}`;
+}
+
+function emitNode(node: Describe | Test, imports: string[]): string {
+  if ("children" in node) return emitDescribe(node, imports);
+  return emitTest(node, imports);
 }
 
 function stringify(x: string): string {
@@ -176,20 +195,34 @@ function stringify(x: string): string {
   ])[0];
 }
 
-function emitDescribe(describe: Describe): string {
+function emitDescribe(describe: Describe, imports: string[]): string {
   return (
     `describe(${stringify(describe.name)}, () => {\n${describe.children
-      .map(emitNode)
+      .map((x) => emitNode(x, imports))
       .join("\n")}`.replaceAll("\n", "\n  ") + "\n});"
   );
 }
 
-function emitTest(test: Test): string {
-  return `t(${stringify(
-    [test.language, ...test.commands].join(" ")
-  )}, ${stringify(test.language)}, ${stringify(test.input)}, ${stringify(
-    test.output
-  )});`;
+function emitTest(test: Test, imports: string[]): string {
+  if (test.language === "Polygolf") {
+    const m = test.args[0].match(/(.+)\.(.+)/);
+    if (m !== null) {
+      const path = m[1];
+      const plugin = m[2];
+      imports.push(path);
+      return `testPlugin(${stringify(plugin)}, ${path
+        .split("/")
+        .at(-1)!}.${plugin}, ${stringify(test.input)}, ${stringify(
+        test.output
+      )});`;
+    }
+    throw new Error(`Unexpected polygolf argument ${test.args[0]}.`);
+  }
+  return `testLang(${stringify(
+    [test.language, ...test.args].join(" ")
+  )}, ${stringify(test.language)}, ${test.args[0] ?? "bytes"}, ${stringify(
+    test.input
+  )}, ${stringify(test.output)});`;
 }
 
 /** Compiles a single markdown test suite source to a Jest source. */

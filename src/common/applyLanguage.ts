@@ -52,7 +52,7 @@ function getFinalEmit(language: Language) {
 
 export const debugEmit = getFinalEmit(polygolfLanguage);
 
-function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
+export function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
   return programToSpine(program).withReplacer(visitor).node as IR.Program;
 }
 
