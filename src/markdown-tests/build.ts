@@ -138,6 +138,8 @@ import applyLanguage, { searchOptions, applyAll } from "@/common/applyLanguage";
 import { findLang } from "@/languages/languages";
 import polygolfLanguage from "@/languages/polygolf";
 import { Plugin } from "@/common/Language";
+import { getOnlyVariant } from "@/common/expandVariants";
+
 ${[...importSet]
   .map((x) => `import * as ${x.split("/").at(-1)!} from "./${x}";`)
   .join("\n")}
@@ -150,7 +152,7 @@ function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars",
 
 function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
   test(name, () =>
-    expect(applyLanguage(polygolfLanguage, applyAll(parse(input), plugin.visit), searchOptions("none", "bytes"))).toEqual(output)
+    expect(applyLanguage(polygolfLanguage, applyAll(getOnlyVariant(parse(input)), plugin.visit), searchOptions("none", "bytes"))).toEqual(output)
   );
 }
 

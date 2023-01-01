@@ -9,9 +9,9 @@ for $i 0 10 {
 ```
 
 ```polygolf loops.forRangeToForRangeInclusive
-@ForRangeInclusive $i 0 (10 - 1) 1 {
-  print $x;
-};
+@ForRangeInclusive $i 0 (10 - 1) 1 (
+  print $x
+);
 ```
 
 ```polygolf loops.forRangeToWhile
@@ -23,9 +23,9 @@ while ($i < 10) {
 ```
 
 ```polygolf loops.forRangeToForCLike
-@ForCLike ($i <- 0) ($i < 10) ($i <- ($i + 1)) {
-  print $x;
-};
+@ForCLike ($i <- 0) ($i < 10) ($i <- ($i + 1)) (
+  print $x
+);
 ```
 
 ## For each
@@ -37,9 +37,9 @@ for $i 0 (# $collection) {
 ```
 
 ```polygolf loops.forRangeToForEach
-@ForEach $i_forRangeToForEach $collection {
-  print $i_forRangeToForEach;
-};
+@ForEach $i_forRangeToForEach $collection (
+  print $i_forRangeToForEach
+);
 ```
 
 ## For each pair
