@@ -124,6 +124,7 @@ function extractTags(markdown: string): (Header | CodeBlock)[] {
 
 /** Emits a single markdown test. */
 function emitSuite(describe: Describe): string {
+  // The `@/` path is defined relatively in `tsconfig.json`, pointing to the `src` directory.
   return `import parse from "frontend/parse";
 import applyLanguage from "@/common/applyLanguage";
 import { findLang } from "@/languages/languages";
