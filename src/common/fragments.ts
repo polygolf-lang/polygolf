@@ -61,7 +61,7 @@ export function* getChildren(node: IR.Node): Generator<IR.Node> {
 export function fromChildRemapFunc(
   node: IR.Node,
   func: (frag: PathFragment) => IR.Node
-) {
+): IR.Node {
   const newNode: any = { ...node };
   let changed = false;
   for (const key of getChildKeys(node)) {

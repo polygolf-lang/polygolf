@@ -3,6 +3,7 @@ import {
   fromChildRemapFunc,
   getChild,
   getChildFragments,
+  getChildren,
   PathFragment,
 } from "./fragments";
 
@@ -11,7 +12,18 @@ import {
  * instantiated Programs (without any Variant nodes in them)
  */
 export function expandVariants(program: IR.Program): IR.Program[] {
+  const n = numVariants(program);
+  if (n > 16)
+    throw new Error(`Variant count ${n} exceeds arbitrary limit. Giving up`);
   return allVariantOptions(program) as IR.Program[];
+}
+
+function numVariants(node: IR.Node): number {
+  if (node.kind === "Variants") {
+    return node.variants.map(numVariants).reduce((a, b) => a + b);
+  } else {
+    return [...getChildren(node)].map(numVariants).reduce((a, b) => a * b, 1);
+  }
 }
 
 function allVariantOptions(node: IR.Node): IR.Node[] {
@@ -24,7 +36,7 @@ function allVariantOptions(node: IR.Node): IR.Node[] {
     const options = frags.map((frag) =>
       allVariantOptions(getChild(node, frag))
     );
-    return cartesianProduct(options).flatMap((opt) =>
+    return cartesianProduct(options).map((opt) =>
       fromChildRemapFunc(node, (f) => opt[fragIndexMap.get(fragToString(f))!])
     );
   }
