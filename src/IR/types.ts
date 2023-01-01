@@ -2,25 +2,25 @@ import { Expr } from "./IR";
 
 /** The type of the value of a node when evaluated */
 export interface IntegerType {
-  kind: "integer";
-  low: IntegerBound;
-  high: IntegerBound;
+  readonly kind: "integer";
+  readonly low: IntegerBound;
+  readonly high: IntegerBound;
 }
 export type IntegerBound = bigint | "-oo" | "oo";
 
 export interface TextType {
-  kind: "text";
-  capacity: number;
+  readonly kind: "text";
+  readonly capacity: number;
 }
 export interface KeyValueType {
-  kind: "KeyValue";
-  key: IntegerType | TextType;
-  value: Type;
+  readonly kind: "KeyValue";
+  readonly key: IntegerType | TextType;
+  readonly value: Type;
 }
 export interface FunctionType {
-  kind: "Function";
-  arguments: Type[];
-  result: Type;
+  readonly kind: "Function";
+  readonly arguments: readonly Type[];
+  readonly result: Type;
 }
 export type Type =
   | FunctionType

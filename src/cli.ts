@@ -12,7 +12,7 @@ import nim from "./languages/nim";
 import python from "./languages/python";
 import polygolf from "./languages/polygolf";
 
-const languageTable = { lua, nim, python, polygolf: polygolf(true) };
+const languageTable = { lua, nim, python, polygolf };
 
 const options = yargs()
   .options({
@@ -63,6 +63,7 @@ try {
           "^"
       );
     }
+    process.exit(1);
   } else {
     throw e;
   }

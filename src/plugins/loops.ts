@@ -1,5 +1,5 @@
 import { getType } from "../common/getType";
-import { Path } from "../common/traverse";
+import { Plugin } from "../common/Language";
 import {
   forRange,
   int,
@@ -14,62 +14,66 @@ import {
   polygolfOp,
 } from "../IR";
 
-export const forRangeToForRangeInclusive = {
+export const forRangeToForRangeInclusive: Plugin = {
   name: "forRangeToForRangeInclusive",
-  enter(path: Path) {
-    const node = path.node;
-    if (node.kind === "ForRange" && !node.inclusive) {
-      path.replaceWith(
-        forRange(
-          node.variable,
-          node.low,
-          polygolfOp("sub", node.high, int(1n)),
-          node.increment,
-          node.body,
-          true
-        )
+  visit(node) {
+    if (node.kind === "ForRange" && !node.inclusive)
+      return forRange(
+        node.variable,
+        node.low,
+        polygolfOp("sub", node.high, int(1n)),
+        node.increment,
+        node.body,
+        true
       );
-    }
   },
 };
 
-/**
- * Only switch if it is shorter
- */
-export const useInclusiveForRange = {
+export const useInclusiveForRange: Plugin = {
   name: "useInclusiveForRange",
-  enter(path: Path) {
-    const node = path.node;
+  visit(node): IR.ForRange | undefined {
     if (node.kind === "ForRange" && !node.inclusive) {
       if (node.high.kind === "IntegerLiteral") {
-        node.inclusive = true;
-        node.high.value = node.high.value - 1n;
+        const high = {
+          ...node.high,
+          value: node.high.value - 1n,
+        };
+        return {
+          ...node,
+          inclusive: true,
+          high,
+        };
       } else if (node.high.kind === "BinaryOp" && node.high.op === "add") {
         if (
           node.high.right.kind === "IntegerLiteral" &&
           node.high.right.value === 1n
         ) {
-          node.inclusive = true;
-          node.high = node.high.left;
+          return {
+            ...node,
+            inclusive: true,
+            high: node.high.left,
+          };
         } else if (
           node.high.left.kind === "IntegerLiteral" &&
           node.high.left.value === 1n
         ) {
-          node.inclusive = true;
-          node.high = node.high.right;
+          return {
+            ...node,
+            inclusive: true,
+            high: node.high.right,
+          };
         }
       }
     }
   },
 };
 
-export const forRangeToWhile = {
+export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
-  enter(path: Path) {
-    const node = path.node;
+  visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, path.root.node);
-      const high = getType(node.high, path.root.node);
+      const low = getType(node.low, spine.root.node);
+      const high = getType(node.high, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
@@ -77,41 +81,36 @@ export const forRangeToWhile = {
         node.variable,
         polygolfOp("add", node.variable, node.increment)
       );
-      path.replaceWith(
-        block([
-          assignment(node.variable, node.low),
-          whileLoop(
-            polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
-            node.body.kind === "Block"
-              ? block([...node.body.children, increment])
-              : block([node.body, increment])
-          ),
-        ])
-      );
+      return block([
+        assignment(node.variable, node.low),
+        whileLoop(
+          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+          node.body.kind === "Block"
+            ? block([...node.body.children, increment])
+            : block([node.body, increment])
+        ),
+      ]);
     }
   },
 };
 
-export const forRangeToForCLike = {
+export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
-  enter(path: Path) {
-    const node = path.node;
+  visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, path.root.node);
-      const high = getType(node.high, path.root.node);
+      const low = getType(node.low, spine.root.node);
+      const high = getType(node.high, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
-      path.replaceWith(
-        forCLike(
-          assignment(node.variable, node.low),
-          assignment(
-            node.variable,
-            polygolfOp("add", node.variable, node.increment ?? int(1n))
-          ),
-          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
-          node.body
-        )
+      return forCLike(
+        assignment(node.variable, node.low),
+        assignment(
+          node.variable,
+          polygolfOp("add", node.variable, node.increment ?? int(1n))
+        ),
+        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+        node.body
       );
     }
   },
@@ -127,10 +126,9 @@ export const forRangeToForCLike = {
  *     commands(i, x)
  */
 // TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
-export const forRangeToForEachPair = {
+export const forRangeToForEachPair: Plugin = {
   name: "forRangeToForEachPair",
-  enter(path: Path) {
-    const node = path.node;
+  visit(node, spine) {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
@@ -141,21 +139,14 @@ export const forRangeToForEachPair = {
       node.high.args[0].kind === "Identifier"
     ) {
       const collection = node.high.args[0];
-      const elementIdentifier = id(path.getNewIdentifier());
-      const bodyPath = new Path(node.body, path, "body");
-      bodyPath.visit({
-        // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
-        name: "anonymous",
-        enter(path2: Path) {
-          const node2 = path2.node;
-          if (isListGet(node2, collection.name, node.variable.name)) {
-            path2.replaceWith(elementIdentifier);
-          }
-        },
-      });
-      path.replaceWith(
-        forEachPair(node.variable, elementIdentifier, collection, node.body)
+      const elementIdentifier = id(
+        node.variable.name + "_forRangeToForEachPair"
       );
+      const newBody = spine.getChild("body").withReplacer((innerNode) => {
+        if (isListGet(innerNode, collection.name, node.variable.name))
+          return elementIdentifier;
+      }).node as IR.Expr;
+      return forEachPair(node.variable, elementIdentifier, collection, newBody);
     }
   },
 };
@@ -169,10 +160,9 @@ export const forRangeToForEachPair = {
  * for x in collection:
  *     commands(x)
  */
-export const forRangeToForEach = {
+export const forRangeToForEach: Plugin = {
   name: "forRangeToForEach",
-  enter(path: Path) {
-    const node = path.node;
+  visit(node, spine) {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
@@ -183,21 +173,21 @@ export const forRangeToForEach = {
       node.high.args[0].kind === "Identifier"
     ) {
       const collection = node.high.args[0];
-      const elementIdentifier = id(path.getNewIdentifier());
-      const bodyPath = new Path(node.body, path, "body");
-      if (!isVariableUsedAlone(bodyPath, collection.name, node.variable.name)) {
+      const elementIdentifier = id(node.variable.name + "_forRangeToForEach");
+      const bodySpine = spine.getChild("body");
+      const onlyUsedForCollectionAccess = bodySpine.everyNode(
+        (n, s) =>
+          n.kind !== "Identifier" ||
+          n.name !== node.variable.name ||
+          isListGet(s.parent!.node, collection.name, node.variable.name)
+      );
+      if (onlyUsedForCollectionAccess) {
         // if the loop variable is only used to index the collection
-        bodyPath.visit({
-          // inside the body, replace each `collection`[`node.variable`] with `elementIdentifier`
-          name: "anonymous",
-          enter(path2: Path) {
-            const node2 = path2.node;
-            if (isListGet(node2, collection.name, node.variable.name)) {
-              path2.replaceWith(elementIdentifier);
-            }
-          },
-        });
-        path.replaceWith(forEach(elementIdentifier, collection, node.body));
+        const newBody = bodySpine.withReplacer((n) => {
+          if (isListGet(n, collection.name, node.variable.name))
+            return elementIdentifier;
+        }).node as IR.Expr;
+        return forEach(elementIdentifier, collection, newBody);
       }
     }
   },
@@ -211,14 +201,5 @@ function isListGet(node: IR.Node, collection: string, index: string) {
     args[0].name === collection &&
     args[1].kind === "Identifier" &&
     args[1].name === index
-  );
-}
-
-function isVariableUsedAlone(path: Path, collection: string, index: string) {
-  return path.anyNode(
-    (x) =>
-      x.node.kind === "Identifier" &&
-      x.node.name === index &&
-      !isListGet(x.parent!.node, collection, index)
   );
 }
