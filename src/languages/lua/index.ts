@@ -17,6 +17,7 @@ import { golfLastPrint } from "../../plugins/print";
 
 const luaLanguage: Language = {
   name: "Lua",
+  extension: "lua",
   emitter: emitProgram,
   golfPlugins: [
     flipBinaryOps,

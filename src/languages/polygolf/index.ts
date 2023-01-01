@@ -17,6 +17,7 @@ const blocksAsVariants: Plugin = {
 
 const polygolfLanguage: Language = {
   name: "Polygolf",
+  extension: "polygolf",
   emitter: emitProgram,
   golfPlugins: [],
   emitPlugins: [],

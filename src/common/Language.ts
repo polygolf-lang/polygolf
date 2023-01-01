@@ -17,6 +17,7 @@ export type OpTransformOutput = (args: readonly IR.Expr[]) => IR.Expr;
  */
 export interface Language {
   name: string;
+  extension: string;
   golfPlugins: Plugin[];
   emitPlugins: Plugin[];
   finalEmitPlugins: Plugin[];

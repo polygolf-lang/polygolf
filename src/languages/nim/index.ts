@@ -26,6 +26,7 @@ import { golfLastPrint } from "../../plugins/print";
 
 const nimLanguage: Language = {
   name: "Nim",
+  extension: "nim",
   emitter: emitProgram,
   golfPlugins: [
     flipBinaryOps,
