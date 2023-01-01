@@ -116,7 +116,3 @@ export function program(body: Expr): Program {
     body,
   };
 }
-
-export function copyType(from: Expr, to: Expr): Expr {
-  return { ...to, type: from.type };
-}

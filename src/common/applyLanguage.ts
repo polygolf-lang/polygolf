@@ -107,7 +107,17 @@ function golfProgram(
       } else {
         for (const altProgram of spine.compactMap((n, s) => {
           const ret = plugin.visit(n, s);
-          if (ret !== undefined) return s.replacedWith(ret).root.node;
+          if (ret !== undefined) {
+            // copy type annotation if present
+            const repl =
+              ret.kind !== "Program" &&
+              n.kind !== "Program" &&
+              n.type !== undefined
+                ? { ...ret, type: n.type }
+                : ret;
+            // mark one more replacement idea.
+            return s.replacedWith(repl).root.node;
+          }
         })) {
           pushToQueue(altProgram, newHist);
         }
