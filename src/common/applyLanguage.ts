@@ -4,13 +4,39 @@ import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
 
+export type OptimisationLevel = "none" | "heuristic" | "full";
+export type Objective = "bytes" | "chars";
+export interface SearchOptions {
+  level: OptimisationLevel;
+  objective: Objective;
+  objectiveFunction: (x: string) => number;
+}
+
+export function searchOptions(
+  level: OptimisationLevel,
+  objective: Objective,
+  objectiveFunction?: (x: string) => number
+): SearchOptions {
+  return {
+    level,
+    objective,
+    objectiveFunction:
+      objectiveFunction ??
+      (objective === "bytes"
+        ? (x) => Buffer.byteLength(x, "utf-8")
+        : (x) => x.length),
+  };
+}
+
 export default function applyLanguage(
   language: Language,
-  program: IR.Program
+  program: IR.Program,
+  options: SearchOptions
 ): string {
   return applyLanguageToVariants(
     language,
-    language.name === "Polygolf" ? [program] : expandVariants(program)
+    language.name === "Polygolf" ? [program] : expandVariants(program),
+    options
   );
 }
 
@@ -38,14 +64,19 @@ function isError(x: any): x is Error {
  * throw an error if every variant throws */
 export function applyLanguageToVariants(
   language: Language,
-  variants: IR.Program[]
+  variants: IR.Program[],
+  options: SearchOptions
 ): string {
   const finalEmit = getFinalEmit(language);
-  const golfPlugins = language.golfPlugins.concat(language.emitPlugins);
+  const golfPlugins =
+    options.level === "none"
+      ? []
+      : language.golfPlugins.concat(language.emitPlugins);
+  const obj = options.objectiveFunction;
   const ret = variants
-    .map((variant) => golfProgram(variant, golfPlugins, finalEmit))
+    .map((variant) => golfProgram(variant, golfPlugins, finalEmit, obj))
     .reduce((a, b) =>
-      isError(a) ? b : isError(b) ? a : a.length < b.length ? a : b
+      isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
     );
   if (isError(ret)) {
     ret.message = "No variant could be compiled: " + ret.message;
@@ -58,7 +89,8 @@ export function applyLanguageToVariants(
 function golfProgram(
   program: IR.Program,
   golfPlugins: Plugin[],
-  finalEmit: (ir: IR.Program) => string
+  finalEmit: (ir: IR.Program) => string,
+  objective: (x: string) => number
 ): string | Error {
   // room for improvement: use this as an actual priority queue
   /** Array of [program, length, plugin hist] */
@@ -85,11 +117,11 @@ function golfProgram(
     visited.add(s);
     try {
       const code = finalEmit(prog);
-      if (code.length < shortestSoFar.length) shortestSoFar = code;
+      if (objective(code) < objective(shortestSoFar)) shortestSoFar = code;
       // 200 is arbitrary limit for performance to stop the search, since we're
       // currently using naive BFS with no pruning.
       // room for improvement: prune bad options
-      if (visited.size < 200) pq.push([prog, code.length, hist]);
+      if (visited.size < 200) pq.push([prog, objective(code), hist]);
     } catch {
       // Ignore for now, assuming it's using an unsupported language feature
       // A warning might be appropriate

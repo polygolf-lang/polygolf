@@ -4,7 +4,7 @@ import yargs from "yargs";
 import fs from "fs";
 import path from "path";
 import parse from "./frontend/parse";
-import applyLanguage from "./common/applyLanguage";
+import applyLanguage, { searchOptions } from "./common/applyLanguage";
 import { PolygolfError } from "./common/errors";
 
 import lua from "./languages/lua";
@@ -40,7 +40,7 @@ const lang = languageTable[options.lang];
 const code = fs.readFileSync(options.input, { encoding: "utf-8" });
 const prog = parse(code);
 try {
-  const result = applyLanguage(lang, prog);
+  const result = applyLanguage(lang, prog, searchOptions("full", "bytes"));
   if (options.output !== undefined) {
     fs.mkdirSync(path.dirname(options.output), { recursive: true });
     fs.writeFileSync(options.output, result);
