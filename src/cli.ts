@@ -69,15 +69,20 @@ yargs()
         type: "string",
         demandOption: true,
       },
+      args: {
+        describe: "arguments to pass to the program",
+        type: "array",
+      },
     },
     handler: (opts) => {
       // TODO: yargs TS magic
       const options = {
         input: opts.input as string,
+        args: opts.args as string[] | undefined,
       };
       withProgramFromFile(options.input, (prog) => {
         expandVariants(prog).forEach((varProg) => {
-          console.log(interpretToString(varProg, []));
+          console.log(interpretToString(varProg, options.args ?? []));
         });
       });
     },
