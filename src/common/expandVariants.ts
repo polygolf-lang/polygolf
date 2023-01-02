@@ -18,6 +18,14 @@ export function expandVariants(program: IR.Program): IR.Program[] {
   return allVariantOptions(program) as IR.Program[];
 }
 
+export function getOnlyVariant(program: IR.Program): IR.Program {
+  const variants = expandVariants(program);
+  if (variants.length > 1) {
+    throw new Error("Program contains multiple variants!");
+  }
+  return variants[0];
+}
+
 function numVariants(node: IR.Node): number {
   if (node.kind === "Variants") {
     return node.variants.map(numVariants).reduce((a, b) => a + b);

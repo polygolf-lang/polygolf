@@ -13,10 +13,12 @@ import {
   print,
   integerType,
 } from "../../IR";
-import applyLanguage from "../../common/applyLanguage";
+import applyLanguage, { searchOptions } from "../../common/applyLanguage";
 
 function expectTransform(program: IR.Program, output: string) {
-  expect(applyLanguage(lua, program)).toEqual(output);
+  expect(applyLanguage(lua, program, searchOptions("full", "bytes"))).toEqual(
+    output
+  );
 }
 
 function expectStatement(statement: IR.Expr, output: string) {

@@ -11,6 +11,7 @@ import { golfLastPrint } from "../../plugins/print";
 
 const pythonLanguage: Language = {
   name: "Python",
+  extension: "py",
   emitter: emitProgram,
   golfPlugins: [
     golfStringListLiteral,

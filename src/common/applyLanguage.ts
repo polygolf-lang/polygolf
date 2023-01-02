@@ -4,13 +4,69 @@ import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
 
+// TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
+export type OptimisationLevel = "none" | "heuristic" | "full";
+export type Objective = "bytes" | "chars";
+export interface SearchOptions {
+  level: OptimisationLevel;
+  objective: Objective;
+  objectiveFunction: (x: string) => number;
+}
+
+// This is what code.golf uses for char scoring
+// https://github.com/code-golf/code-golf/blob/13733cfd472011217031fb9e733ae9ac177b234b/js/_util.ts#L7
+const charLen = (str: string) => {
+  let i = 0;
+  let len = 0;
+
+  while (i < str.length) {
+    const value = str.charCodeAt(i++);
+
+    if (value >= 0xd800 && value <= 0xdbff && i < str.length) {
+      // It's a high surrogate, and there is a next character.
+      const extra = str.charCodeAt(i++);
+
+      // Low surrogate.
+      if ((extra & 0xfc00) === 0xdc00) {
+        len++;
+      } else {
+        // It's an unmatched surrogate; only append this code unit, in
+        // case the next code unit is the high surrogate of a
+        // surrogate pair.
+        len++;
+        i--;
+      }
+    } else {
+      len++;
+    }
+  }
+
+  return len;
+};
+
+export function searchOptions(
+  level: OptimisationLevel,
+  objective: Objective,
+  objectiveFunction?: (x: string) => number
+): SearchOptions {
+  return {
+    level,
+    objective,
+    objectiveFunction:
+      objectiveFunction ??
+      (objective === "bytes" ? (x) => Buffer.byteLength(x, "utf-8") : charLen),
+  };
+}
+
 export default function applyLanguage(
   language: Language,
-  program: IR.Program
+  program: IR.Program,
+  options: SearchOptions
 ): string {
   return applyLanguageToVariants(
     language,
-    language.name === "Polygolf" ? [program] : expandVariants(program)
+    language.name === "Polygolf" ? [program] : expandVariants(program),
+    options
   );
 }
 
@@ -26,7 +82,7 @@ function getFinalEmit(language: Language) {
 
 export const debugEmit = getFinalEmit(polygolfLanguage);
 
-function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
+export function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
   return programToSpine(program).withReplacer(visitor).node as IR.Program;
 }
 
@@ -38,14 +94,19 @@ function isError(x: any): x is Error {
  * throw an error if every variant throws */
 export function applyLanguageToVariants(
   language: Language,
-  variants: IR.Program[]
+  variants: IR.Program[],
+  options: SearchOptions
 ): string {
   const finalEmit = getFinalEmit(language);
-  const golfPlugins = language.golfPlugins.concat(language.emitPlugins);
+  const golfPlugins =
+    options.level === "none"
+      ? []
+      : language.golfPlugins.concat(language.emitPlugins);
+  const obj = options.objectiveFunction;
   const ret = variants
-    .map((variant) => golfProgram(variant, golfPlugins, finalEmit))
+    .map((variant) => golfProgram(variant, golfPlugins, finalEmit, obj))
     .reduce((a, b) =>
-      isError(a) ? b : isError(b) ? a : a.length < b.length ? a : b
+      isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
     );
   if (isError(ret)) {
     ret.message = "No variant could be compiled: " + ret.message;
@@ -58,7 +119,8 @@ export function applyLanguageToVariants(
 function golfProgram(
   program: IR.Program,
   golfPlugins: Plugin[],
-  finalEmit: (ir: IR.Program) => string
+  finalEmit: (ir: IR.Program) => string,
+  objective: (x: string) => number
 ): string | Error {
   // room for improvement: use this as an actual priority queue
   /** Array of [program, length, plugin hist] */
@@ -85,11 +147,11 @@ function golfProgram(
     visited.add(s);
     try {
       const code = finalEmit(prog);
-      if (code.length < shortestSoFar.length) shortestSoFar = code;
+      if (objective(code) < objective(shortestSoFar)) shortestSoFar = code;
       // 200 is arbitrary limit for performance to stop the search, since we're
       // currently using naive BFS with no pruning.
       // room for improvement: prune bad options
-      if (visited.size < 200) pq.push([prog, code.length, hist]);
+      if (visited.size < 200) pq.push([prog, objective(code), hist]);
     } catch {
       // Ignore for now, assuming it's using an unsupported language feature
       // A warning might be appropriate
