@@ -16,8 +16,8 @@ export interface SearchOptions {
 // This is what code.golf uses for char scoring
 // https://github.com/code-golf/code-golf/blob/13733cfd472011217031fb9e733ae9ac177b234b/js/_util.ts#L7
 const charLen = (str: string) => {
-  let i = 0,
-    len = 0;
+  let i = 0;
+  let len = 0;
 
   while (i < str.length) {
     const value = str.charCodeAt(i++);
@@ -27,7 +27,7 @@ const charLen = (str: string) => {
       const extra = str.charCodeAt(i++);
 
       // Low surrogate.
-      if ((extra & 0xfc00) == 0xdc00) {
+      if ((extra & 0xfc00) === 0xdc00) {
         len++;
       } else {
         // It's an unmatched surrogate; only append this code unit, in
