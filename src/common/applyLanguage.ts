@@ -4,6 +4,7 @@ import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
 
+// TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
 export type OptimisationLevel = "none" | "heuristic" | "full";
 export type Objective = "bytes" | "chars";
 export interface SearchOptions {
@@ -11,6 +12,37 @@ export interface SearchOptions {
   objective: Objective;
   objectiveFunction: (x: string) => number;
 }
+
+// This is what code.golf uses for char scoring
+// https://github.com/code-golf/code-golf/blob/13733cfd472011217031fb9e733ae9ac177b234b/js/_util.ts#L7
+const charLen = (str: string) => {
+  let i = 0,
+    len = 0;
+
+  while (i < str.length) {
+    const value = str.charCodeAt(i++);
+
+    if (value >= 0xd800 && value <= 0xdbff && i < str.length) {
+      // It's a high surrogate, and there is a next character.
+      const extra = str.charCodeAt(i++);
+
+      // Low surrogate.
+      if ((extra & 0xfc00) == 0xdc00) {
+        len++;
+      } else {
+        // It's an unmatched surrogate; only append this code unit, in
+        // case the next code unit is the high surrogate of a
+        // surrogate pair.
+        len++;
+        i--;
+      }
+    } else {
+      len++;
+    }
+  }
+
+  return len;
+};
 
 export function searchOptions(
   level: OptimisationLevel,
@@ -22,9 +54,7 @@ export function searchOptions(
     objective,
     objectiveFunction:
       objectiveFunction ??
-      (objective === "bytes"
-        ? (x) => Buffer.byteLength(x, "utf-8")
-        : (x) => x.length),
+      (objective === "bytes" ? (x) => Buffer.byteLength(x, "utf-8") : charLen),
   };
 }
 
