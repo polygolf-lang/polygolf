@@ -194,7 +194,7 @@ function stringify(x: string): string {
         [`'`, `\\"`],
       ],
     ],
-  ])[0];
+  ]);
 }
 
 function emitDescribe(describe: Describe, imports: string[]): string {
