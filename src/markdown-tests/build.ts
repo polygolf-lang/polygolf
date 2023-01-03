@@ -141,7 +141,13 @@ import { Plugin } from "@/common/Language";
 import { getOnlyVariant } from "@/common/expandVariants";
 
 ${[...importSet]
-  .map((x) => `import * as ${x.split("/").at(-1)!} from "./${x}";`)
+  .map(
+    (x) =>
+      `import * as ${x
+        .split("/")
+        .at(-1)!
+        .replace("static", "static_")} from "./${x}";`
+  )
   .join("\n")}
 
 function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars", input: string, output: string) {
@@ -214,9 +220,10 @@ function emitTest(test: Test, imports: string[]): string {
       imports.push(path);
       return `testPlugin(${stringify(plugin)}, ${path
         .split("/")
-        .at(-1)!}.${plugin}, ${stringify(test.input)}, ${stringify(
-        test.output
-      )});`;
+        .at(-1)!
+        .replace("static", "static_")}.${plugin}, ${stringify(
+        test.input
+      )}, ${stringify(test.output)});`;
     }
     throw new Error(`Unexpected polygolf argument ${test.args[0]}.`);
   }

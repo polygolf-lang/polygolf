@@ -3,7 +3,7 @@ import { Plugin } from "../common/Language";
 import { polygolfOp, stringLiteral } from "../IR";
 import { mapOps } from "./ops";
 
-export const printLnToprint = mapOps([
+export const printLnToPrint = mapOps([
   [
     "println",
     (x) =>
