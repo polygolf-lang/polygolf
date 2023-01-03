@@ -67,12 +67,12 @@ export default function applyLanguage(
   program: IR.Program,
   options: SearchOptions
 ): string {
-  const bestBytes = applyLanguageToVariants(
+  const bestUnpacked = applyLanguageToVariants(
     language,
     language.name === "Polygolf" ? [program] : expandVariants(program),
     options
   );
-  if (options.objective === "bytes") return bestBytes;
+  if (options.objective === "bytes") return bestUnpacked;
   function packer(code: string): string | null {
     if ([...code].map((x) => x.charCodeAt(0)).some((x) => x > 127)) return null;
     return (language.packers ?? [])
@@ -89,11 +89,11 @@ export default function applyLanguage(
   const packed = packer(bestForPacking);
   if (
     packed != null &&
-    options.objectiveFunction(packed) < options.objectiveFunction(bestBytes)
+    options.objectiveFunction(packed) < options.objectiveFunction(bestUnpacked)
   ) {
     return packed;
   }
-  return bestBytes;
+  return bestUnpacked;
 }
 
 function getFinalEmit(language: Language) {
