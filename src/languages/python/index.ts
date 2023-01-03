@@ -1,13 +1,19 @@
 import { assignment, functionCall, id, indexCall, methodCall } from "../../IR";
 import { Language } from "../../common/Language";
 
-import emitProgram from "./emit";
+import emitProgram, { emitPythonStringLiteral } from "./emit";
 import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
+import {
+  packSource2to1,
+  packSource3to1,
+  useDecimalConstantPackedPrinter,
+  useLowDecimalListPackedPrinter,
+} from "../../plugins/packing";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -19,6 +25,8 @@ const pythonLanguage: Language = {
     tempVarToMultipleAssignment,
     forRangeToForEach,
     golfLastPrint(),
+    useDecimalConstantPackedPrinter,
+    useLowDecimalListPackedPrinter,
   ],
   emitPlugins: [useIndexCalls()],
   finalEmitPlugins: [
@@ -69,6 +77,16 @@ const pythonLanguage: Language = {
     ),
     aliasBuiltins(),
     renameIdents(),
+  ],
+  packers: [
+    (x) =>
+      `exec(bytes(${emitPythonStringLiteral(packSource2to1(x))},'u16')[2:])`,
+    (x) => {
+      if ([...x].map((x) => x.charCodeAt(0)).some((x) => x < 32)) return null;
+      return `exec(bytes(ord(c)%i+32for c in${emitPythonStringLiteral(
+        packSource3to1(x)
+      )}for i in b'abc'))`;
+    },
   ],
 };
 

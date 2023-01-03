@@ -3,6 +3,8 @@ import { Visitor } from "./Spine";
 
 export type OpTransformOutput = (args: readonly IR.Expr[]) => IR.Expr;
 
+export type Packer = (x: string) => string | null;
+
 /** A language configuration.
  *
  * Somewhat declarative setup. `applyLanguage` always starts with a frontend IR
@@ -22,6 +24,7 @@ export interface Language {
   emitPlugins: Plugin[];
   finalEmitPlugins: Plugin[];
   emitter: Emitter;
+  packers?: Packer[];
   detokenizer?: Detokenizer;
 }
 

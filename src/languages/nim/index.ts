@@ -23,6 +23,10 @@ import { useInclusiveForRange } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
+import {
+  useDecimalConstantPackedPrinter,
+  useLowDecimalListPackedPrinter,
+} from "../../plugins/packing";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -34,6 +38,8 @@ const nimLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
+    useDecimalConstantPackedPrinter,
+    useLowDecimalListPackedPrinter,
   ],
   emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
   finalEmitPlugins: [

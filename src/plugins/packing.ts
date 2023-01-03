@@ -1,4 +1,4 @@
-import { Plugin } from "@/common/Language";
+import { Plugin } from "../common/Language";
 import {
   assignment,
   block,
@@ -8,7 +8,7 @@ import {
   polygolfOp,
   print,
   stringLiteral,
-} from "IR";
+} from "../IR";
 
 export const useDecimalConstantPackedPrinter: Plugin = {
   name: "useDecimalConstantPackedPrinter",
@@ -96,6 +96,7 @@ function packLowDecimalList(value: string): string {
 }
 
 export function packSource2to1(source: string): string {
+  while (source.length % 2 !== 0) source += " ";
   let result = "";
   for (let i = 0; i < source.length; i += 2) {
     result += String.fromCharCode(
@@ -106,6 +107,7 @@ export function packSource2to1(source: string): string {
 }
 
 export function packSource3to1(source: string): string {
+  while (source.length % 3 !== 0) source += "  ";
   let result = "";
   for (let i = 0; i < source.length; i += 3) {
     const a = [i, i + 1, i + 2].map((x) => source.charCodeAt(x) - 32);
@@ -114,7 +116,7 @@ export function packSource3to1(source: string): string {
   return result;
 }
 
-function crt(num: number[], rem: number[]): number {
+function crt(rem: number[], num: number[]): number {
   let sum = 0;
   const prod = num.reduce((a, c) => a * c, 1);
 
