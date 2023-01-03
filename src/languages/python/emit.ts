@@ -28,6 +28,7 @@ function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
         "\n"
       ),
       "$DEDENT$",
+      "\n",
     ];
   }
   return joinGroups(
@@ -40,33 +41,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
   switch (stmt.kind) {
     case "Block":
       return emitBlock(stmt, parent);
-    case "VarDeclarationWithAssignment":
-      if (stmt.requiresBlock) {
-        const variables =
-          stmt.assignments.kind === "Assignment"
-            ? [stmt.assignments.variable]
-            : stmt.assignments.variables;
-        const exprs =
-          stmt.assignments.kind === "Assignment"
-            ? [stmt.assignments.expr]
-            : stmt.assignments.exprs;
-
-        return [
-          "var",
-          "$INDENT$",
-          "\n",
-          ...joinGroups(
-            variables.map((v, i) => [
-              ...emitExprNoParens(v),
-              "=",
-              ...emitExprNoParens(exprs[i]),
-            ]),
-            "\n"
-          ),
-          "$DEDENT$",
-        ];
-      }
-      return ["var", ...emitExprNoParens(stmt.assignments)];
     case "ImportStatement":
       return [
         stmt.name,
@@ -83,39 +57,20 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
         ...emitBlock(stmt.body, stmt),
       ];
     case "ForRange": {
+      const low = emitExpr(stmt.low, stmt);
+      const low0 = low.length === 1 && low[0] === "0";
+      const high = emitExpr(stmt.high, stmt);
       const increment = emitExpr(stmt.increment, stmt);
-      const low =
-        stmt.low.kind === "IntegerLiteral" &&
-        stmt.low.value === 0n &&
-        stmt.inclusive
-          ? []
-          : emitExpr(stmt.low, stmt);
-      if (increment.length === 1 && increment[0] === "1") {
-        return [
-          "for",
-          ...emitExpr(stmt.variable, stmt),
-          "in",
-          ...low,
-          stmt.inclusive ? ".." : "..<",
-          ...emitExpr(stmt.high, stmt),
-          ":",
-          ...emitBlock(stmt.body, stmt),
-        ];
-      }
-      if (!stmt.inclusive) {
-        throw new Error("Ranges with steps must be inclusive in Nim.");
-      }
+      const increment1 = increment.length === 1 && increment[0] === "1";
       return [
         "for",
         ...emitExpr(stmt.variable, stmt),
         "in",
-        "countup",
+        "range",
         "(",
-        ...emitExpr(stmt.low, stmt),
-        ",",
-        ...emitExpr(stmt.high, stmt),
-        ",",
-        ...emitExpr(stmt.increment, stmt),
+        ...(low0 && increment1 ? [] : [...low, ","]),
+        ...high,
+        ...(increment1 ? [] : [",", ...increment]),
         ")",
         ":",
         ...emitBlock(stmt.body, stmt),
@@ -128,7 +83,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
         ":",
         ...emitBlock(stmt.consequent, stmt),
         ...(stmt.alternate !== undefined
-          ? ["else", ":", ...emitBlock(stmt.alternate, stmt)]
+          ? ["\n", "else", ":", ...emitBlock(stmt.alternate, stmt)]
           : []),
       ];
     case "Variants":
@@ -137,7 +92,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.kind}) while emitting Nim`);
+      throw new Error(`Unexpected node (${stmt.kind}) while emitting Python`);
     default:
       return emitExpr(stmt, parent);
   }
@@ -148,10 +103,7 @@ function emitExpr(
   parent: IR.Node,
   fragment?: PathFragment
 ): string[] {
-  const inner = emitExprNoParens(
-    expr,
-    parent.kind === "BinaryOp" && fragment === "left"
-  );
+  const inner = emitExprNoParens(expr);
   return needsParens(expr, parent, fragment) ? ["(", ...inner, ")"] : inner;
 }
 
@@ -173,10 +125,7 @@ function needsParens(
   return false;
 }
 
-function emitExprNoParens(
-  expr: IR.Expr,
-  expressionContinues: boolean = false
-): string[] {
+function emitExprNoParens(expr: IR.Expr): string[] {
   switch (expr.kind) {
     case "Assignment":
       return [
@@ -186,19 +135,15 @@ function emitExprNoParens(
       ];
     case "ManyToManyAssignment":
       return [
-        "(",
         ...joinGroups(
           expr.variables.map((v) => emitExprNoParens(v)),
           ","
         ),
-        ")",
         "=",
-        "(",
         ...joinGroups(
           expr.exprs.map((x) => emitExprNoParens(x)),
           ","
         ),
-        ")",
       ];
     case "MutatingBinaryOp":
       return [
@@ -220,75 +165,46 @@ function emitExprNoParens(
           ],
         ],
         [
+          `'`,
+          [
+            [`\\`, `\\\\`],
+            [`\n`, `\\n`],
+            [`\r`, `\\r`],
+            [`'`, `\\'`],
+          ],
+        ],
+        [
           `"""`,
           [
             [`\\`, `\\\\`],
             [`"""`, `\\"""`],
           ],
         ],
-        [
-          [`r"`, `"`],
-          [
-            [`"`, `""`],
-            [`\n`, null],
-            [`\r`, null],
-          ],
-        ],
       ]);
     case "IntegerLiteral":
       return [expr.value.toString()];
     case "FunctionCall":
-      if (expr.args.length === 1 && expr.args[0].kind === "StringLiteral") {
-        return [expr.ident.name, "", ...emitExpr(expr.args[0], expr)];
-      }
-      if (expressionContinues || expr.args.length > 1)
-        return [
-          expr.ident.name,
-          "(",
-          ...joinGroups(
-            expr.args.map((arg) => emitExpr(arg, expr)),
-            ","
-          ),
-          ")",
-        ];
       return [
         expr.ident.name,
+        "(",
         ...joinGroups(
           expr.args.map((arg) => emitExpr(arg, expr)),
           ","
         ),
+        ")",
       ];
     case "MethodCall":
-      if (expressionContinues || expr.args.length > 1)
-        return [
-          ...emitExpr(expr.object, expr, "object"),
-          ".",
-          expr.ident.name,
-          ...(expr.args.length > 0
-            ? [
-                "(",
-                ...joinGroups(
-                  expr.args.map((arg) => emitExpr(arg, expr)),
-                  ","
-                ),
-                ")",
-              ]
-            : []),
-        ];
-      else
-        return [
-          ...emitExpr(expr.object, expr),
-          ".",
-          expr.ident.name,
-          ...(expr.args.length > 0
-            ? [
-                ...joinGroups(
-                  expr.args.map((arg) => emitExpr(arg, expr)),
-                  ","
-                ),
-              ]
-            : []),
-        ];
+      return [
+        ...emitExpr(expr.object, expr),
+        ".",
+        expr.ident.name,
+        "(",
+        ...joinGroups(
+          expr.args.map((arg) => emitExpr(arg, expr)),
+          ","
+        ),
+        ")",
+      ];
     case "BinaryOp":
       return [
         ...emitExpr(expr.left, expr, "left"),
@@ -299,7 +215,6 @@ function emitExprNoParens(
       return [expr.name, ...emitExpr(expr.arg, expr)];
     case "ListConstructor":
       return [
-        "@",
         "[",
         ...joinGroups(
           expr.exprs.map((x) => emitExprNoParens(x)),
@@ -309,31 +224,18 @@ function emitExprNoParens(
       ];
     case "IndexCall":
       if (expr.oneIndexed)
-        throw new Error("Nim only supports zeroIndexed access.");
+        throw new Error("Python only supports zeroIndexed access.");
       return [
         ...emitExprNoParens(expr.collection),
         "[",
         ...emitExprNoParens(expr.index),
         "]",
       ];
-    case "RangeIndexCall":
-      if (expr.oneIndexed)
-        throw new Error("Nim only supports zeroIndexed access.");
-      if (expr.step.kind !== "IntegerLiteral" || expr.step.value !== 1n)
-        throw new Error("Nim doesn't support indexing with steps.");
-      return [
-        ...emitExprNoParens(expr.collection),
-        "[",
-        ...emitExprNoParens(expr.low),
-        "..",
-        ...emitExprNoParens(expr.high),
-        "]",
-      ];
 
     default:
       throw new Error(
-        `Unexpected node while emitting Nim: ${expr.kind}: ${
-          "op" in expr ? expr.op : ""
+        `Unexpected node while emitting Python: ${expr.kind}: ${
+          "op" in expr ? expr.op ?? "" : ""
         }. `
       );
   }

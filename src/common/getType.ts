@@ -46,34 +46,32 @@ import {
   constantIntegerType,
 } from "../IR";
 import { PolygolfError } from "./errors";
+import { getIdentifierType } from "./symbols";
 
+const cachedType = new WeakMap<Expr, Type>();
+const currentlyFinding = new WeakSet<Expr>();
 export function getType(expr: Expr, program: Program): Type {
-  if (expr.type === undefined) {
-    expr.type = calcType(expr, program);
-  }
-  return expr.type;
+  if (cachedType.has(expr)) return cachedType.get(expr)!;
+  if (currentlyFinding.has(expr))
+    throw new PolygolfError(
+      `Expression defined in terms of itself`,
+      expr.source
+    );
+  currentlyFinding.add(expr);
+  const t = calcType(expr, program);
+  currentlyFinding.delete(expr);
+  cachedType.set(expr, t);
+  return t;
 }
 
 export function calcType(expr: Expr, program: Program): Type {
+  // user-annotated node
+  if (expr.type !== undefined) return expr.type;
+  // type inference
   const type = (e: Expr) => getType(e, program);
   switch (expr.kind) {
-    case "Function": {
-      function setVar(name: string, type: Type) {
-        if (program.variables.has(name)) {
-          throw new PolygolfError(
-            `Duplicate variable declaration: ${name}!`,
-            expr.source
-          );
-        }
-        program.variables.set(name, type);
-      }
-      for (const arg of expr.args) {
-        if (arg.type !== undefined && expr.type === undefined) {
-          setVar(arg.name, arg.type);
-        }
-      }
+    case "Function":
       return functionType(expr.args.map(type), type(expr.expr));
-    }
     case "Block":
     case "VarDeclaration":
       return voidType;
@@ -154,13 +152,7 @@ export function calcType(expr: Expr, program: Program): Type {
       );
     }
     case "Identifier":
-      if (program.variables.has(expr.name)) {
-        return program.variables.get(expr.name)!;
-      }
-      throw new PolygolfError(
-        `Type error. Undeclared variable ${expr.name} encountered!`,
-        expr.source
-      );
+      return getIdentifierType(expr, program);
     case "StringLiteral":
       return textType(expr.value.length);
     case "IntegerLiteral":
@@ -261,7 +253,7 @@ function getOpCodeType(
       throw new PolygolfError(
         `Type error. Operator '${
           expr.op ?? "null"
-        } type error. Expected [${expected
+        }' type error. Expected [${expected
           .map(toString)
           .join(", ")}] but got [${types.map(toString).join(", ")}].`,
         expr.source
@@ -522,7 +514,7 @@ function getOpCodeType(
       return integerType(0, 1);
     case "byte_to_char":
       expectType(integerType(0, 255));
-      return integerType(0, 1);
+      return textType(1);
     case "list_length":
       expectGenericType("List");
       return integerType(0);

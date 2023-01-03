@@ -34,7 +34,11 @@ function emitVariants(expr: Variants, indent = false): string[] {
   ];
 }
 
-function emitExpr(expr: Expr, asStatement = false, indent = false): string[] {
+export function emitExpr(
+  expr: Expr,
+  asStatement = false,
+  indent = false
+): string[] {
   function emitSexpr(op: string, ...args: (string | Expr)[]): string[] {
     if (op === "@") op += expr.kind;
     const result: string[] = [];
@@ -266,7 +270,9 @@ const opAliases: Record<string, string> = {
   mul: "*",
   pow: "^",
   bit_and: "&",
-  bit_or: "&",
+  bit_or: "|",
+  bit_xor: "~",
+  bit_not: "~",
   eq: "==",
   neq: "!=",
   leq: "<=",
