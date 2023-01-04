@@ -7,11 +7,12 @@ import parse from "./frontend/parse";
 import applyLanguage from "./common/applyLanguage";
 import { PolygolfError } from "./common/errors";
 
+import assembly from "./languages/assembly";
 import lua from "./languages/lua";
 import nim from "./languages/nim";
 import polygolf from "./languages/polygolf";
 
-const languageTable = { lua, nim, polygolf: polygolf(true) };
+const languageTable = { lua, nim, polygolf: polygolf(true), assembly };
 
 const options = yargs()
   .options({
