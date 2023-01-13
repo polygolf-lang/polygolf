@@ -3,6 +3,19 @@ import {
   joinGroups,
 } from "../../common/emit";
 import { IR } from "../../IR";
+import { getType } from "../../common/getType";
+import {
+  emitOperand,
+  emitReg,
+  immOperand,
+  Operand,
+  operandIsConstant,
+  labelOperand,
+  memOperand,
+  regOperand,
+  RegOperand,
+  resize,
+} from "./operand";
 
 // STUFF TO DO BEFORE UPLOADING:
 // find the variable generator and use it for splitPrints
@@ -33,29 +46,10 @@ function data(code: string[]) : string[] {
   return setSection(".data").concat(code).concat(setSection(".text"));
 }
 
-type Reg =
-  "%rax" | "%rcx" | "%rdx" | "%rbx" | "%rsp" | "%rbp" | "%rsi" | "%rdi" |
-  "%r8" | "%r9" | "%r10" | "%r11" | "%r12" | "%r13" | "%r14" | "%r15";
-
 // allowed output registers
-type PossibleReg = "any" | "not%rax%rdx" | Reg;
-
-const regNames = [
-  "%rax",
-  "%rcx",
-  "%rdx",
-  "%rbx",
-  "%rsp",
-  "%rbp",
-  "%rsi",
-  "%rdi"
-];
-for(let i = 8; i < 16; i++) {
-  regNames.push(`%r${i}` as Reg);
-}
+type PossibleReg = "any" | number;
 
 // [used as temporary, [variable name, matches memory copy][]]
-// TODO: index by name
 // TODO: use a map for the vars stuff
 let regAllocations: [boolean, [string, boolean][]][] = [
   [false, []],
@@ -76,28 +70,24 @@ let regAllocations: [boolean, [string, boolean][]][] = [
   [false, []],
 ];
 
-function regIsFree(regNum: number): boolean {
-  // const regNum = regNames.indexOf(reg);
-  if (regNum < 0) {
+function regIsFree(reg: number): boolean {
+  if (reg < 0) {
     throw new Error("Checking if nonreg is free");
   }
-  const [usedForTemp, usesForVars] = regAllocations[regNum];
+  const [usedForTemp, usesForVars] = regAllocations[reg];
   return !usedForTemp && usesForVars.length === 0;
 }
 
-function getFreeReg(options: PossibleReg, prefer?: string): [string[], number] {
+function getFreeReg(options: PossibleReg, prefer?: number): [string[], number] {
   const code: string[] = [];
   let reg;
-  const preferNum = regNames.indexOf(prefer ?? "");
   switch (options) {
-    case "any":
-    case "not%rax%rdx": {
+    case "any": {
       if (
-        preferNum > 0 &&
-        regIsFree(preferNum) &&
-        !(options === "not%rax%rdx" && [0, 2].includes(preferNum))
+        prefer !== undefined &&
+        regIsFree(prefer)
       ) {
-        reg = preferNum
+        reg = prefer;
         break;
       }
       // %rax, %rdx, %rdi, %rsi
@@ -111,15 +101,16 @@ function getFreeReg(options: PossibleReg, prefer?: string): [string[], number] {
       break;
     }
     default: {
-      reg = regNames.indexOf(options);
+      reg = options;
       const [usedForTemp, usesForVars] = regAllocations[reg];
       if (usedForTemp) {
         throw new Error(options + " already used for temp");
       }
       if (usesForVars.length !== 0) {
+        // TODO: use spillRegVars
         for (const [name, dirty] of usesForVars) {
           if (dirty) {
-            code.push(`movq ${reg}, ${name}\n`);
+            code.push(`movq ${emitReg(reg,64)}, ${name}\n`);
           }
         }
         regAllocations[reg][1] = [];
@@ -132,83 +123,88 @@ function getFreeReg(options: PossibleReg, prefer?: string): [string[], number] {
   return [code, reg];
 }
 
-function allocateTempReg(options: PossibleReg, prefer?: string): [string[], string] {
+function allocateTempReg(options: PossibleReg, prefer?: number): [string[], number] {
   const [code, reg] = getFreeReg(options, prefer);
   regAllocations[reg][0] = true;
-  return [code, regNames[reg]];
+  return [code, reg];
 }
 
-function allocateVarReg(options: PossibleReg, variable: string, prefer?: string): [string[], string] {
+function allocateTempLoc(
+  options: PossibleReg,
+  size: 8 | 16 | 32 | 64,
+  prefer?: number,
+): [string[], RegOperand] {
+  const [code, reg] = allocateTempReg(options, prefer);
+  return [code, regOperand(reg, size)];
+}
+
+function allocateVarReg(options: PossibleReg, variable: string, prefer?: number): [string[], number] {
   const [code, reg] = getFreeReg(options, prefer);
   regAllocations[reg][1].push([variable, true]);
-  return [code, regNames[reg]];
+  return [code, reg];
 }
 
-function freeTempReg(reg: string) {
-  const regNum = regNames.indexOf(reg);
+function allocateVarLoc(
+  options: PossibleReg,
+  variable: string,
+  size: 8 | 16 | 32 | 64,
+  prefer?: number,
+): [string[], RegOperand] {
+  const [code, reg] = allocateVarReg(options, variable, prefer);
+  return [code, regOperand(reg, size)];
+}
+
+function freeTempReg(reg: number) {
   // not a register
-  if (regNum < 0) {
+  if (reg < 0) {
     return;
   }
-  const usedForTemp = regAllocations[regNum][0];
+  const usedForTemp = regAllocations[reg][0];
   if (!usedForTemp) {
     throw new Error("freeTempReg of register without temporary");
   }
-  regAllocations[regNum][0] = false;
+  regAllocations[reg][0] = false;
 }
 
-function freeVarReg(reg: string, variable: string): boolean {
-  const regNum = regNames.indexOf(reg);
+function freeTempLoc(loc: Operand) {
+  if (loc.type === "register") {
+    freeTempReg(loc.number);
+  }
+}
+
+function freeVarReg(reg: number, variable: string): boolean {
   // not a register
-  if (regNum < 0) {
+  if (reg < 0) {
     throw new Error("freeVarReg of nonreg");
   }
-  const [, usesForVars] = regAllocations[regNum];
+  const usesForVars = regAllocations[reg][1];
   const varIndex = usesForVars.findIndex((x) => x[0] === variable);
   if (varIndex < 0) {
     throw new Error("freeVarReg of register without variable");
   }
-  const [, dirty] = usesForVars.splice(varIndex, 1)[0];
-  return dirty;
-  // regAllocations[regNum][0] = false;
+  return usesForVars.splice(varIndex, 1)[0][1];
 }
 
-// function spillVar(reg: string, variable: string): string[] {
-//   const dirty = freeVarReg(reg, variable)
-//   if (dirty) {
-//     return [`movq ${reg}, ${variable}`];
-//   } else {
-//     return [];
-//   }
-// }
-
-function spillRegVars(reg: string, exceptVar?: string): string[] {
-  const regNum = regNames.indexOf(reg);
-  const usesForVars = regAllocations[regNum][1];
+function spillRegVars(reg: number, exceptVar?: string): string[] {
+  const usesForVars = regAllocations[reg][1];
   const newUsesForVars: [string, boolean][] = [];
   const code = [];
   if (usesForVars.length !== 0) {
-    // throw new Error("saveRegs applied to reg with variable");
-    // const [name, dirty] = regState;
-    // if (dirty) {
-    //   code.push(`movq ${reg}, ${name}\n`);
-    // }
-    // regAllocations[regNum] = false;
     for (const [name, dirty] of usesForVars) {
       if (name === exceptVar) {
         newUsesForVars.push([name, true]);
         continue;
       }
       if (dirty) {
-        code.push(`movq ${reg}, ${name}\n`);
+        code.push(`movq ${emitReg(reg,64)}, ${name}\n`);
       }
     }
-    regAllocations[regNum][1] = newUsesForVars;
+    regAllocations[reg][1] = newUsesForVars;
   }
   return code;
 }
 
-function spillRegsVars(regs: string[]): string[] {
+function spillRegsVars(regs: number[]): string[] {
   const code = [];
   for(const i of regs){
     code.push(...spillRegVars(i));
@@ -216,68 +212,127 @@ function spillRegsVars(regs: string[]): string[] {
   return code;
 }
 
-// code to save regs, regs saved
-// function saveRegs(regs: string[]): [string[], string[]] {
-//   const [saveCode, savedRegs] = saveTempRegs(regs);
-//   return [saveCode.concat(spillRegsVars(regs)), savedRegs];
-// }
-
-
-function saveTempRegs(regs: string[]): [string[], string[]] {
+function saveTempRegs(regs: number[]): [string[], number[]] {
   const code = [];
   const saved = [];
   for (const reg of regs) {
-    const regNum = regNames.indexOf(reg);
-    const usedForTemp = regAllocations[regNum][0];
+    const usedForTemp = regAllocations[reg][0];
     if (usedForTemp) {
-      code.push(`push ${reg}\n`);
+      code.push(`push ${emitReg(reg,64)}\n`);
       saved.push(reg);
-      regAllocations[regNum][0] = false;
+      regAllocations[reg][0] = false;
     }
   }
   return [code, saved];
 }
 
-function restoreRegs(regs: string[]): string[] {
+function restoreRegs(regs: number[]): string[] {
   const code = [];
   for (let i = regs.length - 1; i >= 0; i--) {
-    code.push(`pop ${regs[i]}\n`);
-    const regNum = regNames.indexOf(regs[i]);
-    if (regAllocations[regNum][0]) {
+    const reg = regs[i];
+    code.push(`pop ${emitReg(reg,64)}\n`);
+    if (regAllocations[reg][0]) {
       throw new Error("restoreRegs onto occupied reg");
     }
-    regAllocations[regNum][0] = true;
+    regAllocations[reg][0] = true;
   }
   return code;
 }
 
+type PossibleLocation = {
+  readonly maxImmBits: 0 | 8 | 32 | 64,
+  readonly possibleRegs: PossibleReg,
+  readonly canBeMemory: boolean,
+  readonly minCorrectBits: 32 | 64,
+  readonly outputSize: 32 | 64,
+  readonly extensionType: "any" | "zero"
+};
+
 // Allocate a register according to `options`, and generate code
 // to move `current` there if necessary. Run this function after
 // `restoreRegs`, but include its code before the restore code.
-function movTempAlloc(current: string, options: PossibleReg): [string[], string] {
-  const [spillCode, outputReg] = allocateTempReg(options, current);
-  if (current === outputReg) {
-    return [spillCode, current];
+// TODO: 32 bit
+function movTempAlloc(
+  current: Operand,
+  options: PossibleLocation,
+): [string[], RegOperand] {
+  const [spillCode, outputLoc] = allocateTempLoc(
+    options.possibleRegs,
+    options.outputSize,
+    current.type === "register" ? current.number : undefined,
+  );
+  if (current.type === "register" && current.number === outputLoc.number) {
+    return [spillCode, outputLoc];
   } else {
-    return [[...spillCode, `mov ${current}, ${outputReg}\n`], outputReg];
+    //tag
+    const currentSize =
+      current.type === "immediate" ? options.outputSize : current.size;
+    if (currentSize !== options.outputSize && options.extensionType !== "any") {
+      throw new Error("Nontrivial extension in movTempAlloc");
+    }
+    const resizedOutputLoc: Operand = resize(outputLoc, currentSize);
+    return [
+      [
+        ...spillCode,
+        `mov ${emitOperand(current)}, ${emitOperand(resizedOutputLoc)}\n`,
+      ],
+      outputLoc,
+    ];
+  }
+  // const [spillCode, outputLoc] = allocateTempLoc(
+  //   options,
+  //   current.type === "immediate" ? size : current.size,
+  //   current.type === "register" ? current.number : undefined,
+  // );
+  // if (current.type === "register" && current.number === outputLoc.number) {
+  //   return [spillCode, outputLoc];
+  // } else {
+  //   if (current.type !== "immediate" && current.size !== 64) {
+  //     throw new Error("movTempAlloc from non-64-bit source");
+  //   }
+  //   return [
+  //     [
+  //       ...spillCode,
+  //       `mov ${emitOperand(resize(current, size))}, ${emitOperand(outputLoc)}\n`,
+  //     ],
+  //     outputLoc,
+  //   ];
+  // }
+}
+
+// TODO: merge with movTempAlloc
+function movVarAlloc(
+  current: Operand,
+  options: PossibleReg,
+  variable: string
+): [string[], RegOperand] {
+  const [spillCode, outputLoc] = allocateVarLoc(
+    options,
+    variable,
+    64,
+    current.type === "register" ? current.number : undefined,
+  );
+  if (current.type === "register" && current.number === outputLoc.number) {
+    return [spillCode, outputLoc];
+  } else {
+    if (current.type !== "immediate" && current.size !== 64) {
+      throw new Error("movVarAlloc from non-64-bit source");
+    }
+    return [
+      [
+        ...spillCode,
+        `mov ${emitOperand(current)}, ${emitOperand(outputLoc)}\n`,
+      ],
+      outputLoc,
+    ];
   }
 }
 
-function movVarAlloc(current: string, options: PossibleReg, variable: string): [string[], string] {
-  const [spillCode, outputReg] = allocateVarReg(options, variable, current);
-  if (current === outputReg) {
-    return [spillCode, current];
-  } else {
-    return [[...spillCode, `mov ${current}, ${outputReg}\n`], outputReg];
-  }
-}
-
-function attachVarToReg(reg: string, variable: string, dirty: boolean) {
-  const regNum = regNames.indexOf(reg);
-  if (regNum < 0) {
+function attachVarToReg(reg: number, variable: string, dirty: boolean) {
+  if (reg < 0) {
     throw new Error("attachVarToReg of nonreg");
   }
-  regAllocations[regNum][1].push([variable, dirty]);
+  regAllocations[reg][1].push([variable, dirty]);
 }
 
 function saveAllocState(): [boolean, [string, boolean][]][] {
@@ -304,14 +359,14 @@ function matchAllocState(state: [boolean, [string, boolean][]][]): string[] {
     }
     for (const [name, dirty] of regAllocations[i][1]) {
       if (dirty) {
-        ret.push(`movq ${regNames[i]}, ${name}\n`);
+        ret.push(`movq ${emitReg(i, 64)}, ${name}\n`);
       }
     }
   }
   for (let i = 0; i < state.length; i++) {
     let newRegState: [string, boolean][] = [];
     for (const [name, dirty] of state[i][1]) {
-      ret.push(`movq ${name}, ${regNames[i]}\n`);
+      ret.push(`movq ${name}, ${emitReg(i, 64)}\n`);
       newRegState = [[name, dirty]];
     }
     regAllocations[i][1] = newRegState;
@@ -324,24 +379,43 @@ function loadAllocState(state: [boolean, [string, boolean][]][]) {
 }
 
 // register a variable is in, if any
-function findVarReg(variable: string): string | undefined {
+function findVarReg(variable: string): number | undefined {
   for (let i = 0; i < regAllocations.length; i++) {
     const usesForVars = regAllocations[i][1];
-    if (
-      usesForVars.some((x) => x[0] === variable)
-    ) {
-      return regNames[i];
+    if (usesForVars.some((x) => x[0] === variable)) {
+      return i;
     }
   }
   return undefined;
 }
 
+// TODO: no undefined arg
+function getTypeSize(program: IR.Program, type: IR.ValueType | undefined): 32 | 64 {
+  if (type === undefined) {
+    throw new Error("getTypeSize of undefined type");
+  }
+  if (type.type !== "integer") {
+    return 64;
+  }
+  if (type.low === undefined || type.low < 0n) {
+    return 64;
+  }
+  if (type.high === undefined || type.high >= 2n ** 32n) {
+    return 64;
+  }
+  return 32;
+}
+
+function getVarSize(program: IR.Program, variable: string): 32 | 64 {
+  return getTypeSize(program, program.variables.get(variable));
+}
+
 // TODO: generate label names
-const builtins = new Map<string, {args:Reg[], modifies:Reg[], returns?:Reg, code:string[]}>([
+const builtins = new Map<string, {args:number[], modifies:number[], returns?:number, code:string[]}>([
   ["text_length", {
-    args: ["%rsi"],
-    modifies: ["%rax", "%rdx", "%rdi"],
-    returns: "%rdx",
+    args: [6], // %rsi
+    modifies: [0, 2, 7], // %rax, %rdx, %rdi
+    returns: 2, // %rdx
     code: [
       "mov %rsi, %rdi\n",
       "xor %eax, %eax\n",
@@ -355,8 +429,8 @@ const builtins = new Map<string, {args:Reg[], modifies:Reg[], returns?:Reg, code
     ],
   }],
   ["print", {
-    args: ["%rsi"],
-    modifies: ["%rax", "%rcx", "%rdx", "%rdi", "%r11"],
+    args: [6], // %rsi
+    modifies: [0, 1, 2, 7, 11], // %rax, %rcx, %rdx, %rdi, %r11
     code: [
       "call text_length\n",
       "inc %eax\n",
@@ -365,8 +439,8 @@ const builtins = new Map<string, {args:Reg[], modifies:Reg[], returns?:Reg, code
     ],
   }],
   ["print_length", {
-    args: ["%rsi", "%rdx"],
-    modifies: ["%rax", "%rcx", "%rdi", "%r11"],
+    args: [6, 2], // %rsi, %rdx
+    modifies: [0, 2, 7, 11], // %rax, %rcx, %rdi, %r11
     code: [
       "push $1\n",
       "pop %rax\n",
@@ -375,8 +449,8 @@ const builtins = new Map<string, {args:Reg[], modifies:Reg[], returns?:Reg, code
     ],
   }],
   ["println", {
-    args: ["%rax"],
-    modifies: ["%rax", "%rcx", "%rdx", "%rsi", "%rdi", "%r11"],
+    args: [0], // %rax
+    modifies: [0, 1, 2, 6, 7, 11], // %rax, %rcx, %rdx, %rsi, %rdi, %r11
     code: [
       "or $-1, %edi\n",
       "movb $10, (%rdi)\n",
@@ -397,9 +471,9 @@ const builtins = new Map<string, {args:Reg[], modifies:Reg[], returns?:Reg, code
     ],
   }],
   ["repeat", {
-    args: ["%rsi", "%rbx"],
-    modifies: ["%rax", "%rcx", "%rdx", "%rbx", "%rdi"],
-    returns: "%rdi",
+    args: [6, 3], // %rsi, %rbx
+    modifies: [0, 1, 2, 3, 7], // %rax, %rcx, %rdx, %rbx, %rdi
+    returns: 7, // %rdi
     code: [
       "call text_length\n",
       "mov %r13d, %edi\n",
@@ -414,9 +488,9 @@ const builtins = new Map<string, {args:Reg[], modifies:Reg[], returns?:Reg, code
     ],
   }],
   ["text_to_int", {
-    args: ["%rsi"],
-    modifies: ["%rsi", "%rax", "%rdx"],
-    returns: "%rdx",
+    args: [6], // %rsi
+    modifies: [0, 2, 6], // %rax, %rdx, %rsi
+    returns: 2, // %rdx
     code: [
       "xor %eax, %eax\n",
       "cltd\n",
@@ -433,13 +507,10 @@ const builtins = new Map<string, {args:Reg[], modifies:Reg[], returns?:Reg, code
   // ["argv", {
   //   args: [],
   //   modifies: [],
-  //   returns: "%r12",
+  //   returns: 12, // %r12
   //   code: [],
   // }],
 ]);
-
-// max immediate bits, possible regs, allow memory
-type PossibleLocation = [0 | 8 | 32 | 64, PossibleReg, boolean];
 
 let freeOffset = 0;
 
@@ -478,25 +549,38 @@ function freshLabel(name: string): string {
   return `${name}${freshLabelNum++}`;
 }
 
-function emitBlock(block: IR.Block): string[] {
+function emitBlock(block: IR.Block, program: IR.Program): string[] {
   return joinGroups(
-    block.children.map((stmt) => emitStatement(stmt, block)),
+    block.children.map((stmt) => emitStatement(stmt, program)),
     ""
   );
 }
 
-function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
+function emitStatement(stmt: IR.Expr, program: IR.Program): string[] {
   switch (stmt.type) {
     case "Assignment": {
       if(stmt.variable.type === "IndexCall"){
         throw new Error("Assignment to index");
       }
-      const [code, valueLoc] = emitExpr(stmt.expr, [32, "any", false]);
+      const varSize = getVarSize(program, stmt.variable.name);
+      // TODO: can be memory, actually
+      const [code, valueLoc] = emitExpr(
+        stmt.expr,
+        {
+          maxImmBits: 32,
+          possibleRegs: "any",
+          canBeMemory: false,
+          minCorrectBits: varSize,
+          outputSize: 64,
+          extensionType: "zero",
+        },
+        program,
+      );
       const varReg = findVarReg(stmt.variable.name);
       if (varReg !== undefined) {
         freeVarReg(varReg, stmt.variable.name);
       }
-      freeTempReg(valueLoc);
+      freeTempLoc(valueLoc);
       const outputCode = movVarAlloc(valueLoc, "any", stmt.variable.name)[0];
       return [
         ...code,
@@ -504,17 +588,22 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
       ];
     }
     case "Block":
-      return emitBlock(stmt);
+      return emitBlock(stmt, program);
     case "IfStatement": {
       if (stmt.alternate !== undefined) {
         const ifAlternate = freshLabel("ifalternate");
         const ifBottom = freshLabel("ifbottom");
-        const conditionJump = emitCondJump(stmt.condition, ifAlternate, true);
+        const conditionJump = emitCondJump(
+          stmt.condition,
+          ifAlternate,
+          true,
+          program,
+        );
         const branchAllocState = saveAllocState();
-        const consequent = emitStatement(stmt.consequent, stmt);
+        const consequent = emitStatement(stmt.consequent, program);
         const allocState = saveAllocState();
         loadAllocState(branchAllocState);
-        const alternate = emitStatement(stmt.alternate, stmt);
+        const alternate = emitStatement(stmt.alternate, program);
         const matchCode = matchAllocState(allocState);
         loadAllocState(allocState);
         return [
@@ -528,9 +617,14 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
         ];
       }
       const ifBottom = freshLabel("ifbottom");
-      const conditionJump = emitCondJump(stmt.condition, ifBottom, true);
+      const conditionJump = emitCondJump(
+        stmt.condition,
+        ifBottom,
+        true,
+        program,
+      );
       const allocState = saveAllocState();
-      const consequent = emitStatement(stmt.consequent, stmt);
+      const consequent = emitStatement(stmt.consequent, program);
       const matchCode = matchAllocState(allocState);
       loadAllocState(allocState);
       return [
@@ -544,33 +638,52 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
       if (stmt.variable.type === "IndexCall") {
         throw new Error("Mutating an index");
       }
-      let varLoc = findVarReg(stmt.variable.name);
-      let applyToRegister = true;
-      if (varLoc === undefined) {
-        varLoc = stmt.variable.name;
-        applyToRegister = false;
+      const varSize = getVarSize(program, stmt.variable.name);
+      const varReg = findVarReg(stmt.variable.name);
+      const sizeSuffix = {32: "l", 64: "q"}[varSize];
+      const applyToRegister = varReg !== undefined;
+      let varLoc;
+      if (applyToRegister) {
+        varLoc = regOperand(varReg!, varSize);
+      } else {
+        varLoc = labelOperand(stmt.variable.name, varSize);
       }
       if (stmt.name === "imul" && !applyToRegister) {
+        // TODO deal with this
         throw new Error("RMW imul doesn't exist");
       }
-      const [code, valueLoc] = emitExpr(stmt.right, [32, "any", applyToRegister]);
+      const [code, valueLoc] = emitExpr(
+        stmt.right,
+        {
+          maxImmBits: 32,
+          possibleRegs: "any",
+          canBeMemory: applyToRegister,
+          minCorrectBits: varSize,
+          outputSize: varSize,
+          extensionType: "any",
+        },
+        program,
+      );
       let spillCode: string[] = [];
-      if (applyToRegister) {
-        spillCode = spillRegVars(varLoc, stmt.variable.name);
+      if (varLoc.type === "register") {
+        spillCode = spillRegVars(varLoc.number, stmt.variable.name);
       }
-      freeTempReg(valueLoc);
-      let opInstruction = `${stmt.name}q ${valueLoc}, ${varLoc}\n`;
+      freeTempLoc(valueLoc);
+      const varOpString = emitOperand(varLoc);
+      const valueOpString = emitOperand(valueLoc);
+      let opInstruction =
+        `${stmt.name}${sizeSuffix} ${valueOpString}, ${varOpString}\n`;
       if (
-        (stmt.name === "add" && valueLoc === "$1") ||
-        (stmt.name === "sub" && valueLoc === "$-1")
+        (stmt.name === "add" && operandIsConstant(valueLoc, 1n)) ||
+        (stmt.name === "sub" && operandIsConstant(valueLoc, -1n))
       ) {
-        opInstruction = `incq ${varLoc}\n`;
+        opInstruction = `inc${sizeSuffix} ${varOpString}\n`;
       }
       if (
-        (stmt.name === "add" && valueLoc === "$-1") ||
-        (stmt.name === "sub" && valueLoc === "$1")
+        (stmt.name === "add" && operandIsConstant(valueLoc, -1n)) ||
+        (stmt.name === "sub" && operandIsConstant(valueLoc, 1n))
       ) {
-        opInstruction = `decq ${varLoc}\n`;
+        opInstruction = `dec${sizeSuffix} ${varOpString}\n`;
       }
       return [
         ...code,
@@ -579,6 +692,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
       ];
     }
     case "VarDeclaration": {
+      // TODO: only allocate 4 bytes for short vars
       freeOffset += 8;
       return [
         ...data([stmt.variable.name + ":\n.quad 0\n"]),
@@ -591,16 +705,28 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
       if(stmt.assignments.variable.type === "IndexCall"){
         throw new Error("Declaration of index (why?)");
       }
-      const [code, valueLoc] = emitExpr(stmt.assignments.expr, [64, "any", true]);
+      const varSize = getVarSize(program, stmt.assignments.variable.name);
+      const [code, valueLoc] = emitExpr(
+        stmt.assignments.expr,
+        {
+          maxImmBits: 64,
+          possibleRegs: "any",
+          canBeMemory: true,
+          minCorrectBits: varSize,
+          outputSize: 64,
+          extensionType: "zero",
+        },
+        program,
+      );
       const varName = stmt.assignments.variable.name;
       freeOffset += 8;
-      if (valueLoc[0] === "$") {
+      if (valueLoc.type === "immediate") {
         return [
           ...code,
-          ...data([varName + ":\n.quad " + valueLoc.slice(1) + "\n"]),
+          ...data([`${varName}:\n.quad ${valueLoc.value}\n`]),
         ];
       }
-      freeTempReg(valueLoc);
+      freeTempLoc(valueLoc);
       return [
         ...code,
         ...data([varName + ":\n.quad 0\n"]),
@@ -613,9 +739,14 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
       const loopTop = freshLabel("looptop");
       const loopBottom = freshLabel("loopbottom");
       const allocState = saveAllocState();
-      const conditionJump = emitCondJump(stmt.condition, loopBottom, true);
+      const conditionJump = emitCondJump(
+        stmt.condition,
+        loopBottom,
+        true,
+        program,
+      );
       const exitAllocState = saveAllocState();
-      const loopBody = emitStatement(stmt.body, stmt);
+      const loopBody = emitStatement(stmt.body, program);
       const matchCode = matchAllocState(allocState);
       loadAllocState(exitAllocState);
       return [
@@ -633,15 +764,27 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
     case "ForCLike":
       throw new Error(`Unexpected node (${stmt.type}) while emitting Assembly`);
     default:
-      // fails if this allocates a return register
-      return emitExpr(stmt, [64, "any", true])[0];
+      // TODO: fails if this allocates a return register
+      return emitExpr(
+        stmt,
+        {
+          maxImmBits: 64,
+          possibleRegs: "any",
+          canBeMemory: true,
+          minCorrectBits: 32,
+          outputSize: 32,
+          extensionType: "any",
+        },
+        program,
+      )[0];
   }
 }
 
 function emitCondJump(
   expr: IR.Expr,
   target: string,
-  invert: boolean = false,
+  invert: boolean,
+  program: IR.Program,
 ): string[] {
   switch (expr.type) {
     case "FunctionCall":
@@ -652,13 +795,33 @@ function emitCondJump(
         case "geq":
         case "eq": 
         case "neq": {
-          const [leftCode, leftLoc] = emitExpr(expr.args[0], [0, "any", true]);
+          // TODO: 32 bit compares
+          const [leftCode, leftLoc] = emitExpr(
+            expr.args[0],
+            {
+              maxImmBits: 0,
+              possibleRegs: "any",
+              canBeMemory: true,
+              minCorrectBits: 64,
+              outputSize: 64,
+              extensionType: "any",
+            },
+            program,
+          );
           const [rightCode, rightLoc] = emitExpr(
             expr.args[1],
-            [32, "any", leftLoc[0] === "$" || leftLoc[0] === "%"],
+            {
+              maxImmBits: 32,
+              possibleRegs: "any",
+              canBeMemory: leftLoc.type !== "memory",
+              minCorrectBits: 64,
+              outputSize: 64,
+              extensionType: "any",
+            },
+            program,
           );
-          freeTempReg(rightLoc);
-          freeTempReg(leftLoc);
+          freeTempLoc(rightLoc);
+          freeTempLoc(leftLoc);
           let jump = {
             lt: "jl",
             leq: "jle",
@@ -668,22 +831,22 @@ function emitCondJump(
             neq: "jne",
           }[expr.ident.name];
           if (invert) {
-            if (jump.match("jn") !== undefined) {
+            if (jump.match("jn") !== null) {
               jump = jump.replace("jn", "j");
             } else {
               jump = jump.replace("j", "jn");
             }
           }
+          // TODO: template strings
           return [
             ...leftCode,
             ...rightCode,
-            "cmpq " + rightLoc + ", " + leftLoc + "\n",
+            `cmpq ${emitOperand(rightLoc)}, ${emitOperand(leftLoc)}\n`,
             jump + " " + target + "\n",
           ];
         }
         case "and":
         case "or": {
-          // throw new Error("And/or branches need allocstate handling");
           let type = expr.ident.name;
           if (invert) {
             type = type === "and" ? "or" : "and";
@@ -691,9 +854,19 @@ function emitCondJump(
           if (type === "and") {
             const andFail = freshLabel("andfail");
             const idkLabel = freshLabel("idk");
-            const firstJump = emitCondJump(expr.args[0], andFail, !invert);
+            const firstJump = emitCondJump(
+              expr.args[0],
+              andFail,
+              !invert,
+              program,
+            );
             const firstAllocState = saveAllocState();
-            const secondJump = emitCondJump(expr.args[1], target, invert);
+            const secondJump = emitCondJump(
+              expr.args[1],
+              target,
+              invert,
+              program,
+            );
             const allocState = saveAllocState();
             loadAllocState(firstAllocState);
             const matchCode = matchAllocState(allocState);
@@ -708,9 +881,19 @@ function emitCondJump(
             ];
           } else {
             const orFail = freshLabel("orfail");
-            const firstJump = emitCondJump(expr.args[0], target, invert);
+            const firstJump = emitCondJump(
+              expr.args[0],
+              target,
+              invert,
+              program,
+            );
             const allocState = saveAllocState();
-            const secondJump = emitCondJump(expr.args[1], orFail, !invert);
+            const secondJump = emitCondJump(
+              expr.args[1],
+              orFail,
+              !invert,
+              program,
+            );
             const otherAllocState = saveAllocState();
             const matchCode = matchAllocState(allocState);
             loadAllocState(otherAllocState);
@@ -726,7 +909,7 @@ function emitCondJump(
           }
         }
         case "not": {
-          return emitCondJump(expr.args[0], target, !invert);
+          return emitCondJump(expr.args[0], target, !invert, program);
         }
         default:
           throw new Error(
@@ -748,151 +931,149 @@ function emitImmediate(
   code: string[],
   value: bigint | string,
   loc: PossibleLocation
-): [string[], string] {
-  let canReturnImmediate = loc[0] > 0;
+): [string[], Operand] {
+  const maxImmBits = loc.maxImmBits;
+  let canReturnImmediate = maxImmBits > 0;
   if(typeof value === "number") {
-    // const lowerBound = {0 : 0n, 8 : -128n, 32: -(2n**31n), 64: -(2n**63n)}[loc[0]];
-    // const upperBound = {0 : -1n, 8 : 127n, 32: 2n**31n-1n, 64: 2n**63n-1n}[loc[0]];
-    canReturnImmediate &&= value >= -(2**loc[0]) && value < 2**loc[0];
+    canReturnImmediate &&= value >= -(2 ** maxImmBits) && value < 2 ** maxImmBits;
   } else {
-    canReturnImmediate = loc[0] >= 32;
+    canReturnImmediate = maxImmBits >= 32;
   }
   if (canReturnImmediate) {
-    return [code, `$${value}`];
+    return [code, immOperand(value)];
   }
-  const [spillCode, valueLoc] = allocateTempReg(loc[1]);
+  const [spillCode, valueLoc] = allocateTempLoc(loc.possibleRegs, loc.minCorrectBits);
   return [[
     ...code,
     ...spillCode,
-    `mov $${value}, ${valueLoc}\n`,
+    `mov $${value}, ${emitOperand(valueLoc)}\n`,
   ], valueLoc];
 }
 
-function emitExpr(expr: IR.Expr, loc: PossibleLocation): [string[], string] {
+function emitExpr(
+  expr: IR.Expr,
+  loc: PossibleLocation,
+  program: IR.Program,
+): [string[], Operand] {
   switch (expr.type){
     case "BinaryOp": {
+      // let opSize = getTypeSize(program, getType(expr, program));
+      // if (opSize !== loc.outputSize) {
+      //   throw new Error("BinaryOp size mismatch");
+      // }
+      // TODO: do something else
+      const opSize = loc.outputSize;
       const [leftCode, leftLoc] = emitExpr(
         expr.left,
-        [expr.name === "imul" ? 32 : 0, loc[1], false]);
-      const triadicImul = leftLoc[0] === "$" && expr.name === "imul";
+        {
+          maxImmBits: expr.name === "imul" ? 32 : 0,
+          possibleRegs: loc.possibleRegs,
+          canBeMemory: false,
+          minCorrectBits: opSize,
+          outputSize: opSize,
+          extensionType: "any",
+        },
+        program,
+      );
+      const triadicImul = leftLoc.type === "immediate" && expr.name === "imul";
       const [rightCode, rightLoc] = emitExpr(
         expr.right,
-        triadicImul ?
-          [0, "any", true]
-        :
-          [expr.name === "mov" ? 64 : 32, "any", true],
+        {
+          maxImmBits: triadicImul ? 0 : expr.name === "mov" ? 64 : 32,
+          possibleRegs: "any",
+          canBeMemory: true,
+          minCorrectBits: opSize,
+          outputSize: opSize,
+          extensionType: "any",
+        },
+        program,
       );
-      freeTempReg(rightLoc);
+      freeTempLoc(rightLoc);
       if (triadicImul) {
-        const [spillCode, outputReg] = allocateTempReg(loc[1]);
+        const [spillCode, outputLoc] = allocateTempLoc(loc.possibleRegs, opSize);
         return [[
           ...leftCode,
           ...rightCode,
           ...spillCode,
-          "imul " + leftLoc + ", " + rightLoc + ", " + outputReg + "\n",
-        ], outputReg];
+          // TODO: template strings
+          // "imul " + leftLoc + ", " + rightLoc + ", " + outputReg + "\n",
+          `imul ${emitOperand(leftLoc)}, ${emitOperand(rightLoc)}, ${emitOperand(outputLoc)}\n`,
+
+        ], outputLoc];
       }
-      let output = leftLoc;
-      if (rightLoc[0] === "$" && expr.name === "imul") {
-        output = leftLoc + ", " + leftLoc;
+      let leftOpString = emitOperand(leftLoc);
+      if (rightLoc.type === "immediate" && expr.name === "imul") {
+        // TODO: template strings
+        leftOpString = leftOpString + ", " + leftOpString;
       }
       return [[
         ...leftCode,
         ...rightCode,
-        expr.name + " " + rightLoc + ", " + output + "\n",
+        // TODO: template strings
+        expr.name + " " + emitOperand(rightLoc) + ", " + leftOpString + "\n",
       ], leftLoc];
     }
     case "FunctionCall":
       switch (expr.ident.name) {
         case "print":
-          return emitFunctionCall("print", expr.args, loc[1]);
-          // if (expr.args.length > 1) {
-          //   throw new Error("Too many print args");
-          // }
-          // if (expr.args[0].valueType?.type === "text") {
-          //   const [saveCode2, savedRegs2] = saveRegs(["%rsi"])
-          //   const [code, valueLoc] = emitExpr(expr.args[0], [0, "%rsi", false]);
-          //   // doesn't modify %rsi, so no need to spill vars
-          //   const [saveCode, savedRegs] = saveRegs(["%rax", "%rcx", "%rdx", "%rdi", "%r11"]);
-          //   freeTempReg(valueLoc);
-          //   const restoreCode = restoreRegs(savedRegs2.concat(savedRegs));
-          //   const lenLoop = freshLabel("lenloop");
-          //   return [[
-          //     ...saveCode2,
-          //     ...code,
-          //     ...saveCode,
-          //     "mov %esi, %edi\n",
-          //     "xor %eax, %eax\n",
-          //     "cltd\n",
-          //     "sub %edi, %edx\n",
-          //     `${lenLoop}:\n`,
-          //     "scasb\n",
-          //     `jnz ${lenLoop}\n`,
-          //     "add %edi, %edx\n",
-          //     "dec %edx\n",
-          //     "inc %eax\n",
-          //     "mov %eax, %edi\n",
-          //     "syscall\n",
-          //     ...restoreCode,
-          //   ], "$0"];
-          // }
-          // throw new Error("Printing unimplemented type");
+          return emitFunctionCall(
+            "print",
+            expr.args,
+            loc,
+            program,
+          );
         case "println":
-          return emitFunctionCall("println", expr.args, loc[1]);
-          // if (expr.args.length > 1) {
-          //   throw new Error("Too many println args");
-          // }
-          // if (expr.args[0].valueType?.type === "integer") {
-          //   const [saveCode2, savedRegs2] = saveTempRegs(["%rax"])
-          //   const [code, valueLoc] = emitExpr(expr.args[0], [0, "%rax", false]);
-          //   const spillCode = spillRegVars("%rax");
-          //   const [saveCode, savedRegs] = saveRegs(["%rbx", "%rcx", "%rdx", "%rsi", "%rdi", "%r11"]);
-          //   freeTempReg(valueLoc);
-          //   const restoreCode = restoreRegs(savedRegs2.concat(savedRegs));
-          //   const printLoop = freshLabel("printloop");
-          //   return [[
-          //     ...saveCode2,
-          //     ...code,
-          //     ...spillCode,
-          //     ...saveCode,
-          //     "or $-1, %ebx\n",
-          //     "movb $10, (%rbx)\n",
-          //     "mov %ebx, %esi\n",
-          //     `${printLoop}:\n`,
-          //     "xor %edx, %edx\n",
-          //     "divq (%rbx)\n",
-          //     "add $'0', %dl\n",
-          //     "dec %esi\n",
-          //     "mov %dl, (%rsi)\n",
-          //     "test %rax, %rax\n",
-          //     `jnz ${printLoop}\n`,
-          //     "cltd\n",
-          //     "sub %esi, %edx\n",
-          //     "inc %eax\n",
-          //     "mov %eax, %edi\n",
-          //     "syscall\n",
-          //     ...restoreCode,
-          //   ], "$0"];
-          // }
-          // throw new Error("Printlning unimplemented type");
+          return emitFunctionCall(
+            "println",
+            expr.args,
+            loc,
+            program,
+          );
         case "div":
         case "mod": {
-          const [saveCode, savedRegs] = saveTempRegs(["%rax", "%rdx"]);
-          const [leftCode, leftLoc] = emitExpr(expr.args[0], [0, "%rax", false]);
-          const [rightCode, rightLoc] = emitExpr(expr.args[1], [0, "not%rax%rdx", true]);
-          freeTempReg(leftLoc);
-          freeTempReg(rightLoc);
-          const spillCode = spillRegsVars(["%rax", "%rdx"]);
+          const [saveCode, savedRegs] = saveTempRegs([0, 2]); // %rax, %rdx
+          const [leftCode, leftLoc] = emitExpr(
+            expr.args[0],
+            {
+              maxImmBits: 0,
+              possibleRegs: 0, // %rax
+              canBeMemory: false,
+              minCorrectBits: 64,
+              outputSize: 64,
+              extensionType: "any",
+            },
+            program,
+          );
+          // TODO: Allow more general possibleRegs so this can be
+          // registers other than %rcx
+          const [rightCode, rightLoc] = emitExpr(
+            expr.args[1],
+            {
+              maxImmBits: 0,
+              possibleRegs: 1, // %rcx
+              canBeMemory: true,
+              minCorrectBits: 64,
+              outputSize: 64,
+              extensionType: "any",
+            },
+            program,
+          );
+          freeTempLoc(leftLoc);
+          freeTempLoc(rightLoc);
+          const spillCode = spillRegsVars([0, 2]); // %rax, %rdx
           const restoreCode = restoreRegs(savedRegs);
-          const preferReg = expr.ident.name === "div" ? "%rax" : "%rdx";
-          const [outputCode, outputReg] = movTempAlloc(preferReg, loc[1]);
+          const preferReg = expr.ident.name === "div" ? 0 : 2; // %rax : %rdx
+          const [outputCode, outputReg] = movTempAlloc(
+            regOperand(preferReg, 64),
+            loc,
+          );
           return [[
             ...saveCode,
             ...leftCode,
             ...rightCode,
             ...spillCode,
             "xor %edx, %edx\n",
-            `div ${rightLoc}\n`,
+            `div ${emitOperand(rightLoc)}\n`,
             ...outputCode,
             ...restoreCode,
           ], outputReg];
@@ -901,140 +1082,189 @@ function emitExpr(expr: IR.Expr, loc: PossibleLocation): [string[], string] {
         case "load_rr_b": 
         case "load_rr8_q": {
           // TODO: support imms
+          // TODO: 32 bit
+          // TODO: support returning memory operand
           const [, loadArgs, loadSize] = expr.ident.name.split("_");
           const useIndex = loadArgs.length > 1;
-          const indexScale = loadArgs.length > 2 ? loadArgs[2] : 1;
-          const [baseCode, baseLoc] = emitExpr(expr.args[0], [0, "any", false]);
-          let [indexCode, indexLoc]: [string[], string] = [[], "$0"];
-          if (useIndex) {
-            [indexCode, indexLoc] = emitExpr(expr.args[1], [0, "any", false]);
+          const scale = loadArgs.length > 2 ? +loadArgs[2] : 1;
+          const [baseCode, baseLoc] = emitExpr(
+            expr.args[0],
+            {
+              maxImmBits: 0,
+              possibleRegs: "any",
+              canBeMemory: false,
+              minCorrectBits: 64,
+              outputSize: 64,
+              extensionType: "any",
+            },
+            program,
+          );
+          if (baseLoc.type !== "register") {
+            throw new Error("Non-reg load base");
           }
-          freeTempReg(baseLoc);
+          let [indexCode, indexLoc]: [string[], Operand] = [
+            [],
+            immOperand(0n),
+          ];
           if (useIndex) {
-            freeTempReg(indexLoc);
+            // TODO: this can be an immediate
+            [indexCode, indexLoc] = emitExpr(
+              expr.args[1],
+              {
+                maxImmBits: 0,
+                possibleRegs: "any",
+                canBeMemory: false,
+                minCorrectBits: 64,
+                outputSize: 64,
+                extensionType: "any",
+              },
+              program,
+            );
+            // TODO: For 12 days this gets a 32-bit result
+            // for the second call
           }
-          const [spillCode, outputReg] = allocateTempReg(loc[1]);
+          freeTempLoc(baseLoc);
+          if (useIndex) {
+            freeTempLoc(indexLoc);
+          }
+          const [spillCode, outputLoc] = allocateTempLoc(loc.possibleRegs, 64);
           const opcode = {
             b: "movsxb",
             w: "movsxw",
             l: "movsxd",
             q: "mov"
-          }[loadSize]!;
-          const indexSpec = useIndex ? "," + indexLoc : "";
-          const scaleSpec = useIndex && indexScale > 1 ? `,${indexScale}` : "";
+          }[loadSize];
+          if (opcode === undefined) {
+            throw new Error("Bad load size");
+          }
+          let loadOperand;
+          if (useIndex) {
+            if (indexLoc.type !== "register") {
+              throw new Error("Non-reg load index");
+            }
+            if (![1, 2, 4, 8].includes(scale)){
+              throw new Error("Bad load scale");
+            }
+            loadOperand = memOperand(
+              undefined,
+              baseLoc.number,
+              indexLoc.number,
+              scale as 1 | 2 | 4 | 8,
+              64,
+            );
+          } else {
+            loadOperand = memOperand(undefined, baseLoc.number, undefined, 1, 64);
+          }
           return [[
             ...baseCode,
             ...indexCode,
             ...spillCode,
-            `${opcode} (${baseLoc}${indexSpec}${scaleSpec}), ${outputReg}\n`,
-          ], outputReg];
+            `${opcode} ${emitOperand(loadOperand)}, ${emitOperand(outputLoc)}\n`,
+          ], outputLoc];
         }
         case "repeat": {
-          return emitFunctionCall("repeat", expr.args, loc[1]);
-          // // TODO: Allow the output to be stored in a register other than %rax
-          // // while the function is executing
-          // const [saveCode, savedRegs] = saveRegs(["%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi"]);
-          // const [leftCode, leftLoc] = emitExpr(expr.args[0], [0, "%rdi", false]);
-          // // TODO: more general target
-          // const [rightCode, rightLoc] = emitExpr(expr.args[1], [0, "%rbx", false]);
-          // const spillCode = spillRegsVars(["%rbx", "%rdi"]);
-          // freeTempReg(leftLoc);
-          // freeTempReg(rightLoc);
-          // const restoreCode = restoreRegs(savedRegs);
-          // const [outputCode, outputReg] = movTempAlloc("%rax", loc[1]);
-          // const lenLoop = freshLabel("lenloop");
-          // const repLoop = freshLabel("reploop");
-          // return [[
-          //   ...saveCode,
-          //   ...leftCode,
-          //   ...rightCode,
-          //   ...spillCode,
-          //   "mov %edi, %esi\n",
-          //   "xor %eax, %eax\n",
-          //   "cltd\n",
-          //   "sub %edi, %edx\n",
-          //   `${lenLoop}:\n`,
-          //   "scasb\n",
-          //   `jnz ${lenLoop}\n`,
-          //   "add %edi, %edx\n",
-          //   "dec %edx\n",
-          //   "mov %r13d, %edi\n",
-          //   "mov %edx, %eax\n",
-          //   "imul %ebx, %eax\n",
-          //   "xadd %eax, %r13d\n",
-          //   `${repLoop}:\n`,
-          //   "mov %edx, %ecx\n",
-          //   "rep movsb\n",
-          //   "sub %edx, %esi\n",
-          //   "dec %ebx\n",
-          //   `jnz ${repLoop}\n`,
-          //   ...outputCode,
-          //   ...restoreCode,
-          // ], outputReg];
+          return emitFunctionCall("repeat", expr.args, loc, program);
         }
         case "text_length":
         case "print_length":
         case "text_to_int":{
-          return emitFunctionCall(expr.ident.name, expr.args, loc[1]);
+          return emitFunctionCall(expr.ident.name, expr.args, loc, program);
         }
         case "argv": {
-          return movTempAlloc("%r12", loc[1]);
+          return movTempAlloc(regOperand(12, 64), loc); // %r12
         }
-        case "hint_load": {
-          const [code, valueLoc] = emitExpr(expr.args[0], [0, "any", false]);
-          freeTempReg(valueLoc);
-          return [code, "$1"];
-        }
+        // case "hint_load": {
+        //   const [code, valueLoc] = emitExpr(
+        //     expr.args[0],
+        //     {
+        //       maxImmBits: 0,
+        //       possibleRegs: "any",
+        //       canBeMemory: false,
+        //       minCorrectBits: 64,
+        //       extensionType: "any",
+        //     },
+        //     program
+        //   );
+        //   freeTempLoc(valueLoc);
+        //   return [code, immOperand(1n)];
+        // }
         default:
           throw new Error("Unimplemented function " + expr.ident.name);
       }
     case "Identifier": {
+      // TODO 32 bit
       const varReg = findVarReg(expr.name);
+      const varSize = getVarSize(program, expr.name);
       if (varReg !== undefined) {
+        if (
+          loc.minCorrectBits < varSize &&
+          loc.extensionType !== "any"
+        ) {
+          throw new Error("Identifier varReg requiring nontrivial extension");
+        }
         // TODO: allow a var to be stored in multiple regs
+        const varLoc = regOperand(varReg, varSize);
         const dirty = freeVarReg(varReg, expr.name);
-        const [code, valueLoc] = movTempAlloc(varReg, loc[1]);
-        attachVarToReg(valueLoc, expr.name, dirty);
+        const [code, valueLoc] = movTempAlloc(
+          varLoc,
+          loc,
+        );
+        attachVarToReg(valueLoc.number, expr.name, dirty);
         return [code, valueLoc];
       }
-      if (loc[2]) {
-        return [[], expr.name];
+      if (loc.canBeMemory) {
+        if (loc.minCorrectBits < 64 && loc.extensionType !== "any") {
+          throw new Error("Identifier memory with zero extension");
+        }
+        return [[], labelOperand(expr.name, loc.outputSize)];
       }
-      const [spillCode, valueLoc] = allocateTempReg(loc[1]);
-      attachVarToReg(valueLoc, expr.name, false);
-      return [[...spillCode, `mov ${expr.name}, ${valueLoc}\n`], valueLoc];
+      if (loc.minCorrectBits < varSize && loc.extensionType !== "any") {
+        throw new Error("Identifier boring with nontrivial extension");
+      }
+      const [spillCode, valueLoc] =
+        allocateTempLoc(loc.possibleRegs, loc.outputSize);
+      let movTargetLoc = valueLoc;
+      if (valueLoc.type === "register") {
+        movTargetLoc = resize(valueLoc, loc.minCorrectBits) as RegOperand;
+      }
+      // TODO: figure this out
+      if (loc.extensionType === "any" && loc.outputSize >= varSize) {
+        attachVarToReg(valueLoc.number, expr.name, false);
+      }
+      return [
+        [
+          ...spillCode,
+          `mov ${expr.name}, ${emitOperand(movTargetLoc)}\n`,
+        ],
+        valueLoc,
+      ];
     }
     case "IntegerLiteral": {
       return emitImmediate([], expr.value, loc);
-      // const lowerBound = {0 : 0, 8 : -128, 32: -(2**31), 64: -(2**63)}[loc[0]];
-      // const upperBound = {0 : -1, 8 : 127, 32: 2**31-1, 64: 2**63-1}[loc[0]];
-      // if (expr.value >= lowerBound && expr.value <= upperBound) {
-      //   return [[], `$${expr.value}`];
-      // }
-      // const [spillCode, valueLoc] = allocateTempReg(loc[1]);
-      // // return [["mov $" + expr.value.toString() + ", " + reg + "\n"], valueLoc];
-      // return [[...spillCode, `mov $${expr.value}, ${valueLoc}\n`], valueLoc];
     }
     case "ListConstructor": {
       const entryCodes: string[] = [];
       const entryValues: string[] = [];
       for (const i of expr.exprs) {
-        const [entryCode, entryValue] = emitExpr(i, [64, "any", false]);
-        if (entryValue[0] !== "$") {
+        const [entryCode, entryValue] = emitExpr(
+          i,
+          {
+            maxImmBits: 64,
+            possibleRegs: "any",
+            canBeMemory: false,
+            minCorrectBits: 64,
+            outputSize: 64,
+            extensionType: "any",
+          },
+          program
+        );
+        if (entryValue.type !== "immediate") {
           throw new Error("List constructor with nonconstant entry");
         }
         entryCodes.push(...entryCode);
-        entryValues.push(".quad " + entryValue.slice(1) + "\n");
+        entryValues.push(".quad " + entryValue.value + "\n");
       }
       const listLabel = freshLabel("list");
-      // TODO handle immediate-forbidden case
-      // return [[
-      //   ...entryCodes,
-      //   ...data([
-      //     listLabel + ":\n",
-      //     ...entryValues,
-      //   ]),
-      // ], "$" + listLabel];
       return emitImmediate([
         ...entryCodes,
         ...data([
@@ -1060,15 +1290,17 @@ function emitExpr(expr: IR.Expr, loc: PossibleLocation): [string[], string] {
         "\n",
       ]);
       freeOffset += expr.value.length + 1;
-      if(loc[0] >= 32) {
-        return [stringData, `$${stringLabel}`];
-      }
-      const [spillCode, valueLoc] = allocateTempReg(loc[1]);
-      return [[
-        ...stringData,
-        ...spillCode,
-        `mov $${stringLabel}, ${valueLoc}\n`,
-      ], valueLoc];
+      // TODO use emitImmediate
+      // if(loc.maxImmBits >= 32) {
+      //   return [stringData, immOperand(stringLabel)];
+      // }
+      // const [spillCode, valueLoc] = allocateTempLoc(loc.possibleRegs, 64);
+      // return [[
+      //   ...stringData,
+      //   ...spillCode,
+      //   `mov $${stringLabel}, ${valueLoc}\n`,
+      // ], valueLoc];
+      return emitImmediate(stringData, stringLabel, loc);
     }
     default:
       throw new Error(
@@ -1082,25 +1314,39 @@ function emitExpr(expr: IR.Expr, loc: PossibleLocation): [string[], string] {
 function emitFunctionCall(
   funcName: string,
   args: IR.Expr[],
-  returnIn: PossibleReg
-): [string[], string] {
+  returnIn: PossibleLocation,
+  program: IR.Program,
+): [string[], Operand] {
   const func = builtins.get(funcName)!;
   const [saveCode, savedRegs] = saveTempRegs(func.args.concat(func.modifies));
   const argsCode = [];
   for (let i = 0; i< args.length; i++) {
-    argsCode.push(...emitExpr(args[i], [0, func.args[i], false])[0]);
+    argsCode.push(...emitExpr(
+      args[i],
+      {
+        maxImmBits: 0,
+        possibleRegs: func.args[i],
+        canBeMemory: false,
+        minCorrectBits: 64,
+        outputSize: 64,
+        extensionType: "any",
+      },
+      program,
+    )[0]);
   }
   const spillCode = spillRegsVars(func.modifies);
-  // const funcCode = func.code;
   const funcCode = [`call ${funcName}\n`];
   for (const i of func.args) {
     freeTempReg(i);
   }
   const restoreCode = restoreRegs(savedRegs);
   let outputCode: string[] = [];
-  let outputReg = "$1";
+  let outputLoc: Operand = immOperand(1n);
   if (func.returns !== undefined) {
-    [outputCode, outputReg] = movTempAlloc(func.returns, returnIn);
+    [outputCode, outputLoc] = movTempAlloc(
+      regOperand(func.returns, 64),
+      returnIn,
+    );
   }
   return [[
     ...saveCode,
@@ -1109,5 +1355,5 @@ function emitFunctionCall(
     ...funcCode,
     ...outputCode,
     ...restoreCode,
-  ], outputReg];
+  ], outputLoc];
 }
