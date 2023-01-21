@@ -37,8 +37,8 @@ export function id(name: string, builtin: boolean = false): Identifier {
   return { kind: "Identifier", name, builtin };
 }
 
-export function int(value: bigint): IntegerLiteral {
-  return { kind: "IntegerLiteral", value };
+export function int(value: bigint | number): IntegerLiteral {
+  return { kind: "IntegerLiteral", value: BigInt(value) };
 }
 
 export function stringLiteral(value: string): StringLiteral {
