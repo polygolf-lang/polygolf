@@ -1,8 +1,9 @@
-import { IR } from "../IR";
+import { IR, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
+import { getType } from "./getType";
 
 // TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
 export type OptimisationLevel = "none" | "heuristic" | "full";
@@ -65,12 +66,14 @@ export function searchOptions(
 export default function applyLanguage(
   language: Language,
   program: IR.Program,
-  options: SearchOptions
+  options: SearchOptions,
+  skipTypecheck = false
 ): string {
   const bestUnpacked = applyLanguageToVariants(
     language,
     language.name === "Polygolf" ? [program] : expandVariants(program),
-    options
+    options,
+    skipTypecheck
   );
   if (options.objective === "bytes") return bestUnpacked;
   function packer(code: string): string | null {
@@ -121,7 +124,8 @@ function isError(x: any): x is Error {
 export function applyLanguageToVariants(
   language: Language,
   variants: IR.Program[],
-  options: SearchOptions
+  options: SearchOptions,
+  skipTypecheck = false
 ): string {
   const finalEmit = getFinalEmit(language);
   const golfPlugins =
@@ -130,7 +134,9 @@ export function applyLanguageToVariants(
       : language.golfPlugins.concat(language.emitPlugins);
   const obj = options.objectiveFunction;
   const ret = variants
-    .map((variant) => golfProgram(variant, golfPlugins, finalEmit, obj))
+    .map((variant) =>
+      golfProgram(variant, golfPlugins, finalEmit, obj, skipTypecheck)
+    )
     .reduce((a, b) =>
       isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
     );
@@ -146,13 +152,15 @@ function golfProgram(
   program: IR.Program,
   golfPlugins: Plugin[],
   finalEmit: (ir: IR.Program) => string,
-  objective: (x: string) => number
+  objective: (x: string) => number,
+  skipTypecheck = true
 ): string | Error {
   // room for improvement: use this as an actual priority queue
   /** Array of [program, length, plugin hist] */
   const pq: [IR.Program, number, string[]][] = [];
   let shortestSoFar: string;
   try {
+    if (!skipTypecheck) typecheck(program);
     shortestSoFar = finalEmit(program);
   } catch (e) {
     if (isError(e)) return e;
@@ -213,4 +221,14 @@ function golfProgram(
     }
   }
   return shortestSoFar;
+}
+
+/** Typecheck a program by asking all nodes about their types.
+ * Throws an error on a type error; otherwise is a no-op. */
+function typecheck(program: Program) {
+  const spine = programToSpine(program);
+  spine.everyNode((x) => {
+    if (x.kind !== "Program") getType(x, program);
+    return true;
+  });
 }

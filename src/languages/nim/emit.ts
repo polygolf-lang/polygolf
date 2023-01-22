@@ -150,7 +150,8 @@ function emitExpr(
 ): string[] {
   const inner = emitExprNoParens(
     expr,
-    parent.kind === "BinaryOp" && fragment === "left"
+    (parent.kind === "BinaryOp" && fragment === "left") ||
+      (parent.kind === "MethodCall" && fragment === "object")
   );
   return needsParens(expr, parent, fragment) ? ["(", ...inner, ")"] : inner;
 }
@@ -277,7 +278,7 @@ function emitExprNoParens(
         ];
       else
         return [
-          ...emitExpr(expr.object, expr),
+          ...emitExpr(expr.object, expr, "object"),
           ".",
           expr.ident.name,
           ...(expr.args.length > 0

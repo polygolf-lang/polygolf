@@ -27,6 +27,8 @@ import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
+import { tableHashing } from "../../plugins/hashing";
+import hash from "./hash";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -40,6 +42,7 @@ const nimLanguage: Language = {
     tempVarToMultipleAssignment,
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
+    tableHashing(hash),
   ],
   emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
   finalEmitPlugins: [
@@ -112,6 +115,7 @@ const nimLanguage: Language = {
       ["repeat", "strutils"],
       ["paramStr", "os"],
       ["split", "strutils"],
+      ["hash", "hashes"],
     ]),
     renameIdents(),
     addVarDeclarations,
