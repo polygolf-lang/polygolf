@@ -86,7 +86,7 @@ function findHash(
   ]);
   while (true) {
     for (let mod = width; mod <= maxMod; mod++) {
-      const result: (Expr | undefined)[] = Array(width).fill(undefined);
+      const result: (Expr | undefined)[] = Array(width);
       let collision = false;
       for (const [key, value] of hashedTable) {
         const i = (key % mod) % width;
@@ -97,7 +97,6 @@ function findHash(
         result[i] = value;
       }
       if (!collision) {
-        console.log(result, mod, width);
         return [result, mod];
       }
     }
