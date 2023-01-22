@@ -51,7 +51,7 @@ export function tableHashing(
             maxMod
           );
           let lastUsed = array.length - 1;
-          while (array[lastUsed] === undefined) lastUsed--;
+          while (array[lastUsed] === null) lastUsed--;
 
           return polygolfOp(
             "list_get",
@@ -78,19 +78,20 @@ function findHash(
   hashFunc: (x: string) => number,
   table: [string, Expr][],
   maxMod: number
-): [(Expr | undefined)[], number] {
+): [(Expr | null)[], number] {
   let width = table.length;
   const hashedTable: [number, Expr][] = table.map((x) => [
     hashFunc(x[0]),
     x[1],
   ]);
+  const result: (Expr | null)[] = Array(width);
   while (true) {
     for (let mod = width; mod <= maxMod; mod++) {
-      const result: (Expr | undefined)[] = Array(width);
+      result.fill(null);
       let collision = false;
       for (const [key, value] of hashedTable) {
         const i = (key % mod) % width;
-        if (result[i] !== undefined) {
+        if (result[i] !== null) {
           collision = true;
           break;
         }
@@ -101,6 +102,7 @@ function findHash(
       }
     }
     width++;
+    result.push(null);
   }
 }
 
