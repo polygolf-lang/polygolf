@@ -23,6 +23,8 @@ import { useInclusiveForRange } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
+import { tableHashing } from "../../plugins/hashing";
+import hash from "./hash";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -34,6 +36,7 @@ const nimLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
+    tableHashing(hash),
   ],
   emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
   finalEmitPlugins: [
@@ -106,6 +109,7 @@ const nimLanguage: Language = {
       ["repeat", "strutils"],
       ["paramStr", "os"],
       ["split", "strutils"],
+      ["hash", "hashes"],
     ]),
     renameIdents(),
     addVarDeclarations,

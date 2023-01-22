@@ -1,5 +1,5 @@
-import { getType } from "@/common/getType";
-import { Plugin } from "@/common/Language";
+import { getType } from "../common/getType";
+import { Plugin } from "../common/Language";
 import {
   defaultValue,
   Expr,
@@ -8,7 +8,7 @@ import {
   listConstructor,
   polygolfOp,
   StringLiteral,
-} from "@/IR";
+} from "../IR";
 
 /**
  *
