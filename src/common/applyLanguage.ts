@@ -197,7 +197,8 @@ function golfProgram(
   return shortestSoFar;
 }
 
-/** Typecheck a program by asking all nodes about their types. */
+/** Typecheck a program by asking all nodes about their types.
+ * Throws an error on a type error; otherwise is a no-op. */
 function typecheck(program: Program) {
   const spine = programToSpine(program);
   spine.everyNode((x) => {
