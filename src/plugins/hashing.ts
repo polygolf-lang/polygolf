@@ -1,15 +1,23 @@
 import { getType } from "@/common/getType";
 import { Plugin } from "@/common/Language";
 import {
+  defaultValue,
   Expr,
   functionCall,
-  id,
   int,
   listConstructor,
   polygolfOp,
   StringLiteral,
 } from "@/IR";
 
+/**
+ *
+ * @param hashFunc Behaviour of the builtin hash function used.
+ * @param hashNode Recipe for invoking the bultin hash function.
+ * @param maxMod Max value of `mod`.
+ * @returns Replaces `tableLiteral[key]` with `listLiteral[hash(key)%mod%len(listLiteral)]`,
+ * where `hash` is the builtin used, `mod` <= `maxMod` and `listLiteral` contains values from `tableLiteral` and holes.
+ */
 export function tableHashing(
   hashFunc: (x: string) => number,
   hashNode: string | ((x: Expr) => Expr) = "hash",
@@ -26,7 +34,7 @@ export function tableHashing(
     visit(node, spine) {
       if (
         node.kind === "PolygolfOp" &&
-        node.op == "table_get" &&
+        node.op === "table_get" &&
         node.args[0].kind === "TableConstructor"
       ) {
         const table = node.args[0];
@@ -42,12 +50,21 @@ export function tableHashing(
             table.kvPairs.map((x) => [(x.key as StringLiteral).value, x.value]),
             maxMod
           );
+          let lastUsed = array.length - 1;
+          while (array[lastUsed] === undefined) lastUsed--;
+
           return polygolfOp(
             "list_get",
-            listConstructor(array),
+            listConstructor(
+              array
+                .slice(0, lastUsed + 1)
+                .map((x) => x ?? defaultValue(tableType.value))
+            ),
             polygolfOp(
               "mod",
-              polygolfOp("mod", hash(getKey), int(mod)),
+              mod === array.length
+                ? hash(getKey)
+                : polygolfOp("mod", hash(getKey), int(mod)),
               int(array.length)
             )
           );
@@ -61,6 +78,44 @@ function findHash(
   hashFunc: (x: string) => number,
   table: [string, Expr][],
   maxMod: number
-): [Expr[], number] {
-  throw new Error("Not implemented.");
+): [(Expr | undefined)[], number] {
+  let width = table.length;
+  const hashedTable: [number, Expr][] = table.map((x) => [
+    hashFunc(x[0]),
+    x[1],
+  ]);
+  while (true) {
+    for (let mod = width; mod <= maxMod; mod++) {
+      const result: (Expr | undefined)[] = Array(width).fill(undefined);
+      let collision = false;
+      for (const [key, value] of hashedTable) {
+        const i = (key % mod) % width;
+        if (result[i] !== undefined) {
+          collision = true;
+          break;
+        }
+        result[i] = value;
+      }
+      if (!collision) {
+        console.log(result, mod, width);
+        return [result, mod];
+      }
+    }
+    width++;
+  }
 }
+
+// a simple hashFunc to test the plugin
+function javaHash(str: string): number {
+  let hash = 0;
+  for (let i = 0, len = str.length; i < len; i++) {
+    const chr = str.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0;
+  }
+  return (hash + 2 ** 32) % 2 ** 32;
+}
+export const testTableHashing: Plugin = {
+  ...tableHashing(javaHash, "hash", 9999),
+  name: "testTableHashing",
+};
