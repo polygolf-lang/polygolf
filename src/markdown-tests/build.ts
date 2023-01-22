@@ -158,7 +158,7 @@ function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars",
 
 function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
   test(name, () =>
-    expect(applyLanguage(polygolfLanguage, applyAll(getOnlyVariant(parse(input)), plugin.visit), searchOptions("none", "bytes"))).toEqual(output)
+    expect(applyLanguage(polygolfLanguage, applyAll(getOnlyVariant(parse(input)), plugin.visit), searchOptions("none", "bytes"), true)).toEqual(output)
   );
 }
 
