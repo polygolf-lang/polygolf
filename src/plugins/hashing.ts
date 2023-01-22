@@ -74,7 +74,7 @@ export function tableHashing(
   };
 }
 
-function findHash(
+function findHash( // TODO: Allow collisions in keys that map to the same value.
   hashFunc: (x: string) => number,
   table: [string, Expr][],
   maxMod: number
@@ -116,7 +116,9 @@ function javaHash(str: string): number {
   }
   return (hash + 2 ** 32) % 2 ** 32;
 }
-export const testTableHashing: Plugin = {
-  ...tableHashing(javaHash, "hash", 9999),
-  name: "testTableHashing",
-};
+export function testTableHashing(maxMod: number): Plugin {
+  return {
+    ...tableHashing(javaHash, "hash", maxMod),
+    name: `testTableHashing(${maxMod})`,
+  };
+}
