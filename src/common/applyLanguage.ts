@@ -1,4 +1,4 @@
-import { IR, Program } from "../IR";
+import { IR, Node, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine } from "./Spine";
@@ -86,7 +86,10 @@ function getFinalEmit(language: Language) {
 export const debugEmit = getFinalEmit(polygolfLanguage);
 
 export function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
-  return programToSpine(program).withReplacer(visitor).node as IR.Program;
+  return programToSpine(program).withReplacer((n, s) => {
+    const repl = visitor(n, s);
+    return repl === undefined ? undefined : copyTypeAnnotation(n, repl);
+  }).node as IR.Program;
 }
 
 function isError(x: any): x is Error {
@@ -160,7 +163,8 @@ function golfProgram(
       // currently using naive BFS with no pruning.
       // room for improvement: prune bad options
       if (visited.size < 200) pq.push([prog, objective(code), hist]);
-    } catch {
+    } catch (e) {
+      console.log(e);
       // Ignore for now, assuming it's using an unsupported language feature
       // A warning might be appropriate
     }
@@ -178,15 +182,7 @@ function golfProgram(
         for (const altProgram of spine.compactMap((n, s) => {
           const ret = plugin.visit(n, s);
           if (ret !== undefined) {
-            // copy type annotation if present
-            const repl =
-              ret.kind !== "Program" &&
-              n.kind !== "Program" &&
-              n.type !== undefined
-                ? { ...ret, type: n.type }
-                : ret;
-            // mark one more replacement idea.
-            return s.replacedWith(repl).root.node;
+            return s.replacedWith(copyTypeAnnotation(n, ret)).root.node;
           }
         })) {
           pushToQueue(altProgram, newHist);
@@ -195,6 +191,15 @@ function golfProgram(
     }
   }
   return shortestSoFar;
+}
+
+function copyTypeAnnotation(from: Node, to: Node): Node {
+  // copy type annotation if present
+  return to.kind !== "Program" &&
+    from.kind !== "Program" &&
+    from.type !== undefined
+    ? { ...to, type: from.type }
+    : to;
 }
 
 /** Typecheck a program by asking all nodes about their types.
