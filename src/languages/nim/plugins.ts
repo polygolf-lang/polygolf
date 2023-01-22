@@ -33,46 +33,51 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-export function addImports(dependencyMap0: [string, string][]): Plugin {
-  const dependencyMap = new Map(dependencyMap0);
-  return {
-    name: "addImports",
-    visit(program, spine) {
-      if (program.kind !== "Program") return;
-      // get dependencies
-      // TODO: abstract this part for other languages
-      // TODO: cache, and maybe do recursive merging for performance
-      const dependenciesGen = spine.compactMap((node) => {
-        let op: string = node.kind;
-        if (node.kind === "BinaryOp" || node.kind === "UnaryOp") op = node.name;
-        if (node.kind === "FunctionCall") op = node.ident.name;
-        if (node.kind === "MethodCall") op = node.ident.name;
-        if (dependencyMap.has(op)) {
-          return dependencyMap.get(op)!;
-        }
-      });
-      const dependencies = [...new Set(dependenciesGen)];
-      if (dependencies.length < 1) return;
-      // now actually apply dependencies
-      let imports: ImportStatement;
-      for (const include of includes) {
-        if (include[0].length > dependencies.join().length - 1) break;
-        if (dependencies.every((x) => include[1].includes(x))) {
-          imports = importStatement("include", [include[0]]);
-          break;
-        }
+const dependencyMap = new Map([
+  ["^", "math"],
+  ["repeat", "strutils"],
+  ["paramStr", "os"],
+  ["split", "strutils"],
+  ["hash", "hashes"],
+]);
+export const addImports: Plugin = {
+  name: "addImports",
+  visit(program, spine) {
+    if (program.kind !== "Program") return;
+    // get dependencies
+    // TODO: abstract this part for other languages
+    // TODO: cache, and maybe do recursive merging for performance
+    const dependenciesGen = spine.compactMap((node) => {
+      let op: string = node.kind;
+      if (node.kind === "BinaryOp" || node.kind === "UnaryOp") op = node.name;
+      if (node.kind === "FunctionCall") op = node.ident.name;
+      if (node.kind === "MethodCall") op = node.ident.name;
+      if (dependencyMap.has(op)) {
+        return dependencyMap.get(op)!;
       }
-      imports ??= importStatement("import", dependencies);
-      return {
-        ...program,
-        body:
-          program.body.kind === "Block"
-            ? block([imports, ...program.body.children])
-            : block([imports, program.body]),
-      };
-    },
-  };
-}
+      if (node.kind === "TableConstructor") return "tables";
+    });
+    const dependencies = [...new Set(dependenciesGen)];
+    if (dependencies.length < 1) return;
+    // now actually apply dependencies
+    let imports: ImportStatement;
+    for (const include of includes) {
+      if (include[0].length > dependencies.join().length - 1) break;
+      if (dependencies.every((x) => include[1].includes(x))) {
+        imports = importStatement("include", [include[0]]);
+        break;
+      }
+    }
+    imports ??= importStatement("import", dependencies);
+    return {
+      ...program,
+      body:
+        program.body.kind === "Block"
+          ? block([imports, ...program.body.children])
+          : block([imports, program.body]),
+    };
+  },
+};
 
 const declared: Set<string> = new Set<string>();
 export const addVarDeclarations: Plugin = {

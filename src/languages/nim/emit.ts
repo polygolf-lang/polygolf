@@ -308,6 +308,21 @@ function emitExprNoParens(
         ),
         "]",
       ];
+    case "TableConstructor":
+      return [
+        "{",
+        ...joinGroups(
+          expr.kvPairs.map((x) => [
+            ...emitExprNoParens(x.key),
+            ":",
+            ...emitExprNoParens(x.value),
+          ]),
+          ","
+        ),
+        "}",
+        ".",
+        "toTable",
+      ];
     case "IndexCall":
       if (expr.oneIndexed)
         throw new Error("Nim only supports zeroIndexed access.");
