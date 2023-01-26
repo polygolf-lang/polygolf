@@ -18,7 +18,8 @@ export type IntegerBound = bigint | "-oo" | "oo";
 
 export interface TextType {
   readonly kind: "text";
-  readonly capacity: number;
+  readonly codepointLength: IntegerType;
+  readonly isAscii: boolean;
 }
 export interface KeyValueType {
   readonly kind: "KeyValue";
@@ -30,17 +31,35 @@ export interface FunctionType {
   readonly arguments: readonly Type[];
   readonly result: Type;
 }
+export interface TableType {
+  kind: "Table";
+  key: IntegerType | TextType;
+  value: Type;
+}
+export interface ArrayType {
+  kind: "Array";
+  member: Type;
+  length: number;
+}
+export interface ListType {
+  kind: "List";
+  member: Type;
+}
+export interface SetType {
+  kind: "Set";
+  member: Type;
+}
 export type Type =
   | FunctionType
   | IntegerType
   | TextType
   | { kind: "void" }
   | { kind: "boolean" }
-  | { kind: "List"; member: Type }
-  | { kind: "Table"; key: IntegerType | TextType; value: Type }
+  | ListType
+  | TableType
   | KeyValueType
-  | { kind: "Array"; member: Type; length: number }
-  | { kind: "Set"; member: Type };
+  | ArrayType
+  | SetType;
 
 export const booleanType: Type = { kind: "boolean" };
 export const voidType: Type = { kind: "void" };
@@ -71,7 +90,7 @@ export function keyValueType(
 export function tableType(
   key: IntegerType | TextType,
   value: Type | "void" | "boolean"
-): Type {
+): TableType {
   return {
     kind: "Table",
     key,
@@ -79,14 +98,14 @@ export function tableType(
   };
 }
 
-export function setType(member: Type | "void" | "boolean"): Type {
+export function setType(member: Type | "void" | "boolean"): SetType {
   return {
     kind: "Set",
     member: type(member),
   };
 }
 
-export function listType(member: Type | "void" | "boolean"): Type {
+export function listType(member: Type | "void" | "boolean"): ListType {
   return {
     kind: "List",
     member: type(member),
@@ -96,7 +115,7 @@ export function listType(member: Type | "void" | "boolean"): Type {
 export function arrayType(
   member: Type | "void" | "boolean",
   length: number
-): Type {
+): ArrayType {
   return {
     kind: "Array",
     member: type(member),
@@ -133,17 +152,20 @@ export function constantIntegerType(c: bigint): FiniteIntegerType {
   };
 }
 
-export function textType(capacity: number | IntegerBound = Infinity): TextType {
+export function textType(
+  codepointLength: IntegerType | number = integerType(0, "oo"),
+  isAscii = false
+): TextType {
+  if (typeof codepointLength === "number") {
+    codepointLength = integerType(0n, codepointLength);
+  }
+  if (lt(codepointLength.low, 0n)) {
+    codepointLength = integerType(0n, codepointLength.high);
+  }
   return {
     kind: "text",
-    capacity:
-      typeof capacity === "number"
-        ? Math.max(0, capacity)
-        : lt(capacity, 0n)
-        ? 0
-        : isFiniteBound(capacity) && capacity < BigInt(2 ** 32)
-        ? Number(capacity)
-        : Infinity,
+    codepointLength,
+    isAscii,
   };
 }
 
@@ -188,8 +210,12 @@ export function toString(a: Type): string {
       return `(KeyValue ${toString(a.key)} ${toString(a.value)})`;
     case "void":
       return "Void";
-    case "text":
-      return a.capacity === Infinity ? "Text" : `(Text ${a.capacity})`;
+    case "text": {
+      const name = a.isAscii ? "Ascii" : "Text";
+      return a.codepointLength.high === "oo"
+        ? name
+        : `(${name} ${toString(a.codepointLength)})`;
+    }
     case "boolean":
       return "Bool";
     case "integer":
@@ -231,7 +257,10 @@ export function intersection(a: Type, b: Type): Type {
     const high = min(a.high, b.high);
     if (leq(low, high)) return integerType(low, high);
   } else if (a.kind === "text" && b.kind === "text") {
-    return textType(Math.min(a.capacity, b.capacity));
+    return textType(
+      intersection(a.codepointLength, b.codepointLength) as IntegerType,
+      a.isAscii || b.isAscii
+    );
   } else if (a.kind === b.kind) {
     return a;
   }
@@ -267,7 +296,10 @@ export function union(a: Type, b: Type): Type {
         ? integerType(min(a.low, b.low), max(a.high, b.high))
         : integerType();
     } else if (a.kind === "text" && b.kind === "text") {
-      return textType(Math.max(a.capacity, b.capacity));
+      return textType(
+        union(a.codepointLength, b.codepointLength) as IntegerType,
+        a.isAscii && b.isAscii
+      );
     } else if (a.kind === b.kind) {
       return a;
     }
@@ -306,7 +338,10 @@ export function isSubtype(a: Type, b: Type): boolean {
     return leq(b.low, a.low) && leq(a.high, b.high);
   }
   if (a.kind === "text" && b.kind === "text") {
-    return a.capacity <= b.capacity;
+    return (
+      isSubtype(a.codepointLength, b.codepointLength) &&
+      (a.isAscii || !b.isAscii)
+    );
   }
   return a.kind === b.kind;
 }
@@ -390,7 +425,15 @@ export function defaultValue(a: Type): Expr {
     case "Table":
       return tableConstructor([]);
     case "text":
-      return stringLiteral("");
+      if (
+        isFiniteBound(a.codepointLength.low) &&
+        a.codepointLength.low < 2 ** 32
+      ) {
+        return stringLiteral(
+          " ".repeat(Number(a.codepointLength.low as bigint))
+        );
+      }
+      break;
     case "integer":
       if (lt(a.high, 0n)) return int(a.high as bigint);
       if (lt(0n, a.low)) return int(a.low as bigint);

@@ -16,7 +16,7 @@ export interface SearchOptions {
 
 // This is what code.golf uses for char scoring
 // https://github.com/code-golf/code-golf/blob/13733cfd472011217031fb9e733ae9ac177b234b/js/_util.ts#L7
-const charLen = (str: string) => {
+export const charLength = (str: string) => {
   let i = 0;
   let len = 0;
 
@@ -45,6 +45,8 @@ const charLen = (str: string) => {
   return len;
 };
 
+export const byteLength = (x: string) => Buffer.byteLength(x, "utf-8");
+
 export function searchOptions(
   level: OptimisationLevel,
   objective: Objective,
@@ -54,8 +56,7 @@ export function searchOptions(
     level,
     objective,
     objectiveFunction:
-      objectiveFunction ??
-      (objective === "bytes" ? (x) => Buffer.byteLength(x, "utf-8") : charLen),
+      objectiveFunction ?? (objective === "bytes" ? byteLength : charLength),
   };
 }
 
