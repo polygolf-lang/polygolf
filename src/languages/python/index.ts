@@ -24,7 +24,7 @@ const pythonLanguage: Language = {
   finalEmitPlugins: [
     mapOps([
       ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
-      ["text_length", (x) => functionCall([x[0]], "len")],
+      ["text_codepoint_length", (x) => functionCall([x[0]], "len")],
       ["int_to_text", (x) => functionCall([x[0]], "str")],
       ["text_split", (x) => methodCall(x[0], [x[1]], "split")],
       ["text_split_whitespace", (x) => methodCall(x[0], [], "split")],

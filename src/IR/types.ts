@@ -212,9 +212,8 @@ export function toString(a: Type): string {
       return "Void";
     case "text": {
       const name = a.isAscii ? "Ascii" : "Text";
-      return a.codepointLength.high === "oo"
-        ? name
-        : `(${name} ${toString(a.codepointLength)})`;
+      const length = toString(a.codepointLength);
+      return length === "0..oo" ? name : `(${name} ${length})`;
     }
     case "boolean":
       return "Bool";
@@ -429,9 +428,7 @@ export function defaultValue(a: Type): Expr {
         isFiniteBound(a.codepointLength.low) &&
         a.codepointLength.low < 2 ** 32
       ) {
-        return stringLiteral(
-          " ".repeat(Number(a.codepointLength.low as bigint))
-        );
+        return stringLiteral(" ".repeat(Number(a.codepointLength.low)));
       }
       break;
     case "integer":

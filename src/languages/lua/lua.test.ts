@@ -12,6 +12,8 @@ import {
   Expr,
   print,
   integerType,
+  annotate,
+  textType,
 } from "../../IR";
 import applyLanguage, { searchOptions } from "../../common/applyLanguage";
 
@@ -36,8 +38,11 @@ function testpolygolfOp(
         block([
           assignment({ ...id("i"), type: integerType(0, 1) }, int(0n)),
           assignment({ ...id("I"), type: integerType(0, 4) }, int(4n)),
-          assignment("t", stringLiteral("abc")),
-          assignment("T", stringLiteral("DEF")),
+          assignment(
+            "t",
+            annotate(stringLiteral("abc"), textType(integerType(), true))
+          ),
+          assignment("T", annotate(stringLiteral("DEF"), textType())),
           assignment("b", polygolfOp("true")),
           assignment("B", polygolfOp("false")),
           assignment(
@@ -72,7 +77,7 @@ describe("Applications", () => {
       ]),
       `io.write("x")\nprint("y")`
     ));
-  testpolygolfOp("text_length", ["t"], `t:len()`);
+  testpolygolfOp("text_byte_length", ["t"], `t:len()`);
   testpolygolfOp("int_to_text", ["i"], "tostring(i)");
   testpolygolfOp("text_to_int", ["t"], "~~t");
   testpolygolfOp("bit_not", ["i"], "~i");
@@ -94,13 +99,17 @@ describe("Applications", () => {
   testpolygolfOp("array_get", ["a", "i"], "a[i+1]");
   testpolygolfOp("text_get_byte", ["t", "i"], "t:byte(i+1)");
   testpolygolfOp("text_concat", ["t", "T"], "t..T");
-  testpolygolfOp("text_length", ["t"], "t:len()");
+  testpolygolfOp("text_byte_length", ["t"], "t:len()");
 });
 
 describe("Parentheses", () => {
-  testpolygolfOp("text_length", [stringLiteral("abc")], `("abc"):len()`);
   testpolygolfOp(
-    "text_length",
+    "text_byte_length",
+    [annotate(stringLiteral("abc"), textType())],
+    `("abc"):len()`
+  );
+  testpolygolfOp(
+    "text_byte_length",
     [polygolfOp("array_get", id("a"), id("i"))],
     `a[i+1]:len()`
   );
