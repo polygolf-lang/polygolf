@@ -131,7 +131,10 @@ describe("Parse annotations", () => {
   expectTypeParse("-10..10", integerType(-10, 10));
   expectTypeParse("Bool", booleanType);
   expectTypeParse("Text", textType());
+  expectTypeParse("Ascii", textType(integerType(), true));
   expectTypeParse("(Text 120)", textType(120));
+  expectTypeParse("(Text 40..120)", textType(integerType(40, 120)));
+  expectTypeParse("(Ascii 40..120)", textType(integerType(40, 120), true));
   expectTypeParse("(Array Text 5)", arrayType(textType(), 5));
   expectTypeParse("(List Text)", listType(textType()));
   expectTypeParse("(List (List Text))", listType(listType(textType())));
