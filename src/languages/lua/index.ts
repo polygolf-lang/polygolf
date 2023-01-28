@@ -14,6 +14,7 @@ import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
+// import { useEquivalentTextOp } from "../../plugins/textOps";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -24,6 +25,8 @@ const luaLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
+    // useEquivalentTextOp, TODO: Cannot add this to Lua yet, because it breakes the old style tests.
+    // Rewrite the tests to markdown tests so that golf plugins are not applied when testing the emitter.
   ],
   emitPlugins: [forRangeToForRangeInclusive, useIndexCalls(true)],
   finalEmitPlugins: [

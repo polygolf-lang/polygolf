@@ -8,6 +8,7 @@ import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
+import { useEquivalentTextOp } from "../../plugins/textOps";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -19,6 +20,7 @@ const pythonLanguage: Language = {
     tempVarToMultipleAssignment,
     forRangeToForEach,
     golfLastPrint(),
+    useEquivalentTextOp,
   ],
   emitPlugins: [useIndexCalls()],
   finalEmitPlugins: [

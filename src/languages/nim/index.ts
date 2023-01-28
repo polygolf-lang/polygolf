@@ -25,6 +25,7 @@ import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
+import { useEquivalentTextOp } from "../../plugins/textOps";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -37,6 +38,7 @@ const nimLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
     tableHashing(hash),
+    useEquivalentTextOp,
   ],
   emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
   finalEmitPlugins: [
