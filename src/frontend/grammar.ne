@@ -25,7 +25,8 @@ import {
 main -> (sexpr_stmt | variants):+ {% d => refSource(program(blockOrSingle(d[0].map(id))), d[0][0]) %}
 
 variant ->
-  (sexpr_stmt | variants):* {% d => refSource(blockOrSingle(d[0].map(id)), d[0].length > 0 ? d[0][0] : undefined) %}
+  (sexpr_stmt | variants) (sexpr_stmt | variants):+ {% ([d0, d1]) => refSource(blockOrSingle([d0, ...d1].map(id)), d0[0]) %}
+  | sexpr_stmt {% d => refSource(blockOrSingle(d), d[0][0]) %}
   | expr {% d => refSource(d[0], d[0]) %}
           
 variants -> "{" (variant "/"):* variant "}" {%
