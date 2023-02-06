@@ -102,8 +102,8 @@ function needsParens(
     return true;
   }
   if (
-    parent.kind === "MethodCall" &&
-    expr === parent.object &&
+    ((parent.kind === "MethodCall" && expr === parent.object) ||
+      (parent.kind === "IndexCall" && expr === parent.collection)) &&
     expr.kind !== "Identifier" &&
     expr.kind !== "IndexCall"
   )
