@@ -13,32 +13,43 @@ export default function emitProgram(program: IR.Program): string[] {
 
 function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
   const children = block.kind === "Block" ? block.children : [block];
-  if (hasChildWithBlock(block)) {
-    if (parent.kind === "Program") {
-      return joinGroups(
-        children.map((stmt) => emitStatement(stmt, block)),
-        "\n"
-      );
-    }
-    return [
-      "$INDENT$",
-      "\n",
-      ...joinGroups(
-        children.map((stmt) => emitStatement(stmt, block)),
-        "\n"
-      ),
-      "$DEDENT$",
-      "\n",
-    ];
+  if (parent.kind === "Program") {
+    return joinGroups(
+      children.map((stmt) => emitStatement(stmt, block)),
+      "\n"
+    );
   }
-  return joinGroups(
-    children.map((stmt) => emitStatement(stmt, block)),
-    ";"
-  );
+  return [
+    "{",
+    ...joinGroups(
+      children.map((stmt) => emitStatement(stmt, block)),
+      "\n"
+    ),
+    "}",
+  ];
 }
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
   switch (stmt.kind) {
+    case "VarDeclarationWithAssignment":
+      return [
+        "var",
+        ...joinGroups(
+          (stmt.assignments.kind === "Assignment"
+            ? [stmt.assignments.variable]
+            : stmt.assignments.variables
+          ).map((v, i) => [
+            ...emitExprNoParens(v),
+            "=",
+            ...emitExprNoParens(
+              (stmt.assignments.kind === "Assignment"
+                ? [stmt.assignments.expr]
+                : stmt.assignments.exprs)[i]
+            ),
+          ]),
+          ","
+        ),
+      ];
     case "Block":
       return emitBlock(stmt, parent);
     case "ImportStatement":
@@ -53,12 +64,10 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
       return [
         `while`,
         ...emitExpr(stmt.condition, stmt),
-        ":",
         ...emitBlock(stmt.body, stmt),
       ];
     case "ForRange": {
       const low = emitExpr(stmt.low, stmt);
-      const low0 = low.length === 1 && low[0] === "0";
       const high = emitExpr(stmt.high, stmt);
       const increment = emitExpr(stmt.increment, stmt);
       const increment1 = increment.length === 1 && increment[0] === "1";
@@ -66,13 +75,21 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
         "for",
         ...emitExpr(stmt.variable, stmt),
         "in",
-        "range",
-        "(",
-        ...(low0 && increment1 ? [] : [...low, ","]),
-        ...high,
-        ...(increment1 ? [] : [",", ...increment]),
-        ")",
-        ":",
+        ...(increment1
+          ? [...low, "..<", ...high]
+          : [
+              "stride",
+              "(",
+              ...joinGroups(
+                [
+                  ["from:", ...low],
+                  ["to:", ...high],
+                  ["by:", ...increment],
+                ],
+                ","
+              ),
+              ")",
+            ]),
         ...emitBlock(stmt.body, stmt),
       ];
     }
@@ -80,10 +97,9 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
       return [
         "if",
         ...emitExpr(stmt.condition, stmt),
-        ":",
         ...emitBlock(stmt.consequent, stmt),
         ...(stmt.alternate !== undefined
-          ? ["\n", "else", ":", ...emitBlock(stmt.alternate, stmt)]
+          ? ["else", ...emitBlock(stmt.alternate, stmt)]
           : []),
       ];
     case "Variants":
@@ -92,7 +108,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.kind}) while emitting Python`);
+      throw new Error(`Unexpected node (${stmt.kind}) while emitting Swift`);
     default:
       return emitExpr(stmt, parent);
   }
@@ -119,9 +135,8 @@ function needsParens(
   if (needsParensPrecedence(expr, parent, fragment)) {
     return true;
   }
-  if (parent.kind === "MethodCall" && fragment === "object") {
-    return expr.kind === "UnaryOp" || expr.kind === "BinaryOp";
-  }
+  if (expr.kind === "ConditionalOp")
+    return parent.kind === "UnaryOp" || parent.kind === "BinaryOp";
   return false;
 }
 
@@ -132,18 +147,6 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         ...emitExpr(expr.variable, expr),
         "=",
         ...emitExpr(expr.expr, expr),
-      ];
-    case "ManyToManyAssignment":
-      return [
-        ...joinGroups(
-          expr.variables.map((v) => emitExprNoParens(v)),
-          ","
-        ),
-        "=",
-        ...joinGroups(
-          expr.exprs.map((x) => emitExprNoParens(x)),
-          ","
-        ),
       ];
     case "MutatingBinaryOp":
       return [
@@ -159,24 +162,76 @@ function emitExprNoParens(expr: IR.Expr): string[] {
           `"`,
           [
             [`\\`, `\\\\`],
-            [`\n`, `\\n`],
-            [`\r`, `\\r`],
+            [`\u{1}`, `\\u{1}`],
+            [`\u{2}`, `\\u{2}`],
+            [`\u{3}`, `\\u{3}`],
+            [`\u{4}`, `\\u{4}`],
+            [`\u{5}`, `\\u{5}`],
+            [`\u{6}`, `\\u{6}`],
+            [`\u{7}`, `\\u{7}`],
+            [`\u{8}`, `\\u{8}`],
+            [`\u{9}`, `\\u{9}`],
+            [`\u{a}`, `\\n`],
+            [`\u{b}`, `\\u{b}`],
+            [`\u{c}`, `\\u{c}`],
+            [`\u{d}`, `\\u{d}`],
+            [`\u{e}`, `\\u{e}`],
+            [`\u{f}`, `\\u{f}`],
+            [`\u{10}`, `\\u{10}`],
+            [`\u{11}`, `\\u{11}`],
+            [`\u{12}`, `\\u{12}`],
+            [`\u{13}`, `\\u{13}`],
+            [`\u{14}`, `\\u{14}`],
+            [`\u{15}`, `\\u{15}`],
+            [`\u{16}`, `\\u{16}`],
+            [`\u{17}`, `\\u{17}`],
+            [`\u{18}`, `\\u{18}`],
+            [`\u{19}`, `\\u{19}`],
+            [`\u{1a}`, `\\u{1a}`],
+            [`\u{1b}`, `\\u{1b}`],
+            [`\u{1c}`, `\\u{1c}`],
+            [`\u{1d}`, `\\u{1d}`],
+            [`\u{1e}`, `\\u{1e}`],
+            [`\u{1f}`, `\\u{1f}`],
+
             [`"`, `\\"`],
-          ],
-        ],
-        [
-          `'`,
-          [
-            [`\\`, `\\\\`],
-            [`\n`, `\\n`],
-            [`\r`, `\\r`],
-            [`'`, `\\'`],
           ],
         ],
         [
           `"""`,
           [
             [`\\`, `\\\\`],
+            [`\u{1}`, `\\u{1}`],
+            [`\u{2}`, `\\u{2}`],
+            [`\u{3}`, `\\u{3}`],
+            [`\u{4}`, `\\u{4}`],
+            [`\u{5}`, `\\u{5}`],
+            [`\u{6}`, `\\u{6}`],
+            [`\u{7}`, `\\u{7}`],
+            [`\u{8}`, `\\u{8}`],
+            [`\u{9}`, `\\u{9}`],
+
+            [`\u{b}`, `\\u{b}`],
+            [`\u{c}`, `\\u{c}`],
+            [`\u{d}`, `\\u{d}`],
+            [`\u{e}`, `\\u{e}`],
+            [`\u{f}`, `\\u{f}`],
+            [`\u{10}`, `\\u{10}`],
+            [`\u{11}`, `\\u{11}`],
+            [`\u{12}`, `\\u{12}`],
+            [`\u{13}`, `\\u{13}`],
+            [`\u{14}`, `\\u{14}`],
+            [`\u{15}`, `\\u{15}`],
+            [`\u{16}`, `\\u{16}`],
+            [`\u{17}`, `\\u{17}`],
+            [`\u{18}`, `\\u{18}`],
+            [`\u{19}`, `\\u{19}`],
+            [`\u{1a}`, `\\u{1a}`],
+            [`\u{1b}`, `\\u{1b}`],
+            [`\u{1c}`, `\\u{1c}`],
+            [`\u{1d}`, `\\u{1d}`],
+            [`\u{1e}`, `\\u{1e}`],
+            [`\u{1f}`, `\\u{1f}`],
             [`"""`, `\\"""`],
           ],
         ],
@@ -188,27 +243,53 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         expr.ident.name,
         "(",
         ...joinGroups(
-          expr.args.map((arg) => emitExpr(arg, expr)),
+          expr.op === "repeat"
+            ? [
+                ["repeating:", ...emitExpr(expr.args[0], expr)],
+                ["count:", ...emitExpr(expr.args[1], expr)],
+              ]
+            : expr.op === "print"
+            ? [[...emitExpr(expr.args[0], expr)], ["terminator:", '""']]
+            : expr.args.map((arg) => emitExpr(arg, expr)),
           ","
         ),
         ")",
+        expr.op === "text_to_int" || expr.ident.name === "UnicodeScalar"
+          ? "!"
+          : "",
       ];
     case "MethodCall":
+      if (expr.ident.name === "utf8" || expr.ident.name === "count") {
+        return [...emitExpr(expr.object, expr), ".", expr.ident.name];
+      }
       return [
         ...emitExpr(expr.object, expr),
         ".",
         expr.ident.name,
         "(",
         ...joinGroups(
-          expr.args.map((arg) => emitExpr(arg, expr)),
+          expr.op === "text_split"
+            ? [["separator:", ...emitExpr(expr.args[0], expr)]]
+            : expr.args.map((arg) => emitExpr(arg, expr)),
           ","
         ),
         ")",
       ];
+    case "ConditionalOp":
+      return [
+        ...emitExpr(expr.condition, expr),
+        "",
+        "?",
+        ...emitExpr(expr.consequent, expr),
+        ":",
+        ...emitExpr(expr.alternate, expr),
+      ];
     case "BinaryOp":
       return [
         ...emitExpr(expr.left, expr, "left"),
-        expr.name,
+        ...(expr.op === "neq" // `!=` needs spaces on both sides in Swift
+          ? ["", expr.name, ""]
+          : expr.name),
         ...emitExpr(expr.right, expr, "right"),
       ];
     case "UnaryOp":
@@ -223,8 +304,6 @@ function emitExprNoParens(expr: IR.Expr): string[] {
         "]",
       ];
     case "IndexCall":
-      if (expr.oneIndexed)
-        throw new Error("Python only supports zeroIndexed access.");
       return [
         ...emitExprNoParens(expr.collection),
         "[",
@@ -234,7 +313,7 @@ function emitExprNoParens(expr: IR.Expr): string[] {
 
     default:
       throw new Error(
-        `Unexpected node while emitting Python: ${expr.kind}: ${
+        `Unexpected node while emitting Swift: ${expr.kind}: ${
           "op" in expr ? expr.op ?? "" : ""
         }. `
       );
