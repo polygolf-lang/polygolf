@@ -25,9 +25,6 @@ print("y")
 ## Ops
 
 ```polygolf
-text_length "x";
-int_to_text 5;
-text_to_int "5";
 ~ 1;
 - 1;
 1 + 2;
@@ -48,12 +45,11 @@ array_get (array "xy" "abc") 1;
 text_get_byte "abc" 1;
 text_concat "abc" "xyz";
 text_length "abc";
+int_to_text 5;
+text_to_int "5";
 ```
 
 ```lua nogolf
-("x"):len()
-tostring(5)
-~~"5"
 ~1
 -1
 1+2
@@ -74,6 +70,8 @@ tostring(5)
 ("abc"):byte(1+1)
 "abc".."xyz"
 ("abc"):len()
+tostring(5)
+~~"5"
 ```
 
 ## Parentheses
