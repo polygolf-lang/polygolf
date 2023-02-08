@@ -96,7 +96,7 @@ const swiftLanguage: Language = {
 
       ["max", (x) => functionCall(x, "max")],
       ["min", (x) => functionCall(x, "min")],
-      ["abs", (x) => functionCall([x[0]], "math.abs")],
+      ["abs", (x) => functionCall([x[0]], "abs")],
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
     ]),
