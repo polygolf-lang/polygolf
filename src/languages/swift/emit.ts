@@ -1,6 +1,5 @@
 import {
   emitStringLiteral,
-  hasChildWithBlock,
   joinGroups,
   needsParensPrecedence,
 } from "../../common/emit";
