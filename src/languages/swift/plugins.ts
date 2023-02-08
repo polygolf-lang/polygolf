@@ -23,7 +23,7 @@ export const addImports: Plugin = {
     const dependencies = [...new Set(dependenciesGen)];
     if (dependencies.length < 1) return;
     // now actually apply dependencies
-    let imports: ImportStatement = importStatement("import", dependencies);
+    const imports: ImportStatement = importStatement("import", dependencies);
 
     return {
       ...program,
