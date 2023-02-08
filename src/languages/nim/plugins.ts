@@ -2,6 +2,7 @@ import {
   Assignment,
   block,
   Expr,
+  Identifier,
   ImportStatement,
   importStatement,
   manyToManyAssignment,
@@ -105,7 +106,8 @@ export const addVarDeclarations: Plugin = {
           assignments = [];
         }
       }
-      for (const child of node.children) {
+      for (const childSpine of spine.getChildSpines()) {
+        const child = childSpine.node as Expr;
         if (
           child.kind !== "Assignment" ||
           child.variable.kind !== "Identifier" ||
@@ -113,6 +115,18 @@ export const addVarDeclarations: Plugin = {
         ) {
           processAssignments();
           newNodes.push(child);
+        } else if (
+          assignments.some((pendingAssignment) =>
+            childSpine.someNode(
+              (y) =>
+                y.kind === "Identifier" &&
+                !y.builtin &&
+                y.name === (pendingAssignment.variable as Identifier).name
+            )
+          )
+        ) {
+          processAssignments();
+          assignments.push(child);
         } else {
           assignments.push(child);
         }
