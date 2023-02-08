@@ -1,26 +1,34 @@
-import { Expr } from "./IR";
+import {
+  Expr,
+  arrayConstructor,
+  listConstructor,
+  setConstructor,
+  tableConstructor,
+  stringLiteral,
+  int,
+} from "./IR";
 
 /** The type of the value of a node when evaluated */
 export interface IntegerType {
-  kind: "integer";
-  low: IntegerBound;
-  high: IntegerBound;
+  readonly kind: "integer";
+  readonly low: IntegerBound;
+  readonly high: IntegerBound;
 }
 export type IntegerBound = bigint | "-oo" | "oo";
 
 export interface TextType {
-  kind: "text";
-  capacity: number;
+  readonly kind: "text";
+  readonly capacity: number;
 }
 export interface KeyValueType {
-  kind: "KeyValue";
-  key: IntegerType | TextType;
-  value: Type;
+  readonly kind: "KeyValue";
+  readonly key: IntegerType | TextType;
+  readonly value: Type;
 }
 export interface FunctionType {
-  kind: "Function";
-  arguments: Type[];
-  result: Type;
+  readonly kind: "Function";
+  readonly arguments: readonly Type[];
+  readonly result: Type;
 }
 export type Type =
   | FunctionType
@@ -369,4 +377,24 @@ export function isFiniteType(a: IntegerType): a is FiniteIntegerType {
 }
 export function isConstantType(a: IntegerType): a is FiniteIntegerType {
   return isFiniteType(a) && a.low === a.high;
+}
+
+export function defaultValue(a: Type): Expr {
+  switch (a.kind) {
+    case "Array":
+      return arrayConstructor([]);
+    case "List":
+      return listConstructor([]);
+    case "Set":
+      return setConstructor([]);
+    case "Table":
+      return tableConstructor([]);
+    case "text":
+      return stringLiteral("");
+    case "integer":
+      if (lt(a.high, 0n)) return int(a.high as bigint);
+      if (lt(0n, a.low)) return int(a.low as bigint);
+      return int(0);
+  }
+  throw new Error(`Unsupported default value for type ${toString(a)}`);
 }

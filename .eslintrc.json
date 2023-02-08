@@ -10,7 +10,12 @@
     "sourceType": "module",
     "project": "tsconfig.json"
   },
-  "ignorePatterns": ["src/frontend/grammar*", "*.polygolf"],
+  "ignorePatterns": [
+    "src/frontend/grammar*",
+    "*.polygolf",
+    "*.test.md",
+    "*.test.md.ts"
+  ],
   "rules": {
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/array-type": "off",

@@ -1,4 +1,4 @@
-import { PathFragment } from "../../common/traverse";
+import { PathFragment } from "../../common/fragments";
 import {
   emitStringLiteral,
   joinGroups,

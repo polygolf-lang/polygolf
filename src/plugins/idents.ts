@@ -1,13 +1,14 @@
-import { IdentifierGenerator } from "common/Language";
-import { Path, Visitor } from "../common/traverse";
-import { assignment, block, Expr, id, Identifier, IR } from "../IR";
+import { Plugin, IdentifierGenerator } from "common/Language";
+import { getDeclaredIdentifiers } from "../common/symbols";
+import { Spine } from "../common/Spine";
+import { assignment, block, id, Identifier, IR } from "../IR";
 
 function getIdentMap(
-  path: Path<IR.Program>,
+  spine: Spine<IR.Program>,
   identGen: IdentifierGenerator
 ): Map<string, string> {
   // First, try mapping as many idents as possible to their preferred versions
-  const inputNames = path.getUsedIdentifiers();
+  const inputNames = [...getDeclaredIdentifiers(spine.node)];
   const outputNames = new Set<string>();
   const result = new Map<string, string>();
   for (const iv of inputNames) {
@@ -49,23 +50,22 @@ function getIdentMap(
   return result;
 }
 
-let identMap: Map<string, string>;
 export function renameIdents(
   identGen: IdentifierGenerator = defaultIdentGen
-): Visitor {
+): Plugin {
   return {
     name: "renameIdents(...)",
-    enter(path: Path) {
-      if (path.node.kind === "Program") {
-        identMap = getIdentMap(path.root, identGen);
-      }
-      if (path.node.kind === "Identifier" && !path.node.builtin) {
-        const outputName = identMap.get(path.node.name);
-        if (outputName === undefined) {
-          throw new Error("Programming error. Incomplete identMap.");
+    visit(program, spine) {
+      if (program.kind !== "Program") return;
+      const identMap = getIdentMap(spine.root, identGen);
+      return spine.withReplacer((node) => {
+        if (node.kind === "Identifier" && !node.builtin) {
+          const outputName = identMap.get(node.name);
+          if (outputName === undefined)
+            throw new Error("Programming error. Incomplete identMap.");
+          return id(outputName);
         }
-        path.replaceWith(id(outputName), true);
-      }
+      }).node;
     },
   };
 }
@@ -85,41 +85,42 @@ function defaultShouldAlias(name: string, freq: number): boolean {
 }
 export function aliasBuiltins(
   shouldAlias: (name: string, freq: number) => boolean = defaultShouldAlias
-): Visitor {
-  const usedBuiltins = new Map<string, Identifier[]>();
+): Plugin {
   return {
     name: "aliasBuiltins(...)",
-    enter(path: Path) {
-      const node = path.node;
-      if (node.kind === "Identifier" && node.builtin) {
-        if (!usedBuiltins.has(node.name)) usedBuiltins.set(node.name, []);
-        usedBuiltins.get(node.name)?.push(node);
+    visit(program, spine) {
+      if (program.kind !== "Program") return;
+      // get frequency of each builtin
+      const timesUsed = new Map<string, number>();
+      for (const name of spine.compactMap((node) => {
+        if (node.kind === "Identifier" && node.builtin) return node.name;
+      })) {
+        const freq = timesUsed.get(name) ?? 0;
+        timesUsed.set(name, freq + 1);
       }
-    },
-    exit(path: Path) {
-      if (path.parent === null) {
-        const program = path.root.node;
-        const aliased: string[] = [];
-        usedBuiltins.forEach((identifiers: Identifier[], name: string) => {
-          if (shouldAlias(name, identifiers.length)) {
-            aliased.push(name);
-            for (const ident of identifiers) {
-              ident.builtin = false;
-              ident.name = name + "_alias";
-            }
-          }
-        });
-        program.body = block(
-          aliased
-            .map((x) => assignment(x + "_alias", id(x, true)) as Expr)
-            .concat(
-              program.body.kind === "Block"
-                ? program.body.children
-                : [program.body]
-            )
-        );
-        usedBuiltins.clear();
-      }
+      // apply
+      const assignments: (IR.Assignment & { variable: Identifier })[] = [];
+      const replacedDeep = spine.withReplacer((node) => {
+        if (
+          node.kind === "Identifier" &&
+          node.builtin &&
+          shouldAlias(node.name, timesUsed.get(node.name)!)
+        ) {
+          const alias = node.name + "_alias";
+          if (assignments.every((x) => x.variable.name !== alias))
+            assignments.push(assignment(alias, id(node.name, true)));
+          return { ...node, builtin: false, name: alias };
+        }
+      }).node as IR.Program;
+      return {
+        ...replacedDeep,
+        body: block([
+          ...assignments,
+          ...(program.body.kind === "Block"
+            ? program.body.children
+            : [program.body]),
+        ]),
+      };
     },
   };
 }

@@ -55,10 +55,7 @@ The npm alias `npm run cli` is equivalent to `npm run build; node dist/cli.js`
 
 Some concepts (visitor, Path, etc.) are similar to those used by the JavaScript transpiler Babel, so the [Babel plugin handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md) is worth skimming.
 
-### Adding a language
-
-Language implementations live under [/src/languages](https://github.com/jared-hughes/polygolf/tree/main/src/languages). Each language implements the `Language` interface. The two main steps of the logic are defined in `.plugins` and `.emitter`. The first one is a list of AST transforms (plugins) that should be applied for given language. Most of these plugins are shared among langugages, but there might be language specific plugins. The plugins are where all the golfing should happen. The second step maps the transformed tree to tokens in the target language.
-After the language is implemented, it should be added to [/src/cli.ts](https://github.com/jared-hughes/polygolf/tree/main/src/cli.ts).
+For details about the Polygolf internals, see [Architecture](https://github.com/jared-hughes/polygolf/blob/main/docs/architecture.md).
 
 ## Competitiveness
 
@@ -84,7 +81,7 @@ or
 If the expression is top level or a direct child of a block, it is to be semicolon terminated instead:
 `opcode arg1 arg2 arg3 ...;`
 or
-`arg1 opsymbol arg2`
+`arg1 opsymbol arg2;`
 
 Only symbols and division ops can be used in place of `opsymbol`.
 

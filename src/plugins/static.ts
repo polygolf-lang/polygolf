@@ -6,41 +6,30 @@ import {
   polygolfOp,
   StringLiteral,
   stringLiteral,
-  variants,
   voidType,
 } from "../IR";
 import { getType } from "../common/getType";
-import { Path, Visitor } from "../common/traverse";
+import { Plugin } from "../common/Language";
 
-const golfedStringListLiterals = new WeakMap();
-export const golfStringListLiteral: Visitor = {
+export const golfStringListLiteral: Plugin = {
   name: "golfStringListLiteral",
-  generatesVariants: true,
-  exit(path: Path) {
-    const node = path.node;
+  visit(node) {
     if (
       node.kind === "ListConstructor" &&
-      node.exprs.every((x) => x.kind === "StringLiteral") &&
-      !golfedStringListLiterals.has(node)
+      node.exprs.every((x) => x.kind === "StringLiteral")
     ) {
-      golfedStringListLiterals.set(node, true);
       const strings = (node.exprs as StringLiteral[]).map((x) => x.value);
       const delim = getDelim(strings);
-      path.replaceWith(
-        variants([
-          node,
-          delim === " "
-            ? polygolfOp(
-                "text_split_whitespace",
-                stringLiteral(strings.join(delim))
-              )
-            : polygolfOp(
-                "text_split",
-                stringLiteral(strings.join(delim)),
-                stringLiteral(delim)
-              ),
-        ])
-      );
+      return delim === " "
+        ? polygolfOp(
+            "text_split_whitespace",
+            stringLiteral(strings.join(delim))
+          )
+        : polygolfOp(
+            "text_split",
+            stringLiteral(strings.join(delim)),
+            stringLiteral(delim)
+          );
     }
   },
 };
@@ -61,10 +50,9 @@ function getDelim(strings: string[]): string {
   return String(i);
 }
 
-export const evalStaticExpr: Visitor = {
+export const evalStaticExpr: Plugin = {
   name: "evalStaticExpr",
-  enter(path: Path) {
-    const node = path.node;
+  visit(node, spine) {
     if (
       "op" in node &&
       node.op !== null &&
@@ -75,7 +63,7 @@ export const evalStaticExpr: Visitor = {
       let type = voidType;
       try {
         // encoutering nodes that we don't know the type of is fine
-        type = getType(node, path.root.node);
+        type = getType(node, spine.root.node);
       } catch {}
       if (
         // if the inferred type of the node is a constant integer, replace it with a literal node
@@ -83,11 +71,11 @@ export const evalStaticExpr: Visitor = {
         isFiniteBound(type.low) &&
         type.low === type.high
       ) {
-        path.replaceWith(int(type.low));
+        return int(type.low);
       } else if (args.every((x) => x.kind === "StringLiteral")) {
         const argsVals = args.map((x) => (x as StringLiteral).value);
         if (node.op === "text_concat")
-          path.replaceWith(stringLiteral(argsVals[0].concat(argsVals[1])));
+          return stringLiteral(argsVals[0].concat(argsVals[1]));
       }
     }
   },

@@ -6,11 +6,10 @@ import {
   importStatement,
   manyToManyAssignment,
   methodCall,
-  Program,
   varDeclarationWithAssignment,
 } from "../../IR";
-import { Path, Visitor } from "../../common/traverse";
 import { getType } from "../../common/getType";
+import { Plugin } from "../../common/Language";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -34,11 +33,33 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-export const addImports: Visitor = {
+const dependencyMap = new Map([
+  ["^", "math"],
+  ["repeat", "strutils"],
+  ["paramStr", "os"],
+  ["split", "strutils"],
+  ["hash", "hashes"],
+]);
+export const addImports: Plugin = {
   name: "addImports",
-  enterProgram(program: Program) {
-    const dependencies = [...program.dependencies];
+  visit(program, spine) {
+    if (program.kind !== "Program") return;
+    // get dependencies
+    // TODO: abstract this part for other languages
+    // TODO: cache, and maybe do recursive merging for performance
+    const dependenciesGen = spine.compactMap((node) => {
+      let op: string = node.kind;
+      if (node.kind === "BinaryOp" || node.kind === "UnaryOp") op = node.name;
+      if (node.kind === "FunctionCall") op = node.ident.name;
+      if (node.kind === "MethodCall") op = node.ident.name;
+      if (dependencyMap.has(op)) {
+        return dependencyMap.get(op)!;
+      }
+      if (node.kind === "TableConstructor") return "tables";
+    });
+    const dependencies = [...new Set(dependenciesGen)];
     if (dependencies.length < 1) return;
+    // now actually apply dependencies
     let imports: ImportStatement;
     for (const include of includes) {
       if (include[0].length > dependencies.join().length - 1) break;
@@ -48,26 +69,28 @@ export const addImports: Visitor = {
       }
     }
     imports ??= importStatement("import", dependencies);
-    program.body =
-      program.body.kind === "Block"
-        ? block([imports, ...program.body.children])
-        : block([imports, program.body]);
+    return {
+      ...program,
+      body:
+        program.body.kind === "Block"
+          ? block([imports, ...program.body.children])
+          : block([imports, program.body]),
+    };
   },
 };
 
 const declared: Set<string> = new Set<string>();
-export const addVarDeclarations: Visitor = {
+export const addVarDeclarations: Plugin = {
   name: "addVarDeclarations",
-  enter(path: Path) {
-    const node = path.node;
+  visit(node, spine) {
     if (node.kind === "Program") declared.clear();
     else if (
-      path.parent?.node.kind !== "Block" &&
+      spine.parent?.node.kind !== "Block" &&
       node.kind === "Assignment" &&
       node.variable.kind === "Identifier" &&
       !declared.has(node.variable.name)
     ) {
-      path.replaceWith(simplifyAssignments([node], false));
+      return simplifyAssignments([node], false);
     } else if (node.kind === "Block") {
       let assignments: Assignment[] = [];
       const newNodes: Expr[] = [];
@@ -76,7 +99,7 @@ export const addVarDeclarations: Visitor = {
           newNodes.push(
             simplifyAssignments(
               assignments,
-              path.parent?.node.kind === "Program" && assignments.length > 1
+              spine.parent?.node.kind === "Program" && assignments.length > 1
             )
           );
           assignments = [];
@@ -95,7 +118,10 @@ export const addVarDeclarations: Visitor = {
         }
       }
       processAssignments();
-      node.children = newNodes;
+      return {
+        ...node,
+        children: newNodes,
+      };
     }
   },
 };
@@ -120,11 +146,10 @@ function simplifyAssignments(
   );
 }
 
-export const useUnsignedDivision: Visitor = {
+export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
-  exit(path: Path) {
-    const node = path.node;
-    const program = path.root.node;
+  visit(node, spine) {
+    const program = spine.root.node;
     if (
       node.kind === "BinaryOp" &&
       (node.op === "trunc_div" || node.op === "rem")
@@ -139,25 +164,27 @@ export const useUnsignedDivision: Visitor = {
         right.low !== undefined &&
         right.low >= 0n
       ) {
-        node.name = node.op === "trunc_div" ? "/%" : "%%";
+        const name = node.op === "trunc_div" ? "/%" : "%%";
+        if (name !== node.name)
+          return {
+            ...node,
+            name,
+          };
       }
     }
   },
 };
 
-export const useUFCS: Visitor = {
+export const useUFCS: Plugin = {
   name: "useUFCS",
-  exit(path: Path) {
-    const node = path.node;
+  visit(node) {
     if (node.kind === "FunctionCall" && node.args.length > 0) {
       if (node.args.length === 1 && node.args[0].kind === "StringLiteral") {
         return;
       }
       const [obj, ...args] = node.args;
       if (obj.kind !== "BinaryOp" && obj.kind !== "UnaryOp") {
-        path.replaceWith(
-          methodCall(obj, args, node.ident, node.op ?? undefined)
-        );
+        return methodCall(obj, args, node.ident, node.op ?? undefined);
       }
     }
   },

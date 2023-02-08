@@ -4,7 +4,7 @@ import {
   joinGroups,
   needsParensPrecedence,
 } from "../../common/emit";
-import { PathFragment } from "../../common/traverse";
+import { PathFragment } from "../../common/fragments";
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {
@@ -150,7 +150,8 @@ function emitExpr(
 ): string[] {
   const inner = emitExprNoParens(
     expr,
-    parent.kind === "BinaryOp" && fragment === "left"
+    (parent.kind === "BinaryOp" && fragment === "left") ||
+      (parent.kind === "MethodCall" && fragment === "object")
   );
   return needsParens(expr, parent, fragment) ? ["(", ...inner, ")"] : inner;
 }
@@ -277,7 +278,7 @@ function emitExprNoParens(
         ];
       else
         return [
-          ...emitExpr(expr.object, expr),
+          ...emitExpr(expr.object, expr, "object"),
           ".",
           expr.ident.name,
           ...(expr.args.length > 0
@@ -306,6 +307,21 @@ function emitExprNoParens(
           ","
         ),
         "]",
+      ];
+    case "TableConstructor":
+      return [
+        "{",
+        ...joinGroups(
+          expr.kvPairs.map((x) => [
+            ...emitExprNoParens(x.key),
+            ":",
+            ...emitExprNoParens(x.value),
+          ]),
+          ","
+        ),
+        "}",
+        ".",
+        "toTable",
       ];
     case "IndexCall":
       if (expr.oneIndexed)
