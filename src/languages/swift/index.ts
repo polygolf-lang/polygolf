@@ -1,51 +1,48 @@
-import { functionCall, id, indexCall, methodCall } from "../../IR";
+import {
+  functionCall,
+  id,
+  indexCall,
+  methodCall,
+  int,
+  polygolfOp,
+} from "../../IR";
 import { Language } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { mapOps, plus1, useIndexCalls } from "../../plugins/ops";
-import { renameIdents } from "../../plugins/idents";
-import { addDependencies } from "../../plugins/dependencies";
-import { evalStaticExpr } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
-import { addImports } from "./plugins";
+import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
 import { addVarDeclarations } from "../nim/plugins";
-import { addMutatingBinaryOp } from "../../plugins/binaryOps";
+
+import { addImports } from "./plugins";
+import { renameIdents } from "../../plugins/idents";
+import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
+import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
+import { golfLastPrint } from "../../plugins/print";
 
 const swiftLanguage: Language = {
   name: "Swift",
+  extension: "swift",
   emitter: emitProgram,
-  plugins: [
-    addVarDeclarations,
-    useIndexCalls(),
+  golfPlugins: [
+    flipBinaryOps,
+    golfStringListLiteral,
+    evalStaticExpr,
     golfLastPrint(),
+  ],
+  emitPlugins: [useIndexCalls()],
+  finalEmitPlugins: [
     mapOps([
-      ["not", ["!", 120]],
-      ["neg", ["-", 120]],
-      ["bit_not", ["~", 120]],
-
-      ["mul", ["*", 110]],
-      ["div", ["/", 110]],
-      ["trunc_div", ["/", 110]],
-      ["mod", ["%", 110]],
-      ["bit_and", ["&", 110]],
-
-      ["add", ["+", 100]],
-      ["sub", ["-", 100]],
-      ["bit_or", ["|", 100]],
-      ["bit_xor", ["^", 100]],
-      ["text_concat", ["+", 100]],
-
-      ["lt", ["<", 40]],
-      ["leq", ["<=", 40]],
-      ["eq", ["==", 40]],
-      ["neq", ["!=", 40]],
-      ["geq", [">=", 40]],
-      ["gt", [">", 40]],
-
-      ["and", ["&&", 20]],
-
-      ["or", ["||", 10]],
-
+      [
+        "argv_get",
+        (x) =>
+          indexCall(
+            id("CommandLine.arguments", true),
+            polygolfOp("add", x[0], int(1n)),
+            "argv_get",
+            true
+          ),
+      ],
+    ]),
+    mapOps([
       [
         "text_get_byte",
         (x) =>
@@ -96,27 +93,56 @@ const swiftLanguage: Language = {
       ["println", (x) => functionCall([x[0]], "print")],
       ["print", (x) => functionCall([x[0]], "print")],
       ["text_to_int", (x) => functionCall([x[0]], "Int")],
-      [
-        "argv_get",
-        (x) =>
-          indexCall(
-            id("CommandLine.arguments", true),
-            plus1(x[0]),
-            "argv_get",
-            true
-          ),
-      ],
+
       ["max", (x) => functionCall(x, "max")],
       ["min", (x) => functionCall(x, "min")],
       ["abs", (x) => functionCall([x[0]], "math.abs")],
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
     ]),
-    evalStaticExpr,
-    addDependencies([["pow", "Foundation"]]),
+    mapPrecedenceOps(
+      [
+        ["not", "!"],
+        ["neg", "-"],
+        ["bit_not", "~"],
+      ],
+
+      [
+        ["mul", "*"],
+        ["div", "/"],
+        ["trunc_div", "/"],
+        ["mod", "%"],
+        ["rem", "%"],
+        ["bit_and", "&"],
+      ],
+
+      [
+        ["add", "+"],
+        ["sub", "-"],
+        ["bit_or", "|"],
+        ["bit_xor", "^"],
+        ["text_concat", "+"],
+      ],
+
+      [
+        ["lt", "<"],
+        ["leq", "<="],
+        ["eq", "=="],
+        ["neq", "!="],
+        ["geq", ">="],
+        ["gt", ">"],
+      ],
+
+      [["and", "&&"]],
+
+      [["or", "||"]]
+    ),
+
+    addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^"),
+
     addImports,
     renameIdents(),
-    addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^"),
+    addVarDeclarations,
   ],
 };
 
