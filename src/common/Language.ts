@@ -1,7 +1,10 @@
-import { IR } from "IR";
-import { Visitor } from "./Spine";
+import { Expr, IR } from "IR";
+import { Spine, Visitor } from "./Spine";
 
-export type OpTransformOutput = (args: readonly IR.Expr[]) => IR.Expr;
+export type OpTransformOutput = (
+  args: readonly IR.Expr[],
+  spine: Spine<Expr>
+) => IR.Expr;
 
 /** A language configuration.
  *

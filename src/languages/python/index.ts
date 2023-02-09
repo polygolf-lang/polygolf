@@ -1,4 +1,11 @@
-import { assignment, functionCall, id, indexCall, methodCall } from "../../IR";
+import {
+  assignment,
+  functionCall,
+  id,
+  indexCall,
+  methodCall,
+  stringLiteral,
+} from "../../IR";
 import { Language } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -8,6 +15,7 @@ import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
+import { getType } from "../../common/getType";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -32,7 +40,15 @@ const pythonLanguage: Language = {
       ["println", (x) => functionCall([x[0]], "print")],
       [
         "print",
-        (x) => functionCall([assignment(id("end", true), x[0])], "print"),
+        (x, spine) => {
+          const type = getType(x[0], spine.root.node);
+          return functionCall(
+            type.kind === "text"
+              ? [assignment(id("end", true), x[0])]
+              : [x[0], assignment(id("end", true), stringLiteral(""))],
+            "print"
+          );
+        },
       ],
     ]),
     mapPrecedenceOps(
