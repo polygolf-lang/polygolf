@@ -1,10 +1,9 @@
 ---
 name: Bug report
 about: Polygolf misbehaves and it's not related to producing wrong output
-title: ''
+title: ""
 labels: bug
-assignees: ''
-
+assignees: ""
 ---
 
 **Describe the bug**
