@@ -1,12 +1,5 @@
-import {
-  functionCall,
-  id,
-  indexCall,
-  methodCall,
-  rangeIndexCall,
-} from "../../IR";
+import { functionCall, id, rangeIndexCall } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
-import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
 import emitProgram from "./emit";
 import {
@@ -16,7 +9,6 @@ import {
   useIndexCalls,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
-import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
