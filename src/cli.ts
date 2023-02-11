@@ -4,7 +4,7 @@ import yargs from "yargs";
 import fs from "fs";
 import path from "path";
 import parse from "./frontend/parse";
-import applyLanguage from "./common/applyLanguage";
+import applyLanguage, { searchOptions } from "./common/applyLanguage";
 import { PolygolfError } from "./common/errors";
 
 import lua from "./languages/lua";
@@ -13,13 +13,7 @@ import python from "./languages/python";
 import polygolf from "./languages/polygolf";
 import golfscript from "./languages/golfscript";
 
-const languageTable = {
-  golfscript,
-  lua,
-  nim,
-  python,
-  polygolf: polygolf(true),
-};
+const languageTable = { golfscript, lua, nim, python, polygolf };
 
 const options = yargs()
   .options({
@@ -47,7 +41,7 @@ const lang = languageTable[options.lang];
 const code = fs.readFileSync(options.input, { encoding: "utf-8" });
 const prog = parse(code);
 try {
-  const result = applyLanguage(lang, prog);
+  const result = applyLanguage(lang, prog, searchOptions("full", "bytes"));
   if (options.output !== undefined) {
     fs.mkdirSync(path.dirname(options.output), { recursive: true });
     fs.writeFileSync(options.output, result);
@@ -70,6 +64,7 @@ try {
           "^"
       );
     }
+    process.exit(1);
   } else {
     throw e;
   }

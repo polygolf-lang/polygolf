@@ -40,7 +40,10 @@ import {
 } from "../IR";
 import grammar from "./grammar";
 
-export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
+export function sexpr(
+  callee: Identifier,
+  args: readonly (Expr | Block)[]
+): Expr {
   const opCode = canonicalOp(callee.name, args.length);
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
@@ -60,7 +63,9 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
         e.source
       );
   }
-  function assertIdentifiers(e: (Expr | Block)[]): asserts e is Identifier[] {
+  function assertIdentifiers(
+    e: readonly (Expr | Block)[]
+  ): asserts e is Identifier[] {
     e.forEach(assertIdentifier);
   }
   function assertExpr(e: Expr | Block): asserts e is Expr {
@@ -70,10 +75,10 @@ export function sexpr(callee: Identifier, args: (Expr | Block)[]): Expr {
         e.source
       );
   }
-  function assertExprs(e: (Expr | Block)[]): asserts e is Expr[] {
+  function assertExprs(e: readonly (Expr | Block)[]): asserts e is Expr[] {
     e.forEach(assertExpr);
   }
-  function assertKeyValues(e: Expr[]): asserts e is KeyValue[] {
+  function assertKeyValues(e: readonly Expr[]): asserts e is KeyValue[] {
     for (const x of e) {
       if (x.kind !== "KeyValue")
         throw new PolygolfError(
@@ -304,9 +309,12 @@ export function integerType(
 
 export function refSource(node: Node, ref?: Token | Node): Node {
   if (ref === undefined) return node;
-  if ("line" in ref) node.source = { line: ref.line, column: ref.col };
-  else node.source = ref.source;
-  return node;
+  const source =
+    "line" in ref ? { line: ref.line, column: ref.col } : ref.source;
+  return {
+    ...node,
+    source,
+  };
 }
 
 export default function parse(code: string) {

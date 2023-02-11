@@ -1,5 +1,5 @@
 import { IR } from "IR";
-import { getChildren, PathFragment } from "./traverse";
+import { getChildren, PathFragment } from "./fragments";
 
 export function needsParensPrecedence(
   expr: IR.Expr,

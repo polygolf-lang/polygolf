@@ -1,4 +1,9 @@
-import { emitStringLiteral, joinGroups } from "../../common/emit";
+import { PathFragment } from "../../common/fragments";
+import {
+  emitStringLiteral,
+  joinGroups,
+  needsParensPrecedence,
+} from "../../common/emit";
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): string[] {
@@ -143,3 +148,26 @@ function emitExpr(expr: IR.Expr): string[] {
       );
   }
 }
+
+/**
+ * Does expr need parens around it to override precedence?
+ * This does not include needing parens for stuff like function calls
+ */
+function needsParens(
+  expr: IR.Expr,
+  parent: IR.Node,
+  fragment?: PathFragment
+): boolean {
+  if (needsParensPrecedence(expr, parent, fragment)) {
+    return true;
+  }
+  if (
+    parent.kind === "MethodCall" &&
+    expr === parent.object &&
+    expr.kind !== "Identifier" &&
+    expr.kind !== "IndexCall"
+  )
+    return true;
+  return false;
+}
+

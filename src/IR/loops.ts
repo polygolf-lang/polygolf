@@ -6,9 +6,9 @@ import { Expr, Identifier, id, int, block, BaseExpr } from "./IR";
  * while (condition) { body }.
  */
 export interface WhileLoop extends BaseExpr {
-  kind: "WhileLoop";
-  condition: Expr;
-  body: Expr;
+  readonly kind: "WhileLoop";
+  readonly condition: Expr;
+  readonly body: Expr;
 }
 
 /**
@@ -20,13 +20,13 @@ export interface WhileLoop extends BaseExpr {
  * Python: for variable in range(low, high, increment):body.
  */
 export interface ForRange extends BaseExpr {
-  kind: "ForRange";
-  inclusive: boolean;
-  variable: Identifier;
-  low: Expr;
-  high: Expr;
-  increment: Expr;
-  body: Expr;
+  readonly kind: "ForRange";
+  readonly inclusive: boolean;
+  readonly variable: Identifier;
+  readonly low: Expr;
+  readonly high: Expr;
+  readonly increment: Expr;
+  readonly body: Expr;
 }
 
 /**
@@ -35,10 +35,10 @@ export interface ForRange extends BaseExpr {
  * Python: for variable in collection:body.
  */
 export interface ForEach extends BaseExpr {
-  kind: "ForEach";
-  variable: Identifier;
-  collection: Expr;
-  body: Expr;
+  readonly kind: "ForEach";
+  readonly variable: Identifier;
+  readonly collection: Expr;
+  readonly body: Expr;
 }
 
 /**
@@ -47,10 +47,10 @@ export interface ForEach extends BaseExpr {
  * Python: for variable in array:body.
  */
 export interface ForEachKey extends BaseExpr {
-  kind: "ForEachKey";
-  variable: Identifier;
-  table: Expr;
-  body: Expr;
+  readonly kind: "ForEachKey";
+  readonly variable: Identifier;
+  readonly table: Expr;
+  readonly body: Expr;
 }
 
 /**
@@ -59,11 +59,11 @@ export interface ForEachKey extends BaseExpr {
  * C: for(init;condition;append){body}.
  */
 export interface ForCLike extends BaseExpr {
-  kind: "ForCLike";
-  init: Expr;
-  condition: Expr;
-  append: Expr;
-  body: Expr;
+  readonly kind: "ForCLike";
+  readonly init: Expr;
+  readonly condition: Expr;
+  readonly append: Expr;
+  readonly body: Expr;
 }
 
 /**
@@ -72,11 +72,11 @@ export interface ForCLike extends BaseExpr {
  * Python: for variable in array:body.
  */
 export interface ForEachPair extends BaseExpr {
-  kind: "ForEachPair";
-  keyVariable: Identifier;
-  valueVariable: Identifier;
-  table: Expr;
-  body: Expr;
+  readonly kind: "ForEachPair";
+  readonly keyVariable: Identifier;
+  readonly valueVariable: Identifier;
+  readonly table: Expr;
+  readonly body: Expr;
 }
 
 export function whileLoop(condition: Expr, body: Expr): WhileLoop {
@@ -104,7 +104,7 @@ export function forRange(
 
 export function forRangeCommon(
   bounds: [string, Expr | number, Expr | number, (Expr | number)?, boolean?],
-  ...body: Expr[]
+  ...body: readonly Expr[]
 ): ForRange {
   return forRange(
     bounds[0],

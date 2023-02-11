@@ -1,22 +1,46 @@
-import { functionCall, id, rangeIndexCall } from "../../IR";
+import { functionCall, id, indexCall, methodCall,rangeIndexCall } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
+import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
 import emitProgram from "./emit";
-import { mapOps, useIndexCalls, plus1 } from "../../plugins/ops";
-import { addDependencies } from "../../plugins/dependencies";
-import { addImports } from "./plugins";
+import {
+  mapOps,
+  mapPrecedenceOps,
+  plus1,
+  useIndexCalls,
+} from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
+import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
+import { golfLastPrint } from "../../plugins/print";
+import { addImports } from "./plugins";
 
-const golfScriptLanguage: Language = {
-  name: "GolfScript",
+const golfscriptLanguage: Language = {
+  name: "Golfscript",
+  extension: "txt", // Golfscript doesn't appear to have a custom extension
   emitter: emitProgram,
-  plugins: [
+  golfPlugins: [
     flipBinaryOps,
-    useIndexCalls(),
+    evalStaticExpr,
+    golfLastPrint(),
+   
+  ],
+  emitPlugins: [ useIndexCalls()],
+  finalEmitPlugins: [
     mapOps([
-      ["not", "!"],
+      ["true", (_) => id("1", true)],
+      ["false", (_) => id("0", true)],
+      ["println", (x) => functionCall(x, "puts")],
+      ["print", (x) => functionCall(x, "print")],
+
+      [
+        "text_get_slice",
+        (x) => rangeIndexCall(x[0], x[1], plus1(x[2]), id("1", true)),
+      ],
+    ]),
+    mapPrecedenceOps(
+      [["not", "!"],
       ["bit_not", "~"],
       ["mul", "*"],
       ["div", "/"],
@@ -58,33 +82,11 @@ const golfScriptLanguage: Language = {
       ["max", "[]++$1="],
       ["min", "[]++$0="],
 
-      ["argv_get", "a\\="],
-
-      ["true", (_) => id("1", true)],
-      ["false", (_) => id("0", true)],
-      ["println", (x) => functionCall(x, "puts")],
-      ["print", (x) => functionCall(x, "print")],
-
-      [
-        "text_get_slice",
-        (x) => rangeIndexCall(x[0], x[1], plus1(x[2]), id("1", true)),
-      ],
-    ]),
-    evalStaticExpr,
-    addDependencies([["a\\=", "a"]]),
+      ["argv_get", "a\\="],]
+    ),
     addImports,
-
-    renameIdents({
-      // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
-      preferred(original: string) {
-        if (/n/i.test(original[0])) return ["m", "M"];
-        const lower = original[0].toLowerCase();
-        const upper = original[0].toUpperCase();
-        return [original[0], original[0] === lower ? upper : lower];
-      },
-      short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
-      general: (i: number) => "v" + i.toString(),
-    }),
+    renameIdents(),
+    
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>
@@ -95,4 +97,4 @@ const golfScriptLanguage: Language = {
   ),
 };
 
-export default golfScriptLanguage;
+export default golfscriptLanguage;

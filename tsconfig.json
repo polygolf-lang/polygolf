@@ -2,10 +2,14 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
+    "lib": ["esnext"],
     "sourceMap": true,
     "outDir": "dist",
     "strict": true,
     "baseUrl": "src",
+    "paths": {
+      "@/*": ["*"]
+    },
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
