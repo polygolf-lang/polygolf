@@ -1,4 +1,4 @@
-import { block, Assignment, assignment,id, importStatement } from "../../IR";
+import { block, Assignment, assignment, id, importStatement } from "../../IR";
 
 import { Plugin } from "../../common/Language";
 
@@ -25,11 +25,11 @@ export const addImports: Plugin = {
     // now actually apply dependencies
     const imports: Assignment = assignment(dependencies[0], id("", true));
     return {
-        ...program,
-        body: program.body.kind === "Block"
-        ? block([imports, ...program.body.children])
-        : block([imports, program.body]),
+      ...program,
+      body:
+        program.body.kind === "Block"
+          ? block([imports, ...program.body.children])
+          : block([imports, program.body]),
     };
-
-}
-}
+  },
+};

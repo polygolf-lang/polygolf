@@ -1,4 +1,10 @@
-import { functionCall, id, indexCall, methodCall,rangeIndexCall } from "../../IR";
+import {
+  functionCall,
+  id,
+  indexCall,
+  methodCall,
+  rangeIndexCall,
+} from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
@@ -20,13 +26,8 @@ const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "txt", // Golfscript doesn't appear to have a custom extension
   emitter: emitProgram,
-  golfPlugins: [
-    flipBinaryOps,
-    evalStaticExpr,
-    golfLastPrint(),
-   
-  ],
-  emitPlugins: [ useIndexCalls()],
+  golfPlugins: [flipBinaryOps, evalStaticExpr, golfLastPrint()],
+  emitPlugins: [useIndexCalls()],
   finalEmitPlugins: [
     mapOps([
       ["true", (_) => id("1", true)],
@@ -39,8 +40,8 @@ const golfscriptLanguage: Language = {
         (x) => rangeIndexCall(x[0], x[1], plus1(x[2]), id("1", true)),
       ],
     ]),
-    mapPrecedenceOps(
-      [["not", "!"],
+    mapPrecedenceOps([
+      ["not", "!"],
       ["bit_not", "~"],
       ["mul", "*"],
       ["div", "/"],
@@ -82,11 +83,10 @@ const golfscriptLanguage: Language = {
       ["max", "[]++$1="],
       ["min", "[]++$0="],
 
-      ["argv_get", "a\\="],]
-    ),
+      ["argv_get", "a\\="],
+    ]),
     addImports,
     renameIdents(),
-    
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>

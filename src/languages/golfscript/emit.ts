@@ -170,4 +170,3 @@ function needsParens(
     return true;
   return false;
 }
-
