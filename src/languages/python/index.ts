@@ -2,7 +2,12 @@ import { assignment, functionCall, id, indexCall, methodCall } from "../../IR";
 import { Language } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
+import {
+  equalityToInequality,
+  mapOps,
+  mapPrecedenceOps,
+  useIndexCalls,
+} from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forRangeToForEach } from "../../plugins/loops";
@@ -19,6 +24,7 @@ const pythonLanguage: Language = {
     tempVarToMultipleAssignment,
     forRangeToForEach,
     golfLastPrint(),
+    equalityToInequality,
   ],
   emitPlugins: [useIndexCalls()],
   finalEmitPlugins: [

@@ -7,7 +7,9 @@ import {
   IndexCall,
   indexCall,
   int,
+  IntegerType,
   isBinary,
+  isConstantType,
   OpCode,
   polygolfOp,
   unaryOp,
@@ -120,3 +122,38 @@ export function useIndexCalls(
 export function plus1(expr: Expr): Expr {
   return polygolfOp("add", expr, int(1n));
 }
+
+export const equalityToInequality: Plugin = {
+  name: "equalityToInequality",
+  visit(node, spine) {
+    if (node.kind === "PolygolfOp" && (node.op === "eq" || node.op === "neq")) {
+      const eq = node.op === "eq";
+      const [a, b] = [node.args[0], node.args[1]];
+      const [t1, t2] = [a, b].map((x) => getType(x, spine.root.node)) as [
+        IntegerType,
+        IntegerType
+      ];
+      if (isConstantType(t1)) {
+        if (t1.low === t2.low) {
+          // (0 == $x:0..9) -> (1 > $x:0..9)
+          return polygolfOp(eq ? "gt" : "lt", int(t1.low + 1n), b);
+        }
+        if (t1.low === t2.high) {
+          // (9 == $x:0..9) -> (8 < $x:0..9)
+          return polygolfOp(eq ? "lt" : "gt", int(t1.low - 1n), b);
+        }
+      }
+
+      if (isConstantType(t2)) {
+        if (t1.low === t2.low) {
+          // ($x:0..9 == 0) -> ($x:0..9 < 1)
+          return polygolfOp(eq ? "lt" : "gt", a, int(t2.low + 1n));
+        }
+        if (t1.high === t2.low) {
+          // ($x:0..9 == 9) -> ($x:0..9 > 8)
+          return polygolfOp(eq ? "gt" : "lt", a, int(t2.low - 1n));
+        }
+      }
+    }
+  },
+};
