@@ -115,7 +115,10 @@ const nimLanguage: Language = {
       ((/[A-Za-z0-9_]/.test(a[a.length - 1]) && /[A-Za-z0-9_]/.test(b[0])) ||
         ("=+-*/<>@$~&%|!?^.:\\".includes(a[a.length - 1]) &&
           "=+-*/<>@$~&%|!?^.:\\".includes(b[0])) ||
-        (/[A-Za-z]/.test(a[a.length - 1]) && b[0] === `"`))
+        (/[A-Za-z]/.test(a[a.length - 1]) &&
+          !["in", "else", "if", "while", "for"].includes(a) &&
+          `"=+-*/<>@$~&%|!?^.:\\`.includes(b[0]) &&
+          !["=", ":", ".", "::"].includes(b)))
   ),
 };
 

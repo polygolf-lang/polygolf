@@ -204,6 +204,7 @@ function emitExprNoParens(
     case "MutatingBinaryOp":
       return [
         ...emitExpr(expr.variable, expr),
+        "",
         expr.name + "=",
         ...emitExpr(expr.right, expr),
       ];
@@ -293,6 +294,7 @@ function emitExprNoParens(
     case "BinaryOp":
       return [
         ...emitExpr(expr.left, expr, "left"),
+        ...(/[A-Za-z]/.test(expr.name[0]) ? [] : [""]),
         expr.name,
         ...emitExpr(expr.right, expr, "right"),
       ];
