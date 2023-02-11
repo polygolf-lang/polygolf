@@ -1,8 +1,6 @@
-import { PathFragment } from "../../common/fragments";
 import {
   emitStringLiteral,
   joinGroups,
-  needsParensPrecedence,
 } from "../../common/emit";
 import { IR } from "../../IR";
 

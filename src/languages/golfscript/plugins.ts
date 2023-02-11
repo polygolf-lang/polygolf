@@ -1,4 +1,4 @@
-import { block, Assignment, assignment, id, importStatement } from "../../IR";
+import { block, Assignment, assignment, id } from "../../IR";
 
 import { Plugin } from "../../common/Language";
 
