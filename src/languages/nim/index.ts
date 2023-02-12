@@ -29,6 +29,7 @@ import {
 } from "../../plugins/packing";
 import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
+import { assertInt64 } from "../../plugins/types";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -110,15 +111,10 @@ const nimLanguage: Language = {
     addMutatingBinaryOp("+", "*", "-", "&"),
     useUFCS,
     useUnsignedDivision,
-    addImports([
-      ["^", "math"],
-      ["repeat", "strutils"],
-      ["paramStr", "os"],
-      ["split", "strutils"],
-      ["hash", "hashes"],
-    ]),
+    addImports,
     renameIdents(),
     addVarDeclarations,
+    assertInt64,
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>

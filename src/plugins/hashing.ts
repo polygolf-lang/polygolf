@@ -5,6 +5,7 @@ import {
   Expr,
   functionCall,
   int,
+  integerType,
   listConstructor,
   polygolfOp,
   StringLiteral,
@@ -25,7 +26,10 @@ export function tableHashing(
 ): Plugin {
   let hash: (x: Expr) => Expr;
   if (typeof hashNode === "string") {
-    hash = (x: Expr) => functionCall([x], hashNode);
+    hash = (x: Expr) => ({
+      ...functionCall([x], hashNode),
+      type: integerType(0, 2 ** 32 - 1),
+    });
   } else {
     hash = hashNode;
   }

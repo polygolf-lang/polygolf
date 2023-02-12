@@ -94,7 +94,7 @@ export function useIndexCalls(
       if (
         node.kind === "PolygolfOp" &&
         (ops.length === 0 || ops.includes(node.op)) &&
-        node.args[0].kind === "Identifier"
+        (node.args[0].kind === "Identifier" || node.op.endsWith("_get"))
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.startsWith("table_")) {
