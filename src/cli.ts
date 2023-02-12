@@ -15,7 +15,15 @@ import swift from "./languages/swift";
 import golfscript from "./languages/golfscript";
 import languages from "./languages/languages";
 
-const languageTable = { golfscript, lua, nim, python, polygolf, swift, all: "all"  };
+const languageTable = {
+  golfscript,
+  lua,
+  nim,
+  python,
+  polygolf,
+  swift,
+  all: "all",
+};
 
 const options = yargs()
   .options({
