@@ -10,11 +10,11 @@ print (3+1);
 print(4)
 ```
 
+## Multiline string literals require newlines between delimiters and string content
+
 ```polygolf
 print "abc\ndef\nghi\njkl\nmno\npqr\nstu\nvwx\nyz!";
 ```
-
-## Multiline string literals require newlines between delimiters and string content
 
 ```swift bytes
 print("""
