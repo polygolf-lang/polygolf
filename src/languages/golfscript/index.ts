@@ -28,7 +28,7 @@ const golfscriptLanguage: Language = {
       ["print", (x) => functionCall(x, "print")],
 
       [
-        "text_get_slice",
+        "text_get_byte_slice",
         (x) => rangeIndexCall(x[0], x[1], plus1(x[2]), id("1", true)),
       ],
     ]),
@@ -51,7 +51,7 @@ const golfscriptLanguage: Language = {
       ["and", "and"],
       ["or", "or"],
       ["text_get_byte", "="],
-      ["text_length", ","],
+      ["text_byte_length", ","],
       ["int_to_text", "`"],
       ["text_split", "/"],
       ["repeat", "*"],
@@ -69,9 +69,9 @@ const golfscriptLanguage: Language = {
       ["neq", "=!"],
       ["geq", "(>"],
       ["join", "''*"],
-      ["text_reversed", "-1%"],
-      ["text_get_char", "=[]+''+"],
-      ["byte_to_char", "[]+''+"],
+      ["text_byte_reversed", "-1%"],
+      ["text_get_byte", "=[]+''+"],
+      ["byte_to_text", "[]+''+"],
       ["max", "[]++$1="],
       ["min", "[]++$0="],
 

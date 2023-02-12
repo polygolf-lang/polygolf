@@ -557,7 +557,10 @@ function getOpCodeType(
       const codepointLength = (types[0] as TextType).codepointLength;
       return integerType(
         codepointLength.low,
-        mul(codepointLength.high, (types[0] as TextType).isAscii ? 1n : 4n)
+        min(
+          1n << 31n,
+          mul(codepointLength.high, (types[0] as TextType).isAscii ? 1n : 4n)
+        )
       );
     }
     case "text_codepoint_length":

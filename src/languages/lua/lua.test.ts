@@ -40,7 +40,7 @@ function testpolygolfOp(
           assignment({ ...id("I"), type: integerType(0, 4) }, int(4n)),
           assignment(
             "t",
-            annotate(stringLiteral("abc"), textType(integerType(), true))
+            annotate(stringLiteral("abc"), textType(integerType(0, 10), true))
           ),
           assignment("T", annotate(stringLiteral("DEF"), textType())),
           assignment("b", polygolfOp("true")),
