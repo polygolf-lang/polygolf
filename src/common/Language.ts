@@ -36,7 +36,7 @@ export interface Plugin {
   allOrNothing?: boolean;
 }
 
-interface TokenTreeArray extends Array<string | TokenTreeArray> {}
+type TokenTreeArray = Array<string | TokenTreeArray>;
 export type TokenTree = string | TokenTreeArray;
 export type Detokenizer = (tokens: TokenTree) => string;
 export type WhitespaceInsertLogic = (a: string, b: string) => boolean;

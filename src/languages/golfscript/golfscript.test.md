@@ -32,5 +32,5 @@ println (argv_get 5);
 ```
 
 ```golfscript bytes
-:a;5 a\=puts
+:a;5 a=puts
 ```
