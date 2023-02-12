@@ -1,33 +1,30 @@
-import { emitStringLiteral, joinGroups } from "../../common/emit";
+import { TokenTree } from "../../common/Language";
+import { emitStringLiteral } from "../../common/emit";
 import { IR } from "../../IR";
 
-export default function emitProgram(program: IR.Program): string[] {
+export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }
 
-function emitBlock(block: IR.Expr, parent: IR.Node): string[] {
+function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
   const children = block.kind === "Block" ? block.children : [block];
   if (parent.kind === "Program" || parent.kind === "ForRange") {
-    return joinGroups(children.map((stmt) => emitStatement(stmt, block)));
+    return children.map((stmt) => emitStatement(stmt, block));
   }
 
-  return [
-    "{",
-    ...joinGroups(children.map((stmt) => emitStatement(stmt, block))),
-    "}",
-  ];
+  return ["{", children.map((stmt) => emitStatement(stmt, block)), "}"];
 }
 
-function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
+function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
   switch (stmt.kind) {
     case "Block":
       return emitBlock(stmt, parent);
     case "ImportStatement":
-      return [stmt.name, ...joinGroups(stmt.modules.map((x) => [x]))];
+      return [stmt.name, ...stmt.modules]; // TODO the ... could be avoided if TokenTree was made readonly??
     case "WhileLoop":
       return [
-        ...emitBlock(stmt.condition, stmt),
-        ...emitBlock(stmt.body, stmt),
+        emitBlock(stmt.condition, stmt),
+        emitBlock(stmt.body, stmt),
         "while",
       ];
     case "ForRange": {
@@ -37,26 +34,24 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
       const increment = emitExpr(stmt.increment);
       const increment1 = increment.length === 1 && increment[0] === "1";
       return [
-        ...high,
+        high,
         ",",
-        ...(low0 ? [] : [...low, ">"]),
-        ...(increment1 ? [] : [...increment, "%"]),
+        low0 ? [] : [low, ">"],
+        increment1 ? [] : [increment, "%"],
         "{",
         ":",
-        ...emitExpr(stmt.variable),
+        emitExpr(stmt.variable),
         ";",
-        ...emitBlock(stmt.body, stmt),
+        emitBlock(stmt.body, stmt),
         "}",
         "%",
       ];
     }
     case "IfStatement":
       return [
-        ...emitExpr(stmt.condition),
-        ...emitBlock(stmt.consequent, stmt),
-        ...(stmt.alternate !== undefined
-          ? [...emitBlock(stmt.alternate, stmt)]
-          : ["{}"]),
+        emitExpr(stmt.condition),
+        emitBlock(stmt.consequent, stmt),
+        stmt.alternate !== undefined ? emitBlock(stmt.alternate, stmt) : "{}",
         "if",
       ];
     case "Variants":
@@ -73,10 +68,10 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): string[] {
   }
 }
 
-function emitExpr(expr: IR.Expr): string[] {
+function emitExpr(expr: IR.Expr): TokenTree {
   switch (expr.kind) {
     case "Assignment":
-      return [...emitExpr(expr.expr), ":", ...emitExpr(expr.variable), ";"];
+      return [emitExpr(expr.expr), ":", emitExpr(expr.variable), ";"];
     case "Identifier":
       return [expr.name];
     case "StringLiteral":
@@ -97,29 +92,26 @@ function emitExpr(expr: IR.Expr): string[] {
         ],
       ]);
     case "IntegerLiteral":
-      return [expr.value.toString()];
+      return expr.value.toString();
     case "FunctionCall":
-      return [
-        ...joinGroups(expr.args.map((arg) => emitExpr(arg))),
-        expr.ident.name,
-      ];
+      return [expr.args.map(emitExpr), expr.ident.name];
     case "BinaryOp":
-      return [...emitExpr(expr.left), ...emitExpr(expr.right), expr.name];
+      return [emitExpr(expr.left), emitExpr(expr.right), expr.name];
     case "UnaryOp":
-      return [...emitExpr(expr.arg), expr.name];
+      return [emitExpr(expr.arg), expr.name];
     case "ListConstructor":
-      return ["[", ...joinGroups(expr.exprs.map((x) => emitExpr(x))), "]"];
+      return ["[", expr.exprs.map(emitExpr), "]"];
     case "ConditionalOp":
       return [
-        ...emitExpr(expr.condition),
-        ...emitExpr(expr.consequent),
-        ...emitExpr(expr.alternate),
+        emitExpr(expr.condition),
+        emitExpr(expr.consequent),
+        emitExpr(expr.alternate),
         "if",
       ];
     case "IndexCall":
       if (expr.oneIndexed)
         throw new Error("GolfScript only supports zeroIndexed access.");
-      return [...emitExpr(expr.collection), ...emitExpr(expr.index), "="];
+      return [emitExpr(expr.collection), emitExpr(expr.index), "="];
     case "RangeIndexCall": {
       const step = emitExpr(expr.step);
       const step1 = step.length === 1 && step[0] === "1";
@@ -127,12 +119,12 @@ function emitExpr(expr: IR.Expr): string[] {
         throw new Error("GolfScript only supports zeroIndexed access.");
 
       return [
-        ...emitExpr(expr.collection),
-        ...emitExpr(expr.high),
+        emitExpr(expr.collection),
+        emitExpr(expr.high),
         "<",
-        ...emitExpr(expr.low),
+        emitExpr(expr.low),
         ">",
-        ...(step1 ? [] : [...step, "%"]),
+        step1 ? [] : [step, "%"],
       ];
     }
     default:

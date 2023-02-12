@@ -303,11 +303,11 @@ function emitExprNoParens(
     case "TableConstructor":
       return [
         "{",
-        ...joinGroups(
+        joinTrees(
           expr.kvPairs.map((x) => [
-            ...emitExprNoParens(x.key),
+            emitExprNoParens(x.key),
             ":",
-            ...emitExprNoParens(x.value),
+            emitExprNoParens(x.value),
           ]),
           ","
         ),
