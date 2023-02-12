@@ -18,7 +18,6 @@ export const addImports: Plugin = {
       if (dependencyMap.has(op)) {
         return dependencyMap.get(op)!;
       }
-      if (node.kind === "TableConstructor") return "tables";
     });
     const dependencies = [...new Set(dependenciesGen)];
     if (dependencies.length < 1) return;

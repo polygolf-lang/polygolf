@@ -29,3 +29,15 @@ vwx
 yz!
 """)
 ```
+
+## Indexing a dictionary requires `!` to unwrap an Optional, unlike indexing a string or array
+
+```polygolf
+$a <- (text_get_byte "abc" 1);
+$b <- (table_get (table ("X" => "Y") ) "X");
+```
+
+```swift bytes
+a=Int(Array("abc".utf8)[1])
+b=["X":"Y"]["X"]!
+```

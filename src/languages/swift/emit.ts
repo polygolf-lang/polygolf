@@ -276,12 +276,26 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         ),
         "]",
       ];
+    case "TableConstructor":
+      return [
+        "[",
+        joinTrees(
+          expr.kvPairs.map((x) => [
+            emitExprNoParens(x.key),
+            ":",
+            emitExprNoParens(x.value),
+          ]),
+          ","
+        ),
+        "]",
+      ];
     case "IndexCall":
       return [
         emitExprNoParens(expr.collection),
         "[",
         emitExprNoParens(expr.index),
         "]",
+        expr.collection.kind === "TableConstructor" ? "!" : "",
       ];
 
     default:
