@@ -1,5 +1,6 @@
 import { IR } from "IR";
 import { getChildren, PathFragment } from "./fragments";
+import { TokenTree } from "./Language";
 
 export function needsParensPrecedence(
   expr: IR.Expr,
@@ -20,8 +21,8 @@ export function needsParensPrecedence(
   return false;
 }
 
-export function joinGroups(groups: string[][], ...sep: string[]): string[] {
-  return groups.flatMap((x, i) => (i > 0 ? [...sep, ...x] : x));
+export function joinTrees(groups: TokenTree[], ...sep: TokenTree[]): TokenTree {
+  return groups.map((x, i) => (i > 0 ? [sep, x] : x));
 }
 
 /**
@@ -42,7 +43,7 @@ export function emitStringLiteral(
       ],
     ],
   ]
-) {
+): string {
   let result = "";
   for (const [delim, escapes] of options) {
     if (escapes.some((x) => x[1] === null && value.includes(x[0]))) continue;
@@ -55,7 +56,7 @@ export function emitStringLiteral(
     else current = delim[0] + current + delim[1];
     if (result === "" || current.length < result.length) result = current;
   }
-  return [result];
+  return result;
 }
 
 export function hasChildWithBlock(node: IR.Node): boolean {
