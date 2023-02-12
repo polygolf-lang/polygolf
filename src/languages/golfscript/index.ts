@@ -16,7 +16,7 @@ import { addImports } from "./plugins";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
-  extension: "txt", // Golfscript doesn't appear to have a custom extension
+  extension: "gs",
   emitter: emitProgram,
   golfPlugins: [flipBinaryOps, evalStaticExpr, golfLastPrint()],
   emitPlugins: [useIndexCalls()],
