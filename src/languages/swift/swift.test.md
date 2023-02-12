@@ -1,14 +1,5 @@
 # Swift
 
-## Test eval static expr
-
-```polygolf
-print (3+1);
-```
-
-```swift bytes
-print(4)
-```
 
 ## Multiline string literals require newlines between delimiters and string content
 
