@@ -75,7 +75,7 @@ const golfscriptLanguage: Language = {
       ["max", "[]++$1="],
       ["min", "[]++$0="],
 
-      ["argv_get", "a\\="],
+      ["argv_get", "a="],
     ]),
     addImports,
     renameIdents(),

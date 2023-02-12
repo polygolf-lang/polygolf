@@ -2,7 +2,7 @@ import { block, Assignment, assignment, id } from "../../IR";
 
 import { Plugin } from "../../common/Language";
 
-const dependencyMap = new Map([["a\\=", "a"]]);
+const dependencyMap = new Map([["a=", "a"]]);
 export const addImports: Plugin = {
   name: "addImports",
   visit(program, spine) {
