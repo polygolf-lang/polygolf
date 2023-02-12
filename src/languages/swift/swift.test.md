@@ -1,6 +1,5 @@
 # Swift
 
-
 ## Multiline string literals require newlines between delimiters and string content
 
 ```polygolf
