@@ -200,7 +200,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
           ],
         ],
         [
-          `"""`,
+          [`"""\n`, `\n"""`],
           [
             [`\\`, `\\\\`],
             ...unicode01to09repls,
