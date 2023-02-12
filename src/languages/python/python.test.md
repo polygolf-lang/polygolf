@@ -9,10 +9,10 @@ print 4;
 
 ```python bytes
 p=print
-print(1)
-print(2,end="")
-print(end="3")
-print(4)
+p(1)
+p(2,end="")
+p(end="3")
+p(4)
 ```
 
 ```polygolf
