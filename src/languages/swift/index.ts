@@ -24,7 +24,7 @@ const swiftLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     flipBinaryOps,
-    golfStringListLiteral,
+    golfStringListLiteral(false),
     evalStaticExpr,
     golfLastPrint(),
   ],

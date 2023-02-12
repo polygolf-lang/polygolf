@@ -22,7 +22,7 @@ const pythonLanguage: Language = {
   extension: "py",
   emitter: emitProgram,
   golfPlugins: [
-    golfStringListLiteral,
+    golfStringListLiteral(),
     evalStaticExpr,
     tempVarToMultipleAssignment,
     forRangeToForEach,
