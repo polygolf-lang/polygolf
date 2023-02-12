@@ -4,8 +4,10 @@ import nimLanguage from "./nim";
 import polygolfLanguage from "./polygolf";
 import pythonLanguage from "./python";
 import swiftLanguage from "./swift";
+import golfscriptLanguage from "./golfscript";
 
 const languages = [
+  golfscriptLanguage,
   luaLanguage,
   nimLanguage,
   pythonLanguage,
