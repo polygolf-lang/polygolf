@@ -26,6 +26,7 @@ import { golfLastPrint } from "../../plugins/print";
 import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
 import { useEquivalentTextOp } from "../../plugins/textOps";
+import { assertInt64 } from "../../plugins/types";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -109,6 +110,7 @@ const nimLanguage: Language = {
     addImports,
     renameIdents(),
     addVarDeclarations,
+    assertInt64,
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>

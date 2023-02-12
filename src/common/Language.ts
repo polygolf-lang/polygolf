@@ -36,7 +36,9 @@ export interface Plugin {
   allOrNothing?: boolean;
 }
 
-export type Detokenizer = (tokens: string[]) => string;
+interface TokenTreeArray extends Array<string | TokenTreeArray> {}
+export type TokenTree = string | TokenTreeArray;
+export type Detokenizer = (tokens: TokenTree) => string;
 export type WhitespaceInsertLogic = (a: string, b: string) => boolean;
 
 export interface IdentifierGenerator {
@@ -45,7 +47,7 @@ export interface IdentifierGenerator {
   general: (i: number) => string;
 }
 
-export type Emitter = (program: IR.Program) => string[];
+export type Emitter = (program: IR.Program) => TokenTree;
 
 function isAlphaNum(a: string, i: number): boolean {
   return /[A-Za-z0-9]/.test(a[i]);
@@ -59,7 +61,9 @@ export function defaultDetokenizer(
   whitespace: WhitespaceInsertLogic = defaultWhitespaceInsertLogic,
   indent = 1
 ): Detokenizer {
-  return function (tokens: string[]): string {
+  return function (tokenTree: TokenTree): string {
+    // @ts-expect-error
+    const tokens: string[] = [tokenTree].flat(Infinity); // it seems ts doesn't understand flattening the tree
     let indentLevel = 0;
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {

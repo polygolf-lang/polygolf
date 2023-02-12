@@ -63,9 +63,22 @@ export type Type =
 
 export const booleanType: Type = { kind: "boolean" };
 export const voidType: Type = { kind: "void" };
+export const int64Type: Type = integerType(
+  -9223372036854775808n,
+  9223372036854775807n
+);
 
-function type(type: Type | "void" | "boolean"): Type {
-  return type === "boolean" ? booleanType : type === "void" ? voidType : type;
+export function type(type: Type | "void" | "boolean" | "int64"): Type {
+  switch (type) {
+    case "void":
+      return voidType;
+    case "boolean":
+      return booleanType;
+    case "int64":
+      return int64Type;
+    default:
+      return type;
+  }
 }
 
 export function functionType(args: Type[], result: Type): FunctionType {
