@@ -15,6 +15,7 @@ import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
+import { assertInt64 } from "../../plugins/types";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -88,6 +89,7 @@ const luaLanguage: Language = {
       [["or", "or"]]
     ),
     renameIdents(),
+    assertInt64,
   ],
 };
 

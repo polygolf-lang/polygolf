@@ -11,33 +11,38 @@ import {
 import { getType } from "../common/getType";
 import { Plugin } from "../common/Language";
 
-export const golfStringListLiteral: Plugin = {
-  name: "golfStringListLiteral",
-  visit(node) {
-    if (
-      node.kind === "ListConstructor" &&
-      node.exprs.every((x) => x.kind === "StringLiteral")
-    ) {
-      const strings = (node.exprs as StringLiteral[]).map((x) => x.value);
-      const delim = getDelim(strings);
-      return delim === " "
-        ? polygolfOp(
-            "text_split_whitespace",
-            stringLiteral(strings.join(delim))
-          )
-        : polygolfOp(
-            "text_split",
-            stringLiteral(strings.join(delim)),
-            stringLiteral(delim)
-          );
-    }
-  },
-};
+export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
+  return {
+    name: "golfStringListLiteral",
+    visit(node) {
+      if (
+        node.kind === "ListConstructor" &&
+        node.exprs.every((x) => x.kind === "StringLiteral")
+      ) {
+        const strings = (node.exprs as StringLiteral[]).map((x) => x.value);
+        const delim = getDelim(strings, useTextSplitWhitespace);
+        return delim === true
+          ? polygolfOp(
+              "text_split_whitespace",
+              stringLiteral(strings.join(" "))
+            )
+          : polygolfOp(
+              "text_split",
+              stringLiteral(strings.join(delim)),
+              stringLiteral(delim)
+            );
+      }
+    },
+  };
+}
 
-function getDelim(strings: string[]): string {
+function getDelim(
+  strings: string[],
+  useTextSplitWhitespace = true
+): string | true {
   const string = strings.join();
-  if (!/\s/.test(string)) return " ";
-  for (let i = 33; i < 127; i++) {
+  if (!/\s/.test(string) && useTextSplitWhitespace) return true;
+  for (let i = 32; i < 127; i++) {
     const c = String.fromCharCode(i);
     if (!string.includes(c)) {
       return c;

@@ -11,11 +11,13 @@ import {
   isBinary,
   isConstantType,
   OpCode,
+  PolygolfOp,
   polygolfOp,
   unaryOp,
   UnaryOpCode,
 } from "../IR";
 import { getType } from "../common/getType";
+import { Spine } from "@/common/Spine";
 
 export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
   const opMap = new Map<string, OpTransformOutput>(opMap0);
@@ -27,7 +29,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
         const op = node.op;
         const f = opMap.get(op);
         if (f !== undefined) {
-          let replacement = f(node.args);
+          let replacement = f(node.args, spine as Spine<PolygolfOp>);
           if ("op" in replacement && replacement.kind !== "PolygolfOp") {
             // "as any" because TS doesn't do well with the "in" keyword
             replacement = { ...(replacement as any), op: node.op };
