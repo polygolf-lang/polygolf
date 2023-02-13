@@ -102,3 +102,17 @@ else:
   else:p("d")
  else:p("e")
 ```
+
+## Associativity
+
+```polygolf
+$x <- 0:0..1;
+$a <- (($x + $x) + $x);
+$b <- ($x + ($x + $x));
+```
+
+```python bytes
+x=0
+a=x+x+x
+b=x+x+x
+```

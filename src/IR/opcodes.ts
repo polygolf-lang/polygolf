@@ -153,3 +153,17 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   }
   return null;
 }
+
+export function de(op: BinaryOpCode): boolean {
+  // TODO how to treat "and" and "or"?
+  return [
+    "add",
+    "mul",
+    "bit_and",
+    "bit_xor",
+    "gcd",
+    "min",
+    "max",
+    "text_concat",
+  ].includes(op);
+}

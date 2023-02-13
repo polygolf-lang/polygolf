@@ -1,6 +1,7 @@
 import { Plugin, OpTransformOutput } from "../common/Language";
 import {
   assignment,
+  Associativity,
   binaryOp,
   BinaryOpCode,
   Expr,
@@ -45,25 +46,18 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
  * @returns The plugin closure.
  */
 export function mapPrecedenceOps(
-  ...opMap0: [UnaryOpCode | BinaryOpCode, string, boolean?][][]
+  ...opMap0: [UnaryOpCode | BinaryOpCode, string, Associativity?][][]
 ): Plugin {
   function opTransform(
-    recipe: [UnaryOpCode | BinaryOpCode, string, boolean?],
+    recipe: [UnaryOpCode | BinaryOpCode, string, Associativity?],
     precedence: number
   ): [OpCode, OpTransformOutput] {
-    const [op, name, rightAssociative] = recipe;
+    const [op, name, associativity] = recipe;
     return [
       op,
       isBinary(op)
         ? (x: readonly Expr[]) =>
-            binaryOp(
-              op,
-              x[0],
-              x[1],
-              name,
-              precedence,
-              rightAssociative ?? (op === "pow" || op === "text_concat")
-            )
+            binaryOp(op, x[0], x[1], name, precedence, associativity)
         : (x: readonly Expr[]) => unaryOp(op, x[0], name, precedence),
     ];
   }

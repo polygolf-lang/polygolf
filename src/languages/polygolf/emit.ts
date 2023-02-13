@@ -137,7 +137,7 @@ export function emitExpr(
         "@",
         expr.op,
         String(expr.precedence),
-        String(expr.rightAssociative),
+        expr.associativity,
         expr.name,
         expr.left,
         expr.right

@@ -12,10 +12,12 @@ export function needsParensPrecedence(
   } else if (parent.kind === "BinaryOp" && expr.kind === "BinaryOp") {
     if (fragment === undefined) return true;
     if (fragment === "right") {
-      if (expr.rightAssociative) return expr.precedence < parent.precedence;
+      if (expr.associativity !== "left")
+        return expr.precedence < parent.precedence;
       return expr.precedence <= parent.precedence;
     }
-    if (expr.rightAssociative) return expr.precedence <= parent.precedence;
+    if (expr.associativity === "right")
+      return expr.precedence <= parent.precedence;
     return expr.precedence < parent.precedence;
   }
   return false;

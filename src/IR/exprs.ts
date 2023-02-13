@@ -62,6 +62,7 @@ export interface RangeIndexCall extends BaseExpr {
 
 export type LValue = Identifier | IndexCall;
 
+export type Associativity = "left" | "right" | "both";
 export interface BinaryOp extends BaseExpr {
   readonly kind: "BinaryOp";
   readonly op: BinaryOpCode;
@@ -69,7 +70,7 @@ export interface BinaryOp extends BaseExpr {
   readonly left: Expr;
   readonly right: Expr;
   readonly precedence: number;
-  readonly rightAssociative: boolean;
+  readonly associativity: Associativity;
 }
 
 /**
@@ -199,7 +200,7 @@ export function binaryOp(
   right: Expr,
   name: string = "",
   precedence: number,
-  rightAssociative?: boolean
+  associativity?: Associativity
 ): BinaryOp {
   return {
     kind: "BinaryOp",
@@ -208,8 +209,22 @@ export function binaryOp(
     right,
     name,
     precedence,
-    rightAssociative:
-      rightAssociative ?? (op === "pow" || op === "text_concat"),
+    associativity:
+      associativity ??
+      (op === "pow"
+        ? "right"
+        : [
+            "add",
+            "mul",
+            "bit_and",
+            "bit_xor",
+            "gcd",
+            "min",
+            "max",
+            "text_concat",
+          ].includes(op)
+        ? "both"
+        : "left"),
   };
 }
 
