@@ -45,7 +45,7 @@ export type Detokenizer = (tokens: TokenTree) => string;
 export type WhitespaceInsertLogic = (a: string, b: string) => boolean;
 
 export function flattenTree(tokenTree: TokenTree): string[] {
-  const flattened: string[] = [];
+  var flattened: string[] = [];
 
   function stepTree(t: TokenTree) {
     if (typeof t === "string") flattened.push(t);

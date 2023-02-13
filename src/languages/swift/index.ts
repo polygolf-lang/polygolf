@@ -6,7 +6,7 @@ import {
   int,
   polygolfOp,
 } from "../../IR";
-import { Language, TokenTree, flattenTree } from "../../common/Language";
+import { Language, TokenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
 import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
@@ -170,7 +170,13 @@ const swiftLanguage: Language = {
       );
     }
 
-    const tokens: string[] = flattenTree([tokenTree]);
+    // if #109 is merged, finiteFlatten can be imported from ../../common/Language
+    function finiteFlatten(tokenTree: TokenTree): string[] {
+      if (typeof tokenTree === "string") return [tokenTree];
+      return tokenTree.map(finiteFlatten).flat(1);
+    }
+
+    const tokens: string[] = finiteFlatten([tokenTree]);
 
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {
