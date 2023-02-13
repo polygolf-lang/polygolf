@@ -21,8 +21,8 @@ p(4)
 
 ```polygolf
 $a <- (text_get_char "abcdefg" 4);
-$a <- (text_get_slice "abcdefg" 1 3);
-$b <- (text_reversed "abcdefg");
+$b <- (text_get_slice "abcdefg" 1 3);
+$c <- (text_reversed "abcdefg");
 ```
 
 ```python bytes
