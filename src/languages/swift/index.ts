@@ -11,7 +11,7 @@ import { Language, TokenTree } from "../../common/Language";
 import emitProgram from "./emit";
 import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
 import { addVarDeclarations } from "../nim/plugins";
-
+import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { addImports } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
@@ -29,7 +29,7 @@ const swiftLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
   ],
-  emitPlugins: [useIndexCalls()],
+  emitPlugins: [modToRem, divToTruncdiv, useIndexCalls()],
   finalEmitPlugins: [
     mapOps([
       [
@@ -110,8 +110,8 @@ const swiftLanguage: Language = {
 
       [
         ["mul", "*"],
-        ["div", "/"],
-        ["mod", "%"],
+        ["trunc_div", "/"],
+        ["rem", "%"],
         ["bit_and", "&"],
       ],
 

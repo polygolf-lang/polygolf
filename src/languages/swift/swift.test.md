@@ -28,8 +28,7 @@ $b <- (table_get (table ("X" => "Y") ) "X");
 ```
 
 ```swift bytes
-a=Int(Array("abc".utf8)[1])
-b=["X":"Y"]["X"]!
+var a=Int(Array("abc".utf8)[1]),b=["X":"Y"]["X"]!
 ```
 
 ## Whitespace behavior
