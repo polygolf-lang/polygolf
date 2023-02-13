@@ -251,7 +251,6 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
     case "ConditionalOp":
       return [
         emitExpr(expr.condition, expr),
-        "",
         "?",
         emitExpr(expr.consequent, expr),
         ":",
@@ -260,9 +259,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
     case "BinaryOp":
       return [
         emitExpr(expr.left, expr, "left"),
-        expr.op === "neq" // `!=` needs spaces on both sides in Swift
-          ? ["", expr.name, ""]
-          : expr.name,
+        expr.name,
         emitExpr(expr.right, expr, "right"),
       ];
     case "UnaryOp":
