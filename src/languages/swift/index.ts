@@ -170,8 +170,13 @@ const swiftLanguage: Language = {
       );
     }
 
-    // @ts-expect-error
-    const tokens: string[] = [tokenTree].flat(Infinity); // it seems ts doesn't understand flattening the tree
+    // if #109 is merged, finiteFlatten can be imported from ../../common/Language
+    function finiteFlatten(tokenTree: TokenTree): string[] {
+      if (typeof tokenTree === "string") return [tokenTree];
+      return tokenTree.map(finiteFlatten).flat(1);
+    }
+
+    const tokens: string[] = finiteFlatten([tokenTree]);
 
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {
