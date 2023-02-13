@@ -100,6 +100,7 @@ const swiftLanguage: Language = {
       ["abs", (x) => functionCall([x[0]], "abs")],
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
+    
     ]),
     mapPrecedenceOps(
       [
@@ -111,9 +112,7 @@ const swiftLanguage: Language = {
       [
         ["mul", "*"],
         ["div", "/"],
-        ["trunc_div", "/"],
         ["mod", "%"],
-        ["rem", "%"],
         ["bit_and", "&"],
       ],
 
