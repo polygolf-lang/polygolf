@@ -108,6 +108,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitExpr(stmt.variable, stmt),
         "in",
         "countup",
+        "",
         "(",
         emitExpr(stmt.low, stmt),
         ",",
@@ -240,6 +241,7 @@ function emitExprNoParens(
       if (expressionContinues || expr.args.length > 1)
         return [
           expr.ident.name,
+          "",
           "(",
           joinTrees(
             expr.args.map((arg) => emitExpr(arg, expr)),
@@ -262,6 +264,7 @@ function emitExprNoParens(
           expr.ident.name,
           expr.args.length > 0
             ? [
+                "",
                 "(",
                 joinTrees(
                   expr.args.map((arg) => emitExpr(arg, expr)),

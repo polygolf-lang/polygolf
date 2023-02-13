@@ -122,11 +122,11 @@ const nimLanguage: Language = {
 
     if (
       /[A-Za-z]/.test(left) &&
-      !["in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"`).includes(right) &&
+      !["var", "in", "else", "if", "while", "for"].includes(a) &&
+      (symbols + `"(`).includes(right) &&
       !["=", ":", ".", "::"].includes(b)
     )
-      return true; // identifier meeting an operator or string literal
+      return true; // identifier meeting an operator or string literal or opening paren
 
     return false;
   }),
