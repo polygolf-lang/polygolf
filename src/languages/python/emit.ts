@@ -223,7 +223,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         emitExprNoParens(expr.index),
         "]",
       ];
-    case "RangeIndexCall":
+    case "RangeIndexCall": {
       if (expr.oneIndexed)
         throw new Error("Python only supports zeroIndexed access.");
       const low = emitExpr(expr.low, expr);
@@ -240,6 +240,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         step1 ? [] : [":", ...step],
         "]",
       ];
+    }
     default:
       throw new Error(
         `Unexpected node while emitting Python: ${expr.kind}: ${
