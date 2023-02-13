@@ -1,3 +1,4 @@
+import { stringify } from "../common/applyLanguage";
 import {
   assignment,
   Expr,
@@ -21,20 +22,6 @@ import {
   booleanType,
 } from "../IR";
 import parse from "./parse";
-
-function stringify(x: any): string {
-  // Jest complains it cannot serialize bigint
-  return JSON.stringify(
-    x,
-    (key, value) =>
-      key === "source"
-        ? undefined
-        : typeof value === "bigint"
-        ? value.toString() + "n"
-        : value,
-    2
-  );
-}
 
 function testStmtParse(desc: string, str: string, output: Node) {
   test(desc, () => {

@@ -124,6 +124,18 @@ export function applyLanguageToVariants(
   return ret;
 }
 
+export const stringify = (x: any) =>
+  JSON.stringify(
+    x,
+    (key, value) =>
+      key === "source"
+        ? undefined
+        : typeof value === "bigint"
+        ? value.toString() + "n"
+        : value,
+    2
+  );
+
 /** Returns an error if the program cannot be emitted */
 function golfProgram(
   program: IR.Program,
@@ -151,9 +163,7 @@ function golfProgram(
     //      `polygolfOp("+",a,b)` vs `functionCall("+",a,b)`)
     // room for improvement? custom compare function. Might be able to
     // O(log(nodes)) checking for duplicates instead of O(nodes) stringification
-    const s = JSON.stringify(prog, (_, value) =>
-      typeof value === "bigint" ? value.toString() + "n" : value
-    );
+    const s = stringify(prog);
     if (visited.has(s)) return;
     visited.add(s);
     try {

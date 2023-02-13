@@ -106,13 +106,27 @@ else:
 ## Associativity
 
 ```polygolf
-$x <- 0:0..1;
+$x <- 0:0..oo;
 $a <- (($x + $x) + $x);
 $b <- ($x + ($x + $x));
+$a <- (($a + $x) + $x);
+$a <- ($a + 1);
 ```
 
 ```python bytes
 x=0
 a=x+x+x
 b=x+x+x
+a+=x+x
+a+=1
+```
+
+```polygolf
+$x <- (list 0:0..oo);
+list_set $x 0 ((list_get $x 0) + 1);
+```
+
+```python bytes
+x=[0]
+x[0]+=1
 ```

@@ -137,7 +137,7 @@ const swiftLanguage: Language = {
       [["or", "||"]]
     ),
 
-    addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^"),
+    addMutatingBinaryOp(["+", "-", "*", "/", "%", "&", "|", "^"]),
 
     addImports,
     renameIdents(),

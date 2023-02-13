@@ -1,38 +1,96 @@
-import { flipOpCode, isBinary, mutatingBinaryOp, polygolfOp } from "../IR";
+import {
+  binaryOp,
+  BinaryOp,
+  BinaryOpCode,
+  Expr,
+  flipOpCode,
+  isBinary,
+  mutatingBinaryOp,
+  polygolfOp,
+} from "../IR";
 import { Plugin } from "../common/Language";
+import { stringify } from "../common/applyLanguage";
 
 // "a = a + b" --> "a += b"
-export function addMutatingBinaryOp(...ops: string[]): Plugin {
+export function addMutatingBinaryOp(
+  ops: string[],
+  associative: BinaryOpCode[] = [
+    "add",
+    "mul",
+    "bit_and",
+    "bit_xor",
+    "gcd",
+    "min",
+    "max",
+    "text_concat",
+  ]
+): Plugin {
   return {
-    name: `addMutatingBinaryOp(${ops.join(", ")})`,
+    name: `addMutatingBinaryOp([${ops.join(", ")}],[${associative.join(
+      ", "
+    )}])`,
     visit(node) {
       if (
         node.kind === "Assignment" &&
         node.expr.kind === "BinaryOp" &&
         ops.includes(node.expr.name)
       ) {
+        const root = node.expr;
+        const left = node.variable;
+        const [first, ...rest] = getAssociativeChainArgs(root, associative);
         if (
-          (node.expr.left.kind === "Identifier" &&
-            node.variable.kind === "Identifier" &&
-            node.variable.name === node.expr.left.name) ||
-          (node.expr.left.kind === "IndexCall" &&
-            node.expr.left.collection.kind === "Identifier" &&
-            node.variable.kind === "IndexCall" &&
-            node.variable.collection.kind === "Identifier" &&
-            node.variable.collection.name === node.expr.left.collection.name &&
-            JSON.stringify(node.variable.index) ===
-              JSON.stringify(node.expr.left.index))
+          (left.kind === "Identifier" &&
+            first.kind === "Identifier" &&
+            left.name === first.name) ||
+          (first.kind === "IndexCall" &&
+            first.collection.kind === "Identifier" &&
+            left.kind === "IndexCall" &&
+            left.collection.kind === "Identifier" &&
+            left.collection.name === first.collection.name &&
+            stringify(left.index) === stringify(first.index))
         ) {
           return mutatingBinaryOp(
             node.expr.op,
             node.variable,
-            node.expr.right,
+            rest.reduce((a, b) =>
+              binaryOp(
+                root.op,
+                a,
+                b,
+                root.name,
+                root.precedence,
+                root.associativity
+              )
+            ),
             node.expr.name
           );
         }
       }
     },
   };
+}
+
+function getAssociativeChainArgs(
+  root: BinaryOp,
+  associative: BinaryOpCode[]
+): Expr[] {
+  const result: Expr[] = [];
+  const isAssociative = associative.includes(root.op);
+  function traverse(node: Expr, isRoot = false) {
+    if (
+      node.kind === "BinaryOp" &&
+      node.op === root.op &&
+      node.precedence === root.precedence &&
+      (isRoot || isAssociative)
+    ) {
+      traverse(node.left);
+      traverse(node.right);
+    } else {
+      result.push(node);
+    }
+  }
+  traverse(root, true);
+  return result;
 }
 
 // (a + b) --> (b + a)

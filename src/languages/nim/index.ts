@@ -102,7 +102,7 @@ const nimLanguage: Language = {
         ["bit_xor", "xor"],
       ]
     ),
-    addMutatingBinaryOp("+", "*", "-", "&"),
+    addMutatingBinaryOp(["+", "*", "-", "&"]),
     useUFCS,
     useUnsignedDivision,
     addImports,

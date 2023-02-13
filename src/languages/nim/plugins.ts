@@ -10,6 +10,7 @@ import {
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { Plugin } from "../../common/Language";
+import { stringify } from "../../common/applyLanguage";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -157,7 +158,7 @@ export const useUnsignedDivision: Plugin = {
       const right = getType(node.right, program);
       const left = getType(node.left, program);
       if (right.kind !== "integer" || left.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify([left, right])}.`);
+        throw new Error(`Unexpected type ${stringify([left, right])}.`);
       if (
         left.low !== undefined &&
         left.low >= 0n &&

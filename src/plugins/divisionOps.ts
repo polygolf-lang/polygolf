@@ -1,3 +1,4 @@
+import { stringify } from "../common/applyLanguage";
 import { getType } from "../common/getType";
 import { Plugin } from "../common/Language";
 import { leq, polygolfOp } from "../IR";
@@ -9,7 +10,7 @@ export const modToRem: Plugin = {
     if (node.kind === "PolygolfOp" && node.op === "mod") {
       const rightType = getType(node.args[1], program);
       if (rightType.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
+        throw new Error(`Unexpected type ${stringify(rightType)}.`);
       if (leq(0n, rightType.low)) {
         return polygolfOp("rem", ...node.args);
       } else {
@@ -30,7 +31,7 @@ export const divToTruncdiv: Plugin = {
     if (node.kind === "PolygolfOp" && node.op === "div") {
       const rightType = getType(node.args[1], program);
       if (rightType.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
+        throw new Error(`Unexpected type ${stringify(rightType)}.`);
       if (rightType.low !== undefined && rightType.low >= 0n) {
         return {
           ...node,
