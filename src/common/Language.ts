@@ -70,7 +70,7 @@ export function defaultDetokenizer(
   indent = 1
 ): Detokenizer {
   return function (tokenTree: TokenTree): string {
-    const tokens: string[] = finiteFlatten([tokenTree]);
+    const tokens: string[] = finiteFlatten(tokenTree);
     let indentLevel = 0;
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {
