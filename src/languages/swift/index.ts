@@ -156,7 +156,7 @@ const swiftLanguage: Language = {
       nextToken: string
     ): boolean {
       return (
-        (/^[-+*\/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
+        (/^[-+*/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
         token === `!=`
       );
     }
