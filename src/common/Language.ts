@@ -1,7 +1,10 @@
-import { IR } from "IR";
-import { Visitor } from "./Spine";
+import { Expr, IR } from "IR";
+import { Spine, Visitor } from "./Spine";
 
-export type OpTransformOutput = (args: readonly IR.Expr[]) => IR.Expr;
+export type OpTransformOutput = (
+  args: readonly IR.Expr[],
+  spine: Spine<Expr>
+) => IR.Expr;
 
 export type Packer = (x: string) => string | null;
 
@@ -44,6 +47,17 @@ export type TokenTree = string | TokenTreeArray;
 export type Detokenizer = (tokens: TokenTree) => string;
 export type WhitespaceInsertLogic = (a: string, b: string) => boolean;
 
+export function flattenTree(tokenTree: TokenTree): string[] {
+  const flattened: string[] = [];
+
+  function stepTree(t: TokenTree) {
+    if (typeof t === "string") flattened.push(t);
+    else t.map(stepTree);
+  }
+  stepTree(tokenTree);
+  return flattened;
+}
+
 export interface IdentifierGenerator {
   preferred: (original: string) => string[];
   short: string[];
@@ -65,8 +79,7 @@ export function defaultDetokenizer(
   indent = 1
 ): Detokenizer {
   return function (tokenTree: TokenTree): string {
-    // @ts-expect-error
-    const tokens: string[] = [tokenTree].flat(Infinity); // it seems ts doesn't understand flattening the tree
+    const tokens: string[] = flattenTree(tokenTree);
     let indentLevel = 0;
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {

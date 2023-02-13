@@ -41,9 +41,10 @@ export function emitExpr(
   indent = false
 ): TokenTree {
   function emitSexpr(op: string, ...args: (TokenTree | Expr)[]): TokenTree {
+    const isNullary = ["argv", "true", "false"].includes(op);
     if (op === "@") op += expr.kind;
     const result: TokenTree = [];
-    if (!asStatement) result.push("(");
+    if (!asStatement && !isNullary) result.push("(");
     if (indent) result.push("$INDENT$", "\n");
     if (opAliases[op] !== undefined && args.length === 2) {
       let a = args[0];
@@ -66,7 +67,7 @@ export function emitExpr(
       result.push(";");
     } else {
       if (indent) result.push("$DEDENT$", "\n");
-      result.push(")");
+      if (!isNullary) result.push(")");
       if (expr.type !== undefined) result.push(":", toString(expr.type));
     }
     return result;

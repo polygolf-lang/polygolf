@@ -200,7 +200,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
           ],
         ],
         [
-          `"""`,
+          [`"""\n`, `\n"""`],
           [
             [`\\`, `\\\\`],
             ...unicode01to09repls,
@@ -251,7 +251,6 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
     case "ConditionalOp":
       return [
         emitExpr(expr.condition, expr),
-        "",
         "?",
         emitExpr(expr.consequent, expr),
         ":",
@@ -260,9 +259,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
     case "BinaryOp":
       return [
         emitExpr(expr.left, expr, "left"),
-        expr.op === "neq" // `!=` needs spaces on both sides in Swift
-          ? ["", expr.name, ""]
-          : expr.name,
+        expr.name,
         emitExpr(expr.right, expr, "right"),
       ];
     case "UnaryOp":
@@ -276,12 +273,26 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         ),
         "]",
       ];
+    case "TableConstructor":
+      return [
+        "[",
+        joinTrees(
+          expr.kvPairs.map((x) => [
+            emitExprNoParens(x.key),
+            ":",
+            emitExprNoParens(x.value),
+          ]),
+          ","
+        ),
+        "]",
+      ];
     case "IndexCall":
       return [
         emitExprNoParens(expr.collection),
         "[",
         emitExprNoParens(expr.index),
         "]",
+        expr.collection.kind === "TableConstructor" ? "!" : "",
       ];
 
     default:
