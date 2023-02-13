@@ -38,7 +38,7 @@ function stringify(x: any): string {
 
 function testStmtParse(desc: string, str: string, output: Node) {
   test(desc, () => {
-    expect(stringify(parse(str).body)).toEqual(stringify(output));
+    expect(stringify(parse(str, false).body)).toEqual(stringify(output));
   });
 }
 

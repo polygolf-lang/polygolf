@@ -37,9 +37,11 @@ import {
   functionType,
   func,
   conditional,
+  frontendOpcodes,
 } from "../IR";
 import grammar from "./grammar";
 
+let restrictFrontend = true;
 export function sexpr(
   callee: Identifier,
   args: readonly (Expr | Block)[]
@@ -153,7 +155,10 @@ export function sexpr(
       assertKeyValues(args);
       return tableConstructor(args);
   }
-  if (isOpCode(opCode)) {
+  if (
+    isOpCode(opCode) &&
+    (!restrictFrontend || frontendOpcodes.includes(opCode))
+  ) {
     if (isBinary(opCode)) {
       const allowNary = [
         "add",
@@ -317,7 +322,8 @@ export function refSource(node: Node, ref?: Token | Node): Node {
   };
 }
 
-export default function parse(code: string) {
+export default function parse(code: string, restrictedFrontend = true) {
+  restrictFrontend = restrictedFrontend;
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
   parser.feed(code);
   const results = parser.results;
