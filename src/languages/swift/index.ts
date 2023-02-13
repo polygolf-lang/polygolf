@@ -170,7 +170,7 @@ const swiftLanguage: Language = {
       );
     }
 
-    const tokens: string[] = flattenTree([tokenTree]);
+    const tokens: string[] = flattenTree(tokenTree);
 
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {
