@@ -44,6 +44,11 @@ export type TokenTree = string | TokenTreeArray;
 export type Detokenizer = (tokens: TokenTree) => string;
 export type WhitespaceInsertLogic = (a: string, b: string) => boolean;
 
+export function finiteFlatten(tokenTree: TokenTree): string[] {
+  if (typeof tokenTree === "string") return [tokenTree];
+  return tokenTree.map(finiteFlatten).flat(1);
+}
+
 export interface IdentifierGenerator {
   preferred: (original: string) => string[];
   short: string[];
@@ -65,8 +70,7 @@ export function defaultDetokenizer(
   indent = 1
 ): Detokenizer {
   return function (tokenTree: TokenTree): string {
-    // @ts-expect-error
-    const tokens: string[] = [tokenTree].flat(Infinity); // it seems ts doesn't understand flattening the tree
+    const tokens: string[] = finiteFlatten([tokenTree]);
     let indentLevel = 0;
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {
