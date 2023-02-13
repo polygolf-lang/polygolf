@@ -34,7 +34,7 @@ const nimLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     flipBinaryOps,
-    golfStringListLiteral,
+    golfStringListLiteral(),
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,

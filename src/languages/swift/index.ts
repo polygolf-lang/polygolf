@@ -6,17 +6,18 @@ import {
   int,
   polygolfOp,
 } from "../../IR";
-import { Language } from "../../common/Language";
+import { Language, TokenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
 import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
 import { addVarDeclarations } from "../nim/plugins";
-
+import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { addImports } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
+import { assertInt64 } from "../../plugins/types";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -24,11 +25,11 @@ const swiftLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     flipBinaryOps,
-    golfStringListLiteral,
+    golfStringListLiteral(false),
     evalStaticExpr,
     golfLastPrint(),
   ],
-  emitPlugins: [useIndexCalls()],
+  emitPlugins: [modToRem, divToTruncdiv, useIndexCalls()],
   finalEmitPlugins: [
     mapOps([
       [
@@ -111,9 +112,7 @@ const swiftLanguage: Language = {
 
       [
         ["mul", "*"],
-        ["div", "/"],
         ["trunc_div", "/"],
-        ["mod", "%"],
         ["rem", "%"],
         ["bit_and", "&"],
       ],
@@ -145,7 +144,54 @@ const swiftLanguage: Language = {
     addImports,
     renameIdents(),
     addVarDeclarations,
+    assertInt64,
   ],
+  // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
+  detokenizer: function (tokenTree: TokenTree): string {
+    function isAlphaNum(s: string): boolean {
+      return /[A-Za-z0-9]/.test(s);
+    }
+
+    // A binary op followed by a unary op needs whitespace on both sides, and `!=` always needs it
+    function needsWhiteSpaceOnBothSides(
+      token: string,
+      nextToken: string
+    ): boolean {
+      return (
+        (/^[-+*/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
+        token === `!=`
+      );
+    }
+
+    function needsWhiteSpace(prevToken: string, token: string): boolean {
+      return (
+        (isAlphaNum(prevToken[prevToken.length - 1]) && isAlphaNum(token[0])) ||
+        ([`if`, `in`, `while`].includes(prevToken) && token[0] !== `(`) ||
+        token[0] === `?` ||
+        needsWhiteSpaceOnBothSides(prevToken, token)
+      );
+    }
+
+    // if #109 is merged, finiteFlatten can be imported from ../../common/Language
+    function finiteFlatten(tokenTree: TokenTree): string[] {
+      if (typeof tokenTree === "string") return [tokenTree];
+      return tokenTree.map(finiteFlatten).flat(1);
+    }
+
+    const tokens: string[] = finiteFlatten([tokenTree]);
+
+    let result = tokens[0];
+    for (let i = 1; i < tokens.length; i++) {
+      if (
+        needsWhiteSpace(tokens[i - 1], tokens[i]) ||
+        (i + 1 < tokens.length &&
+          needsWhiteSpaceOnBothSides(tokens[i], tokens[i + 1]))
+      )
+        result += " ";
+      result += tokens[i];
+    }
+    return result.trim();
+  },
 };
 
 export default swiftLanguage;

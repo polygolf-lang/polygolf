@@ -116,9 +116,9 @@ export function aliasBuiltins(
         ...replacedDeep,
         body: block([
           ...assignments,
-          ...(program.body.kind === "Block"
-            ? program.body.children
-            : [program.body]),
+          ...(replacedDeep.body.kind === "Block"
+            ? replacedDeep.body.children
+            : [replacedDeep.body]),
         ]),
       };
     },
