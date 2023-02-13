@@ -17,6 +17,7 @@ import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
+import { assertInt64 } from "../../plugins/types";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -143,6 +144,7 @@ const swiftLanguage: Language = {
     addImports,
     renameIdents(),
     addVarDeclarations,
+    assertInt64,
   ],
 };
 
