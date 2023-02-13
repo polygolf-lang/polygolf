@@ -25,7 +25,6 @@ function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
       "$INDENT$",
       children.map((stmt) => ["\n", emitStatement(stmt, block)]),
       "$DEDENT$",
-      "\n",
     ];
   }
   return joinTrees(
