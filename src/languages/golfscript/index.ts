@@ -64,7 +64,7 @@ const golfscriptLanguage: Language = {
       ["join_using", "*"],
       ["sorted", "$"],
 
-      ["neg", "0-"],
+      ["neg", "-1*"],
       ["leq", ")<"],
       ["neq", "=!"],
       ["geq", "(>"],
