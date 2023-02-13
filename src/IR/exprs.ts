@@ -6,6 +6,7 @@ import {
   UnaryOpCode,
   BinaryOpCode,
   OpCode,
+  associativity as defaultAssociativity,
 } from "./IR";
 
 /**
@@ -209,22 +210,7 @@ export function binaryOp(
     right,
     name,
     precedence,
-    associativity:
-      associativity ??
-      (op === "pow"
-        ? "right"
-        : [
-            "add",
-            "mul",
-            "bit_and",
-            "bit_xor",
-            "gcd",
-            "min",
-            "max",
-            "text_concat",
-          ].includes(op)
-        ? "both"
-        : "left"),
+    associativity: associativity ?? defaultAssociativity(op),
   };
 }
 

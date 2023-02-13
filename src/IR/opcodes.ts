@@ -1,3 +1,5 @@
+import { Associativity } from "./exprs";
+
 export const BinaryOpCodeArray = [
   // (num, num) => num
   "add",
@@ -152,4 +154,21 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
       return "lt";
   }
   return null;
+}
+
+export function associativity(op: BinaryOpCode): Associativity {
+  return op === "pow"
+    ? "right"
+    : [
+        "add",
+        "mul",
+        "bit_and",
+        "bit_xor",
+        "gcd",
+        "min",
+        "max",
+        "text_concat",
+      ].includes(op)
+    ? "both"
+    : "left";
 }

@@ -37,6 +37,7 @@ import {
   functionType,
   func,
   conditional,
+  associativity,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -155,15 +156,7 @@ export function sexpr(
   }
   if (isOpCode(opCode)) {
     if (isBinary(opCode)) {
-      const allowNary = [
-        "add",
-        "mul",
-        "bit_and",
-        "bit_or",
-        "bit_xor",
-        "text_concat",
-      ].includes(opCode);
-      expectArity(2, allowNary ? Infinity : 2);
+      expectArity(2, associativity(opCode) === "both" ? Infinity : 2);
       return composedPolygolfOp(opCode, args);
     }
     expectArity(arity(opCode));
