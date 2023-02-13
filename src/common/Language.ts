@@ -44,9 +44,15 @@ export type TokenTree = string | TokenTreeArray;
 export type Detokenizer = (tokens: TokenTree) => string;
 export type WhitespaceInsertLogic = (a: string, b: string) => boolean;
 
-export function finiteFlatten(tokenTree: TokenTree): string[] {
-  if (typeof tokenTree === "string") return [tokenTree];
-  return tokenTree.map(finiteFlatten).flat(1);
+export function flattenTree(tokenTree: TokenTree): string[] {
+  var flattened: string[] = [];
+
+  function stepTree(t: TokenTree) {
+    if (typeof t === "string") flattened.push(t);
+    else t.map(stepTree);
+  }
+  stepTree(tokenTree);
+  return flattened;
 }
 
 export interface IdentifierGenerator {
@@ -70,7 +76,7 @@ export function defaultDetokenizer(
   indent = 1
 ): Detokenizer {
   return function (tokenTree: TokenTree): string {
-    const tokens: string[] = finiteFlatten(tokenTree);
+    const tokens: string[] = flattenTree(tokenTree);
     let indentLevel = 0;
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {
