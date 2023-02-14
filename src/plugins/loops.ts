@@ -203,3 +203,68 @@ function isListGet(node: IR.Node, collection: string, index: string) {
     args[1].name === index
   );
 }
+
+export const forArgvToForEach: Plugin = {
+  name: "forArgvToForEach",
+  visit(node) {
+    if (node.kind === "ForArgv") {
+      return forEach(node.variable, polygolfOp("argv"), node.body);
+    }
+  },
+};
+
+export const forArgvToForRangeOvershoot: Plugin = {
+  name: "forArgvToForRangeOvershoot",
+  visit(node) {
+    if (node.kind === "ForArgv") {
+      return forRange(
+        node.variable,
+        int(0),
+        int(node.argcUpperBound),
+        int(1),
+        node.body
+      );
+    }
+  },
+};
+
+export const forArgvToForRangeArgc: Plugin = {
+  name: "forArgvToForRangeArgc",
+  visit(node) {
+    if (node.kind === "ForArgv") {
+      return forRange(
+        node.variable,
+        int(0),
+        polygolfOp("argc"),
+        int(1),
+        node.body
+      );
+    }
+  },
+};
+
+export const assertForArgvTopLevel: Plugin = {
+  name: "assertForArgvTopLevel",
+  visit(node, spine) {
+    if (node.kind === "Program") {
+      let forArgvSeen = false;
+      for (const kind of spine.compactMap((x) => x.kind)) {
+        if (kind === "ForArgv") {
+          if (forArgvSeen)
+            throw new Error("Only a single for_argv node allowed.");
+          forArgvSeen = true;
+        }
+      }
+    }
+    if (node.kind === "ForArgv") {
+      if (
+        spine.parent?.node.kind !== "Program" &&
+        (spine.parent?.node.kind !== "Block" ||
+          spine.parent?.parent?.node.kind !== "Program")
+      ) {
+        throw new Error("Node for_argv only allowed at the top level.");
+      }
+    }
+    return undefined;
+  },
+};
