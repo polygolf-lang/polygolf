@@ -41,7 +41,7 @@ export function emitExpr(
   indent = false
 ): TokenTree {
   function emitSexpr(op: string, ...args: (TokenTree | Expr)[]): TokenTree {
-    const isNullary = ["argv", "true", "false"].includes(op);
+    const isNullary = ["argv", "argc", "true", "false"].includes(op);
     if (op === "@") op += expr.kind;
     const result: TokenTree = [];
     if (!asStatement && !isNullary) result.push("(");
@@ -227,6 +227,12 @@ export function emitExpr(
         expr.variable,
         expr.collection,
         ...emitExpr(expr.body, false, true)
+      );
+    case "ForArgv":
+      return emitSexpr(
+        "for_range",
+        expr.variable,
+        expr.argcUpperBound.toString()
       );
     case "ForEachKey":
       return emitSexpr(
