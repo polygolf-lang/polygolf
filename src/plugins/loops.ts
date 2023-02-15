@@ -12,6 +12,8 @@ import {
   id,
   IR,
   polygolfOp,
+  ForArgv,
+  ForRange,
 } from "../IR";
 
 export const forRangeToForRangeInclusive: Plugin = {
@@ -213,35 +215,26 @@ export const forArgvToForEach: Plugin = {
   },
 };
 
-export const forArgvToForRangeOvershoot: Plugin = {
-  name: "forArgvToForRangeOvershoot",
-  visit(node) {
-    if (node.kind === "ForArgv") {
-      return forRange(
-        node.variable,
-        int(0),
-        int(node.argcUpperBound),
-        int(1),
-        node.body
-      );
-    }
-  },
-};
-
-export const forArgvToForRangeArgc: Plugin = {
-  name: "forArgvToForRangeArgc",
-  visit(node) {
-    if (node.kind === "ForArgv") {
-      return forRange(
-        node.variable,
-        int(0),
-        polygolfOp("argc"),
-        int(1),
-        node.body
-      );
-    }
-  },
-};
+export function forArgvToForRange(overshoot = true): Plugin {
+  return {
+    name: `forArgvToForRange(${overshoot})`,
+    visit(node) {
+      if (node.kind === "ForArgv") {
+        const newBody = block([
+          assignment(node.variable, polygolfOp("argv_get")),
+          ...(node.body.kind === "Block" ? node.body.children : [node.body]),
+        ]);
+        return forRange(
+          node.variable,
+          int(0),
+          overshoot ? int(node.argcUpperBound) : polygolfOp("argc"),
+          int(1),
+          newBody
+        );
+      }
+    },
+  };
+}
 
 export const assertForArgvTopLevel: Plugin = {
   name: "assertForArgvTopLevel",
