@@ -13,15 +13,17 @@ import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { addImports } from "./plugins";
+import { forArgvToForEach } from "../../plugins/loops";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
   emitter: emitProgram,
   golfPlugins: [flipBinaryOps, evalStaticExpr, golfLastPrint()],
-  emitPlugins: [useIndexCalls()],
+  emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
     mapOps([
+      ["argv", (_) => id("a", true)],
       ["true", (_) => id("1", true)],
       ["false", (_) => id("0", true)],
       ["println", (x) => functionCall(x, "puts")],
