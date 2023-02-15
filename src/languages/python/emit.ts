@@ -241,6 +241,8 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         "]",
       ];
     }
+    case "ImportStatement":
+      return ["import", joinTrees([...expr.modules], ",")];
     default:
       throw new Error(
         `Unexpected node while emitting Python: ${expr.kind}: ${

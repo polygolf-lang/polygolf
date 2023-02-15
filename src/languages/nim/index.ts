@@ -1,16 +1,14 @@
-import {
-  functionCall,
-  id,
-  indexCall,
-  int,
-  polygolfOp,
-  rangeIndexCall,
-} from "../../IR";
+import { functionCall, id, indexCall, int, rangeIndexCall } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
-import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
+import {
+  mapOps,
+  mapPrecedenceOps,
+  plus1,
+  useIndexCalls,
+} from "../../plugins/ops";
 import {
   addImports,
   addVarDeclarations,
@@ -19,7 +17,11 @@ import {
 } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
-import { useInclusiveForRange } from "../../plugins/loops";
+import {
+  forArgvToForEach,
+  forArgvToForRange,
+  useInclusiveForRange,
+} from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
@@ -38,15 +40,20 @@ const nimLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
     tableHashing(hash),
+    forArgvToForEach,
+    forArgvToForRange(),
   ],
-  emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
-  finalEmitPlugins: [
+  emitPlugins: [
+    modToRem,
+    divToTruncdiv,
+    useInclusiveForRange,
+    useIndexCalls(),
     mapOps([
-      [
-        "argv_get",
-        (x) => functionCall([polygolfOp("add", x[0], int(1n))], "paramStr"),
-      ],
+      ["argv", (x) => functionCall([], "commandLineParams")],
+      ["argv_get", (x) => functionCall([plus1(x[0])], "paramStr")],
     ]),
+  ],
+  finalEmitPlugins: [
     mapOps([
       ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["text_get_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],

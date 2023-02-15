@@ -1,11 +1,4 @@
-import {
-  functionCall,
-  id,
-  indexCall,
-  methodCall,
-  int,
-  polygolfOp,
-} from "../../IR";
+import { functionCall, id, indexCall, methodCall } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -18,6 +11,7 @@ import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
+import { forArgvToForEach } from "../../plugins/loops";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -29,20 +23,9 @@ const swiftLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
   ],
-  emitPlugins: [modToRem, divToTruncdiv, useIndexCalls()],
+  emitPlugins: [modToRem, divToTruncdiv, useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
-    mapOps([
-      [
-        "argv_get",
-        (x) =>
-          indexCall(
-            id("CommandLine.arguments", true),
-            polygolfOp("add", x[0], int(1n)),
-            "argv_get",
-            true
-          ),
-      ],
-    ]),
+    mapOps([["argv", (x) => id("CommandLine.arguments[1...]", true)]]),
     mapOps([
       [
         "text_get_byte",

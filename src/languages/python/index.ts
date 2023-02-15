@@ -7,8 +7,10 @@ import {
   rangeIndexCall,
   stringLiteral,
   int,
+  importStatement,
+  block,
 } from "../../IR";
-import { Language } from "../../common/Language";
+import { Language, Plugin } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
@@ -19,10 +21,31 @@ import {
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
-import { forRangeToForEach } from "../../plugins/loops";
+import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
+
+// abstract out as a part of https://github.com/jared-hughes/polygolf/issues/89
+const addImports: Plugin = {
+  name: "addImports",
+  visit(node, spine) {
+    if (
+      node.kind === "Program" &&
+      spine.someNode(
+        (x) => x.kind === "Identifier" && x.builtin && x.name === "sys.argv[1:]"
+      )
+    ) {
+      return {
+        ...node,
+        body: block([
+          importStatement("import", ["sys"]),
+          ...(node.body.kind === "Block" ? node.body.children : [node.body]),
+        ]),
+      };
+    }
+  },
+};
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -35,7 +58,7 @@ const pythonLanguage: Language = {
     forRangeToForEach,
     golfLastPrint(),
   ],
-  emitPlugins: [useIndexCalls()],
+  emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
     mapOps([
       ["true", (_) => int(1)],
@@ -76,6 +99,7 @@ const pythonLanguage: Language = {
           );
         },
       ],
+      ["argv", (x) => id("sys.argv[1:]", true)],
     ]),
     mapPrecedenceOps(
       [["pow", "**"]],
@@ -111,6 +135,7 @@ const pythonLanguage: Language = {
     ),
     aliasBuiltins(),
     renameIdents(),
+    addImports,
   ],
 };
 

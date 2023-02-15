@@ -12,8 +12,6 @@ import {
   id,
   IR,
   polygolfOp,
-  ForArgv,
-  ForRange,
 } from "../IR";
 
 export const forRangeToForRangeInclusive: Plugin = {
@@ -217,7 +215,7 @@ export const forArgvToForEach: Plugin = {
 
 export function forArgvToForRange(overshoot = true): Plugin {
   return {
-    name: `forArgvToForRange(${overshoot})`,
+    name: `forArgvToForRange(${overshoot ? "" : "false"})`,
     visit(node) {
       if (node.kind === "ForArgv") {
         const newBody = block([

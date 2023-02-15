@@ -1,6 +1,9 @@
 import { functionCall, id, indexCall, methodCall } from "../../IR";
 import { Language } from "../../common/Language";
-import { forRangeToForRangeInclusive } from "../../plugins/loops";
+import {
+  forArgvToForRange,
+  forRangeToForRangeInclusive,
+} from "../../plugins/loops";
 
 import emitProgram from "./emit";
 import {
@@ -26,8 +29,10 @@ const luaLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
   ],
-  emitPlugins: [forRangeToForRangeInclusive, useIndexCalls(true)],
-  finalEmitPlugins: [
+  emitPlugins: [
+    forRangeToForRangeInclusive,
+    useIndexCalls(true),
+    forArgvToForRange(),
     mapOps([
       [
         "argv_get",
@@ -38,6 +43,8 @@ const luaLanguage: Language = {
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
     ]),
+  ],
+  finalEmitPlugins: [
     mapOps([
       ["text_length", (x) => methodCall(x[0], [], "len")],
       ["int_to_text", (x) => functionCall(x, "tostring")],
