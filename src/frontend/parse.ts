@@ -38,6 +38,7 @@ import {
   func,
   conditional,
   frontendOpcodes,
+  id,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -213,6 +214,20 @@ function composedPolygolfOp(op: OpCode, args: Expr[]): PolygolfOp {
     composedPolygolfOp(op, args.slice(0, -1)),
     args[args.length - 1]
   );
+}
+
+export function userIdentifier(token: Token): Identifier {
+  const name = token.value.slice(1);
+  if (name.includes("POLYGOLF") && restrictFrontend) {
+    throw new PolygolfError(
+      `Parse error. Variable names cannot contain 'POLYGOLF'`,
+      {
+        line: token.line,
+        column: token.col,
+      }
+    );
+  }
+  return id(name, false);
 }
 
 export function typeSexpr(

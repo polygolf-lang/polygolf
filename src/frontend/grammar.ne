@@ -17,7 +17,8 @@ import {
   typeSexpr,
   integerType,
   annotate,
-  refSource } from "./parse";
+  refSource,
+  userIdentifier } from "./parse";
 %}
 
 @lexer lexer
@@ -41,7 +42,7 @@ expr_inner ->
 
 integer -> %integer {% d => refSource(int(BigInt(d[0])), d[0]) %}
 
-variable -> %variable {% d => refSource(identifier(d[0].value.slice(1), false), d[0]) %}
+variable -> %variable {% d => refSource(userIdentifier(d[0]), d[0]) %}
 
 builtin -> (%builtin | "argv_get") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
 opalias -> (%opalias | "..") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
