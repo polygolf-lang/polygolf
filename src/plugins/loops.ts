@@ -218,12 +218,13 @@ export function forArgvToForRange(overshoot = true): Plugin {
     name: `forArgvToForRange(${overshoot ? "" : "false"})`,
     visit(node) {
       if (node.kind === "ForArgv") {
+        const indexVar = id(node.variable.name + "+index");
         const newBody = block([
-          assignment(node.variable, polygolfOp("argv_get")),
+          assignment(node.variable, polygolfOp("argv_get", indexVar)),
           ...(node.body.kind === "Block" ? node.body.children : [node.body]),
         ]);
         return forRange(
-          node.variable.name + "+index",
+          indexVar,
           int(0),
           overshoot ? int(node.argcUpperBound) : polygolfOp("argc"),
           int(1),

@@ -102,3 +102,16 @@ else:
   else:p("d")
  else:p("e")
 ```
+
+## Argv
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```python
+import sys
+for x in sys.argv[1:]:print(x)
+```

@@ -64,3 +64,31 @@ for $i 0 (# $collection) {
   print $i_forRangeToForEachPair;
 };
 ```
+
+## For each argv
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```polygolf loops.forArgvToForEach
+@ForEach $x argv (
+  println $x
+);
+```
+
+```polygolf loops.forArgvToForRange()
+for $x+index 0 100 {
+  $x <- (argv_get $x+index);
+  println $x;
+};
+```
+
+```polygolf loops.forArgvToForRange(false)
+for $x+index 0 argc {
+  $x <- (argv_get $x+index);
+  println $x;
+};
+```

@@ -20,3 +20,16 @@ print (text_split "abc" "b");
 include re
 "abc".split("b").echo
 ```
+
+## Argv
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```nim
+import os
+for x in commandLineParams():x.echo
+```

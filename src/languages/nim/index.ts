@@ -40,10 +40,10 @@ const nimLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
     tableHashing(hash),
-    forArgvToForEach,
-    forArgvToForRange(),
   ],
   emitPlugins: [
+    forArgvToForEach,
+    forArgvToForRange(),
     modToRem,
     divToTruncdiv,
     useInclusiveForRange,

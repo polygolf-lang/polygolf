@@ -30,9 +30,9 @@ const luaLanguage: Language = {
     tempVarToMultipleAssignment,
   ],
   emitPlugins: [
+    forArgvToForRange(),
     forRangeToForRangeInclusive,
     useIndexCalls(true),
-    forArgvToForRange(),
     mapOps([
       [
         "argv_get",

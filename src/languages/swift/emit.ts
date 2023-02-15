@@ -66,6 +66,14 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitExpr(stmt.condition, stmt),
         emitBlock(stmt.body, stmt),
       ];
+    case "ForEach":
+      return [
+        `for`,
+        emitExpr(stmt.variable, stmt),
+        "in",
+        emitExpr(stmt.collection, stmt),
+        emitBlock(stmt.body, stmt),
+      ];
     case "ForRange": {
       const low = emitExpr(stmt.low, stmt);
       const high = emitExpr(stmt.high, stmt);
@@ -104,7 +112,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
       ];
     case "Variants":
       throw new Error("Variants should have been instantiated.");
-    case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":

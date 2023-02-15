@@ -80,6 +80,15 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ":",
         emitBlock(stmt.body, stmt),
       ];
+    case "ForEach":
+      return [
+        `for`,
+        emitExpr(stmt.variable, stmt),
+        "in",
+        emitExpr(stmt.collection, stmt),
+        ":",
+        emitBlock(stmt.body, stmt),
+      ];
     case "ForRange": {
       const increment = emitExpr(stmt.increment, stmt);
       const low =
@@ -131,7 +140,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
       ];
     case "Variants":
       throw new Error("Variants should have been instantiated.");
-    case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
@@ -236,7 +244,7 @@ function emitExprNoParens(
       if (expr.args.length === 1 && expr.args[0].kind === "StringLiteral") {
         return [expr.ident.name, "", emitExpr(expr.args[0], expr)];
       }
-      if (expressionContinues || expr.args.length > 1)
+      if (expressionContinues || expr.args.length > 1 || expr.args.length === 0)
         return [
           expr.ident.name,
           "(",
