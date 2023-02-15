@@ -225,7 +225,7 @@ export function forArgvToForRange(overshoot = true): Plugin {
           ...(node.body.kind === "Block" ? node.body.children : [node.body]),
         ]);
         return forRange(
-          node.variable,
+          node.variable.name + "+index",
           int(0),
           overshoot ? int(node.argcUpperBound) : polygolfOp("argc"),
           int(1),
