@@ -5,7 +5,7 @@ import emitProgram from "./emit";
 import {
   mapOps,
   mapPrecedenceOps,
-  plus1,
+  add1,
   useIndexCalls,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
@@ -29,7 +29,7 @@ const golfscriptLanguage: Language = {
 
       [
         "text_get_slice",
-        (x) => rangeIndexCall(x[0], x[1], plus1(x[2]), id("1", true)),
+        (x) => rangeIndexCall(x[0], x[1], add1(x[2]), id("1", true)),
       ],
     ]),
     mapPrecedenceOps([

@@ -15,7 +15,7 @@ import {
   mapOps,
   mapPrecedenceOps,
   useIndexCalls,
-  plus1,
+  add1,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
@@ -54,10 +54,7 @@ const pythonLanguage: Language = {
       ["byte_to_char", (x) => functionCall([x[0]], "chr")],
       ["max", (x) => functionCall([x[0], x[1]], "max")],
       ["min", (x) => functionCall([x[0], x[1]], "min")],
-      [
-        "text_get_slice",
-        (x) => rangeIndexCall(x[0], x[1], plus1(x[2]), int(1)),
-      ],
+      ["text_get_slice", (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1))],
       ["text_length", (x) => functionCall([x[0]], "len")],
       ["int_to_text", (x) => functionCall([x[0]], "str")],
       ["text_split", (x) => methodCall(x[0], [x[1]], "split")],
