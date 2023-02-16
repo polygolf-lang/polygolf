@@ -1,7 +1,10 @@
-import { IR } from "IR";
-import { Visitor } from "./Spine";
+import { Expr, IR } from "IR";
+import { Spine, Visitor } from "./Spine";
 
-export type OpTransformOutput = (args: readonly IR.Expr[]) => IR.Expr;
+export type OpTransformOutput = (
+  args: readonly IR.Expr[],
+  spine: Spine<Expr>
+) => IR.Expr;
 
 /** A language configuration.
  *
@@ -36,8 +39,21 @@ export interface Plugin {
   allOrNothing?: boolean;
 }
 
-export type Detokenizer = (tokens: string[]) => string;
+type TokenTreeArray = Array<string | TokenTreeArray>;
+export type TokenTree = string | TokenTreeArray;
+export type Detokenizer = (tokens: TokenTree) => string;
 export type WhitespaceInsertLogic = (a: string, b: string) => boolean;
+
+export function flattenTree(tokenTree: TokenTree): string[] {
+  const flattened: string[] = [];
+
+  function stepTree(t: TokenTree) {
+    if (typeof t === "string") flattened.push(t);
+    else t.map(stepTree);
+  }
+  stepTree(tokenTree);
+  return flattened;
+}
 
 export interface IdentifierGenerator {
   preferred: (original: string) => string[];
@@ -45,7 +61,7 @@ export interface IdentifierGenerator {
   general: (i: number) => string;
 }
 
-export type Emitter = (program: IR.Program) => string[];
+export type Emitter = (program: IR.Program) => TokenTree;
 
 function isAlphaNum(a: string, i: number): boolean {
   return /[A-Za-z0-9]/.test(a[i]);
@@ -59,7 +75,8 @@ export function defaultDetokenizer(
   whitespace: WhitespaceInsertLogic = defaultWhitespaceInsertLogic,
   indent = 1
 ): Detokenizer {
-  return function (tokens: string[]): string {
+  return function (tokenTree: TokenTree): string {
+    const tokens: string[] = flattenTree(tokenTree);
     let indentLevel = 0;
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {
