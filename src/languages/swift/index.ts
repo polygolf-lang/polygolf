@@ -1,15 +1,13 @@
-import {
-  functionCall,
-  id,
-  indexCall,
-  methodCall,
-  int,
-  polygolfOp,
-} from "../../IR";
+import { functionCall, id, indexCall, methodCall } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
+import {
+  add1,
+  mapOps,
+  mapPrecedenceOps,
+  useIndexCalls,
+} from "../../plugins/ops";
 import { addVarDeclarations } from "../nim/plugins";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { addImports } from "./plugins";
@@ -37,7 +35,7 @@ const swiftLanguage: Language = {
         (x) =>
           indexCall(
             id("CommandLine.arguments", true),
-            polygolfOp("add", x[0], int(1n)),
+            add1(x[0]),
             "argv_get",
             true
           ),

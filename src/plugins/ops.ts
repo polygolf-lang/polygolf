@@ -102,7 +102,7 @@ export function useIndexCalls(
         if (oneIndexed && !node.op.startsWith("table_")) {
           indexNode = indexCall(
             node.args[0],
-            polygolfOp("add", node.args[1], int(1n)),
+            add1(node.args[1]),
             node.op,
             true
           );
@@ -129,11 +129,11 @@ export function add(expr: Expr, amount: bigint = 1n): Expr {
     const b = expr.args[1];
 
     if (a.kind === "IntegerLiteral") {
-      if (a.value + amount === 0n) return b;
+      if (a.value + amount === 0n && expr.op === "add") return b;
       return polygolfOp(expr.op, add(a, amount), b);
     }
     if (b.kind === "IntegerLiteral") {
-      if (b.value + amount === 0n) return a;
+      if (amount + (expr.op === "add" ? b.value : -b.value) === 0n) return a;
       return polygolfOp(
         expr.op,
         a,

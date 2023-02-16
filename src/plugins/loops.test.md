@@ -64,3 +64,45 @@ for $i 0 (# $collection) {
   print $i_forRangeToForEachPair;
 };
 ```
+
+## Shift range
+
+```polygolf
+for $i 0 80 {
+  println ($i + 1);
+  println (1 + $i);
+  println ($i * 3);
+  println ($i + 2);
+  println ($i - 1);
+  println ($i - 2);
+  println (1 - $i);
+  println (-1 - $i);
+};
+```
+
+```polygolf loops.shiftRangeOneUp
+for $iPOLYGOLFshifted 1 81 {
+  println $iPOLYGOLFshifted;
+  println $iPOLYGOLFshifted;
+  println (($iPOLYGOLFshifted - 1) * 3);
+  println ($iPOLYGOLFshifted + 1);
+  println ($iPOLYGOLFshifted - 2);
+  println ($iPOLYGOLFshifted - 3);
+  println (2 - $iPOLYGOLFshifted);
+  println (0 - $iPOLYGOLFshifted);
+};
+```
+
+```polygolf
+for $i 0 80 {
+  println $i;
+  println ($i + 2);
+};
+```
+
+```polygolf loops.shiftRangeOneUp
+for $i 0 80 {
+  println $i;
+  println ($i + 2);
+};
+```
