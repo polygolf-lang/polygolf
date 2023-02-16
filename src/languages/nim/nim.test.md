@@ -54,5 +54,4 @@ for i in..9:
     a=j
     if i<j:a=j;a=j
  a=i
- ```
- 
+```
