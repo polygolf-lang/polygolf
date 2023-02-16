@@ -14,13 +14,13 @@ export default function emitProgram(program: IR.Program): TokenTree {
 
 function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
   const children = block.kind === "Block" ? block.children : [block];
+  if (parent.kind === "Program") {
+    return joinTrees(
+      children.map((stmt) => emitStatement(stmt, block)),
+      "\n"
+    );
+  }
   if (hasChildWithBlock(block)) {
-    if (parent.kind === "Program") {
-      return joinTrees(
-        children.map((stmt) => emitStatement(stmt, block)),
-        "\n"
-      );
-    }
     return [
       "$INDENT$",
       children.map((stmt) => ["\n", emitStatement(stmt, block)]),

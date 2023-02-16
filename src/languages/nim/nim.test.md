@@ -17,7 +17,8 @@ print (text_split "abc" "b");
 ```
 
 ```nim
-include re;"abc".split("b").echo
+include re
+"abc".split("b").echo
 ```
 
 ```polygolf
