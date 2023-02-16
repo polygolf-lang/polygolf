@@ -61,6 +61,7 @@ for i in..9:
 ```polygolf
 for_argv $x 100 {
   println $x;
+};
 ```
 
 ```nim

@@ -88,7 +88,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "in",
         emitExpr(stmt.collection, stmt),
         ":",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
       ];
     case "ForRange": {
       const increment = emitExpr(stmt.increment, stmt);

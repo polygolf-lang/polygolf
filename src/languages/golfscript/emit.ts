@@ -54,7 +54,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ":",
         emitExpr(stmt.variable),
         ";",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
         "}",
         "%",
       ];
