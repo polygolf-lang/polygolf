@@ -48,8 +48,19 @@ b=" a\nbc  d".split()
 ```polygolf
 for $i 0 10 {
     for $j 0 10 {
-        if ($i < $j) {if ($i < $j) {$a <- $j;if ($i < $j) {$a <- $j;};$a <- $j;};};
-
+        if ($i < $j) {
+            if ($i < $j) {
+                $a <- $j;
+                if ($i < $j) {
+                    $a <- $j;
+                };
+                $a <- $j;
+                if ($i < $j) {
+                    $a <- $j;
+                    $a <- $j;
+                };
+            };
+        };
     };
     $a <- $i;
 };
@@ -63,6 +74,7 @@ for i in range(10):
     a=j
     if i<j:a=j
     a=j
+    if i<j:a=j;a=j
  a=i
 ```
 
