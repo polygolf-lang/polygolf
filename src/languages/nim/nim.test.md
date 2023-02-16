@@ -21,12 +21,46 @@ include re
 "abc".split("b").echo
 ```
 
+```polygolf
+$a:0..10 <- 0;
+for $i 0 10 {
+    for $j 0 10 {
+        if ($i < $j) {
+            if ($i < $j) {
+                $a <- $j;
+                if ($i < $j) {
+                    $a <- $j;
+                };
+                $a <- $j;
+                if ($i < $j) {
+                    $a <- $j;
+                    $a <- $j;
+                };
+            };
+        };
+    };
+    $a <- $i;
+};
+```
+
+```nim
+var a=0
+for i in..9:
+ for j in..9:
+  if i<j:
+   if i<j:
+    a=j
+    if i<j:a=j
+    a=j
+    if i<j:a=j;a=j
+ a=i
+```
+
 ## Argv
 
 ```polygolf
 for_argv $x 100 {
   println $x;
-};
 ```
 
 ```nim

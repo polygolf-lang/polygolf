@@ -11,18 +11,18 @@ export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }
 
-function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
-  const children = block.kind === "Block" ? block.children : [block];
+function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
+  const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
   if (parent.kind === "Program") {
     return joinTrees(
-      children.map((stmt) => emitStatement(stmt, block)),
+      children.map((stmt) => emitStatement(stmt, baseExpr)),
       "\n"
     );
   }
   return [
     "{",
     joinTrees(
-      children.map((stmt) => emitStatement(stmt, block)),
+      children.map((stmt) => emitStatement(stmt, baseExpr)),
       "\n"
     ),
     "}",
@@ -51,7 +51,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ),
       ];
     case "Block":
-      return emitBlock(stmt, parent);
+      return emitMultiExpr(stmt, parent);
     case "ImportStatement":
       return [
         stmt.name,
@@ -64,7 +64,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
       return [
         `while`,
         emitExpr(stmt.condition, stmt),
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
       ];
     case "ForEach":
       return [
@@ -98,16 +98,16 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
               ),
               ")",
             ],
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
       ];
     }
     case "IfStatement":
       return [
         "if",
         emitExpr(stmt.condition, stmt),
-        emitBlock(stmt.consequent, stmt),
+        emitMultiExpr(stmt.consequent, stmt),
         stmt.alternate !== undefined
-          ? ["else", emitBlock(stmt.alternate, stmt)]
+          ? ["else", emitMultiExpr(stmt.alternate, stmt)]
           : [],
       ];
     case "Variants":

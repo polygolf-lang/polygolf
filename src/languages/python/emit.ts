@@ -1,7 +1,7 @@
 import { TokenTree } from "@/common/Language";
 import {
+  containsMultiExpr,
   emitStringLiteral,
-  hasChildWithBlock,
   joinTrees,
   needsParensPrecedence,
 } from "../../common/emit";
@@ -12,23 +12,24 @@ export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }
 
-function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
-  const children = block.kind === "Block" ? block.children : [block];
-  if (hasChildWithBlock(block)) {
-    if (parent.kind === "Program") {
-      return joinTrees(
-        children.map((stmt) => emitStatement(stmt, block)),
-        "\n"
-      );
-    }
+function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
+  const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
+  // Prefer newlines over semicolons at top level for aesthetics
+  if (parent.kind === "Program") {
+    return joinTrees(
+      children.map((stmt) => emitStatement(stmt, baseExpr)),
+      "\n"
+    );
+  }
+  if (containsMultiExpr(children)) {
     return [
       "$INDENT$",
-      children.map((stmt) => ["\n", emitStatement(stmt, block)]),
+      children.map((stmt) => ["\n", emitStatement(stmt, baseExpr)]),
       "$DEDENT$",
     ];
   }
   return joinTrees(
-    children.map((stmt) => emitStatement(stmt, block)),
+    children.map((stmt) => emitStatement(stmt, baseExpr)),
     ";"
   );
 }
@@ -36,7 +37,7 @@ function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
 function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
   switch (stmt.kind) {
     case "Block":
-      return emitBlock(stmt, parent);
+      return emitMultiExpr(stmt, parent);
     case "ImportStatement":
       return [
         stmt.name,
@@ -50,7 +51,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         `while`,
         emitExpr(stmt.condition, stmt),
         ":",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
       ];
     case "ForEach":
       return [
@@ -78,7 +79,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         increment1 ? [] : [",", ...increment],
         ")",
         ":",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
       ];
     }
     case "IfStatement":
@@ -86,9 +87,9 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "if",
         emitExpr(stmt.condition, stmt),
         ":",
-        emitBlock(stmt.consequent, stmt),
+        emitMultiExpr(stmt.consequent, stmt),
         stmt.alternate !== undefined
-          ? ["\n", "else", ":", ...emitBlock(stmt.alternate, stmt)]
+          ? ["\n", "else", ":", ...emitMultiExpr(stmt.alternate, stmt)]
           : [],
       ];
     case "Variants":
