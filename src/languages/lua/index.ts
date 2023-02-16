@@ -1,6 +1,9 @@
 import { functionCall, id, indexCall, methodCall } from "../../IR";
 import { Language } from "../../common/Language";
-import { forRangeToForRangeInclusive } from "../../plugins/loops";
+import {
+  forRangeToForRangeInclusive,
+  shiftRangeOneUp,
+} from "../../plugins/loops";
 
 import emitProgram from "./emit";
 import {
@@ -25,6 +28,7 @@ const luaLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
+    shiftRangeOneUp,
   ],
   emitPlugins: [forRangeToForRangeInclusive, useIndexCalls(true)],
   finalEmitPlugins: [

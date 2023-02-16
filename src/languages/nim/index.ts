@@ -17,7 +17,7 @@ import {
 } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
-import { useInclusiveForRange } from "../../plugins/loops";
+import { shiftRangeOneUp, useInclusiveForRange } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
@@ -36,6 +36,7 @@ const nimLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
     tableHashing(hash),
+    shiftRangeOneUp,
   ],
   emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
   finalEmitPlugins: [
