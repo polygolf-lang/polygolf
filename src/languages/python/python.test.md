@@ -46,6 +46,7 @@ b=" a\nbc  d".split()
 ## Indenting
 
 ```polygolf
+$a:0..10 <- 0;
 for $i 0 10 {
     for $j 0 10 {
         if ($i < $j) {
@@ -67,6 +68,7 @@ for $i 0 10 {
 ```
 
 ```python bytes
+a=0
 for i in range(10):
  for j in range(10):
   if i<j:
