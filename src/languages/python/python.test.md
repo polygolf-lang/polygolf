@@ -10,11 +10,7 @@ print 4;
 ```
 
 ```python bytes
-p=print
-p(1)
-p(2,end="")
-p(end="3")
-p(4)
+p=print;p(1);p(2,end="");p(end="3");p(4)
 ```
 
 ## Indexing
@@ -26,9 +22,7 @@ $c <- (text_reversed "abcdefg");
 ```
 
 ```python bytes
-a="abcdefg"[4]
-b="abcdefg"[1:3+1]
-c="abcdefg"[::-1]
+a="abcdefg"[4];b="abcdefg"[1:3+1];c="abcdefg"[::-1]
 ```
 
 ## Text splitting
@@ -39,8 +33,7 @@ $b <- (text_split_whitespace " a\nbc  d");
 ```
 
 ```python bytes
-a="a_bc_d_".split("_")
-b=" a\nbc  d".split()
+a="a_bc_d_".split("_");b=" a\nbc  d".split()
 ```
 
 ## Indenting
