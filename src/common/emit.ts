@@ -1,5 +1,5 @@
 import { IR } from "IR";
-import { getChildren, PathFragment } from "./fragments";
+import { PathFragment } from "./fragments";
 import { TokenTree } from "./Language";
 
 export function needsParensPrecedence(
@@ -61,9 +61,9 @@ export function emitStringLiteral(
   return result;
 }
 
-export function hasChildWithBlock(node: IR.Node): boolean {
-  for (const child of [node, ...getChildren(node)]) {
-    if ("consequent" in child || "children" in child || "body" in child) {
+export function containsMultiExpr(exprs: readonly IR.Expr[]): boolean {
+  for (const expr of exprs) {
+    if ("consequent" in expr || "children" in expr || "body" in expr) {
       return true;
     }
   }
