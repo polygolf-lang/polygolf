@@ -116,3 +116,15 @@ else:
   else:p("d")
  else:p("e")
 ```
+
+## Mutating ops
+
+```polygolf
+$a:0..oo <- 1;
+$a <- ($a + 2);
+```
+
+```python
+a=1
+a+=2
+```

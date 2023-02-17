@@ -23,6 +23,7 @@ import { forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
+import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -109,6 +110,7 @@ const pythonLanguage: Language = {
       [["and", "and"]],
       [["or", "or"]]
     ),
+    addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
     aliasBuiltins(),
     renameIdents(),
   ],
