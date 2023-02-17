@@ -35,12 +35,16 @@ export interface OneToManyAssignment extends BaseExpr {
   readonly expr: Expr;
 }
 
+export type SomeAssignment =
+  | Assignment
+  | OneToManyAssignment
+  | ManyToManyAssignment;
 /**
  * Variable declaration with assignment
  */
 export interface VarDeclarationWithAssignment extends BaseExpr {
   readonly kind: "VarDeclarationWithAssignment";
-  readonly assignments: Assignment | ManyToManyAssignment;
+  readonly assignments: SomeAssignment[];
   readonly valueTypes?: readonly Type[];
   readonly requiresBlock: boolean;
 }
@@ -87,19 +91,21 @@ export function oneToManyAssignment(
 }
 
 export function varDeclarationWithAssignment(
-  assignments: Assignment | ManyToManyAssignment,
+  assignments: SomeAssignment[],
   requiresBlock: boolean = true,
   valueTypes?: readonly Type[]
 ): VarDeclarationWithAssignment {
   if (
-    (assignments.kind === "Assignment"
-      ? [assignments.variable]
-      : assignments.variables
-    ).some((x) => x.kind !== "Identifier")
+    assignments.some(
+      (x) =>
+        (x.kind === "Assignment" && x.variable.kind !== "Identifier") ||
+        (x.kind !== "Assignment" &&
+          x.variables.some((y) => y.kind !== "Identifier"))
+    )
   ) {
     throw new PolygolfError(
       "VarDeclarationWithAssignment needs assignments to variables.",
-      assignments.source
+      assignments[0].source
     );
   }
   return {
