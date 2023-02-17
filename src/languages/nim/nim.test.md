@@ -55,3 +55,14 @@ for i in..9:
     if i<j:a=j;a=j
  a=i
 ```
+
+## Indexing precedence
+
+```polygolf
+list_get (text_split "a b" " ") 1;
+```
+
+```nim nogolf
+include re
+"a b".split(" ")[1]
+```

@@ -150,7 +150,9 @@ function emitExpr(
   const inner = emitExprNoParens(
     expr,
     (parent.kind === "BinaryOp" && fragment === "left") ||
-      (parent.kind === "MethodCall" && fragment === "object")
+      (parent.kind === "MethodCall" && fragment === "object") ||
+      ((parent.kind === "IndexCall" || parent.kind === "RangeIndexCall") &&
+        fragment === "collection")
   );
   return needsParens(expr, parent, fragment) ? ["(", inner, ")"] : inner;
 }
@@ -320,7 +322,7 @@ function emitExprNoParens(
       if (expr.oneIndexed)
         throw new Error("Nim only supports zeroIndexed access.");
       return [
-        emitExprNoParens(expr.collection),
+        emitExpr(expr.collection, expr, "collection"),
         "[",
         emitExprNoParens(expr.index),
         "]",
@@ -331,7 +333,7 @@ function emitExprNoParens(
       if (expr.step.kind !== "IntegerLiteral" || expr.step.value !== 1n)
         throw new Error("Nim doesn't support indexing with steps.");
       return [
-        emitExprNoParens(expr.collection),
+        emitExpr(expr.collection, expr, "collection"),
         "[",
         emitExprNoParens(expr.low),
         "..",
