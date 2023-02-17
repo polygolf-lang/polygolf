@@ -90,7 +90,7 @@ if(1==1) {
 };
 ```
 
-```python bytes
+```python nogolf
 p=print
 if 1==1:
  if 2==1:p("a")
