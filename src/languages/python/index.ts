@@ -25,6 +25,7 @@ import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
+import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 
 // abstract out as a part of https://github.com/jared-hughes/polygolf/issues/89
 const addImports: Plugin = {
@@ -133,6 +134,7 @@ const pythonLanguage: Language = {
       [["and", "and"]],
       [["or", "or"]]
     ),
+    addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
     aliasBuiltins(),
     renameIdents(),
     addImports,

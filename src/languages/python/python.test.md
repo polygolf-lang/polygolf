@@ -129,3 +129,15 @@ for_argv $x 100 {
 import sys
 for x in sys.argv[1:]:print(x)
 ```
+
+## Mutating ops
+
+```polygolf
+$a:0..oo <- 1;
+$a <- ($a + 2);
+```
+
+```python
+a=1
+a+=2
+```
