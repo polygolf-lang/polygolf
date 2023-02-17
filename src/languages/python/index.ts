@@ -29,6 +29,7 @@ import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
+import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -117,6 +118,7 @@ const pythonLanguage: Language = {
       [["and", "and"]],
       [["or", "or"]]
     ),
+    addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
     aliasBuiltins(),
     renameIdents(),
   ],

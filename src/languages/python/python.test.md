@@ -46,16 +46,29 @@ b=" a\nbc  d".split()
 ## Indenting
 
 ```polygolf
+$a:0..10 <- 0;
 for $i 0 10 {
     for $j 0 10 {
-        if ($i < $j) {if ($i < $j) {$a <- $j;if ($i < $j) {$a <- $j;};$a <- $j;};};
-
+        if ($i < $j) {
+            if ($i < $j) {
+                $a <- $j;
+                if ($i < $j) {
+                    $a <- $j;
+                };
+                $a <- $j;
+                if ($i < $j) {
+                    $a <- $j;
+                    $a <- $j;
+                };
+            };
+        };
     };
     $a <- $i;
 };
 ```
 
 ```python bytes
+a=0
 for i in range(10):
  for j in range(10):
   if i<j:
@@ -63,6 +76,7 @@ for i in range(10):
     a=j
     if i<j:a=j
     a=j
+    if i<j:a=j;a=j
  a=i
 ```
 
@@ -101,4 +115,16 @@ else:
    if 5==1:p("c")
   else:p("d")
  else:p("e")
+```
+
+## Mutating ops
+
+```polygolf
+$a:0..oo <- 1;
+$a <- ($a + 2);
+```
+
+```python
+a=1
+a+=2
 ```
