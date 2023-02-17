@@ -118,7 +118,8 @@ export function applyLanguageToVariants(
       isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
     );
   if (isError(ret)) {
-    ret.message = "No variant could be compiled: " + ret.message;
+    ret.message =
+      "No variant could be compiled: " + language.name + ret.message;
     throw ret;
   }
   return ret;
