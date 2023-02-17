@@ -221,7 +221,7 @@ export function forArgvToForRange(overshoot = true): Plugin {
         const indexVar = id(node.variable.name + "+index");
         const newBody = block([
           assignment(node.variable, polygolfOp("argv_get", indexVar)),
-          ...(node.body.kind === "Block" ? node.body.children : [node.body]),
+          node.body,
         ]);
         return forRange(
           indexVar,
