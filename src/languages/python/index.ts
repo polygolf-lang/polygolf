@@ -24,6 +24,7 @@ import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
 import { useEquivalentTextOp } from "../../plugins/textOps";
+import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -111,6 +112,7 @@ const pythonLanguage: Language = {
       [["and", "and"]],
       [["or", "or"]]
     ),
+    addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
     aliasBuiltins(),
     renameIdents(),
   ],

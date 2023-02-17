@@ -6,25 +6,25 @@ export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }
 
-function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
-  const children = block.kind === "Block" ? block.children : [block];
+function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
+  const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
   if (parent.kind === "Program" || parent.kind === "ForRange") {
-    return children.map((stmt) => emitStatement(stmt, block));
+    return children.map((stmt) => emitStatement(stmt, baseExpr));
   }
 
-  return ["{", children.map((stmt) => emitStatement(stmt, block)), "}"];
+  return ["{", children.map((stmt) => emitStatement(stmt, baseExpr)), "}"];
 }
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
   switch (stmt.kind) {
     case "Block":
-      return emitBlock(stmt, parent);
+      return emitMultiExpr(stmt, parent);
     case "ImportStatement":
       return [stmt.name, ...stmt.modules]; // TODO the ... could be avoided if TokenTree was made readonly??
     case "WhileLoop":
       return [
-        emitBlock(stmt.condition, stmt),
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.condition, stmt),
+        emitMultiExpr(stmt.body, stmt),
         "while",
       ];
     case "ForRange": {
@@ -42,7 +42,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ":",
         emitExpr(stmt.variable),
         ";",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
         "}",
         "%",
       ];
@@ -50,8 +50,10 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     case "IfStatement":
       return [
         emitExpr(stmt.condition),
-        emitBlock(stmt.consequent, stmt),
-        stmt.alternate !== undefined ? emitBlock(stmt.alternate, stmt) : "{}",
+        emitMultiExpr(stmt.consequent, stmt),
+        stmt.alternate !== undefined
+          ? emitMultiExpr(stmt.alternate, stmt)
+          : "{}",
         "if",
       ];
     case "Variants":
