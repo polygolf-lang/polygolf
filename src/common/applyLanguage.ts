@@ -119,7 +119,7 @@ export function applyLanguageToVariants(
     );
   if (isError(ret)) {
     ret.message =
-      "No variant could be compiled: " + language.name + ret.message;
+      "No variant could be compiled: " + language.name + " " + ret.message;
     throw ret;
   }
   return ret;
