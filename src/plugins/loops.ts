@@ -85,9 +85,7 @@ export const forRangeToWhile: Plugin = {
         assignment(node.variable, node.low),
         whileLoop(
           polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
-          node.body.kind === "Block"
-            ? block([...node.body.children, increment])
-            : block([node.body, increment])
+          block([node.body, increment])
         ),
       ]);
     }
