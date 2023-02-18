@@ -1,17 +1,18 @@
-import { joinGroups } from "../../common/emit";
+import { TokenTree } from "@/common/Language";
+import { joinTrees } from "../../common/emit";
 import { block, Expr, IR, toString, variants, Variants } from "../../IR";
 
-export default function emitProgram(program: IR.Program): string[] {
+export default function emitProgram(program: IR.Program): TokenTree {
   return emitExpr(program.body, true);
 }
 
-function emitVariants(expr: Variants, indent = false): string[] {
+function emitVariants(expr: Variants, indent = false): TokenTree {
   if (indent || expr.variants.some((x) => x.kind === "Block")) {
     return [
       "{",
       "$INDENT$",
       "\n",
-      ...joinGroups(
+      joinTrees(
         expr.variants.map((x) => emitExpr(x, true)),
         "$DEDENT$",
         "\n",
@@ -26,7 +27,7 @@ function emitVariants(expr: Variants, indent = false): string[] {
   }
   return [
     "{",
-    ...joinGroups(
+    joinTrees(
       expr.variants.map((x) => emitExpr(x, true)),
       "/"
     ),
@@ -38,26 +39,27 @@ export function emitExpr(
   expr: Expr,
   asStatement = false,
   indent = false
-): string[] {
-  function emitSexpr(op: string, ...args: (string | Expr)[]): string[] {
+): TokenTree {
+  function emitSexpr(op: string, ...args: (TokenTree | Expr)[]): TokenTree {
+    const isNullary = ["argv", "true", "false"].includes(op);
     if (op === "@") op += expr.kind;
-    const result: string[] = [];
-    if (!asStatement) result.push("(");
+    const result: TokenTree = [];
+    if (!asStatement && !isNullary) result.push("(");
     if (indent) result.push("$INDENT$", "\n");
     if (opAliases[op] !== undefined && args.length === 2) {
-      result.push(
-        ...(typeof args[0] === "string" ? [args[0]] : emitExpr(args[0]))
-      );
+      let a = args[0];
+      result.push(typeof a === "string" || !("kind" in a) ? a : emitExpr(a));
       result.push(opAliases[op]);
-      result.push(
-        ...(typeof args[1] === "string" ? [args[1]] : emitExpr(args[1]))
-      );
+      a = args[1];
+      result.push(typeof a === "string" || !("kind" in a) ? a : emitExpr(a));
     } else {
       op = opAliases[op] ?? op;
       result.push(op);
       result.push(
-        ...joinGroups(
-          args.map((x) => (typeof x === "string" ? [x] : emitExpr(x)))
+        joinTrees(
+          args.map((x) =>
+            typeof x === "string" || !("kind" in x) ? [x] : emitExpr(x)
+          )
         )
       );
     }
@@ -65,19 +67,17 @@ export function emitExpr(
       result.push(";");
     } else {
       if (indent) result.push("$DEDENT$", "\n");
-      result.push(")");
+      if (!isNullary) result.push(")");
       if (expr.type !== undefined) result.push(":", toString(expr.type));
     }
     return result;
   }
   switch (expr.kind) {
     case "Block":
-      return [
-        ...joinGroups(
-          expr.children.map((x) => emitExpr(x, true)),
-          "\n"
-        ),
-      ];
+      return joinTrees(
+        expr.children.map((x) => emitExpr(x, true)),
+        "\n"
+      );
     case "Variants":
       return emitVariants(expr, indent);
     case "KeyValue":
@@ -156,13 +156,13 @@ export function emitExpr(
       } else {
         return [
           "$" + expr.name,
-          ...(expr.type === undefined ? [] : [":", toString(expr.type)]),
+          expr.type === undefined ? [] : [":", toString(expr.type)],
         ];
       }
     case "StringLiteral":
-      return [JSON.stringify(expr.value)];
+      return JSON.stringify(expr.value);
     case "IntegerLiteral":
-      return [expr.value.toString()];
+      return expr.value.toString();
     case "ArrayConstructor":
       return emitSexpr("array", ...expr.exprs);
     case "ListConstructor":

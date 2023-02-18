@@ -11,12 +11,13 @@ export type Objective = "bytes" | "chars";
 export interface SearchOptions {
   level: OptimisationLevel;
   objective: Objective;
-  objectiveFunction: (x: string) => number;
+  objectiveFunction: (x: string | null) => number;
 }
 
 // This is what code.golf uses for char scoring
 // https://github.com/code-golf/code-golf/blob/13733cfd472011217031fb9e733ae9ac177b234b/js/_util.ts#L7
-const charLen = (str: string) => {
+const charLen = (str: string | null) => {
+  if (str === null) return Infinity;
   let i = 0;
   let len = 0;
 
@@ -54,8 +55,11 @@ export function searchOptions(
     level,
     objective,
     objectiveFunction:
-      objectiveFunction ??
-      (objective === "bytes" ? (x) => Buffer.byteLength(x, "utf-8") : charLen),
+      objectiveFunction === undefined
+        ? objective === "bytes"
+          ? (x) => (x === null ? Infinity : Buffer.byteLength(x, "utf-8"))
+          : (x) => (x === null ? Infinity : charLen(x))
+        : (x) => (x === null ? Infinity : objectiveFunction(x)),
   };
 }
 
@@ -65,12 +69,35 @@ export default function applyLanguage(
   options: SearchOptions,
   skipTypecheck = false
 ): string {
-  return applyLanguageToVariants(
+  const bestUnpacked = applyLanguageToVariants(
     language,
     language.name === "Polygolf" ? [program] : expandVariants(program),
     options,
     skipTypecheck
   );
+  const packers = language.packers ?? [];
+  if (options.objective === "bytes" || packers.length < 1) return bestUnpacked;
+  function packer(code: string): string | null {
+    if ([...code].map((x) => x.charCodeAt(0)).some((x) => x > 127)) return null;
+    return packers
+      .map((x) => x(code))
+      .reduce((a, b) =>
+        options.objectiveFunction(a) < options.objectiveFunction(b) ? a : b
+      );
+  }
+  const bestForPacking = applyLanguageToVariants(
+    language,
+    language.name === "Polygolf" ? [program] : expandVariants(program),
+    searchOptions(options.level, "chars", (x) => charLen(packer(x)))
+  );
+  const packed = packer(bestForPacking);
+  if (
+    packed != null &&
+    options.objectiveFunction(packed) < options.objectiveFunction(bestUnpacked)
+  ) {
+    return packed;
+  }
+  return bestUnpacked;
 }
 
 function getFinalEmit(language: Language) {
@@ -88,7 +115,9 @@ export const debugEmit = getFinalEmit(polygolfLanguage);
 export function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
   return programToSpine(program).withReplacer((n, s) => {
     const repl = visitor(n, s);
-    return repl === undefined ? undefined : copyTypeAnnotation(n, repl);
+    return repl === undefined
+      ? undefined
+      : copySource(n, copyTypeAnnotation(n, repl));
   }).node as IR.Program;
 }
 
@@ -118,7 +147,8 @@ export function applyLanguageToVariants(
       isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
     );
   if (isError(ret)) {
-    ret.message = "No variant could be compiled: " + ret.message;
+    ret.message =
+      "No variant could be compiled: " + language.name + " " + ret.message;
     throw ret;
   }
   return ret;
@@ -182,7 +212,8 @@ function golfProgram(
         for (const altProgram of spine.compactMap((n, s) => {
           const ret = plugin.visit(n, s);
           if (ret !== undefined) {
-            return s.replacedWith(copyTypeAnnotation(n, ret)).root.node;
+            return s.replacedWith(copySource(n, copyTypeAnnotation(n, ret)))
+              .root.node;
           }
         })) {
           pushToQueue(altProgram, newHist);
@@ -200,6 +231,11 @@ function copyTypeAnnotation(from: Node, to: Node): Node {
     from.type !== undefined
     ? { ...to, type: from.type }
     : to;
+}
+
+function copySource(from: Node, to: Node): Node {
+  // copy source reference if present
+  return { ...to, source: from.source };
 }
 
 /** Typecheck a program by asking all nodes about their types.

@@ -4,6 +4,7 @@ import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
 import emitProgram from "./emit";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   plus1,
@@ -14,6 +15,7 @@ import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
+import { assertInt64 } from "../../plugins/types";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -24,6 +26,7 @@ const luaLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
+    equalityToInequality,
   ],
   emitPlugins: [forRangeToForRangeInclusive, useIndexCalls(true)],
   finalEmitPlugins: [
@@ -59,7 +62,7 @@ const luaLanguage: Language = {
         ["neg", "-"],
         ["list_length", "#"],
         ["bit_not", "~"],
-        ["text_to_int", "~~"],
+        ["text_to_int", "- -"],
       ],
       [
         ["mul", "*"],
@@ -86,6 +89,7 @@ const luaLanguage: Language = {
       [["or", "or"]]
     ),
     renameIdents(),
+    assertInt64,
   ],
 };
 
