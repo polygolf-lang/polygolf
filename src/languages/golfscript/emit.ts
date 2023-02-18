@@ -1,30 +1,30 @@
 import { TokenTree } from "../../common/Language";
-import { emitStringLiteral } from "../../common/emit";
+import { EmitError, emitStringLiteral } from "../../common/emit";
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }
 
-function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
-  const children = block.kind === "Block" ? block.children : [block];
+function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
+  const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
   if (parent.kind === "Program" || parent.kind === "ForRange") {
-    return children.map((stmt) => emitStatement(stmt, block));
+    return children.map((stmt) => emitStatement(stmt, baseExpr));
   }
 
-  return ["{", children.map((stmt) => emitStatement(stmt, block)), "}"];
+  return ["{", children.map((stmt) => emitStatement(stmt, baseExpr)), "}"];
 }
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
   switch (stmt.kind) {
     case "Block":
-      return emitBlock(stmt, parent);
+      return emitMultiExpr(stmt, parent);
     case "ImportStatement":
       return [stmt.name, ...stmt.modules]; // TODO the ... could be avoided if TokenTree was made readonly??
     case "WhileLoop":
       return [
-        emitBlock(stmt.condition, stmt),
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.condition, stmt),
+        emitMultiExpr(stmt.body, stmt),
         "while",
       ];
     case "ForRange": {
@@ -42,7 +42,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ":",
         emitExpr(stmt.variable),
         ";",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
         "}",
         "%",
       ];
@@ -50,19 +50,18 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     case "IfStatement":
       return [
         emitExpr(stmt.condition),
-        emitBlock(stmt.consequent, stmt),
-        stmt.alternate !== undefined ? emitBlock(stmt.alternate, stmt) : "{}",
+        emitMultiExpr(stmt.consequent, stmt),
+        stmt.alternate !== undefined
+          ? emitMultiExpr(stmt.alternate, stmt)
+          : "{}",
         "if",
       ];
     case "Variants":
-      throw new Error("Variants should have been instantiated.");
     case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(
-        `Unexpected node (${stmt.kind}) while emitting GolfScript`
-      );
+      throw new EmitError(stmt);
     default:
       return emitExpr(stmt);
   }
@@ -109,8 +108,7 @@ function emitExpr(expr: IR.Expr): TokenTree {
         "if",
       ];
     case "IndexCall":
-      if (expr.oneIndexed)
-        throw new Error("GolfScript only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       return [emitExpr(expr.collection), emitExpr(expr.index), "="];
     case "RangeIndexCall": {
       const step = emitExpr(expr.step);
@@ -128,10 +126,6 @@ function emitExpr(expr: IR.Expr): TokenTree {
       ];
     }
     default:
-      throw new Error(
-        `Unexpected node while emitting GolfScript: ${expr.kind}: ${
-          "op" in expr ? expr.op ?? "" : ""
-        }. `
-      );
+      throw new EmitError(expr);
   }
 }

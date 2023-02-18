@@ -3,6 +3,7 @@ import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   plus1,
@@ -16,9 +17,14 @@ import { addImports } from "./plugins";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
-  extension: "txt", // Golfscript doesn't appear to have a custom extension
+  extension: "gs",
   emitter: emitProgram,
-  golfPlugins: [flipBinaryOps, evalStaticExpr, golfLastPrint()],
+  golfPlugins: [
+    flipBinaryOps,
+    evalStaticExpr,
+    golfLastPrint(),
+    equalityToInequality,
+  ],
   emitPlugins: [useIndexCalls()],
   finalEmitPlugins: [
     mapOps([
@@ -64,7 +70,7 @@ const golfscriptLanguage: Language = {
       ["join_using", "*"],
       ["sorted", "$"],
 
-      ["neg", "0-"],
+      ["neg", "-1*"],
       ["leq", ")<"],
       ["neq", "=!"],
       ["geq", "(>"],
@@ -78,7 +84,17 @@ const golfscriptLanguage: Language = {
       ["argv_get", "a="],
     ]),
     addImports,
-    renameIdents(),
+    renameIdents({
+      // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
+      preferred(original: string) {
+        if (/n/i.test(original[0])) return ["N", "m", "M"];
+        const lower = original[0].toLowerCase();
+        const upper = original[0].toUpperCase();
+        return [original[0], original[0] === lower ? upper : lower];
+      },
+      short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+      general: (i: number) => "v" + i.toString(),
+    }),
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>
