@@ -4,6 +4,7 @@ import {
   containsMultiExpr,
   joinTrees,
   needsParensPrecedence,
+  EmitError,
 } from "../../common/emit";
 import { PathFragment } from "../../common/fragments";
 import { IR } from "../../IR";
@@ -102,7 +103,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ];
       }
       if (!stmt.inclusive) {
-        throw new Error("Ranges with steps must be inclusive in Nim.");
+        throw new EmitError(stmt, "exlusive+step");
       }
       return [
         "for",
@@ -131,12 +132,11 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           : [],
       ];
     case "Variants":
-      throw new Error("Variants should have been instantiated.");
     case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.kind}) while emitting Nim`);
+      throw new EmitError(stmt);
     default:
       return emitExpr(stmt, parent);
   }
@@ -317,8 +317,7 @@ function emitExprNoParens(
         "toTable",
       ];
     case "IndexCall":
-      if (expr.oneIndexed)
-        throw new Error("Nim only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       return [
         emitExprNoParens(expr.collection),
         "[",
@@ -326,10 +325,9 @@ function emitExprNoParens(
         "]",
       ];
     case "RangeIndexCall":
-      if (expr.oneIndexed)
-        throw new Error("Nim only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       if (expr.step.kind !== "IntegerLiteral" || expr.step.value !== 1n)
-        throw new Error("Nim doesn't support indexing with steps.");
+        throw new EmitError(expr, "step");
       return [
         emitExprNoParens(expr.collection),
         "[",
@@ -340,10 +338,6 @@ function emitExprNoParens(
       ];
 
     default:
-      throw new Error(
-        `Unexpected node while emitting Nim: ${expr.kind}: ${
-          "op" in expr ? expr.op : ""
-        }. `
-      );
+      throw new EmitError(expr);
   }
 }
