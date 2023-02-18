@@ -39,7 +39,7 @@ export const BinaryOpCodeArray = [
   "repeat",
   "text_contains",
   "text_codepoint_find", // (text_codepoint_find a b) returns the codepoint-0-index of the start of the first occurence of b in a or -1 if it is not found
-  "text_byte_find", // (text_codepoint_find a b) returns the byte-0-index of the start of the first occurence of b in a or -1 if it is not found
+  "text_byte_find", // (text_byte_find a b) returns the byte-0-index of the start of the first occurence of b in a or -1 if it is not found
   "text_split",
   "text_get_byte", // returns a single byte text at the specified byte-0-index
   "text_get_codepoint", // returns a single codepoint text at the specified codepoint-0-index
