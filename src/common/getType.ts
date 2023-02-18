@@ -632,7 +632,9 @@ function getOpCodeType(
         ["T2", (x) => x[1]]
       )[1];
     case null:
-      throw new Error("Cannot determine type based on null opcode.");
+      throw new Error(
+        "Cannot determine type based on null opcode - this is most likely a programming error - a plugin introduced a node missing both an opcode and a type annotation."
+      );
   }
 }
 
