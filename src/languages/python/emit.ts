@@ -1,6 +1,7 @@
 import { TokenTree } from "@/common/Language";
 import {
   containsMultiExpr,
+  EmitError,
   emitStringLiteral,
   joinTrees,
   needsParensPrecedence,
@@ -84,12 +85,11 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           : [],
       ];
     case "Variants":
-      throw new Error("Variants should have been instantiated.");
     case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.kind}) while emitting Python`);
+      throw new EmitError(stmt);
     default:
       return emitExpr(stmt, parent);
   }
@@ -190,8 +190,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         "]",
       ];
     case "IndexCall":
-      if (expr.oneIndexed)
-        throw new Error("Python only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       return [
         emitExprNoParens(expr.collection),
         "[",
@@ -199,8 +198,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         "]",
       ];
     case "RangeIndexCall": {
-      if (expr.oneIndexed)
-        throw new Error("Python only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       const low = emitExpr(expr.low, expr);
       const low0 = low.length === 1 && low[0] === "0";
       const high = emitExpr(expr.high, expr);
@@ -217,11 +215,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
       ];
     }
     default:
-      throw new Error(
-        `Unexpected node while emitting Python: ${expr.kind}: ${
-          "op" in expr ? expr.op ?? "" : ""
-        }. `
-      );
+      throw new EmitError(expr);
   }
 }
 
