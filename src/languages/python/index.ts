@@ -12,6 +12,7 @@ import { Language } from "../../common/Language";
 
 import emitProgram, { emitPythonStringLiteral } from "./emit";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   useIndexCalls,
@@ -41,6 +42,7 @@ const pythonLanguage: Language = {
     tempVarToMultipleAssignment,
     forRangeToForEach,
     golfLastPrint(),
+    equalityToInequality,
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
   ],
