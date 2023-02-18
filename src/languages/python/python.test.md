@@ -20,9 +20,9 @@ p(4)
 ## Indexing
 
 ```polygolf
-$a <- (text_get_char "abcdefg" 4);
-$b <- (text_get_slice "abcdefg" 1 3);
-$c <- (text_reversed "abcdefg");
+$a <- (text_get_codepoint "abcdefg" 4);
+$b <- (text_get_codepoint_slice "abcdefg" 1 3);
+$c <- (text_codepoint_reversed "abcdefg");
 ```
 
 ```python bytes

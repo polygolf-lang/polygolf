@@ -44,7 +44,7 @@ print("y")
 array_get (array "xy" "abc") 1;
 text_get_byte "abc" 1;
 text_concat "abc" "xyz";
-text_length "abc";
+text_byte_length "abc";
 int_to_text 5;
 text_to_int "5";
 ```
@@ -78,7 +78,7 @@ tostring(5)
 
 ```polygolf
 $t <- "abc";
-text_length $t;
+text_byte_length $t;
 ```
 
 ```lua nogolf
@@ -88,7 +88,7 @@ t:len()
 
 ```polygolf
 $a <- (array "abc" "xyz");
-text_length (array_get $a 1);
+text_byte_length (array_get $a 1);
 ```
 
 ```lua nogolf
