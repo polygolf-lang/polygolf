@@ -545,10 +545,16 @@ function getOpCodeType(
       return integerType(0, 1);
     case "byte_to_text":
       expectType(integerType(0, 255));
-      return textType(integerType(1n, 1n), (types[0] as any).high < 128n);
+      return textType(
+        integerType(1n, 1n),
+        (types[0] as IntegerType).high < 128n
+      );
     case "int_to_codepoint":
       expectType(integerType(0, 0x10ffff));
-      return textType(integerType(1n, 1n), (types[0] as any).high < 128n);
+      return textType(
+        integerType(1n, 1n),
+        (types[0] as IntegerType).high < 128n
+      );
     case "list_length":
       expectGenericType("List");
       return integerType(0);
