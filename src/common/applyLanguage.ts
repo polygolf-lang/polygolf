@@ -75,10 +75,11 @@ export default function applyLanguage(
     options,
     skipTypecheck
   );
-  if (options.objective === "bytes") return bestUnpacked;
+  const packers = language.packers ?? [];
+  if (options.objective === "bytes" || packers.length == 0) return bestUnpacked;
   function packer(code: string): string | null {
     if ([...code].map((x) => x.charCodeAt(0)).some((x) => x > 127)) return null;
-    return (language.packers ?? [])
+    return packers
       .map((x) => x(code))
       .reduce((a, b) =>
         options.objectiveFunction(a) < options.objectiveFunction(b) ? a : b
