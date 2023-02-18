@@ -6,22 +6,19 @@ import path from "path";
 import parse from "./frontend/parse";
 import applyLanguage, { searchOptions } from "./common/applyLanguage";
 import { PolygolfError } from "./common/errors";
+import languages, { findLang } from "./languages/languages";
 
-import lua from "./languages/lua";
-import nim from "./languages/nim";
-import python from "./languages/python";
-import polygolf from "./languages/polygolf";
-import swift from "./languages/swift";
-import golfscript from "./languages/golfscript";
-
-const languageTable = { golfscript, lua, nim, python, polygolf, swift };
+const languageChoices = [
+  ...new Set(languages.flatMap((x) => [x.name.toLowerCase(), x.extension])),
+  "all",
+];
 
 const options = yargs()
   .options({
     lang: {
       alias: "l",
       describe: "language to target",
-      choices: Object.keys(languageTable) as (keyof typeof languageTable)[],
+      choices: languageChoices,
       demandOption: true,
     },
     input: {
@@ -35,38 +32,57 @@ const options = yargs()
       describe: "output file",
       type: "string",
     },
+    chars: {
+      alias: "c",
+      description: "Use char length as objective",
+      type: "boolean",
+    },
   })
   .parseSync(process.argv.slice(2));
 
-const lang = languageTable[options.lang];
+const langs = options.lang === "all" ? languages : [findLang(options.lang)!];
 const code = fs.readFileSync(options.input, { encoding: "utf-8" });
 const prog = parse(code);
-try {
-  const result = applyLanguage(lang, prog, searchOptions("full", "bytes"));
-  if (options.output !== undefined) {
-    fs.mkdirSync(path.dirname(options.output), { recursive: true });
-    fs.writeFileSync(options.output, result);
-  } else {
-    console.log(result);
-  }
-} catch (e) {
-  if (e instanceof PolygolfError) {
-    console.log(e.message);
-    if (e.source != null) {
-      const startLine = e.source.line === 0 ? 0 : e.source.line - 2;
-      console.log(
-        code
-          .split(/\r?\n/)
-          .slice(startLine, e.source.line)
-          .map((x, i) => `${startLine + i + 1}`.padStart(3, " ") + " " + x)
-          .join("\n") +
-          "\n" +
-          " ".repeat(e.source.column + 3) +
-          "^"
+const printingMultipleLangs = langs.length > 1 && options.output === undefined;
+for (const lang of langs) {
+  if (printingMultipleLangs) console.log(lang.name);
+  try {
+    const result = applyLanguage(
+      lang,
+      prog,
+      searchOptions("full", options.chars === true ? "chars" : "bytes")
+    );
+    if (options.output !== undefined) {
+      fs.mkdirSync(path.dirname(options.output), { recursive: true });
+      fs.writeFileSync(
+        options.output +
+          (langs.length > 1 || !options.output.includes(".")
+            ? "." + lang.extension
+            : ""),
+        result
       );
+    } else {
+      console.log(result);
     }
-    process.exit(1);
-  } else {
-    throw e;
+  } catch (e) {
+    if (e instanceof PolygolfError) {
+      console.log(e.message);
+      if (e.source != null) {
+        const startLine = e.source.line === 0 ? 0 : e.source.line - 2;
+        console.log(
+          code
+            .split(/\r?\n/)
+            .slice(startLine, e.source.line)
+            .map((x, i) => `${startLine + i + 1}`.padStart(3, " ") + " " + x)
+            .join("\n") +
+            "\n" +
+            " ".repeat(e.source.column + 3) +
+            "^"
+        );
+      }
+    } else {
+      throw e;
+    }
   }
+  if (printingMultipleLangs) console.log("");
 }

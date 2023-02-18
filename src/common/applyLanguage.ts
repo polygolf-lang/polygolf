@@ -11,12 +11,13 @@ export type Objective = "bytes" | "chars";
 export interface SearchOptions {
   level: OptimisationLevel;
   objective: Objective;
-  objectiveFunction: (x: string) => number;
+  objectiveFunction: (x: string | null) => number;
 }
 
 // This is what code.golf uses for char scoring
 // https://github.com/code-golf/code-golf/blob/13733cfd472011217031fb9e733ae9ac177b234b/js/_util.ts#L7
-export const charLength = (str: string) => {
+const charLen = (str: string | null) => {
+  if (str === null) return Infinity;
   let i = 0;
   let len = 0;
 
@@ -56,7 +57,11 @@ export function searchOptions(
     level,
     objective,
     objectiveFunction:
-      objectiveFunction ?? (objective === "bytes" ? byteLength : charLength),
+      objectiveFunction === undefined
+        ? objective === "bytes"
+          ? (x) => (x === null ? Infinity : Buffer.byteLength(x, "utf-8"))
+          : (x) => (x === null ? Infinity : charLen(x))
+        : (x) => (x === null ? Infinity : objectiveFunction(x)),
   };
 }
 
@@ -66,12 +71,35 @@ export default function applyLanguage(
   options: SearchOptions,
   skipTypecheck = false
 ): string {
-  return applyLanguageToVariants(
+  const bestUnpacked = applyLanguageToVariants(
     language,
     language.name === "Polygolf" ? [program] : expandVariants(program),
     options,
     skipTypecheck
   );
+  const packers = language.packers ?? [];
+  if (options.objective === "bytes" || packers.length < 1) return bestUnpacked;
+  function packer(code: string): string | null {
+    if ([...code].map((x) => x.charCodeAt(0)).some((x) => x > 127)) return null;
+    return packers
+      .map((x) => x(code))
+      .reduce((a, b) =>
+        options.objectiveFunction(a) < options.objectiveFunction(b) ? a : b
+      );
+  }
+  const bestForPacking = applyLanguageToVariants(
+    language,
+    language.name === "Polygolf" ? [program] : expandVariants(program),
+    searchOptions(options.level, "chars", (x) => charLen(packer(x)))
+  );
+  const packed = packer(bestForPacking);
+  if (
+    packed != null &&
+    options.objectiveFunction(packed) < options.objectiveFunction(bestUnpacked)
+  ) {
+    return packed;
+  }
+  return bestUnpacked;
 }
 
 function getFinalEmit(language: Language) {
