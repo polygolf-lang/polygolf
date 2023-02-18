@@ -85,10 +85,11 @@ export function defaultDetokenizer(
     for (let i = 1; i < tokens.length; i++) {
       if (tokens[i] === "$INDENT$") indentLevel++;
       else if (tokens[i] === "$DEDENT$") indentLevel--;
-      else {
+      else if (tokens[i] !== "$GLUE$") {
         if (
           tokens[i - 1] !== "$INDENT$" &&
           tokens[i - 1] !== "$DEDENT$" &&
+          tokens[i - 1] !== "$GLUE$" &&
           whitespace(tokens[i - 1], tokens[i])
         )
           result += " ";

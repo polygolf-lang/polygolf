@@ -110,6 +110,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitExpr(stmt.variable, stmt),
         "in",
         "countup",
+        "$GLUE$",
         "(",
         emitExpr(stmt.low, stmt),
         ",",
@@ -199,6 +200,7 @@ function emitExprNoParens(
     case "MutatingBinaryOp":
       return [
         emitExpr(expr.variable, expr),
+        "$GLUE$",
         expr.name + "=",
         emitExpr(expr.right, expr),
       ];
@@ -235,11 +237,12 @@ function emitExprNoParens(
       return expr.value.toString();
     case "FunctionCall":
       if (expr.args.length === 1 && expr.args[0].kind === "StringLiteral") {
-        return [expr.ident.name, "", emitExpr(expr.args[0], expr)];
+        return [expr.ident.name, "$GLUE$", emitExpr(expr.args[0], expr)];
       }
       if (expressionContinues || expr.args.length > 1)
         return [
           expr.ident.name,
+          "$GLUE$",
           "(",
           joinTrees(
             expr.args.map((arg) => emitExpr(arg, expr)),
@@ -262,6 +265,7 @@ function emitExprNoParens(
           expr.ident.name,
           expr.args.length > 0
             ? [
+                "$GLUE$",
                 "(",
                 joinTrees(
                   expr.args.map((arg) => emitExpr(arg, expr)),
@@ -286,6 +290,7 @@ function emitExprNoParens(
     case "BinaryOp":
       return [
         emitExpr(expr.left, expr, "left"),
+        /[A-Za-z]/.test(expr.name[0]) ? [] : "$GLUE$",
         expr.name,
         emitExpr(expr.right, expr, "right"),
       ];
