@@ -10,7 +10,12 @@ import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
-import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
+import {
+  equalityToInequality,
+  mapOps,
+  mapPrecedenceOps,
+  useIndexCalls,
+} from "../../plugins/ops";
 import {
   addImports,
   addVarDeclarations,
@@ -38,6 +43,7 @@ const nimLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
     tableHashing(hash),
+    equalityToInequality,
   ],
   emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
   finalEmitPlugins: [
