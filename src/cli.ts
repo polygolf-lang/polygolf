@@ -6,31 +6,19 @@ import path from "path";
 import parse from "./frontend/parse";
 import applyLanguage, { searchOptions } from "./common/applyLanguage";
 import { PolygolfError } from "./common/errors";
+import languages, { findLang } from "./languages/languages";
 
-import lua from "./languages/lua";
-import nim from "./languages/nim";
-import python from "./languages/python";
-import polygolf from "./languages/polygolf";
-import swift from "./languages/swift";
-import golfscript from "./languages/golfscript";
-import languages from "./languages/languages";
-
-const languageTable = {
-  golfscript,
-  lua,
-  nim,
-  python,
-  polygolf,
-  swift,
-  all: "all",
-};
+const languageChoices = [
+  ...languages.flatMap((x) => [x.name.toLowerCase(), x.extension]),
+  "all",
+];
 
 const options = yargs()
   .options({
     lang: {
       alias: "l",
       describe: "language to target",
-      choices: Object.keys(languageTable) as (keyof typeof languageTable)[],
+      choices: languageChoices,
       demandOption: true,
     },
     input: {
@@ -52,8 +40,7 @@ const options = yargs()
   })
   .parseSync(process.argv.slice(2));
 
-const langs =
-  options.lang === "all" ? languages : [languageTable[options.lang]];
+const langs = options.lang === "all" ? languages : [findLang(options.lang)!];
 const code = fs.readFileSync(options.input, { encoding: "utf-8" });
 const prog = parse(code);
 const printingMultipleLangs = langs.length > 1 && options.output === undefined;
@@ -67,7 +54,13 @@ for (const lang of langs) {
     );
     if (options.output !== undefined) {
       fs.mkdirSync(path.dirname(options.output), { recursive: true });
-      fs.writeFileSync(options.output + "." + lang.extension, result);
+      fs.writeFileSync(
+        options.output +
+          (langs.length > 1 || !options.output.includes(".")
+            ? "." + lang.extension
+            : ""),
+        result
+      );
     } else {
       console.log(result);
     }
