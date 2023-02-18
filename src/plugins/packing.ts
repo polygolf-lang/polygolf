@@ -100,7 +100,7 @@ export function packSource2to1(source: string): string {
   let result = "";
   for (let i = 0; i < source.length; i += 2) {
     result += String.fromCharCode(
-      source.charCodeAt(i) * 256 + source.charCodeAt(i + 1)
+      source.charCodeAt(i) + source.charCodeAt(i + 1) * 256
     );
   }
   return result;
