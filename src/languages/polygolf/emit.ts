@@ -230,9 +230,10 @@ export function emitExpr(
       );
     case "ForArgv":
       return emitSexpr(
-        "for_range",
+        "for_argv",
         expr.variable,
-        expr.argcUpperBound.toString()
+        expr.argcUpperBound.toString(),
+        ...emitExpr(expr.body, false, true)
       );
     case "ForEachKey":
       return emitSexpr(
