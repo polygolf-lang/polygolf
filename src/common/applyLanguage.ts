@@ -89,7 +89,9 @@ export const debugEmit = getFinalEmit(polygolfLanguage);
 export function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
   return programToSpine(program).withReplacer((n, s) => {
     const repl = visitor(n, s);
-    return repl === undefined ? undefined : copyTypeAnnotation(n, repl);
+    return repl === undefined
+      ? undefined
+      : copySource(n, copyTypeAnnotation(n, repl));
   }).node as IR.Program;
 }
 
@@ -119,7 +121,8 @@ export function applyLanguageToVariants(
       isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
     );
   if (isError(ret)) {
-    ret.message = "No variant could be compiled: " + ret.message;
+    ret.message =
+      "No variant could be compiled: " + language.name + " " + ret.message;
     throw ret;
   }
   return ret;
@@ -183,7 +186,8 @@ function golfProgram(
         for (const altProgram of spine.compactMap((n, s) => {
           const ret = plugin.visit(n, s);
           if (ret !== undefined) {
-            return s.replacedWith(copyTypeAnnotation(n, ret)).root.node;
+            return s.replacedWith(copySource(n, copyTypeAnnotation(n, ret)))
+              .root.node;
           }
         })) {
           pushToQueue(altProgram, newHist);
@@ -201,6 +205,11 @@ function copyTypeAnnotation(from: Node, to: Node): Node {
     from.type !== undefined
     ? { ...to, type: from.type }
     : to;
+}
+
+function copySource(from: Node, to: Node): Node {
+  // copy source reference if present
+  return { ...to, source: from.source };
 }
 
 /** Typecheck a program by asking all nodes about their types.

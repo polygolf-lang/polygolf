@@ -4,6 +4,7 @@ import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
 import emitProgram from "./emit";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   plus1,
@@ -14,7 +15,7 @@ import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
-// import { useEquivalentTextOp } from "../../plugins/textOps";
+import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 
 const luaLanguage: Language = {
@@ -26,8 +27,8 @@ const luaLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
-    // useEquivalentTextOp, TODO: Cannot add this to Lua yet, because it breakes the old style tests.
-    // Rewrite the tests to markdown tests so that golf plugins are not applied when testing the emitter.
+    equalityToInequality,
+    useEquivalentTextOp,
   ],
   emitPlugins: [forRangeToForRangeInclusive, useIndexCalls(true)],
   finalEmitPlugins: [
@@ -66,7 +67,7 @@ const luaLanguage: Language = {
         ["neg", "-"],
         ["list_length", "#"],
         ["bit_not", "~"],
-        ["text_to_int", "~~"],
+        ["text_to_int", "- -"],
       ],
       [
         ["mul", "*"],

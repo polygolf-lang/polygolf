@@ -9,7 +9,12 @@ import {
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
+import {
+  mapOps,
+  mapPrecedenceOps,
+  useIndexCalls,
+  equalityToInequality,
+} from "../../plugins/ops";
 import { addVarDeclarations } from "../nim/plugins";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { addImports } from "./plugins";
@@ -28,6 +33,7 @@ const swiftLanguage: Language = {
     golfStringListLiteral(false),
     evalStaticExpr,
     golfLastPrint(),
+    equalityToInequality,
   ],
   emitPlugins: [modToRem, divToTruncdiv, useIndexCalls()],
   finalEmitPlugins: [
