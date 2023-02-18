@@ -56,8 +56,9 @@ const langs =
   options.lang === "all" ? languages : [languageTable[options.lang]];
 const code = fs.readFileSync(options.input, { encoding: "utf-8" });
 const prog = parse(code);
+const printingMultipleLangs = langs.length > 1 && options.output !== undefined;
 for (const lang of langs) {
-  if (langs.length > 1) console.log(lang.name);
+  if (printingMultipleLangs) console.log(lang.name);
   try {
     const result = applyLanguage(
       lang,
@@ -93,5 +94,5 @@ for (const lang of langs) {
       throw e;
     }
   }
-  if (langs.length > 1) console.log("");
+  if (printingMultipleLangs) console.log("");
 }
