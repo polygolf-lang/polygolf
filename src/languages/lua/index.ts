@@ -7,6 +7,7 @@ import {
 
 import emitProgram from "./emit";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   add1,
@@ -28,6 +29,7 @@ const luaLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
+    equalityToInequality,
     shiftRangeOneUp,
   ],
   emitPlugins: [forRangeToForRangeInclusive, useIndexCalls(true)],

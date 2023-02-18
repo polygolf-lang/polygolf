@@ -7,6 +7,7 @@ import {
   mapOps,
   mapPrecedenceOps,
   useIndexCalls,
+  equalityToInequality,
 } from "../../plugins/ops";
 import { addVarDeclarations } from "../nim/plugins";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
@@ -26,6 +27,7 @@ const swiftLanguage: Language = {
     golfStringListLiteral(false),
     evalStaticExpr,
     golfLastPrint(),
+    equalityToInequality,
   ],
   emitPlugins: [modToRem, divToTruncdiv, useIndexCalls()],
   finalEmitPlugins: [
