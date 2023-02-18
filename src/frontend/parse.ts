@@ -39,6 +39,7 @@ import {
   conditional,
   frontendOpcodes,
   id,
+  arrayConstructor,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -149,7 +150,7 @@ export function sexpr(
       return listConstructor(args);
     case "array":
       expectArity(1, Infinity);
-      return listConstructor(args);
+      return arrayConstructor(args);
     case "set":
       return setConstructor(args);
     case "table":

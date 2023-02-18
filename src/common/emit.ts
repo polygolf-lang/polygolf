@@ -1,5 +1,6 @@
-import { IR } from "IR";
-import { getChildren, PathFragment } from "./fragments";
+import { Expr, IR } from "IR";
+import { PolygolfError } from "./errors";
+import { PathFragment } from "./fragments";
 import { TokenTree } from "./Language";
 
 export function needsParensPrecedence(
@@ -59,11 +60,23 @@ export function emitStringLiteral(
   return result;
 }
 
-export function hasChildWithBlock(node: IR.Node): boolean {
-  for (const child of [node, ...getChildren(node)]) {
-    if ("consequent" in child || "children" in child || "body" in child) {
+export function containsMultiExpr(exprs: readonly IR.Expr[]): boolean {
+  for (const expr of exprs) {
+    if ("consequent" in expr || "children" in expr || "body" in expr) {
       return true;
     }
   }
   return false;
+}
+
+export class EmitError extends PolygolfError {
+  constructor(expr: Expr, detail?: string) {
+    if (detail === undefined && "op" in expr && expr.op !== null)
+      detail = expr.op;
+    detail = detail === undefined ? "" : ` (${detail})`;
+    const message = `emit error - ${expr.kind}${detail} not supported.`;
+    super(message, expr.source);
+    this.name = "EmitError";
+    Object.setPrototypeOf(this, EmitError.prototype);
+  }
 }

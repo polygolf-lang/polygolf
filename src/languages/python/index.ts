@@ -12,6 +12,7 @@ import { Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   useIndexCalls,
@@ -23,6 +24,7 @@ import { forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
+import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -34,6 +36,7 @@ const pythonLanguage: Language = {
     tempVarToMultipleAssignment,
     forRangeToForEach,
     golfLastPrint(),
+    equalityToInequality,
   ],
   emitPlugins: [useIndexCalls()],
   finalEmitPlugins: [
@@ -109,6 +112,7 @@ const pythonLanguage: Language = {
       [["and", "and"]],
       [["or", "or"]]
     ),
+    addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
     aliasBuiltins(),
     renameIdents(),
   ],

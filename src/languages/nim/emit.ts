@@ -1,9 +1,10 @@
 import { TokenTree } from "@/common/Language";
 import {
   emitStringLiteral,
-  hasChildWithBlock,
+  containsMultiExpr,
   joinTrees,
   needsParensPrecedence,
+  EmitError,
 } from "../../common/emit";
 import { PathFragment } from "../../common/fragments";
 import { IR } from "../../IR";
@@ -12,27 +13,28 @@ export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }
 
-function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
-  const children = block.kind === "Block" ? block.children : [block];
-  if (hasChildWithBlock(block)) {
-    if (parent.kind === "Program") {
-      return joinTrees(
-        children.map((stmt) => emitStatement(stmt, block)),
-        "\n"
-      );
-    }
+function emitMultiExpr(expr: IR.Expr, parent: IR.Node): TokenTree {
+  const children = expr.kind === "Block" ? expr.children : [expr];
+  // Prefer newlines over semicolons at top level for aesthetics
+  if (parent.kind === "Program") {
+    return joinTrees(
+      children.map((stmt) => emitStatement(stmt, expr)),
+      "\n"
+    );
+  }
+  if (containsMultiExpr(children)) {
     return [
       "$INDENT$",
       "\n",
       joinTrees(
-        children.map((stmt) => emitStatement(stmt, block)),
+        children.map((stmt) => emitStatement(stmt, expr)),
         "\n"
       ),
       "$DEDENT$",
     ];
   }
   return joinTrees(
-    children.map((stmt) => emitStatement(stmt, block)),
+    children.map((stmt) => emitStatement(stmt, expr)),
     ";"
   );
 }
@@ -40,7 +42,7 @@ function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
 function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
   switch (stmt.kind) {
     case "Block":
-      return emitBlock(stmt, parent);
+      return emitMultiExpr(stmt, parent);
     case "VarDeclarationWithAssignment":
       if (stmt.requiresBlock) {
         const variables =
@@ -78,7 +80,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         `while`,
         emitExpr(stmt.condition, stmt),
         ":",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
       ];
     case "ForRange": {
       const increment = emitExpr(stmt.increment, stmt);
@@ -97,17 +99,18 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           stmt.inclusive ? ".." : "..<",
           emitExpr(stmt.high, stmt),
           ":",
-          emitBlock(stmt.body, stmt),
+          emitMultiExpr(stmt.body, stmt),
         ];
       }
       if (!stmt.inclusive) {
-        throw new Error("Ranges with steps must be inclusive in Nim.");
+        throw new EmitError(stmt, "exlusive+step");
       }
       return [
         "for",
         emitExpr(stmt.variable, stmt),
         "in",
         "countup",
+        "$GLUE$",
         "(",
         emitExpr(stmt.low, stmt),
         ",",
@@ -116,7 +119,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitExpr(stmt.increment, stmt),
         ")",
         ":",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
       ];
     }
     case "IfStatement":
@@ -124,18 +127,17 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "if",
         emitExpr(stmt.condition, stmt),
         ":",
-        emitBlock(stmt.consequent, stmt),
+        emitMultiExpr(stmt.consequent, stmt),
         stmt.alternate !== undefined
-          ? ["else", ":", emitBlock(stmt.alternate, stmt)]
+          ? ["else", ":", emitMultiExpr(stmt.alternate, stmt)]
           : [],
       ];
     case "Variants":
-      throw new Error("Variants should have been instantiated.");
     case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.kind}) while emitting Nim`);
+      throw new EmitError(stmt);
     default:
       return emitExpr(stmt, parent);
   }
@@ -198,6 +200,7 @@ function emitExprNoParens(
     case "MutatingBinaryOp":
       return [
         emitExpr(expr.variable, expr),
+        "$GLUE$",
         expr.name + "=",
         emitExpr(expr.right, expr),
       ];
@@ -234,11 +237,12 @@ function emitExprNoParens(
       return expr.value.toString();
     case "FunctionCall":
       if (expr.args.length === 1 && expr.args[0].kind === "StringLiteral") {
-        return [expr.ident.name, "", emitExpr(expr.args[0], expr)];
+        return [expr.ident.name, "$GLUE$", emitExpr(expr.args[0], expr)];
       }
       if (expressionContinues || expr.args.length > 1)
         return [
           expr.ident.name,
+          "$GLUE$",
           "(",
           joinTrees(
             expr.args.map((arg) => emitExpr(arg, expr)),
@@ -261,6 +265,7 @@ function emitExprNoParens(
           expr.ident.name,
           expr.args.length > 0
             ? [
+                "$GLUE$",
                 "(",
                 joinTrees(
                   expr.args.map((arg) => emitExpr(arg, expr)),
@@ -285,6 +290,7 @@ function emitExprNoParens(
     case "BinaryOp":
       return [
         emitExpr(expr.left, expr, "left"),
+        /[A-Za-z]/.test(expr.name[0]) ? [] : "$GLUE$",
         expr.name,
         emitExpr(expr.right, expr, "right"),
       ];
@@ -316,8 +322,7 @@ function emitExprNoParens(
         "toTable",
       ];
     case "IndexCall":
-      if (expr.oneIndexed)
-        throw new Error("Nim only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       return [
         emitExprNoParens(expr.collection),
         "[",
@@ -325,10 +330,9 @@ function emitExprNoParens(
         "]",
       ];
     case "RangeIndexCall":
-      if (expr.oneIndexed)
-        throw new Error("Nim only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       if (expr.step.kind !== "IntegerLiteral" || expr.step.value !== 1n)
-        throw new Error("Nim doesn't support indexing with steps.");
+        throw new EmitError(expr, "step");
       return [
         emitExprNoParens(expr.collection),
         "[",
@@ -339,10 +343,6 @@ function emitExprNoParens(
       ];
 
     default:
-      throw new Error(
-        `Unexpected node while emitting Nim: ${expr.kind}: ${
-          "op" in expr ? expr.op : ""
-        }. `
-      );
+      throw new EmitError(expr);
   }
 }

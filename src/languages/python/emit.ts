@@ -1,7 +1,8 @@
 import { TokenTree } from "@/common/Language";
 import {
+  containsMultiExpr,
+  EmitError,
   emitStringLiteral,
-  hasChildWithBlock,
   joinTrees,
   needsParensPrecedence,
 } from "../../common/emit";
@@ -12,23 +13,24 @@ export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }
 
-function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
-  const children = block.kind === "Block" ? block.children : [block];
-  if (hasChildWithBlock(block)) {
-    if (parent.kind === "Program") {
-      return joinTrees(
-        children.map((stmt) => emitStatement(stmt, block)),
-        "\n"
-      );
-    }
+function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
+  const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
+  // Prefer newlines over semicolons at top level for aesthetics
+  if (parent.kind === "Program") {
+    return joinTrees(
+      children.map((stmt) => emitStatement(stmt, baseExpr)),
+      "\n"
+    );
+  }
+  if (containsMultiExpr(children)) {
     return [
       "$INDENT$",
-      children.map((stmt) => ["\n", emitStatement(stmt, block)]),
+      children.map((stmt) => ["\n", emitStatement(stmt, baseExpr)]),
       "$DEDENT$",
     ];
   }
   return joinTrees(
-    children.map((stmt) => emitStatement(stmt, block)),
+    children.map((stmt) => emitStatement(stmt, baseExpr)),
     ";"
   );
 }
@@ -36,7 +38,7 @@ function emitBlock(block: IR.Expr, parent: IR.Node): TokenTree {
 function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
   switch (stmt.kind) {
     case "Block":
-      return emitBlock(stmt, parent);
+      return emitMultiExpr(stmt, parent);
     case "ImportStatement":
       return [
         stmt.name,
@@ -50,7 +52,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         `while`,
         emitExpr(stmt.condition, stmt),
         ":",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
       ];
     case "ForRange": {
       const low = emitExpr(stmt.low, stmt);
@@ -69,7 +71,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         increment1 ? [] : [",", ...increment],
         ")",
         ":",
-        emitBlock(stmt.body, stmt),
+        emitMultiExpr(stmt.body, stmt),
       ];
     }
     case "IfStatement":
@@ -77,18 +79,17 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "if",
         emitExpr(stmt.condition, stmt),
         ":",
-        emitBlock(stmt.consequent, stmt),
+        emitMultiExpr(stmt.consequent, stmt),
         stmt.alternate !== undefined
-          ? ["\n", "else", ":", ...emitBlock(stmt.alternate, stmt)]
+          ? ["\n", "else", ":", ...emitMultiExpr(stmt.alternate, stmt)]
           : [],
       ];
     case "Variants":
-      throw new Error("Variants should have been instantiated.");
     case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.kind}) while emitting Python`);
+      throw new EmitError(stmt);
     default:
       return emitExpr(stmt, parent);
   }
@@ -215,8 +216,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         "]",
       ];
     case "IndexCall":
-      if (expr.oneIndexed)
-        throw new Error("Python only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       return [
         emitExprNoParens(expr.collection),
         "[",
@@ -224,8 +224,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         "]",
       ];
     case "RangeIndexCall": {
-      if (expr.oneIndexed)
-        throw new Error("Python only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       const low = emitExpr(expr.low, expr);
       const low0 = low.length === 1 && low[0] === "0";
       const high = emitExpr(expr.high, expr);
@@ -242,10 +241,6 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
       ];
     }
     default:
-      throw new Error(
-        `Unexpected node while emitting Python: ${expr.kind}: ${
-          "op" in expr ? expr.op ?? "" : ""
-        }. `
-      );
+      throw new EmitError(expr);
   }
 }
