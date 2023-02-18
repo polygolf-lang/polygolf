@@ -22,7 +22,7 @@ import {
 export function tableHashing(
   hashFunc: (x: string) => number,
   hashNode: string | ((x: Expr) => Expr) = "hash",
-  maxMod = 99999
+  maxMod = 9999
 ): Plugin {
   let hash: (x: Expr) => Expr;
   if (typeof hashNode === "string") {
@@ -49,11 +49,13 @@ export function tableHashing(
           tableType.key.kind === "text" &&
           table.kvPairs.every((x) => x.key.kind === "StringLiteral")
         ) {
-          const [array, mod] = findHash(
+          const searchResult = findHash(
             hashFunc,
             table.kvPairs.map((x) => [(x.key as StringLiteral).value, x.value]),
             maxMod
           );
+          if (searchResult === null) return undefined;
+          const [array, mod] = searchResult;
           let lastUsed = array.length - 1;
           while (array[lastUsed] === null) lastUsed--;
 
@@ -82,14 +84,13 @@ function findHash( // TODO: Allow collisions in keys that map to the same value.
   hashFunc: (x: string) => number,
   table: [string, Expr][],
   maxMod: number
-): [(Expr | null)[], number] {
-  let width = table.length;
+): [(Expr | null)[], number] | null {
   const hashedTable: [number, Expr][] = table.map((x) => [
     hashFunc(x[0]),
     x[1],
   ]);
-  const result: (Expr | null)[] = Array(width);
-  while (true) {
+  const result: (Expr | null)[] = Array(table.length);
+  for (let width = table.length; width < table.length * 4; width++) {
     for (let mod = width; mod <= maxMod; mod++) {
       result.fill(null);
       let collision = false;
@@ -105,9 +106,9 @@ function findHash( // TODO: Allow collisions in keys that map to the same value.
         return [result, mod];
       }
     }
-    width++;
     result.push(null);
   }
+  return null;
 }
 
 // a simple hashFunc to test the plugin
