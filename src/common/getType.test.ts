@@ -388,15 +388,17 @@ describePolygolfOp("text_contains", [
 
 describePolygolfOp("text_codepoint_find", [
   [[text(), int()], "error"],
-  [[text(), text()], int(-1)],
-  [[text(100), text()], int(-1, 99)],
+  [[text(), text()], "error"],
+  [[text(), text(int(1, 1))], int(-1)],
+  [[text(100), text(int(10))], int(-1, 90)],
 ]);
 
 describePolygolfOp("text_byte_find", [
   [[text(), int()], "error"],
-  [[text(), text()], int(-1)],
-  [[text(100), text()], int(-1, 396)],
-  [[ascii(100), text()], int(-1, 99)],
+  [[text(), text()], "error"],
+  [[text(), text(int(1, 1))], int(-1)],
+  [[text(100), text(int(10))], int(-1, 390)],
+  [[ascii(100), text(int(10))], int(-1, 90)],
 ]);
 
 describePolygolfOp("text_split", [

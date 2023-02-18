@@ -422,14 +422,17 @@ function getOpCodeType(
       return booleanType;
     case "text_codepoint_find":
     case "text_byte_find":
-      expectType(textType(), textType());
+      expectType(textType(), textType(integerType(1, "oo")));
       return integerType(
         -1,
-        mul(
-          sub((types[0] as TextType).codepointLength.high, 1n),
-          expr.op === "text_byte_find" && !(types[0] as TextType).isAscii
-            ? 4n
-            : 1n
+        sub(
+          mul(
+            (types[0] as TextType).codepointLength.high,
+            expr.op === "text_byte_find" && !(types[0] as TextType).isAscii
+              ? 4n
+              : 1n
+          ),
+          (types[1] as TextType).codepointLength.low
         )
       );
     case "text_split":
