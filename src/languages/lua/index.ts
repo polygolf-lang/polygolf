@@ -4,6 +4,7 @@ import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
 import emitProgram from "./emit";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   plus1,
@@ -25,6 +26,7 @@ const luaLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
+    equalityToInequality,
   ],
   emitPlugins: [forRangeToForRangeInclusive, useIndexCalls(true)],
   finalEmitPlugins: [
@@ -60,7 +62,7 @@ const luaLanguage: Language = {
         ["neg", "-"],
         ["list_length", "#"],
         ["bit_not", "~"],
-        ["text_to_int", "~~"],
+        ["text_to_int", "- -"],
       ],
       [
         ["mul", "*"],

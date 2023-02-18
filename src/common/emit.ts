@@ -1,4 +1,5 @@
-import { IR } from "IR";
+import { Expr, IR } from "IR";
+import { PolygolfError } from "./errors";
 import { PathFragment } from "./fragments";
 import { TokenTree } from "./Language";
 
@@ -68,4 +69,16 @@ export function containsMultiExpr(exprs: readonly IR.Expr[]): boolean {
     }
   }
   return false;
+}
+
+export class EmitError extends PolygolfError {
+  constructor(expr: Expr, detail?: string) {
+    if (detail === undefined && "op" in expr && expr.op !== null)
+      detail = expr.op;
+    detail = detail === undefined ? "" : ` (${detail})`;
+    const message = `emit error - ${expr.kind}${detail} not supported.`;
+    super(message, expr.source);
+    this.name = "EmitError";
+    Object.setPrototypeOf(this, EmitError.prototype);
+  }
 }

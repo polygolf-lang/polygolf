@@ -12,6 +12,7 @@ import { Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   useIndexCalls,
@@ -35,6 +36,7 @@ const pythonLanguage: Language = {
     tempVarToMultipleAssignment,
     forRangeToForEach,
     golfLastPrint(),
+    equalityToInequality,
   ],
   emitPlugins: [useIndexCalls()],
   finalEmitPlugins: [
