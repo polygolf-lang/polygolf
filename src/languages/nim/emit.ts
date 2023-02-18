@@ -167,6 +167,7 @@ function needsParens(
   if (needsParensPrecedence(expr, parent, fragment)) {
     return true;
   }
+  if (expr.kind === "ConditionalOp" && !expr.isSafe) return true;
   if (parent.kind === "MethodCall" && fragment === "object") {
     return expr.kind === "UnaryOp" || expr.kind === "BinaryOp";
   }
@@ -291,6 +292,30 @@ function emitExprNoParens(
       ];
     case "UnaryOp":
       return [expr.name, emitExpr(expr.arg, expr)];
+    case "ConditionalOp":
+      return expr.isSafe
+        ? [
+            "[",
+            emitExpr(expr.alternate, expr),
+            ",",
+            emitExpr(expr.consequent, expr),
+            "]",
+            "[",
+            "ord",
+            emitExpr(expr.condition, expr),
+            "]",
+          ]
+        : [
+            "if",
+            emitExpr(expr.condition, expr),
+            ":",
+
+            emitExpr(expr.consequent, expr),
+
+            "else",
+            ":",
+            emitExpr(expr.alternate, expr),
+          ];
     case "ListConstructor":
       return [
         "@",

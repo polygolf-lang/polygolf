@@ -102,6 +102,9 @@ function needsParens(
   if (needsParensPrecedence(expr, parent, fragment)) {
     return true;
   }
+  if (expr.kind === "ConditionalOp" && expr.isSafe)
+    return parent.kind === "UnaryOp" || parent.kind === "BinaryOp";
+
   if (
     parent.kind === "MethodCall" &&
     expr === parent.object &&
@@ -178,6 +181,39 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
       ];
     case "UnaryOp":
       return [expr.name, emitExpr(expr.arg, expr)];
+    case "ConditionalOp":
+      return expr.isSafe
+        ? [
+            "(",
+            emitExpr(expr.condition, expr),
+            ")",
+            "and",
+            "(",
+            emitExpr(expr.consequent, expr),
+            ")",
+            "or",
+            "(",
+            emitExpr(expr.alternate, expr),
+            ")",
+          ]
+        : [
+            "(",
+            "(",
+            emitExpr(expr.condition, expr),
+            ")",
+            "and",
+            "{",
+            emitExpr(expr.consequent, expr),
+            "}",
+            "or",
+            "{",
+            emitExpr(expr.alternate, expr),
+            "}",
+            ")",
+            "[",
+            "1",
+            "]",
+          ];
     case "IndexCall":
       if (!expr.oneIndexed)
         throw new Error("Lua only supports one indexed access.");
