@@ -80,9 +80,6 @@ for (const lang of langs) {
             "^"
         );
       }
-    } else if (e instanceof Error && e.message.includes("No variant")) {
-      // #130 will remove the need for this as emiters will throw a PolygolfError
-      console.log(e.message);
     } else {
       throw e;
     }
