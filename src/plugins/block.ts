@@ -16,7 +16,11 @@ import { Spine } from "@/common/Spine";
  */
 export function blockChildrenCollectAndReplace(
   name: string,
-  childrenFilter: (expr: Expr, spine: Spine<Expr>) => boolean,
+  collectPredicate: (
+    previous: Expr[],
+    expr: Expr,
+    spine: Spine<Expr>
+  ) => boolean,
   transform: (exprs: Expr[]) => Expr[]
 ): Plugin {
   return {
@@ -44,3 +48,8 @@ export function blockChildrenCollectAndReplace(
     },
   };
 }
+
+export const useOneToManyAssignment = blockChildrenCollectAndReplace(
+  "useOneToManyAssignment",
+  (x) => x.kind === "Assignment"
+);

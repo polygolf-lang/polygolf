@@ -1,5 +1,37 @@
 import { PolygolfError } from "../common/errors";
-import { BaseExpr, Expr, id, Identifier, Type, IndexCall, LValue } from "./IR";
+import {
+  BaseExpr,
+  Expr,
+  id,
+  Identifier,
+  Type,
+  IndexCall,
+  BinaryOpCode,
+} from "./IR";
+
+export type LValue = Identifier | IndexCall;
+
+/**
+ * Mutating operator.
+ *
+ * a += 5
+ */
+export interface MutatingBinaryOp extends BaseExpr {
+  readonly kind: "MutatingBinaryOp";
+  readonly op: BinaryOpCode;
+  readonly name: string;
+  readonly variable: LValue;
+  readonly right: Expr;
+}
+
+/**
+ * Variable declaration.
+ */
+export interface VarDeclaration extends BaseExpr {
+  readonly kind: "VarDeclaration";
+  readonly variable: Identifier;
+  readonly variableType: Type;
+}
 
 /**
  * Assignment statement of the form `variable = expr`. Raw OK
@@ -44,9 +76,39 @@ export type SomeAssignment =
  */
 export interface VarDeclarationWithAssignment extends BaseExpr {
   readonly kind: "VarDeclarationWithAssignment";
-  readonly assignments: SomeAssignment[];
-  readonly valueTypes?: readonly Type[];
-  readonly requiresBlock: boolean;
+  readonly assignment: SomeAssignment;
+  readonly types?: readonly Type[];
+}
+
+export interface VarDeclarationBlock extends BaseExpr {
+  readonly kind: "VarDeclarationBlock";
+  readonly children: (VarDeclaration | VarDeclarationWithAssignment)[];
+}
+
+export function mutatingBinaryOp(
+  op: BinaryOpCode,
+  variable: LValue,
+  right: Expr,
+  name: string = ""
+): MutatingBinaryOp {
+  return {
+    kind: "MutatingBinaryOp",
+    op,
+    variable,
+    right,
+    name,
+  };
+}
+
+export function varDeclaration(
+  variable: Identifier | string,
+  variableType: Type
+): VarDeclaration {
+  return {
+    kind: "VarDeclaration",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    variableType,
+  };
 }
 
 export function assignment(
@@ -57,10 +119,7 @@ export function assignment(
   variable: IndexCall,
   expr: Expr
 ): Assignment & { variable: IndexCall };
-export function assignment(
-  variable: Identifier | string | IndexCall,
-  expr: Expr
-): Assignment {
+export function assignment(variable: LValue | string, expr: Expr): Assignment {
   return {
     kind: "Assignment",
     variable: typeof variable === "string" ? id(variable) : variable,
@@ -69,7 +128,7 @@ export function assignment(
 }
 
 export function manyToManyAssignment(
-  variables: (Identifier | string | IndexCall)[],
+  variables: (LValue | string)[],
   exprs: readonly Expr[]
 ): ManyToManyAssignment {
   return {
@@ -80,7 +139,7 @@ export function manyToManyAssignment(
 }
 
 export function oneToManyAssignment(
-  variables: readonly (Identifier | string | IndexCall)[],
+  variables: readonly (LValue | string)[],
   expr: Expr
 ): OneToManyAssignment {
   return {
@@ -91,27 +150,42 @@ export function oneToManyAssignment(
 }
 
 export function varDeclarationWithAssignment(
-  assignments: SomeAssignment[],
-  requiresBlock: boolean = true,
-  valueTypes?: readonly Type[]
+  assignment: SomeAssignment,
+  types?: readonly Type[]
 ): VarDeclarationWithAssignment {
   if (
-    assignments.some(
-      (x) =>
-        (x.kind === "Assignment" && x.variable.kind !== "Identifier") ||
-        (x.kind !== "Assignment" &&
-          x.variables.some((y) => y.kind !== "Identifier"))
-    )
+    (assignment.kind === "Assignment" &&
+      assignment.variable.kind !== "Identifier") ||
+    (assignment.kind !== "Assignment" &&
+      assignment.variables.some((y) => y.kind !== "Identifier"))
   ) {
     throw new PolygolfError(
       "VarDeclarationWithAssignment needs assignments to variables.",
-      assignments[0].source
+      assignment.source
+    );
+  }
+  if (
+    assignment.kind === "Assignment"
+      ? 1
+      : assignment.variables.length != types?.length
+  ) {
+    throw new PolygolfError(
+      "Number of variables and number of types don't match.",
+      assignment.source
     );
   }
   return {
     kind: "VarDeclarationWithAssignment",
-    assignments,
-    requiresBlock,
-    valueTypes,
+    assignment,
+    types,
+  };
+}
+
+export function varDeclarationBlock(
+  children: (VarDeclaration | VarDeclarationWithAssignment)[]
+): VarDeclarationBlock {
+  return {
+    kind: "VarDeclarationBlock",
+    children,
   };
 }

@@ -60,8 +60,6 @@ export interface RangeIndexCall extends BaseExpr {
   readonly oneIndexed: boolean;
 }
 
-export type LValue = Identifier | IndexCall;
-
 export interface BinaryOp extends BaseExpr {
   readonly kind: "BinaryOp";
   readonly op: BinaryOpCode;
@@ -70,19 +68,6 @@ export interface BinaryOp extends BaseExpr {
   readonly right: Expr;
   readonly precedence: number;
   readonly rightAssociative: boolean;
-}
-
-/**
- * Mutating operator.
- *
- * a += 5
- */
-export interface MutatingBinaryOp extends BaseExpr {
-  readonly kind: "MutatingBinaryOp";
-  readonly op: BinaryOpCode;
-  readonly name: string;
-  readonly variable: LValue;
-  readonly right: Expr;
 }
 
 export interface UnaryOp extends BaseExpr {
@@ -210,21 +195,6 @@ export function binaryOp(
     precedence,
     rightAssociative:
       rightAssociative ?? (op === "pow" || op === "text_concat"),
-  };
-}
-
-export function mutatingBinaryOp(
-  op: BinaryOpCode,
-  variable: LValue,
-  right: Expr,
-  name: string = ""
-): MutatingBinaryOp {
-  return {
-    kind: "MutatingBinaryOp",
-    op,
-    variable,
-    right,
-    name,
   };
 }
 
