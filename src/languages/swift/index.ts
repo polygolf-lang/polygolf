@@ -1,8 +1,13 @@
-import { functionCall, id, indexCall, methodCall } from "../../IR";
+import { functionCall, id, indexCall, methodCall, polygolfOp } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { mapOps, mapPrecedenceOps, useIndexCalls } from "../../plugins/ops";
+import {
+  mapOps,
+  mapPrecedenceOps,
+  plus1,
+  useIndexCalls,
+} from "../../plugins/ops";
 import { addVarDeclarations } from "../nim/plugins";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { addImports } from "./plugins";
@@ -23,9 +28,25 @@ const swiftLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
   ],
-  emitPlugins: [modToRem, divToTruncdiv, useIndexCalls(), forArgvToForEach],
+  emitPlugins: [
+    forArgvToForEach,
+    modToRem,
+    divToTruncdiv,
+    mapOps([
+      ["argv", (x) => id("CommandLine.arguments[1...]", true)],
+      [
+        "argv_get",
+        (x) =>
+          polygolfOp(
+            "list_get",
+            id("CommandLine.arguments", true),
+            plus1(x[0])
+          ),
+      ],
+    ]),
+    useIndexCalls(),
+  ],
   finalEmitPlugins: [
-    mapOps([["argv", (x) => id("CommandLine.arguments[1...]", true)]]),
     mapOps([
       [
         "text_get_byte",

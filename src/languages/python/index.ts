@@ -9,6 +9,7 @@ import {
   int,
   importStatement,
   block,
+  polygolfOp,
 } from "../../IR";
 import { Language, Plugin } from "../../common/Language";
 
@@ -34,7 +35,7 @@ const addImports: Plugin = {
     if (
       node.kind === "Program" &&
       spine.someNode(
-        (x) => x.kind === "Identifier" && x.builtin && x.name === "sys.argv[1:]"
+        (x) => x.kind === "Identifier" && x.builtin && x.name.startsWith("sys.")
       )
     ) {
       return {
@@ -59,7 +60,17 @@ const pythonLanguage: Language = {
     forRangeToForEach,
     golfLastPrint(),
   ],
-  emitPlugins: [useIndexCalls(), forArgvToForEach],
+  emitPlugins: [
+    forArgvToForEach,
+    mapOps([
+      ["argv", (x) => id("sys.argv[1:]", true)],
+      [
+        "argv_get",
+        (x) => polygolfOp("list_get", id("sys.argv", true), plus1(x[0])),
+      ],
+    ]),
+    useIndexCalls(),
+  ],
   finalEmitPlugins: [
     mapOps([
       ["true", (_) => int(1)],
@@ -100,7 +111,6 @@ const pythonLanguage: Language = {
           );
         },
       ],
-      ["argv", (x) => id("sys.argv[1:]", true)],
     ]),
     mapPrecedenceOps(
       [["pow", "**"]],

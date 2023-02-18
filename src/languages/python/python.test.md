@@ -130,6 +130,15 @@ import sys
 for x in sys.argv[1:]:print(x)
 ```
 
+```polygolf
+print (argv_get 0);
+```
+
+```python
+import sys
+print(sys.argv[1])
+```
+
 ## Mutating ops
 
 ```polygolf

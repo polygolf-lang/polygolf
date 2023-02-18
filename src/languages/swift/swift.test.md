@@ -68,3 +68,11 @@ for_argv $x 100 {
 ```swift
 for x in CommandLine.arguments[1...]{print(x)}
 ```
+
+```polygolf
+print (argv_get 0);
+```
+
+```swift
+print(CommandLine.arguments[1])
+```
