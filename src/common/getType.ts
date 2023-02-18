@@ -590,7 +590,7 @@ function getOpCodeType(
     case "println":
       return voidType;
     case "text_replace": {
-      expectType(textType(), textType(), textType());
+      expectType(textType(), textType(integerType(1, "oo")), textType());
       const [a, c] = [types[0], types[2]] as TextType[];
       return textType(
         getArithmeticType("mul", a.codepointLength, c.codepointLength),
