@@ -1,5 +1,5 @@
 import { TokenTree } from "../../common/Language";
-import { emitStringLiteral } from "../../common/emit";
+import { EmitError, emitStringLiteral } from "../../common/emit";
 import { IR } from "../../IR";
 
 export default function emitProgram(program: IR.Program): TokenTree {
@@ -68,13 +68,10 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "if",
       ];
     case "Variants":
-      throw new Error("Variants should have been instantiated.");
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(
-        `Unexpected node (${stmt.kind}) while emitting GolfScript`
-      );
+      throw new EmitError(stmt);
     default:
       return emitExpr(stmt);
   }
@@ -121,8 +118,7 @@ function emitExpr(expr: IR.Expr): TokenTree {
         "if",
       ];
     case "IndexCall":
-      if (expr.oneIndexed)
-        throw new Error("GolfScript only supports zeroIndexed access.");
+      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       return [emitExpr(expr.collection), emitExpr(expr.index), "="];
     case "RangeIndexCall": {
       const step = emitExpr(expr.step);
@@ -140,10 +136,6 @@ function emitExpr(expr: IR.Expr): TokenTree {
       ];
     }
     default:
-      throw new Error(
-        `Unexpected node while emitting GolfScript: ${expr.kind}: ${
-          "op" in expr ? expr.op ?? "" : ""
-        }. `
-      );
+      throw new EmitError(expr);
   }
 }

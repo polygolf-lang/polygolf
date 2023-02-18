@@ -36,6 +36,7 @@ import {
   functionType,
   func,
   conditional,
+  arrayConstructor,
   forArgv,
 } from "../IR";
 import grammar from "./grammar";
@@ -136,7 +137,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       return listConstructor(args);
     case "array":
       expectArity(1, Infinity);
-      return listConstructor(args);
+      return arrayConstructor(args);
     case "set":
       return setConstructor(args);
     case "table":

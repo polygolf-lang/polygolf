@@ -1,5 +1,6 @@
 import { TokenTree } from "../../common/Language";
 import {
+  EmitError,
   emitStringLiteral,
   joinTrees,
   needsParensPrecedence,
@@ -111,11 +112,10 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           : [],
       ];
     case "Variants":
-      throw new Error("Variants should have been instantiated.");
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.kind}) while emitting Swift`);
+      throw new EmitError(stmt);
     default:
       return emitExpr(stmt, parent);
   }
@@ -303,10 +303,6 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
       ];
 
     default:
-      throw new Error(
-        `Unexpected node while emitting Swift: ${expr.kind}: ${
-          "op" in expr ? expr.op ?? "" : ""
-        }. `
-      );
+      throw new EmitError(expr);
   }
 }

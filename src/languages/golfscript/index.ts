@@ -3,6 +3,7 @@ import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   plus1,
@@ -19,7 +20,12 @@ const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
   emitter: emitProgram,
-  golfPlugins: [flipBinaryOps, evalStaticExpr, golfLastPrint()],
+  golfPlugins: [
+    flipBinaryOps,
+    evalStaticExpr,
+    golfLastPrint(),
+    equalityToInequality,
+  ],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
     mapOps([

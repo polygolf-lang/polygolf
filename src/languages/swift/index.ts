@@ -5,8 +5,9 @@ import emitProgram from "./emit";
 import {
   mapOps,
   mapPrecedenceOps,
-  plus1,
   useIndexCalls,
+  equalityToInequality,
+  plus1,
 } from "../../plugins/ops";
 import { addVarDeclarations } from "../nim/plugins";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
@@ -27,6 +28,7 @@ const swiftLanguage: Language = {
     golfStringListLiteral(false),
     evalStaticExpr,
     golfLastPrint(),
+    equalityToInequality,
   ],
   emitPlugins: [
     forArgvToForEach,

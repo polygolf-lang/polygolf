@@ -1,5 +1,6 @@
 import { PathFragment } from "../../common/fragments";
 import {
+  EmitError,
   emitStringLiteral,
   joinTrees,
   needsParensPrecedence,
@@ -40,7 +41,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         joinTrees(stmt.exprs.map(emitExprNoParens), ","),
       ];
     case "ForRange": {
-      if (!stmt.inclusive) throw new Error("Lua requires inclusive ForRange");
+      if (!stmt.inclusive) throw new EmitError(stmt, "exclusive");
       let increment = [",", emitExpr(stmt.increment, stmt)];
       if (
         stmt.increment.kind === "IntegerLiteral" &&
@@ -73,12 +74,11 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "end",
       ];
     case "Variants":
-      throw new Error("Variants should have been instantiated.");
     case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
-      throw new Error(`Unexpected node (${stmt.kind}) while emitting Lua`);
+      throw new EmitError(stmt);
     default:
       return emitExpr(stmt, parent);
   }
@@ -106,8 +106,8 @@ function needsParens(
     return true;
   }
   if (
-    parent.kind === "MethodCall" &&
-    expr === parent.object &&
+    ((parent.kind === "MethodCall" && expr === parent.object) ||
+      (parent.kind === "IndexCall" && expr === parent.collection)) &&
     expr.kind !== "Identifier" &&
     expr.kind !== "IndexCall"
   )
@@ -182,8 +182,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
     case "UnaryOp":
       return [expr.name, emitExpr(expr.arg, expr)];
     case "IndexCall":
-      if (!expr.oneIndexed)
-        throw new Error("Lua only supports one indexed access.");
+      if (!expr.oneIndexed) throw new EmitError(expr, "zero indexed");
       return [
         emitExpr(expr.collection, expr),
         "[",
@@ -195,10 +194,6 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
       return ["{", joinTrees(expr.exprs.map(emitExprNoParens), ","), "}"];
 
     default:
-      throw new Error(
-        `Unexpected node while emitting Lua: ${expr.kind}: ${String(
-          "op" in expr ? expr.op : ""
-        )}. `
-      );
+      throw new EmitError(expr);
   }
 }

@@ -4,6 +4,7 @@ import { defaultDetokenizer, Language } from "../../common/Language";
 import emitProgram from "./emit";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import {
+  equalityToInequality,
   mapOps,
   mapPrecedenceOps,
   plus1,
@@ -40,6 +41,7 @@ const nimLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
     tableHashing(hash),
+    equalityToInequality,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -117,15 +119,25 @@ const nimLanguage: Language = {
     addVarDeclarations,
     assertInt64,
   ],
-  detokenizer: defaultDetokenizer(
-    (a, b) =>
-      a !== "" &&
-      b !== "" &&
-      ((/[A-Za-z0-9_]/.test(a[a.length - 1]) && /[A-Za-z0-9_]/.test(b[0])) ||
-        ("=+-*/<>@$~&%|!?^.:\\".includes(a[a.length - 1]) &&
-          "=+-*/<>@$~&%|!?^.:\\".includes(b[0])) ||
-        (/[A-Za-z]/.test(a[a.length - 1]) && b[0] === `"`))
-  ),
+  detokenizer: defaultDetokenizer((a, b) => {
+    const left = a[a.length - 1];
+    const right = b[0];
+
+    if (/[A-Za-z0-9_]/.test(left) && /[A-Za-z0-9_]/.test(right)) return true; // alphanums meeting
+
+    const symbols = "=+-*/<>@$~&%|!?^.:\\";
+    if (symbols.includes(left) && symbols.includes(right)) return true; // symbols meeting
+
+    if (
+      /[A-Za-z]/.test(left) &&
+      !["var", "in", "else", "if", "while", "for"].includes(a) &&
+      (symbols + `"(`).includes(right) &&
+      !["=", ":", ".", "::"].includes(b)
+    )
+      return true; // identifier meeting an operator or string literal or opening paren
+
+    return false;
+  }),
 };
 
 export default nimLanguage;
