@@ -111,7 +111,6 @@ const nimLanguage: Language = {
     assertInt64,
   ],
   detokenizer: defaultDetokenizer((a, b) => {
-    if (a === "" || b === "") return false; // glue token
     const left = a[a.length - 1];
     const right = b[0];
 
