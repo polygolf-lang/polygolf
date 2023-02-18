@@ -57,6 +57,7 @@ const langs =
 const code = fs.readFileSync(options.input, { encoding: "utf-8" });
 const prog = parse(code);
 for (const lang of langs) {
+  if (langs.length > 1) console.log(lang.name);
   try {
     const result = applyLanguage(
       lang,
@@ -85,9 +86,12 @@ for (const lang of langs) {
             "^"
         );
       }
-      process.exit(1);
+    } else if (e instanceof Error && e.message.includes("No variant")) {
+      // #130 will remove the need for this as emiters will throw a PolygolfError
+      console.log(e.message);
     } else {
       throw e;
     }
   }
+  if (langs.length > 1) console.log("");
 }
