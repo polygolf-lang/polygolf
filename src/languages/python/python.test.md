@@ -9,12 +9,12 @@ print "3";
 print 4;
 ```
 
-```python bytes
+```python nogolf
 p=print
 p(1)
 p(2,end="")
 p(end="3")
-p(4)
+p(4,end="")
 ```
 
 ## Indexing
@@ -25,7 +25,7 @@ $b <- (text_get_codepoint_slice "abcdefg" 1 3);
 $c <- (text_codepoint_reversed "abcdefg");
 ```
 
-```python bytes
+```python nogolf
 a="abcdefg"[4]
 b="abcdefg"[1:3+1]
 c="abcdefg"[::-1]
@@ -38,7 +38,7 @@ $a <- (text_split "a_bc_d_" "_");
 $b <- (text_split_whitespace " a\nbc  d");
 ```
 
-```python bytes
+```python nogolf
 a="a_bc_d_".split("_")
 b=" a\nbc  d".split()
 ```
@@ -67,7 +67,7 @@ for $i 0 10 {
 };
 ```
 
-```python bytes
+```python nogolf
 a=0
 for i in range(10):
  for j in range(10):

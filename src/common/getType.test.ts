@@ -592,10 +592,11 @@ describePolygolfOp("argv", [
 
 describePolygolfOp("text_replace", [
   [[text(), text()], "error"],
-  [[text(), text(), text()], text()],
-  [[text(58), text(), text()], text()],
-  [[text(), text(), text(58)], text()],
-  [[text(58), text(), text(58)], text(58 * 58)],
+  [[text(), text(), text()], "error"],
+  [[text(), text(int(1)), text()], text()],
+  [[text(58), text(int(1)), text()], text()],
+  [[text(), text(int(1)), text(58)], text()],
+  [[text(58), text(int(1)), text(58)], text(58 * 58)],
 ]);
 
 describePolygolfOp("text_get_codepoint_slice", [
