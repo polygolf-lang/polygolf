@@ -60,7 +60,7 @@ const luaLanguage: Language = {
         ["neg", "-"],
         ["list_length", "#"],
         ["bit_not", "~"],
-        ["text_to_int", "~~"],
+        ["text_to_int", "- -"],
       ],
       [
         ["mul", "*"],

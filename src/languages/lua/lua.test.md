@@ -71,7 +71,7 @@ text_to_int "5";
 "abc".."xyz"
 ("abc"):len()
 tostring(5)
-~~"5"
+- -"5"
 ```
 
 ## Parentheses
