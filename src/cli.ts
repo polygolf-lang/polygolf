@@ -9,7 +9,7 @@ import { PolygolfError } from "./common/errors";
 import languages, { findLang } from "./languages/languages";
 
 const languageChoices = [
-  ...languages.flatMap((x) => [x.name.toLowerCase(), x.extension]),
+  ...new Set(languages.flatMap((x) => [x.name.toLowerCase(), x.extension])),
   "all",
 ];
 
