@@ -104,7 +104,7 @@ if(1==1) {
 };
 ```
 
-```python bytes
+```python nogolf
 p=print
 if 1==1:
  if 2==1:p("a")
@@ -115,4 +115,16 @@ else:
    if 5==1:p("c")
   else:p("d")
  else:p("e")
+```
+
+## Mutating ops
+
+```polygolf
+$a:0..oo <- 1;
+$a <- ($a + 2);
+```
+
+```python
+a=1
+a+=2
 ```

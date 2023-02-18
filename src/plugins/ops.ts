@@ -138,22 +138,34 @@ export const equalityToInequality: Plugin = {
       if (isConstantType(t1)) {
         if (t1.low === t2.low) {
           // (0 == $x:0..9) -> (1 > $x:0..9)
-          return polygolfOp(eq ? "gt" : "lt", int(t1.low + 1n), b);
+          // (0 != $x:0..9) -> (0 < $x:0..9)
+          return eq
+            ? polygolfOp("gt", int(t1.low + 1n), b)
+            : polygolfOp("lt", int(t1.low), b);
         }
         if (t1.low === t2.high) {
           // (9 == $x:0..9) -> (8 < $x:0..9)
-          return polygolfOp(eq ? "lt" : "gt", int(t1.low - 1n), b);
+          // (9 != $x:0..9) -> (9 > $x:0..9)
+          return eq
+            ? polygolfOp("lt", int(t1.low - 1n), b)
+            : polygolfOp("gt", int(t1.low), b);
         }
       }
 
       if (isConstantType(t2)) {
         if (t1.low === t2.low) {
           // ($x:0..9 == 0) -> ($x:0..9 < 1)
-          return polygolfOp(eq ? "lt" : "gt", a, int(t2.low + 1n));
+          // ($x:0..9 != 0) -> ($x:0..9 > 0)
+          return eq
+            ? polygolfOp("lt", a, int(t2.low + 1n))
+            : polygolfOp("gt", a, int(t2.low));
         }
         if (t1.high === t2.low) {
           // ($x:0..9 == 9) -> ($x:0..9 > 8)
-          return polygolfOp(eq ? "gt" : "lt", a, int(t2.low - 1n));
+          // ($x:0..9 != 9) -> ($x:0..9 < 9)
+          return eq
+            ? polygolfOp("gt", a, int(t2.low - 1n))
+            : polygolfOp("lt", a, int(t2.low));
         }
       }
     }
