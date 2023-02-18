@@ -147,33 +147,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
     case "Identifier":
       return expr.name;
     case "StringLiteral":
-      return emitStringLiteral(expr.value, [
-        [
-          `"`,
-          [
-            [`\\`, `\\\\`],
-            [`\n`, `\\n`],
-            [`\r`, `\\r`],
-            [`"`, `\\"`],
-          ],
-        ],
-        [
-          `'`,
-          [
-            [`\\`, `\\\\`],
-            [`\n`, `\\n`],
-            [`\r`, `\\r`],
-            [`'`, `\\'`],
-          ],
-        ],
-        [
-          `"""`,
-          [
-            [`\\`, `\\\\`],
-            [`"""`, `\\"""`],
-          ],
-        ],
-      ]);
+      return emitPythonStringLiteral(expr.value);
     case "IntegerLiteral":
       return expr.value.toString();
     case "FunctionCall":
@@ -243,4 +217,34 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
     default:
       throw new EmitError(expr);
   }
+}
+
+export function emitPythonStringLiteral(x: string): string {
+  return emitStringLiteral(x, [
+    [
+      `"`,
+      [
+        [`\\`, `\\\\`],
+        [`\n`, `\\n`],
+        [`\r`, `\\r`],
+        [`"`, `\\"`],
+      ],
+    ],
+    [
+      `'`,
+      [
+        [`\\`, `\\\\`],
+        [`\n`, `\\n`],
+        [`\r`, `\\r`],
+        [`'`, `\\'`],
+      ],
+    ],
+    [
+      `"""`,
+      [
+        [`\\`, `\\\\`],
+        [`"""`, `\\"""`],
+      ],
+    ],
+  ]);
 }

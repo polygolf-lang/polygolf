@@ -10,7 +10,7 @@ import {
 } from "../../IR";
 import { Language } from "../../common/Language";
 
-import emitProgram from "./emit";
+import emitProgram, { emitPythonStringLiteral } from "./emit";
 import {
   equalityToInequality,
   mapOps,
@@ -24,6 +24,12 @@ import { forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
+import {
+  packSource2to1,
+  packSource3to1,
+  useDecimalConstantPackedPrinter,
+  useLowDecimalListPackedPrinter,
+} from "../../plugins/packing";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 
 const pythonLanguage: Language = {
@@ -37,6 +43,8 @@ const pythonLanguage: Language = {
     forRangeToForEach,
     golfLastPrint(),
     equalityToInequality,
+    useDecimalConstantPackedPrinter,
+    useLowDecimalListPackedPrinter,
   ],
   emitPlugins: [useIndexCalls()],
   finalEmitPlugins: [
@@ -115,6 +123,16 @@ const pythonLanguage: Language = {
     addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
     aliasBuiltins(),
     renameIdents(),
+  ],
+  packers: [
+    (x) =>
+      `exec(bytes(${emitPythonStringLiteral(packSource2to1(x))},'u16')[2:])`,
+    (x) => {
+      if ([...x].map((x) => x.charCodeAt(0)).some((x) => x < 32)) return null;
+      return `exec(bytes(ord(c)%i+32for c in${emitPythonStringLiteral(
+        packSource3to1(x)
+      )}for i in b'abc'))`;
+    },
   ],
 };
 
