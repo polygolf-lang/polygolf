@@ -5,6 +5,7 @@ import {
   flipOpCode,
   Identifier,
   isBinary,
+  LValue,
   manyToManyAssignment,
   mutatingBinaryOp,
   Node,
@@ -84,40 +85,47 @@ function stringifyRightSide(
 }
 
 /**
- * Replaces `v1 = c; v2 = c; ... ; vn = c` with `v1,v2,...vn=c` // TODO allow banning this
- * or `var v1 = c; var v2 = c; ... ; var vn = c` with `var v1,v2,...vn=c`
+ * Replaces `v1 = c; v2 = c; ... ; vn = c` with `v1,v2,...vn=c`
  */
 export const addOneToManyAssignments = blockChildrenCollectAndReplace<
-  Assignment | VarDeclarationWithAssignment<Assignment>
+  Assignment<Identifier>
 >(
   "addOneToManyAssignments",
   (expr, spine, previous) =>
-    (expr.kind === "Assignment" ||
-      (expr.kind === "VarDeclarationWithAssignment" &&
-        expr.assignment.kind === "Assignment")) &&
+    isAssignmentToIdentifier(expr) &&
     (previous.length < 1 ||
-      (previous[0].kind === expr.kind &&
-        stringifyRightSide(
-          expr as Assignment | VarDeclarationWithAssignment<Assignment>
-        ) === stringifyRightSide(previous[0]))),
+      stringify(expr.expr) === stringify(previous[0].expr)),
   (exprs) => [
-    exprs[0].kind === "Assignment"
-      ? oneToManyAssignment(
-          exprs.map((x) => (x as Assignment).variable),
-          exprs[0].expr
-        )
-      : varDeclarationWithAssignment(
-          oneToManyAssignment(
-            exprs.map(
-              (x) =>
-                (x as VarDeclarationWithAssignment<Assignment>).assignment
-                  .variable
-            ),
-            exprs[0].assignment.expr
-          )
-        ),
+    oneToManyAssignment(
+      exprs.map((x) => x.variable),
+      exprs[0].expr
+    ),
   ]
 );
+
+/**
+ * Replaces `var v1 = c; var v2 = c; ... ; var vn = c` with `var v1,v2,...vn=c`
+ */
+export const addVarDeclarationOneToManyAssignments =
+  blockChildrenCollectAndReplace<
+    VarDeclarationWithAssignment<Assignment<Identifier>>
+  >(
+    "addVarDeclarationOneToManyAssignments",
+    (expr, spine, previous) =>
+      expr.kind === "VarDeclarationWithAssignment" &&
+      isAssignmentToIdentifier(expr.assignment) &&
+      (previous.length < 1 ||
+        stringify(expr.assignment.expr) ===
+          stringify(previous[0].assignment.expr)),
+    (exprs) => [
+      varDeclarationWithAssignment(
+        oneToManyAssignment(
+          exprs.map((x) => x.assignment.variable),
+          exprs[0].assignment.expr
+        )
+      ),
+    ]
+  );
 
 function referencesVariable(spine: Spine<Expr>, variable: Identifier): boolean {
   return spine.someNode(
@@ -125,50 +133,52 @@ function referencesVariable(spine: Spine<Expr>, variable: Identifier): boolean {
   );
 }
 
+function isAssignment(x: Node): x is Assignment {
+  return x.kind === "Assignment";
+}
+function isAssignmentToIdentifier(x: Node): x is Assignment<Identifier> {
+  return isAssignment(x) && x.variable.kind === "Identifier";
+}
+
 /**
- * Replaces `v1 = e1; v2 = e2; ... ; vn = en` with `(v1,v2,...vn)=(e1,e2,...,en)` // TODO allow banning this
- * or `var v1 = e1; var v2 = e2; ... ; var vn = en` with `var (v1,v2,...vn)=(e1,e2,...,en)`
+ * Replaces `v1 = e1; v2 = e2; ... ; vn = en` with `(v1,v2,...vn)=(e1,e2,...,en)`
  */
 export const addManyToManyAssignments = blockChildrenCollectAndReplace<
-  Assignment | VarDeclarationWithAssignment<Assignment>
+  Assignment<Identifier>
 >(
   "addManyToManyAssignments",
-  (expr, spine, previous) => {
-    const previousAssignments = previous.map((x) =>
-      x.kind === "Assignment" ? x : x.assignment
-    );
-    return (
-      ((expr.kind === "Assignment" && expr.variable.kind === "Identifier") ||
-        (expr.kind === "VarDeclarationWithAssignment" &&
-          expr.assignment.kind === "Assignment" &&
-          expr.assignment.variable.kind === "Identifier")) &&
-      (previous.length < 1 || previous[0].kind === expr.kind) &&
-      !previousAssignments.some((pendingAssignment) =>
-        referencesVariable(spine, pendingAssignment.variable as Identifier)
-      )
-    );
-  },
+  (expr, spine, previous) =>
+    isAssignmentToIdentifier(expr) &&
+    !previous.some((x) => referencesVariable(spine, x.variable)),
   (exprs) => [
-    exprs[0].kind === "Assignment"
-      ? manyToManyAssignment(
-          exprs.map((x) => (x as Assignment).variable),
-          exprs.map((x) => (x as Assignment).expr)
-        )
-      : varDeclarationWithAssignment(
-          manyToManyAssignment(
-            exprs.map(
-              (x) =>
-                (x as VarDeclarationWithAssignment<Assignment>).assignment
-                  .variable
-            ),
-            exprs.map(
-              (x) =>
-                (x as VarDeclarationWithAssignment<Assignment>).assignment.expr
-            )
-          )
-        ),
+    manyToManyAssignment(
+      exprs.map((x) => x.variable),
+      exprs.map((x) => x.expr)
+    ),
   ]
 );
+
+/**
+ * Replaces `var v1 = e1; var v2 = e2; ... ; var vn = en` with `var (v1,v2,...vn)=(e1,e2,...,en)`
+ */
+export const addVarDeclarationManyToManyAssignments =
+  blockChildrenCollectAndReplace<
+    VarDeclarationWithAssignment<Assignment<Identifier>>
+  >(
+    "addVarDeclarationManyToManyAssignments",
+    (expr, spine, previous) =>
+      expr.kind === "VarDeclarationWithAssignment" &&
+      isAssignmentToIdentifier(expr.assignment) &&
+      !previous.some((x) => referencesVariable(spine, x.assignment.variable)),
+    (exprs) => [
+      varDeclarationWithAssignment(
+        manyToManyAssignment(
+          exprs.map((x) => x.assignment.variable),
+          exprs.map((x) => x.assignment.expr)
+        )
+      ),
+    ]
+  );
 
 export const groupVarDeclarations = blockChildrenCollectAndReplace<
   VarDeclaration | VarDeclarationWithAssignment

@@ -39,9 +39,9 @@ export interface VarDeclaration extends BaseExpr {
  * Since many languages lack assignment expressions, assignments are
  * statement-level by default.
  */
-export interface Assignment extends BaseExpr {
+export interface Assignment<T extends LValue = LValue> extends BaseExpr {
   readonly kind: "Assignment";
-  readonly variable: LValue;
+  readonly variable: T;
   readonly expr: Expr;
 }
 
@@ -115,11 +115,11 @@ export function varDeclaration(
 export function assignment(
   variable: Identifier | string,
   expr: Expr
-): Assignment & { variable: Identifier };
+): Assignment<Identifier>;
 export function assignment(
   variable: IndexCall,
   expr: Expr
-): Assignment & { variable: IndexCall };
+): Assignment<IndexCall>;
 export function assignment(variable: LValue | string, expr: Expr): Assignment {
   return {
     kind: "Assignment",
