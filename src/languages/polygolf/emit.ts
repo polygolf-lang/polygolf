@@ -86,11 +86,13 @@ export function emitExpr(
       return emitSexpr(expr.op, ...expr.args);
     case "VarDeclaration":
       return emitSexpr("@", expr.variable, toString(expr.variableType));
+    case "VarDeclarationBlock":
+      return emitSexpr("@", ...expr.children.map((x) => emitExpr(x)));
     case "VarDeclarationWithAssignment":
       return emitSexpr(
         "@",
-        expr.assignments,
-        "{" + (expr.valueTypes ?? []).map(toString).join(" ") + "}"
+        expr.assignment,
+        "{" + (expr.types ?? []).map(toString).join(" ") + "}"
       );
     case "Assignment":
       return emitSexpr("assign", expr.variable, expr.expr);

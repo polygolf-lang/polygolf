@@ -154,6 +154,18 @@ export function applyLanguageToVariants(
   return ret;
 }
 
+export const stringify = (x: any) =>
+  JSON.stringify(
+    x,
+    (key, value) =>
+      key === "source"
+        ? undefined
+        : typeof value === "bigint"
+        ? value.toString() + "n"
+        : value,
+    2
+  );
+
 /** Returns an error if the program cannot be emitted */
 function golfProgram(
   program: IR.Program,

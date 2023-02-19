@@ -3,6 +3,9 @@ import {
   ManyToManyAssignment,
   OneToManyAssignment,
   VarDeclarationWithAssignment,
+  MutatingBinaryOp,
+  VarDeclaration,
+  VarDeclarationBlock,
 } from "./assignments";
 import {
   ArrayConstructor,
@@ -16,7 +19,6 @@ import {
   ConditionalOp,
   FunctionCall,
   MethodCall,
-  MutatingBinaryOp,
   UnaryOp,
   IndexCall,
   KeyValue,
@@ -32,13 +34,7 @@ import {
   WhileLoop,
 } from "./loops";
 import { Identifier, IntegerLiteral, StringLiteral } from "./terminals";
-import {
-  Block,
-  IfStatement,
-  ImportStatement,
-  VarDeclaration,
-  Variants,
-} from "./toplevel";
+import { Block, IfStatement, ImportStatement, Variants } from "./toplevel";
 import { Type } from "./types";
 
 export * from "./assignments";
@@ -75,6 +71,7 @@ export type Expr =
   | PolygolfOp
   | VarDeclaration
   | VarDeclarationWithAssignment
+  | VarDeclarationBlock
   | Assignment
   | IndexCall
   | RangeIndexCall

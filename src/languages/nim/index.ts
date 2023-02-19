@@ -16,12 +16,7 @@ import {
   mapPrecedenceOps,
   useIndexCalls,
 } from "../../plugins/ops";
-import {
-  addImports,
-  addVarDeclarations,
-  useUFCS,
-  useUnsignedDivision,
-} from "./plugins";
+import { addImports, useUFCS, useUnsignedDivision } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { useInclusiveForRange } from "../../plugins/loops";
@@ -35,6 +30,7 @@ import {
 import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
 import { assertInt64 } from "../../plugins/types";
+import { addVarDeclarations } from "../../plugins/block";
 
 const nimLanguage: Language = {
   name: "Nim",

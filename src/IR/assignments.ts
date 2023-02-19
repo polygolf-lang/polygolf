@@ -74,9 +74,10 @@ export type SomeAssignment =
 /**
  * Variable declaration with assignment
  */
-export interface VarDeclarationWithAssignment extends BaseExpr {
+export interface VarDeclarationWithAssignment<T = SomeAssignment>
+  extends BaseExpr {
   readonly kind: "VarDeclarationWithAssignment";
-  readonly assignment: SomeAssignment;
+  readonly assignment: T;
   readonly types?: readonly Type[];
 }
 
@@ -149,10 +150,10 @@ export function oneToManyAssignment(
   };
 }
 
-export function varDeclarationWithAssignment(
-  assignment: SomeAssignment,
+export function varDeclarationWithAssignment<T extends SomeAssignment>(
+  assignment: T,
   types?: readonly Type[]
-): VarDeclarationWithAssignment {
+): VarDeclarationWithAssignment<T> {
   if (
     (assignment.kind === "Assignment" &&
       assignment.variable.kind !== "Identifier") ||

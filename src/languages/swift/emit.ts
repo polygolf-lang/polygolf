@@ -36,16 +36,16 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
       return [
         "var",
         joinTrees(
-          (stmt.assignments.kind === "Assignment"
-            ? [stmt.assignments.variable]
-            : stmt.assignments.variables
+          (stmt.assignment.kind === "Assignment"
+            ? [stmt.assignment.variable]
+            : stmt.assignment.variables
           ).map((v, i) => [
             emitExprNoParens(v),
             "=",
             emitExprNoParens(
-              (stmt.assignments.kind === "Assignment"
-                ? [stmt.assignments.expr]
-                : stmt.assignments.exprs)[i]
+              (stmt.assignment.kind !== "ManyToManyAssignment"
+                ? [stmt.assignment.expr]
+                : stmt.assignment.exprs)[i]
             ),
           ]),
           ","
