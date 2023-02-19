@@ -183,6 +183,8 @@ export const canonicalOpTable: Record<string, OpCode> = {
   "^": "pow",
   "&": "bit_and",
   "|": "bit_or",
+  "<<": "bit_shift_left",
+  ">>": "bit_shift_right",
   // bitxor, bitnot handled as special case in canonicalOp
   "==": "eq",
   "!=": "neq",
