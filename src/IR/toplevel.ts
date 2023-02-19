@@ -1,4 +1,4 @@
-import { BaseExpr, Expr, id, Identifier, Type } from "./IR";
+import { BaseExpr, Expr } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.

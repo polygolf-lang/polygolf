@@ -2,23 +2,18 @@ import {
   Assignment,
   block,
   Expr,
-  flipOpCode,
   Identifier,
-  isBinary,
-  LValue,
   manyToManyAssignment,
-  mutatingBinaryOp,
   Node,
   oneToManyAssignment,
-  polygolfOp,
   VarDeclaration,
   varDeclarationBlock,
   VarDeclarationWithAssignment,
   varDeclarationWithAssignment,
 } from "../IR";
 import { Plugin } from "../common/Language";
-import { Spine } from "@/common/Spine";
-import { stringify } from "@/common/applyLanguage";
+import { Spine } from "../common/Spine";
+import { stringify } from "../common/applyLanguage";
 
 /**
  * Collects neighbouring block children matching a predicate and replaces the with a different set of children.
@@ -76,13 +71,6 @@ export const addVarDeclarations: Plugin = {
     }
   },
 };
-
-function stringifyRightSide(
-  x: Assignment | VarDeclarationWithAssignment<Assignment>
-): string {
-  if (x.kind === "Assignment") return stringify(x.expr);
-  return stringify(x.assignment.expr);
-}
 
 /**
  * Replaces `v1 = c; v2 = c; ... ; vn = c` with `v1,v2,...vn=c`

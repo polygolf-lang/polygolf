@@ -44,29 +44,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     case "Block":
       return emitMultiExpr(stmt, parent);
     case "VarDeclarationWithAssignment":
-      if (stmt.requiresBlock) {
-        const variables =
-          stmt.assignments.kind === "Assignment"
-            ? [stmt.assignments.variable]
-            : stmt.assignments.variables;
-        const exprs =
-          stmt.assignments.kind === "Assignment"
-            ? [stmt.assignments.expr]
-            : stmt.assignments.exprs;
-
-        return [
-          "var",
-          "$INDENT$",
-          variables.map((v, i) => [
-            "\n",
-            emitExprNoParens(v),
-            "=",
-            emitExprNoParens(exprs[i]),
-          ]),
-          "$DEDENT$",
-        ];
-      }
-      return ["var", emitExprNoParens(stmt.assignments)];
+      return ["var", emitExprNoParens(stmt.assignment)];
     case "ImportStatement":
       return [
         stmt.name,

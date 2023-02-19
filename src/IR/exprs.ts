@@ -6,6 +6,7 @@ import {
   UnaryOpCode,
   BinaryOpCode,
   OpCode,
+  MutatingBinaryOp,
 } from "./IR";
 
 /**

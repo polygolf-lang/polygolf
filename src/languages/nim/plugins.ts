@@ -1,14 +1,4 @@
-import {
-  Assignment,
-  block,
-  Expr,
-  Identifier,
-  ImportStatement,
-  importStatement,
-  manyToManyAssignment,
-  methodCall,
-  varDeclarationWithAssignment,
-} from "../../IR";
+import { block, ImportStatement, importStatement, methodCall } from "../../IR";
 import { getType } from "../../common/getType";
 import { Plugin } from "../../common/Language";
 

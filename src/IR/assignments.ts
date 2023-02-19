@@ -78,7 +78,6 @@ export interface VarDeclarationWithAssignment<T = SomeAssignment>
   extends BaseExpr {
   readonly kind: "VarDeclarationWithAssignment";
   readonly assignment: T;
-  readonly types?: readonly Type[];
 }
 
 export interface VarDeclarationBlock extends BaseExpr {
@@ -151,8 +150,7 @@ export function oneToManyAssignment(
 }
 
 export function varDeclarationWithAssignment<T extends SomeAssignment>(
-  assignment: T,
-  types?: readonly Type[]
+  assignment: T
 ): VarDeclarationWithAssignment<T> {
   if (
     (assignment.kind === "Assignment" &&
@@ -165,20 +163,9 @@ export function varDeclarationWithAssignment<T extends SomeAssignment>(
       assignment.source
     );
   }
-  if (
-    assignment.kind === "Assignment"
-      ? 1
-      : assignment.variables.length != types?.length
-  ) {
-    throw new PolygolfError(
-      "Number of variables and number of types don't match.",
-      assignment.source
-    );
-  }
   return {
     kind: "VarDeclarationWithAssignment",
     assignment,
-    types,
   };
 }
 
