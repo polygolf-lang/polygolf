@@ -115,6 +115,11 @@ const swiftLanguage: Language = {
       ],
 
       [
+        ["bit_shift_left", "<<"],
+        ["bit_shift_right", ">>"],
+      ],
+
+      [
         ["mul", "*"],
         ["trunc_div", "/"],
         ["rem", "%"],
@@ -143,7 +148,7 @@ const swiftLanguage: Language = {
       [["or", "||"]]
     ),
 
-    addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^"),
+    addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^", ">>", "<<"),
 
     addImports,
     renameIdents(),

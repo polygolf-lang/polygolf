@@ -97,6 +97,10 @@ const nimLanguage: Language = {
       ],
       [["text_concat", "&", false]],
       [
+        ["bit_shift_left", "shl"],
+        ["bit_shift_right", "shr"],
+      ],
+      [
         ["lt", "<"],
         ["leq", "<="],
         ["eq", "=="],
