@@ -6,6 +6,8 @@ export type OpTransformOutput = (
   spine: Spine<Expr>
 ) => IR.Expr;
 
+export type Packer = (x: string) => string | null;
+
 /** A language configuration.
  *
  * Somewhat declarative setup. `applyLanguage` always starts with a frontend IR
@@ -25,6 +27,7 @@ export interface Language {
   emitPlugins: Plugin[];
   finalEmitPlugins: Plugin[];
   emitter: Emitter;
+  packers?: Packer[];
   detokenizer?: Detokenizer;
 }
 
@@ -82,10 +85,11 @@ export function defaultDetokenizer(
     for (let i = 1; i < tokens.length; i++) {
       if (tokens[i] === "$INDENT$") indentLevel++;
       else if (tokens[i] === "$DEDENT$") indentLevel--;
-      else {
+      else if (tokens[i] !== "$GLUE$") {
         if (
           tokens[i - 1] !== "$INDENT$" &&
           tokens[i - 1] !== "$DEDENT$" &&
+          tokens[i - 1] !== "$GLUE$" &&
           whitespace(tokens[i - 1], tokens[i])
         )
           result += " ";

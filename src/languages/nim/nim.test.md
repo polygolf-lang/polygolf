@@ -1,24 +1,28 @@
 # Nim
 
 ```polygolf
-print (3+1);
-```
-
-```nim nogolf
-stdout.write 3+1
-```
-
-```nim bytes
-4.echo
-```
-
-```polygolf
 print (text_split "abc" "b");
 ```
 
 ```nim
 include re
 "abc".split("b").echo
+```
+
+```polygolf
+println ((1 + 1) * 2);
+```
+
+```nim nogolf
+echo (1+1)*2
+```
+
+```polygolf
+println (int_to_text 1);
+```
+
+```nim nogolf
+echo $1
 ```
 
 ```polygolf
@@ -54,6 +58,18 @@ for i in..9:
     a=j
     if i<j:a=j;a=j
  a=i
+```
+
+```polygolf
+$b <- 0;
+for $i $b 16 {
+    println $i;
+};
+```
+
+```nim nogolf
+var b=0
+for i in b..15:i.echo
 ```
 
 ## Indexing precedence
