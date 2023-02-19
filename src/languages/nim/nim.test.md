@@ -58,6 +58,18 @@ for i in..9:
  a=i
 ```
 
+```polygolf
+$b <- 0;
+for $i $b 16 {
+    println $i;
+};
+```
+
+```nim nogolf
+var b=0
+for i in b..15:i.echo
+```
+
 ## Variables & Assignments
 
 ```polygolf
