@@ -124,7 +124,19 @@ const pythonLanguage: Language = {
       [["and", "and"]],
       [["or", "or"]]
     ),
-    addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^", ">>", "<<"),
+    addMutatingBinaryOp(
+      "+",
+      "*",
+      "-",
+      "//",
+      "%",
+      "**",
+      "&",
+      "|",
+      "^",
+      ">>",
+      "<<"
+    ),
     aliasBuiltins(),
     renameIdents(),
   ],
