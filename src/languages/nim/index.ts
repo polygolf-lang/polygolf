@@ -26,6 +26,10 @@ import {
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
+import {
+  useDecimalConstantPackedPrinter,
+  useLowDecimalListPackedPrinter,
+} from "../../plugins/packing";
 import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
 import { assertInt64 } from "../../plugins/types";
@@ -40,6 +44,8 @@ const nimLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
+    useDecimalConstantPackedPrinter,
+    useLowDecimalListPackedPrinter,
     tableHashing(hash),
     equalityToInequality,
   ],

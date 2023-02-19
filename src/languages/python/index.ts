@@ -13,7 +13,7 @@ import {
 } from "../../IR";
 import { Language, Plugin } from "../../common/Language";
 
-import emitProgram from "./emit";
+import emitProgram, { emitPythonStringLiteral } from "./emit";
 import {
   equalityToInequality,
   mapOps,
@@ -27,6 +27,12 @@ import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
+import {
+  packSource2to1,
+  packSource3to1,
+  useDecimalConstantPackedPrinter,
+  useLowDecimalListPackedPrinter,
+} from "../../plugins/packing";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 
 // abstract out as a part of https://github.com/jared-hughes/polygolf/issues/89
@@ -61,6 +67,8 @@ const pythonLanguage: Language = {
     forRangeToForEach,
     golfLastPrint(),
     equalityToInequality,
+    useDecimalConstantPackedPrinter,
+    useLowDecimalListPackedPrinter,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -150,6 +158,16 @@ const pythonLanguage: Language = {
     aliasBuiltins(),
     renameIdents(),
     addImports,
+  ],
+  packers: [
+    (x) =>
+      `exec(bytes(${emitPythonStringLiteral(packSource2to1(x))},'u16')[2:])`,
+    (x) => {
+      if ([...x].map((x) => x.charCodeAt(0)).some((x) => x < 32)) return null;
+      return `exec(bytes(ord(c)%i+32for c in${emitPythonStringLiteral(
+        packSource3to1(x)
+      )}for i in b'abc'))`;
+    },
   ],
 };
 
