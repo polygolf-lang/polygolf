@@ -6,7 +6,7 @@ import {
   needsParensPrecedence,
 } from "../../common/emit";
 import { PathFragment } from "../../common/fragments";
-import { IR } from "../../IR";
+import { IR, isIntLiteral } from "../../IR";
 
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
@@ -70,14 +70,12 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     case "ForRange": {
       const low = emitExpr(stmt.low, stmt);
       const high = emitExpr(stmt.high, stmt);
-      const increment = emitExpr(stmt.increment, stmt);
-      const increment1 = increment.length === 1 && increment[0] === "1";
       return [
         "for",
         emitExpr(stmt.variable, stmt),
         "in",
-        increment1
-          ? [low, "..<", high]
+        isIntLiteral(stmt.increment, 1n)
+          ? [low, stmt.inclusive ? "..." : "..<", high]
           : [
               "stride",
               "(",
@@ -85,7 +83,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
                 [
                   ["from:", low],
                   ["to:", high],
-                  ["by:", increment],
+                  ["by:", emitExpr(stmt.increment, stmt)],
                 ],
                 ","
               ),

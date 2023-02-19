@@ -7,7 +7,7 @@ import {
   EmitError,
 } from "../../common/emit";
 import { PathFragment } from "../../common/fragments";
-import { IR } from "../../IR";
+import { IR, isIntLiteral } from "../../IR";
 
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
@@ -83,14 +83,8 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitMultiExpr(stmt.body, stmt),
       ];
     case "ForRange": {
-      const increment = emitExpr(stmt.increment, stmt);
-      const low =
-        stmt.low.kind === "IntegerLiteral" &&
-        stmt.low.value === 0n &&
-        stmt.inclusive
-          ? []
-          : emitExpr(stmt.low, stmt);
-      if (increment.length === 1 && increment[0] === "1") {
+      const low = isIntLiteral(stmt.low, 0n) ? [] : emitExpr(stmt.low, stmt);
+      if (isIntLiteral(stmt.increment, 1n)) {
         return [
           "for",
           emitExpr(stmt.variable, stmt),
@@ -331,8 +325,7 @@ function emitExprNoParens(
       ];
     case "RangeIndexCall":
       if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
-      if (expr.step.kind !== "IntegerLiteral" || expr.step.value !== 1n)
-        throw new EmitError(expr, "step");
+      if (!isIntLiteral(expr.step, 1n)) throw new EmitError(expr, "step");
       return [
         emitExprNoParens(expr.collection),
         "[",

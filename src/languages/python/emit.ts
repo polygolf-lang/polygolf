@@ -7,7 +7,7 @@ import {
   needsParensPrecedence,
 } from "../../common/emit";
 import { PathFragment } from "../../common/fragments";
-import { IR } from "../../IR";
+import { IR, isIntLiteral } from "../../IR";
 
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
@@ -56,10 +56,10 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
       ];
     case "ForRange": {
       const low = emitExpr(stmt.low, stmt);
-      const low0 = low.length === 1 && low[0] === "0";
+      const low0 = isIntLiteral(stmt.low, 0n);
       const high = emitExpr(stmt.high, stmt);
       const increment = emitExpr(stmt.increment, stmt);
-      const increment1 = increment.length === 1 && increment[0] === "1";
+      const increment1 = isIntLiteral(stmt.increment, 1n);
       return [
         "for",
         emitExpr(stmt.variable, stmt),
@@ -68,7 +68,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "(",
         low0 && increment1 ? [] : [low, ","],
         high,
-        increment1 ? [] : [",", ...increment],
+        increment1 ? [] : [",", increment],
         ")",
         ":",
         emitMultiExpr(stmt.body, stmt),
@@ -200,10 +200,10 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
     case "RangeIndexCall": {
       if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       const low = emitExpr(expr.low, expr);
-      const low0 = low.length === 1 && low[0] === "0";
+      const low0 = isIntLiteral(expr.low, 0n);
       const high = emitExpr(expr.high, expr);
       const step = emitExpr(expr.step, expr);
-      const step1 = step.length === 1 && step[0] === "1";
+      const step1 = isIntLiteral(expr.step, 1n);
       return [
         emitExprNoParens(expr.collection),
         "[",
