@@ -59,3 +59,15 @@ for i in..9:
     if i<j:a=j;a=j
  a=i
 ```
+
+```polygolf
+$b <- 0;
+for $i $b 16 {
+    println $i;
+};
+```
+
+```nim nogolf
+var b=0
+for i in b..15:i.echo
+```

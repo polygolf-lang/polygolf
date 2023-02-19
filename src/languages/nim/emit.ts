@@ -90,6 +90,7 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           emitExpr(stmt.variable, stmt),
           "in",
           low,
+          "$GLUE$",
           stmt.inclusive ? ".." : "..<",
           emitExpr(stmt.high, stmt),
           ":",
