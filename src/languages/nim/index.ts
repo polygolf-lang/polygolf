@@ -35,6 +35,7 @@ import {
   addVarDeclarationManyToManyAssignments,
   addVarDeclarationOneToManyAssignments,
   addVarDeclarations,
+  groupVarDeclarations,
 } from "../../plugins/block";
 
 const nimLanguage: Language = {
@@ -55,6 +56,8 @@ const nimLanguage: Language = {
   emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
   finalEmitPlugins: [
     mapOps([
+      ["true", (_) => id("true", true)],
+      ["false", (_) => id("true", true)],
       [
         "argv_get",
         (x) => functionCall([polygolfOp("add", x[0], int(1n))], "paramStr"),
@@ -121,9 +124,10 @@ const nimLanguage: Language = {
     addImports,
     renameIdents(),
     addVarDeclarations,
-    addVarDeclarationOneToManyAssignments,
-    addVarDeclarationManyToManyAssignments,
-    addManyToManyAssignments,
+    addVarDeclarationOneToManyAssignments(),
+    addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 2),
+    addManyToManyAssignments((_, spine) => spine.depth > 2),
+    groupVarDeclarations((_, spine) => spine.depth <= 2),
     assertInt64,
   ],
   detokenizer: defaultDetokenizer((a, b) => {

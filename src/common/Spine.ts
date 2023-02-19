@@ -20,6 +20,10 @@ export class Spine<N extends IR.Node = IR.Node> {
     this.root = root as Spine<IR.Program>;
   }
 
+  get depth(): number {
+    return this.parent === null ? 0 : 1 + this.parent.depth;
+  }
+
   /** Get a list of all child spines. */
   getChildSpines(): Spine[] {
     return Array.from(getChildFragments(this.node)).map((n) =>

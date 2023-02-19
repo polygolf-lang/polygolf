@@ -90,7 +90,7 @@ const luaLanguage: Language = {
       [["or", "or"]]
     ),
     renameIdents(),
-    addOneToManyAssignments,
+    addOneToManyAssignments(),
     assertInt64,
   ],
 };

@@ -1,7 +1,6 @@
 import { TokenTree } from "@/common/Language";
 import {
   emitStringLiteral,
-  containsMultiExpr,
   joinTrees,
   needsParensPrecedence,
   EmitError,
@@ -22,7 +21,7 @@ function emitMultiExpr(expr: IR.Expr, parent: IR.Node): TokenTree {
       "\n"
     );
   }
-  if (containsMultiExpr(children)) {
+  if (needsIndentation(children)) {
     return [
       "$INDENT$",
       "\n",
@@ -44,15 +43,18 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     case "Block":
       return emitMultiExpr(stmt, parent);
     case "VarDeclarationWithAssignment":
+      if (parent.kind !== "VarDeclarationBlock")
+        return ["var", emitExprNoParens(stmt.assignment)];
       return emitExprNoParens(stmt.assignment);
     case "VarDeclarationBlock":
       if (stmt.children.length > 1)
         return [
           "var",
           "$INDENT$",
-          stmt.children.map((x) => ["\n", emitExprNoParens(x)]),
+          stmt.children.map((x) => ["\n", emitStatement(x, stmt)]),
+          "$DEDENT$",
         ];
-      return ["var", emitExprNoParens(stmt.children[0])];
+      return ["var", emitStatement(stmt.children[0], stmt)];
     case "ImportStatement":
       return [
         stmt.name,
@@ -127,6 +129,20 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     default:
       return emitExpr(stmt, parent);
   }
+}
+
+function needsIndentation(exprs: readonly IR.Expr[]): boolean {
+  for (const expr of exprs) {
+    if (
+      "consequent" in expr ||
+      "children" in expr ||
+      "body" in expr ||
+      expr.kind.startsWith("VarDeclaration")
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function emitExpr(

@@ -138,6 +138,11 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
           ","
         ),
       ];
+    case "OneToManyAssignment":
+      return [
+        expr.variables.map((v) => [emitExprNoParens(v), "="]),
+        emitExprNoParens(expr.expr),
+      ];
     case "MutatingBinaryOp":
       return [
         emitExpr(expr.variable, expr),

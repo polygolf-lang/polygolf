@@ -22,35 +22,50 @@ import { stringify } from "../common/applyLanguage";
  * @param transform Transforming function.
  * @param blockPredicate Condition for block to consider its children.
  */
-export function blockChildrenCollectAndReplace<T = Expr>(
+export function blockChildrenCollectAndReplace<T extends Expr = Expr>(
   name: string,
   collectPredicate: (expr: Expr, spine: Spine<Expr>, previous: T[]) => boolean,
   transform: (exprs: T[]) => Expr[],
-  blockPredicate: (block: Block) => boolean = (_) => true
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
 ): Plugin {
   return {
     name,
     visit(node, spine) {
-      if (node.kind === "Block" && blockPredicate(node)) {
+      if (
+        node.kind === "Block" &&
+        blockPredicate(node, spine as Spine<Block>)
+      ) {
         const newNodes: Expr[] = [];
         let changed = false;
         let collected: T[] = [];
         for (const childSpine of spine.getChildSpines()) {
           const expr = childSpine.node as Expr;
           if (collectPredicate(expr, childSpine as Spine<Expr>, collected)) {
-            changed = true;
             collected.push(expr as any as T);
           } else if (collectPredicate(expr, childSpine as Spine<Expr>, [])) {
-            newNodes.push(...transform(collected));
+            if (collected.length > 1) {
+              newNodes.push(...transform(collected));
+              changed = true;
+            } else {
+              newNodes.push(...collected);
+            }
             collected = [expr as any as T];
           } else {
-            newNodes.push(...transform(collected));
+            if (collected.length > 1) {
+              newNodes.push(...transform(collected));
+              changed = true;
+            } else {
+              newNodes.push(...collected);
+            }
             collected = [];
             newNodes.push(expr);
           }
         }
-        if (collected.length > 0) {
+        if (collected.length > 1) {
           newNodes.push(...transform(collected));
+          changed = true;
+        } else {
+          newNodes.push(...collected);
         }
         if (changed) return block(newNodes);
       }
@@ -78,27 +93,32 @@ export const addVarDeclarations: Plugin = {
 /**
  * Replaces `v1 = c; v2 = c; ... ; vn = c` with `v1,v2,...vn=c`
  */
-export const addOneToManyAssignments = blockChildrenCollectAndReplace<
-  Assignment<Identifier>
->(
-  "addOneToManyAssignments",
-  (expr, spine, previous) =>
-    isAssignmentToIdentifier(expr) &&
-    (previous.length < 1 ||
-      stringify(expr.expr) === stringify(previous[0].expr)),
-  (exprs) => [
-    oneToManyAssignment(
-      exprs.map((x) => x.variable),
-      exprs[0].expr
-    ),
-  ]
-);
+export function addOneToManyAssignments(
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+): Plugin {
+  return blockChildrenCollectAndReplace<Assignment<Identifier>>(
+    "addOneToManyAssignments",
+    (expr, spine, previous) =>
+      isAssignmentToIdentifier(expr) &&
+      (previous.length < 1 ||
+        stringify(expr.expr) === stringify(previous[0].expr)),
+    (exprs) => [
+      oneToManyAssignment(
+        exprs.map((x) => x.variable),
+        exprs[0].expr
+      ),
+    ],
+    blockPredicate
+  );
+}
 
 /**
  * Replaces `var v1 = c; var v2 = c; ... ; var vn = c` with `var v1,v2,...vn=c`
  */
-export const addVarDeclarationOneToManyAssignments =
-  blockChildrenCollectAndReplace<
+export function addVarDeclarationOneToManyAssignments(
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+): Plugin {
+  return blockChildrenCollectAndReplace<
     VarDeclarationWithAssignment<Assignment<Identifier>>
   >(
     "addVarDeclarationOneToManyAssignments",
@@ -115,8 +135,10 @@ export const addVarDeclarationOneToManyAssignments =
           exprs[0].assignment.expr
         )
       ),
-    ]
+    ],
+    blockPredicate
   );
+}
 
 function referencesVariable(spine: Spine<Expr>, variable: Identifier): boolean {
   return spine.someNode(
@@ -134,26 +156,31 @@ function isAssignmentToIdentifier(x: Node): x is Assignment<Identifier> {
 /**
  * Replaces `v1 = e1; v2 = e2; ... ; vn = en` with `(v1,v2,...vn)=(e1,e2,...,en)`
  */
-export const addManyToManyAssignments = blockChildrenCollectAndReplace<
-  Assignment<Identifier>
->(
-  "addManyToManyAssignments",
-  (expr, spine, previous) =>
-    isAssignmentToIdentifier(expr) &&
-    !previous.some((x) => referencesVariable(spine, x.variable)),
-  (exprs) => [
-    manyToManyAssignment(
-      exprs.map((x) => x.variable),
-      exprs.map((x) => x.expr)
-    ),
-  ]
-);
+export function addManyToManyAssignments(
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+): Plugin {
+  return blockChildrenCollectAndReplace<Assignment<Identifier>>(
+    "addManyToManyAssignments",
+    (expr, spine, previous) =>
+      isAssignmentToIdentifier(expr) &&
+      !previous.some((x) => referencesVariable(spine, x.variable)),
+    (exprs) => [
+      manyToManyAssignment(
+        exprs.map((x) => x.variable),
+        exprs.map((x) => x.expr)
+      ),
+    ],
+    blockPredicate
+  );
+}
 
 /**
  * Replaces `var v1 = e1; var v2 = e2; ... ; var vn = en` with `var (v1,v2,...vn)=(e1,e2,...,en)`
  */
-export const addVarDeclarationManyToManyAssignments =
-  blockChildrenCollectAndReplace<
+export function addVarDeclarationManyToManyAssignments(
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+): Plugin {
+  return blockChildrenCollectAndReplace<
     VarDeclarationWithAssignment<Assignment<Identifier>>
   >(
     "addVarDeclarationManyToManyAssignments",
@@ -168,15 +195,22 @@ export const addVarDeclarationManyToManyAssignments =
           exprs.map((x) => x.assignment.expr)
         )
       ),
-    ]
+    ],
+    blockPredicate
   );
+}
 
-export const groupVarDeclarations = blockChildrenCollectAndReplace<
-  VarDeclaration | VarDeclarationWithAssignment
->(
-  "groupVarDeclarations",
-  (expr) =>
-    expr.kind === "VarDeclaration" ||
-    expr.kind === "VarDeclarationWithAssignment",
-  (exprs) => [varDeclarationBlock(exprs)]
-);
+export function groupVarDeclarations(
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+): Plugin {
+  return blockChildrenCollectAndReplace<
+    VarDeclaration | VarDeclarationWithAssignment
+  >(
+    "groupVarDeclarations",
+    (expr) =>
+      expr.kind === "VarDeclaration" ||
+      expr.kind === "VarDeclarationWithAssignment",
+    (exprs) => [varDeclarationBlock(exprs)],
+    blockPredicate
+  );
+}

@@ -124,7 +124,7 @@ const pythonLanguage: Language = {
     addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
     aliasBuiltins(),
     renameIdents(),
-    addOneToManyAssignments,
+    addOneToManyAssignments(),
   ],
   packers: [
     (x) =>

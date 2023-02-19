@@ -22,7 +22,7 @@ import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
-import { addVarDeclarations } from "../../plugins/block";
+import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -147,7 +147,7 @@ const swiftLanguage: Language = {
     addImports,
     renameIdents(),
     addVarDeclarations,
-    // groupVarDeclarations,
+    groupVarDeclarations(),
     assertInt64,
   ],
   // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
