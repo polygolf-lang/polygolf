@@ -53,10 +53,8 @@ for i in..9:
  for j in..9:
   if i<j:
    if i<j:
-    a=j
-    if i<j:a=j
-    a=j
-    if i<j:a=j;a=j
+    a=j;if i<j:a=j
+    a=j;if i<j:a=j;a=j
  a=i
 ```
 
@@ -104,8 +102,7 @@ if true {
 ```nim nogolf
 if true:
  if true:
-  var(a,b)=(0,1)
-  var c=a+b
+  var(a,b)=(0,1);var c=a+b
 ```
 
 ```polygolf

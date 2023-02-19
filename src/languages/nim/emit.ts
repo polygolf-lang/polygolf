@@ -21,21 +21,21 @@ function emitMultiExpr(expr: IR.Expr, parent: IR.Node): TokenTree {
       "\n"
     );
   }
-  if (needsIndentation(children)) {
-    return [
-      "$INDENT$",
-      "\n",
-      joinTrees(
-        children.map((stmt) => emitStatement(stmt, expr)),
-        "\n"
-      ),
-      "$DEDENT$",
-    ];
+  let inner = [];
+  let needsBlock = false;
+  for (const child of children) {
+    const needsNewline =
+      "consequent" in child || "children" in child || "body" in child;
+    needsBlock =
+      needsBlock || needsNewline || child.kind.startsWith("VarDeclaration");
+    inner.push(emitStatement(child, expr));
+    inner.push(needsNewline ? "\n" : ";");
   }
-  return joinTrees(
-    children.map((stmt) => emitStatement(stmt, expr)),
-    ";"
-  );
+  inner = inner.slice(0, -1);
+  if (needsBlock) {
+    return ["$INDENT$", "\n", inner, "$DEDENT$"];
+  }
+  return inner;
 }
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
@@ -129,20 +129,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     default:
       return emitExpr(stmt, parent);
   }
-}
-
-function needsIndentation(exprs: readonly IR.Expr[]): boolean {
-  for (const expr of exprs) {
-    if (
-      "consequent" in expr ||
-      "children" in expr ||
-      "body" in expr ||
-      expr.kind.startsWith("VarDeclaration")
-    ) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function emitExpr(
