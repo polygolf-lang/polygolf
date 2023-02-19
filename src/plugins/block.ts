@@ -1,5 +1,6 @@
 import {
   Assignment,
+  Block,
   block,
   Expr,
   Identifier,
@@ -16,19 +17,21 @@ import { Spine } from "../common/Spine";
 import { stringify } from "../common/applyLanguage";
 
 /**
- * Collects neighbouring block children matching a predicate and replaces the with a different set of children.
+ * Collects neighbouring block children matching a predicate and replaces them with a different set of children.
  * @param collectPredicate Condition for expr to be collected.
  * @param transform Transforming function.
+ * @param blockPredicate Condition for block to consider its children.
  */
 export function blockChildrenCollectAndReplace<T = Expr>(
   name: string,
   collectPredicate: (expr: Expr, spine: Spine<Expr>, previous: T[]) => boolean,
-  transform: (exprs: T[]) => Expr[]
+  transform: (exprs: T[]) => Expr[],
+  blockPredicate: (block: Block) => boolean = (_) => true
 ): Plugin {
   return {
     name,
     visit(node, spine) {
-      if (node.kind === "Block") {
+      if (node.kind === "Block" && blockPredicate(node)) {
         const newNodes: Expr[] = [];
         let changed = false;
         let collected: T[] = [];

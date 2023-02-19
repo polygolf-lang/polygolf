@@ -32,25 +32,16 @@ function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
   switch (stmt.kind) {
-    case "VarDeclarationWithAssignment":
+    case "VarDeclarationBlock":
       return [
         "var",
         joinTrees(
-          (stmt.assignment.kind === "Assignment"
-            ? [stmt.assignment.variable]
-            : stmt.assignment.variables
-          ).map((v, i) => [
-            emitExprNoParens(v),
-            "=",
-            emitExprNoParens(
-              (stmt.assignment.kind !== "ManyToManyAssignment"
-                ? [stmt.assignment.expr]
-                : stmt.assignment.exprs)[i]
-            ),
-          ]),
+          stmt.children.map((v) => emitStatement(v, stmt)),
           ","
         ),
       ];
+    case "VarDeclarationWithAssignment":
+      return emitStatement(stmt.assignment, stmt);
     case "Block":
       return emitMultiExpr(stmt, parent);
     case "ImportStatement":

@@ -30,7 +30,12 @@ import {
 import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
 import { assertInt64 } from "../../plugins/types";
-import { addVarDeclarations } from "../../plugins/block";
+import {
+  addManyToManyAssignments,
+  addVarDeclarationManyToManyAssignments,
+  addVarDeclarationOneToManyAssignments,
+  addVarDeclarations,
+} from "../../plugins/block";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -116,6 +121,9 @@ const nimLanguage: Language = {
     addImports,
     renameIdents(),
     addVarDeclarations,
+    addVarDeclarationOneToManyAssignments,
+    addVarDeclarationManyToManyAssignments,
+    addManyToManyAssignments,
     assertInt64,
   ],
   detokenizer: defaultDetokenizer((a, b) => {

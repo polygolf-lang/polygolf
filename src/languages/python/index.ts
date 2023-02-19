@@ -31,6 +31,7 @@ import {
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
+import { addOneToManyAssignments } from "../../plugins/block";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -123,6 +124,7 @@ const pythonLanguage: Language = {
     addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
     aliasBuiltins(),
     renameIdents(),
+    addOneToManyAssignments,
   ],
   packers: [
     (x) =>

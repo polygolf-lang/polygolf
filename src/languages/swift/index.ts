@@ -144,10 +144,10 @@ const swiftLanguage: Language = {
     ),
 
     addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^"),
-
     addImports,
     renameIdents(),
     addVarDeclarations,
+    // groupVarDeclarations,
     assertInt64,
   ],
   // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides

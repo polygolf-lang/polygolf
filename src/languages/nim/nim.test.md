@@ -59,3 +59,37 @@ for i in..9:
     if i<j:a=j;a=j
  a=i
 ```
+
+## Variables & Assignments
+
+```polygolf
+
+```
+
+```nim nogolf
+
+```
+
+```polygolf
+
+```
+
+```nim nogolf
+
+```
+
+```polygolf
+
+```
+
+```nim nogolf
+
+```
+
+```polygolf
+
+```
+
+```nim nogolf
+
+```

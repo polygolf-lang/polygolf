@@ -44,7 +44,15 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     case "Block":
       return emitMultiExpr(stmt, parent);
     case "VarDeclarationWithAssignment":
-      return ["var", emitExprNoParens(stmt.assignment)];
+      return emitExprNoParens(stmt.assignment);
+    case "VarDeclarationBlock":
+      if (stmt.children.length > 1)
+        return [
+          "var",
+          "$INDENT$",
+          stmt.children.map((x) => ["\n", emitExprNoParens(x)]),
+        ];
+      return ["var", emitExprNoParens(stmt.children[0])];
     case "ImportStatement":
       return [
         stmt.name,
@@ -174,6 +182,15 @@ function emitExprNoParens(
           ","
         ),
         ")",
+      ];
+    case "OneToManyAssignment":
+      return [
+        joinTrees(
+          expr.variables.map((v) => emitExprNoParens(v)),
+          ","
+        ),
+        "=",
+        emitExprNoParens(expr.expr),
       ];
     case "MutatingBinaryOp":
       return [
