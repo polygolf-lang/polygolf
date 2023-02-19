@@ -17,6 +17,7 @@ import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
+import { forRangeToForRangeInclusive } from "../../plugins/loops";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -28,6 +29,7 @@ const swiftLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     equalityToInequality,
+    forRangeToForRangeInclusive,
   ],
   emitPlugins: [modToRem, divToTruncdiv, useIndexCalls()],
   finalEmitPlugins: [

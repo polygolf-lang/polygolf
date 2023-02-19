@@ -18,7 +18,10 @@ import {
 } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
-import { shiftRangeOneUp, useInclusiveForRange } from "../../plugins/loops";
+import {
+  forRangeToForRangeInclusive,
+  shiftRangeOneUp,
+} from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
@@ -45,8 +48,9 @@ const nimLanguage: Language = {
     tableHashing(hash),
     equalityToInequality,
     shiftRangeOneUp,
+    forRangeToForRangeInclusive,
   ],
-  emitPlugins: [modToRem, divToTruncdiv, useInclusiveForRange, useIndexCalls()],
+  emitPlugins: [modToRem, divToTruncdiv, useIndexCalls()],
   finalEmitPlugins: [
     mapOps([["argv_get", (x) => functionCall([add1(x[0])], "paramStr")]]),
     mapOps([

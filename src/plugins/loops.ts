@@ -27,50 +27,11 @@ export const forRangeToForRangeInclusive: Plugin = {
       return forRange(
         node.variable,
         node.low,
-        polygolfOp("sub", node.high, int(1n)),
+        sub1(node.high),
         node.increment,
         node.body,
         true
       );
-  },
-};
-
-export const useInclusiveForRange: Plugin = {
-  name: "useInclusiveForRange",
-  visit(node): IR.ForRange | undefined {
-    if (node.kind === "ForRange" && !node.inclusive) {
-      if (node.high.kind === "IntegerLiteral") {
-        const high = {
-          ...node.high,
-          value: node.high.value - 1n,
-        };
-        return {
-          ...node,
-          inclusive: true,
-          high,
-        };
-      } else if (node.high.kind === "BinaryOp" && node.high.op === "add") {
-        if (
-          node.high.right.kind === "IntegerLiteral" &&
-          node.high.right.value === 1n
-        ) {
-          return {
-            ...node,
-            inclusive: true,
-            high: node.high.left,
-          };
-        } else if (
-          node.high.left.kind === "IntegerLiteral" &&
-          node.high.left.value === 1n
-        ) {
-          return {
-            ...node,
-            inclusive: true,
-            high: node.high.right,
-          };
-        }
-      }
-    }
   },
 };
 

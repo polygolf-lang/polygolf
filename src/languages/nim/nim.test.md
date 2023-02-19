@@ -69,5 +69,5 @@ for $i $b 16 {
 
 ```nim nogolf
 var b=0
-for i in b..15:i.echo
+for i in b..<16:i.echo
 ```

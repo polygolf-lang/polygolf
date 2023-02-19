@@ -9,7 +9,7 @@ for $i 0 10 {
 ```
 
 ```polygolf loops.forRangeToForRangeInclusive
-@ForRangeInclusive $i 0 (10 - 1) 1 (
+@ForRangeInclusive $i 0 9 1 (
   print $x
 );
 ```
