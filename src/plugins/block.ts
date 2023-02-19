@@ -83,6 +83,10 @@ function stringifyRightSide(
   return stringify(x.assignment.expr);
 }
 
+/**
+ * Replaces `v1 = c; v2 = c; ... ; vn = c` with `v1,v2,...vn=c` // TODO allow banning this
+ * or `var v1 = c; var v2 = c; ... ; var vn = c` with `var v1,v2,...vn=c`
+ */
 export const addOneToManyAssignments = blockChildrenCollectAndReplace<
   Assignment | VarDeclarationWithAssignment<Assignment>
 >(
@@ -121,6 +125,10 @@ function referencesVariable(spine: Spine<Expr>, variable: Identifier): boolean {
   );
 }
 
+/**
+ * Replaces `v1 = e1; v2 = e2; ... ; vn = en` with `(v1,v2,...vn)=(e1,e2,...,en)` // TODO allow banning this
+ * or `var v1 = e1; var v2 = e2; ... ; var vn = en` with `var (v1,v2,...vn)=(e1,e2,...,en)`
+ */
 export const addManyToManyAssignments = blockChildrenCollectAndReplace<
   Assignment | VarDeclarationWithAssignment<Assignment>
 >(
