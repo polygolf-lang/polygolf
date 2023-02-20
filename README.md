@@ -10,7 +10,6 @@ Design goals
   2. mostly functional: Elixir, F#, Haskell, Lisp
   3. other: Assembly, ><>, brainfuck, GolfScript, Hexagony, J, K, Prolog, sed, SQL, VimL
 - can compile PolyGolf to any language without language-specific annotations
-- alternative options and domain annotations may help recognition of language-specific idioms
 - goal for each language target (vague): at most twice as long on average for all holes, aka score at least 500× number of holes
 
 Read on for usage, or see [docs/architecture.md](docs/architecture.md) for the architecture.
@@ -29,33 +28,14 @@ npm install . --location=global
 
 This will set up the `polygolf` command to point to the CLI script.
 
-The usage is currently simple. Just pick an input PolyGolf file and target language:
+Polygolf CLI supports the following options:
 
-```
-polygolf -i src/programs/fibonacci.polygolf -l lua
-```
-
-Use `-o` to specify an output file instead of stdout:
-
-```
-polygolf -i src/programs/fibonacci.polygolf -l lua -o fibonacci.lua
-```
+- `--input`, `-i`: path to the input program
+- `--lang`, `-l`: target language name or its extension, or `all` for targeting all supported languages
+- `--output`, `-o`: output path, if omitted, output goes to stdout
+- `--chars`, `-c`: if set, switches the objective from bytes to chars
 
 To uninstall, use `npm uninstall polygolf --location=global`
-
-## Development
-
-To get started, clone the repository, then run `npm install` to install dependencies
-
-After making a change, run `npm run build` before running the cli as `node dist/cli.js`.
-
-To run tests, run `npm run test`.
-
-The npm alias `npm run cli` is equivalent to `npm run build; node dist/cli.js`
-
-Some concepts (visitor, Path, etc.) are similar to those used by the JavaScript transpiler Babel, so the [Babel plugin handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md) is worth skimming.
-
-For details about the Polygolf internals, see [Architecture](https://github.com/jared-hughes/polygolf/blob/main/docs/architecture.md).
 
 ## Competitiveness
 
@@ -152,6 +132,8 @@ For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
 
 ## Example
 
+For more examples, search this repo for `*.test.md` files.
+
 Example Fibonacci using variants
 
 ```clojure
@@ -194,64 +176,3 @@ Note the following Lua-specific features, besides the syntax:
 
 - foreach-range loop instead of a glorified while loop (!)
 - temporary variable replaced with simultaneous assignment (!)
-
-## Unrefined IR
-
-The goal is to have a small but expressive core subset of language features. Approximately a lowest common denominator of most of the languages targeted.
-
-The IR is a tree. Assignments are by value, not reference (no aliasing)
-
-Types:
-
-- `boolean`
-- `integer` (unbounded; domain annotations may help language-specific narrowing to 32-bit ints etc)
-- `string`
-- `List<?>` (0 indexed)
-- `Table<?,?>`
-
-Constant literals for each type.
-
-Control Flow:
-
-- procedures (no functions for now for simplicity)
-- if-else
-- while
-
-Builtin constants
-
-- argv
-- true
-- false
-
-Builtin functions:
-
-- arithmetic: add, subtract, multiply, (integer) divide, exponent, mod (mathematical)
-- integer comparison: less, greater, etc.
-- indexing (table, string)
-- conversions: (int <--> string, etc.)
-- string ops: string concatenation, string split, print, length
-- sort
-
-[Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).
-
-## Idiom recognition (backend)
-
-Where the magic happens for golfing. Mixins shared across languages for idiom recognition, for example replacing (the IR for) `i=1;while(i<5)do i=i+1 end` with (the IR for) `for i=1,4 do end` when targeting Lua. The same IR code (loop over range) would represent `for i in range(1,5)` in Python, so the same mixin can target several languages.
-
-Planned idioms:
-
-- automatic 1-indexing correction (necessary for 1-indexed langs)
-- constant collapse e.g. 2+1 → 3 to golf automatic 1-indexing correction
-- replace while loops with foreach-range loops (Lua, Python, etc)
-- replace exponent that has base 2 with bitshift (C, other)
-- inline procedures used exactly once (most langs)
-- if string concatenation's only purpose is to be printed, then split each appended part into its own print statement (C, other languages with long concat)
-- merge several prints into one print (pretty much every language)
-- replace while loops with for loops (C, Java, etc)
-- replace temp variable with simultaneous assignment (Lua, Python, etc)
-- variable shortening (all languages): convert all variables to a single letter, to allow for more-verbose PolyGolf code
-- ...much more. We'll see what's useful when starting
-
-## Implementation plan
-
-Finalize syntax. Solve most code.golf solutions in Polygolf to see what ops we are missing and implement those. Add MVPs for as many imperative languages as possible. Think about how to approach transforms for other paradigms. Cry.

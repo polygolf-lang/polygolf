@@ -1,5 +1,15 @@
 # Architecture
 
+To get started, clone the repository, then run `npm install` to install dependencies
+
+After making a change, run `npm run build` before running the cli as `node dist/cli.js`.
+
+To run tests, run `npm run test`.
+
+The npm alias `npm run cli` is equivalent to `npm run build; node dist/cli.js`
+
+Some concepts (visitor, Path, etc.) are similar to those used by the JavaScript transpiler Babel, so the [Babel plugin handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md) is worth skimming.
+
 Polygolf is a source-to-source transpiler: It takes in Polygolf code and spits out code in another language (the target). The data flow can be summarized as:
 
 1. Polygolf frontend code (type: `string`)
@@ -14,13 +24,70 @@ Polygolf is a source-to-source transpiler: It takes in Polygolf code and spits o
 
    The transformation of the frontend IR to this is the core to supporting languages and the primary source of automatic golfing, so it is discussed more below. This is specified in language-specific configurations such as `src/languages/lua/index.ts`.
 
-4. Tokens in the target language (type: `string[]`)
+4. Tree of tokens in the target language (type: `TokenTree`)
 
    Creating this from the target IR essentially consists of a big `switch` block for each node type in the IR. A main source of mistakes here is incorrect parenthesization rules.
 
 5. Code in the target language (type: `string`)
 
-   This mostly consists of just joining up the tokens to one big string, though it also supports indent/dedent tokens (for Python). Customizing the detokenizer lets a language configure when whitespace is needed between tokens.
+   This mostly consists of just joining up the tokens to one big string, though it also supports indent/dedent tokens (for Python). There are two levels of abstraction / customization here. The first is just controlling when whitespace should be inserted to separate the tokens and the second is an arbitrary transform of the token tree.
+
+## Unrefined IR
+
+The goal is to have a small but expressive core subset of language features. Approximately a lowest common denominator of most of the languages targeted.
+
+The IR is a tree. Assignments are by value, not reference (no aliasing)
+
+Types:
+
+- `boolean`
+- `integer` (unbounded; domain annotations may help language-specific narrowing to 32-bit ints etc)
+- `string`
+- `List<?>` (0 indexed)
+- `Table<?,?>`
+
+Constant literals for each type.
+
+Control Flow:
+
+- procedures (no functions for now for simplicity)
+- if-else
+- while
+
+Builtin constants
+
+- argv
+- true
+- false
+
+Builtin functions:
+
+- arithmetic: add, subtract, multiply, (integer) divide, exponent, mod (mathematical)
+- integer comparison: less, greater, etc.
+- indexing (table, string)
+- conversions: (int <--> string, etc.)
+- string ops: string concatenation, string split, print, length
+- sort
+
+[Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).
+
+## Idiom recognition (backend)
+
+Where the magic happens for golfing. Mixins shared across languages for idiom recognition, for example replacing (the IR for) `i=1;while(i<5)do i=i+1 end` with (the IR for) `for i=1,4 do end` when targeting Lua. The same IR code (loop over range) would represent `for i in range(1,5)` in Python, so the same mixin can target several languages.
+
+Planned idioms:
+
+- automatic 1-indexing correction (necessary for 1-indexed langs)
+- constant collapse e.g. 2+1 → 3 to golf automatic 1-indexing correction
+- replace while loops with foreach-range loops (Lua, Python, etc)
+- replace exponent that has base 2 with bitshift (C, other)
+- inline procedures used exactly once (most langs)
+- if string concatenation's only purpose is to be printed, then split each appended part into its own print statement (C, other languages with long concat)
+- merge several prints into one print (pretty much every language)
+- replace while loops with for loops (C, Java, etc)
+- replace temp variable with simultaneous assignment (Lua, Python, etc)
+- variable shortening (all languages): convert all variables to a single letter, to allow for more-verbose PolyGolf code
+- ...much more. We'll see what's useful when starting
 
 ## Intermediate Representation (IR) Transformations
 
@@ -53,3 +120,23 @@ The main time spent optimizing the output for each language does not use variant
 ## Adding a language target
 
 To add a new language target, create a new folder in `src/languages`. The Polygolf target is good to start from: begin by preparing the emitter for your language, then continue adding plugins.
+
+## Tests
+
+Most Polygolf tests suits are defined using `*.test.md` files. These are used to test individual languages or individual plugins. The structure of these files is as follows:
+
+- Headings are used to group the tests
+- Code blocks are used to define the actual tests.
+- All other markdown syntax is ignored.
+
+Each codeblock is required to have the language annotation and optionally other test parameters/options/commands (all space-separated).
+If the language is `polygolf` (with no other options) it denotes an input, otherwise an output.
+Multiple output blocks can relate to a single input block.
+
+Supported options are
+
+- `skip` = this code block is ignored
+- `bytes` = output is golfed for bytes (this is the default)
+- `chars` = output is golfed for chars
+- `nogolf` = golf search is skipped, this should be used for testing the emitter
+- `{path}.{plugin}` = the given plugin is applied (as an emit plugin)
