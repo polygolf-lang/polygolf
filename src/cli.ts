@@ -41,7 +41,9 @@ const options = yargs()
   .parseSync(process.argv.slice(2));
 
 const langs = options.lang === "all" ? languages : [findLang(options.lang)!];
-const code = fs.readFileSync(options.input, { encoding: "utf-8" });
+let input = options.input;
+if (!fs.existsSync(input)) input += ".polygolf";
+const code = fs.readFileSync(input, { encoding: "utf-8" });
 const prog = parse(code);
 const printingMultipleLangs = langs.length > 1 && options.output === undefined;
 for (const lang of langs) {
