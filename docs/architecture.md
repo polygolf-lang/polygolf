@@ -140,3 +140,5 @@ Supported options are
 - `chars` = output is golfed for chars
 - `nogolf` = golf search is skipped, this should be used for testing the emitter
 - `{path}.{plugin}` = the given plugin is applied (as an emit plugin)
+
+To test other aspects of Polygolf, use jest in `*.test.ts` files.
