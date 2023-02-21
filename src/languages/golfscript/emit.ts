@@ -8,7 +8,7 @@ export default function emitProgram(program: IR.Program): TokenTree {
 
 function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
   const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
-  if (parent.kind === "Program" || parent.kind === "ForRange") {
+  if (["Program", "ForRange", "ForEach"].includes(parent.kind)) {
     return children.map((stmt) => emitStatement(stmt, baseExpr));
   }
 
@@ -47,6 +47,17 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "%",
       ];
     }
+    case "ForEach":
+      return [
+        emitExpr(stmt.collection),
+        "{",
+        ":",
+        emitExpr(stmt.variable),
+        ";",
+        emitMultiExpr(stmt.body, stmt),
+        "}",
+        "%",
+      ];
     case "IfStatement":
       return [
         emitExpr(stmt.condition),
@@ -57,7 +68,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "if",
       ];
     case "Variants":
-    case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":

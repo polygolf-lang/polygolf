@@ -7,10 +7,13 @@ import {
   rangeIndexCall,
   stringLiteral,
   int,
+  importStatement,
+  block,
+  polygolfOp,
 } from "../../IR";
-import { Language } from "../../common/Language";
+import { Language, Plugin } from "../../common/Language";
 
-import emitProgram from "./emit";
+import emitProgram, { emitPythonStringLiteral } from "./emit";
 import {
   equalityToInequality,
   mapOps,
@@ -20,11 +23,38 @@ import {
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
-import { forRangeToForEach } from "../../plugins/loops";
+import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
+import {
+  packSource2to1,
+  packSource3to1,
+  useDecimalConstantPackedPrinter,
+  useLowDecimalListPackedPrinter,
+} from "../../plugins/packing";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
+
+// abstract out as a part of https://github.com/jared-hughes/polygolf/issues/89
+const addImports: Plugin = {
+  name: "addImports",
+  visit(node, spine) {
+    if (
+      node.kind === "Program" &&
+      spine.someNode(
+        (x) => x.kind === "Identifier" && x.builtin && x.name.startsWith("sys.")
+      )
+    ) {
+      return {
+        ...node,
+        body: block([
+          importStatement("import", ["sys"]),
+          ...(node.body.kind === "Block" ? node.body.children : [node.body]),
+        ]),
+      };
+    }
+  },
+};
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -37,8 +67,20 @@ const pythonLanguage: Language = {
     forRangeToForEach,
     golfLastPrint(),
     equalityToInequality,
+    useDecimalConstantPackedPrinter,
+    useLowDecimalListPackedPrinter,
   ],
-  emitPlugins: [useIndexCalls()],
+  emitPlugins: [
+    forArgvToForEach,
+    mapOps([
+      ["argv", (x) => id("sys.argv[1:]", true)],
+      [
+        "argv_get",
+        (x) => polygolfOp("list_get", id("sys.argv", true), plus1(x[0])),
+      ],
+    ]),
+    useIndexCalls(),
+  ],
   finalEmitPlugins: [
     mapOps([
       ["true", (_) => int(1)],
@@ -115,6 +157,17 @@ const pythonLanguage: Language = {
     addMutatingBinaryOp(["+", "-", "*", "//", "%", "**", "&", "|", "^"]),
     aliasBuiltins(),
     renameIdents(),
+    addImports,
+  ],
+  packers: [
+    (x) =>
+      `exec(bytes(${emitPythonStringLiteral(packSource2to1(x))},'u16')[2:])`,
+    (x) => {
+      if ([...x].map((x) => x.charCodeAt(0)).some((x) => x < 32)) return null;
+      return `exec(bytes(ord(c)%i+32for c in${emitPythonStringLiteral(
+        packSource3to1(x)
+      )}for i in b'abc'))`;
+    },
   ],
 };
 

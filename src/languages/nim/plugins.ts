@@ -38,6 +38,7 @@ const dependencyMap = new Map([
   ["^", "math"],
   ["repeat", "strutils"],
   ["paramStr", "os"],
+  ["commandLineParams", "os"],
   ["split", "strutils"],
   ["hash", "hashes"],
 ]);
