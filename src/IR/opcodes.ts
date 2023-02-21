@@ -143,6 +143,7 @@ export const OpCodeArray = [
   "true",
   "false",
   "argv",
+  "argc",
   "print",
   "println",
   "text_replace",
@@ -171,6 +172,7 @@ export function arity(op: OpCode): number {
     case "true":
     case "false":
     case "argv":
+    case "argc":
       return 0;
     case "print":
     case "println":

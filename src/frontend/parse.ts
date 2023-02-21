@@ -7,7 +7,6 @@ import {
   Identifier,
   Program,
   forRange,
-  Block,
   ifStatement,
   listConstructor,
   polygolfOp,
@@ -40,14 +39,12 @@ import {
   frontendOpcodes,
   id,
   arrayConstructor,
+  forArgv,
 } from "../IR";
 import grammar from "./grammar";
 
 let restrictFrontend = true;
-export function sexpr(
-  callee: Identifier,
-  args: readonly (Expr | Block)[]
-): Expr {
+export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   const opCode = canonicalOp(callee.name, args.length);
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
@@ -60,27 +57,22 @@ export function sexpr(
       );
     }
   }
-  function assertIdentifier(e: Expr | Block): asserts e is Identifier {
+  function assertIdentifier(e: Expr): asserts e is Identifier {
     if (e.kind !== "Identifier")
       throw new PolygolfError(
         `Syntax error. Application first argument must be identifier, but got ${args[0].kind}`,
         e.source
       );
   }
-  function assertIdentifiers(
-    e: readonly (Expr | Block)[]
-  ): asserts e is Identifier[] {
-    e.forEach(assertIdentifier);
-  }
-  function assertExpr(e: Expr | Block): asserts e is Expr {
-    if (e.kind === "Block")
+  function assertInteger(e: Expr): asserts e is IntegerLiteral {
+    if (e.kind !== "IntegerLiteral")
       throw new PolygolfError(
-        `Syntax error. Application ${opCode} cannot take a block as argument`,
+        `Syntax error. Expected integer literal, but got ${e.kind}`,
         e.source
       );
   }
-  function assertExprs(e: readonly (Expr | Block)[]): asserts e is Expr[] {
-    e.forEach(assertExpr);
+  function assertIdentifiers(e: readonly Expr[]): asserts e is Identifier[] {
+    e.forEach(assertIdentifier);
   }
   function assertKeyValues(e: readonly Expr[]): asserts e is KeyValue[] {
     for (const x of e) {
@@ -91,18 +83,20 @@ export function sexpr(
         );
     }
   }
+  if (!callee.builtin) {
+    return functionCall(args, callee);
+  }
   switch (opCode) {
     case "func": {
       expectArity(1, Infinity);
       const idents = args.slice(0, args.length - 1);
       const expr = args[args.length - 1];
       assertIdentifiers(idents);
-      assertExpr(expr);
       return func(idents, expr);
     }
     case "for": {
       expectArity(4, 5);
-      let variable, low, high, increment, body: Expr | Block;
+      let variable, low, high, increment, body: Expr;
       if (args.length === 5) {
         [variable, low, high, increment, body] = args;
       } else {
@@ -110,9 +104,6 @@ export function sexpr(
         increment = int(1n);
       }
       assertIdentifier(variable);
-      assertExpr(low);
-      assertExpr(high);
-      assertExpr(increment);
       return forRange(variable, low, high, increment, body);
     }
     case "if": {
@@ -120,21 +111,20 @@ export function sexpr(
       const condition = args[0];
       const consequent = args[1];
       const alternate = args[2];
-      assertExpr(condition);
       return ifStatement(condition, consequent, alternate);
     }
     case "while": {
       expectArity(2);
       const [condition, body] = args;
-      assertExpr(condition);
       return whileLoop(condition, body);
     }
-  }
-  assertExprs(args);
-  if (!callee.builtin) {
-    return functionCall(args, callee);
-  }
-  switch (opCode) {
+    case "for_argv": {
+      expectArity(3);
+      const [variable, upperBound, body] = args;
+      assertIdentifier(variable);
+      assertInteger(upperBound);
+      return forArgv(variable, Number(upperBound.value), body);
+    }
     case "key_value":
       expectArity(2);
       return keyValue(args[0], args[1]);
@@ -156,6 +146,10 @@ export function sexpr(
     case "table":
       assertKeyValues(args);
       return tableConstructor(args);
+    case "argv_get":
+      expectArity(1);
+      assertInteger(args[0]);
+      return polygolfOp(opCode, ...args);
   }
   if (
     isOpCode(opCode) &&
@@ -208,7 +202,7 @@ function canonicalOp(op: string, arity: number): string {
   return canonicalOpTable[op] ?? op;
 }
 
-function composedPolygolfOp(op: OpCode, args: Expr[]): PolygolfOp {
+function composedPolygolfOp(op: OpCode, args: readonly Expr[]): PolygolfOp {
   if (args.length < 3) return polygolfOp(op, ...args);
   return polygolfOp(
     op,

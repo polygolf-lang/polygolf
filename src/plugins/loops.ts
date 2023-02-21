@@ -85,9 +85,7 @@ export const forRangeToWhile: Plugin = {
         assignment(node.variable, node.low),
         whileLoop(
           polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
-          node.body.kind === "Block"
-            ? block([...node.body.children, increment])
-            : block([node.body, increment])
+          block([node.body, increment])
         ),
       ]);
     }
@@ -205,3 +203,60 @@ function isListGet(node: IR.Node, collection: string, index: string) {
     args[1].name === index
   );
 }
+
+export const forArgvToForEach: Plugin = {
+  name: "forArgvToForEach",
+  visit(node) {
+    if (node.kind === "ForArgv") {
+      return forEach(node.variable, polygolfOp("argv"), node.body);
+    }
+  },
+};
+
+export function forArgvToForRange(overshoot = true): Plugin {
+  return {
+    name: `forArgvToForRange(${overshoot ? "" : "false"})`,
+    visit(node) {
+      if (node.kind === "ForArgv") {
+        const indexVar = id(node.variable.name + "+index");
+        const newBody = block([
+          assignment(node.variable, polygolfOp("argv_get", indexVar)),
+          node.body,
+        ]);
+        return forRange(
+          indexVar,
+          int(0),
+          overshoot ? int(node.argcUpperBound) : polygolfOp("argc"),
+          int(1),
+          newBody
+        );
+      }
+    },
+  };
+}
+
+export const assertForArgvTopLevel: Plugin = {
+  name: "assertForArgvTopLevel",
+  visit(node, spine) {
+    if (node.kind === "Program") {
+      let forArgvSeen = false;
+      for (const kind of spine.compactMap((x) => x.kind)) {
+        if (kind === "ForArgv") {
+          if (forArgvSeen)
+            throw new Error("Only a single for_argv node allowed.");
+          forArgvSeen = true;
+        }
+      }
+    }
+    if (node.kind === "ForArgv") {
+      if (
+        spine.parent?.node.kind !== "Program" &&
+        (spine.parent?.node.kind !== "Block" ||
+          spine.parent?.parent?.node.kind !== "Program")
+      ) {
+        throw new Error("Node for_argv only allowed at the top level.");
+      }
+    }
+    return undefined;
+  },
+};

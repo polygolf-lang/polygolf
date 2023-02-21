@@ -82,20 +82,32 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ":",
         emitMultiExpr(stmt.body, stmt),
       ];
+    case "ForEach":
+      return [
+        `for`,
+        emitExpr(stmt.variable, stmt),
+        "in",
+        emitExpr(stmt.collection, stmt),
+        ":",
+        emitMultiExpr(stmt.body, stmt),
+      ];
     case "ForRange": {
-      const increment = emitExpr(stmt.increment, stmt);
       const low =
         stmt.low.kind === "IntegerLiteral" &&
         stmt.low.value === 0n &&
         stmt.inclusive
           ? []
           : emitExpr(stmt.low, stmt);
-      if (increment.length === 1 && increment[0] === "1") {
+      if (
+        stmt.increment.kind === "IntegerLiteral" &&
+        stmt.increment.value === 1n
+      ) {
         return [
           "for",
           emitExpr(stmt.variable, stmt),
           "in",
           low,
+          "$GLUE$",
           stmt.inclusive ? ".." : "..<",
           emitExpr(stmt.high, stmt),
           ":",
@@ -133,7 +145,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           : [],
       ];
     case "Variants":
-    case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
@@ -239,7 +250,7 @@ function emitExprNoParens(
       if (expr.args.length === 1 && expr.args[0].kind === "StringLiteral") {
         return [expr.ident.name, "$GLUE$", emitExpr(expr.args[0], expr)];
       }
-      if (expressionContinues || expr.args.length > 1)
+      if (expressionContinues || expr.args.length > 1 || expr.args.length === 0)
         return [
           expr.ident.name,
           "$GLUE$",

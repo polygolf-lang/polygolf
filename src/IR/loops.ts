@@ -79,6 +79,17 @@ export interface ForEachPair extends BaseExpr {
   readonly body: Expr;
 }
 
+/**
+ * A loop over argv, with upper bound of argc.
+ *
+ */
+export interface ForArgv extends BaseExpr {
+  readonly kind: "ForArgv";
+  readonly variable: Identifier;
+  readonly argcUpperBound: number;
+  readonly body: Expr;
+}
+
 export function whileLoop(condition: Expr, body: Expr): WhileLoop {
   return { kind: "WhileLoop", condition, body };
 }
@@ -174,6 +185,19 @@ export function forEachPair(
     valueVariable:
       typeof valueVariable === "string" ? id(valueVariable) : valueVariable,
     table,
+    body,
+  };
+}
+
+export function forArgv(
+  variable: Identifier,
+  argcUpperBound: number,
+  body: Expr
+): ForArgv {
+  return {
+    kind: "ForArgv",
+    variable,
+    argcUpperBound,
     body,
   };
 }
