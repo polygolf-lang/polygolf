@@ -592,6 +592,11 @@ describePolygolfOp("argv", [
   [[], list(text())],
 ]);
 
+describePolygolfOp("argc", [
+  [[int(0)], "error"],
+  [[], int(0, 2 ** 31 - 1)],
+]);
+
 describePolygolfOp("text_replace", [
   [[text(), text()], "error"],
   [[text(), text(), text()], "error"],

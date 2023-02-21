@@ -593,6 +593,9 @@ function getOpCodeType(
     case "false":
       expectType();
       return booleanType;
+    case "argc":
+      expectType();
+      return integerType(0, 2 ** 31 - 1);
     case "argv":
       expectType();
       return listType(textType());
