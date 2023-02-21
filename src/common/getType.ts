@@ -229,6 +229,7 @@ export function calcType(expr: Expr, program: Program): Type {
     case "IfStatement":
     case "ForRange":
     case "WhileLoop":
+    case "ForArgv":
       return voidType;
   }
   throw new PolygolfError(

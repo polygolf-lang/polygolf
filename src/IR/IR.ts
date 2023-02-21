@@ -30,6 +30,7 @@ import {
   ForEachPair,
   ForCLike,
   WhileLoop,
+  ForArgv,
 } from "./loops";
 import { Identifier, IntegerLiteral, StringLiteral } from "./terminals";
 import {
@@ -100,6 +101,7 @@ export type Expr =
   | ForEachKey
   | ForEachPair
   | ForCLike
+  | ForArgv
   | IfStatement;
 
 /**

@@ -16,7 +16,7 @@ const tokenTable = {
     "Func",
   ],
   argv_get: "argv_get",
-  nullary: ["argv", "true", "false"],
+  nullary: ["argv", "argc", "true", "false"],
   ninf: ["-oo", "-∞"],
   pinf: ["oo", "∞"],
   variant: "/",

@@ -59,3 +59,28 @@ for i in..9:
     if i<j:a=j;a=j
  a=i
 ```
+
+## Argv
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```nim
+import os
+for x in commandLineParams():x.echo
+```
+
+```polygolf
+$b <- 0;
+for $i $b 16 {
+    println $i;
+};
+```
+
+```nim nogolf
+var b=0
+for i in b..15:i.echo
+```
