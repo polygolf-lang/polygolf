@@ -241,6 +241,12 @@ export function typeSexpr(
     case "Void":
       expectArity(0);
       return voidType;
+    case "Int":
+      expectArity(0);
+      return intType();
+    case "Nat":
+      expectArity(0);
+      return intType(0);
     case "Text":
       expectArity(0, 1);
       if (args.length === 0) return textType();
