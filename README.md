@@ -130,6 +130,26 @@ These symbolic aliases can also be used in an infix matter: `(+ 2 3)` is the sam
 Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`bit_and`,`bit_or`,`bit_xor`,`text_concat`.  
 For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
 
+## Types
+
+Polygolf is strongly typed, featuring the following types:
+
+- `Void` - the unit type - this is the return type of statements.
+- `Bool` - boolean.
+- `Int` or `-oo..oo` - integer of unlimited size`, with its subtypes:
+  - `LowerBound..UpperBound` - Where the bounds are inclusive integer literals or "-oo" or "oo".
+- `Text` - unicode string of unlimited length, with its subtypes:
+  - `(Text SomeIntegerType)`, where `SomeIntegerType` is a subtype of `Int` and signifies the type of the text codepoint length, for example `(Text 1..1)` is a text with exactly one codepoint.
+  - `Ascii` - string consisting of ascii characters only.
+  - `(Ascii SomeIntegerType)`, where `SomeIntegerType` is a subtype of `Int` and signifies the type of the text length, for example `(Ascii 1..1)` is a text with exactly one ascii character.
+- `(List MemberType)` - dynamic length, zero indexed sequence of items of type `MemberType`.
+- `(Array MemberType lengthLiteral)` - fixed length, zero indexed sequence of items of type `MemberType`. This currently has limited support.
+- `(Table InType OutType)` - partial table / dictionary / map from values of type `InType` to values of type `OutType`.
+- `(Set MemberType)` - set of items of type `MemberType` - note that this currently has zero support on the backend.
+- `(Func InType_1 ... InType_n OutType)` - a function type - currently no support on the backend.
+
+Polygolf has type inference so for example if variable `$a` is `Int`, then Polygolf knows that `(10 + ($a mod 10))` is `10..19`.
+
 ## Example
 
 For more examples, search this repo for `*.test.md` files.
@@ -176,3 +196,17 @@ Note the following Lua-specific features, besides the syntax:
 
 - foreach-range loop instead of a glorified while loop (!)
 - temporary variable replaced with simultaneous assignment (!)
+
+## Tips for writing solutions in Polygolf
+
+- Don't golf the Polygolf source - let Polygolf do the golfing (especially the simple stuff) for you. This includes:
+  - Use whitespace to format the source.
+  - Use comments if appropriate.
+  - Use descriptive variable names - Polygolf will shorten them for you.
+  - Store intermediate results of complex expressions in auxilary variables - Polygolf will inline them for you. (To come)
+- Help Polygolf understand the problem. This includes:
+  - Explicitly annotate types of values. The type inference algorithm isn't perfect or in some cases can't even possible narrow the type down as much as you can. This is especially relevant for
+    - Values coming from argv - perhaps you know they will be ascii or that they will be representing an integer in a certain range.
+  - Complex arithmetic expressions.
+  - Prefer higher level opcodes if they exist. While Polygolf aims to generally be able to convert between lower level implementation and a higher level one, the conversion from low level to high level is harder and might not always work out for you.
+- Use variants. Polygolf is WIP and the set of golfing rules it knowns is limited. If there are two different equivalent implementations that both are sometimes shorter, include them both using the variant syntax. If you believe the case is general enough and that Polygolf should be able to generate one based on the other, [open an issue](https://github.com/jared-hughes/polygolf/issues/new/choose).
