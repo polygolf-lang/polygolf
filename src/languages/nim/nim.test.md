@@ -60,6 +60,19 @@ for i in..9:
  a=i
 ```
 
+## Argv
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```nim
+import os
+for x in commandLineParams():x.echo
+```
+
 ```polygolf
 $b <- 0;
 for $i $b 16 {

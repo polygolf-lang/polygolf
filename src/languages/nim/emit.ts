@@ -82,6 +82,15 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ":",
         emitMultiExpr(stmt.body, stmt),
       ];
+    case "ForEach":
+      return [
+        `for`,
+        emitExpr(stmt.variable, stmt),
+        "in",
+        emitExpr(stmt.collection, stmt),
+        ":",
+        emitMultiExpr(stmt.body, stmt),
+      ];
     case "ForRange": {
       const low =
         stmt.low.kind === "IntegerLiteral" &&
@@ -136,7 +145,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           : [],
       ];
     case "Variants":
-    case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
@@ -242,7 +250,7 @@ function emitExprNoParens(
       if (expr.args.length === 1 && expr.args[0].kind === "StringLiteral") {
         return [expr.ident.name, "$GLUE$", emitExpr(expr.args[0], expr)];
       }
-      if (expressionContinues || expr.args.length > 1)
+      if (expressionContinues || expr.args.length > 1 || expr.args.length === 0)
         return [
           expr.ident.name,
           "$GLUE$",

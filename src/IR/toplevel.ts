@@ -44,7 +44,10 @@ export interface ImportStatement extends BaseExpr {
 }
 
 export function block(children: readonly Expr[]): Block {
-  return { kind: "Block", children };
+  return {
+    kind: "Block",
+    children: children.flatMap((x) => (x.kind === "Block" ? x.children : x)),
+  };
 }
 
 export function blockOrSingle(children: readonly Expr[]): Expr {
