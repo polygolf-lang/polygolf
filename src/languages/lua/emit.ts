@@ -52,7 +52,10 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     case "ForRange": {
       if (!stmt.inclusive) throw new EmitError(stmt, "exclusive");
       let increment = [",", emitExpr(stmt.increment, stmt)];
-      if (increment.length === 2 && increment[1] === "1") {
+      if (
+        stmt.increment.kind === "IntegerLiteral" &&
+        stmt.increment.value === 1n
+      ) {
         increment = [];
       }
       return [

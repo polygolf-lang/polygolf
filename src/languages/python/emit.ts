@@ -54,6 +54,15 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ":",
         emitMultiExpr(stmt.body, stmt),
       ];
+    case "ForEach":
+      return [
+        `for`,
+        emitExpr(stmt.variable, stmt),
+        "in",
+        emitExpr(stmt.collection, stmt),
+        ":",
+        emitMultiExpr(stmt.body, stmt),
+      ];
     case "ForRange": {
       const low = emitExpr(stmt.low, stmt);
       const low0 = low.length === 1 && low[0] === "0";
@@ -85,7 +94,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           : [],
       ];
     case "Variants":
-    case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
@@ -219,6 +227,8 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
         "]",
       ];
     }
+    case "ImportStatement":
+      return ["import", joinTrees([...expr.modules], ",")];
     default:
       throw new EmitError(expr);
   }

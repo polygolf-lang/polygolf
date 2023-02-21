@@ -2,7 +2,10 @@ import { block, Assignment, assignment, id } from "../../IR";
 
 import { Plugin } from "../../common/Language";
 
-const dependencyMap = new Map([["a=", "a"]]);
+const dependencyMap = new Map([
+  ["a=", "a"],
+  ["a", "a"],
+]);
 export const addImports: Plugin = {
   name: "addImports",
   visit(program, spine) {
@@ -12,13 +15,12 @@ export const addImports: Plugin = {
     // TODO: cache, and maybe do recursive merging for performance
     const dependenciesGen = spine.compactMap((node) => {
       let op: string = node.kind;
-      if (node.kind === "BinaryOp" || node.kind === "UnaryOp") op = node.name;
-      if (node.kind === "FunctionCall") op = node.ident.name;
-      if (node.kind === "MethodCall") op = node.ident.name;
+      if (node.kind === "UnaryOp") op = node.name;
+      if (node.kind === "ForEach" && node.collection.kind === "Identifier")
+        op = node.collection.name;
       if (dependencyMap.has(op)) {
         return dependencyMap.get(op)!;
       }
-      if (node.kind === "TableConstructor") return "tables";
     });
     const dependencies = [...new Set(dependenciesGen)];
     if (dependencies.length < 1) return;

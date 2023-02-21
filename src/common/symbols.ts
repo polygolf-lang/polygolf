@@ -1,4 +1,12 @@
-import { Identifier, integerType, IR, isSubtype, sub, Type } from "../IR";
+import {
+  Identifier,
+  integerType,
+  IR,
+  isSubtype,
+  sub,
+  textType,
+  Type,
+} from "../IR";
 import { PolygolfError } from "./errors";
 import { getCollectionTypes, getType } from "./getType";
 import { programToSpine, Spine } from "./Spine";
@@ -71,6 +79,7 @@ function introducedSymbols(
     case "ForRange":
     case "ForEach":
     case "ForEachKey":
+    case "ForArgv":
       return [node.variable.name];
     case "ForEachPair":
       return [node.keyVariable.name, node.valueVariable.name];
@@ -110,6 +119,8 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
     }
     case "ForEach":
       return getCollectionTypes(node.collection, program)[0];
+    case "ForArgv":
+      return textType();
     case "ForEachKey":
       return getCollectionTypes(node.table, program)[0];
     case "ForEachPair": {
