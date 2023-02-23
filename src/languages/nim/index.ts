@@ -57,11 +57,10 @@ const nimLanguage: Language = {
     forArgvToForRange(),
     modToRem,
     divToTruncdiv,
-    useInclusiveForRange,
     useIndexCalls(),
     mapOps([
       ["argv", (x) => functionCall([], "commandLineParams")],
-      ["argv_get", (x) => functionCall([plus1(x[0])], "paramStr")],
+      ["argv_get", (x) => functionCall([add1(x[0])], "paramStr")],
     ]),
   ],
   finalEmitPlugins: [

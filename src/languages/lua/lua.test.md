@@ -104,7 +104,7 @@ for_argv $x 100 {
 };
 ```
 
-```lua
+```lua nogolf
 for x=0,99 do X=arg[x+1]
 print(X)end
 ```

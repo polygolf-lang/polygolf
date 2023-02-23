@@ -8,7 +8,6 @@ import {
   mapPrecedenceOps,
   useIndexCalls,
   equalityToInequality,
-  plus1,
 } from "../../plugins/ops";
 import { addVarDeclarations } from "../nim/plugins";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
@@ -18,8 +17,10 @@ import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
-import { forArgvToForEach } from "../../plugins/loops";
-import { forRangeToForRangeInclusive } from "../../plugins/loops";
+import {
+  forArgvToForEach,
+  forRangeToForRangeInclusive,
+} from "../../plugins/loops";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -42,11 +43,7 @@ const swiftLanguage: Language = {
       [
         "argv_get",
         (x) =>
-          polygolfOp(
-            "list_get",
-            id("CommandLine.arguments", true),
-            plus1(x[0])
-          ),
+          polygolfOp("list_get", id("CommandLine.arguments", true), add1(x[0])),
       ],
     ]),
     useIndexCalls(),
