@@ -19,7 +19,7 @@ import {
   mapOps,
   mapPrecedenceOps,
   useIndexCalls,
-  plus1,
+  add1,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
@@ -78,7 +78,7 @@ const pythonLanguage: Language = {
       ["argv", (x) => id("sys.argv[1:]", true)],
       [
         "argv_get",
-        (x) => polygolfOp("list_get", id("sys.argv", true), plus1(x[0])),
+        (x) => polygolfOp("list_get", id("sys.argv", true), add1(x[0])),
       ],
     ]),
     useIndexCalls(),
@@ -103,7 +103,7 @@ const pythonLanguage: Language = {
       ["min", (x) => functionCall([x[0], x[1]], "min")],
       [
         "text_get_codepoint_slice",
-        (x) => rangeIndexCall(x[0], x[1], plus1(x[2]), int(1)),
+        (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
       ],
       ["text_codepoint_length", (x) => functionCall([x[0]], "len")],
       ["int_to_text", (x) => functionCall([x[0]], "str")],

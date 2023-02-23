@@ -5,7 +5,7 @@ import {
   joinTrees,
   needsParensPrecedence,
 } from "../../common/emit";
-import { IR } from "../../IR";
+import { IR, isIntLiteral } from "../../IR";
 import { TokenTree } from "@/common/Language";
 
 export default function emitProgram(program: IR.Program): TokenTree {
@@ -42,13 +42,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
       ];
     case "ForRange": {
       if (!stmt.inclusive) throw new EmitError(stmt, "exclusive");
-      let increment = [",", emitExpr(stmt.increment, stmt)];
-      if (
-        stmt.increment.kind === "IntegerLiteral" &&
-        stmt.increment.value === 1n
-      ) {
-        increment = [];
-      }
       return [
         "for",
         emitExpr(stmt.variable, stmt),
@@ -56,7 +49,9 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitExpr(stmt.low, stmt),
         ",",
         emitExpr(stmt.high, stmt),
-        increment,
+        isIntLiteral(stmt.increment, 1n)
+          ? []
+          : [",", emitExpr(stmt.increment, stmt)],
         "do",
         emitStatement(stmt.body, stmt),
         "end",

@@ -27,7 +27,7 @@ $c <- (text_codepoint_reversed "abcdefg");
 
 ```python nogolf
 a="abcdefg"[4]
-b="abcdefg"[1:3+1]
+b="abcdefg"[1:4]
 c="abcdefg"[::-1]
 ```
 
