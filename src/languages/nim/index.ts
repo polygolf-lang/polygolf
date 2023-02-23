@@ -5,9 +5,9 @@ import emitProgram from "./emit";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import {
   equalityToInequality,
+  add1,
   mapOps,
   mapPrecedenceOps,
-  plus1,
   useIndexCalls,
 } from "../../plugins/ops";
 import { addImports, useUFCS, useUnsignedDivision } from "./plugins";
@@ -16,7 +16,8 @@ import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import {
   forArgvToForEach,
   forArgvToForRange,
-  useInclusiveForRange,
+  forRangeToForRangeInclusive,
+  shiftRangeOneUp,
 } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
@@ -50,17 +51,18 @@ const nimLanguage: Language = {
     useLowDecimalListPackedPrinter,
     tableHashing(hash),
     equalityToInequality,
+    shiftRangeOneUp,
+    forRangeToForRangeInclusive,
   ],
   emitPlugins: [
     forArgvToForEach,
     forArgvToForRange(),
     modToRem,
     divToTruncdiv,
-    useInclusiveForRange,
     useIndexCalls(),
     mapOps([
       ["argv", (x) => functionCall([], "commandLineParams")],
-      ["argv_get", (x) => functionCall([plus1(x[0])], "paramStr")],
+      ["argv_get", (x) => functionCall([add1(x[0])], "paramStr")],
     ]),
   ],
   finalEmitPlugins: [

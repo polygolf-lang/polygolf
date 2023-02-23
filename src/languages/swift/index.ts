@@ -3,11 +3,11 @@ import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
+  add1,
   mapOps,
   mapPrecedenceOps,
   useIndexCalls,
   equalityToInequality,
-  plus1,
 } from "../../plugins/ops";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { addImports } from "./plugins";
@@ -17,7 +17,10 @@ import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
-import { forArgvToForEach } from "../../plugins/loops";
+import {
+  forArgvToForEach,
+  forRangeToForRangeInclusive,
+} from "../../plugins/loops";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -29,6 +32,7 @@ const swiftLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     equalityToInequality,
+    forRangeToForRangeInclusive,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -39,11 +43,7 @@ const swiftLanguage: Language = {
       [
         "argv_get",
         (x) =>
-          polygolfOp(
-            "list_get",
-            id("CommandLine.arguments", true),
-            plus1(x[0])
-          ),
+          polygolfOp("list_get", id("CommandLine.arguments", true), add1(x[0])),
       ],
     ]),
     useIndexCalls(),
