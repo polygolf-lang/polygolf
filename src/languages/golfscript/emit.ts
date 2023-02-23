@@ -1,6 +1,6 @@
 import { TokenTree } from "../../common/Language";
 import { EmitError, emitStringLiteral } from "../../common/emit";
-import { IR } from "../../IR";
+import { IR, isIntLiteral } from "../../IR";
 
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
@@ -27,17 +27,12 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitMultiExpr(stmt.body, stmt),
         "while",
       ];
-    case "ForRange": {
-      const low = emitExpr(stmt.low);
-      const low0 = low.length === 1 && low[0] === "0";
-      const high = emitExpr(stmt.high);
-      const increment = emitExpr(stmt.increment);
-      const increment1 = increment.length === 1 && increment[0] === "1";
+    case "ForRange":
       return [
-        high,
+        emitExpr(stmt.high),
         ",",
-        low0 ? [] : [low, ">"],
-        increment1 ? [] : [increment, "%"],
+        isIntLiteral(stmt.low, 0n) ? [] : [emitExpr(stmt.low), ">"],
+        isIntLiteral(stmt.increment, 1n) ? [] : [emitExpr(stmt.increment), "%"],
         "{",
         ":",
         emitExpr(stmt.variable),
@@ -46,7 +41,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "}",
         "%",
       ];
-    }
     case "ForEach":
       return [
         emitExpr(stmt.collection),
@@ -121,8 +115,6 @@ function emitExpr(expr: IR.Expr): TokenTree {
       if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       return [emitExpr(expr.collection), emitExpr(expr.index), "="];
     case "RangeIndexCall": {
-      const step = emitExpr(expr.step);
-      const step1 = step.length === 1 && step[0] === "1";
       if (expr.oneIndexed)
         throw new Error("GolfScript only supports zeroIndexed access.");
 
@@ -132,7 +124,7 @@ function emitExpr(expr: IR.Expr): TokenTree {
         "<",
         emitExpr(expr.low),
         ">",
-        step1 ? [] : [step, "%"],
+        isIntLiteral(expr.step, 1n) ? [] : [emitExpr(expr.step), "%"],
       ];
     }
     default:

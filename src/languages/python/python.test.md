@@ -25,9 +25,9 @@ $b <- (text_get_slice "abcdefg" 1 3);
 $c <- (text_reversed "abcdefg");
 ```
 
-```python bytes
+```python nogolf
 a="abcdefg"[4]
-b="abcdefg"[1:3+1]
+b="abcdefg"[1:4]
 c="abcdefg"[::-1]
 ```
 

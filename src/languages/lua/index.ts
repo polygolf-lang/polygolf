@@ -3,6 +3,7 @@ import { Language } from "../../common/Language";
 import {
   forArgvToForRange,
   forRangeToForRangeInclusive,
+  shiftRangeOneUp,
 } from "../../plugins/loops";
 
 import emitProgram from "./emit";
@@ -10,7 +11,7 @@ import {
   equalityToInequality,
   mapOps,
   mapPrecedenceOps,
-  plus1,
+  add1,
   useIndexCalls,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
@@ -30,14 +31,15 @@ const luaLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
     equalityToInequality,
+    shiftRangeOneUp,
   ],
   emitPlugins: [
     forArgvToForRange(),
     forRangeToForRangeInclusive,
     mapOps([
       ["argv_get", (x) => polygolfOp("list_get", id("arg", true), x[0])],
-      ["text_get_byte", (x) => methodCall(x[0], [plus1(x[1])], "byte")],
-      ["text_get_slice", (x) => methodCall(x[0], [x[1], plus1(x[2])], "sub")],
+      ["text_get_byte", (x) => methodCall(x[0], [add1(x[1])], "byte")],
+      ["text_get_slice", (x) => methodCall(x[0], [x[1], add1(x[2])], "sub")],
     ]),
     useIndexCalls(true),
   ],
