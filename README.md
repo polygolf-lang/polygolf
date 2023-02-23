@@ -152,7 +152,7 @@ Polygolf has type inference so for example if variable `$a` is `Int`, then Polyg
 
 ## Example
 
-For more examples, search this repo for `*.test.md` files like [this one](programs/code.golf-default.test.md).
+For more examples, search this repo for `*.test.md` files like [this one](src/programs/code.golf-default.test.md).
 
 Example Fibonacci using variants
 

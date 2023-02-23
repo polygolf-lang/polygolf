@@ -1,6 +1,8 @@
 # Default code.golf code
 
-Polygolf equivalent of the prefilled code on code.golf. Note that the code.golf tends to be written in a way that works for any argc, while in many langs knowing an upper bound allows for shorter code.
+Polygolf equivalent of the prefilled code on code.golf. Note that the default code.golf code tends to be written in a way that works for any argc, while in many langs knowing an upper bound allows for shorter code.
+
+_Polygolf_
 
 ```polygolf
 % Printing
@@ -17,32 +19,44 @@ for_argv $arg 1000 {
 };
 ```
 
-## Golfscript
+_Golfscript_
 
 ```gs
-b = 1;
+:a;"Hello, World!"puts 10,{:i;i puts}%a{:A;A puts}%
 ```
 
-## Lua
+_Lua_
 
 ```lua
-b=1
+print("Hello, World!")
+for i=0,9 do print(i)end
+for a=1,1000 do A=arg[a]
+print(A)end
 ```
 
-## Nim
+_Nim_
 
 ```nim
-b=1
+import os
+echo"Hello, World!"
+for i in..9:i.echo
+for a in commandLineParams():a.echo
 ```
 
-## Python
+_Python_
 
 ```python
-b=1
+import sys
+p=print
+p("Hello, World!")
+for i in range(10):p(i)
+for a in sys.argv[1:]:p(a)
 ```
 
-## Swift
+_Swift_
 
 ```swift
-b=1
+print("Hello, World!")
+for i in 0...9{print(i)}
+for a in CommandLine.arguments[1...]{print(a)}
 ```
