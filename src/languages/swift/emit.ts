@@ -67,6 +67,14 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitExpr(stmt.condition, stmt),
         emitMultiExpr(stmt.body, stmt),
       ];
+    case "ForEach":
+      return [
+        `for`,
+        emitExpr(stmt.variable, stmt),
+        "in",
+        emitExpr(stmt.collection, stmt),
+        emitMultiExpr(stmt.body, stmt),
+      ];
     case "ForRange": {
       const low = emitExpr(stmt.low, stmt);
       const high = emitExpr(stmt.high, stmt);
@@ -102,7 +110,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           : [],
       ];
     case "Variants":
-    case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":

@@ -95,3 +95,16 @@ text_length (array_get $a 1);
 a={"abc","xyz"}
 a[2]:len()
 ```
+
+## Argv
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```lua
+for x=0,99 do X=arg[x+1]
+print(X)end
+```

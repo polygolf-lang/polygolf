@@ -7,8 +7,11 @@ import {
   rangeIndexCall,
   stringLiteral,
   int,
+  importStatement,
+  block,
+  polygolfOp,
 } from "../../IR";
-import { Language } from "../../common/Language";
+import { Language, Plugin } from "../../common/Language";
 
 import emitProgram, { emitPythonStringLiteral } from "./emit";
 import {
@@ -20,7 +23,7 @@ import {
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
-import { forRangeToForEach } from "../../plugins/loops";
+import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
@@ -31,6 +34,27 @@ import {
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
+
+// abstract out as a part of https://github.com/jared-hughes/polygolf/issues/89
+const addImports: Plugin = {
+  name: "addImports",
+  visit(node, spine) {
+    if (
+      node.kind === "Program" &&
+      spine.someNode(
+        (x) => x.kind === "Identifier" && x.builtin && x.name.startsWith("sys.")
+      )
+    ) {
+      return {
+        ...node,
+        body: block([
+          importStatement("import", ["sys"]),
+          ...(node.body.kind === "Block" ? node.body.children : [node.body]),
+        ]),
+      };
+    }
+  },
+};
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -46,7 +70,17 @@ const pythonLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
   ],
-  emitPlugins: [useIndexCalls()],
+  emitPlugins: [
+    forArgvToForEach,
+    mapOps([
+      ["argv", (x) => id("sys.argv[1:]", true)],
+      [
+        "argv_get",
+        (x) => polygolfOp("list_get", id("sys.argv", true), plus1(x[0])),
+      ],
+    ]),
+    useIndexCalls(),
+  ],
   finalEmitPlugins: [
     mapOps([
       ["true", (_) => int(1)],
@@ -120,6 +154,7 @@ const pythonLanguage: Language = {
     addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
     aliasBuiltins(),
     renameIdents(),
+    addImports,
   ],
   packers: [
     (x) =>

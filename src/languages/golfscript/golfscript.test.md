@@ -34,3 +34,13 @@ println (argv_get 5);
 ```golfscript bytes
 :a;5 a=puts
 ```
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```golfscript bytes
+:a;a{:x;x puts}%
+```

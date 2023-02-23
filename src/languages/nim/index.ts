@@ -19,6 +19,8 @@ import {
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import {
+  forArgvToForEach,
+  forArgvToForRange,
   forRangeToForRangeInclusive,
   shiftRangeOneUp,
 } from "../../plugins/loops";
@@ -50,9 +52,19 @@ const nimLanguage: Language = {
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
   ],
-  emitPlugins: [modToRem, divToTruncdiv, useIndexCalls()],
+  emitPlugins: [
+    forArgvToForEach,
+    forArgvToForRange(),
+    modToRem,
+    divToTruncdiv,
+    useInclusiveForRange,
+    useIndexCalls(),
+    mapOps([
+      ["argv", (x) => functionCall([], "commandLineParams")],
+      ["argv_get", (x) => functionCall([plus1(x[0])], "paramStr")],
+    ]),
+  ],
   finalEmitPlugins: [
-    mapOps([["argv_get", (x) => functionCall([add1(x[0])], "paramStr")]]),
     mapOps([
       ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["text_get_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
