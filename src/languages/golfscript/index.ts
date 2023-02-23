@@ -6,7 +6,7 @@ import {
   equalityToInequality,
   mapOps,
   mapPrecedenceOps,
-  plus1,
+  add1,
   useIndexCalls,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
@@ -14,6 +14,7 @@ import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { addImports } from "./plugins";
+import { forArgvToForEach } from "../../plugins/loops";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
@@ -25,9 +26,10 @@ const golfscriptLanguage: Language = {
     golfLastPrint(),
     equalityToInequality,
   ],
-  emitPlugins: [useIndexCalls()],
+  emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
     mapOps([
+      ["argv", (_) => id("a", true)],
       ["true", (_) => id("1", true)],
       ["false", (_) => id("0", true)],
       ["println", (x) => functionCall(x, "puts")],
@@ -35,7 +37,7 @@ const golfscriptLanguage: Language = {
 
       [
         "text_get_slice",
-        (x) => rangeIndexCall(x[0], x[1], plus1(x[2]), id("1", true)),
+        (x) => rangeIndexCall(x[0], x[1], add1(x[2]), id("1", true)),
       ],
     ]),
     mapPrecedenceOps([

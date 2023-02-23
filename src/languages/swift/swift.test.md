@@ -56,3 +56,23 @@ if -3 != a{a=1}
 for d in -4..<4{a=d}
 for e in(a+1)*(a+1)..<99{a=1}
 ```
+
+## Argv
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```swift
+for x in CommandLine.arguments[1...]{print(x)}
+```
+
+```polygolf
+print (argv_get 0);
+```
+
+```swift
+print(CommandLine.arguments[1])
+```

@@ -1,15 +1,9 @@
-import {
-  functionCall,
-  id,
-  indexCall,
-  methodCall,
-  int,
-  polygolfOp,
-} from "../../IR";
+import { functionCall, id, indexCall, methodCall, polygolfOp } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
+  add1,
   mapOps,
   mapPrecedenceOps,
   useIndexCalls,
@@ -23,6 +17,10 @@ import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
+import {
+  forArgvToForEach,
+  forRangeToForRangeInclusive,
+} from "../../plugins/loops";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -34,21 +32,23 @@ const swiftLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     equalityToInequality,
+    forRangeToForRangeInclusive,
   ],
-  emitPlugins: [modToRem, divToTruncdiv, useIndexCalls()],
-  finalEmitPlugins: [
+  emitPlugins: [
+    forArgvToForEach,
+    modToRem,
+    divToTruncdiv,
     mapOps([
+      ["argv", (x) => id("CommandLine.arguments[1...]", true)],
       [
         "argv_get",
         (x) =>
-          indexCall(
-            id("CommandLine.arguments", true),
-            polygolfOp("add", x[0], int(1n)),
-            "argv_get",
-            true
-          ),
+          polygolfOp("list_get", id("CommandLine.arguments", true), add1(x[0])),
       ],
     ]),
+    useIndexCalls(),
+  ],
+  finalEmitPlugins: [
     mapOps([
       [
         "text_get_byte",

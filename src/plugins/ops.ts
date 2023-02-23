@@ -104,7 +104,7 @@ export function useIndexCalls(
         if (oneIndexed && !node.op.startsWith("table_")) {
           indexNode = indexCall(
             node.args[0],
-            polygolfOp("add", node.args[1], int(1n)),
+            add1(node.args[1]),
             node.op,
             true
           );
@@ -121,9 +121,36 @@ export function useIndexCalls(
   };
 }
 
-export function plus1(expr: Expr): Expr {
-  return polygolfOp("add", expr, int(1n));
+export function add(expr: Expr, amount: bigint = 1n): Expr {
+  if (amount === 0n) return expr;
+
+  if (expr.kind === "IntegerLiteral") return int(expr.value + amount);
+
+  if (expr.kind === "PolygolfOp" && ["add", "sub"].includes(expr.op)) {
+    const a = expr.args[0];
+    const b = expr.args[1];
+
+    if (a.kind === "IntegerLiteral") {
+      if (a.value + amount === 0n && expr.op === "add") return b;
+      return polygolfOp(expr.op, add(a, amount), b);
+    }
+    if (b.kind === "IntegerLiteral") {
+      if (amount + (expr.op === "add" ? b.value : -b.value) === 0n) return a;
+      return polygolfOp(
+        expr.op,
+        a,
+        add(b, expr.op === "add" ? amount : -amount)
+      );
+    }
+  }
+
+  return amount > 0n
+    ? polygolfOp("add", expr, int(amount))
+    : polygolfOp("sub", expr, int(-amount));
 }
+
+export const add1 = (expr: Expr) => add(expr, 1n);
+export const sub1 = (expr: Expr) => add(expr, -1n);
 
 export const equalityToInequality: Plugin = {
   name: "equalityToInequality",

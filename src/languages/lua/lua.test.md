@@ -66,8 +66,8 @@ text_to_int "5";
 1==2
 1>=2
 1>2
-({"xy","abc"})[1+1]
-("abc"):byte(1+1)
+({"xy","abc"})[2]
+("abc"):byte(2)
 "abc".."xyz"
 ("abc"):len()
 tostring(5)
@@ -93,5 +93,18 @@ text_length (array_get $a 1);
 
 ```lua nogolf
 a={"abc","xyz"}
-a[1+1]:len()
+a[2]:len()
+```
+
+## Argv
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```lua nogolf
+for x=0,99 do X=arg[x+1]
+print(X)end
 ```

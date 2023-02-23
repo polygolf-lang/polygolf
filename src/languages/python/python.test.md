@@ -25,9 +25,9 @@ $b <- (text_get_slice "abcdefg" 1 3);
 $c <- (text_reversed "abcdefg");
 ```
 
-```python bytes
+```python nogolf
 a="abcdefg"[4]
-b="abcdefg"[1:3+1]
+b="abcdefg"[1:4]
 c="abcdefg"[::-1]
 ```
 
@@ -115,6 +115,28 @@ else:
    if 5==1:p("c")
   else:p("d")
  else:p("e")
+```
+
+## Argv
+
+```polygolf
+for_argv $x 100 {
+  println $x;
+};
+```
+
+```python
+import sys
+for x in sys.argv[1:]:print(x)
+```
+
+```polygolf
+print (argv_get 0);
+```
+
+```python
+import sys
+print(sys.argv[1])
 ```
 
 ## Mutating ops

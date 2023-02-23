@@ -7,7 +7,7 @@ import {
   EmitError,
 } from "../../common/emit";
 import { PathFragment } from "../../common/fragments";
-import { IR } from "../../IR";
+import { IR, isIntLiteral } from "../../IR";
 
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
@@ -82,17 +82,18 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         ":",
         emitMultiExpr(stmt.body, stmt),
       ];
+    case "ForEach":
+      return [
+        `for`,
+        emitExpr(stmt.variable, stmt),
+        "in",
+        emitExpr(stmt.collection, stmt),
+        ":",
+        emitMultiExpr(stmt.body, stmt),
+      ];
     case "ForRange": {
-      const low =
-        stmt.low.kind === "IntegerLiteral" &&
-        stmt.low.value === 0n &&
-        stmt.inclusive
-          ? []
-          : emitExpr(stmt.low, stmt);
-      if (
-        stmt.increment.kind === "IntegerLiteral" &&
-        stmt.increment.value === 1n
-      ) {
+      const low = isIntLiteral(stmt.low, 0n) ? [] : emitExpr(stmt.low, stmt);
+      if (isIntLiteral(stmt.increment, 1n)) {
         return [
           "for",
           emitExpr(stmt.variable, stmt),
@@ -136,7 +137,6 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
           : [],
       ];
     case "Variants":
-    case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
     case "ForCLike":
@@ -242,7 +242,7 @@ function emitExprNoParens(
       if (expr.args.length === 1 && expr.args[0].kind === "StringLiteral") {
         return [expr.ident.name, "$GLUE$", emitExpr(expr.args[0], expr)];
       }
-      if (expressionContinues || expr.args.length > 1)
+      if (expressionContinues || expr.args.length > 1 || expr.args.length === 0)
         return [
           expr.ident.name,
           "$GLUE$",
@@ -334,8 +334,7 @@ function emitExprNoParens(
       ];
     case "RangeIndexCall":
       if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
-      if (expr.step.kind !== "IntegerLiteral" || expr.step.value !== 1n)
-        throw new EmitError(expr, "step");
+      if (!isIntLiteral(expr.step, 1n)) throw new EmitError(expr, "step");
       return [
         emitExprNoParens(expr.collection),
         "[",
