@@ -6,6 +6,8 @@ import {
   UnaryOpCode,
   BinaryOpCode,
   OpCode,
+  Node,
+  IntegerLiteral,
   associativity as defaultAssociativity,
 } from "./IR";
 
@@ -300,4 +302,11 @@ export function getArgs(
     case "RangeIndexCall":
       return [node.collection, node.low, node.high, node.step];
   }
+}
+
+export function isIntLiteral(x: Node, val?: bigint): x is IntegerLiteral {
+  if (x.kind === "IntegerLiteral") {
+    return val === undefined || val === x.value;
+  }
+  return false;
 }

@@ -1,3 +1,4 @@
+import { Spine } from "../common/Spine";
 import { getType } from "../common/getType";
 import { Plugin } from "../common/Language";
 import {
@@ -12,7 +13,12 @@ import {
   id,
   IR,
   polygolfOp,
+  Expr,
+  Identifier,
+  PolygolfOp,
+  Node,
 } from "../IR";
+import { add1, sub1 } from "./ops";
 
 export const forRangeToForRangeInclusive: Plugin = {
   name: "forRangeToForRangeInclusive",
@@ -21,50 +27,11 @@ export const forRangeToForRangeInclusive: Plugin = {
       return forRange(
         node.variable,
         node.low,
-        polygolfOp("sub", node.high, int(1n)),
+        sub1(node.high),
         node.increment,
         node.body,
         true
       );
-  },
-};
-
-export const useInclusiveForRange: Plugin = {
-  name: "useInclusiveForRange",
-  visit(node): IR.ForRange | undefined {
-    if (node.kind === "ForRange" && !node.inclusive) {
-      if (node.high.kind === "IntegerLiteral") {
-        const high = {
-          ...node.high,
-          value: node.high.value - 1n,
-        };
-        return {
-          ...node,
-          inclusive: true,
-          high,
-        };
-      } else if (node.high.kind === "BinaryOp" && node.high.op === "add") {
-        if (
-          node.high.right.kind === "IntegerLiteral" &&
-          node.high.right.value === 1n
-        ) {
-          return {
-            ...node,
-            inclusive: true,
-            high: node.high.left,
-          };
-        } else if (
-          node.high.left.kind === "IntegerLiteral" &&
-          node.high.left.value === 1n
-        ) {
-          return {
-            ...node,
-            inclusive: true,
-            high: node.high.right,
-          };
-        }
-      }
-    }
   },
 };
 
@@ -105,7 +72,7 @@ export const forRangeToForCLike: Plugin = {
         assignment(node.variable, node.low),
         assignment(
           node.variable,
-          polygolfOp("add", node.variable, node.increment ?? int(1n))
+          polygolfOp("add", node.variable, node.increment)
         ),
         polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
         node.body
@@ -258,3 +225,75 @@ export const assertForArgvTopLevel: Plugin = {
     return undefined;
   },
 };
+
+export const shiftRangeOneUp: Plugin = {
+  name: "shiftRangeOneUp",
+  visit(node, spine) {
+    if (
+      node.kind === "ForRange" &&
+      node.increment.kind === "IntegerLiteral" &&
+      node.increment.value === 1n
+    ) {
+      const bodySpine = new Spine(node.body, spine, "body");
+      if (bodySpine.someNode((x) => isIdentPlus(x, node.variable, true))) {
+        const newVar = id(node.variable.name + "POLYGOLFshifted");
+        return forRange(
+          newVar,
+          add1(node.low),
+          add1(node.high),
+          int(1n),
+          bodySpine.withReplacer((x) =>
+            isIdentPlus(x, node.variable) || isIdent(x, node.variable)
+              ? sub1Replace(x, newVar)
+              : undefined
+          ).node as Expr,
+          node.inclusive
+        );
+      }
+    }
+  },
+};
+
+function isIdentPlus(
+  node: Node,
+  ident: Identifier,
+  onlyPlus1 = false
+): node is PolygolfOp {
+  if (
+    node.kind === "PolygolfOp" &&
+    (node.op === "add" || (node.op === "sub" && !onlyPlus1))
+  ) {
+    const a = node.args[0];
+    const b = node.args[1];
+    return (
+      (isIdent(a, ident) &&
+        b.kind === "IntegerLiteral" &&
+        (!onlyPlus1 || b.value === 1n)) ||
+      (isIdent(b, ident) &&
+        a.kind === "IntegerLiteral" &&
+        (!onlyPlus1 || a.value === 1n))
+    );
+  }
+  return false;
+}
+
+function isIdent(node: Node, ident: Identifier): node is Identifier {
+  return (
+    node.kind === "Identifier" &&
+    node.name === ident.name &&
+    node.builtin === ident.builtin
+  );
+}
+
+function sub1Replace(
+  expr: PolygolfOp | Identifier,
+  newIdent: Identifier
+): Expr {
+  if (expr.kind === "Identifier") return sub1(newIdent);
+  const a = expr.args[0];
+  const b = expr.args[1];
+  if (a.kind === "Identifier") return sub1(polygolfOp(expr.op, newIdent, b));
+  return expr.op === "add"
+    ? sub1(polygolfOp(expr.op, a, newIdent))
+    : add1(polygolfOp(expr.op, a, newIdent));
+}
