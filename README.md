@@ -73,22 +73,6 @@ Type expression is either
 - Simple type `Text`, `Bool`, `Void` or
 - S-expression using type expressions `(List (Set 0..100))`
 
-Each variable must be first used in an assignment. Variable type is determined by the type annotation on the first assignment or the type of the value being assigned, if the annotation is missing.
-
-### Statements & control flow
-
-Loop over half-open integer range (exclusive upper bound) with optional step:  
-`for $i $low $high {print $i;};`
-
-`for $i $low $high $step {print $i;};`
-
-While loop:  
-`while $condition {$i <- ($i + 1);};`  
-If with optional else-branch:  
-`if $condition {print "Yes";} {print "No";};`  
-Assignment:  
-`assign $x 5;` or `$x <- 5;`
-
 ### Literals
 
 Integer literals are unbounded and written in base 10. String literals are JSON string literals.  
@@ -99,7 +83,50 @@ Array and set literals are similar:
 Table literals are n-ary s-expressions taking a variable number of key-value pairs:  
 `(table ("x" => 0) ("y" => 1) ("z" => 2))`
 
-### Operations
+## Semantics
+
+All nodes in the Polygolf tree are expressions and each expression has a specific type. Some expressions don't return a value - these have the unit type.
+
+### Types
+
+Polygolf is strongly typed, featuring the following types:
+
+- `Void` - the unit type - this is the return type of statements.
+- `Bool` - boolean.
+- `Int` or `-oo..oo` - integer of unlimited size`, with its subtypes:
+  - `LowerBound..UpperBound` - Where the bounds are inclusive integer literals or "-oo" or "oo".
+- `Text` - unicode string of unlimited length, with its subtypes:
+  - `(Text SomeIntegerType)`, where `SomeIntegerType` is a subtype of `Int` and signifies the type of the text codepoint length, for example `(Text 1..1)` is a text with exactly one codepoint.
+  - `Ascii` - string consisting of ascii characters only.
+  - `(Ascii SomeIntegerType)`, where `SomeIntegerType` is a subtype of `Int` and signifies the type of the text length, for example `(Ascii 1..1)` is a text with exactly one ascii character.
+- `(List MemberType)` - dynamic length, zero indexed sequence of items of type `MemberType`.
+- `(Array MemberType lengthLiteral)` - fixed length, zero indexed sequence of items of type `MemberType`. This currently has limited support.
+- `(Table InType OutType)` - partial table / dictionary / map from values of type `InType` to values of type `OutType`.
+- `(Set MemberType)` - set of items of type `MemberType` - note that this currently has zero support on the backend.
+- `(Func InType_1 ... InType_n OutType)` - a function type - currently no support on the backend.
+
+Polygolf has type inference so for example if variable `$a` is `Int`, then Polygolf knows that `(10 + ($a mod 10))` is `10..19`.
+
+### Variables
+
+Each variable must be first used in an assignment. Variable type is determined by the type annotation on the first assignment or the type of the value being assigned, if the annotation is missing.
+
+### Special expressions
+
+- `{}` - Block - combines multiple expressions into a single one. An important feature of blocks is that they can contain multiple variants / alternatives. These variants are expanded (even recursively) so that several different programs solving the hole are generated and the shortest (compilable) one is chosen. This is very useful when variant A is longer (or cannot Polygolf is unable to compile it) than variant B for some subset of languages, but it is shorter for another subset of languages.
+- `assign`, `<-` - assigns a value to a variable.
+- `key_value`, `=>` - this can only be used as a part of a table literal.
+- `func` - anonymous function literal - last argument is the body, all others are its arguments.
+- `if` - if statement - expects a boolean condition and 1-2 bodies - a consequent and an optional alternate.
+- `for` - a loop over an integer range - expects a loop variable, inclusive lower bound, exclusive upper bound, optional step and a body.
+- `while` - a while loop. Expects a boolean condition and a body.
+- `for_argv` - a loop over input arguments. Expects a loop variable and a static integer literal representing the upper bound on the number of arguments.
+- `conditional` - a ternary conditional expression. Expects a boolean condition, a consequent and an alternate.
+- `unsafe_conditional` - same as `conditional` but both branches can be safely evaluated regardless of the condition.
+- `list`, `array`, `set`, `table` - construct the respective collection with the given items.
+- `argv_get` - gets a single input arg. Its argument must be a static integer literal - this cannot be used in a loop.
+
+### Polygolf operators
 
 All other expressions are Polygolf operators. Most of them return values, but some are used for I/O and some are used for setting values in collections.  
 [Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).  
@@ -129,26 +156,6 @@ Notice how `-` and `~` both correspond to two ops - this is resolved by the used
 These symbolic aliases can also be used in an infix matter: `(+ 2 3)` is the same as (`2 + 3)`.
 Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`bit_and`,`bit_or`,`bit_xor`,`text_concat`.  
 For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
-
-## Types
-
-Polygolf is strongly typed, featuring the following types:
-
-- `Void` - the unit type - this is the return type of statements.
-- `Bool` - boolean.
-- `Int` or `-oo..oo` - integer of unlimited size`, with its subtypes:
-  - `LowerBound..UpperBound` - Where the bounds are inclusive integer literals or "-oo" or "oo".
-- `Text` - unicode string of unlimited length, with its subtypes:
-  - `(Text SomeIntegerType)`, where `SomeIntegerType` is a subtype of `Int` and signifies the type of the text codepoint length, for example `(Text 1..1)` is a text with exactly one codepoint.
-  - `Ascii` - string consisting of ascii characters only.
-  - `(Ascii SomeIntegerType)`, where `SomeIntegerType` is a subtype of `Int` and signifies the type of the text length, for example `(Ascii 1..1)` is a text with exactly one ascii character.
-- `(List MemberType)` - dynamic length, zero indexed sequence of items of type `MemberType`.
-- `(Array MemberType lengthLiteral)` - fixed length, zero indexed sequence of items of type `MemberType`. This currently has limited support.
-- `(Table InType OutType)` - partial table / dictionary / map from values of type `InType` to values of type `OutType`.
-- `(Set MemberType)` - set of items of type `MemberType` - note that this currently has zero support on the backend.
-- `(Func InType_1 ... InType_n OutType)` - a function type - currently no support on the backend.
-
-Polygolf has type inference so for example if variable `$a` is `Int`, then Polygolf knows that `(10 + ($a mod 10))` is `10..19`.
 
 ## Example
 
