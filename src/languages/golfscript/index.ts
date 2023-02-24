@@ -82,6 +82,8 @@ const golfscriptLanguage: Language = {
       ["byte_to_char", "[]+''+"],
       ["max", "[]++$1="],
       ["min", "[]++$0="],
+      ["bit_shift_left", "2\\?*"],
+      ["bit_shift_right", "2\\?/"],
 
       ["argv_get", "a="],
     ]),

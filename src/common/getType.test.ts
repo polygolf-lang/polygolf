@@ -290,6 +290,22 @@ describeArithmeticOp("pow", [
   [[int(-3), int(1, 4)], int(-27)],
 ]);
 
+describeArithmeticOp("bit_shift_left", [
+  [[int()], "error"],
+  [[int(), int()], "error"],
+  [[int(1, 5), int(2, 3)], int(4, 40)],
+  [[int("-oo", 0), int(0, "oo")], int("-oo", 0)],
+  [[int(-10, -2), int(0, 10)], int(-10240, -2)],
+]);
+
+describeArithmeticOp("bit_shift_right", [
+  [[int()], "error"],
+  [[int(), int()], "error"],
+  [[int(1, 5), int(2, 3)], int(0, 1)],
+  [[int("-oo", 0), int(0, "oo")], int("-oo", 0)],
+  [[int(10, 50), int(2, 3)], int(1, 12)],
+]);
+
 describePolygolfOp("or", [
   [[bool, int()], "error"],
   [[bool], "error"],

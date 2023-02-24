@@ -11,6 +11,8 @@ export const BinaryOpCodeArray = [
   "bit_and",
   "bit_or",
   "bit_xor",
+  "bit_shift_left",
+  "bit_shift_right",
   "gcd",
   "min",
   "max",

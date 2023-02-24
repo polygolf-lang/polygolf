@@ -346,6 +346,8 @@ function getOpCodeType(
     case "bit_and":
     case "bit_or":
     case "bit_xor":
+    case "bit_shift_left":
+    case "bit_shift_right":
     case "min":
     case "max":
       expectType(integerType(), integerType());
@@ -738,6 +740,18 @@ export function getArithmeticType(
     case "bit_and":
       return getTypeBitNot(
         getArithmeticType("bit_or", getTypeBitNot(a), getTypeBitNot(b))
+      );
+    case "bit_shift_left":
+      return getArithmeticType(
+        "mul",
+        a,
+        getArithmeticType("pow", integerType(2, 2), b)
+      );
+    case "bit_shift_right":
+      return getArithmeticType(
+        "div",
+        a,
+        getArithmeticType("pow", integerType(2, 2), b)
       );
     case "bit_or":
     case "bit_xor": {

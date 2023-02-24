@@ -133,6 +133,8 @@ All of the Polygolf operators can be called using their name. In addition, sever
 | pow             | ^     |
 | bit_and         | &     |
 | bit_or          | \|    |
+| bit_shift_left  | <<    |
+| bit_shift_right | >>    |
 | bit_xor/bit_not | ~     |
 | eq              | ==    |
 | neq             | !=    |

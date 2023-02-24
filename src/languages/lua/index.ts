@@ -80,6 +80,10 @@ const luaLanguage: Language = {
         ["sub", "-"],
       ],
       [["text_concat", ".."]],
+      [
+        ["bit_shift_left", "<<"],
+        ["bit_shift_right", ">>"],
+      ],
       [["bit_and", "&"]],
       [["bit_xor", "~"]],
       [["bit_or", "|"]],

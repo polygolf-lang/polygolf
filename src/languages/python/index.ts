@@ -136,6 +136,10 @@ const pythonLanguage: Language = {
         ["text_concat", "+"],
         ["sub", "-"],
       ],
+      [
+        ["bit_shift_left", "<<"],
+        ["bit_shift_right", ">>"],
+      ],
       [["bit_and", "&"]],
       [["bit_xor", "^"]],
       [["bit_or", "|"]],
@@ -151,7 +155,19 @@ const pythonLanguage: Language = {
       [["and", "and"]],
       [["or", "or"]]
     ),
-    addMutatingBinaryOp("+", "*", "-", "//", "%", "**", "&", "|", "^"),
+    addMutatingBinaryOp(
+      "+",
+      "*",
+      "-",
+      "//",
+      "%",
+      "**",
+      "&",
+      "|",
+      "^",
+      ">>",
+      "<<"
+    ),
     aliasBuiltins(),
     renameIdents(),
     addImports,
