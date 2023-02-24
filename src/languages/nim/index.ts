@@ -95,16 +95,14 @@ const nimLanguage: Language = {
         ["mul", "*"],
         ["trunc_div", "div"],
         ["rem", "mod"],
+        ["bit_shift_left", "shl"],
+        ["bit_shift_right", "shr"],
       ],
       [
         ["add", "+"],
         ["sub", "-"],
       ],
       [["text_concat", "&", false]],
-      [
-        ["bit_shift_left", "shl"],
-        ["bit_shift_right", "shr"],
-      ],
       [
         ["lt", "<"],
         ["leq", "<="],
