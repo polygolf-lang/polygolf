@@ -1,5 +1,6 @@
 import { flipOpCode, isBinary, mutatingBinaryOp, polygolfOp } from "../IR";
 import { Plugin } from "../common/Language";
+import { stringify } from "../common/stringify";
 
 // "a = a + b" --> "a += b"
 export function addMutatingBinaryOp(...ops: string[]): Plugin {
@@ -20,8 +21,7 @@ export function addMutatingBinaryOp(...ops: string[]): Plugin {
             node.variable.kind === "IndexCall" &&
             node.variable.collection.kind === "Identifier" &&
             node.variable.collection.name === node.expr.left.collection.name &&
-            JSON.stringify(node.variable.index) ===
-              JSON.stringify(node.expr.left.index))
+            stringify(node.variable.index) === stringify(node.expr.left.index))
         ) {
           return mutatingBinaryOp(
             node.expr.op,
