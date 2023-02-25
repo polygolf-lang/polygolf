@@ -10,6 +10,8 @@ import {
   importStatement,
   block,
   polygolfOp,
+  listType,
+  textType,
 } from "../../IR";
 import { Language, Plugin } from "../../common/Language";
 
@@ -78,7 +80,12 @@ const pythonLanguage: Language = {
       ["argv", (x) => id("sys.argv[1:]", true)],
       [
         "argv_get",
-        (x) => polygolfOp("list_get", id("sys.argv", true), add1(x[0])),
+        (x) =>
+          polygolfOp(
+            "list_get",
+            { ...id("sys.argv", true), type: listType(textType()) },
+            add1(x[0])
+          ),
       ],
     ]),
     useIndexCalls(),

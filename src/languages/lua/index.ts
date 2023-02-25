@@ -1,4 +1,4 @@
-import { functionCall, id, methodCall, polygolfOp } from "../../IR";
+import { functionCall, id, methodCall, polygolfOp, textType } from "../../IR";
 import { Language } from "../../common/Language";
 import {
   forArgvToForRange,
@@ -39,7 +39,15 @@ const luaLanguage: Language = {
     forArgvToForRange(),
     forRangeToForRangeInclusive,
     mapOps([
-      ["argv_get", (x) => polygolfOp("list_get", id("arg", true), x[0])],
+      [
+        "argv_get",
+        (x) =>
+          polygolfOp(
+            "list_get",
+            { ...id("arg", true), type: textType() },
+            x[0]
+          ),
+      ],
       ["text_get_byte", (x) => methodCall(x[0], [add1(x[1])], "byte")],
       [
         "text_get_byte_slice",
