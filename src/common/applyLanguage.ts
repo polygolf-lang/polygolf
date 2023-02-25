@@ -16,7 +16,7 @@ export interface SearchOptions {
 
 // This is what code.golf uses for char scoring
 // https://github.com/code-golf/code-golf/blob/13733cfd472011217031fb9e733ae9ac177b234b/js/_util.ts#L7
-const charLen = (str: string | null) => {
+export const charLength = (str: string | null) => {
   if (str === null) return Infinity;
   let i = 0;
   let len = 0;
@@ -46,6 +46,9 @@ const charLen = (str: string | null) => {
   return len;
 };
 
+export const byteLength = (x: string | null) =>
+  x === null ? Infinity : Buffer.byteLength(x, "utf-8");
+
 export function searchOptions(
   level: OptimisationLevel,
   objective: Objective,
@@ -57,8 +60,8 @@ export function searchOptions(
     objectiveFunction:
       objectiveFunction === undefined
         ? objective === "bytes"
-          ? (x) => (x === null ? Infinity : Buffer.byteLength(x, "utf-8"))
-          : (x) => (x === null ? Infinity : charLen(x))
+          ? byteLength
+          : charLength
         : (x) => (x === null ? Infinity : objectiveFunction(x)),
   };
 }
@@ -88,7 +91,7 @@ export default function applyLanguage(
   const bestForPacking = applyLanguageToVariants(
     language,
     language.name === "Polygolf" ? [program] : expandVariants(program),
-    searchOptions(options.level, "chars", (x) => charLen(packer(x)))
+    searchOptions(options.level, "chars", (x) => charLength(packer(x)))
   );
   const packed = packer(bestForPacking);
   if (

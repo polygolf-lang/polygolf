@@ -37,6 +37,7 @@ import {
   func,
   conditional,
   arrayConstructor,
+  toString,
   forArgv,
 } from "../IR";
 import grammar from "./grammar";
@@ -177,6 +178,8 @@ export const canonicalOpTable: Record<string, OpCode> = {
   "^": "pow",
   "&": "bit_and",
   "|": "bit_or",
+  "<<": "bit_shift_left",
+  ">>": "bit_shift_right",
   // bitxor, bitnot handled as special case in canonicalOp
   "==": "eq",
   "!=": "neq",
@@ -241,11 +244,24 @@ export function typeSexpr(
     case "Void":
       expectArity(0);
       return voidType;
+    case "Ascii":
     case "Text":
       expectArity(0, 1);
-      if (args.length === 0) return textType();
-      assertNumber(args[0]);
-      return textType(Number(args[0].value));
+      if (args.length === 0)
+        return textType(intType(), callee.value === "Ascii");
+      if (args[0].kind === "IntegerLiteral")
+        return textType(Number(args[0].value), callee.value === "Ascii");
+      if (args[0].kind === "integer")
+        return textType(args[0], callee.value === "Ascii");
+      throw new PolygolfError(
+        `Syntax error. Expected integer or integer type, got ${toString(
+          args[0]
+        )}.`,
+        {
+          line: callee.line,
+          column: callee.col,
+        }
+      );
     case "Bool":
       expectArity(0);
       return booleanType;
