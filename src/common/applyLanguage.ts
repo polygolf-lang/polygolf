@@ -4,6 +4,7 @@ import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
 import { getType } from "./getType";
+import { stringify } from "./stringify";
 
 // TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
 export type OptimisationLevel = "none" | "heuristic" | "full";
@@ -196,9 +197,7 @@ function golfProgram(
     //      `polygolfOp("+",a,b)` vs `functionCall("+",a,b)`)
     // room for improvement? custom compare function. Might be able to
     // O(log(nodes)) checking for duplicates instead of O(nodes) stringification
-    const s = JSON.stringify(prog, (_, value) =>
-      typeof value === "bigint" ? value.toString() + "n" : value
-    );
+    const s = stringify(prog);
     if (visited.has(s)) return;
     visited.add(s);
     try {

@@ -1,3 +1,4 @@
+import { stringify } from "../common/stringify";
 import {
   assignment,
   Expr,
@@ -22,20 +23,6 @@ import {
   Type,
 } from "../IR";
 import parse from "./parse";
-
-function stringify(x: any): string {
-  // Jest complains it cannot serialize bigint
-  return JSON.stringify(
-    x,
-    (key, value) =>
-      key === "source"
-        ? undefined
-        : typeof value === "bigint"
-        ? value.toString() + "n"
-        : value,
-    2
-  );
-}
 
 function testStmtParse(desc: string, str: string, output: Node) {
   test(desc, () => {
@@ -182,5 +169,17 @@ describe("Parse variants", () => {
     "Expression variants",
     `println { 0 / 1 };`,
     print(variants([int(0n), int(1n)]), true)
+  );
+});
+
+describe("Parse unambiguously", () => {
+  testStmtParse(
+    "Nested variants",
+    `{
+      {
+        $a <- 0;
+      }
+    }`,
+    variants([variants([assignment(id("a"), int(0n))])])
   );
 });
