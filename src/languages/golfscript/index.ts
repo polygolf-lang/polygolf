@@ -6,7 +6,7 @@ import {
   equalityToInequality,
   mapOps,
   mapPrecedenceOps,
-  plus1,
+  add1,
   useIndexCalls,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
@@ -36,8 +36,8 @@ const golfscriptLanguage: Language = {
       ["print", (x) => functionCall(x, "print")],
 
       [
-        "text_get_slice",
-        (x) => rangeIndexCall(x[0], x[1], plus1(x[2]), id("1", true)),
+        "text_get_byte_slice",
+        (x) => rangeIndexCall(x[0], x[1], add1(x[2]), id("1", true)),
       ],
     ]),
     mapPrecedenceOps([
@@ -59,7 +59,7 @@ const golfscriptLanguage: Language = {
       ["and", "and"],
       ["or", "or"],
       ["text_get_byte", "="],
-      ["text_length", ","],
+      ["text_byte_length", ","],
       ["int_to_text", "`"],
       ["text_split", "/"],
       ["repeat", "*"],
@@ -77,11 +77,13 @@ const golfscriptLanguage: Language = {
       ["neq", "=!"],
       ["geq", "(>"],
       ["join", "''*"],
-      ["text_reversed", "-1%"],
-      ["text_get_char", "=[]+''+"],
-      ["byte_to_char", "[]+''+"],
+      ["text_byte_reversed", "-1%"],
+      ["text_get_byte", "=[]+''+"],
+      ["byte_to_text", "[]+''+"],
       ["max", "[]++$1="],
       ["min", "[]++$0="],
+      ["bit_shift_left", "2\\?*"],
+      ["bit_shift_right", "2\\?/"],
 
       ["argv_get", "a="],
     ]),

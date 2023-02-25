@@ -10,7 +10,6 @@ Design goals
   2. mostly functional: Elixir, F#, Haskell, Lisp
   3. other: Assembly, ><>, brainfuck, GolfScript, Hexagony, J, K, Prolog, sed, SQL, VimL
 - can compile PolyGolf to any language without language-specific annotations
-- alternative options and domain annotations may help recognition of language-specific idioms
 - goal for each language target (vague): at most twice as long on average for all holes, aka score at least 500× number of holes
 
 Read on for usage, or see [docs/architecture.md](docs/architecture.md) for the architecture.
@@ -29,33 +28,14 @@ npm install . --location=global
 
 This will set up the `polygolf` command to point to the CLI script.
 
-The usage is currently simple. Just pick an input PolyGolf file and target language:
+Polygolf CLI supports the following options:
 
-```
-polygolf -i src/programs/fibonacci.polygolf -l lua
-```
-
-Use `-o` to specify an output file instead of stdout:
-
-```
-polygolf -i src/programs/fibonacci.polygolf -l lua -o fibonacci.lua
-```
+- `--input`, `-i`: path to the input program
+- `--lang`, `-l`: target language name or its extension, or `all` for targeting all supported languages
+- `--output`, `-o`: output path, if omitted, output goes to stdout
+- `--chars`, `-c`: if set, switches the objective from bytes to chars
 
 To uninstall, use `npm uninstall polygolf --location=global`
-
-## Development
-
-To get started, clone the repository, then run `npm install` to install dependencies
-
-After making a change, run `npm run build` before running the cli as `node dist/cli.js`.
-
-To run tests, run `npm run test`.
-
-The npm alias `npm run cli` is equivalent to `npm run build; node dist/cli.js`
-
-Some concepts (visitor, Path, etc.) are similar to those used by the JavaScript transpiler Babel, so the [Babel plugin handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md) is worth skimming.
-
-For details about the Polygolf internals, see [Architecture](https://github.com/jared-hughes/polygolf/blob/main/docs/architecture.md).
 
 ## Competitiveness
 
@@ -93,22 +73,6 @@ Type expression is either
 - Simple type `Text`, `Bool`, `Void` or
 - S-expression using type expressions `(List (Set 0..100))`
 
-Each variable must be first used in an assignment. Variable type is determined by the type annotation on the first assignment or the type of the value being assigned, if the annotation is missing.
-
-### Statements & control flow
-
-Loop over half-open integer range (exclusive upper bound) with optional step:  
-`for $i $low $high {print $i;};`
-
-`for $i $low $high $step {print $i;};`
-
-While loop:  
-`while $condition {$i <- ($i + 1);};`  
-If with optional else-branch:  
-`if $condition {print "Yes";} {print "No";};`  
-Assignment:  
-`assign $x 5;` or `$x <- 5;`
-
 ### Literals
 
 Integer literals are unbounded and written in base 10. String literals are JSON string literals.  
@@ -119,7 +83,50 @@ Array and set literals are similar:
 Table literals are n-ary s-expressions taking a variable number of key-value pairs:  
 `(table ("x" => 0) ("y" => 1) ("z" => 2))`
 
-### Operations
+## Semantics
+
+All nodes in the Polygolf tree are expressions and each expression has a specific type. Some expressions don't return a value - these have the unit type.
+
+### Types
+
+Polygolf is strongly typed, featuring the following types:
+
+- `Void` - the unit type - this is the return type of statements.
+- `Bool` - boolean.
+- `Int` or `-oo..oo` - integer of unlimited size`, with its subtypes:
+  - `LowerBound..UpperBound` - Where the bounds are inclusive integer literals or "-oo" or "oo".
+- `Text` - unicode string of unlimited length, with its subtypes:
+  - `(Text SomeIntegerType)`, where `SomeIntegerType` is a subtype of `Int` and signifies the type of the text codepoint length, for example `(Text 1..1)` is a text with exactly one codepoint.
+  - `Ascii` - string consisting of ascii characters only.
+  - `(Ascii SomeIntegerType)`, where `SomeIntegerType` is a subtype of `Int` and signifies the type of the text length, for example `(Ascii 1..1)` is a text with exactly one ascii character.
+- `(List MemberType)` - dynamic length, zero indexed sequence of items of type `MemberType`.
+- `(Array MemberType lengthLiteral)` - fixed length, zero indexed sequence of items of type `MemberType`. This currently has limited support.
+- `(Table InType OutType)` - partial table / dictionary / map from values of type `InType` to values of type `OutType`.
+- `(Set MemberType)` - set of items of type `MemberType` - note that this currently has zero support on the backend.
+- `(Func InType_1 ... InType_n OutType)` - a function type - currently no support on the backend.
+
+Polygolf has type inference so for example if variable `$a` is `Int`, then Polygolf knows that `(10 + ($a mod 10))` is `10..19`.
+
+### Variables
+
+Each variable must be first used in an assignment. Variable type is determined by the type annotation on the first assignment or the type of the value being assigned, if the annotation is missing.
+
+### Special expressions
+
+- `{}` - Block - combines multiple expressions into a single one. An important feature of blocks is that they can contain multiple variants / alternatives. These variants are expanded (even recursively) so that several different programs solving the hole are generated and the shortest (compilable) one is chosen. This is very useful when variant A is longer (or cannot Polygolf is unable to compile it) than variant B for some subset of languages, but it is shorter for another subset of languages.
+- `assign`, `<-` - assigns a value to a variable.
+- `key_value`, `=>` - this can only be used as a part of a table literal.
+- `func` - anonymous function literal - last argument is the body, all others are its arguments.
+- `if` - if statement - expects a boolean condition and 1-2 bodies - a consequent and an optional alternate.
+- `for` - a loop over an integer range - expects a loop variable, inclusive lower bound, exclusive upper bound, optional step and a body.
+- `while` - a while loop. Expects a boolean condition and a body.
+- `for_argv` - a loop over input arguments. Expects a loop variable and a static integer literal representing the upper bound on the number of arguments.
+- `conditional` - a ternary conditional expression. Expects a boolean condition, a consequent and an alternate.
+- `unsafe_conditional` - same as `conditional` but both branches can be safely evaluated regardless of the condition.
+- `list`, `array`, `set`, `table` - construct the respective collection with the given items.
+- `argv_get` - gets a single input arg. Its argument must be a static integer literal - this cannot be used in a loop.
+
+### Polygolf operators
 
 All other expressions are Polygolf operators. Most of them return values, but some are used for I/O and some are used for setting values in collections.  
 [Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).  
@@ -133,6 +140,8 @@ All of the Polygolf operators can be called using their name. In addition, sever
 | pow             | ^     |
 | bit_and         | &     |
 | bit_or          | \|    |
+| bit_shift_left  | <<    |
+| bit_shift_right | >>    |
 | bit_xor/bit_not | ~     |
 | eq              | ==    |
 | neq             | !=    |
@@ -151,6 +160,8 @@ Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`b
 For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
 
 ## Example
+
+For more examples, search this repo for `*.test.md` files like [this one](src/programs/code.golf-default.test.md).
 
 Example Fibonacci using variants
 
@@ -195,63 +206,16 @@ Note the following Lua-specific features, besides the syntax:
 - foreach-range loop instead of a glorified while loop (!)
 - temporary variable replaced with simultaneous assignment (!)
 
-## Unrefined IR
+## Tips for writing solutions in Polygolf
 
-The goal is to have a small but expressive core subset of language features. Approximately a lowest common denominator of most of the languages targeted.
-
-The IR is a tree. Assignments are by value, not reference (no aliasing)
-
-Types:
-
-- `boolean`
-- `integer` (unbounded; domain annotations may help language-specific narrowing to 32-bit ints etc)
-- `string`
-- `List<?>` (0 indexed)
-- `Table<?,?>`
-
-Constant literals for each type.
-
-Control Flow:
-
-- procedures (no functions for now for simplicity)
-- if-else
-- while
-
-Builtin constants
-
-- argv
-- true
-- false
-
-Builtin functions:
-
-- arithmetic: add, subtract, multiply, (integer) divide, exponent, mod (mathematical)
-- integer comparison: less, greater, etc.
-- indexing (table, string)
-- conversions: (int <--> string, etc.)
-- string ops: string concatenation, string split, print, length
-- sort
-
-[Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).
-
-## Idiom recognition (backend)
-
-Where the magic happens for golfing. Mixins shared across languages for idiom recognition, for example replacing (the IR for) `i=1;while(i<5)do i=i+1 end` with (the IR for) `for i=1,4 do end` when targeting Lua. The same IR code (loop over range) would represent `for i in range(1,5)` in Python, so the same mixin can target several languages.
-
-Planned idioms:
-
-- automatic 1-indexing correction (necessary for 1-indexed langs)
-- constant collapse e.g. 2+1 → 3 to golf automatic 1-indexing correction
-- replace while loops with foreach-range loops (Lua, Python, etc)
-- replace exponent that has base 2 with bitshift (C, other)
-- inline procedures used exactly once (most langs)
-- if string concatenation's only purpose is to be printed, then split each appended part into its own print statement (C, other languages with long concat)
-- merge several prints into one print (pretty much every language)
-- replace while loops with for loops (C, Java, etc)
-- replace temp variable with simultaneous assignment (Lua, Python, etc)
-- variable shortening (all languages): convert all variables to a single letter, to allow for more-verbose PolyGolf code
-- ...much more. We'll see what's useful when starting
-
-## Implementation plan
-
-Finalize syntax. Solve most code.golf solutions in Polygolf to see what ops we are missing and implement those. Add MVPs for as many imperative languages as possible. Think about how to approach transforms for other paradigms. Cry.
+- Don't golf the Polygolf source - let Polygolf do the golfing (especially the simple stuff) for you. This includes:
+  - Use whitespace to format the source.
+  - Use comments if appropriate.
+  - Use descriptive variable names - Polygolf will shorten them for you.
+  - Store intermediate results of complex expressions in auxilary variables - Polygolf will inline them for you. (To come)
+- Help Polygolf understand the problem. This includes:
+  - Explicitly annotate types of values. The type inference algorithm isn't perfect or in some cases can't even possible narrow the type down as much as you can. This is especially relevant for
+    - Values coming from argv - perhaps you know they will be ascii or that they will be representing an integer in a certain range.
+  - Complex arithmetic expressions.
+  - Prefer higher level opcodes if they exist. While Polygolf aims to generally be able to convert between lower level implementation and a higher level one, the conversion from low level to high level is harder and might not always work out for you.
+- Use variants. Polygolf is WIP and the set of golfing rules it knowns is limited. If there are two different equivalent implementations that both are sometimes shorter, include them both using the variant syntax. If you believe the case is general enough and that Polygolf should be able to generate one based on the other, [open an issue](https://github.com/jared-hughes/polygolf/issues/new/choose).
