@@ -32,62 +32,34 @@ Polygolf is a source-to-source transpiler: It takes in Polygolf code and spits o
 
    This mostly consists of just joining up the tokens to one big string, though it also supports indent/dedent tokens (for Python). There are two levels of abstraction / customization here. The first is just controlling when whitespace should be inserted to separate the tokens and the second is an arbitrary transform of the token tree.
 
-## Unrefined IR
-
-The goal is to have a small but expressive core subset of language features. Approximately a lowest common denominator of most of the languages targeted.
-
-The IR is a tree. Assignments are by value, not reference (no aliasing)
-
-Types:
-
-- `boolean`
-- `integer` (unbounded; domain annotations may help language-specific narrowing to 32-bit ints etc)
-- `string`
-- `List<?>` (0 indexed)
-- `Table<?,?>`
-
-Constant literals for each type.
-
-Control Flow:
-
-- procedures (no functions for now for simplicity)
-- if-else
-- while
-
-Builtin constants
-
-- argv
-- true
-- false
-
-Builtin functions:
-
-- arithmetic: add, subtract, multiply, (integer) divide, exponent, mod (mathematical)
-- integer comparison: less, greater, etc.
-- indexing (table, string)
-- conversions: (int <--> string, etc.)
-- string ops: string concatenation, string split, print, length
-- sort
-
-[Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).
-
 ## Idiom recognition (backend)
 
-Where the magic happens for golfing. Mixins shared across languages for idiom recognition, for example replacing (the IR for) `i=1;while(i<5)do i=i+1 end` with (the IR for) `for i=1,4 do end` when targeting Lua. The same IR code (loop over range) would represent `for i in range(1,5)` in Python, so the same mixin can target several languages.
+Where the magic happens for golfing. Plugins are shared across languages for idiom recognition.
 
-Planned idioms:
+Plugins are implemented in the `src/plugins` folder.
 
-- automatic 1-indexing correction (necessary for 1-indexed langs)
-- constant collapse e.g. 2+1 → 3 to golf automatic 1-indexing correction
-- replace while loops with foreach-range loops (Lua, Python, etc)
-- replace exponent that has base 2 with bitshift (C, other)
-- inline procedures used exactly once (most langs)
-- if string concatenation's only purpose is to be printed, then split each appended part into its own print statement (C, other languages with long concat)
-- merge several prints into one print (pretty much every language)
-- replace while loops with for loops (C, Java, etc)
-- replace temp variable with simultaneous assignment (Lua, Python, etc)
-- variable shortening (all languages): convert all variables to a single letter, to allow for more-verbose PolyGolf code
-- ...much more. We'll see what's useful when starting
+**Implemented idioms:**
+
+- mutating binary ops - Python, etc.: `a=a+2` → `a+=2`
+- use remainder instead of modulo where the two ops overlap - Nim, etc.
+- replace table lookup by lookup by bruteforced hashes of keys - Nim, etc.
+- variable shortening - convert all variables to a single letter
+- replace temp variable with simultaneous assignment - Lua, Python, etc.
+- convert Polygolf's exclusive upper bound for range loops to inclusive - Lua, etc.
+- convert for loop to a while loop
+- convert for range loop to a C like for loop
+- convert for range + list index to a foreach loop - Python, etc.
+- convert `for_argv` loop to the correct form in each language
+- shift the bounds of a for range loop to avoid having to 1-adjust the loop variable
+- pack printing of number sequences
+- replace `println` with `print` with explicit `\n`
+- replace the last printing command by the shortest of the two
+- replace a list of strings constructor by a split on a string - Nim, Python, etc.
+- statically evaluate parts of the program and replace with the literal result
+
+**Planned plugins & idioms:**
+
+[Plugin issues](https://github.com/jared-hughes/polygolf/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement+label%3Aplugin)
 
 ## Intermediate Representation (IR) Transformations
 
