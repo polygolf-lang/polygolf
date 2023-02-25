@@ -25,9 +25,8 @@ import {
 main -> (sexpr_stmt | variants):+ {% d => refSource(program(blockOrSingle(d[0].map(id))), d[0][0]) %}
 
 variant ->
-  (sexpr_stmt | variants) (sexpr_stmt | variants):+ {% ([d0, d1]) => refSource(blockOrSingle([d0, ...d1].map(id)), d0[0]) %}
-  | sexpr_stmt {% d => refSource(blockOrSingle(d), d[0][0]) %}
-  | expr {% d => refSource(d[0], d[0]) %}
+  (sexpr_stmt | variants):+ {% d => refSource(blockOrSingle(d[0].map(id)), d[0].length > 0 ? d[0][0] : undefined) %}
+  | expr_not_variants {% d => refSource(d[0], d[0]) %}
           
 variants -> "{" (variant "/"):* variant "}" {%
     ([start, vars, var2, ]) => refSource(variants([...vars.map(id), var2]), start)
@@ -73,5 +72,7 @@ type_simple -> %type {% d => typeSexpr(d[0], []) %}
 
 type_sexpr -> "(" %type (type_expr | integer):+ ")" {% d => typeSexpr(d[1], d[2].map((x:any) => x[0])) %}
 
-expr -> expr_inner (":" type_expr):? {% d => annotate(d[0], d[1]) %}
+expr_not_variants -> expr_inner (":" type_expr):? {% d => annotate(d[0], d[1]) %}
+
+expr -> expr_not_variants {% id %}
   | variants {% id %}

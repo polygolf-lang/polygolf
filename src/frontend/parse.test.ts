@@ -208,3 +208,15 @@ describe("Parse variants", () => {
     print(variants([int(0n), int(1n)]), true)
   );
 });
+
+describe("Parse unambiguously", () => {
+  testStmtParse(
+    "Nested variants",
+    `{
+      {
+        $a <- 0;
+      }
+    }`,
+    variants([variants([assignment(id("a"), int(0n))])])
+  );
+});
