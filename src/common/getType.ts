@@ -44,7 +44,9 @@ import {
   typeContains,
   isConstantType,
   constantIntegerType,
+  ListType,
 } from "../IR";
+import { byteLength, charLength } from "./applyLanguage";
 import { PolygolfError } from "./errors";
 import { getIdentifierType } from "./symbols";
 
@@ -153,8 +155,13 @@ export function calcType(expr: Expr, program: Program): Type {
     }
     case "Identifier":
       return getIdentifierType(expr, program);
-    case "StringLiteral":
-      return textType(expr.value.length);
+    case "StringLiteral": {
+      const codepoints = charLength(expr.value);
+      return textType(
+        integerType(codepoints, codepoints),
+        codepoints === byteLength(expr.value)
+      );
+    }
     case "IntegerLiteral":
       return integerType(expr.value, expr.value);
     case "ArrayConstructor":
@@ -391,9 +398,6 @@ function getOpCodeType(
       return expectGenericType("List", ["0..oo", (_) => integerType(0)])[0];
     case "table_get":
       return expectGenericType("Table", ["T1", (x) => x[0]])[1];
-    case "text_get_byte":
-      expectType(textType(), integerType(0));
-      return integerType(0, 255);
     case "argv_get":
       expectType(integerType(0));
       return textType();
@@ -403,31 +407,54 @@ function getOpCodeType(
     case "text_concat": {
       expectType(textType(), textType());
       const [t1, t2] = types as [TextType, TextType];
-      return textType(t1.capacity + t2.capacity);
+      return textType(
+        getArithmeticType("add", t1.codepointLength, t2.codepointLength),
+        t1.isAscii && t2.isAscii
+      );
     }
     case "repeat": {
       expectType(textType(), integerType(0));
       const [t, i] = types as [TextType, IntegerType];
-      return textType(mul(BigInt(t.capacity), i.high));
+      return textType(
+        getArithmeticType("mul", t.codepointLength, i),
+        t.isAscii
+      );
     }
     case "text_contains":
       expectType(textType(), textType());
       return booleanType;
-    case "text_find":
-      expectType(textType(), textType());
-      return integerType(-1, (types[0] as TextType).capacity - 1);
+    case "text_codepoint_find":
+    case "text_byte_find":
+      expectType(textType(), textType(integerType(1, "oo")));
+      return integerType(
+        -1,
+        sub(
+          mul(
+            (types[0] as TextType).codepointLength.high,
+            expr.op === "text_byte_find" && !(types[0] as TextType).isAscii
+              ? 4n
+              : 1n
+          ),
+          (types[1] as TextType).codepointLength.low
+        )
+      );
     case "text_split":
       expectType(textType(), textType());
       return listType(types[0]);
-    case "text_get_char":
+    case "text_get_byte":
+    case "text_get_codepoint":
       expectType(textType(), integerType(0));
-      return textType(1);
+      return textType(integerType(1, 1), (types[0] as TextType).isAscii);
     case "join_using":
       expectType(listType(textType()), textType());
-      return textType();
+      return textType(
+        integerType(0, "oo"),
+        ((types[0] as ListType).member as TextType).isAscii &&
+          (types[1] as TextType).isAscii
+      );
     case "right_align":
       expectType(textType(), integerType(0));
-      return textType();
+      return textType(integerType(0, "oo"), (types[0] as TextType).isAscii);
     case "int_to_bin_aligned":
     case "int_to_hex_aligned": {
       expectType(integerType(0), integerType(0));
@@ -435,15 +462,16 @@ function getOpCodeType(
       const t2 = types[0] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2)) {
         return textType(
-          max(
+          integerTypeIncludingAll(
             BigInt(
               t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16).length
             ),
             t2.high
-          )
+          ),
+          true
         );
       }
-      return textType();
+      return textType(integerType(), true);
     }
     case "simplify_fraction": {
       expectType(integerType(), integerType());
@@ -451,9 +479,13 @@ function getOpCodeType(
       const t2 = types[1] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2))
         return textType(
-          1 +
-            Math.max(t1.low.toString().length, t1.high.toString().length) +
-            Math.max(t2.low.toString().length, t2.high.toString().length)
+          integerType(
+            0,
+            1 +
+              Math.max(t1.low.toString().length, t1.high.toString().length) +
+              Math.max(t2.low.toString().length, t2.high.toString().length)
+          ),
+          true
         );
       return textType();
     }
@@ -488,9 +520,9 @@ function getOpCodeType(
       const t = types[0] as IntegerType;
       if (isFiniteType(t))
         return textType(
-          Math.max(
-            ...[t.low, t.high].map(
-              (x) =>
+          integerTypeIncludingAll(
+            ...[t.low, t.high, ...(typeContains(t, 0n) ? [0n] : [])].map((x) =>
+              BigInt(
                 x.toString(
                   expr.op === "int_to_bin"
                     ? 2
@@ -498,32 +530,54 @@ function getOpCodeType(
                     ? 16
                     : 10
                 ).length
+              )
             )
-          )
+          ),
+          true
         );
-      return textType();
+      return textType(integerType(1), true);
     }
     case "text_to_int": {
-      expectType(textType());
+      expectType(textType(integerType(), true));
       const t = types[0] as TextType;
-      if (t.capacity === Infinity) return integerType();
+      if (!isFiniteType(t.codepointLength)) return integerType();
       return integerType(
-        1n - 10n ** BigInt(t.capacity - 1),
-        10n ** BigInt(t.capacity) - 1n
+        1n - 10n ** (t.codepointLength.high - 1n),
+        10n ** t.codepointLength.high - 1n
       );
     }
     case "bool_to_int":
       expectType(booleanType);
       return integerType(0, 1);
-    case "byte_to_char":
+    case "byte_to_text":
       expectType(integerType(0, 255));
-      return textType(1);
+      return textType(
+        integerType(1n, 1n),
+        (types[0] as IntegerType).high < 128n
+      );
+    case "int_to_codepoint":
+      expectType(integerType(0, 0x10ffff));
+      return textType(
+        integerType(1n, 1n),
+        (types[0] as IntegerType).high < 128n
+      );
     case "list_length":
       expectGenericType("List");
       return integerType(0);
-    case "text_length":
+    case "text_byte_length": {
       expectType(textType());
-      return integerType(0, (types[0] as TextType).capacity);
+      const codepointLength = (types[0] as TextType).codepointLength;
+      return integerType(
+        codepointLength.low,
+        min(
+          1n << 31n,
+          mul(codepointLength.high, (types[0] as TextType).isAscii ? 1n : 4n)
+        )
+      );
+    }
+    case "text_codepoint_length":
+      expectType(textType());
+      return (types[0] as TextType).codepointLength;
     case "text_split_whitespace":
       expectType(textType());
       return listType(types[0]);
@@ -532,14 +586,18 @@ function getOpCodeType(
     case "join":
       expectType(listType(textType()));
       return textType();
-    case "text_reversed":
+    case "text_byte_reversed":
+    case "text_codepoint_reversed":
       expectType(textType());
-      return textType();
+      return types[0];
     // other
     case "true":
     case "false":
       expectType();
       return booleanType;
+    case "argc":
+      expectType();
+      return integerType(0, 2 ** 31 - 1);
     case "argv":
       expectType();
       return listType(textType());
@@ -547,23 +605,29 @@ function getOpCodeType(
     case "println":
       return voidType;
     case "text_replace": {
-      expectType(textType(), textType(), textType());
-      const a = types[0] as TextType;
-      const c = types[2] as TextType;
-      return textType(a.capacity * c.capacity);
+      expectType(textType(), textType(integerType(1, "oo")), textType());
+      const [a, c] = [types[0], types[2]] as TextType[];
+      return textType(
+        getArithmeticType("mul", a.codepointLength, c.codepointLength),
+        a.isAscii && c.isAscii
+      );
     }
-    case "text_get_slice": {
+    case "text_get_byte_slice":
+    case "text_get_codepoint_slice": {
       expectType(textType(), integerType(0), integerType(0));
       const [t, i1, i2] = types as [TextType, IntegerType, IntegerType];
-      const c = max(
-        0n,
-        sub(
-          min(t.capacity === Infinity ? "oo" : BigInt(t.capacity), i2.high),
-          i1.low
-        )
+      const maximum = min(
+        t.codepointLength.high,
+        max(0n, sub(i2.high, i1.low))
       );
-      return textType(c);
+      return textType(integerType(0n, maximum), t.isAscii);
     }
+    case "text_codepoint_ord":
+      expectType(textType(), integerType(0));
+      return integerType(0, (types[0] as TextType).isAscii ? 127 : 0x10ffff);
+    case "text_byte_ord":
+      expectType(textType(), integerType(0));
+      return integerType(0, (types[0] as TextType).isAscii ? 127 : 255);
     case "array_set":
       return expectGenericType(
         "Array",
@@ -582,11 +646,11 @@ function getOpCodeType(
         ["T1", (x) => x[0]],
         ["T2", (x) => x[1]]
       )[1];
+    case null:
+      throw new Error(
+        "Cannot determine type based on null opcode - this is most likely a programming error - a plugin introduced a node missing both an opcode and a type annotation."
+      );
   }
-  throw new PolygolfError(
-    `Type error. Unknown opcode. ${expr.op ?? "null"}`,
-    expr.source
-  );
 }
 
 export function getArithmeticType(

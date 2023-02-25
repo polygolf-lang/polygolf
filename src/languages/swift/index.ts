@@ -64,7 +64,7 @@ const swiftLanguage: Language = {
           ),
       ],
       [
-        "text_get_char",
+        "text_get_codepoint",
         (x) =>
           functionCall(
             [indexCall(functionCall([x[0]], "Array"), x[1])],
@@ -72,12 +72,14 @@ const swiftLanguage: Language = {
           ),
       ],
       [
-        "byte_to_char",
+        "int_to_codepoint",
         (x) => functionCall([functionCall([x[0]], "UnicodeScalar")], "String"),
       ],
-      ["text_length", (x) => methodCall(x[0], [], "count")],
-      // ["text_length_chars", (x) => methodCall(x[0], [], "count")],
-      // ["text_length_bytes", (x) => methodCall(methodCall(x[0], [], "utf8"), [], "count")]
+      ["text_codepoint_length", (x) => methodCall(x[0], [], "count")],
+      [
+        "text_byte_length",
+        (x) => methodCall(methodCall(x[0], [], "utf8"), [], "count"),
+      ],
       ["int_to_text", (x) => functionCall([x[0]], "String")],
       ["text_split", (x) => methodCall(x[0], [x[1]], "split")],
       ["repeat", (x) => functionCall([x[0], x[1]], "String")],
