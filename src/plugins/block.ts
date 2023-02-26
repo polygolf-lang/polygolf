@@ -14,7 +14,7 @@ import {
 } from "../IR";
 import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
-import { stringify } from "../common/applyLanguage";
+import { stringify } from "../common/stringify";
 
 /**
  * Collects neighbouring block children matching a predicate and replaces them with a different set of children.
