@@ -19,7 +19,7 @@ import emitProgram, { emitPythonStringLiteral } from "./emit";
 import {
   equalityToInequality,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   useIndexCalls,
   add1,
 } from "../../plugins/ops";
@@ -132,7 +132,7 @@ const pythonLanguage: Language = {
         },
       ],
     ]),
-    mapPrecedenceOps(
+    mapToUnaryAndBinaryOps(
       [["pow", "**"]],
       [
         ["neg", "-"],

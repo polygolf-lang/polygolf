@@ -10,7 +10,7 @@ import emitProgram from "./emit";
 import {
   equalityToInequality,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   add1,
   useIndexCalls,
 } from "../../plugins/ops";
@@ -75,7 +75,7 @@ const luaLanguage: Language = {
       ["abs", (x) => functionCall(x, "math.abs")],
       ["byte_to_text", (x) => functionCall(x, "string.char")],
     ]),
-    mapPrecedenceOps(
+    mapToUnaryAndBinaryOps(
       [["pow", "^"]],
       [
         ["not", "not"],

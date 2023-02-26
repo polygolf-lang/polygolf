@@ -73,8 +73,6 @@ export interface BinaryOp extends BaseExpr {
   readonly name: string;
   readonly left: Expr;
   readonly right: Expr;
-  readonly precedence: number;
-  readonly rightAssociative: boolean;
 }
 
 export interface UnaryOp extends BaseExpr {
@@ -82,7 +80,6 @@ export interface UnaryOp extends BaseExpr {
   readonly name: string;
   readonly op: UnaryOpCode;
   readonly arg: Expr;
-  readonly precedence: number;
 }
 
 /**
@@ -251,9 +248,7 @@ export function binaryOp(
   op: BinaryOpCode,
   left: Expr,
   right: Expr,
-  name: string = "",
-  precedence: number,
-  rightAssociative?: boolean
+  name: string = ""
 ): BinaryOp {
   return {
     kind: "BinaryOp",
@@ -261,24 +256,19 @@ export function binaryOp(
     left,
     right,
     name,
-    precedence,
-    rightAssociative:
-      rightAssociative ?? (op === "pow" || op === "text_concat"),
   };
 }
 
 export function unaryOp(
   op: UnaryOpCode,
   arg: Expr,
-  name: string = "",
-  precedence: number
+  name: string = ""
 ): UnaryOp {
   return {
     kind: "UnaryOp",
     op,
     arg,
     name,
-    precedence,
   };
 }
 

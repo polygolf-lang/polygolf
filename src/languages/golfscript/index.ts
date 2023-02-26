@@ -5,7 +5,7 @@ import emitProgram from "./emit";
 import {
   equalityToInequality,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   add1,
   useIndexCalls,
 } from "../../plugins/ops";
@@ -40,7 +40,7 @@ const golfscriptLanguage: Language = {
         (x) => rangeIndexCall(x[0], x[1], add1(x[2]), id("1", true)),
       ],
     ]),
-    mapPrecedenceOps([
+    mapToUnaryAndBinaryOps([
       ["not", "!"],
       ["bit_not", "~"],
       ["mul", "*"],

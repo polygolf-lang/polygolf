@@ -8,6 +8,53 @@ import {
 import { PathFragment } from "../../common/fragments";
 import { IR, isIntLiteral } from "../../IR";
 
+function precedence(expr: IR.Expr): number {
+  switch (expr.kind) {
+    case "UnaryOp":
+    case "BinaryOp":
+      return opPrecedence(expr.name);
+  }
+}
+
+function opPrecedence(opname: string): number {
+  switch (opname) {
+    case "not":
+    case "-":
+    case "$":
+      return 11;
+    case "^":
+      return 10;
+    case "*":
+    case "div":
+    case "mod":
+    case "%%":
+    case "/%":
+    case "shl":
+    case "shr":
+      return 9;
+    case "+":
+    case "-":
+      return 8;
+    case "&":
+      return 7;
+    case "..":
+      return 6;
+    case "<":
+    case "<=":
+    case "==":
+    case "!=":
+    case ">=":
+    case ">":
+      return 5;
+    case "and":
+      return 4;
+    case "or":
+    case "xor":
+      return 3;
+  }
+  throw new Error(`Programming error - unknown Nim operator '${opname}.'`);
+}
+
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }

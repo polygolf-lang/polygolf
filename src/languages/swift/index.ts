@@ -5,7 +5,7 @@ import emitProgram from "./emit";
 import {
   add1,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   useIndexCalls,
   equalityToInequality,
 } from "../../plugins/ops";
@@ -109,7 +109,7 @@ const swiftLanguage: Language = {
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
     ]),
-    mapPrecedenceOps(
+    mapToUnaryAndBinaryOps(
       [
         ["not", "!"],
         ["neg", "-"],

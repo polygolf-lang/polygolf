@@ -46,34 +46,19 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
  * @param opMap0 Each group defines operators of the same precedence, higher precedence ones first.
  * @returns The plugin closure.
  */
-export function mapPrecedenceOps(
-  ...opMap0: [UnaryOpCode | BinaryOpCode, string, boolean?][][]
+// TODO chaining
+export function mapToUnaryAndBinaryOps(
+  ...opMap0: [UnaryOpCode | BinaryOpCode, string][]
 ): Plugin {
-  function opTransform(
-    recipe: [UnaryOpCode | BinaryOpCode, string, boolean?],
-    precedence: number
-  ): [OpCode, OpTransformOutput] {
-    const [op, name, rightAssociative] = recipe;
-    return [
-      op,
-      isBinary(op)
-        ? (x: readonly Expr[]) =>
-            binaryOp(
-              op,
-              x[0],
-              x[1],
-              name,
-              precedence,
-              rightAssociative ?? (op === "pow" || op === "text_concat")
-            )
-        : (x: readonly Expr[]) => unaryOp(op, x[0], name, precedence),
-    ];
-  }
-  const opMap = opMap0.flatMap((x, i) =>
-    x.map((recipe) => opTransform(recipe, opMap0.length - i))
-  );
   return {
-    ...mapOps(opMap),
+    ...mapOps(
+      opMap0.map(([op, name]) => [
+        op,
+        isBinary(op)
+          ? (x: readonly Expr[]) => binaryOp(op, x[0], x[1], name)
+          : (x: readonly Expr[]) => unaryOp(op, x[0], name),
+      ])
+    ),
     name: `mapPrecedenceOps(${JSON.stringify(opMap0)})`,
   };
 }
