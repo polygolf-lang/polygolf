@@ -142,7 +142,9 @@ function emitExpr(
   const inner = emitExprNoParens(
     expr,
     (parent.kind === "BinaryOp" && fragment === "left") ||
-      (parent.kind === "MethodCall" && fragment === "object")
+      (parent.kind === "MethodCall" && fragment === "object") ||
+      ((parent.kind === "IndexCall" || parent.kind === "RangeIndexCall") &&
+        fragment === "collection")
   );
   return needsParens(expr, parent, fragment) ? ["(", inner, ")"] : inner;
 }
@@ -324,7 +326,7 @@ function emitExprNoParens(
     case "IndexCall":
       if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       return [
-        emitExprNoParens(expr.collection),
+        emitExpr(expr.collection, expr, "collection"),
         "[",
         emitExprNoParens(expr.index),
         "]",
@@ -333,7 +335,7 @@ function emitExprNoParens(
       if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
       if (!isIntLiteral(expr.step, 1n)) throw new EmitError(expr, "step");
       return [
-        emitExprNoParens(expr.collection),
+        emitExpr(expr.collection, expr, "collection"),
         "[",
         emitExprNoParens(expr.low),
         "..",

@@ -142,3 +142,14 @@ var
  b=2
  c=a+b
 ```
+
+## Indexing precedence
+
+```polygolf
+list_get (text_split "a b" " ") 1;
+```
+
+```nim nogolf
+include re
+"a b".split(" ")[1]
+```
