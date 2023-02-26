@@ -165,3 +165,18 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   }
   return null;
 }
+
+export const isAssociative = (op: OpCode) =>
+  [
+    "add",
+    "mul",
+    "bit_and",
+    "bit_or",
+    "bit_xor",
+    "and",
+    "or",
+    "text_concat",
+  ].includes(op);
+
+export const isCommutative = (op: OpCode) =>
+  ["add", "mul", "bit_and", "bit_or", "bit_xor", "and", "or"].includes(op);

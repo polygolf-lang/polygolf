@@ -1,3 +1,4 @@
+import { stringify } from "../common/stringify";
 import {
   Expr,
   Identifier,
@@ -9,6 +10,9 @@ import {
   Node,
   IntegerLiteral,
   MutatingBinaryOp,
+  isAssociative,
+  isCommutative,
+  int,
 } from "./IR";
 
 /**
@@ -109,12 +113,74 @@ export function keyValue(key: Expr, value: Expr): KeyValue {
   };
 }
 
-export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
+function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
   return {
     kind: "PolygolfOp",
     op,
     args,
   };
+}
+
+export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
+  if (op === "neg") {
+    if (args[0].kind === "PolygolfOp" && args[0].op === "add")
+      return _polygolfOp(
+        "add",
+        ...args[0].args.map((x) => polygolfOp("neg", x))
+      );
+    return polygolfOp("mul", int(-1), args[0]);
+  }
+  if (op === "sub") {
+    return polygolfOp("add", args[0], polygolfOp("neg", args[1]));
+  }
+  if (isAssociative(op)) {
+    args = args.flatMap((x) =>
+      x.kind === "PolygolfOp" && x.op === op ? x.args : [x]
+    );
+    if (op === "add") args = simplifyPolynomial(args);
+    else {
+      if (isCommutative(op)) {
+        args.sort(compareTerms);
+      }
+      // simplify neighbours
+    }
+  }
+  return _polygolfOp(op, ...args);
+}
+
+function simplifyPolynomial(terms: Expr[]): Expr[] {
+  const coeffMap = new Map<string, [bigint, Expr]>();
+  let constant = 0n;
+  function add(coeff: bigint, rest: readonly Expr[]) {
+    const stringified = rest.map(stringify).join("");
+    if (coeffMap.has(stringified)) {
+      const [oldCoeff, expr] = coeffMap.get(stringified)!;
+      coeffMap.set(stringified, [oldCoeff + coeff, expr]);
+    } else {
+      coeffMap.set(stringified, [coeff, _polygolfOp("mul", ...rest)]);
+    }
+  }
+  for (const x of terms) {
+    if (x.kind === "IntegerLiteral") constant += x.value;
+    if (x.kind === "PolygolfOp" && x.op === "mul") {
+      if (x.args[0].kind === "IntegerLiteral")
+        add(x.args[0].value, x.args.slice(1));
+      else add(1n, x.args);
+    } else add(1n, [x]);
+  }
+  let result: Expr[] = [];
+  for (const [coeff, expr] of coeffMap.values()) {
+    if (coeff === 1n) result.push(expr);
+    else if (coeff !== 0n) result.push(polygolfOp("mul", int(coeff), expr));
+  }
+  if (result.length < 0 || constant !== 0n) result.push(int(constant));
+  return result;
+}
+
+function compareTerms(a: Expr, b: Expr): -1 | 0 | 1 {
+  if (a.kind === "IntegerLiteral" && b.kind === "IntegerLiteral") return 0;
+  if (b.kind === "IntegerLiteral") return -1;
+  return 0;
 }
 
 export function functionCall(
