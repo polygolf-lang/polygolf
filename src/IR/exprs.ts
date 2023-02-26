@@ -211,7 +211,7 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
     if (coeff === 1n) result.push(expr);
     else if (coeff !== 0n) result.push(_polygolfOp("mul", int(coeff), expr));
   }
-  if (result.length < 0 || constant !== 0n) result.push(int(constant));
+  if (result.length < 1 || constant !== 0n) result.push(int(constant));
   return result;
 }
 
