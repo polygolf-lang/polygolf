@@ -109,6 +109,18 @@ const swiftLanguage: Language = {
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
     ]),
+    addMutatingBinaryOp(
+      ["add", "+"],
+      ["sub", "-"],
+      ["mul", "*"],
+      ["trunc_div", "/"],
+      ["rem", "%"],
+      ["bit_and", "&"],
+      ["bit_or", "|"],
+      ["bit_xor", "^"],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"]
+    ),
     mapToUnaryAndBinaryOps(
       ["not", "!"],
       ["neg", "-"],
@@ -133,9 +145,6 @@ const swiftLanguage: Language = {
       ["and", "&&"],
       ["or", "||"]
     ),
-
-    addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^", ">>", "<<"),
-
     addImports,
     renameIdents(),
     addVarDeclarations,

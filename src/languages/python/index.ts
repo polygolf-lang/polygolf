@@ -132,6 +132,22 @@ const pythonLanguage: Language = {
         },
       ],
     ]),
+    addMutatingBinaryOp(
+      ["add", "+"],
+      ["text_concat", "+"],
+      ["sub", "-"],
+      ["mul", "*"],
+      ["mul", "*"],
+      ["repeat", "*"],
+      ["div", "//"],
+      ["mod", "%"],
+      ["pow", "**"],
+      ["bit_and", "&"],
+      ["bit_xor", "^"],
+      ["bit_or", "|"],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"]
+    ),
     mapToUnaryAndBinaryOps(
       ["pow", "**"],
       ["neg", "-"],
@@ -157,19 +173,6 @@ const pythonLanguage: Language = {
       ["not", "not"],
       ["and", "and"],
       ["or", "or"]
-    ),
-    addMutatingBinaryOp(
-      "+",
-      "*",
-      "-",
-      "//",
-      "%",
-      "**",
-      "&",
-      "|",
-      "^",
-      ">>",
-      "<<"
     ),
     aliasBuiltins(),
     renameIdents(),
