@@ -166,7 +166,29 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   return null;
 }
 
-export const isAssociative = (op: OpCode) =>
+export type Associativity = "left" | "both" | "right";
+
+export function associativity(op: BinaryOpCode): Associativity {
+  return op === "pow"
+    ? "right"
+    : [
+        "add",
+        "mul",
+        "bit_and",
+        "bit_or",
+        "bit_xor",
+        "and",
+        "or",
+        "gcd",
+        "min",
+        "max",
+        "text_concat",
+      ].includes(op)
+    ? "both"
+    : "left";
+}
+
+export const isCommutative = (op: OpCode) =>
   [
     "add",
     "mul",
@@ -175,8 +197,7 @@ export const isAssociative = (op: OpCode) =>
     "bit_xor",
     "and",
     "or",
-    "text_concat",
+    "gcd",
+    "min",
+    "max",
   ].includes(op);
-
-export const isCommutative = (op: OpCode) =>
-  ["add", "mul", "bit_and", "bit_or", "bit_xor", "and", "or"].includes(op);
