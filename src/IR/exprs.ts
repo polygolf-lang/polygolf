@@ -167,8 +167,11 @@ function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
   }
   if (left.kind === "IntegerLiteral" && right.kind === "IntegerLiteral") {
     return int(
-      getArithmeticType(op, integerType(left.value), integerType(right.value))
-        .low as bigint
+      getArithmeticType(
+        op,
+        integerType(left.value, left.value),
+        integerType(right.value, right.value)
+      ).low as bigint
     );
   }
   return null;
@@ -189,7 +192,7 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
   }
   for (const x of terms) {
     if (x.kind === "IntegerLiteral") constant += x.value;
-    if (x.kind === "PolygolfOp" && x.op === "mul") {
+    else if (x.kind === "PolygolfOp" && x.op === "mul") {
       if (x.args[0].kind === "IntegerLiteral")
         add(x.args[0].value, x.args.slice(1));
       else add(1n, x.args);
@@ -206,7 +209,7 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
 
 function compareTerms(a: Expr, b: Expr): -1 | 0 | 1 {
   if (a.kind === "IntegerLiteral" && b.kind === "IntegerLiteral") return 0;
-  if (b.kind === "IntegerLiteral") return -1;
+  if (a.kind === "IntegerLiteral") return -1;
   return 0;
 }
 
