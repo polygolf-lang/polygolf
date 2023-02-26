@@ -40,7 +40,7 @@ const golfscriptLanguage: Language = {
         (x) => rangeIndexCall(x[0], x[1], add1(x[2]), id("1", true)),
       ],
     ]),
-    mapToUnaryAndBinaryOps([
+    mapToUnaryAndBinaryOps(
       ["not", "!"],
       ["bit_not", "~"],
       ["mul", "*"],
@@ -85,8 +85,8 @@ const golfscriptLanguage: Language = {
       ["bit_shift_left", "2\\?*"],
       ["bit_shift_right", "2\\?/"],
 
-      ["argv_get", "a="],
-    ]),
+      ["argv_get", "a="]
+    ),
     addImports,
     renameIdents({
       // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
