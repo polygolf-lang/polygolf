@@ -8,6 +8,8 @@ function precedence(expr: IR.Expr): number {
       return 11;
     case "BinaryOp":
       return binaryPrecedence(expr.name);
+    case "StringLiteral":
+      return 1000;
   }
   return Infinity;
 }

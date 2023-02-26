@@ -10,6 +10,7 @@ import {
   IntegerType,
   isBinary,
   isConstantType,
+  isIntLiteral,
   OpCode,
   PolygolfOp,
   polygolfOp,
@@ -46,21 +47,51 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
  * @param opMap0 Each group defines operators of the same precedence, higher precedence ones first.
  * @returns The plugin closure.
  */
-// TODO chaining
 export function mapToUnaryAndBinaryOps(
   ...opMap0: [UnaryOpCode | BinaryOpCode, string][]
 ): Plugin {
+  const opMap = new Map(opMap0);
   return {
     ...mapOps(
       opMap0.map(([op, name]) => [
         op,
         isBinary(op)
-          ? (x: readonly Expr[]) => binaryOp(op, x[0], x[1], name)
+          ? (x: readonly Expr[]) => asBinaryChain(op, x, opMap)
           : (x: readonly Expr[]) => unaryOp(op, x[0], name),
       ])
     ),
     name: `mapPrecedenceOps(${JSON.stringify(opMap0)})`,
   };
+}
+
+function asBinaryChain(
+  op: BinaryOpCode,
+  exprs: readonly Expr[],
+  names: Map<OpCode, string>
+): Expr {
+  if (op === "mul" && isIntLiteral(exprs[0]) && exprs[0].value < 0n) {
+    return unaryOp("neg", polygolfOp("mul", ...exprs.slice(1)));
+  }
+  let result = exprs[0];
+  for (const expr of exprs.slice(1)) {
+    if (
+      op === "add" &&
+      expr.kind === "PolygolfOp" &&
+      expr.op === "mul" &&
+      isIntLiteral(expr.args[0]) &&
+      expr.args[0].value < 0n
+    ) {
+      result = binaryOp(
+        "sub",
+        result,
+        polygolfOp("neg", expr),
+        names.get("sub")
+      );
+    } else {
+      result = binaryOp(op, result, expr, names.get(op));
+    }
+  }
+  return result;
 }
 
 export function useIndexCalls(

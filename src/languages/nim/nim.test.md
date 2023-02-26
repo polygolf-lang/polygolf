@@ -10,11 +10,12 @@ include re
 ```
 
 ```polygolf
-println ((1 + 1) * 2);
+$a:0..1
+println (($a + 1) * 2);
 ```
 
 ```nim nogolf
-echo (1+1)*2
+echo (a+1)*2
 ```
 
 ```polygolf
