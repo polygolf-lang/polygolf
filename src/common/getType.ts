@@ -45,6 +45,7 @@ import {
   isConstantType,
   constantIntegerType,
   ListType,
+  associativity,
 } from "../IR";
 import { byteLength, charLength } from "./applyLanguage";
 import { PolygolfError } from "./errors";
@@ -253,6 +254,18 @@ function getOpCodeType(
   program: Program
 ): Type {
   const types = getArgs(expr).map((x) => getType(x, program));
+  function expectVariadicType(expected: Type) {
+    if (types.length < 2 || types.some((x, i) => !isSubtype(x, expected))) {
+      throw new PolygolfError(
+        `Type error. Operator '${
+          expr.op ?? "null"
+        }' type error. Expected [...${toString(expected)}] but got [${types
+          .map(toString)
+          .join(", ")}].`,
+        expr.source
+      );
+    }
+  }
   function expectType(...expected: Type[]) {
     if (
       types.length !== expected.length ||
@@ -356,14 +369,23 @@ function getOpCodeType(
     case "bit_shift_left":
     case "bit_shift_right":
     case "min":
-    case "max":
-      expectType(integerType(), integerType());
-      return getArithmeticType(
-        expr.op,
-        types[0] as IntegerType,
-        types[1] as IntegerType,
-        expr.source
-      );
+    case "max": {
+      const op = expr.op;
+      if (associativity(expr.op) === "both") {
+        expectVariadicType(integerType());
+        return types.reduce((a, b) =>
+          getArithmeticType(op, a as IntegerType, b as IntegerType, expr.source)
+        );
+      } else {
+        expectType(integerType(), integerType());
+        return getArithmeticType(
+          op,
+          types[0] as IntegerType,
+          types[1] as IntegerType,
+          expr.source
+        );
+      }
+    }
     // (num, num) => bool
     case "lt":
     case "leq":
@@ -376,7 +398,7 @@ function getOpCodeType(
     // (bool, bool) => bool
     case "or":
     case "and":
-      expectType(booleanType, booleanType);
+      expectVariadicType(booleanType);
       return booleanType;
     // membership
     case "array_contains":
@@ -405,11 +427,13 @@ function getOpCodeType(
     case "list_push":
       return expectGenericType("List", ["T1", (x) => x[0]])[0];
     case "text_concat": {
-      expectType(textType(), textType());
-      const [t1, t2] = types as [TextType, TextType];
+      expectVariadicType(textType());
+      const textTypes = types as TextType[];
       return textType(
-        getArithmeticType("add", t1.codepointLength, t2.codepointLength),
-        t1.isAscii && t2.isAscii
+        textTypes
+          .map((x) => x.codepointLength)
+          .reduce((a, b) => getArithmeticType("add", a, b)),
+        textTypes.every((x) => x.isAscii)
       );
     }
     case "repeat": {
