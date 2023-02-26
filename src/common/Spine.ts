@@ -1,4 +1,4 @@
-import { IR } from "../IR";
+import { IR, polygolfOp } from "../IR";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
 import { replaceAtIndex } from "./immutable";
 
@@ -44,6 +44,15 @@ export class Spine<N extends IR.Node = IR.Node> {
     const node =
       typeof pathFragment === "string"
         ? { ...this.node, [pathFragment]: newChild }
+        : this.node.kind === "PolygolfOp"
+        ? (polygolfOp(
+            this.node.op,
+            ...(replaceAtIndex(
+              this.node.args,
+              pathFragment.index,
+              newChild
+            ) as IR.Expr[])
+          ) as N)
         : {
             ...this.node,
             [pathFragment.prop]: replaceAtIndex(
