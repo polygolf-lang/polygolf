@@ -74,7 +74,7 @@ print ($a + (-1 * $b));
 
 ```polygolf
 $a:-oo..oo <- 0;
-print ($a - (2 * $a) + $a);
+print (($a - (2 * $a)) + $a);
 ```
 
 ```polygolf nogolf

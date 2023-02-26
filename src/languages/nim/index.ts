@@ -129,7 +129,10 @@ const nimLanguage: Language = {
     addVarDeclarationOneToManyAssignments(),
     addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 2),
     addManyToManyAssignments((_, spine) => spine.depth > 2),
-    groupVarDeclarations((_, spine) => spine.depth <= 2),
+    groupVarDeclarations(
+      (_, spine) => spine.depth <= 2,
+      (collected) => collected.length > 0
+    ),
     assertInt64,
   ],
   detokenizer: defaultDetokenizer((a, b) => {

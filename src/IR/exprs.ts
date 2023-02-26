@@ -1,3 +1,4 @@
+import { getArithmeticType } from "../common/getType";
 import { stringify } from "../common/stringify";
 import {
   Expr,
@@ -14,6 +15,8 @@ import {
   int,
   associativity,
   isBinary,
+  stringLiteral,
+  integerType,
 } from "./IR";
 
 /**
@@ -119,7 +122,7 @@ function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
   };
 }
 
-export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
+export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   if (op === "neg") {
     if (args[0].kind === "PolygolfOp" && args[0].op === "add")
       return _polygolfOp(
@@ -140,12 +143,38 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
       if (isCommutative(op)) {
         args.sort(compareTerms);
       }
-      // simplify neighbours
+      const newArgs: Expr[] = [];
+      for (const arg of args) {
+        if (newArgs.length > 0) {
+          const combined = evalBinaryOp(op, newArgs[newArgs.length - 1], arg);
+          if (combined !== null) {
+            newArgs[newArgs.length - 1] = combined;
+          } else {
+            newArgs.push(arg);
+          }
+        } else newArgs.push(arg);
+      }
+      args = newArgs;
     }
+    if (args.length === 1) return args[0];
   }
   return _polygolfOp(op, ...args);
 }
 
+function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
+  if (left.kind === "StringLiteral" && right.kind === "StringLiteral") {
+    return stringLiteral(left.value + right.value);
+  }
+  if (left.kind === "IntegerLiteral" && right.kind === "IntegerLiteral") {
+    return int(
+      getArithmeticType(op, integerType(left.value), integerType(right.value))
+        .low as bigint
+    );
+  }
+  return null;
+}
+
+/** Simplifies a polynomial represented as an array of terms. */
 function simplifyPolynomial(terms: Expr[]): Expr[] {
   const coeffMap = new Map<string, [bigint, Expr]>();
   let constant = 0n;
@@ -296,7 +325,7 @@ export function func(args: (string | Identifier)[], expr: Expr): Function {
   };
 }
 
-export function print(value: Expr, newline: boolean = true): PolygolfOp {
+export function print(value: Expr, newline: boolean = true): Expr {
   return polygolfOp(newline ? "println" : "print", value);
 }
 

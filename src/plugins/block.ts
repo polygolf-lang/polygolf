@@ -26,7 +26,8 @@ export function blockChildrenCollectAndReplace<T extends Expr = Expr>(
   name: string,
   collectPredicate: (expr: Expr, spine: Spine<Expr>, previous: T[]) => boolean,
   transform: (exprs: T[]) => Expr[],
-  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true,
+  transformPredicate: (exprs: T[]) => boolean = (exprs: T[]) => exprs.length > 1
 ): Plugin {
   return {
     name,
@@ -43,7 +44,7 @@ export function blockChildrenCollectAndReplace<T extends Expr = Expr>(
           if (collectPredicate(expr, childSpine as Spine<Expr>, collected)) {
             collected.push(expr as any as T);
           } else if (collectPredicate(expr, childSpine as Spine<Expr>, [])) {
-            if (collected.length > 1) {
+            if (transformPredicate(collected)) {
               newNodes.push(...transform(collected));
               changed = true;
             } else {
@@ -51,7 +52,7 @@ export function blockChildrenCollectAndReplace<T extends Expr = Expr>(
             }
             collected = [expr as any as T];
           } else {
-            if (collected.length > 1) {
+            if (transformPredicate(collected)) {
               newNodes.push(...transform(collected));
               changed = true;
             } else {
@@ -61,7 +62,7 @@ export function blockChildrenCollectAndReplace<T extends Expr = Expr>(
             newNodes.push(expr);
           }
         }
-        if (collected.length > 1) {
+        if (transformPredicate(collected)) {
           newNodes.push(...transform(collected));
           changed = true;
         } else {
@@ -201,7 +202,9 @@ export function addVarDeclarationManyToManyAssignments(
 }
 
 export function groupVarDeclarations(
-  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true,
+  transformPredicate: (collected: Expr[]) => boolean = (collected: Expr[]) =>
+    collected.length > 1
 ): Plugin {
   return blockChildrenCollectAndReplace<
     VarDeclaration | VarDeclarationWithAssignment
@@ -211,6 +214,7 @@ export function groupVarDeclarations(
       expr.kind === "VarDeclaration" ||
       expr.kind === "VarDeclarationWithAssignment",
     (exprs) => [varDeclarationBlock(exprs)],
-    blockPredicate
+    blockPredicate,
+    transformPredicate
   );
 }
