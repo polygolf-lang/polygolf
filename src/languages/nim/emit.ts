@@ -98,7 +98,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           return [
             "var",
             "$INDENT$",
-            e.children.map((x) => ["\n", "var", emit(x)]),
+            e.children.map((x) => ["\n", emit(x)]),
             "$DEDENT$",
           ];
         return ["var", emit(e.children[0])];
