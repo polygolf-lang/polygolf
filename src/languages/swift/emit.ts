@@ -9,7 +9,7 @@ function precedence(expr: IR.Expr): number {
     case "BinaryOp":
       return binaryPrecedence(expr.name);
   }
-  return -Infinity;
+  return Infinity;
 }
 
 function binaryPrecedence(opname: string): number {
@@ -63,13 +63,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
   function emitNoParens(e: IR.Expr): TokenTree {
     switch (e.kind) {
       case "VarDeclarationBlock":
-        return [
-          "var",
-          joinTrees(
-            e.children.map((v) => emit(v)),
-            ","
-          ),
-        ];
+        return ["var", joinTrees(e.children.map(emit), ",")];
       case "VarDeclarationWithAssignment":
         return emit(e.assignment);
       case "Block":
