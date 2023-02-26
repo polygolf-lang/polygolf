@@ -124,11 +124,6 @@ function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
 
 export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   if (op === "neg") {
-    if (args[0].kind === "PolygolfOp" && args[0].op === "add")
-      return _polygolfOp(
-        "add",
-        ...args[0].args.map((x) => polygolfOp("neg", x))
-      );
     return polygolfOp("mul", int(-1), args[0]);
   }
   if (op === "sub") {
@@ -155,6 +150,18 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
         } else newArgs.push(arg);
       }
       args = newArgs;
+      if (
+        op === "mul" &&
+        args.length === 2 &&
+        isIntLiteral(args[0], -1n) &&
+        args[1].kind === "PolygolfOp" &&
+        args[1].op === "add"
+      ) {
+        return polygolfOp(
+          "add",
+          ...args[1].args.map((x) => polygolfOp("neg", x))
+        );
+      }
     }
     if (args.length === 1) return args[0];
   }
@@ -187,7 +194,8 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
       const [oldCoeff, expr] = coeffMap.get(stringified)!;
       coeffMap.set(stringified, [oldCoeff + coeff, expr]);
     } else {
-      coeffMap.set(stringified, [coeff, _polygolfOp("mul", ...rest)]);
+      if (rest.length === 1) coeffMap.set(stringified, [coeff, rest[0]]);
+      else coeffMap.set(stringified, [coeff, _polygolfOp("mul", ...rest)]);
     }
   }
   for (const x of terms) {
@@ -201,7 +209,7 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
   const result: Expr[] = [];
   for (const [coeff, expr] of coeffMap.values()) {
     if (coeff === 1n) result.push(expr);
-    else if (coeff !== 0n) result.push(polygolfOp("mul", int(coeff), expr));
+    else if (coeff !== 0n) result.push(_polygolfOp("mul", int(coeff), expr));
   }
   if (result.length < 0 || constant !== 0n) result.push(int(constant));
   return result;

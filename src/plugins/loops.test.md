@@ -99,7 +99,7 @@ for $x+index 0 argc {
 for $i 0 80 {
   println ($i + 1);
   println (1 + $i);
-  println ($i * 3);
+  println (3 * $i);
   println ($i + 2);
   println ($i - 1);
   println ($i - 2);
@@ -112,12 +112,12 @@ for $i 0 80 {
 for $iPOLYGOLFshifted 1 81 {
   println $iPOLYGOLFshifted;
   println $iPOLYGOLFshifted;
-  println (($iPOLYGOLFshifted - 1) * 3);
+  println (3 * ($iPOLYGOLFshifted + -1));
   println ($iPOLYGOLFshifted + 1);
-  println ($iPOLYGOLFshifted - 2);
-  println ($iPOLYGOLFshifted - 3);
-  println (2 - $iPOLYGOLFshifted);
-  println (0 - $iPOLYGOLFshifted);
+  println ($iPOLYGOLFshifted + -2);
+  println ($iPOLYGOLFshifted + -3);
+  println ((-1 * $iPOLYGOLFshifted) + 2);
+  println (-1 * $iPOLYGOLFshifted);
 };
 ```
 

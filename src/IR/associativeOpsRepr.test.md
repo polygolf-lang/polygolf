@@ -13,7 +13,7 @@ print (($a + $b) + $c);
 $a:-oo..oo <- 0;
 $b:-oo..oo <- 0;
 $c:-oo..oo <- 0;
-print (+ $a + $b + $c);
+print (+ $a $b $c);
 ```
 
 ```polygolf
