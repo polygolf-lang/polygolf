@@ -36,6 +36,7 @@ import {
   addVarDeclarationOneToManyAssignments,
   addVarDeclarations,
   groupVarDeclarations,
+  noStandaloneVarDeclarations,
 } from "../../plugins/block";
 
 const nimLanguage: Language = {
@@ -129,10 +130,8 @@ const nimLanguage: Language = {
     addVarDeclarationOneToManyAssignments(),
     addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 2),
     addManyToManyAssignments((_, spine) => spine.depth > 2),
-    groupVarDeclarations(
-      (_, spine) => spine.depth <= 2,
-      (collected) => collected.length > 0
-    ),
+    groupVarDeclarations((_, spine) => spine.depth <= 2),
+    noStandaloneVarDeclarations,
     assertInt64,
   ],
   detokenizer: defaultDetokenizer((a, b) => {

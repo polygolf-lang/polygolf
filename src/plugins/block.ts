@@ -218,3 +218,16 @@ export function groupVarDeclarations(
     transformPredicate
   );
 }
+
+export const noStandaloneVarDeclarations: Plugin = {
+  name: "noStandaloneVarDeclarations",
+  visit(node, spine) {
+    if (
+      (node.kind === "VarDeclaration" ||
+        node.kind === "VarDeclarationWithAssignment") &&
+      spine.parent?.node.kind !== "VarDeclarationBlock"
+    ) {
+      return varDeclarationBlock([node]);
+    }
+  },
+};

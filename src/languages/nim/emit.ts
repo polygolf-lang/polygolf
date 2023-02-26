@@ -63,7 +63,10 @@ function emitMultiExpr(expr: IR.Expr, isRoot = false): TokenTree {
   let needsBlock = false;
   for (const child of children) {
     const needsNewline =
-      "consequent" in child || "children" in child || "body" in child;
+      "consequent" in child ||
+      ("children" in child &&
+        (child.kind !== "VarDeclarationBlock" || child.children.length > 1)) ||
+      "body" in child;
     needsBlock =
       needsBlock || needsNewline || child.kind.startsWith("VarDeclaration");
     inner.push(emit(child));
@@ -108,7 +111,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           ),
         ];
       case "WhileLoop":
-        return [`while`, emit(e.condition), ":", emit(e.body)];
+        return [`while`, emit(e.condition), ":", emitMultiExpr(e.body)];
       case "ForEach":
         return [
           `for`,
@@ -116,7 +119,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           "in",
           emit(e.collection),
           ":",
-          emit(e.body),
+          emitMultiExpr(e.body),
         ];
       case "ForRange": {
         const low = isIntLiteral(e.low, 0n) ? [] : emit(e.low);
@@ -130,7 +133,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
             e.inclusive ? ".." : "..<",
             emit(e.high),
             ":",
-            emit(e.body),
+            emitMultiExpr(e.body),
           ];
         }
         if (!e.inclusive) {
@@ -150,7 +153,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emit(e.increment),
           ")",
           ":",
-          emit(e.body),
+          emitMultiExpr(e.body),
         ];
       }
       case "IfStatement":
@@ -158,8 +161,10 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           "if",
           emit(e.condition),
           ":",
-          emit(e.consequent),
-          e.alternate !== undefined ? ["else", ":", emit(e.alternate)] : [],
+          emitMultiExpr(e.consequent),
+          e.alternate !== undefined
+            ? ["else", ":", emitMultiExpr(e.alternate)]
+            : [],
         ];
       case "Variants":
       case "ForEachKey":

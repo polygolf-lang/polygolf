@@ -98,7 +98,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "ImportStatement":
         return [e.name, joinTrees([...e.modules], ",")];
       case "WhileLoop":
-        return [`while`, emit(e.condition), ":", emit(e.body)];
+        return [`while`, emit(e.condition), ":", emitMultiExpr(e.body)];
       case "ForEach":
         return [
           `for`,
@@ -106,7 +106,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           "in",
           emit(e.collection),
           ":",
-          emit(e.body),
+          emitMultiExpr(e.body),
         ];
       case "ForRange": {
         const low = emit(e.low);
@@ -125,7 +125,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           increment1 ? [] : [",", increment],
           ")",
           ":",
-          emit(e.body),
+          emitMultiExpr(e.body),
         ];
       }
       case "IfStatement":
@@ -133,9 +133,9 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           "if",
           emit(e.condition),
           ":",
-          emit(e.consequent),
+          emitMultiExpr(e.consequent),
           e.alternate !== undefined
-            ? ["\n", "else", ":", emit(e.alternate)]
+            ? ["\n", "else", ":", emitMultiExpr(e.alternate)]
             : [],
         ];
       case "Variants":

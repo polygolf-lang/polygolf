@@ -10,7 +10,7 @@ include re
 ```
 
 ```polygolf
-$a:0..1
+$a:0..1 <- 0;
 println (($a + 1) * 2);
 ```
 

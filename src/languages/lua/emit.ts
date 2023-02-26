@@ -9,6 +9,8 @@ function precedence(expr: IR.Expr): number {
     case "BinaryOp":
       return binaryPrecedence(expr.name);
     case "StringLiteral":
+    case "ArrayConstructor":
+    case "TableConstructor":
       return 1000;
   }
   return Infinity;
