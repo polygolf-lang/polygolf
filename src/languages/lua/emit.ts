@@ -8,6 +8,54 @@ import {
 import { IR, isIntLiteral } from "../../IR";
 import { TokenTree } from "@/common/Language";
 
+function precedence(expr: IR.Expr): number {
+  switch (expr.kind) {
+    case "UnaryOp":
+      return 11;
+    case "BinaryOp":
+      return binaryPrecedence(expr.name);
+  }
+}
+
+function binaryPrecedence(opname: string): number {
+  switch (opname) {
+    case "^":
+      return 12;
+    case "*":
+    case "//":
+    case "%":
+      return 10;
+    case "+":
+    case "-":
+      return 9;
+    case "..":
+      return 8;
+    case "<<":
+    case ">>":
+      return 7;
+    case "&":
+      return 6;
+    case "~":
+      return 5;
+    case "|":
+      return 4;
+    case "<":
+    case "<=":
+    case "==":
+    case "~=":
+    case ">=":
+    case ">":
+      return 3;
+    case "and":
+      return 2;
+    case "or":
+      return 1;
+  }
+  throw new Error(
+    `Programming error - unknown Lua binary operator '${opname}.'`
+  );
+}
+
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }

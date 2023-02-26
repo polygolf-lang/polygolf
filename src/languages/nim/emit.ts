@@ -11,17 +11,14 @@ import { IR, isIntLiteral } from "../../IR";
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
     case "UnaryOp":
+      return 11;
     case "BinaryOp":
-      return opPrecedence(expr.name);
+      return binaryPrecedence(expr.name);
   }
 }
 
-function opPrecedence(opname: string): number {
+function binaryPrecedence(opname: string): number {
   switch (opname) {
-    case "not":
-    case "-":
-    case "$":
-      return 11;
     case "^":
       return 10;
     case "*":
@@ -52,7 +49,9 @@ function opPrecedence(opname: string): number {
     case "xor":
       return 3;
   }
-  throw new Error(`Programming error - unknown Nim operator '${opname}.'`);
+  throw new Error(
+    `Programming error - unknown Nim binary operator '${opname}.'`
+  );
 }
 
 export default function emitProgram(program: IR.Program): TokenTree {
