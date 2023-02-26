@@ -9,6 +9,65 @@ import {
 import { PathFragment } from "../../common/fragments";
 import { IR, isIntLiteral } from "../../IR";
 
+function precedence(expr: IR.Expr): number {
+  switch (expr.kind) {
+    case "UnaryOp":
+      return unaryPrecedence(expr.name);
+    case "BinaryOp":
+      return binaryPrecedence(expr.name);
+  }
+}
+
+function binaryPrecedence(opname: string): number {
+  switch (opname) {
+    case "**":
+      return 12;
+    case "*":
+    case "//":
+    case "%":
+      return 10;
+    case "+":
+    case "-":
+      return 9;
+    case "<<":
+    case ">>":
+      return 8;
+    case "&":
+      return 7;
+    case "^":
+      return 6;
+    case "|":
+      return 5;
+    case "<":
+    case "<=":
+    case "==":
+    case "!=":
+    case ">=":
+    case ">":
+      return 4;
+    case "and":
+      return 2;
+    case "or":
+      return 1;
+  }
+  throw new Error(
+    `Programming error - unknown Python binary operator '${opname}.'`
+  );
+}
+
+function unaryPrecedence(opname: string): number {
+  switch (opname) {
+    case "-":
+    case "~":
+      return 11;
+    case "not":
+      return 3;
+  }
+  throw new Error(
+    `Programming error - unknown Python unary operator '${opname}.'`
+  );
+}
+
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }

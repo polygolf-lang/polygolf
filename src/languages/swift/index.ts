@@ -110,44 +110,28 @@ const swiftLanguage: Language = {
       ["false", (_) => id("false", true)],
     ]),
     mapToUnaryAndBinaryOps(
-      [
-        ["not", "!"],
-        ["neg", "-"],
-        ["bit_not", "~"],
-      ],
-
-      [
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-      ],
-
-      [
-        ["mul", "*"],
-        ["trunc_div", "/"],
-        ["rem", "%"],
-        ["bit_and", "&"],
-      ],
-
-      [
-        ["add", "+"],
-        ["sub", "-"],
-        ["bit_or", "|"],
-        ["bit_xor", "^"],
-        ["text_concat", "+"],
-      ],
-
-      [
-        ["lt", "<"],
-        ["leq", "<="],
-        ["eq", "=="],
-        ["neq", "!="],
-        ["geq", ">="],
-        ["gt", ">"],
-      ],
-
-      [["and", "&&"]],
-
-      [["or", "||"]]
+      ["not", "!"],
+      ["neg", "-"],
+      ["bit_not", "~"],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"],
+      ["mul", "*"],
+      ["trunc_div", "/"],
+      ["rem", "%"],
+      ["bit_and", "&"],
+      ["add", "+"],
+      ["sub", "-"],
+      ["bit_or", "|"],
+      ["bit_xor", "^"],
+      ["text_concat", "+"],
+      ["lt", "<"],
+      ["leq", "<="],
+      ["eq", "=="],
+      ["neq", "!="],
+      ["geq", ">="],
+      ["gt", ">"],
+      ["and", "&&"],
+      ["or", "||"]
     ),
 
     addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^", ">>", "<<"),

@@ -8,6 +8,51 @@ import {
 import { PathFragment } from "../../common/fragments";
 import { IR, isIntLiteral } from "../../IR";
 
+function precedence(expr: IR.Expr): number {
+  switch (expr.kind) {
+    case "UnaryOp":
+      return unaryPrecedence(expr.name);
+    case "BinaryOp":
+      return binaryPrecedence(expr.name);
+  }
+}
+
+function binaryPrecedence(opname: string): number {
+  switch (opname) {
+    case "<<":
+    case ">>":
+      return 6;
+    case "*":
+    case "/":
+    case "%":
+    case "&":
+      return 5;
+    case "+":
+    case "-":
+    case "|":
+    case "^":
+      return 4;
+    case "<":
+    case "<=":
+    case "==":
+    case "!=":
+    case ">=":
+    case ">":
+      return 3;
+    case "&&":
+      return 2;
+    case "||":
+      return 1;
+  }
+  throw new Error(
+    `Programming error - unknown Swift binary operator '${opname}.'`
+  );
+}
+
+function unaryPrecedence(opname: string): number {
+  return 7;
+}
+
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitStatement(program.body, program);
 }

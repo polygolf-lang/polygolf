@@ -75,7 +75,7 @@ const luaLanguage: Language = {
       ["abs", (x) => functionCall(x, "math.abs")],
       ["byte_to_text", (x) => functionCall(x, "string.char")],
     ]),
-    mapToUnaryAndBinaryOps([
+    mapToUnaryAndBinaryOps(
       ["pow", "^"],
       ["not", "not"],
       ["neg", "-"],
@@ -100,8 +100,8 @@ const luaLanguage: Language = {
       ["geq", ">="],
       ["gt", ">"],
       ["and", "and"],
-      ["or", "or"],
-    ]),
+      ["or", "or"]
+    ),
     renameIdents(),
     addOneToManyAssignments(),
     assertInt64,

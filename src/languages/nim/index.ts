@@ -89,7 +89,7 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_text", (x) => functionCall(x, "chr")],
     ]),
-    mapToUnaryAndBinaryOps([
+    mapToUnaryAndBinaryOps(
       ["bit_not", "not"],
       ["not", "not"],
       ["neg", "-"],
@@ -113,8 +113,8 @@ const nimLanguage: Language = {
       ["bit_and", "and"],
       ["or", "or"],
       ["bit_or", "or"],
-      ["bit_xor", "xor"],
-    ]),
+      ["bit_xor", "xor"]
+    ),
     addMutatingBinaryOp("+", "*", "-", "&"),
     useUFCS,
     useUnsignedDivision,
