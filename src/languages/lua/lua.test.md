@@ -54,6 +54,8 @@ text_to_int "5";
 ```
 
 ```lua nogolf
+a=0
+b="xy"
 ~a
 -a
 a+2

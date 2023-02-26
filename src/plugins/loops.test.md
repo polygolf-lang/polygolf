@@ -120,17 +120,3 @@ for $iPOLYGOLFshifted 1 81 {
   println (-1 * $iPOLYGOLFshifted);
 };
 ```
-
-```polygolf
-for $i 0 80 {
-  println $i;
-  println ($i + 2);
-};
-```
-
-```polygolf loops.shiftRangeOneUp
-for $i 0 80 {
-  println $i;
-  println ($i + 2);
-};
-```

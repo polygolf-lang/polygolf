@@ -12,6 +12,8 @@ function precedence(expr: IR.Expr): number {
     case "ArrayConstructor":
     case "TableConstructor":
       return 1000;
+    case "Block":
+      return -Infinity;
   }
   return Infinity;
 }
@@ -182,6 +184,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
   }
 
   const inner = emitNoParens(expr);
+  console.log(expr, prec, minimumPrec, prec >= minimumPrec, inner);
   if (prec >= minimumPrec) return inner;
   return ["(", inner, ")"];
 }
