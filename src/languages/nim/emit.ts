@@ -8,6 +8,10 @@ function precedence(expr: IR.Expr): number {
       return 11;
     case "BinaryOp":
       return binaryPrecedence(expr.name);
+    case "FunctionCall":
+      return 2;
+    case "MethodCall":
+      return 12;
   }
   return Infinity;
 }
@@ -220,9 +224,9 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return e.value.toString();
       case "FunctionCall":
         if (e.args.length === 1 && e.args[0].kind === "StringLiteral") {
-          return [e.ident.name, "$GLUE$", emit(e.args[0])];
+          return [e.ident.name, "$GLUE$", emit(e.args[0], prec)];
         }
-        if (minimumPrec > -Infinity || e.args.length > 1 || e.args.length === 0)
+        if (e.args.length > 1 || e.args.length === 0)
           return [
             e.ident.name,
             "$GLUE$",
@@ -232,7 +236,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           ];
         return [e.ident.name, joinTrees(e.args.map(emit), ",")];
       case "MethodCall":
-        if (minimumPrec > -Infinity || e.args.length > 1)
+        if (e.args.length > 1)
           return [
             emit(e.object, Infinity),
             ".",
