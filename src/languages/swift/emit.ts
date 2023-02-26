@@ -56,7 +56,7 @@ export default function emitProgram(program: IR.Program): TokenTree {
  * Emits the expression.
  * @param expr The expression to be emited.
  * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
- * @returns
+ * @returns Token tree corresponding to the expression.
  */
 export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
   const prec = precedence(expr);
