@@ -48,7 +48,7 @@ export function addMutatingBinaryOp(
   };
 }
 
-// (a + b) --> (b + a)
+// (a > b) --> (b < a)
 export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
   visit(node) {
