@@ -20,7 +20,6 @@ import {
   int,
   assignment,
   OpCode,
-  PolygolfOp,
   whileLoop,
   voidType,
   textType,

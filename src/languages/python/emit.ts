@@ -96,13 +96,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "Block":
         return emitMultiExpr(expr);
       case "ImportStatement":
-        return [
-          e.name,
-          joinTrees(
-            e.modules.map((x) => [x]),
-            ","
-          ),
-        ];
+        return [e.name, joinTrees([...e.modules], ",")];
       case "WhileLoop":
         return [`while`, emit(e.condition), ":", emit(e.body)];
       case "ForEach":
@@ -210,8 +204,6 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           "]",
         ];
       }
-      case "ImportStatement":
-        return ["import", joinTrees([...e.modules], ",")];
       default:
         throw new EmitError(expr);
     }

@@ -166,7 +166,7 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
       else add(1n, x.args);
     } else add(1n, [x]);
   }
-  let result: Expr[] = [];
+  const result: Expr[] = [];
   for (const [coeff, expr] of coeffMap.values()) {
     if (coeff === 1n) result.push(expr);
     else if (coeff !== 0n) result.push(polygolfOp("mul", int(coeff), expr));
