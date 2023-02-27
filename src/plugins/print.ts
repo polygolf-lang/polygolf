@@ -7,7 +7,7 @@ export const printLnToPrint = mapOps([
   [
     "println",
     (x) =>
-      polygolfOp("print", polygolfOp("text_concat", x[0], stringLiteral("\n"))),
+      polygolfOp("print", polygolfOp("concat", x[0], stringLiteral("\n"))),
   ],
 ]);
 

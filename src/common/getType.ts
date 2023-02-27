@@ -404,7 +404,7 @@ function getOpCodeType(
     // other
     case "list_push":
       return expectGenericType("List", ["T1", (x) => x[0]])[0];
-    case "text_concat": {
+    case "concat": {
       expectType(textType(), textType());
       const [t1, t2] = types as [TextType, TextType];
       return textType(

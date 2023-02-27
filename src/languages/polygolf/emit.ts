@@ -289,7 +289,7 @@ const opAliases: Record<string, string> = {
   geq: ">=",
   gt: ">",
   list_length: "#",
-  text_concat: "..",
+  concat: "..",
   assign: "<-",
   key_value: "=>",
   mod: "mod",

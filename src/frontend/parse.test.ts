@@ -97,8 +97,8 @@ describe("Parse s-expressions", () => {
     "..",
     "(.. $x $y $z)",
     polygolfOp(
-      "text_concat",
-      polygolfOp("text_concat", id("x"), id("y")),
+      "concat",
+      polygolfOp("concat", id("x"), id("y")),
       id("z")
     )
   );
