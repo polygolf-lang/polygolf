@@ -172,7 +172,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           e.op === "text_to_int" || e.ident.name === "UnicodeScalar" ? "!" : "",
         ];
       case "MethodCall":
-        if (e.ident.name === "utf8" || e.ident.name === "count") {
+        if (e.property) {
           return [emit(e.object), ".", e.ident.name];
         }
         return [
@@ -253,6 +253,7 @@ function emitMultiExpr(baseExpr: IR.Expr, isRoot = false): TokenTree {
     "}",
   ];
 }
+>>>>>>> main
 
 const unicode01to09repls: [string, string][] = [
   [`\u{1}`, `\\u{1}`],
