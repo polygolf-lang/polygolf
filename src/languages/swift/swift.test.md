@@ -3,10 +3,10 @@
 ## Multiline string literals require newlines between delimiters and string content
 
 ```polygolf
-print "abc\ndef\nghi\njkl\nmno\npqr\nstu\nvwx\nyz!";
+println "abc\ndef\nghi\njkl\nmno\npqr\nstu\nvwx\nyz!";
 ```
 
-```swift bytes
+```swift nogolf
 print("""
 abc
 def
@@ -27,7 +27,7 @@ $a <- (text_get_byte "abc" 1);
 $b <- (table_get (table ("X" => "Y") ) "X");
 ```
 
-```swift bytes
+```swift nogolf
 var a=Int(Array("abc".utf8)[1]),b=["X":"Y"]["X"]!
 ```
 
@@ -46,7 +46,7 @@ for $d -4 4 {$a <- $d;};
 for $e (($a + 1)*($a + 1)) 99 {$a <- 1;};
 ```
 
-```swift bytes
+```swift nogolf
 var a=5 ^ -4,b = -1,c = ~4
 a*=2
 a -= -5
@@ -65,14 +65,14 @@ for_argv $x 100 {
 };
 ```
 
-```swift
+```swift nogolf
 for x in CommandLine.arguments[1...]{print(x)}
 ```
 
 ```polygolf
-print (argv_get 0);
+println (argv_get 0);
 ```
 
-```swift
+```swift nogolf
 print(CommandLine.arguments[1])
 ```
