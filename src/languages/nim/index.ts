@@ -94,7 +94,7 @@ const nimLanguage: Language = {
       ["add", "+"],
       ["mul", "*"],
       ["sub", "-"],
-      ["text_concat", "&"]
+      ["concat", "&"]
     ),
     mapToUnaryAndBinaryOps(
       ["bit_not", "not"],
@@ -109,7 +109,7 @@ const nimLanguage: Language = {
       ["bit_shift_right", "shr"],
       ["add", "+"],
       ["sub", "-"],
-      ["text_concat", "&"],
+      ["concat", "&"],
       ["lt", "<"],
       ["leq", "<="],
       ["eq", "=="],

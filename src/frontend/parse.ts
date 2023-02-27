@@ -180,7 +180,7 @@ export const canonicalOpTable: Record<string, OpCode> = {
   ">=": "geq",
   ">": "gt",
   "#": "list_length",
-  "..": "text_concat",
+  "..": "concat",
 };
 
 function canonicalOp(op: string, arity: number): string {

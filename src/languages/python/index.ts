@@ -134,7 +134,7 @@ const pythonLanguage: Language = {
     ]),
     addMutatingBinaryOp(
       ["add", "+"],
-      ["text_concat", "+"],
+      ["concat", "+"],
       ["sub", "-"],
       ["mul", "*"],
       ["mul", "*"],
@@ -157,7 +157,7 @@ const pythonLanguage: Language = {
       ["div", "//"],
       ["mod", "%"],
       ["add", "+"],
-      ["text_concat", "+"],
+      ["concat", "+"],
       ["sub", "-"],
       ["bit_shift_left", "<<"],
       ["bit_shift_right", ">>"],

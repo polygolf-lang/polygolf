@@ -135,7 +135,7 @@ const swiftLanguage: Language = {
       ["sub", "-"],
       ["bit_or", "|"],
       ["bit_xor", "^"],
-      ["text_concat", "+"],
+      ["concat", "+"],
       ["lt", "<"],
       ["leq", "<="],
       ["eq", "=="],

@@ -47,7 +47,7 @@ $a >= 2;
 $a > 2;
 array_get (array "xy" "abc") 1;
 text_get_byte "abc" 1;
-text_concat $b "xyz";
+concat $b "xyz";
 text_byte_length "abc";
 int_to_text 5;
 text_to_int "5";

@@ -28,7 +28,7 @@ export const useDecimalConstantPackedPrinter: Plugin = {
           assignment(
             "result",
             polygolfOp(
-              "text_concat",
+              "concat",
               id("result"),
               polygolfOp(
                 "text_get_codepoint_slice",

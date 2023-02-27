@@ -37,7 +37,7 @@ export const BinaryOpCodeArray = [
   "table_get",
   // other
   "list_push",
-  "text_concat",
+  "concat",
   "repeat",
   "text_contains",
   "text_codepoint_find", // (text_codepoint_find a b) returns the codepoint-0-index of the start of the first occurence of b in a or -1 if it is not found
@@ -178,7 +178,7 @@ export function associativity(op: BinaryOpCode): Associativity {
         "gcd",
         "min",
         "max",
-        "text_concat",
+        "concat",
       ].includes(op)
     ? "both"
     : "left";

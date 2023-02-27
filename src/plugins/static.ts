@@ -79,7 +79,7 @@ export const evalStaticExpr: Plugin = {
         return int(type.low);
       } else if (args.every((x) => x.kind === "StringLiteral")) {
         const argsVals = args.map((x) => (x as StringLiteral).value);
-        if (node.op === "text_concat")
+        if (node.op === "concat")
           return stringLiteral(argsVals[0].concat(argsVals[1]));
       }
     }

@@ -87,7 +87,7 @@ const luaLanguage: Language = {
       ["mod", "%"],
       ["add", "+"],
       ["sub", "-"],
-      ["text_concat", ".."],
+      ["concat", ".."],
       ["bit_shift_left", "<<"],
       ["bit_shift_right", ">>"],
       ["bit_and", "&"],
