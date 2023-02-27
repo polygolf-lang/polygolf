@@ -90,8 +90,9 @@ function emitMultiExpr(expr: IR.Expr, isRoot = false): TokenTree {
  * @returns Token tree corresponding to the expression.
  */
 function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
-  const prec = precedence(expr);
-  function emitNoParens(e: IR.Expr): TokenTree {
+  let prec = precedence(expr);
+  const e = expr;
+  function emitNoParens(): TokenTree {
     switch (e.kind) {
       case "Block":
         return emitMultiExpr(e);
@@ -224,7 +225,14 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return e.value.toString();
       case "FunctionCall":
         if (e.args.length === 1 && e.args[0].kind === "StringLiteral") {
-          return [e.ident.name, "$GLUE$", emit(e.args[0], prec)];
+          const raw = emitAsRawStringLiteral(e.args[0].value, e.ident.name);
+          if (raw !== null) {
+            prec = Infinity;
+            return raw;
+          }
+        }
+        if (e.args.length > 1) {
+          prec = 11.5;
         }
         if (e.args.length > 1 || e.args.length === 0)
           return [
@@ -238,20 +246,29 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "MethodCall":
         if (e.args.length > 1)
           return [
-            emit(e.object, Infinity),
+            emit(e.object, prec),
             ".",
             e.ident.name,
             e.args.length > 0
               ? ["$GLUE$", "(", joinTrees(e.args.map(emit), ","), ")"]
               : [],
           ];
-        else
+        else {
+          if (e.args.length === 1 && e.args[0].kind === "StringLiteral") {
+            const raw = emitAsRawStringLiteral(e.args[0].value, e.ident.name);
+            if (raw !== null) {
+              prec = 12;
+              return [emit(e.object, prec), ".", raw];
+            }
+          }
+          prec = 2;
           return [
-            emit(e.object, Infinity),
+            emit(e.object, prec),
             ".",
             e.ident.name,
             e.args.length > 0 ? joinTrees(e.args.map(emit), ",") : [],
           ];
+        }
       case "BinaryOp": {
         const assoc = associativity(e.op);
         return [
@@ -278,12 +295,12 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         ];
       case "IndexCall":
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");
-        return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
+        return [emit(e.collection, 12), "[", emit(e.index), "]"];
       case "RangeIndexCall":
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");
         if (!isIntLiteral(e.step, 1n)) throw new EmitError(expr, "step");
         return [
-          emit(e.collection, Infinity),
+          emit(e.collection, 12),
           "[",
           emit(e.low),
           "..",
@@ -295,7 +312,15 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
     }
   }
 
-  const inner = emitNoParens(expr);
+  const inner = emitNoParens();
   if (prec >= minimumPrec) return inner;
   return ["(", inner, ")"];
+}
+
+function emitAsRawStringLiteral(
+  value: string,
+  prefix: string = "r"
+): string | null {
+  if (value.includes("\n") || value.includes("\r")) return null;
+  return `${prefix}"${value.replace(`"`, `""`)}"`;
 }

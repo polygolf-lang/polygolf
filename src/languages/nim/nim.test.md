@@ -6,7 +6,7 @@ print (text_split "abc" "b");
 
 ```nim
 include re
-"abc".split("b").echo
+"abc".split"b".echo
 ```
 
 ```polygolf
@@ -153,5 +153,5 @@ list_get (text_split "a b" " ") 1;
 
 ```nim nogolf
 include re
-"a b".split(" ")[1]
+"a b".split" "[1]
 ```
