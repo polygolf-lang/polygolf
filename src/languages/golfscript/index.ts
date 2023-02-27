@@ -52,7 +52,7 @@ const golfscriptLanguage: Language = {
       ["sub", "-"],
       ["bit_or", "|"],
       ["bit_xor", "^"],
-      ["text_concat", "+"],
+      ["concat", "+"],
       ["lt", "<"],
       ["eq", "="],
       ["gt", ">"],

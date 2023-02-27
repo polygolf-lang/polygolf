@@ -145,7 +145,7 @@ const pythonLanguage: Language = {
       ],
       [
         ["add", "+"],
-        ["text_concat", "+"],
+        ["concat", "+"],
         ["sub", "-"],
       ],
       [

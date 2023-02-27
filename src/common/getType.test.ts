@@ -381,7 +381,7 @@ describePolygolfOp("list_push", [
   [[list(int(0, 1000)), int(100, 200)], int(0, 1000)],
 ]);
 
-describePolygolfOp("text_concat", [
+describePolygolfOp("concat", [
   [[text(), int()], "error"],
   [[text(), text()], text()],
   [[ascii(), text(100, true)], ascii()],

@@ -64,7 +64,7 @@ export function mapPrecedenceOps(
               x[1],
               name,
               precedence,
-              rightAssociative ?? (op === "pow" || op === "text_concat")
+              rightAssociative ?? (op === "pow" || op === "concat")
             )
         : (x: readonly Expr[]) => unaryOp(op, x[0], name, precedence),
     ];

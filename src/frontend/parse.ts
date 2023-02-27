@@ -157,7 +157,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         "bit_and",
         "bit_or",
         "bit_xor",
-        "text_concat",
+        "concat",
       ].includes(opCode);
       expectArity(2, allowNary ? Infinity : 2);
       return composedPolygolfOp(opCode, args);
@@ -188,7 +188,7 @@ export const canonicalOpTable: Record<string, OpCode> = {
   ">=": "geq",
   ">": "gt",
   "#": "list_length",
-  "..": "text_concat",
+  "..": "concat",
 };
 
 function canonicalOp(op: string, arity: number): string {

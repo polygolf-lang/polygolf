@@ -45,7 +45,7 @@ print("y")
 1 > 2;
 array_get (array "xy" "abc") 1;
 text_get_byte "abc" 1;
-text_concat "abc" "xyz";
+concat "abc" "xyz";
 text_byte_length "abc";
 int_to_text 5;
 text_to_int "5";
