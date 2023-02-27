@@ -253,7 +253,6 @@ function emitMultiExpr(baseExpr: IR.Expr, isRoot = false): TokenTree {
     "}",
   ];
 }
->>>>>>> main
 
 const unicode01to09repls: [string, string][] = [
   [`\u{1}`, `\\u{1}`],
