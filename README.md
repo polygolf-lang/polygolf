@@ -151,7 +151,7 @@ All of the Polygolf operators can be called using their name. In addition, sever
 | gt              | >     |
 | assign          | <-    |
 | list_length     | #     |
-| concat     | ..    |
+| concat          | ..    |
 | key_value       | =>    |
 
 Notice how `-` and `~` both correspond to two ops - this is resolved by the used arity.

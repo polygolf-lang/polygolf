@@ -6,8 +6,7 @@ import { mapOps } from "./ops";
 export const printLnToPrint = mapOps([
   [
     "println",
-    (x) =>
-      polygolfOp("print", polygolfOp("concat", x[0], stringLiteral("\n"))),
+    (x) => polygolfOp("print", polygolfOp("concat", x[0], stringLiteral("\n"))),
   ],
 ]);
 

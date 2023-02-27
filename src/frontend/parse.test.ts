@@ -96,11 +96,7 @@ describe("Parse s-expressions", () => {
   expectExprParse(
     "..",
     "(.. $x $y $z)",
-    polygolfOp(
-      "concat",
-      polygolfOp("concat", id("x"), id("y")),
-      id("z")
-    )
+    polygolfOp("concat", polygolfOp("concat", id("x"), id("y")), id("z"))
   );
   expectExprParse("- as neg", "(- $x)", polygolfOp("neg", id("x")));
   expectExprParse("- as sub", "(- $x $y)", polygolfOp("sub", id("x"), id("y")));
