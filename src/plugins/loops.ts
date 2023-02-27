@@ -232,9 +232,9 @@ export const shiftRangeOneUp: Plugin = {
     if (node.kind === "ForRange" && isIntLiteral(node.increment, 1n)) {
       const bodySpine = new Spine(node.body, spine, "body");
       const newVar = id(node.variable.name + "POLYGOLFshifted");
-      const newBodySpine = bodySpine
-        .withReplacer((x) => (isIdent(x, node.variable) ? sub1(x) : undefined))
-        .withReplacer((x) => (isIdent(x, node.variable) ? newVar : undefined));
+      const newBodySpine = bodySpine.withReplacer((x) =>
+        isIdent(x, node.variable) ? sub1(newVar) : undefined
+      );
       return forRange(
         newVar,
         add1(node.low),
