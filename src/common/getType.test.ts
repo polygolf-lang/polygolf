@@ -29,6 +29,8 @@ import {
   listType,
   functionCall,
   IntegerType,
+  associativity,
+  isBinary,
 } from "IR";
 import { PolygolfError } from "./errors";
 import { calcType } from "./getType";
@@ -58,7 +60,7 @@ function testPolygolfOp(
   args: Type[],
   result: Type | "error"
 ) {
-  testExpr(name, polygolfOp(op, ...args.map(e)), result);
+  testExpr(name, { kind: "PolygolfOp", op, args: args.map(e) }, result);
 }
 
 function describePolygolfOp(op: OpCode, tests: [Type[], Type | "error"][]) {
@@ -82,7 +84,9 @@ function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
     [[text(), text()], "error"],
     [[int(), bool], "error"],
     [[int(), text()], "error"],
-    [[int(), int(), int()], "error"],
+    isBinary(op) && associativity(op) === "both"
+      ? [[text(), int()], "error"]
+      : [[int(), int(), int()], "error"],
     ...tests,
   ]);
 }
