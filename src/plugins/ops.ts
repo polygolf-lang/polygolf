@@ -70,7 +70,11 @@ function asBinaryChain(
   names: Map<OpCode, string>
 ): Expr {
   if (op === "mul" && isIntLiteral(exprs[0]) && exprs[0].value < 0n) {
-    return unaryOp("neg", polygolfOp("mul", ...exprs.slice(1)));
+    return unaryOp(
+      "neg",
+      polygolfOp("mul", ...exprs.slice(1)),
+      names.get("neg")
+    );
   }
   let result = exprs[0];
   for (const expr of exprs.slice(1)) {
@@ -87,6 +91,12 @@ function asBinaryChain(
         polygolfOp("neg", expr),
         names.get("sub")
       );
+    } else if (
+      op === "add" &&
+      expr.kind === "IntegerLiteral" &&
+      expr.value < 0n
+    ) {
+      result = binaryOp("sub", result, int(-expr.value), names.get("sub"));
     } else {
       result = binaryOp(op, result, expr, names.get(op));
     }

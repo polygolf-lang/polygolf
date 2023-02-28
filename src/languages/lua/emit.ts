@@ -65,21 +65,22 @@ export default function emitProgram(program: IR.Program): TokenTree {
  * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
  * @returns Token tree corresponding to the expression.
  */
-function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
+function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
   const prec = precedence(expr);
+  const emit1 = (expr: IR.Expr) => emit(expr);
   function emitNoParens(e: IR.Expr): TokenTree {
     switch (e.kind) {
       case "Block":
-        return joinTrees(e.children.map(emit), "\n");
+        return joinTrees(e.children.map(emit1), "\n");
       case "WhileLoop":
         return [`while`, emit(e.condition), "do", emit(e.body), "end"];
       case "OneToManyAssignment":
-        return [joinTrees(e.variables.map(emit), ","), "=", emit(e.expr)];
+        return [joinTrees(e.variables.map(emit1), ","), "=", emit(e.expr)];
       case "ManyToManyAssignment":
         return [
-          joinTrees(e.variables.map(emit), ","),
+          joinTrees(e.variables.map(emit1), ","),
           "=",
-          joinTrees(e.exprs.map(emit), ","),
+          joinTrees(e.exprs.map(emit1), ","),
         ];
       case "ForRange": {
         if (!e.inclusive) throw new EmitError(e, "exclusive");
@@ -146,7 +147,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "IntegerLiteral":
         return [e.value.toString()];
       case "FunctionCall":
-        return [e.ident.name, "(", joinTrees(e.args.map(emit), ","), ")"];
+        return [e.ident.name, "(", joinTrees(e.args.map(emit1), ","), ")"];
       case "MethodCall":
         return [
           emit(e.object, Infinity),
@@ -174,7 +175,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
       case "ListConstructor":
       case "ArrayConstructor":
-        return ["{", joinTrees(e.exprs.map(emit), ","), "}"];
+        return ["{", joinTrees(e.exprs.map(emit1), ","), "}"];
 
       default:
         throw new EmitError(e);
