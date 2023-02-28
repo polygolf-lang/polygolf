@@ -61,7 +61,7 @@ function emitMultiExpr(expr: IR.Expr, isRoot = false): TokenTree {
   const children = expr.kind === "Block" ? expr.children : [expr];
   // Prefer newlines over semicolons at top level for aesthetics
   if (isRoot) {
-    return joinTrees(children.map(emit), "\n");
+    return joinExprs("\n", children);
   }
   let inner = [];
   let needsBlock = false;
@@ -81,6 +81,17 @@ function emitMultiExpr(expr: IR.Expr, isRoot = false): TokenTree {
     return ["$INDENT$", "\n", inner, "$DEDENT$"];
   }
   return inner;
+}
+
+function joinExprs(
+  delim: TokenTree,
+  exprs: readonly IR.Expr[],
+  minPrec = -Infinity
+) {
+  return joinTrees(
+    delim,
+    exprs.map((x) => emit(x, minPrec))
+  );
 }
 
 /**
@@ -108,13 +119,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           ];
         return ["var", emit(e.children[0])];
       case "ImportStatement":
-        return [
-          e.name,
-          joinTrees(
-            e.modules.map((x) => [x]),
-            ","
-          ),
-        ];
+        return [e.name, joinTrees(",", e.modules)];
       case "WhileLoop":
         return [`while`, emit(e.condition), ":", emitMultiExpr(e.body)];
       case "ForEach":
@@ -181,15 +186,15 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "ManyToManyAssignment":
         return [
           "(",
-          joinTrees(e.variables.map(emit), ","),
+          joinExprs(",", e.variables),
           ")",
           "=",
           "(",
-          joinTrees(e.exprs.map(emit), ","),
+          joinExprs(",", e.exprs),
           ")",
         ];
       case "OneToManyAssignment":
-        return [joinTrees(e.variables.map(emit), ","), "=", emit(e.expr)];
+        return [joinExprs(",", e.variables), "=", emit(e.expr)];
       case "MutatingBinaryOp":
         return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
       case "Identifier":
@@ -235,14 +240,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           prec = 11.5;
         }
         if (e.args.length > 1 || e.args.length === 0)
-          return [
-            e.ident.name,
-            "$GLUE$",
-            "(",
-            joinTrees(e.args.map(emit), ","),
-            ")",
-          ];
-        return [e.ident.name, joinTrees(e.args.map(emit), ",")];
+          return [e.ident.name, "$GLUE$", "(", joinExprs(",", e.args), ")"];
+        return [e.ident.name, joinExprs(",", e.args)];
       case "MethodCall":
         if (e.args.length > 1)
           return [
@@ -250,7 +249,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
             ".",
             e.ident.name,
             e.args.length > 0
-              ? ["$GLUE$", "(", joinTrees(e.args.map(emit), ","), ")"]
+              ? ["$GLUE$", "(", joinExprs(",", e.args), ")"]
               : [],
           ];
         else {
@@ -266,7 +265,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
             emit(e.object, prec),
             ".",
             e.ident.name,
-            e.args.length > 0 ? joinTrees(e.args.map(emit), ",") : [],
+            e.args.length > 0 ? joinExprs(",", e.args) : [],
           ];
         }
       case "BinaryOp": {
@@ -281,13 +280,13 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "UnaryOp":
         return [e.name, emit(e.arg, prec + 1)];
       case "ListConstructor":
-        return ["@", "[", joinTrees(e.exprs.map(emit), ","), "]"];
+        return ["@", "[", joinExprs(",", e.exprs), "]"];
       case "TableConstructor":
         return [
           "{",
           joinTrees(
-            e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
-            ","
+            ",",
+            e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
           ),
           "}",
           ".",

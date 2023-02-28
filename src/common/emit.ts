@@ -2,8 +2,11 @@ import { Expr, IR } from "IR";
 import { PolygolfError } from "./errors";
 import { TokenTree } from "./Language";
 
-export function joinTrees(groups: TokenTree[], ...sep: TokenTree[]): TokenTree {
-  return groups.map((x, i) => (i > 0 ? [sep, x] : x));
+export function joinTrees(
+  sep: TokenTree,
+  groups: readonly TokenTree[]
+): TokenTree {
+  return groups.flatMap((x, i) => (i > 0 ? [sep, x] : [x]));
 }
 
 /**

@@ -13,12 +13,8 @@ function emitVariants(expr: Variants, indent = false): TokenTree {
       "$INDENT$",
       "\n",
       joinTrees(
-        expr.variants.map((x) => emitExpr(x, true)),
-        "$DEDENT$",
-        "\n",
-        "/",
-        "$INDENT$",
-        "\n"
+        ["$DEDENT$", "\n", "/", "$INDENT$", "\n"],
+        expr.variants.map((x) => emitExpr(x, true))
       ),
       "$DEDENT$",
       "\n",
@@ -28,8 +24,8 @@ function emitVariants(expr: Variants, indent = false): TokenTree {
   return [
     "{",
     joinTrees(
-      expr.variants.map((x) => emitExpr(x, true)),
-      "/"
+      "/",
+      expr.variants.map((x) => emitExpr(x, true))
     ),
     "}",
   ];
@@ -57,6 +53,7 @@ export function emitExpr(
       result.push(op);
       result.push(
         joinTrees(
+          [],
           args.map((x) =>
             typeof x === "string" || !("kind" in x) ? [x] : emitExpr(x)
           )
@@ -75,8 +72,8 @@ export function emitExpr(
   switch (expr.kind) {
     case "Block":
       return joinTrees(
-        expr.children.map((x) => emitExpr(x, true)),
-        "\n"
+        "\n",
+        expr.children.map((x) => emitExpr(x, true))
       );
     case "Variants":
       return emitVariants(expr, indent);

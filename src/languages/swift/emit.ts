@@ -52,6 +52,17 @@ export default function emitProgram(program: IR.Program): TokenTree {
   return emitMultiExpr(program.body, true);
 }
 
+function joinExprs(
+  delim: TokenTree,
+  exprs: readonly IR.Expr[],
+  minPrec = -Infinity
+) {
+  return joinTrees(
+    delim,
+    exprs.map((x) => emit(x, minPrec))
+  );
+}
+
 /**
  * Emits the expression.
  * @param expr The expression to be emited.
@@ -63,19 +74,13 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
   function emitNoParens(e: IR.Expr): TokenTree {
     switch (e.kind) {
       case "VarDeclarationBlock":
-        return ["var", joinTrees(e.children.map(emit), ",")];
+        return ["var", joinExprs(",", e.children)];
       case "VarDeclarationWithAssignment":
         return emit(e.assignment);
       case "Block":
         return emitMultiExpr(e);
       case "ImportStatement":
-        return [
-          e.name,
-          joinTrees(
-            e.modules.map((x) => [x]),
-            ","
-          ),
-        ];
+        return [e.name, joinTrees(",", e.modules)];
       case "WhileLoop":
         return [`while`, emit(e.condition), emitMultiExpr(e.body)];
       case "ForEach":
@@ -98,14 +103,11 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
             : [
                 "stride",
                 "(",
-                joinTrees(
-                  [
-                    ["from:", low],
-                    ["to:", high],
-                    ["by:", emit(e.increment)],
-                  ],
-                  ","
-                ),
+                joinTrees(",", [
+                  ["from:", low],
+                  ["to:", high],
+                  ["by:", emit(e.increment)],
+                ]),
                 ")",
               ],
           emitMultiExpr(e.body),
@@ -158,6 +160,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           e.ident.name,
           "(",
           joinTrees(
+            ",",
             e.op === "repeat"
               ? [
                   ["repeating:", emit(e.args[0])],
@@ -165,8 +168,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
                 ]
               : e.op === "print"
               ? [[emit(e.args[0])], ["terminator:", '""']]
-              : e.args.map((arg) => emit(arg)),
-            ","
+              : e.args.map((arg) => emit(arg))
           ),
           ")",
           e.op === "text_to_int" || e.ident.name === "UnicodeScalar" ? "!" : "",
@@ -181,10 +183,10 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           e.ident.name,
           "(",
           joinTrees(
+            ",",
             e.op === "text_split"
               ? [["separator:", emit(e.args[0])]]
-              : e.args.map((arg) => emit(arg)),
-            ","
+              : e.args.map((arg) => emit(arg))
           ),
           ")",
         ];
@@ -207,13 +209,13 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "UnaryOp":
         return [e.name, emit(e.arg, prec + 1)];
       case "ListConstructor":
-        return ["[", joinTrees(e.exprs.map(emit), ","), "]"];
+        return ["[", joinExprs(",", e.exprs), "]"];
       case "TableConstructor":
         return [
           "[",
           joinTrees(
-            e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
-            ","
+            ",",
+            e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
           ),
           "]",
         ];
@@ -239,19 +241,9 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
 function emitMultiExpr(baseExpr: IR.Expr, isRoot = false): TokenTree {
   const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
   if (isRoot) {
-    return joinTrees(
-      children.map((stmt) => emit(stmt)),
-      "\n"
-    );
+    return joinExprs("\n", children);
   }
-  return [
-    "{",
-    joinTrees(
-      children.map((stmt) => emit(stmt)),
-      "\n"
-    ),
-    "}",
-  ];
+  return ["{", joinExprs("\n", children), "}"];
 }
 
 const unicode01to09repls: [string, string][] = [

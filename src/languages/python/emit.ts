@@ -75,12 +75,23 @@ function emitMultiExpr(baseExpr: IR.Expr, isRoot = false): TokenTree {
   const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
   // Prefer newlines over semicolons at top level for aesthetics
   if (isRoot) {
-    return joinTrees(children.map(emit), "\n");
+    return joinExprs("\n", children);
   }
   if (containsMultiExpr(children)) {
-    return ["$INDENT$", children.map((stmt) => ["\n", emit(stmt)]), "$DEDENT$"];
+    return ["$INDENT$", "\n", joinExprs("\n", children), "$DEDENT$"];
   }
-  return joinTrees(children.map(emit), ";");
+  return joinExprs(";", children);
+}
+
+function joinExprs(
+  delim: TokenTree,
+  exprs: readonly IR.Expr[],
+  minPrec = -Infinity
+) {
+  return joinTrees(
+    delim,
+    exprs.map((x) => emit(x, minPrec))
+  );
 }
 
 /**
@@ -96,7 +107,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "Block":
         return emitMultiExpr(expr);
       case "ImportStatement":
-        return [e.name, joinTrees([...e.modules], ",")];
+        return [e.name, joinTrees(",", e.modules)];
       case "WhileLoop":
         return [`while`, emit(e.condition), ":", emitMultiExpr(e.body)];
       case "ForEach":
@@ -146,11 +157,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "Assignment":
         return [emit(e.variable), "=", emit(e.expr)];
       case "ManyToManyAssignment":
-        return [
-          joinTrees(e.variables.map(emit), ","),
-          "=",
-          joinTrees(e.exprs.map(emit), ","),
-        ];
+        return [joinExprs(",", e.variables), "=", joinExprs(",", e.exprs)];
       case "OneToManyAssignment":
         return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
       case "MutatingBinaryOp":
@@ -162,14 +169,14 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "IntegerLiteral":
         return e.value.toString();
       case "FunctionCall":
-        return [e.ident.name, "(", joinTrees(e.args.map(emit), ","), ")"];
+        return [e.ident.name, "(", joinExprs(",", e.args), ")"];
       case "MethodCall":
         return [
           emit(e.object),
           ".",
           e.ident.name,
           "(",
-          joinTrees(e.args.map(emit), ","),
+          joinExprs(",", e.args),
           ")",
         ];
       case "BinaryOp": {
@@ -183,7 +190,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "UnaryOp":
         return [e.name, emit(e.arg, prec + 1)];
       case "ListConstructor":
-        return ["[", joinTrees(e.exprs.map(emit), ","), "]"];
+        return ["[", joinExprs(",", e.exprs), "]"];
       case "IndexCall":
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");
         return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
