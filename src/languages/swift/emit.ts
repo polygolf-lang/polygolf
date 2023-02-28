@@ -1,6 +1,6 @@
 import { TokenTree } from "../../common/Language";
 import { EmitError, emitStringLiteral, joinTrees } from "../../common/emit";
-import { associativity, IR, isIntLiteral } from "../../IR";
+import { IR, isIntLiteral } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -199,12 +199,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emit(e.alternate),
         ];
       case "BinaryOp": {
-        const assoc = associativity(e.op);
-        return [
-          emit(e.left, prec + (assoc === "right" ? 1 : 0)),
-          e.name,
-          emit(e.right, prec + (assoc === "left" ? 1 : 0)),
-        ];
+        return [emit(e.left, prec), e.name, emit(e.right, prec + 1)];
       }
       case "UnaryOp":
         return [e.name, emit(e.arg, prec + 1)];

@@ -128,9 +128,9 @@ export function emitExpr(
         ...expr.args
       );
     case "BinaryOp":
-      return emitSexpr("@", expr.op, expr.name, expr.left, expr.right);
+      return emitSexpr("@", expr.op ?? "?", expr.name, expr.left, expr.right);
     case "UnaryOp":
-      return emitSexpr("@", expr.op, expr.name, expr.arg);
+      return emitSexpr("@", expr.op ?? "?", expr.name, expr.arg);
     case "Identifier":
       if (expr.builtin) {
         return emitSexpr("@BuiltinIdent", JSON.stringify(expr.name));

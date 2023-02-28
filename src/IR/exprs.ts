@@ -73,7 +73,7 @@ export interface RangeIndexCall extends BaseExpr {
 
 export interface BinaryOp extends BaseExpr {
   readonly kind: "BinaryOp";
-  readonly op: BinaryOpCode;
+  readonly op: BinaryOpCode | null;
   readonly name: string;
   readonly left: Expr;
   readonly right: Expr;
@@ -82,7 +82,7 @@ export interface BinaryOp extends BaseExpr {
 export interface UnaryOp extends BaseExpr {
   readonly kind: "UnaryOp";
   readonly name: string;
-  readonly op: UnaryOpCode;
+  readonly op: UnaryOpCode | null;
   readonly arg: Expr;
 }
 
@@ -286,7 +286,7 @@ export function rangeIndexCall(
 }
 
 export function binaryOp(
-  op: BinaryOpCode,
+  op: BinaryOpCode | null,
   left: Expr,
   right: Expr,
   name: string = ""
@@ -301,7 +301,7 @@ export function binaryOp(
 }
 
 export function unaryOp(
-  op: UnaryOpCode,
+  op: UnaryOpCode | null,
   arg: Expr,
   name: string = ""
 ): UnaryOp {

@@ -5,7 +5,7 @@ import {
   emitStringLiteral,
   joinTrees,
 } from "../../common/emit";
-import { associativity, IR, isIntLiteral } from "../../IR";
+import { IR, isIntLiteral } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -180,11 +180,11 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           ")",
         ];
       case "BinaryOp": {
-        const assoc = associativity(e.op);
+        const rightAssoc = e.name === "**";
         return [
-          emit(e.left, prec + (assoc === "right" ? 1 : 0)),
+          emit(e.left, prec + (rightAssoc ? 1 : 0)),
           e.name,
-          emit(e.right, prec + (assoc === "left" ? 1 : 0)),
+          emit(e.right, prec + (rightAssoc ? 0 : 1)),
         ];
       }
       case "UnaryOp":
