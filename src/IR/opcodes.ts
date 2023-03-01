@@ -136,6 +136,9 @@ export function arity(op: OpCode): number {
  */
 export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
+    case "eq":
+    case "neq":
+      return op;
     case "lt":
       return "gt";
     case "gt":
@@ -150,6 +153,10 @@ export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
 
 export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
+    case "eq":
+      return "neq";
+    case "neq":
+      return "eq";
     case "lt":
       return "geq";
     case "gt":
