@@ -31,13 +31,13 @@ export const divToTruncdiv: Plugin = {
       const rightType = getType(node.args[1], program);
       if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
-      if (rightType.low !== undefined && rightType.low >= 0n) {
+      if (leq(0n, rightType.low)) {
         return {
           ...node,
           op: "trunc_div",
         };
       } else {
-        throw new Error("Not implemented.");
+        return undefined; // TODO
       }
     }
   },
