@@ -13,7 +13,7 @@ import {
   MutatingBinaryOp,
   isCommutative,
   int,
-  associativity,
+  isAssociative,
   isBinary,
   stringLiteral,
   integerType,
@@ -129,7 +129,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   if (op === "sub") {
     return polygolfOp("add", args[0], polygolfOp("neg", args[1]));
   }
-  if (isBinary(op) && associativity(op) === "both") {
+  if (isBinary(op) && isAssociative(op)) {
     args = args.flatMap((x) =>
       x.kind === "PolygolfOp" && x.op === op ? x.args : [x]
     );

@@ -29,7 +29,7 @@ import {
   listType,
   functionCall,
   IntegerType,
-  associativity,
+  isAssociative,
   isBinary,
 } from "IR";
 import { PolygolfError } from "./errors";
@@ -84,7 +84,7 @@ function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
     [[text(), text()], "error"],
     [[int(), bool], "error"],
     [[int(), text()], "error"],
-    isBinary(op) && associativity(op) === "both"
+    isBinary(op) && isAssociative(op)
       ? [[text(), int()], "error"]
       : [[int(), int(), int()], "error"],
     ...tests,

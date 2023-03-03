@@ -38,7 +38,7 @@ import {
   arrayConstructor,
   toString,
   forArgv,
-  associativity,
+  isAssociative,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -151,7 +151,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   }
   if (isOpCode(opCode)) {
     if (isBinary(opCode)) {
-      expectArity(2, associativity(opCode) === "both" ? Infinity : 2);
+      expectArity(2, isAssociative(opCode) ? Infinity : 2);
       return polygolfOp(opCode, ...args);
     }
     expectArity(arity(opCode));

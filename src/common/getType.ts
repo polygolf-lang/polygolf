@@ -45,7 +45,7 @@ import {
   isConstantType,
   constantIntegerType,
   ListType,
-  associativity,
+  isAssociative,
 } from "../IR";
 import { byteLength, charLength } from "./applyLanguage";
 import { PolygolfError } from "./errors";
@@ -371,7 +371,7 @@ function getOpCodeType(
     case "min":
     case "max": {
       const op = expr.op;
-      if (associativity(expr.op) === "both") {
+      if (isAssociative(expr.op)) {
         expectVariadicType(integerType());
         return types.reduce((a, b) =>
           getArithmeticType(op, a as IntegerType, b as IntegerType, expr.source)
