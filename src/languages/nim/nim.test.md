@@ -155,3 +155,37 @@ list_get (text_split "a b" " ") 1;
 include re
 "a b".split" "[1]
 ```
+
+## Raw string literals
+
+```polygolf
+print "Hello world!";
+```
+
+```nim
+echo"Hello world!"
+```
+
+```polygolf
+print "Hello\nworld!";
+```
+
+```nim
+echo "Hello\nworld!"
+```
+
+```polygolf
+print "Hello\\n\\n\\nworld!";
+```
+
+```nim
+echo"Hello\n\n\nworld!"
+```
+
+```polygolf
+print "Hello \"world\"!";
+```
+
+```nim
+echo"Hello ""world""!"
+```

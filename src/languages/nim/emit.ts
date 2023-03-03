@@ -321,5 +321,5 @@ function emitAsRawStringLiteral(
   prefix: string = "r"
 ): string | null {
   if (value.includes("\n") || value.includes("\r")) return null;
-  return `${prefix}"${value.replace(`"`, `""`)}"`;
+  return `${prefix}"${value.replaceAll(`"`, `""`)}"`;
 }
