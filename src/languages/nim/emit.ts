@@ -302,7 +302,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emit(e.collection, 12),
           "[",
           emit(e.low),
-          "..",
+          "..<",
           emit(e.high),
           "]",
         ];

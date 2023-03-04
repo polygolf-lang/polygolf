@@ -1,5 +1,106 @@
 # Nim
 
+## Ops emit
+
+```polygolf
+$t:(Ascii 3) <- "";
+$n:0..1 <- 0;
+$m <- $n;
+$b <- (1<2);
+
+text_get_byte $t 2;
+text_get_byte_slice $t 2 6;
+text_split $t "|";
+text_split_whitespace $t;
+text_byte_length $t;
+repeat $t 3;
+max $n 1;
+min $n 1;
+abs $n;
+text_to_int $t;
+print $t;
+println $t;
+bool_to_int $b;
+byte_to_text 48;
+$t .. "x";
+
+~ $n;
+not $b;
+
+- $n;
+int_to_text $n;
+$n ^ 3;
+$n * $m;
+$n trunc_div 3;
+$n rem 3;
+$n << 3;
+$n >> 3;
+$n + 3;
+$n - 3;
+$n & 3;
+$n | 3;
+$n ~ 3;
+
+$n < 3;
+$n <= 3;
+$n == 3;
+$n != 3;
+$n >= 3;
+$n > 3;
+
+and $b $b;
+or $b $b;
+```
+
+```nim nogolf
+import strutils,math
+var
+ t=""
+ n=0
+ m=n
+ b=1<2
+t[2]
+t[2..<6]
+t.split"|"
+t.split
+t.len
+t.repeat 3
+1.max n
+1.min n
+n.abs
+t.parseInt
+stdout.write t
+t.echo
+b.int
+48.chr
+t&"x"
+not n
+not b
+-n
+$n
+n^3
+n*m
+n/%3
+n%%3
+n shl 3
+n shr 3
+n+3
+n-3
+3 and n
+3 or n
+3 xor n
+n<3
+n<=3
+n==3
+n!=3
+n>=3
+n>3
+b and b
+b or b
+```
+
+## Misc
+
 ```polygolf
 print (text_split "abc" "b");
 ```

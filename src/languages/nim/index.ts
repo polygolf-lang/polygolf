@@ -72,7 +72,8 @@ const nimLanguage: Language = {
     mapOps([
       ["true", (_) => id("true", true)],
       ["false", (_) => id("true", true)],
-      ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
+      ["text_byte_ord", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
+      ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
       ["text_split", (x) => functionCall(x, "split")],
       ["text_split_whitespace", (x) => functionCall(x, "split")],

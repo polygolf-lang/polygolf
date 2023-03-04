@@ -1,5 +1,19 @@
 # Swift
 
+## Named argument function calls
+
+```polygolf
+repeat "xy" 3;
+print "xy";
+text_split "x|y" "|";
+```
+
+```swift nogolf
+String(repeating:"xy",count:3)
+print("xy",terminator:"")
+"x|y".split(separator:"|")
+```
+
 ## Multiline string literals require newlines between delimiters and string content
 
 ```polygolf
