@@ -72,7 +72,7 @@ const luaLanguage: Language = {
       ["min", (x) => functionCall(x, "math.min")],
       ["max", (x) => functionCall(x, "math.max")],
       ["abs", (x) => functionCall(x, "math.abs")],
-      ["byte_to_text", (x) => functionCall(x, "string.char")],
+      ["int_to_text_byte", (x) => functionCall(x, "string.char")],
     ]),
     mapPrecedenceOps(
       [["pow", "^"]],

@@ -35,7 +35,11 @@ import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
-import { useEquivalentTextOp } from "../../plugins/textOps";
+import {
+  textGetToIntToTextGet,
+  textToIntToTextGetToInt,
+  useEquivalentTextOp,
+} from "../../plugins/textOps";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 
 // abstract out as a part of https://github.com/jared-hughes/polygolf/issues/89
@@ -72,6 +76,7 @@ const pythonLanguage: Language = {
     equalityToInequality,
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
+    textToIntToTextGetToInt,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -91,6 +96,7 @@ const pythonLanguage: Language = {
     useIndexCalls(),
   ],
   finalEmitPlugins: [
+    textGetToIntToTextGet,
     mapOps([
       ["true", (_) => int(1)],
       ["false", (_) => int(0)],
@@ -103,10 +109,7 @@ const pythonLanguage: Language = {
         "text_codepoint_reversed",
         (x) => rangeIndexCall(x[0], id("", true), id("", true), int(-1)),
       ],
-      [
-        "text_codepoint_ord",
-        (x) => functionCall([indexCall(x[0], x[1])], "ord"),
-      ],
+      ["codepoint_to_int", (x) => functionCall(x, "ord")],
       ["text_get_codepoint", (x) => indexCall(x[0], x[1])],
       ["int_to_codepoint", (x) => functionCall([x[0]], "chr")],
       ["max", (x) => functionCall([x[0], x[1]], "max")],

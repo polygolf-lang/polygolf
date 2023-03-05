@@ -4,7 +4,7 @@ import { Spine, Visitor } from "./Spine";
 export type OpTransformOutput = (
   args: readonly IR.Expr[],
   spine: Spine<Expr>
-) => IR.Expr;
+) => IR.Expr | undefined;
 
 export type Packer = (x: string) => string | null;
 

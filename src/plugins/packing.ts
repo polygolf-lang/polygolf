@@ -38,7 +38,7 @@ export const useDecimalConstantPackedPrinter: Plugin = {
                     "add",
                     int(72n),
                     polygolfOp(
-                      "text_byte_ord",
+                      "text_get_byte_to_int",
                       stringLiteral(packed),
                       id("packindex")
                     )
@@ -80,7 +80,11 @@ export const useLowDecimalListPackedPrinter: Plugin = {
       return forRangeCommon(
         ["packindex", 0, packed.length],
         print(
-          polygolfOp("text_byte_ord", stringLiteral(packed), id("packindex"))
+          polygolfOp(
+            "text_get_byte_to_int",
+            stringLiteral(packed),
+            id("packindex")
+          )
         )
       );
     }

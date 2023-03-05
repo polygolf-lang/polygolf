@@ -549,7 +549,7 @@ function getOpCodeType(
     case "bool_to_int":
       expectType(booleanType);
       return integerType(0, 1);
-    case "byte_to_text":
+    case "int_to_text_byte":
       expectType(integerType(0, 255));
       return textType(
         integerType(1n, 1n),
@@ -622,11 +622,17 @@ function getOpCodeType(
       );
       return textType(integerType(0n, maximum), t.isAscii);
     }
-    case "text_codepoint_ord":
+    case "text_get_codepoint_to_int":
       expectType(textType(), integerType(0));
       return integerType(0, (types[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "text_byte_ord":
+    case "text_get_byte_to_int":
       expectType(textType(), integerType(0));
+      return integerType(0, (types[0] as TextType).isAscii ? 127 : 255);
+    case "codepoint_to_int":
+      expectType(textType(integerType(1, 1)));
+      return integerType(0, (types[0] as TextType).isAscii ? 127 : 0x10ffff);
+    case "text_byte_to_int":
+      expectType(textType(integerType(1, 1)));
       return integerType(0, (types[0] as TextType).isAscii ? 127 : 255);
     case "array_set":
       return expectGenericType(

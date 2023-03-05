@@ -34,7 +34,11 @@ import {
 } from "../../plugins/packing";
 import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
-import { useEquivalentTextOp } from "../../plugins/textOps";
+import {
+  textGetToIntToTextGet,
+  textToIntToTextGetToInt,
+  useEquivalentTextOp,
+} from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 
 const nimLanguage: Language = {
@@ -54,6 +58,7 @@ const nimLanguage: Language = {
     equalityToInequality,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
+    textToIntToTextGetToInt,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -68,8 +73,9 @@ const nimLanguage: Language = {
     ]),
   ],
   finalEmitPlugins: [
+    textGetToIntToTextGet,
     mapOps([
-      ["text_byte_ord", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
+      ["text_byte_to_int", (x) => functionCall(x, "ord")],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
       ["text_split", (x) => functionCall(x, "split")],
@@ -86,7 +92,7 @@ const nimLanguage: Language = {
       ["max", (x) => functionCall(x, "max")],
       ["abs", (x) => functionCall(x, "abs")],
       ["bool_to_int", (x) => functionCall(x, "int")],
-      ["byte_to_text", (x) => functionCall(x, "chr")],
+      ["int_to_text_byte", (x) => functionCall(x, "chr")],
     ]),
     mapPrecedenceOps(
       [
