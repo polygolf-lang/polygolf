@@ -32,12 +32,12 @@ const luaLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
     equalityToInequality,
-    useEquivalentTextOp,
     shiftRangeOneUp,
   ],
   emitPlugins: [
     forArgvToForRange(),
     forRangeToForRangeInclusive,
+    useEquivalentTextOp(true, false),
     mapOps([
       [
         "argv_get",

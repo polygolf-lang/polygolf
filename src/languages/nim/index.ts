@@ -50,7 +50,6 @@ const nimLanguage: Language = {
     useLowDecimalListPackedPrinter,
     tableHashing(hash),
     equalityToInequality,
-    useEquivalentTextOp,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
   ],
@@ -60,6 +59,7 @@ const nimLanguage: Language = {
     modToRem,
     divToTruncdiv,
     useIndexCalls(),
+    useEquivalentTextOp(true, false),
     mapOps([
       ["argv", (x) => functionCall([], "commandLineParams")],
       ["argv_get", (x) => functionCall([add1(x[0])], "paramStr")],

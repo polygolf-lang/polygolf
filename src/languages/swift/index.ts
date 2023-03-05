@@ -21,6 +21,7 @@ import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
 } from "../../plugins/loops";
+import { useEquivalentTextOp } from "../../plugins/textOps";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -33,6 +34,7 @@ const swiftLanguage: Language = {
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive,
+    useEquivalentTextOp(true, true),
   ],
   emitPlugins: [
     forArgvToForEach,
