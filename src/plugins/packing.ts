@@ -38,9 +38,12 @@ export const useDecimalConstantPackedPrinter: Plugin = {
                     "add",
                     int(72n),
                     polygolfOp(
-                      "text_get_byte_to_int",
-                      stringLiteral(packed),
-                      id("packindex")
+                      "text_byte_to_int",
+                      polygolfOp(
+                        "text_get_byte",
+                        stringLiteral(packed),
+                        id("packindex")
+                      )
                     )
                   )
                 ),

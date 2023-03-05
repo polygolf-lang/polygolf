@@ -14,6 +14,7 @@ const textOpsEquivalenceAscii = toBidirectionalMap<OpCode>([
   ["text_codepoint_length", "text_byte_length"],
   ["text_codepoint_reversed", "text_byte_reversed"],
   ["text_get_codepoint_slice", "text_get_byte_slice"],
+  ["codepoint_to_int", "text_byte_to_int"],
 ]);
 
 const integerOpsEquivalenceAscii = toBidirectionalMap<OpCode>([

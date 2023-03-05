@@ -851,6 +851,8 @@ export function getCollectionTypes(expr: Expr, program: Program): Type[] {
       return [exprType.member];
     case "Table":
       return [exprType.key, exprType.value];
+    case "text":
+      return [textType(integerType(1, 1), exprType.isAscii)];
   }
   throw new PolygolfError("Type error. Node is not a collection.", expr.source);
 }
