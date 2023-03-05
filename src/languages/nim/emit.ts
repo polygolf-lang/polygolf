@@ -210,13 +210,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
               [`"`, `\\"`],
             ],
           ],
-          [
-            `"""`,
-            [
-              [`\\`, `\\\\`],
-              [`"""`, `\\"""`],
-            ],
-          ],
+          [`"""`, [[`"""`, null]]],
           [
             [`r"`, `"`],
             [
