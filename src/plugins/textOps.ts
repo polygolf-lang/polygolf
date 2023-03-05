@@ -25,7 +25,7 @@ export function useEquivalentTextOp(
   useCodepoints = true
 ): Plugin {
   return {
-    name: `useEquivalentTextOp(${useBytes}, ${useCodepoints})`,
+    name: `useEquivalentTextOp(${useBytes.toString()}, ${useCodepoints.toString()})`,
     visit(node, spine) {
       if (node.kind !== "PolygolfOp") return;
       const program = spine.root.node;
