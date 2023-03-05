@@ -24,6 +24,10 @@ export function useEquivalentTextOp(
   useBytes = true,
   useCodepoints = true
 ): Plugin {
+  if (!useBytes && !useCodepoints)
+    throw new Error(
+      "Programming error. Choose at least one of bytes and codepoints."
+    );
   return {
     name: `useEquivalentTextOp(${useBytes.toString()}, ${useCodepoints.toString()})`,
     visit(node, spine) {

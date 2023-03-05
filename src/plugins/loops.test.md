@@ -36,9 +36,73 @@ for $i 0 (# $collection) {
 };
 ```
 
-```polygolf loops.forRangeToForEach
-@ForEach $i_forRangeToForEach $collection (
-  print $i_forRangeToForEach
+```polygolf loops.forRangeToForEach("list_get")
+@ForEach $i_POLYGOLFforRangeToForEach $collection (
+  print $i_POLYGOLFforRangeToForEach
+);
+```
+
+```polygolf
+$collection <- (array "a" "b" "c");
+for $i 0 3 {
+  print (array_get $collection $i);
+};
+```
+
+```polygolf loops.forRangeToForEach("array_get")
+$collection <- (array "a" "b" "c");
+@ForEach $i_POLYGOLFforRangeToForEach $collection (
+  print $i_POLYGOLFforRangeToForEach
+);
+```
+
+```polygolf
+$collection <- (array "a" "b" "c" "d");
+for $i 0 3 {
+  print (array_get $collection $i);
+};
+```
+
+```polygolf loops.forRangeToForEach("array_get")
+$collection <- (array "a" "b" "c" "d");
+for $i 0 3 (
+  print (array_get $collection $i)
+);
+```
+
+```polygolf
+for $i 0 10 (
+  print (text_get_byte "9876543210" $i)
+);
+```
+
+```polygolf loops.forRangeToForEach("text_get_byte")
+@ForEach $i_POLYGOLFforRangeToForEach "9876543210" (
+  print $i_POLYGOLFforRangeToForEach
+);
+```
+
+```polygolf
+for $i 0 5 (
+  print (text_get_byte "9876543210" $i)
+);
+```
+
+```polygolf loops.forRangeToForEach("text_get_byte")
+for $i 0 5 (
+  print (text_get_byte "9876543210" $i)
+);
+```
+
+```polygolf
+for $i 0 5 {
+  print (list_get (list 5 4 3 2 1) $i);
+};
+```
+
+```polygolf loops.forRangeToForEach("list_get")
+@ForEach $i_POLYGOLFforRangeToForEach (list 5 4 3 2 1) (
+  print $i_POLYGOLFforRangeToForEach
 );
 ```
 
@@ -51,7 +115,7 @@ for $i 0 (# $collection) {
 };
 ```
 
-```polygolf loops.forRangeToForEach
+```polygolf loops.forRangeToForEach("list_get")
 for $i 0 (# $collection) {
   print $i;
   print (list_get $collection $i);

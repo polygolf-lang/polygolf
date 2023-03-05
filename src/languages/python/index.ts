@@ -67,7 +67,7 @@ const pythonLanguage: Language = {
     golfStringListLiteral(),
     evalStaticExpr,
     tempVarToMultipleAssignment,
-    forRangeToForEach,
+    forRangeToForEach("array_get", "list_get", "text_get_codepoint"),
     golfLastPrint(),
     equalityToInequality,
     useDecimalConstantPackedPrinter,

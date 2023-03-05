@@ -21,6 +21,7 @@ import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import {
   forArgvToForEach,
   forArgvToForRange,
+  forRangeToForEach,
   forRangeToForRangeInclusive,
   shiftRangeOneUp,
 } from "../../plugins/loops";
@@ -45,6 +46,7 @@ const nimLanguage: Language = {
     golfStringListLiteral(),
     evalStaticExpr,
     golfLastPrint(),
+    forRangeToForEach("array_get", "list_get", "text_get_byte"),
     tempVarToMultipleAssignment,
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,

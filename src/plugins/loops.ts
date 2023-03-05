@@ -17,8 +17,12 @@ import {
   Identifier,
   PolygolfOp,
   Node,
+  OpCode,
+  StringLiteral,
+  ListConstructor,
 } from "../IR";
 import { add1, sub1 } from "./ops";
+import { byteLength, charLength } from "../common/applyLanguage";
 
 export const forRangeToForRangeInclusive: Plugin = {
   name: "forRangeToForRangeInclusive",
@@ -116,48 +120,6 @@ export const forRangeToForEachPair: Plugin = {
   },
 };
 
-/**
- * Python:
- * for i in range(len(collection)):
- *     commands(collection[i])
- *           |
- *           V
- * for x in collection:
- *     commands(x)
- */
-export const forRangeToForEach: Plugin = {
-  name: "forRangeToForEach",
-  visit(node, spine) {
-    if (
-      node.kind === "ForRange" &&
-      !node.inclusive &&
-      node.low.kind === "IntegerLiteral" &&
-      node.low.value === 0n &&
-      node.high.kind === "PolygolfOp" &&
-      node.high.op === "list_length" &&
-      node.high.args[0].kind === "Identifier"
-    ) {
-      const collection = node.high.args[0];
-      const elementIdentifier = id(node.variable.name + "_forRangeToForEach");
-      const bodySpine = spine.getChild("body");
-      const onlyUsedForCollectionAccess = bodySpine.everyNode(
-        (n, s) =>
-          n.kind !== "Identifier" ||
-          n.name !== node.variable.name ||
-          isListGet(s.parent!.node, collection.name, node.variable.name)
-      );
-      if (onlyUsedForCollectionAccess) {
-        // if the loop variable is only used to index the collection
-        const newBody = bodySpine.withReplacer((n) => {
-          if (isListGet(n, collection.name, node.variable.name))
-            return elementIdentifier;
-        }).node as IR.Expr;
-        return forEach(elementIdentifier, collection, newBody);
-      }
-    }
-  },
-};
-
 function isListGet(node: IR.Node, collection: string, index: string) {
   if (node.kind !== "PolygolfOp" || node.op !== "list_get") return false;
   const args = node.args;
@@ -167,6 +129,145 @@ function isListGet(node: IR.Node, collection: string, index: string) {
     args[1].kind === "Identifier" &&
     args[1].name === index
   );
+}
+
+/**
+ * Python:
+ * for i in range(len(collection)):
+ *     commands(collection[i])
+ *           |
+ *           V
+ * for x in collection:
+ *     commands(x)
+ */
+type GetOp = OpCode &
+  ("array_get" | "list_get" | "text_get_byte" | "text_get_codepoint");
+export function forRangeToForEach(...ops: GetOp[]): Plugin {
+  if (ops.includes("text_get_byte") && ops.includes("text_get_codepoint"))
+    throw new Error(
+      "Programming error. Choose only one of 'text_get_byte' && 'text_get_codepoint'."
+    );
+  const lengthOpToGetOp = new Map([
+    ["array_length", "array_get"],
+    ["list_length", "list_get"],
+    ["text_byte_length", "text_get_byte"],
+    ["array_length", "text_get_codepoint"],
+  ]);
+  return {
+    name: "forRangeToForEach",
+    visit(node, spine) {
+      if (
+        node.kind === "ForRange" &&
+        !node.inclusive &&
+        node.low.kind === "IntegerLiteral" &&
+        node.low.value === 0n &&
+        ((node.high.kind === "PolygolfOp" &&
+          ops.includes(lengthOpToGetOp.get(node.high.op) as any) &&
+          node.high.args[0].kind === "Identifier") ||
+          node.high.kind === "IntegerLiteral")
+      ) {
+        const indexVar = node.variable;
+        const bodySpine = spine.getChild("body") as Spine<Expr>;
+        const knownLength =
+          node.high.kind === "IntegerLiteral"
+            ? Number(node.high.value)
+            : undefined;
+        const allowedOps =
+          node.high.kind === "IntegerLiteral"
+            ? ops
+            : [lengthOpToGetOp.get(node.high.op) as GetOp];
+        const collectionVar =
+          node.high.kind === "IntegerLiteral"
+            ? undefined
+            : (node.high.args[0] as Identifier);
+        const indexedCollection = getIndexedCollection(
+          bodySpine,
+          indexVar,
+          allowedOps,
+          knownLength,
+          collectionVar
+        );
+        if (indexedCollection !== null) {
+          const elementIdentifier = id(
+            node.variable.name + "_POLYGOLFforRangeToForEach"
+          );
+          const newBody = bodySpine.withReplacer((n) => {
+            if (
+              n.kind === "PolygolfOp" &&
+              n.args[0] === indexedCollection &&
+              n.args[1].kind === "Identifier" &&
+              !n.args[1].builtin &&
+              n.args[1].name === indexVar.name
+            )
+              return elementIdentifier;
+          }).node as IR.Expr;
+          return forEach(elementIdentifier, indexedCollection, newBody);
+        }
+      }
+    },
+  };
+}
+
+/**
+ * Returns a single collection descendant that is being indexed into or null.
+ * @param spine Root spine.
+ * @param indexVar Indexing variable.
+ * @param allowedOps Indexing.
+ * @param knownLength The allowed length of the collection if it is a literal or of an array type.
+ * @param collectionVar The allowed collection variable to be indexed into.
+ */
+function getIndexedCollection(
+  spine: Spine<Expr>,
+  indexVar: Identifier,
+  allowedOps: GetOp[],
+  knownLength?: number,
+  collectionVar?: Identifier
+): Expr | null {
+  let result: Expr | null = null;
+  for (const x of spine.compactMap((n, s) => {
+    const parent = s.parent!.node;
+    if (n.kind !== "Identifier" || n.builtin || n.name !== indexVar.name)
+      return undefined;
+    if (
+      parent.kind !== "PolygolfOp" ||
+      !(allowedOps as OpCode[]).includes(parent.op)
+    )
+      return null;
+    const collection = parent.args[0];
+    if (
+      (collection.kind === "StringLiteral" ||
+        collection.kind === "ListConstructor") &&
+      literalLength(collection, allowedOps.includes("text_get_byte")) ===
+        knownLength
+    )
+      return collection;
+    if (
+      collectionVar !== undefined &&
+      collection.kind === "Identifier" &&
+      collection.name === collectionVar.name &&
+      !collection.builtin
+    )
+      return collection;
+    const collectionType = getType(collection, s.root.node);
+    if (
+      collectionType.kind === "Array" &&
+      collectionType.length === knownLength
+    )
+      return collection;
+    return null;
+  })) {
+    if (x === null || result != null) return null;
+    if (result === null) result = x;
+  }
+  return result;
+}
+
+function literalLength(
+  expr: StringLiteral | ListConstructor,
+  countTextBytes: boolean
+): number {
+  if (expr.kind === "ListConstructor") return expr.exprs.length;
+  return (countTextBytes ? byteLength : charLength)(expr.value);
 }
 
 export const forArgvToForEach: Plugin = {
