@@ -2,6 +2,11 @@ import { Spine } from "../common/Spine";
 import { Plugin } from "../common/Language";
 import { block, Expr, importStatement, program } from "../IR";
 
+/**
+ * @param rules Map from expr to a import it needs or array encoded map from symbol name to import.
+ * @param output Mapping of collected import names to the Import Expr to be added or a name to be used for ImportStatement.
+ * @returns The import adding plugin.
+ */
 export function addImports( // TODO caching
   rules: [string, string][] | ((n: Expr, s: Spine) => string | undefined),
   output: string | ((modules: string[]) => Expr | undefined)
