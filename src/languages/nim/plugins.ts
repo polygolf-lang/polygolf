@@ -1,8 +1,6 @@
 import {
   Assignment,
-  block,
   Expr,
-  ImportStatement,
   importStatement,
   manyToManyAssignment,
   methodCall,
@@ -10,6 +8,7 @@ import {
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { Plugin } from "../../common/Language";
+import { addImports } from "../../plugins/imports";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -33,52 +32,27 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-const dependencyMap = new Map([
-  ["^", "math"],
-  ["repeat", "strutils"],
-  ["paramStr", "os"],
-  ["commandLineParams", "os"],
-  ["split", "strutils"],
-  ["hash", "hashes"],
-]);
-export const addImports: Plugin = {
-  name: "addImports",
-  visit(program, spine) {
-    if (program.kind !== "Program") return;
-    // get dependencies
-    // TODO: abstract this part for other languages
-    // TODO: cache, and maybe do recursive merging for performance
-    const dependenciesGen = spine.compactMap((node) => {
-      let op: string = node.kind;
-      if (node.kind === "BinaryOp" || node.kind === "UnaryOp") op = node.name;
-      if (node.kind === "FunctionCall") op = node.ident.name;
-      if (node.kind === "MethodCall") op = node.ident.name;
-      if (dependencyMap.has(op)) {
-        return dependencyMap.get(op)!;
-      }
-      if (node.kind === "TableConstructor") return "tables";
-    });
-    const dependencies = [...new Set(dependenciesGen)];
-    if (dependencies.length < 1) return;
-    // now actually apply dependencies
-    let imports: ImportStatement;
+export const addNimImports: Plugin = addImports(
+  [
+    ["^", "math"],
+    ["repeat", "strutils"],
+    ["paramStr", "os"],
+    ["commandLineParams", "os"],
+    ["split", "strutils"],
+    ["hash", "hashes"],
+    ["TableConstructor", "tables"],
+  ],
+  (modules: string[]) => {
+    if (modules.length < 1) return;
     for (const include of includes) {
-      if (include[0].length > dependencies.join().length - 1) break;
-      if (dependencies.every((x) => include[1].includes(x))) {
-        imports = importStatement("include", [include[0]]);
-        break;
+      if (include[0].length > modules.join().length - 1) break;
+      if (modules.every((x) => include[1].includes(x))) {
+        return importStatement("include", [include[0]]);
       }
     }
-    imports ??= importStatement("import", dependencies);
-    return {
-      ...program,
-      body:
-        program.body.kind === "Block"
-          ? block([imports, ...program.body.children])
-          : block([imports, program.body]),
-    };
-  },
-};
+    return importStatement("import", modules);
+  }
+);
 
 const declared: Set<string> = new Set<string>();
 export const addVarDeclarations: Plugin = {

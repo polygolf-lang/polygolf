@@ -11,7 +11,7 @@ import {
   useIndexCalls,
 } from "../../plugins/ops";
 import {
-  addImports,
+  addNimImports,
   addVarDeclarations,
   useUFCS,
   useUnsignedDivision,
@@ -126,7 +126,7 @@ const nimLanguage: Language = {
     addMutatingBinaryOp("+", "*", "-", "&"),
     useUFCS,
     useUnsignedDivision,
-    addImports,
+    addNimImports,
     renameIdents(),
     addVarDeclarations,
     assertInt64,
