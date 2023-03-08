@@ -1,7 +1,7 @@
 import { TokenTree } from "../../common/Language";
 import { EmitError, emitStringLiteral } from "../../common/emit";
-import { Expr, integerType, IR, isIntLiteral, isSubtype, Type } from "../../IR";
-import { getType } from "@/common/getType";
+import { Expr, integerType, IR, isIntLiteral, isSubtype } from "../../IR";
+import { getType } from "../../common/getType";
 
 export default function emitProgram(program: IR.Program): TokenTree {
   function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
