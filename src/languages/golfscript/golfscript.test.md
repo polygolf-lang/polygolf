@@ -28,6 +28,16 @@ for $i 0 31 {
 ```
 
 ```polygolf
+for $i -5 31 {
+  println $i;
+};
+```
+
+```golfscript bytes
+36,{-5+}%{:i;i puts}%
+```
+
+```polygolf
 println (argv_get 5);
 ```
 
