@@ -29,27 +29,35 @@ export default function emitProgram(program: IR.Program): TokenTree {
         if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
         const isNaturalType = (x: Expr) =>
           isSubtype(getType(x, program), integerType(0, "oo"));
-        if (
-          isNaturalType(stmt.low) &&
-          isNaturalType(stmt.high) &&
-          isNaturalType(stmt.increment)
-        )
-          return [
-            emitExpr(stmt.high),
-            ",",
-            isIntLiteral(stmt.low, 0n) ? [] : [emitExpr(stmt.low), ">"],
-            isIntLiteral(stmt.increment, 1n)
-              ? []
-              : [emitExpr(stmt.increment), "%"],
-            "{",
-            ":",
-            emitExpr(stmt.variable),
-            ";",
-            emitMultiExpr(stmt.body, stmt),
-            "}",
-            "%",
-          ];
-        throw new EmitError(stmt, "potentially negative");
+        return [
+          isNaturalType(stmt.low)
+            ? [
+                emitExpr(stmt.high),
+                ",",
+                isIntLiteral(stmt.low, 0n) ? [] : [emitExpr(stmt.low), ">"],
+              ]
+            : [
+                emitExpr(stmt.high),
+                emitExpr(stmt.low),
+                "-",
+                ",",
+                "{",
+                emitExpr(stmt.low),
+                "+",
+                "}",
+                "%",
+              ],
+          isIntLiteral(stmt.increment, 1n)
+            ? []
+            : [emitExpr(stmt.increment), "%"],
+          "{",
+          ":",
+          emitExpr(stmt.variable),
+          ";",
+          emitMultiExpr(stmt.body, stmt),
+          "}",
+          "%",
+        ];
       }
       case "ForEach":
         return [
