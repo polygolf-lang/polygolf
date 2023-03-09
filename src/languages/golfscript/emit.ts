@@ -1,6 +1,14 @@
 import { TokenTree } from "../../common/Language";
 import { EmitError, emitStringLiteral } from "../../common/emit";
-import { Expr, integerType, IR, isIntLiteral, isSubtype } from "../../IR";
+import {
+  binaryOp,
+  Expr,
+  int,
+  integerType,
+  IR,
+  isIntLiteral,
+  isSubtype,
+} from "../../IR";
 import { getType } from "../../common/getType";
 
 export default function emitProgram(program: IR.Program): TokenTree {
@@ -37,9 +45,11 @@ export default function emitProgram(program: IR.Program): TokenTree {
                 isIntLiteral(stmt.low, 0n) ? [] : [emitExpr(stmt.low), ">"],
               ]
             : [
-                emitExpr(stmt.high),
-                emitExpr(stmt.low),
-                "-",
+                emitExpr(
+                  isIntLiteral(stmt.low) && isIntLiteral(stmt.high)
+                    ? int(stmt.high.value - stmt.low.value)
+                    : binaryOp("sub", stmt.high, stmt.low, "-", 0)
+                ),
                 ",",
                 "{",
                 emitExpr(stmt.low),
