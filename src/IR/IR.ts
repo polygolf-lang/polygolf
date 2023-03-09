@@ -31,6 +31,7 @@ import {
   ForCLike,
   WhileLoop,
   ForArgv,
+  ForDifferenceRange,
 } from "./loops";
 import { Identifier, IntegerLiteral, StringLiteral } from "./terminals";
 import {
@@ -97,6 +98,7 @@ export type Expr =
   | ImportStatement
   | WhileLoop
   | ForRange
+  | ForDifferenceRange
   | ForEach
   | ForEachKey
   | ForEachPair

@@ -221,6 +221,15 @@ export function emitExpr(
           : [expr.increment]),
         ...emitExpr(expr.body, false, true)
       );
+    case "ForDifferenceRange":
+      return emitSexpr(
+        "@ForDifferenceRange",
+        expr.variable,
+        expr.low,
+        expr.difference,
+        expr.increment,
+        ...emitExpr(expr.body, false, true)
+      );
     case "ForEach":
       return emitSexpr(
         "@",

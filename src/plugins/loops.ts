@@ -17,6 +17,8 @@ import {
   Identifier,
   PolygolfOp,
   Node,
+  ForRange,
+  forDifferenceRange,
 } from "../IR";
 import { add1, sub1 } from "./ops";
 
@@ -296,4 +298,30 @@ function sub1Replace(
   return expr.op === "add"
     ? sub1(polygolfOp(expr.op, a, newIdent))
     : add1(polygolfOp(expr.op, a, newIdent));
+}
+
+export function forRangeToForDifferenceRange(
+  transformPredicate: (
+    expr: ForRange,
+    spine: Spine<ForRange>
+  ) => boolean = () => true
+): Plugin {
+  return {
+    name: "forRangeToForDifferenceRange",
+    visit(node, spine) {
+      if (
+        node.kind === "ForRange" &&
+        transformPredicate(node, spine as Spine<ForRange>)
+      ) {
+        return forDifferenceRange(
+          node.variable,
+          node.low,
+          polygolfOp("sub", node.high, node.low),
+          node.increment,
+          node.body,
+          node.inclusive
+        );
+      }
+    },
+  };
 }

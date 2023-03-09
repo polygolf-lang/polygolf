@@ -77,6 +77,7 @@ function introducedSymbols(
   const node = spine.node;
   switch (node.kind) {
     case "ForRange":
+    case "ForDifferenceRange":
     case "ForEach":
     case "ForEachKey":
     case "ForArgv":
