@@ -31,12 +31,12 @@ export default function emitProgram(program: IR.Program): TokenTree {
         ];
       case "ForRange": {
         if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
-        if (!isSubtype(getType(stmt.low, program), integerType(0)))
+        if (!isSubtype(getType(stmt.start, program), integerType(0)))
           throw new EmitError(stmt, "potentially negative low");
         return [
-          emitExpr(stmt.high),
+          emitExpr(stmt.end),
           ",",
-          isIntLiteral(stmt.low, 0n) ? [] : [emitExpr(stmt.low), ">"],
+          isIntLiteral(stmt.start, 0n) ? [] : [emitExpr(stmt.start), ">"],
           isIntLiteral(stmt.increment, 1n)
             ? []
             : [emitExpr(stmt.increment), "%"],
@@ -55,7 +55,7 @@ export default function emitProgram(program: IR.Program): TokenTree {
           emitExpr(stmt.difference),
           ",",
           "{",
-          emitExpr(stmt.low),
+          emitExpr(stmt.start),
           "+",
           "}",
           "%",

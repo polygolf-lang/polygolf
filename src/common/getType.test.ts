@@ -29,6 +29,8 @@ import {
   listType,
   functionCall,
   IntegerType,
+  forRangeCommon,
+  forDifferenceRange,
 } from "IR";
 import { PolygolfError } from "./errors";
 import { calcType } from "./getType";
@@ -86,6 +88,59 @@ function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
     ...tests,
   ]);
 }
+
+describe("Bindings", () => {
+  const empty = block([]);
+  testExpr(
+    "for range positive step exclusive",
+    id("i"),
+    int(0, 9),
+    program(forRangeCommon(["i", 0, 10], empty))
+  );
+  testExpr(
+    "for range positive step inclusive",
+    id("i"),
+    int(0, 10),
+    program(forRangeCommon(["i", 0, 10, 1, true], empty))
+  );
+  testExpr(
+    "for range negative step exclusive",
+    id("i"),
+    int(1, 10),
+    program(forRangeCommon(["i", 10, 0, -1], empty))
+  );
+  testExpr(
+    "for range negative step inclusive",
+    id("i"),
+    int(0, 10),
+    program(forRangeCommon(["i", 10, 0, -1, true], empty))
+  );
+  testExpr(
+    "for range general",
+    id("i"),
+    int(-12, 12),
+    program(
+      forRangeCommon(
+        ["i", e(int(-10, 10)), e(int(-12, 12)), e(int(-1, 1)), true],
+        empty
+      )
+    )
+  );
+  testExpr(
+    "for difference range",
+    id("i"),
+    int(10, 14),
+    program(
+      forDifferenceRange(
+        "i",
+        integerLiteral(10),
+        integerLiteral(5),
+        integerLiteral(1),
+        empty
+      )
+    )
+  );
+});
 
 describe("Block", () => {
   testExpr("block", block([]), voidType);

@@ -46,9 +46,9 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         "for",
         emitExpr(stmt.variable, stmt),
         "=",
-        emitExpr(stmt.low, stmt),
+        emitExpr(stmt.start, stmt),
         ",",
-        emitExpr(stmt.high, stmt),
+        emitExpr(stmt.end, stmt),
         isIntLiteral(stmt.increment, 1n)
           ? []
           : [",", emitExpr(stmt.increment, stmt)],

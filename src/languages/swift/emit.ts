@@ -76,8 +76,8 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitMultiExpr(stmt.body, stmt),
       ];
     case "ForRange": {
-      const low = emitExpr(stmt.low, stmt);
-      const high = emitExpr(stmt.high, stmt);
+      const low = emitExpr(stmt.start, stmt);
+      const high = emitExpr(stmt.end, stmt);
       return [
         "for",
         emitExpr(stmt.variable, stmt),

@@ -40,7 +40,7 @@ const golfscriptLanguage: Language = {
   finalEmitPlugins: [
     forRangeToForDifferenceRange(
       (node, spine) =>
-        !isSubtype(getType(node.low, spine.root.node), integerType(0))
+        !isSubtype(getType(node.start, spine.root.node), integerType(0))
     ),
     mapOps([
       ["argv", (_) => id("a", true)],

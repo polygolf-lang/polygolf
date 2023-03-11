@@ -64,9 +64,9 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitMultiExpr(stmt.body, stmt),
       ];
     case "ForRange": {
-      const low = emitExpr(stmt.low, stmt);
-      const low0 = isIntLiteral(stmt.low, 0n);
-      const high = emitExpr(stmt.high, stmt);
+      const low = emitExpr(stmt.start, stmt);
+      const low0 = isIntLiteral(stmt.start, 0n);
+      const high = emitExpr(stmt.end, stmt);
       const increment = emitExpr(stmt.increment, stmt);
       const increment1 = isIntLiteral(stmt.increment, 1n);
       return [

@@ -204,8 +204,8 @@ export function emitExpr(
         return emitSexpr(
           "@ForRangeInclusive",
           expr.variable,
-          expr.low,
-          expr.high,
+          expr.start,
+          expr.end,
           expr.increment,
           ...emitExpr(expr.body, false, true)
         );
@@ -213,8 +213,8 @@ export function emitExpr(
       return emitSexpr(
         "for",
         expr.variable,
-        expr.low,
-        expr.high,
+        expr.start,
+        expr.end,
         ...(expr.increment.kind === "IntegerLiteral" &&
         expr.increment.value === 1n
           ? []
@@ -225,7 +225,7 @@ export function emitExpr(
       return emitSexpr(
         "@ForDifferenceRange",
         expr.variable,
-        expr.low,
+        expr.start,
         expr.difference,
         expr.increment,
         ...emitExpr(expr.body, false, true)

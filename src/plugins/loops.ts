@@ -28,8 +28,8 @@ export const forRangeToForRangeInclusive: Plugin = {
     if (node.kind === "ForRange" && !node.inclusive)
       return forRange(
         node.variable,
-        node.low,
-        sub1(node.high),
+        node.start,
+        sub1(node.end),
         node.increment,
         node.body,
         true
@@ -41,8 +41,8 @@ export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, spine.root.node);
-      const high = getType(node.high, spine.root.node);
+      const low = getType(node.start, spine.root.node);
+      const high = getType(node.end, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
@@ -51,9 +51,9 @@ export const forRangeToWhile: Plugin = {
         polygolfOp("add", node.variable, node.increment)
       );
       return block([
-        assignment(node.variable, node.low),
+        assignment(node.variable, node.start),
         whileLoop(
-          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
           block([node.body, increment])
         ),
       ]);
@@ -65,18 +65,18 @@ export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, spine.root.node);
-      const high = getType(node.high, spine.root.node);
+      const low = getType(node.start, spine.root.node);
+      const high = getType(node.end, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
       return forCLike(
-        assignment(node.variable, node.low),
+        assignment(node.variable, node.start),
         assignment(
           node.variable,
           polygolfOp("add", node.variable, node.increment)
         ),
-        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
         node.body
       );
     }
@@ -99,13 +99,13 @@ export const forRangeToForEachPair: Plugin = {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
-      node.low.kind === "IntegerLiteral" &&
-      node.low.value === 0n &&
-      node.high.kind === "PolygolfOp" &&
-      node.high.op === "list_length" &&
-      node.high.args[0].kind === "Identifier"
+      node.start.kind === "IntegerLiteral" &&
+      node.start.value === 0n &&
+      node.end.kind === "PolygolfOp" &&
+      node.end.op === "list_length" &&
+      node.end.args[0].kind === "Identifier"
     ) {
-      const collection = node.high.args[0];
+      const collection = node.end.args[0];
       const elementIdentifier = id(
         node.variable.name + "_forRangeToForEachPair"
       );
@@ -133,13 +133,13 @@ export const forRangeToForEach: Plugin = {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
-      node.low.kind === "IntegerLiteral" &&
-      node.low.value === 0n &&
-      node.high.kind === "PolygolfOp" &&
-      node.high.op === "list_length" &&
-      node.high.args[0].kind === "Identifier"
+      node.start.kind === "IntegerLiteral" &&
+      node.start.value === 0n &&
+      node.end.kind === "PolygolfOp" &&
+      node.end.op === "list_length" &&
+      node.end.args[0].kind === "Identifier"
     ) {
-      const collection = node.high.args[0];
+      const collection = node.end.args[0];
       const elementIdentifier = id(node.variable.name + "_forRangeToForEach");
       const bodySpine = spine.getChild("body");
       const onlyUsedForCollectionAccess = bodySpine.everyNode(
@@ -241,8 +241,8 @@ export const shiftRangeOneUp: Plugin = {
         const newVar = id(node.variable.name + "POLYGOLFshifted");
         return forRange(
           newVar,
-          add1(node.low),
-          add1(node.high),
+          add1(node.start),
+          add1(node.end),
           int(1n),
           bodySpine.withReplacer((x) =>
             isIdentPlus(x, node.variable) || isIdent(x, node.variable)
@@ -315,8 +315,8 @@ export function forRangeToForDifferenceRange(
       ) {
         return forDifferenceRange(
           node.variable,
-          node.low,
-          polygolfOp("sub", node.high, node.low),
+          node.start,
+          polygolfOp("sub", node.end, node.start),
           node.increment,
           node.body,
           node.inclusive
