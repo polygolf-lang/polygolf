@@ -28,13 +28,23 @@ for $i 0 31 {
 ```
 
 ```polygolf
+for $i 5 80 5 {
+  println $i;
+};
+```
+
+```golfscript bytes
+80,5>5%{:i;i puts}%
+```
+
+```polygolf
 for $i -5 31 {
   println $i;
 };
 ```
 
 ```golfscript bytes
-36,{-5+}%{:i;i puts}%
+36,{5-:i;i puts}%
 ```
 
 ```polygolf
@@ -45,7 +55,7 @@ for $i $a ($a+6) {
 ```
 
 ```golfscript bytes
--4:a;6,{a+}%{:i;i puts}%
+-4:a;6,{a+:i;i puts}%
 ```
 
 ```polygolf
