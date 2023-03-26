@@ -10,7 +10,6 @@ import {
   equalityToInequality,
 } from "../../plugins/ops";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
-import { addImports } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
@@ -21,6 +20,7 @@ import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
 } from "../../plugins/loops";
+import { addImports } from "../../plugins/imports";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -158,7 +158,7 @@ const swiftLanguage: Language = {
       ["and", "&&"],
       ["or", "||"]
     ),
-    addImports,
+    addImports([["pow", "Foundation"]], "import"),
     renameIdents(),
     addVarDeclarations,
     groupVarDeclarations(),

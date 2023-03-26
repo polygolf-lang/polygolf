@@ -10,7 +10,7 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
 } from "../../plugins/ops";
-import { addImports, useUFCS, useUnsignedDivision } from "./plugins";
+import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import {
@@ -125,7 +125,7 @@ const nimLanguage: Language = {
     ),
     useUFCS,
     useUnsignedDivision,
-    addImports,
+    addNimImports,
     renameIdents(),
     addVarDeclarations,
     addVarDeclarationOneToManyAssignments(),

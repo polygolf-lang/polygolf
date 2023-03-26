@@ -7,13 +7,11 @@ import {
   rangeIndexCall,
   stringLiteral,
   int,
-  importStatement,
-  block,
   polygolfOp,
   listType,
   textType,
 } from "../../IR";
-import { Language, Plugin } from "../../common/Language";
+import { Language } from "../../common/Language";
 
 import emitProgram, { emitPythonStringLiteral } from "./emit";
 import {
@@ -38,27 +36,7 @@ import {
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 import { addOneToManyAssignments } from "../../plugins/block";
-
-// abstract out as a part of https://github.com/jared-hughes/polygolf/issues/89
-const addImports: Plugin = {
-  name: "addImports",
-  visit(node, spine) {
-    if (
-      node.kind === "Program" &&
-      spine.someNode(
-        (x) => x.kind === "Identifier" && x.builtin && x.name.startsWith("sys.")
-      )
-    ) {
-      return {
-        ...node,
-        body: block([
-          importStatement("import", ["sys"]),
-          ...(node.body.kind === "Block" ? node.body.children : [node.body]),
-        ]),
-      };
-    }
-  },
-};
+import { addImports } from "../../plugins/imports";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -177,7 +155,13 @@ const pythonLanguage: Language = {
     aliasBuiltins(),
     renameIdents(),
     addOneToManyAssignments(),
-    addImports,
+    addImports(
+      [
+        ["sys.argv[1:]", "sys"],
+        ["sys.argv", "sys"],
+      ],
+      "import"
+    ),
   ],
   packers: [
     (x) =>
