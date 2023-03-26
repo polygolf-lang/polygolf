@@ -9,13 +9,13 @@ import {
   useIndexCalls,
   equalityToInequality,
 } from "../../plugins/ops";
-import { addVarDeclarations } from "../nim/plugins";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
+import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
 import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
@@ -168,6 +168,7 @@ const swiftLanguage: Language = {
     addImports([["pow", "Foundation"]], "import"),
     renameIdents(),
     addVarDeclarations,
+    groupVarDeclarations(),
     assertInt64,
   ],
   // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides

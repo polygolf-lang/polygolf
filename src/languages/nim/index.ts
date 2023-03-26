@@ -35,6 +35,13 @@ import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
+import {
+  addManyToManyAssignments,
+  addVarDeclarationManyToManyAssignments,
+  addVarDeclarationOneToManyAssignments,
+  addVarDeclarations,
+  groupVarDeclarations,
+} from "../../plugins/block";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -67,6 +74,8 @@ const nimLanguage: Language = {
   ],
   finalEmitPlugins: [
     mapOps([
+      ["true", (_) => id("true", true)],
+      ["false", (_) => id("true", true)],
       ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
       ["text_split", (x) => functionCall(x, "split")],
@@ -129,6 +138,10 @@ const nimLanguage: Language = {
     addNimImports,
     renameIdents(),
     addVarDeclarations,
+    addVarDeclarationOneToManyAssignments(),
+    addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 2),
+    addManyToManyAssignments((_, spine) => spine.depth > 2),
+    groupVarDeclarations((_, spine) => spine.depth <= 2),
     assertInt64,
   ],
   detokenizer: defaultDetokenizer((a, b) => {

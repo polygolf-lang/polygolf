@@ -35,6 +35,7 @@ import {
 } from "../../plugins/packing";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
+import { addOneToManyAssignments } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
 
 const pythonLanguage: Language = {
@@ -160,6 +161,7 @@ const pythonLanguage: Language = {
     ),
     aliasBuiltins(),
     renameIdents(),
+    addOneToManyAssignments(),
     addImports(
       [
         ["sys.argv[1:]", "sys"],

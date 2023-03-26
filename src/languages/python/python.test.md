@@ -47,6 +47,7 @@ b=" a\nbc  d".split()
 
 ```polygolf
 $a:0..10 <- 0;
+$b:0..10 <- 0;
 for $i 0 10 {
     for $j 0 10 {
         if ($i < $j) {
@@ -58,7 +59,7 @@ for $i 0 10 {
                 $a <- $j;
                 if ($i < $j) {
                     $a <- $j;
-                    $a <- $j;
+                    $a <- $b;
                 };
             };
         };
@@ -68,7 +69,7 @@ for $i 0 10 {
 ```
 
 ```python nogolf
-a=0
+a=b=0
 for i in range(10):
  for j in range(10):
   if i<j:
@@ -76,7 +77,7 @@ for i in range(10):
     a=j
     if i<j:a=j
     a=j
-    if i<j:a=j;a=j
+    if i<j:a=j;a=b
  a=i
 ```
 
