@@ -247,9 +247,6 @@ export function typeSexpr(
     case "Int":
       expectArity(0);
       return intType();
-    case "Nat":
-      expectArity(0);
-      return intType(0);
     case "Ascii":
     case "Text":
       expectArity(0, 1);
