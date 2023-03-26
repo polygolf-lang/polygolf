@@ -227,6 +227,9 @@ export function typeSexpr(
     case "Void":
       expectArity(0);
       return voidType;
+    case "Int":
+      expectArity(0);
+      return intType();
     case "Ascii":
     case "Text":
       expectArity(0, 1);
