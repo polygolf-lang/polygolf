@@ -41,7 +41,7 @@ export function blockChildrenCollectAndReplace<T extends Expr = Expr>(
         for (const childSpine of spine.getChildSpines()) {
           const expr = childSpine.node as Expr;
           if (collectPredicate(expr, childSpine as Spine<Expr>, collected)) {
-            collected.push(expr as any as T);
+            collected.push(expr as T);
           } else if (collectPredicate(expr, childSpine as Spine<Expr>, [])) {
             if (collected.length > 1) {
               newNodes.push(...transform(collected));
@@ -49,7 +49,7 @@ export function blockChildrenCollectAndReplace<T extends Expr = Expr>(
             } else {
               newNodes.push(...collected);
             }
-            collected = [expr as any as T];
+            collected = [expr as T];
           } else {
             if (collected.length > 1) {
               newNodes.push(...transform(collected));
@@ -73,7 +73,7 @@ export function blockChildrenCollectAndReplace<T extends Expr = Expr>(
   };
 }
 
-const declared: Set<string> = new Set<string>();
+const declared = new Set<string>();
 export const addVarDeclarations: Plugin = {
   name: "addVarDeclarations",
   visit(node) {
