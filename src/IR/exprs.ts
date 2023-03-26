@@ -136,7 +136,9 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
     if (op === "add") args = simplifyPolynomial(args);
     else {
       if (isCommutative(op)) {
-        args.sort(compareTerms);
+        args = args
+          .filter((x) => x.kind === "IntegerLiteral")
+          .concat(args.filter((x) => x.kind !== "IntegerLiteral"));
       }
       const newArgs: Expr[] = [];
       for (const arg of args) {
@@ -213,12 +215,6 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
   }
   if (result.length < 1 || constant !== 0n) result.push(int(constant));
   return result;
-}
-
-function compareTerms(a: Expr, b: Expr): -1 | 0 | 1 {
-  if (a.kind === "IntegerLiteral" && b.kind === "IntegerLiteral") return 0;
-  if (a.kind === "IntegerLiteral") return -1;
-  return 0;
 }
 
 export function functionCall(
