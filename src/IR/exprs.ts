@@ -196,8 +196,7 @@ export function binaryOp(
     right,
     name,
     precedence,
-    rightAssociative:
-      rightAssociative ?? (op === "pow" || op === "text_concat"),
+    rightAssociative: rightAssociative ?? (op === "pow" || op === "concat"),
   };
 }
 

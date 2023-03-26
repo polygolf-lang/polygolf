@@ -151,12 +151,12 @@ All of the Polygolf operators can be called using their name. In addition, sever
 | gt              | >     |
 | assign          | <-    |
 | list_length     | #     |
-| text_concat     | ..    |
+| concat          | ..    |
 | key_value       | =>    |
 
 Notice how `-` and `~` both correspond to two ops - this is resolved by the used arity.
 These symbolic aliases can also be used in an infix matter: `(+ 2 3)` is the same as (`2 + 3)`.
-Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`bit_and`,`bit_or`,`bit_xor`,`text_concat`.  
+Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`bit_and`,`bit_or`,`bit_xor`,`concat`.  
 For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
 
 ## Example

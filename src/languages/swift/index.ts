@@ -56,7 +56,10 @@ const swiftLanguage: Language = {
           functionCall(
             [
               indexCall(
-                functionCall([methodCall(x[0], [], "utf8")], "Array"),
+                functionCall(
+                  [methodCall(x[0], [], "utf8", undefined, true)],
+                  "Array"
+                ),
                 x[1]
               ),
             ],
@@ -75,10 +78,20 @@ const swiftLanguage: Language = {
         "int_to_codepoint",
         (x) => functionCall([functionCall([x[0]], "UnicodeScalar")], "String"),
       ],
-      ["text_codepoint_length", (x) => methodCall(x[0], [], "count")],
+      [
+        "text_codepoint_length",
+        (x) => methodCall(x[0], [], "count", undefined, true),
+      ],
       [
         "text_byte_length",
-        (x) => methodCall(methodCall(x[0], [], "utf8"), [], "count"),
+        (x) =>
+          methodCall(
+            methodCall(x[0], [], "utf8", undefined, true),
+            [],
+            "count",
+            undefined,
+            true
+          ),
       ],
       ["int_to_text", (x) => functionCall([x[0]], "String")],
       ["text_split", (x) => methodCall(x[0], [x[1]], "split")],
@@ -133,7 +146,7 @@ const swiftLanguage: Language = {
         ["sub", "-"],
         ["bit_or", "|"],
         ["bit_xor", "^"],
-        ["text_concat", "+"],
+        ["concat", "+"],
       ],
 
       [

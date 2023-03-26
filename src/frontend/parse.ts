@@ -157,7 +157,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         "bit_and",
         "bit_or",
         "bit_xor",
-        "text_concat",
+        "concat",
       ].includes(opCode);
       expectArity(2, allowNary ? Infinity : 2);
       return composedPolygolfOp(opCode, args);
@@ -188,7 +188,7 @@ export const canonicalOpTable: Record<string, OpCode> = {
   ">=": "geq",
   ">": "gt",
   "#": "list_length",
-  "..": "text_concat",
+  "..": "concat",
 };
 
 function canonicalOp(op: string, arity: number): string {
@@ -330,11 +330,39 @@ export function refSource(node: Node, ref?: Token | Node): Node {
 
 export default function parse(code: string) {
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-  parser.feed(code);
+  try {
+    parser.feed(code);
+  } catch (e) {
+    if (e instanceof Error && "token" in e) {
+      const token: Token = (e as any).token;
+      // https://stackoverflow.com/a/72016226/14611638
+      const expected = [
+        ...new Set(
+          ((e as any).message.match(/(?<=A ).*(?= based on:)/g) ?? []).map(
+            (s: string) => s.replace(/\s+token/i, "")
+          )
+        ),
+      ];
+      let message = `Unexpected token ${JSON.stringify(token.text)}.`;
+      if (expected.length > 0) {
+        message += ` Expected one of ${expected.join(", ")}.`;
+      }
+      throw new PolygolfError(message, {
+        line: token.line,
+        column: token.col,
+      });
+    }
+  }
   const results = parser.results;
   if (results.length > 1) {
-    throw new Error("Ambiguous parse of code");
+    throw new Error("Ambiguous parse of code"); // this is most likely an error in the grammar
   }
-  if (results.length === 0) throw new Error("Unexpected end of code");
+  if (results.length === 0) {
+    const lines = code.split("\n");
+    throw new PolygolfError("Unexpected end of code", {
+      line: lines.length + 1,
+      column: (lines.at(-1)?.length ?? 0) + 1,
+    });
+  }
   return results[0] as Program;
 }

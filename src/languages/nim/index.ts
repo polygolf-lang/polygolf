@@ -108,7 +108,7 @@ const nimLanguage: Language = {
         ["add", "+"],
         ["sub", "-"],
       ],
-      [["text_concat", "&", false]],
+      [["concat", "&", false]],
       [
         ["lt", "<"],
         ["leq", "<="],

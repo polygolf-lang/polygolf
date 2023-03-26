@@ -228,7 +228,7 @@ function emitExprNoParens(expr: IR.Expr): TokenTree {
           : "",
       ];
     case "MethodCall":
-      if (expr.ident.name === "utf8" || expr.ident.name === "count") {
+      if (expr.property) {
         return [emitExpr(expr.object, expr), ".", expr.ident.name];
       }
       return [
