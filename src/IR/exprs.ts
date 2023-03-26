@@ -31,6 +31,17 @@ export interface KeyValue extends BaseExpr {
   readonly value: Expr;
 }
 
+/**
+ * This is used to represent an abstract operation.
+ * Polygolf ensures that in the IR, there will never be:
+
+ * Polygolf(neg)
+ * Polygolf(sub)
+ * Polygolf(add) as a direct child of Polygolf(add) - same with all other associative ops
+ * IntegerLiteral (if present) appears at the first position in the args list
+ * 
+ * This is ensured when using the polygolfOp contructor function and the Spine API so avoid creating such nodes manually.
+ */
 export interface PolygolfOp extends BaseExpr {
   readonly kind: "PolygolfOp";
   readonly op: OpCode;
@@ -114,6 +125,10 @@ export function keyValue(key: Expr, value: Expr): KeyValue {
   };
 }
 
+/**
+ * This assumes that the construction will not break the invariants described
+ * on `PolygolfOp` interface and hence is made private.
+ */
 function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
   return {
     kind: "PolygolfOp",
