@@ -1,4 +1,14 @@
-import { functionCall, id, methodCall, polygolfOp, textType } from "../../IR";
+import {
+  binaryOp,
+  functionCall,
+  id,
+  int,
+  methodCall,
+  polygolfOp,
+  stringLiteral,
+  textType,
+  unaryOp,
+} from "../../IR";
 import { Language } from "../../common/Language";
 import {
   forArgvToForRange,
@@ -39,6 +49,11 @@ const luaLanguage: Language = {
   emitPlugins: [
     forArgvToForRange(),
     forRangeToForRangeInclusive,
+    mapOps([["text_to_int", (x) => binaryOp(null, int(1n), x[0], "*")]]),
+    mapOps([["text_to_int", (x) => binaryOp(null, int(0n), x[0], "+")]]),
+    mapOps([
+      ["text_to_int", (x) => unaryOp(null, unaryOp(null, x[0], "-"), "-")],
+    ]),
     mapOps([
       [
         "argv_get",
@@ -62,7 +77,7 @@ const luaLanguage: Language = {
       ["text_byte_length", (x) => methodCall(x[0], [], "len")],
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
-      ["int_to_text", (x) => functionCall(x, "tostring")],
+      ["int_to_text", (x) => binaryOp(null, stringLiteral(""), x[0], "..")],
       ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
       ["print", (x) => functionCall(x, "io.write")],
       ["println", (x) => functionCall(x, "print")],
@@ -81,7 +96,6 @@ const luaLanguage: Language = {
       ["neg", "-"],
       ["list_length", "#"],
       ["bit_not", "~"],
-      ["text_to_int", "- -"],
       ["mul", "*"],
       ["div", "//"],
       ["mod", "%"],

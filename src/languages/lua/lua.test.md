@@ -78,8 +78,8 @@ a>2
 ("abc"):byte(2)
 b.."xyz"
 ("abc"):len()
-tostring(5)
-- -"5"
+""..5
+1*"5"
 ```
 
 ## Parentheses
