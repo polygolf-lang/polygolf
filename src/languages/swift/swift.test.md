@@ -1,5 +1,19 @@
 # Swift
 
+## Named argument function calls
+
+```polygolf
+repeat "xy" 3;
+print "xy";
+text_split "x|y" "|";
+```
+
+```swift nogolf
+String(repeating:"xy",count:3)
+print("xy",terminator:"")
+"x|y".split(separator:"|")
+```
+
 ## Multiline string literals require newlines between delimiters and string content
 
 ```polygolf
@@ -34,11 +48,11 @@ var a=Int(Array("abc".utf8)[1]),b=["X":"Y"]["X"]!
 ## Whitespace behavior
 
 ```polygolf
-$a:-100..100 <- (5 ~ -4):-99..99;
 $b <- -1;
+$a:-100..100 <- 8:-99..99;
 $c <- (bit_not 4);
 $a <- ($a * 2):-99..99;
-$a <- ($a - -5):-99..99;
+$a <- ($a * -5):-99..99;
 if ($a != 0) {$a <- 1;};
 if ($a != -12) {$a <- 1;};
 if (-3 != $a) {$a <- 1;};
@@ -47,9 +61,9 @@ for $e (($a + 1)*($a + 1)) 99 {$a <- 1;};
 ```
 
 ```swift nogolf
-var a=5 ^ -4,b = -1,c = ~4
+var b = -1,a=8,c = ~4
 a*=2
-a -= -5
+a *= -5
 if a != 0{a=1}
 if a != -12{a=1}
 if -3 != a{a=1}

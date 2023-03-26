@@ -48,7 +48,7 @@ export default function emitProgram(program: IR.Program): TokenTree {
                 emitExpr(
                   isIntLiteral(stmt.low) && isIntLiteral(stmt.high)
                     ? int(stmt.high.value - stmt.low.value)
-                    : binaryOp("sub", stmt.high, stmt.low, "-", 0)
+                    : binaryOp("sub", stmt.high, stmt.low, "-")
                 ),
                 ",",
                 "{",

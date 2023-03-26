@@ -1,20 +1,123 @@
 # Nim
 
+## Ops emit
+
+```polygolf
+$t:(Ascii 3) <- "";
+$n:0..1 <- 0;
+$m <- $n;
+$b <- (1<2);
+
+text_get_byte $t 2;
+text_get_byte_slice $t 2 6;
+text_split $t "|";
+text_split_whitespace $t;
+text_byte_length $t;
+repeat $t 3;
+max $n 1;
+min $n 1;
+abs $n;
+text_to_int $t;
+print $t;
+println $t;
+bool_to_int $b;
+byte_to_text 48;
+$t .. "x";
+
+~ $n;
+not $b;
+
+- $n;
+int_to_text $n;
+$n ^ 3;
+$n * $m;
+$n trunc_div 3;
+$n rem 3;
+$n << 3;
+$n >> 3;
+$n + 3;
+$n - 3;
+$n & 3;
+$n | 3;
+$n ~ 3;
+
+$n < 3;
+$n <= 3;
+$n == 3;
+$n != 3;
+$n >= 3;
+$n > 3;
+
+and $b $b;
+or $b $b;
+```
+
+```nim nogolf
+import strutils,math
+var
+ t=""
+ n=0
+ m=n
+ b=1<2
+t[2]
+t[2..<6]
+t.split"|"
+t.split
+t.len
+t.repeat 3
+1.max n
+1.min n
+n.abs
+t.parseInt
+stdout.write t
+t.echo
+b.int
+48.chr
+t&"x"
+not n
+not b
+-n
+$n
+n^3
+n*m
+n/%3
+n%%3
+n shl 3
+n shr 3
+n+3
+n-3
+3 and n
+3 or n
+3 xor n
+n<3
+n<=3
+n==3
+n!=3
+n>=3
+n>3
+b and b
+b or b
+```
+
+## Misc
+
 ```polygolf
 print (text_split "abc" "b");
 ```
 
 ```nim
 include re
-"abc".split("b").echo
+"abc".split"b".echo
 ```
 
 ```polygolf
-println ((1 + 1) * 2);
+$a:0..1 <- 0;
+println (($a + 1) * $a);
 ```
 
 ```nim nogolf
-echo (1+1)*2
+var a=0
+echo (a+1)*a
 ```
 
 ```polygolf
@@ -83,17 +186,6 @@ var b=0
 for i in b..<16:i.echo
 ```
 
-## Indexing precedence
-
-```polygolf
-list_get (text_split "a b" " ") 1;
-```
-
-```nim nogolf
-include re
-"a b".split(" ")[1]
-```
-
 ## Variables & Assignments
 
 ```polygolf
@@ -152,4 +244,49 @@ var
  a=1
  b=2
  c=a+b
+```
+
+## Indexing precedence
+
+```polygolf
+list_get (text_split "a b" " ") 1;
+```
+
+```nim nogolf
+include re
+"a b".split" "[1]
+```
+
+## Raw string literals
+
+```polygolf
+print "Hello world!";
+```
+
+```nim
+echo"Hello world!"
+```
+
+```polygolf
+print "Hello\nworld!";
+```
+
+```nim
+echo "Hello\nworld!"
+```
+
+```polygolf
+print "Hello\\n\\n\\nworld!";
+```
+
+```nim
+echo"Hello\n\n\nworld!"
+```
+
+```polygolf
+print "Hello \"world\"!";
+```
+
+```nim
+echo"Hello ""world""!"
 ```

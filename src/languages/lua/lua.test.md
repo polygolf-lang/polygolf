@@ -22,57 +22,61 @@ io.write("x")
 print("y")
 ```
 
-## Ops
+## Ops emit
 
 ```polygolf
-~ 1;
-- 1;
-1 + 2;
-1 - 2;
-1 * 2;
-1 div 2;
-1 ^ 2;
-1 mod 2;
-1 & 2;
-1 | 2;
-1 ~ 2;
-1 << 2;
-1 >> 2;
-1 < 2;
-1 <= 2;
-1 == 2;
-1 >= 2;
-1 > 2;
+$a:-100..100 <- 0;
+$b:Text <- "xy";
+~ $a;
+- $a;
+$a + 2;
+$a - 2;
+$a * 2;
+$a div 2;
+$a ^ 2;
+$a mod 2;
+$a & 2;
+$a | 2;
+$a ~ 2;
+$a << 2;
+$a >> 2;
+$a < 2;
+$a <= 2;
+$a == 2;
+$a >= 2;
+$a > 2;
 array_get (array "xy" "abc") 1;
 text_get_byte "abc" 1;
-concat "abc" "xyz";
+concat $b "xyz";
 text_byte_length "abc";
 int_to_text 5;
 text_to_int "5";
 ```
 
 ```lua nogolf
-~1
--1
-1+2
-1-2
-1*2
-1//2
-1^2
-1%2
-1&2
-1|2
-1~2
-1<<2
-1>>2
-1<2
-1<=2
-1==2
-1>=2
-1>2
+a=0
+b="xy"
+~a
+-a
+a+2
+a-2
+2*a
+a//2
+a^2
+a%2
+2&a
+2|a
+2~a
+a<<2
+a>>2
+a<2
+a<=2
+a==2
+a>=2
+a>2
 ({"xy","abc"})[2]
 ("abc"):byte(2)
-"abc".."xyz"
+b.."xyz"
 ("abc"):len()
 tostring(5)
 - -"5"

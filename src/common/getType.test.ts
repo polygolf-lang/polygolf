@@ -29,6 +29,8 @@ import {
   listType,
   functionCall,
   IntegerType,
+  isAssociative,
+  isBinary,
 } from "IR";
 import { PolygolfError } from "./errors";
 import { calcType } from "./getType";
@@ -58,7 +60,7 @@ function testPolygolfOp(
   args: Type[],
   result: Type | "error"
 ) {
-  testExpr(name, polygolfOp(op, ...args.map(e)), result);
+  testExpr(name, { kind: "PolygolfOp", op, args: args.map(e) }, result);
 }
 
 function describePolygolfOp(op: OpCode, tests: [Type[], Type | "error"][]) {
@@ -82,7 +84,9 @@ function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
     [[text(), text()], "error"],
     [[int(), bool], "error"],
     [[int(), text()], "error"],
-    [[int(), int(), int()], "error"],
+    isBinary(op) && isAssociative(op)
+      ? [[text(), int()], "error"]
+      : [[int(), int(), int()], "error"],
     ...tests,
   ]);
 }
@@ -216,6 +220,7 @@ describeArithmeticOp("add", [
   [[int()], "error"],
   [[int(), int()], int()],
   [[int(), int(-10, 10)], int()],
+  [[int(1, 2), int(10, 20), int(100, 200), int(1000, 2000)], int(1111, 2222)],
   [[int(30, 200), int(-100, 10)], int(-70, 210)],
   [[int(30, 30), int(-100, -100)], int(-70, -70)],
 ]);
@@ -386,6 +391,10 @@ describePolygolfOp("concat", [
   [[text(), text()], text()],
   [[ascii(), text(100, true)], ascii()],
   [[text(20), text(30, true)], text(50)],
+  [
+    [ascii(int(10, 20)), ascii(int(1, 5)), text(int(100, 100))],
+    text(int(111, 125)),
+  ],
 ]);
 
 describePolygolfOp("repeat", [
