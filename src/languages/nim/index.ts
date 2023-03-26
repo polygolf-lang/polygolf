@@ -10,12 +10,7 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
 } from "../../plugins/ops";
-import {
-  addNimImports,
-  addVarDeclarations,
-  useUFCS,
-  useUnsignedDivision,
-} from "./plugins";
+import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import {

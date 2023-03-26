@@ -1,11 +1,4 @@
-import {
-  Assignment,
-  Expr,
-  importStatement,
-  manyToManyAssignment,
-  methodCall,
-  varDeclarationWithAssignment,
-} from "../../IR";
+import { importStatement, methodCall } from "../../IR";
 import { getType } from "../../common/getType";
 import { Plugin } from "../../common/Language";
 import { addImports } from "../../plugins/imports";
@@ -53,73 +46,6 @@ export const addNimImports: Plugin = addImports(
     return importStatement("import", modules);
   }
 );
-
-const declared: Set<string> = new Set<string>();
-export const addVarDeclarations: Plugin = {
-  name: "addVarDeclarations",
-  visit(node, spine) {
-    if (node.kind === "Program") declared.clear();
-    else if (
-      spine.parent?.node.kind !== "Block" &&
-      node.kind === "Assignment" &&
-      node.variable.kind === "Identifier" &&
-      !declared.has(node.variable.name)
-    ) {
-      return simplifyAssignments([node], false);
-    } else if (node.kind === "Block") {
-      let assignments: Assignment[] = [];
-      const newNodes: Expr[] = [];
-      function processAssignments() {
-        if (assignments.length > 0) {
-          newNodes.push(
-            simplifyAssignments(
-              assignments,
-              spine.parent?.node.kind === "Program" && assignments.length > 1
-            )
-          );
-          assignments = [];
-        }
-      }
-      for (const child of node.children) {
-        if (
-          child.kind !== "Assignment" ||
-          child.variable.kind !== "Identifier" ||
-          declared.has(child.variable.name)
-        ) {
-          processAssignments();
-          newNodes.push(child);
-        } else {
-          assignments.push(child);
-        }
-      }
-      processAssignments();
-      return {
-        ...node,
-        children: newNodes,
-      };
-    }
-  },
-};
-
-function simplifyAssignments(
-  assignments: Assignment[],
-  topLevel: boolean
-): Expr {
-  for (const v of assignments) {
-    if (v.variable.kind === "Identifier") {
-      declared.add(v.variable.name);
-    }
-  }
-  return varDeclarationWithAssignment(
-    assignments.length > 1
-      ? manyToManyAssignment(
-          assignments.map((x) => x.variable),
-          assignments.map((x) => x.expr)
-        )
-      : assignments[0],
-    topLevel
-  );
-}
 
 export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
