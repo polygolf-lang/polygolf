@@ -20,7 +20,6 @@ import {
   int,
   assignment,
   OpCode,
-  PolygolfOp,
   whileLoop,
   voidType,
   textType,
@@ -39,6 +38,7 @@ import {
   arrayConstructor,
   toString,
   forArgv,
+  isAssociative,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -151,16 +151,8 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   }
   if (isOpCode(opCode)) {
     if (isBinary(opCode)) {
-      const allowNary = [
-        "add",
-        "mul",
-        "bit_and",
-        "bit_or",
-        "bit_xor",
-        "concat",
-      ].includes(opCode);
-      expectArity(2, allowNary ? Infinity : 2);
-      return composedPolygolfOp(opCode, args);
+      expectArity(2, isAssociative(opCode) ? Infinity : 2);
+      return polygolfOp(opCode, ...args);
     }
     expectArity(arity(opCode));
     return polygolfOp(opCode, ...args);
@@ -197,15 +189,6 @@ function canonicalOp(op: string, arity: number): string {
   if (op === "-") return arity < 2 ? "neg" : "sub";
   if (op === "~") return arity < 2 ? "bit_not" : "bit_xor";
   return canonicalOpTable[op] ?? op;
-}
-
-function composedPolygolfOp(op: OpCode, args: readonly Expr[]): PolygolfOp {
-  if (args.length < 3) return polygolfOp(op, ...args);
-  return polygolfOp(
-    op,
-    composedPolygolfOp(op, args.slice(0, -1)),
-    args[args.length - 1]
-  );
 }
 
 export function typeSexpr(

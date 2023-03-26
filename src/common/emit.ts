@@ -1,29 +1,12 @@
 import { Expr, IR } from "IR";
 import { PolygolfError } from "./errors";
-import { PathFragment } from "./fragments";
 import { TokenTree } from "./Language";
 
-export function needsParensPrecedence(
-  expr: IR.Expr,
-  parent: IR.Node,
-  fragment?: PathFragment
-): boolean {
-  if (parent.kind === "UnaryOp") {
-    return expr.kind === "BinaryOp" && expr.precedence <= parent.precedence;
-  } else if (parent.kind === "BinaryOp" && expr.kind === "BinaryOp") {
-    if (fragment === undefined) return true;
-    if (fragment === "right") {
-      if (expr.rightAssociative) return expr.precedence < parent.precedence;
-      return expr.precedence <= parent.precedence;
-    }
-    if (expr.rightAssociative) return expr.precedence <= parent.precedence;
-    return expr.precedence < parent.precedence;
-  }
-  return false;
-}
-
-export function joinTrees(groups: TokenTree[], ...sep: TokenTree[]): TokenTree {
-  return groups.map((x, i) => (i > 0 ? [sep, x] : x));
+export function joinTrees(
+  sep: TokenTree,
+  groups: readonly TokenTree[]
+): TokenTree {
+  return groups.flatMap((x, i) => (i > 0 ? [sep, x] : [x]));
 }
 
 /**

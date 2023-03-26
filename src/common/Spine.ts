@@ -1,4 +1,4 @@
-import { IR } from "../IR";
+import { Expr, IR, polygolfOp } from "../IR";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
 import { replaceAtIndex } from "./immutable";
 
@@ -111,25 +111,42 @@ export class Spine<N extends IR.Node = IR.Node> {
    * root program, to get a fresh spine up to the program node.
    *
    * @param skipThis if true, does not replace this node.
+   * @param skipReplaced if true, does not recurse onto children of freshly replaced node
    * */
   withReplacer(
     replacer: Visitor<IR.Node | undefined>,
-    skipThis?: boolean
+    skipThis = false,
+    skipReplaced = false
   ): Spine {
-    const ret = skipThis === true ? undefined : replacer(this.node, this);
+    const ret = skipThis ? undefined : replacer(this.node, this);
     if (ret === undefined) {
-      // recurse on children
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let curr = this as Spine;
-      for (const child of this.getChildSpines()) {
-        const newChild = child.withReplacer(replacer);
-        if (newChild !== child) {
-          curr = curr.withChildReplaced(newChild.node, child.pathFragment!);
-          // Following line should be equivalent but doesn't work: (Bug?)
-          //    curr = child.replacedWith(newChild.node).parent!;
+      // recurse on children
+      if (this.node.kind === "PolygolfOp") {
+        // Create canonical PolygolfOp instead of just replacing the chidren
+        const newChildren: Expr[] = [];
+        let someChildrenIsNew = false;
+        for (const child of this.getChildSpines()) {
+          const newChild = child.withReplacer(replacer, false, skipReplaced);
+          newChildren.push(newChild.node as Expr);
+          someChildrenIsNew ||= newChild !== child;
+        }
+        if (someChildrenIsNew)
+          curr = curr.replacedWith(polygolfOp(this.node.op, ...newChildren));
+      } else {
+        for (const child of this.getChildSpines()) {
+          const newChild = child.withReplacer(replacer, false, skipReplaced);
+          if (newChild !== child) {
+            curr = curr.withChildReplaced(newChild.node, child.pathFragment!);
+            // Following line should be equivalent but doesn't work: (Bug?)
+            //    curr = child.replacedWith(newChild.node).parent!;
+          }
         }
       }
       return curr;
+    } else if (skipReplaced) {
+      return this.replacedWith(ret);
     } else {
       // replace this, then recurse on children but not this
       return this.replacedWith(ret).withReplacer(replacer, true);

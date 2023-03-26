@@ -37,7 +37,7 @@ export interface ImportStatement extends BaseExpr {
 export function block(children: readonly Expr[]): Block {
   return {
     kind: "Block",
-    children: children.flatMap((x) => (x.kind === "Block" ? x.children : x)),
+    children: children.flatMap((x) => (x.kind === "Block" ? x.children : [x])),
   };
 }
 

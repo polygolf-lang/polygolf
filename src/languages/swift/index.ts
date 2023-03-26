@@ -5,7 +5,7 @@ import emitProgram from "./emit";
 import {
   add1,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   useIndexCalls,
   equalityToInequality,
 } from "../../plugins/ops";
@@ -122,49 +122,42 @@ const swiftLanguage: Language = {
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
     ]),
-    mapPrecedenceOps(
-      [
-        ["not", "!"],
-        ["neg", "-"],
-        ["bit_not", "~"],
-      ],
-
-      [
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-      ],
-
-      [
-        ["mul", "*"],
-        ["trunc_div", "/"],
-        ["rem", "%"],
-        ["bit_and", "&"],
-      ],
-
-      [
-        ["add", "+"],
-        ["sub", "-"],
-        ["bit_or", "|"],
-        ["bit_xor", "^"],
-        ["concat", "+"],
-      ],
-
-      [
-        ["lt", "<"],
-        ["leq", "<="],
-        ["eq", "=="],
-        ["neq", "!="],
-        ["geq", ">="],
-        ["gt", ">"],
-      ],
-
-      [["and", "&&"]],
-
-      [["or", "||"]]
+    addMutatingBinaryOp(
+      ["add", "+"],
+      ["sub", "-"],
+      ["mul", "*"],
+      ["trunc_div", "/"],
+      ["rem", "%"],
+      ["bit_and", "&"],
+      ["bit_or", "|"],
+      ["bit_xor", "^"],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"]
     ),
-
-    addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^", ">>", "<<"),
-
+    mapToUnaryAndBinaryOps(
+      ["not", "!"],
+      ["neg", "-"],
+      ["bit_not", "~"],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"],
+      ["mul", "*"],
+      ["trunc_div", "/"],
+      ["rem", "%"],
+      ["bit_and", "&"],
+      ["add", "+"],
+      ["sub", "-"],
+      ["bit_or", "|"],
+      ["bit_xor", "^"],
+      ["concat", "+"],
+      ["lt", "<"],
+      ["leq", "<="],
+      ["eq", "=="],
+      ["neq", "!="],
+      ["geq", ">="],
+      ["gt", ">"],
+      ["and", "&&"],
+      ["or", "||"]
+    ),
     addImports([["pow", "Foundation"]], "import"),
     renameIdents(),
     addVarDeclarations,

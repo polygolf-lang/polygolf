@@ -130,15 +130,14 @@ export function arity(op: OpCode): number {
   }
 }
 
+/**
+ * Maps a binary op to another one with the same meaning, except the order of the arguments is swapped.
+ * This should only be used for ops that are *not* associative.
+ */
 export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
-    case "add":
-    case "mul":
     case "eq":
     case "neq":
-    case "bit_and":
-    case "bit_or":
-    case "bit_xor":
       return op;
     case "lt":
       return "gt";
@@ -154,6 +153,10 @@ export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
 
 export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
+    case "eq":
+      return "neq";
+    case "neq":
+      return "eq";
     case "lt":
       return "geq";
     case "gt":
@@ -165,3 +168,33 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   }
   return null;
 }
+
+export function isAssociative(op: OpCode): boolean {
+  return [
+    "add",
+    "mul",
+    "bit_and",
+    "bit_or",
+    "bit_xor",
+    "and",
+    "or",
+    "gcd",
+    "min",
+    "max",
+    "concat",
+  ].includes(op);
+}
+
+export const isCommutative = (op: OpCode) =>
+  [
+    "add",
+    "mul",
+    "bit_and",
+    "bit_or",
+    "bit_xor",
+    "and",
+    "or",
+    "gcd",
+    "min",
+    "max",
+  ].includes(op);
