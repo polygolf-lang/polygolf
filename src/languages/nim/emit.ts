@@ -1,7 +1,6 @@
 import { TokenTree } from "@/common/Language";
 import {
   emitStringLiteral,
-  containsMultiExpr,
   joinTrees,
   needsParensPrecedence,
   EmitError,
@@ -22,21 +21,21 @@ function emitMultiExpr(expr: IR.Expr, parent: IR.Node): TokenTree {
       "\n"
     );
   }
-  if (containsMultiExpr(children)) {
-    return [
-      "$INDENT$",
-      "\n",
-      joinTrees(
-        children.map((stmt) => emitStatement(stmt, expr)),
-        "\n"
-      ),
-      "$DEDENT$",
-    ];
+  let inner = [];
+  let needsBlock = false;
+  for (const child of children) {
+    const needsNewline =
+      "consequent" in child || "children" in child || "body" in child;
+    needsBlock =
+      needsBlock || needsNewline || child.kind.startsWith("VarDeclaration");
+    inner.push(emitStatement(child, expr));
+    inner.push(needsNewline ? "\n" : ";");
   }
-  return joinTrees(
-    children.map((stmt) => emitStatement(stmt, expr)),
-    ";"
-  );
+  inner = inner.slice(0, -1);
+  if (needsBlock) {
+    return ["$INDENT$", "\n", inner, "$DEDENT$"];
+  }
+  return inner;
 }
 
 function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
@@ -44,29 +43,18 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
     case "Block":
       return emitMultiExpr(stmt, parent);
     case "VarDeclarationWithAssignment":
-      if (stmt.requiresBlock) {
-        const variables =
-          stmt.assignments.kind === "Assignment"
-            ? [stmt.assignments.variable]
-            : stmt.assignments.variables;
-        const exprs =
-          stmt.assignments.kind === "Assignment"
-            ? [stmt.assignments.expr]
-            : stmt.assignments.exprs;
-
+      if (parent.kind !== "VarDeclarationBlock")
+        return ["var", emitExprNoParens(stmt.assignment)];
+      return emitExprNoParens(stmt.assignment);
+    case "VarDeclarationBlock":
+      if (stmt.children.length > 1)
         return [
           "var",
           "$INDENT$",
-          variables.map((v, i) => [
-            "\n",
-            emitExprNoParens(v),
-            "=",
-            emitExprNoParens(exprs[i]),
-          ]),
+          stmt.children.map((x) => ["\n", emitStatement(x, stmt)]),
           "$DEDENT$",
         ];
-      }
-      return ["var", emitExprNoParens(stmt.assignments)];
+      return ["var", emitStatement(stmt.children[0], stmt)];
     case "ImportStatement":
       return [
         stmt.name,
@@ -201,6 +189,15 @@ function emitExprNoParens(
           ","
         ),
         ")",
+      ];
+    case "OneToManyAssignment":
+      return [
+        joinTrees(
+          expr.variables.map((v) => emitExprNoParens(v)),
+          ","
+        ),
+        "=",
+        emitExprNoParens(expr.expr),
       ];
     case "MutatingBinaryOp":
       return [

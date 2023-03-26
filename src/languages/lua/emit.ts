@@ -31,6 +31,15 @@ function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
         emitStatement(stmt.body, stmt),
         "end",
       ];
+    case "OneToManyAssignment":
+      return [
+        joinTrees(
+          stmt.variables.map((x) => emitExprNoParens(x)),
+          ","
+        ),
+        "=",
+        emitExprNoParens(stmt.expr),
+      ];
     case "ManyToManyAssignment":
       return [
         joinTrees(

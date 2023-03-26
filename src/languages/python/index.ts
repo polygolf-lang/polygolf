@@ -37,6 +37,7 @@ import {
 } from "../../plugins/packing";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
+import { addOneToManyAssignments } from "../../plugins/block";
 
 // abstract out as a part of https://github.com/jared-hughes/polygolf/issues/89
 const addImports: Plugin = {
@@ -182,6 +183,7 @@ const pythonLanguage: Language = {
     ),
     aliasBuiltins(),
     renameIdents(),
+    addOneToManyAssignments(),
     addImports,
   ],
   packers: [

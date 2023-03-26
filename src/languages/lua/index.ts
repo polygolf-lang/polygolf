@@ -21,6 +21,7 @@ import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
+import { addOneToManyAssignments } from "../../plugins/block";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -112,6 +113,7 @@ const luaLanguage: Language = {
       [["or", "or"]]
     ),
     renameIdents(),
+    addOneToManyAssignments(),
     assertInt64,
   ],
 };
