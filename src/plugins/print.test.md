@@ -7,7 +7,7 @@ println "y";
 
 ```polygolf print.printLnToPrint
 print "x";
-print ("y" .. "\n");
+print "y\n";
 ```
 
 ```polygolf print.golfLastPrint(true)

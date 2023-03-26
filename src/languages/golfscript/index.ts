@@ -1,11 +1,11 @@
-import { functionCall, id, rangeIndexCall } from "../../IR";
+import { assignment, functionCall, id, rangeIndexCall } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
   equalityToInequality,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   add1,
   useIndexCalls,
 } from "../../plugins/ops";
@@ -13,8 +13,8 @@ import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
-import { addImports } from "./plugins";
 import { forArgvToForEach } from "../../plugins/loops";
+import { addImports } from "../../plugins/imports";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
@@ -40,7 +40,7 @@ const golfscriptLanguage: Language = {
         (x) => rangeIndexCall(x[0], x[1], add1(x[2]), id("1", true)),
       ],
     ]),
-    mapPrecedenceOps([
+    mapToUnaryAndBinaryOps(
       ["not", "!"],
       ["bit_not", "~"],
       ["mul", "*"],
@@ -85,9 +85,15 @@ const golfscriptLanguage: Language = {
       ["bit_shift_left", "2\\?*"],
       ["bit_shift_right", "2\\?/"],
 
-      ["argv_get", "a="],
-    ]),
-    addImports,
+      ["argv_get", "a="]
+    ),
+    addImports(
+      [
+        ["a=", "a"],
+        ["a", "a"],
+      ],
+      (x) => (x.length > 0 ? assignment(x[0], id("", true)) : undefined)
+    ),
     renameIdents({
       // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
       preferred(original: string) {

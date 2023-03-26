@@ -1,15 +1,7 @@
-import {
-  Assignment,
-  block,
-  Expr,
-  ImportStatement,
-  importStatement,
-  manyToManyAssignment,
-  methodCall,
-  varDeclarationWithAssignment,
-} from "../../IR";
+import { importStatement, methodCall } from "../../IR";
 import { getType } from "../../common/getType";
 import { Plugin } from "../../common/Language";
+import { addImports } from "../../plugins/imports";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -33,119 +25,27 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-const dependencyMap = new Map([
-  ["^", "math"],
-  ["repeat", "strutils"],
-  ["paramStr", "os"],
-  ["commandLineParams", "os"],
-  ["split", "strutils"],
-  ["hash", "hashes"],
-]);
-export const addImports: Plugin = {
-  name: "addImports",
-  visit(program, spine) {
-    if (program.kind !== "Program") return;
-    // get dependencies
-    // TODO: abstract this part for other languages
-    // TODO: cache, and maybe do recursive merging for performance
-    const dependenciesGen = spine.compactMap((node) => {
-      let op: string = node.kind;
-      if (node.kind === "BinaryOp" || node.kind === "UnaryOp") op = node.name;
-      if (node.kind === "FunctionCall") op = node.ident.name;
-      if (node.kind === "MethodCall") op = node.ident.name;
-      if (dependencyMap.has(op)) {
-        return dependencyMap.get(op)!;
-      }
-      if (node.kind === "TableConstructor") return "tables";
-    });
-    const dependencies = [...new Set(dependenciesGen)];
-    if (dependencies.length < 1) return;
-    // now actually apply dependencies
-    let imports: ImportStatement;
+export const addNimImports: Plugin = addImports(
+  [
+    ["^", "math"],
+    ["repeat", "strutils"],
+    ["paramStr", "os"],
+    ["commandLineParams", "os"],
+    ["split", "strutils"],
+    ["hash", "hashes"],
+    ["TableConstructor", "tables"],
+  ],
+  (modules: string[]) => {
+    if (modules.length < 1) return;
     for (const include of includes) {
-      if (include[0].length > dependencies.join().length - 1) break;
-      if (dependencies.every((x) => include[1].includes(x))) {
-        imports = importStatement("include", [include[0]]);
-        break;
+      if (include[0].length > modules.join().length - 1) break;
+      if (modules.every((x) => include[1].includes(x))) {
+        return importStatement("include", [include[0]]);
       }
     }
-    imports ??= importStatement("import", dependencies);
-    return {
-      ...program,
-      body:
-        program.body.kind === "Block"
-          ? block([imports, ...program.body.children])
-          : block([imports, program.body]),
-    };
-  },
-};
-
-const declared: Set<string> = new Set<string>();
-export const addVarDeclarations: Plugin = {
-  name: "addVarDeclarations",
-  visit(node, spine) {
-    if (node.kind === "Program") declared.clear();
-    else if (
-      spine.parent?.node.kind !== "Block" &&
-      node.kind === "Assignment" &&
-      node.variable.kind === "Identifier" &&
-      !declared.has(node.variable.name)
-    ) {
-      return simplifyAssignments([node], false);
-    } else if (node.kind === "Block") {
-      let assignments: Assignment[] = [];
-      const newNodes: Expr[] = [];
-      function processAssignments() {
-        if (assignments.length > 0) {
-          newNodes.push(
-            simplifyAssignments(
-              assignments,
-              spine.parent?.node.kind === "Program" && assignments.length > 1
-            )
-          );
-          assignments = [];
-        }
-      }
-      for (const child of node.children) {
-        if (
-          child.kind !== "Assignment" ||
-          child.variable.kind !== "Identifier" ||
-          declared.has(child.variable.name)
-        ) {
-          processAssignments();
-          newNodes.push(child);
-        } else {
-          assignments.push(child);
-        }
-      }
-      processAssignments();
-      return {
-        ...node,
-        children: newNodes,
-      };
-    }
-  },
-};
-
-function simplifyAssignments(
-  assignments: Assignment[],
-  topLevel: boolean
-): Expr {
-  for (const v of assignments) {
-    if (v.variable.kind === "Identifier") {
-      declared.add(v.variable.name);
-    }
+    return importStatement("import", modules);
   }
-  return varDeclarationWithAssignment(
-    assignments.length > 1
-      ? manyToManyAssignment(
-          assignments.map((x) => x.variable),
-          assignments.map((x) => x.expr)
-        )
-      : assignments[0],
-    topLevel
-  );
-}
+);
 
 export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",

@@ -20,7 +20,6 @@ import {
   int,
   assignment,
   OpCode,
-  PolygolfOp,
   whileLoop,
   voidType,
   textType,
@@ -39,6 +38,7 @@ import {
   arrayConstructor,
   toString,
   forArgv,
+  isAssociative,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -151,16 +151,8 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   }
   if (isOpCode(opCode)) {
     if (isBinary(opCode)) {
-      const allowNary = [
-        "add",
-        "mul",
-        "bit_and",
-        "bit_or",
-        "bit_xor",
-        "concat",
-      ].includes(opCode);
-      expectArity(2, allowNary ? Infinity : 2);
-      return composedPolygolfOp(opCode, args);
+      expectArity(2, isAssociative(opCode) ? Infinity : 2);
+      return polygolfOp(opCode, ...args);
     }
     expectArity(arity(opCode));
     return polygolfOp(opCode, ...args);
@@ -197,15 +189,6 @@ function canonicalOp(op: string, arity: number): string {
   if (op === "-") return arity < 2 ? "neg" : "sub";
   if (op === "~") return arity < 2 ? "bit_not" : "bit_xor";
   return canonicalOpTable[op] ?? op;
-}
-
-function composedPolygolfOp(op: OpCode, args: readonly Expr[]): PolygolfOp {
-  if (args.length < 3) return polygolfOp(op, ...args);
-  return polygolfOp(
-    op,
-    composedPolygolfOp(op, args.slice(0, -1)),
-    args[args.length - 1]
-  );
 }
 
 export function typeSexpr(
@@ -330,11 +313,39 @@ export function refSource(node: Node, ref?: Token | Node): Node {
 
 export default function parse(code: string) {
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-  parser.feed(code);
+  try {
+    parser.feed(code);
+  } catch (e) {
+    if (e instanceof Error && "token" in e) {
+      const token: Token = (e as any).token;
+      // https://stackoverflow.com/a/72016226/14611638
+      const expected = [
+        ...new Set(
+          ((e as any).message.match(/(?<=A ).*(?= based on:)/g) ?? []).map(
+            (s: string) => s.replace(/\s+token/i, "")
+          )
+        ),
+      ];
+      let message = `Unexpected token ${JSON.stringify(token.text)}.`;
+      if (expected.length > 0) {
+        message += ` Expected one of ${expected.join(", ")}.`;
+      }
+      throw new PolygolfError(message, {
+        line: token.line,
+        column: token.col,
+      });
+    }
+  }
   const results = parser.results;
   if (results.length > 1) {
-    throw new Error("Ambiguous parse of code");
+    throw new Error("Ambiguous parse of code"); // this is most likely an error in the grammar
   }
-  if (results.length === 0) throw new Error("Unexpected end of code");
+  if (results.length === 0) {
+    const lines = code.split("\n");
+    throw new PolygolfError("Unexpected end of code", {
+      line: lines.length + 1,
+      column: (lines.at(-1)?.length ?? 0) + 1,
+    });
+  }
   return results[0] as Program;
 }

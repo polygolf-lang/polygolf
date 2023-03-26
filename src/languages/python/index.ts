@@ -7,19 +7,17 @@ import {
   rangeIndexCall,
   stringLiteral,
   int,
-  importStatement,
-  block,
   polygolfOp,
   listType,
   textType,
 } from "../../IR";
-import { Language, Plugin } from "../../common/Language";
+import { Language } from "../../common/Language";
 
 import emitProgram, { emitPythonStringLiteral } from "./emit";
 import {
   equalityToInequality,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   useIndexCalls,
   add1,
 } from "../../plugins/ops";
@@ -41,27 +39,8 @@ import {
   useEquivalentTextOp,
 } from "../../plugins/textOps";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
-
-// abstract out as a part of https://github.com/jared-hughes/polygolf/issues/89
-const addImports: Plugin = {
-  name: "addImports",
-  visit(node, spine) {
-    if (
-      node.kind === "Program" &&
-      spine.someNode(
-        (x) => x.kind === "Identifier" && x.builtin && x.name.startsWith("sys.")
-      )
-    ) {
-      return {
-        ...node,
-        body: block([
-          importStatement("import", ["sys"]),
-          ...(node.body.kind === "Block" ? node.body.children : [node.body]),
-        ]),
-      };
-    }
-  },
-};
+import { addOneToManyAssignments } from "../../plugins/block";
+import { addImports } from "../../plugins/imports";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -137,58 +116,58 @@ const pythonLanguage: Language = {
         },
       ],
     ]),
-    mapPrecedenceOps(
-      [["pow", "**"]],
-      [
-        ["neg", "-"],
-        ["bit_not", "~"],
-      ],
-      [
-        ["mul", "*"],
-        ["repeat", "*"],
-        ["div", "//"],
-        ["mod", "%"],
-      ],
-      [
-        ["add", "+"],
-        ["concat", "+"],
-        ["sub", "-"],
-      ],
-      [
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-      ],
-      [["bit_and", "&"]],
-      [["bit_xor", "^"]],
-      [["bit_or", "|"]],
-      [
-        ["lt", "<"],
-        ["leq", "<="],
-        ["eq", "=="],
-        ["neq", "!="],
-        ["geq", ">="],
-        ["gt", ">"],
-      ],
-      [["not", "not"]],
-      [["and", "and"]],
-      [["or", "or"]]
-    ),
     addMutatingBinaryOp(
-      "+",
-      "*",
-      "-",
-      "//",
-      "%",
-      "**",
-      "&",
-      "|",
-      "^",
-      ">>",
-      "<<"
+      ["add", "+"],
+      ["concat", "+"],
+      ["sub", "-"],
+      ["mul", "*"],
+      ["mul", "*"],
+      ["repeat", "*"],
+      ["div", "//"],
+      ["mod", "%"],
+      ["pow", "**"],
+      ["bit_and", "&"],
+      ["bit_xor", "^"],
+      ["bit_or", "|"],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"]
+    ),
+    mapToUnaryAndBinaryOps(
+      ["pow", "**"],
+      ["neg", "-"],
+      ["bit_not", "~"],
+      ["mul", "*"],
+      ["repeat", "*"],
+      ["div", "//"],
+      ["mod", "%"],
+      ["add", "+"],
+      ["concat", "+"],
+      ["sub", "-"],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"],
+      ["bit_and", "&"],
+      ["bit_xor", "^"],
+      ["bit_or", "|"],
+      ["lt", "<"],
+      ["leq", "<="],
+      ["eq", "=="],
+      ["neq", "!="],
+      ["geq", ">="],
+      ["gt", ">"],
+      ["not", "not"],
+      ["and", "and"],
+      ["or", "or"]
     ),
     aliasBuiltins(),
     renameIdents(),
-    addImports,
+    addOneToManyAssignments(),
+    addImports(
+      [
+        ["sys.argv[1:]", "sys"],
+        ["sys.argv", "sys"],
+      ],
+      "import"
+    ),
   ],
   packers: [
     (x) =>
