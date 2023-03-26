@@ -84,3 +84,14 @@ for $i $b 16 {
 var b=0
 for i in b..<16:i.echo
 ```
+
+## Indexing precedence
+
+```polygolf
+list_get (text_split "a b" " ") 1;
+```
+
+```nim nogolf
+include re
+"a b".split(" ")[1]
+```
