@@ -1,13 +1,12 @@
 import {
-  binaryOp,
   functionCall,
   id,
+  implicitConversion,
   int,
   methodCall,
   polygolfOp,
   stringLiteral,
   textType,
-  unaryOp,
 } from "../../IR";
 import { Language } from "../../common/Language";
 import {
@@ -49,10 +48,19 @@ const luaLanguage: Language = {
   emitPlugins: [
     forArgvToForRange(),
     forRangeToForRangeInclusive,
-    mapOps([["text_to_int", (x) => binaryOp(null, int(1n), x[0], "*")]]),
-    mapOps([["text_to_int", (x) => binaryOp(null, int(0n), x[0], "+")]]),
     mapOps([
-      ["text_to_int", (x) => unaryOp(null, unaryOp(null, x[0], "-"), "-")],
+      [
+        "text_to_int",
+        (x) =>
+          polygolfOp("mul", int(1n), implicitConversion(x[0], "text_to_int")),
+      ],
+    ]),
+    mapOps([
+      [
+        "text_to_int",
+        (x) =>
+          polygolfOp("add", int(0n), implicitConversion(x[0], "text_to_int")),
+      ],
     ]),
     mapOps([
       [
@@ -74,10 +82,20 @@ const luaLanguage: Language = {
   ],
   finalEmitPlugins: [
     mapOps([
+      [
+        "int_to_text",
+        (x) =>
+          polygolfOp(
+            "concat",
+            stringLiteral(""),
+            implicitConversion(x[0], "int_to_text")
+          ),
+      ],
+    ]),
+    mapOps([
       ["text_byte_length", (x) => methodCall(x[0], [], "len")],
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
-      ["int_to_text", (x) => binaryOp(null, stringLiteral(""), x[0], "..")],
       ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
       ["print", (x) => functionCall(x, "io.write")],
       ["println", (x) => functionCall(x, "print")],

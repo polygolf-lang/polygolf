@@ -116,3 +116,37 @@ for_argv $x 100 {
 for x=0,99 do X=arg[x+1]
 print(X)end
 ```
+
+## Implicit conversions
+
+```polygolf
+2 * (text_to_int "3");
+```
+
+```lua
+2*"3"
+```
+
+```polygolf
+2 + (text_to_int "3");
+```
+
+```lua
+"3"+2
+```
+
+```polygolf
+"x" .. (int_to_text 3);
+```
+
+```lua
+"x"..3
+```
+
+```polygolf
+(int_to_text 3) .. "x";
+```
+
+```lua
+3.."x"
+```

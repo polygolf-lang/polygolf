@@ -39,8 +39,8 @@ export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, spine.root.node);
-      const high = getType(node.high, spine.root.node);
+      const low = getType(node.low, spine);
+      const high = getType(node.high, spine);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
@@ -63,8 +63,8 @@ export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, spine.root.node);
-      const high = getType(node.high, spine.root.node);
+      const low = getType(node.low, spine);
+      const high = getType(node.high, spine);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }

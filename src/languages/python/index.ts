@@ -100,7 +100,7 @@ const pythonLanguage: Language = {
       [
         "print",
         (x, spine) => {
-          const type = getType(x[0], spine.root.node);
+          const type = getType(x[0], spine);
           return functionCall(
             type.kind === "text"
               ? [assignment(id("end", true), x[0])]

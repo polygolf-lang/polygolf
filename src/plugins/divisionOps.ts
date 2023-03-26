@@ -5,9 +5,8 @@ import { leq, polygolfOp } from "../IR";
 export const modToRem: Plugin = {
   name: "modToRem",
   visit(node, spine) {
-    const program = spine.root.node;
     if (node.kind === "PolygolfOp" && node.op === "mod") {
-      const rightType = getType(node.args[1], program);
+      const rightType = getType(node.args[1], spine);
       if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (leq(0n, rightType.low)) {
@@ -26,9 +25,8 @@ export const modToRem: Plugin = {
 export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
   visit(node, spine) {
-    const program = spine.root.node;
     if (node.kind === "PolygolfOp" && node.op === "div") {
-      const rightType = getType(node.args[1], program);
+      const rightType = getType(node.args[1], spine);
       if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (leq(0n, rightType.low)) {

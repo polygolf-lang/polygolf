@@ -35,7 +35,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
             // "as any" because TS doesn't do well with the "in" keyword
             replacement = { ...(replacement as any), op: node.op };
           }
-          return { ...replacement, type: getType(node, spine.root.node) };
+          return { ...replacement, type: getType(node, spine) };
         }
       }
     },
@@ -156,7 +156,7 @@ export const equalityToInequality: Plugin = {
     if (node.kind === "PolygolfOp" && (node.op === "eq" || node.op === "neq")) {
       const eq = node.op === "eq";
       const [a, b] = [node.args[0], node.args[1]];
-      const [t1, t2] = [a, b].map((x) => getType(x, spine.root.node)) as [
+      const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
         IntegerType,
         IntegerType
       ];

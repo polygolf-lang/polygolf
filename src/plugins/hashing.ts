@@ -43,7 +43,7 @@ export function tableHashing(
       ) {
         const table = node.args[0];
         const getKey = node.args[1];
-        const tableType = getType(table, spine.root.node);
+        const tableType = getType(table, spine);
         if (
           tableType.kind === "Table" &&
           tableType.key.kind === "text" &&

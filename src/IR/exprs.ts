@@ -19,6 +19,12 @@ import {
   integerType,
 } from "./IR";
 
+export interface ImplicitConversion extends BaseExpr {
+  readonly kind: "ImplicitConversion";
+  expr: Expr;
+  behavesLike: (x: Expr) => Expr;
+}
+
 /**
  * All expressions start as a `PolygolfOp` node.
  * Plugins (mainly `mapOps, mapPrecedenceOps` plugins) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
@@ -117,6 +123,20 @@ export interface Function extends BaseExpr {
   readonly expr: Expr;
 }
 
+export function implicitConversion(
+  expr: Expr,
+  behavesLike: UnaryOpCode | ((x: Expr) => Expr)
+): ImplicitConversion {
+  return {
+    kind: "ImplicitConversion",
+    expr,
+    behavesLike:
+      typeof behavesLike === "string"
+        ? (x: Expr) => polygolfOp(behavesLike, x)
+        : behavesLike,
+  };
+}
+
 export function keyValue(key: Expr, value: Expr): KeyValue {
   return {
     kind: "KeyValue",
@@ -144,6 +164,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   if (op === "sub") {
     return polygolfOp("add", args[0], polygolfOp("neg", args[1]));
   }
+
   if (isBinary(op) && isAssociative(op)) {
     args = args.flatMap((x) =>
       x.kind === "PolygolfOp" && x.op === op ? x.args : [x]
@@ -154,6 +175,14 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
         args = args
           .filter((x) => x.kind === "IntegerLiteral")
           .concat(args.filter((x) => x.kind !== "IntegerLiteral"));
+      } else {
+        args = args.filter((x) => x.kind !== "StringLiteral" || x.value !== "");
+        if (
+          args.length === 0 ||
+          (args.length === 1 && args[0].kind === "ImplicitConversion")
+        ) {
+          args = [stringLiteral(""), args[0]];
+        }
       }
       const newArgs: Expr[] = [];
       for (const arg of args) {
@@ -228,7 +257,12 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
     if (coeff === 1n) result.push(expr);
     else if (coeff !== 0n) result.push(_polygolfOp("mul", int(coeff), expr));
   }
-  if (result.length < 1 || constant !== 0n) result.push(int(constant));
+  if (
+    result.length < 1 ||
+    constant !== 0n ||
+    (result.length === 1 && result[0].kind === "ImplicitConversion")
+  )
+    result.push(int(constant));
   return result;
 }
 
