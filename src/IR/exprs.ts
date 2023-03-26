@@ -22,7 +22,7 @@ import {
 export interface ImplicitConversion extends BaseExpr {
   readonly kind: "ImplicitConversion";
   expr: Expr;
-  behavesLike: (x: Expr) => Expr;
+  behavesLike: UnaryOpCode & `${string}_to_${string}`;
 }
 
 /**
@@ -125,15 +125,12 @@ export interface Function extends BaseExpr {
 
 export function implicitConversion(
   expr: Expr,
-  behavesLike: UnaryOpCode | ((x: Expr) => Expr)
+  behavesLike: UnaryOpCode & `${string}_to_${string}`
 ): ImplicitConversion {
   return {
     kind: "ImplicitConversion",
     expr,
-    behavesLike:
-      typeof behavesLike === "string"
-        ? (x: Expr) => polygolfOp(behavesLike, x)
-        : behavesLike,
+    behavesLike,
   };
 }
 

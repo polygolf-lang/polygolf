@@ -46,6 +46,7 @@ import {
   constantIntegerType,
   ListType,
   isAssociative,
+  polygolfOp,
 } from "../IR";
 import { byteLength, charLength } from "./applyLanguage";
 import { PolygolfError } from "./errors";
@@ -235,7 +236,7 @@ export function calcType(expr: Expr, program: Program): Type {
     case "ForArgv":
       return voidType;
     case "ImplicitConversion": {
-      return type(expr.behavesLike(expr.expr));
+      return type(polygolfOp(expr.behavesLike, expr.expr));
     }
   }
   throw new PolygolfError(
