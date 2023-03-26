@@ -371,20 +371,14 @@ function getOpCodeType(
     case "min":
     case "max": {
       const op = expr.op;
-      if (isAssociative(expr.op)) {
+      if (isAssociative(op)) {
         expectVariadicType(integerType());
-        return types.reduce((a, b) =>
-          getArithmeticType(op, a as IntegerType, b as IntegerType, expr.source)
-        );
       } else {
         expectType(integerType(), integerType());
-        return getArithmeticType(
-          op,
-          types[0] as IntegerType,
-          types[1] as IntegerType,
-          expr.source
-        );
       }
+      return types.reduce((a, b) =>
+        getArithmeticType(op, a as IntegerType, b as IntegerType, expr.source)
+      );
     }
     // (num, num) => bool
     case "lt":
