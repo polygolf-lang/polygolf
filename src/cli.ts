@@ -41,48 +41,59 @@ const options = yargs()
   .parseSync(process.argv.slice(2));
 
 const langs = options.lang === "all" ? languages : [findLang(options.lang)!];
-const code = fs.readFileSync(options.input, { encoding: "utf-8" });
-const prog = parse(code);
-const printingMultipleLangs = langs.length > 1 && options.output === undefined;
-for (const lang of langs) {
-  if (printingMultipleLangs) console.log(lang.name);
-  try {
-    const result = applyLanguage(
-      lang,
-      prog,
-      searchOptions("full", options.chars === true ? "chars" : "bytes")
-    );
-    if (options.output !== undefined) {
-      fs.mkdirSync(path.dirname(options.output), { recursive: true });
-      fs.writeFileSync(
-        options.output +
-          (langs.length > 1 || !options.output.includes(".")
-            ? "." + lang.extension
-            : ""),
-        result
+let input = options.input;
+if (!fs.existsSync(input)) input += ".polygolf";
+const code = fs.readFileSync(input, { encoding: "utf-8" });
+try {
+  const prog = parse(code);
+  const printingMultipleLangs =
+    langs.length > 1 && options.output === undefined;
+  for (const lang of langs) {
+    if (printingMultipleLangs) console.log(lang.name);
+    try {
+      const result = applyLanguage(
+        lang,
+        prog,
+        searchOptions("full", options.chars === true ? "chars" : "bytes")
       );
-    } else {
-      console.log(result);
-    }
-  } catch (e) {
-    if (e instanceof PolygolfError) {
-      console.log(e.message);
-      if (e.source != null) {
-        const startLine = e.source.line === 0 ? 0 : e.source.line - 2;
-        console.log(
-          code
-            .split(/\r?\n/)
-            .slice(startLine, e.source.line)
-            .map((x, i) => `${startLine + i + 1}`.padStart(3, " ") + " " + x)
-            .join("\n") +
-            "\n" +
-            " ".repeat(e.source.column + 3) +
-            "^"
+      if (options.output !== undefined) {
+        fs.mkdirSync(path.dirname(options.output), { recursive: true });
+        fs.writeFileSync(
+          options.output +
+            (langs.length > 1 || !options.output.includes(".")
+              ? "." + lang.extension
+              : ""),
+          result
         );
+      } else {
+        console.log(result);
       }
-    } else {
-      throw e;
+    } catch (e) {
+      handleError(e);
     }
+    if (printingMultipleLangs) console.log("");
   }
-  if (printingMultipleLangs) console.log("");
+} catch (e) {
+  handleError(e);
+}
+
+function handleError(e: unknown) {
+  if (e instanceof PolygolfError) {
+    console.log(e.message);
+    if (e.source != null) {
+      const startLine = e.source.line === 0 ? 0 : e.source.line - 2;
+      console.log(
+        code
+          .split(/\r?\n/)
+          .slice(startLine, e.source.line)
+          .map((x, i) => `${startLine + i + 1}`.padStart(3, " ") + " " + x)
+          .join("\n") +
+          "\n" +
+          " ".repeat(e.source.column + 3) +
+          "^"
+      );
+    }
+  } else {
+    throw e;
+  }
 }
