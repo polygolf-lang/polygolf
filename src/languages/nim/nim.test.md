@@ -21,7 +21,7 @@ text_to_int $t;
 print $t;
 println $t;
 bool_to_int $b;
-byte_to_text 48;
+int_to_text_byte 48;
 $t .. "x";
 
 ~ $n;
