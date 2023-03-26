@@ -162,6 +162,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
       case "MutatingBinaryOp":
         return [emit(e.variable), e.name + "=", emit(e.right)];
+      case "NamedArg":
+        return [e.name, "=", emit(e.value)];
       case "Identifier":
         return e.name;
       case "StringLiteral":

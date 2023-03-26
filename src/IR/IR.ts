@@ -24,6 +24,7 @@ import {
   KeyValue,
   RangeIndexCall,
   Function,
+  NamedArg,
 } from "./exprs";
 import {
   ForRange,
@@ -99,7 +100,8 @@ export type Expr =
   | ForEachPair
   | ForCLike
   | ForArgv
-  | IfStatement;
+  | IfStatement
+  | NamedArg;
 
 /**
  * Program node. This should be the root node. Raw OK

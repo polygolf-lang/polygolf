@@ -248,6 +248,8 @@ export function emitExpr(
           ? []
           : [...emitExpr(expr.alternate, false, true)])
       );
+    case "NamedArg":
+      return emitSexpr("@", JSON.stringify(expr.name), ...emitExpr(expr.value));
   }
 }
 
