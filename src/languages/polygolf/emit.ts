@@ -13,12 +13,8 @@ function emitVariants(expr: Variants, indent = false): TokenTree {
       "$INDENT$",
       "\n",
       joinTrees(
-        expr.variants.map((x) => emitExpr(x, true)),
-        "$DEDENT$",
-        "\n",
-        "/",
-        "$INDENT$",
-        "\n"
+        ["$DEDENT$", "\n", "/", "$INDENT$", "\n"],
+        expr.variants.map((x) => emitExpr(x, true))
       ),
       "$DEDENT$",
       "\n",
@@ -28,8 +24,8 @@ function emitVariants(expr: Variants, indent = false): TokenTree {
   return [
     "{",
     joinTrees(
-      expr.variants.map((x) => emitExpr(x, true)),
-      "/"
+      "/",
+      expr.variants.map((x) => emitExpr(x, true))
     ),
     "}",
   ];
@@ -57,6 +53,7 @@ export function emitExpr(
       result.push(op);
       result.push(
         joinTrees(
+          [],
           args.map((x) =>
             typeof x === "string" || !("kind" in x) ? [x] : emitExpr(x)
           )
@@ -75,8 +72,8 @@ export function emitExpr(
   switch (expr.kind) {
     case "Block":
       return joinTrees(
-        expr.children.map((x) => emitExpr(x, true)),
-        "\n"
+        "\n",
+        expr.children.map((x) => emitExpr(x, true))
       );
     case "Variants":
       return emitVariants(expr, indent);
@@ -86,12 +83,10 @@ export function emitExpr(
       return emitSexpr(expr.op, ...expr.args);
     case "VarDeclaration":
       return emitSexpr("@", expr.variable, toString(expr.variableType));
+    case "VarDeclarationBlock":
+      return emitSexpr("@", ...expr.children.map((x) => emitExpr(x)));
     case "VarDeclarationWithAssignment":
-      return emitSexpr(
-        "@",
-        expr.assignments,
-        "{" + (expr.valueTypes ?? []).map(toString).join(" ") + "}"
-      );
+      return emitSexpr("@", expr.assignment);
     case "Assignment":
       return emitSexpr("assign", expr.variable, expr.expr);
     case "Function":
@@ -133,23 +128,9 @@ export function emitExpr(
         ...expr.args
       );
     case "BinaryOp":
-      return emitSexpr(
-        "@",
-        expr.op,
-        String(expr.precedence),
-        String(expr.rightAssociative),
-        expr.name,
-        expr.left,
-        expr.right
-      );
+      return emitSexpr("@", expr.op ?? "?", expr.name, expr.left, expr.right);
     case "UnaryOp":
-      return emitSexpr(
-        "@",
-        expr.op,
-        String(expr.precedence),
-        expr.name,
-        expr.arg
-      );
+      return emitSexpr("@", expr.op ?? "?", expr.name, expr.arg);
     case "Identifier":
       if (expr.builtin) {
         return emitSexpr("@BuiltinIdent", JSON.stringify(expr.name));

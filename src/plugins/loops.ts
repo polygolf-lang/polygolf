@@ -15,8 +15,8 @@ import {
   polygolfOp,
   Expr,
   Identifier,
-  PolygolfOp,
   Node,
+  isIntLiteral,
   ForRange,
   forDifferenceRange,
 } from "../IR";
@@ -231,53 +231,23 @@ export const assertForArgvTopLevel: Plugin = {
 export const shiftRangeOneUp: Plugin = {
   name: "shiftRangeOneUp",
   visit(node, spine) {
-    if (
-      node.kind === "ForRange" &&
-      node.increment.kind === "IntegerLiteral" &&
-      node.increment.value === 1n
-    ) {
+    if (node.kind === "ForRange" && isIntLiteral(node.increment, 1n)) {
       const bodySpine = new Spine(node.body, spine, "body");
-      if (bodySpine.someNode((x) => isIdentPlus(x, node.variable, true))) {
-        const newVar = id(node.variable.name + "POLYGOLFshifted");
-        return forRange(
-          newVar,
-          add1(node.start),
-          add1(node.end),
-          int(1n),
-          bodySpine.withReplacer((x) =>
-            isIdentPlus(x, node.variable) || isIdent(x, node.variable)
-              ? sub1Replace(x, newVar)
-              : undefined
-          ).node as Expr,
-          node.inclusive
-        );
-      }
+      const newVar = id(node.variable.name + "POLYGOLFshifted");
+      const newBodySpine = bodySpine.withReplacer((x) =>
+        isIdent(x, node.variable) ? sub1(newVar) : undefined
+      );
+      return forRange(
+        newVar,
+        add1(node.start),
+        add1(node.end),
+        int(1n),
+        newBodySpine.node as Expr,
+        node.inclusive
+      );
     }
   },
 };
-
-function isIdentPlus(
-  node: Node,
-  ident: Identifier,
-  onlyPlus1 = false
-): node is PolygolfOp {
-  if (
-    node.kind === "PolygolfOp" &&
-    (node.op === "add" || (node.op === "sub" && !onlyPlus1))
-  ) {
-    const a = node.args[0];
-    const b = node.args[1];
-    return (
-      (isIdent(a, ident) &&
-        b.kind === "IntegerLiteral" &&
-        (!onlyPlus1 || b.value === 1n)) ||
-      (isIdent(b, ident) &&
-        a.kind === "IntegerLiteral" &&
-        (!onlyPlus1 || a.value === 1n))
-    );
-  }
-  return false;
-}
 
 function isIdent(node: Node, ident: Identifier): node is Identifier {
   return (
@@ -285,19 +255,6 @@ function isIdent(node: Node, ident: Identifier): node is Identifier {
     node.name === ident.name &&
     node.builtin === ident.builtin
   );
-}
-
-function sub1Replace(
-  expr: PolygolfOp | Identifier,
-  newIdent: Identifier
-): Expr {
-  if (expr.kind === "Identifier") return sub1(newIdent);
-  const a = expr.args[0];
-  const b = expr.args[1];
-  if (a.kind === "Identifier") return sub1(polygolfOp(expr.op, newIdent, b));
-  return expr.op === "add"
-    ? sub1(polygolfOp(expr.op, a, newIdent))
-    : add1(polygolfOp(expr.op, a, newIdent));
 }
 
 export function forRangeToForDifferenceRange(

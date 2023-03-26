@@ -5,22 +5,22 @@ import emitProgram from "./emit";
 import {
   add1,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   useIndexCalls,
   equalityToInequality,
 } from "../../plugins/ops";
-import { addVarDeclarations } from "../nim/plugins";
 import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
-import { addImports } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
+import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
 import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
 } from "../../plugins/loops";
+import { addImports } from "../../plugins/imports";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -122,52 +122,46 @@ const swiftLanguage: Language = {
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
     ]),
-    mapPrecedenceOps(
-      [
-        ["not", "!"],
-        ["neg", "-"],
-        ["bit_not", "~"],
-      ],
-
-      [
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-      ],
-
-      [
-        ["mul", "*"],
-        ["trunc_div", "/"],
-        ["rem", "%"],
-        ["bit_and", "&"],
-      ],
-
-      [
-        ["add", "+"],
-        ["sub", "-"],
-        ["bit_or", "|"],
-        ["bit_xor", "^"],
-        ["concat", "+"],
-      ],
-
-      [
-        ["lt", "<"],
-        ["leq", "<="],
-        ["eq", "=="],
-        ["neq", "!="],
-        ["geq", ">="],
-        ["gt", ">"],
-      ],
-
-      [["and", "&&"]],
-
-      [["or", "||"]]
+    addMutatingBinaryOp(
+      ["add", "+"],
+      ["sub", "-"],
+      ["mul", "*"],
+      ["trunc_div", "/"],
+      ["rem", "%"],
+      ["bit_and", "&"],
+      ["bit_or", "|"],
+      ["bit_xor", "^"],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"]
     ),
-
-    addMutatingBinaryOp("+", "-", "*", "/", "%", "&", "|", "^", ">>", "<<"),
-
-    addImports,
+    mapToUnaryAndBinaryOps(
+      ["not", "!"],
+      ["neg", "-"],
+      ["bit_not", "~"],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"],
+      ["mul", "*"],
+      ["trunc_div", "/"],
+      ["rem", "%"],
+      ["bit_and", "&"],
+      ["add", "+"],
+      ["sub", "-"],
+      ["bit_or", "|"],
+      ["bit_xor", "^"],
+      ["concat", "+"],
+      ["lt", "<"],
+      ["leq", "<="],
+      ["eq", "=="],
+      ["neq", "!="],
+      ["geq", ">="],
+      ["gt", ">"],
+      ["and", "&&"],
+      ["or", "||"]
+    ),
+    addImports([["pow", "Foundation"]], "import"),
     renameIdents(),
     addVarDeclarations,
+    groupVarDeclarations(),
     assertInt64,
   ],
   // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides

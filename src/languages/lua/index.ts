@@ -10,7 +10,7 @@ import emitProgram from "./emit";
 import {
   equalityToInequality,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   add1,
   useIndexCalls,
 } from "../../plugins/ops";
@@ -21,6 +21,7 @@ import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
+import { addOneToManyAssignments } from "../../plugins/block";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -74,44 +75,35 @@ const luaLanguage: Language = {
       ["abs", (x) => functionCall(x, "math.abs")],
       ["byte_to_text", (x) => functionCall(x, "string.char")],
     ]),
-    mapPrecedenceOps(
-      [["pow", "^"]],
-      [
-        ["not", "not"],
-        ["neg", "-"],
-        ["list_length", "#"],
-        ["bit_not", "~"],
-        ["text_to_int", "- -"],
-      ],
-      [
-        ["mul", "*"],
-        ["div", "//"],
-        ["mod", "%"],
-      ],
-      [
-        ["add", "+"],
-        ["sub", "-"],
-      ],
-      [["concat", ".."]],
-      [
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-      ],
-      [["bit_and", "&"]],
-      [["bit_xor", "~"]],
-      [["bit_or", "|"]],
-      [
-        ["lt", "<"],
-        ["leq", "<="],
-        ["eq", "=="],
-        ["neq", "~="],
-        ["geq", ">="],
-        ["gt", ">"],
-      ],
-      [["and", "and"]],
-      [["or", "or"]]
+    mapToUnaryAndBinaryOps(
+      ["pow", "^"],
+      ["not", "not"],
+      ["neg", "-"],
+      ["list_length", "#"],
+      ["bit_not", "~"],
+      ["text_to_int", "- -"],
+      ["mul", "*"],
+      ["div", "//"],
+      ["mod", "%"],
+      ["add", "+"],
+      ["sub", "-"],
+      ["concat", ".."],
+      ["bit_shift_left", "<<"],
+      ["bit_shift_right", ">>"],
+      ["bit_and", "&"],
+      ["bit_xor", "~"],
+      ["bit_or", "|"],
+      ["lt", "<"],
+      ["leq", "<="],
+      ["eq", "=="],
+      ["neq", "~="],
+      ["geq", ">="],
+      ["gt", ">"],
+      ["and", "and"],
+      ["or", "or"]
     ),
     renameIdents(),
+    addOneToManyAssignments(),
     assertInt64,
   ],
 };

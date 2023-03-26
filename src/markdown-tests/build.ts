@@ -212,7 +212,7 @@ function emitDescribe(describe: Describe, imports: string[]): string {
 }
 
 function emitTest(test: Test, imports: string[]): string {
-  if (test.language === "Polygolf") {
+  if (test.language === "Polygolf" && test.args[0] !== "nogolf") {
     const m = test.args[0].match(/(.+)\.(.+)/);
     if (m !== null) {
       const path = m[1];

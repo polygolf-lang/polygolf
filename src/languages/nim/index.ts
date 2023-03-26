@@ -7,15 +7,10 @@ import {
   equalityToInequality,
   add1,
   mapOps,
-  mapPrecedenceOps,
+  mapToUnaryAndBinaryOps,
   useIndexCalls,
 } from "../../plugins/ops";
-import {
-  addImports,
-  addVarDeclarations,
-  useUFCS,
-  useUnsignedDivision,
-} from "./plugins";
+import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import {
@@ -35,6 +30,14 @@ import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
+import {
+  addManyToManyAssignments,
+  addVarDeclarationManyToManyAssignments,
+  addVarDeclarationOneToManyAssignments,
+  addVarDeclarations,
+  groupVarDeclarations,
+  noStandaloneVarDeclarations,
+} from "../../plugins/block";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -67,7 +70,10 @@ const nimLanguage: Language = {
   ],
   finalEmitPlugins: [
     mapOps([
-      ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
+      ["true", (_) => id("true", true)],
+      ["false", (_) => id("true", true)],
+      ["text_byte_ord", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
+      ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
       ["text_split", (x) => functionCall(x, "split")],
       ["text_split_whitespace", (x) => functionCall(x, "split")],
@@ -85,50 +91,48 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_text", (x) => functionCall(x, "chr")],
     ]),
-    mapPrecedenceOps(
-      [
-        ["bit_not", "not"],
-        ["not", "not"],
-        ["neg", "-"],
-        ["int_to_text", "$"],
-      ],
-      [["pow", "^"]],
-      [
-        ["mul", "*"],
-        ["trunc_div", "div"],
-        ["rem", "mod"],
-        ["bit_shift_left", "shl"],
-        ["bit_shift_right", "shr"],
-      ],
-      [
-        ["add", "+"],
-        ["sub", "-"],
-      ],
-      [["concat", "&", false]],
-      [
-        ["lt", "<"],
-        ["leq", "<="],
-        ["eq", "=="],
-        ["neq", "!="],
-        ["geq", ">="],
-        ["gt", ">"],
-      ],
-      [
-        ["and", "and"],
-        ["bit_and", "and"],
-      ],
-      [
-        ["or", "or"],
-        ["bit_or", "or"],
-        ["bit_xor", "xor"],
-      ]
+    addMutatingBinaryOp(
+      ["add", "+"],
+      ["mul", "*"],
+      ["sub", "-"],
+      ["concat", "&"]
     ),
-    addMutatingBinaryOp("+", "*", "-", "&"),
+    mapToUnaryAndBinaryOps(
+      ["bit_not", "not"],
+      ["not", "not"],
+      ["neg", "-"],
+      ["int_to_text", "$"],
+      ["pow", "^"],
+      ["mul", "*"],
+      ["trunc_div", "div"],
+      ["rem", "mod"],
+      ["bit_shift_left", "shl"],
+      ["bit_shift_right", "shr"],
+      ["add", "+"],
+      ["sub", "-"],
+      ["concat", "&"],
+      ["lt", "<"],
+      ["leq", "<="],
+      ["eq", "=="],
+      ["neq", "!="],
+      ["geq", ">="],
+      ["gt", ">"],
+      ["and", "and"],
+      ["bit_and", "and"],
+      ["or", "or"],
+      ["bit_or", "or"],
+      ["bit_xor", "xor"]
+    ),
     useUFCS,
     useUnsignedDivision,
-    addImports,
+    addNimImports,
     renameIdents(),
     addVarDeclarations,
+    addVarDeclarationOneToManyAssignments(),
+    addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 2),
+    addManyToManyAssignments((_, spine) => spine.depth > 2),
+    groupVarDeclarations((_, spine) => spine.depth <= 2),
+    noStandaloneVarDeclarations,
     assertInt64,
   ],
   detokenizer: defaultDetokenizer((a, b) => {
