@@ -337,6 +337,8 @@ export default function parse(code: string) {
         line: token.line,
         column: token.col,
       });
+    } else {
+      throw e;
     }
   }
   const results = parser.results;
