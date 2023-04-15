@@ -15,6 +15,7 @@ export const frontendOpcodes: OpCode[] = [
   "eq",
   "neq",
   "gt",
+  "geq",
   "or",
   "and",
   "array_contains",
@@ -67,6 +68,7 @@ export const frontendOpcodes: OpCode[] = [
   "array_set",
   "list_set",
   "table_set",
+  "sorted",
 ];
 
 export const BinaryOpCodeArray = [
