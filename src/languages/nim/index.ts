@@ -17,6 +17,7 @@ import {
   forArgvToForEach,
   forArgvToForRange,
   forRangeToForRangeInclusive,
+  forRangeToForRangeOneStep,
   shiftRangeOneUp,
 } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
@@ -56,6 +57,7 @@ const nimLanguage: Language = {
     useEquivalentTextOp,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
+    forRangeToForRangeOneStep,
   ],
   emitPlugins: [
     forArgvToForEach,

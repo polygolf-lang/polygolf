@@ -23,7 +23,11 @@ import {
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
-import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
+import {
+  forArgvToForEach,
+  forRangeToForEach,
+  forRangeToForRangeOneStep,
+} from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
@@ -52,6 +56,7 @@ const pythonLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     useEquivalentTextOp,
+    forRangeToForRangeOneStep,
   ],
   emitPlugins: [
     forArgvToForEach,

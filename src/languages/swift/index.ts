@@ -27,6 +27,7 @@ import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
 import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
+  forRangeToForRangeOneStep,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 
@@ -41,6 +42,7 @@ const swiftLanguage: Language = {
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive,
+    forRangeToForRangeOneStep,
   ],
   emitPlugins: [
     forArgvToForEach,

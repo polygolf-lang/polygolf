@@ -3,6 +3,7 @@ import { Language } from "../../common/Language";
 import {
   forArgvToForRange,
   forRangeToForRangeInclusive,
+  forRangeToForRangeOneStep,
   shiftRangeOneUp,
 } from "../../plugins/loops";
 
@@ -35,6 +36,7 @@ const luaLanguage: Language = {
     equalityToInequality,
     useEquivalentTextOp,
     shiftRangeOneUp,
+    forRangeToForRangeOneStep,
   ],
   emitPlugins: [
     forArgvToForRange(),

@@ -23,6 +23,7 @@ import { golfLastPrint } from "../../plugins/print";
 import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
+  forRangeToForRangeOneStep,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
@@ -36,6 +37,7 @@ const golfscriptLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     equalityToInequality,
+    forRangeToForRangeOneStep,
   ],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
