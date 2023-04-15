@@ -1,5 +1,4 @@
 import {
-  assignment,
   functionCall,
   id,
   indexCall,
@@ -10,6 +9,7 @@ import {
   polygolfOp,
   listType,
   textType,
+  namedArg,
 } from "../../IR";
 import { Language } from "../../common/Language";
 
@@ -103,8 +103,8 @@ const pythonLanguage: Language = {
           const type = getType(x[0], spine.root.node);
           return functionCall(
             type.kind === "text"
-              ? [assignment(id("end", true), x[0])]
-              : [x[0], assignment(id("end", true), stringLiteral(""))],
+              ? [namedArg("end", x[0])]
+              : [x[0], namedArg("end", stringLiteral(""))],
             "print"
           );
         },
