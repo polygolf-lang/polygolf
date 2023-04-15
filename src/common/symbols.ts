@@ -1,8 +1,11 @@
 import {
+  add,
   Identifier,
   integerType,
+  integerTypeIncludingAll,
   IR,
   isSubtype,
+  lt,
   sub,
   textType,
   Type,
@@ -77,6 +80,7 @@ function introducedSymbols(
   const node = spine.node;
   switch (node.kind) {
     case "ForRange":
+    case "ForDifferenceRange":
     case "ForEach":
     case "ForEachKey":
     case "ForArgv":
@@ -101,21 +105,37 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
   const node = spine.node;
   const program = spine.root.node;
   switch (node.kind) {
-    case "ForRange": {
-      const low = getType(node.low, program);
-      const high = getType(node.high, program);
+    case "ForRange":
+    case "ForDifferenceRange": {
+      const start = getType(node.start, program);
+      let end = getType(
+        node.kind === "ForRange" ? node.end : node.difference,
+        program
+      );
       const step = getType(node.increment, program);
       if (
-        low.kind !== "integer" ||
-        high.kind !== "integer" ||
+        start.kind !== "integer" ||
+        end.kind !== "integer" ||
         step.kind !== "integer"
       ) {
         throw new PolygolfError(
-          `Unexpected for range type (${low.kind},${high.kind},${step.kind})`,
+          `Unexpected for range type (${start.kind},${end.kind},${step.kind})`,
           node.source
         );
       }
-      return integerType(low.low, sub(high.high, node.inclusive ? 0n : 1n));
+      if (node.kind === "ForDifferenceRange")
+        end = integerType(add(start.low, end.low), add(start.high, end.high)); // get the real end
+      if (lt(0n, step.low))
+        return integerType(
+          start.low,
+          node.inclusive ? end.high : sub(end.high, 1n)
+        );
+      if (lt(step.high, 0n))
+        return integerType(
+          node.inclusive ? end.low : add(end.low, 1n),
+          start.high
+        );
+      return integerTypeIncludingAll(start.low, start.high, end.low, end.high);
     }
     case "ForEach":
       return getCollectionTypes(node.collection, program)[0];

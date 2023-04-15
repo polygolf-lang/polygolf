@@ -1,20 +1,16 @@
 import { TokenTree } from "../../common/Language";
 import { EmitError, emitStringLiteral } from "../../common/emit";
-import {
-  binaryOp,
-  Expr,
-  int,
-  integerType,
-  IR,
-  isIntLiteral,
-  isSubtype,
-} from "../../IR";
+import { int, integerType, IR, isIntLiteral, isSubtype } from "../../IR";
 import { getType } from "../../common/getType";
 
 export default function emitProgram(program: IR.Program): TokenTree {
   function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
     const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
-    if (["Program", "ForRange", "ForEach"].includes(parent.kind)) {
+    if (
+      ["Program", "ForRange", "ForDifferenceRange", "ForEach"].includes(
+        parent.kind
+      )
+    ) {
       return children.map((stmt) => emitStatement(stmt, baseExpr));
     }
 
@@ -35,32 +31,36 @@ export default function emitProgram(program: IR.Program): TokenTree {
         ];
       case "ForRange": {
         if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
-        const isNaturalType = (x: Expr) =>
-          isSubtype(getType(x, program), integerType(0, "oo"));
+        if (!isSubtype(getType(stmt.start, program), integerType(0)))
+          throw new EmitError(stmt, "potentially negative low");
         return [
-          isNaturalType(stmt.low)
-            ? [
-                emitExpr(stmt.high),
-                ",",
-                isIntLiteral(stmt.low, 0n) ? [] : [emitExpr(stmt.low), ">"],
-              ]
-            : [
-                emitExpr(
-                  isIntLiteral(stmt.low) && isIntLiteral(stmt.high)
-                    ? int(stmt.high.value - stmt.low.value)
-                    : binaryOp("sub", stmt.high, stmt.low, "-")
-                ),
-                ",",
-                "{",
-                emitExpr(stmt.low),
-                "+",
-                "}",
-                "%",
-              ],
+          emitExpr(stmt.end),
+          ",",
+          isIntLiteral(stmt.start, 0n) ? [] : [emitExpr(stmt.start), ">"],
           isIntLiteral(stmt.increment, 1n)
             ? []
             : [emitExpr(stmt.increment), "%"],
           "{",
+          ":",
+          emitExpr(stmt.variable),
+          ";",
+          emitMultiExpr(stmt.body, stmt),
+          "}",
+          "%",
+        ];
+      }
+      case "ForDifferenceRange": {
+        if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
+        return [
+          emitExpr(stmt.difference),
+          ",",
+          isIntLiteral(stmt.increment, 1n)
+            ? []
+            : [emitExpr(stmt.increment), "%"],
+          "{",
+          isIntLiteral(stmt.start) && stmt.start.value < 0n
+            ? [emitExpr(int(-stmt.start.value)), "-"]
+            : [emitExpr(stmt.start), "+"],
           ":",
           emitExpr(stmt.variable),
           ";",

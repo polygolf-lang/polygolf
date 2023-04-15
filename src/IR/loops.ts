@@ -23,8 +23,26 @@ export interface ForRange extends BaseExpr {
   readonly kind: "ForRange";
   readonly inclusive: boolean;
   readonly variable: Identifier;
-  readonly low: Expr;
-  readonly high: Expr;
+  readonly start: Expr;
+  readonly end: Expr;
+  readonly increment: Expr;
+  readonly body: Expr;
+}
+
+/**
+ * A loop over the integer interval [low, low+difference) or [low, low+difference] with increment.
+ *
+ * Increment is required but should default to 1 or -1 in most cases, allowing
+ * the emitter to golf some output space
+ *
+ * Python: for variable in range(low, low+difference, increment):body.
+ */
+export interface ForDifferenceRange extends BaseExpr {
+  readonly kind: "ForDifferenceRange";
+  readonly inclusive: boolean;
+  readonly variable: Identifier;
+  readonly start: Expr;
+  readonly difference: Expr;
   readonly increment: Expr;
   readonly body: Expr;
 }
@@ -96,8 +114,8 @@ export function whileLoop(condition: Expr, body: Expr): WhileLoop {
 
 export function forRange(
   variable: Identifier | string,
-  low: Expr,
-  high: Expr,
+  start: Expr,
+  end: Expr,
   increment: Expr,
   body: Expr,
   inclusive: boolean = false
@@ -105,8 +123,27 @@ export function forRange(
   return {
     kind: "ForRange",
     variable: typeof variable === "string" ? id(variable) : variable,
-    low,
-    high,
+    start,
+    end,
+    increment,
+    body,
+    inclusive,
+  };
+}
+
+export function forDifferenceRange(
+  variable: Identifier | string,
+  start: Expr,
+  difference: Expr,
+  increment: Expr,
+  body: Expr,
+  inclusive: boolean = false
+): ForDifferenceRange {
+  return {
+    kind: "ForDifferenceRange",
+    variable: typeof variable === "string" ? id(variable) : variable,
+    start,
+    difference,
     increment,
     body,
     inclusive,

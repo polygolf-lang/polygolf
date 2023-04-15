@@ -92,20 +92,20 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emitMultiExpr(e.body),
         ];
       case "ForRange": {
-        const low = emit(e.low);
-        const high = emit(e.high);
+        const start = emit(e.start);
+        const end = emit(e.end);
         return [
           "for",
           emit(e.variable),
           "in",
           isIntLiteral(e.increment, 1n)
-            ? [low, e.inclusive ? "..." : "..<", high]
+            ? [start, e.inclusive ? "..." : "..<", end]
             : [
                 "stride",
                 "(",
                 joinTrees(",", [
-                  ["from:", low],
-                  ["to:", high],
+                  ["from:", start],
+                  ["to:", end],
                   ["by:", emit(e.increment)],
                 ]),
                 ")",
