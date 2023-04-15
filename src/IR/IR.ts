@@ -24,6 +24,7 @@ import {
   KeyValue,
   RangeIndexCall,
   Function,
+  NamedArg,
   ImplicitConversion,
 } from "./exprs";
 import {
@@ -34,6 +35,7 @@ import {
   ForCLike,
   WhileLoop,
   ForArgv,
+  ForDifferenceRange,
 } from "./loops";
 import { Identifier, IntegerLiteral, StringLiteral } from "./terminals";
 import { Block, IfStatement, ImportStatement, Variants } from "./toplevel";
@@ -96,12 +98,14 @@ export type Expr =
   | ImportStatement
   | WhileLoop
   | ForRange
+  | ForDifferenceRange
   | ForEach
   | ForEachKey
   | ForEachPair
   | ForCLike
   | ForArgv
-  | IfStatement;
+  | IfStatement
+  | NamedArg;
 
 /**
  * Program node. This should be the root node. Raw OK

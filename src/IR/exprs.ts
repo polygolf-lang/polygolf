@@ -123,6 +123,12 @@ export interface Function extends BaseExpr {
   readonly expr: Expr;
 }
 
+export interface NamedArg<T extends Expr = Expr> extends BaseExpr {
+  readonly kind: "NamedArg";
+  readonly name: string;
+  readonly value: T;
+}
+
 export function implicitConversion(
   expr: Expr,
   behavesLike: UnaryOpCode & `${string}_to_${string}`
@@ -375,6 +381,14 @@ export function func(args: (string | Identifier)[], expr: Expr): Function {
     kind: "Function",
     args: args.map((x) => (typeof x === "string" ? id(x) : x)),
     expr,
+  };
+}
+
+export function namedArg<T extends Expr>(name: string, value: T): NamedArg<T> {
+  return {
+    kind: "NamedArg",
+    name,
+    value,
   };
 }
 

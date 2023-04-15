@@ -132,16 +132,16 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emitMultiExpr(e.body),
         ];
       case "ForRange": {
-        const low = isIntLiteral(e.low, 0n) ? [] : emit(e.low);
+        const start = isIntLiteral(e.start, 0n) ? [] : emit(e.start);
         if (isIntLiteral(e.increment, 1n)) {
           return [
             "for",
             emit(e.variable),
             "in",
-            low,
+            start,
             "$GLUE$",
             e.inclusive ? ".." : "..<",
-            emit(e.high),
+            emit(e.end),
             ":",
             emitMultiExpr(e.body),
           ];
@@ -156,9 +156,9 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           "countup",
           "$GLUE$",
           "(",
-          emit(e.low),
+          emit(e.start),
           ",",
-          emit(e.high),
+          emit(e.end),
           ",",
           emit(e.increment),
           ")",

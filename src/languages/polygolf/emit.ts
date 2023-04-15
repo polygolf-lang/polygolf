@@ -187,8 +187,8 @@ export function emitExpr(
         return emitSexpr(
           "@ForRangeInclusive",
           expr.variable,
-          expr.low,
-          expr.high,
+          expr.start,
+          expr.end,
           expr.increment,
           ...emitExpr(expr.body, false, true)
         );
@@ -196,12 +196,21 @@ export function emitExpr(
       return emitSexpr(
         "for",
         expr.variable,
-        expr.low,
-        expr.high,
+        expr.start,
+        expr.end,
         ...(expr.increment.kind === "IntegerLiteral" &&
         expr.increment.value === 1n
           ? []
           : [expr.increment]),
+        ...emitExpr(expr.body, false, true)
+      );
+    case "ForDifferenceRange":
+      return emitSexpr(
+        "@ForDifferenceRange",
+        expr.variable,
+        expr.start,
+        expr.difference,
+        expr.increment,
         ...emitExpr(expr.body, false, true)
       );
     case "ForEach":
@@ -250,6 +259,8 @@ export function emitExpr(
           ? []
           : [...emitExpr(expr.alternate, false, true)])
       );
+    case "NamedArg":
+      return emitSexpr("@", JSON.stringify(expr.name), ...emitExpr(expr.value));
   }
 }
 
