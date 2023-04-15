@@ -173,7 +173,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
         } else newArgs.push(arg);
       }
       args = newArgs;
-      if (op === "mul" && args.length === 2 && isIntLiteral(args[0], 1n)) {
+      if (op === "mul" && args.length > 1 && isIntLiteral(args[0], 1n)) {
         args = args.slice(1);
       } else if (
         op === "mul" &&
