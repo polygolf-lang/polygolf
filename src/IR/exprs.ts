@@ -173,7 +173,9 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
         } else newArgs.push(arg);
       }
       args = newArgs;
-      if (
+      if (op === "mul" && args.length === 2 && isIntLiteral(args[0], 1n)) {
+        args = args.slice(1);
+      } else if (
         op === "mul" &&
         args.length === 2 &&
         isIntLiteral(args[0], -1n) &&
@@ -229,12 +231,12 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
       else add(1n, x.args);
     } else add(1n, [x]);
   }
-  const result: Expr[] = [];
+  let result: Expr[] = [];
   for (const [coeff, expr] of coeffMap.values()) {
     if (coeff === 1n) result.push(expr);
     else if (coeff !== 0n) result.push(_polygolfOp("mul", int(coeff), expr));
   }
-  if (result.length < 1 || constant !== 0n) result.push(int(constant));
+  if (result.length < 1 || constant !== 0n) result = [int(constant), ...result];
   return result;
 }
 
@@ -401,4 +403,20 @@ export function isIntLiteral(x: Node, val?: bigint): x is IntegerLiteral {
     return val === undefined || val === x.value;
   }
   return false;
+}
+
+export function isNegativeLiteral(expr: Expr) {
+  return isIntLiteral(expr) && expr.value < 0n;
+}
+
+/**
+ * Checks whether the expression is a negative integer literal or a multiplication with one.
+ */
+export function isNegative(expr: Expr) {
+  return (
+    isNegativeLiteral(expr) ||
+    (expr.kind === "PolygolfOp" &&
+      expr.op === "mul" &&
+      isNegativeLiteral(expr.args[0]))
+  );
 }

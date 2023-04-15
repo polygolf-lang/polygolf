@@ -84,7 +84,7 @@ n/%3
 n%%3
 n shl 3
 n shr 3
-n+3
+3+n
 n-3
 3 and n
 3 or n
@@ -117,7 +117,7 @@ println (($a + 1) * $a);
 
 ```nim nogolf
 var a=0
-echo (a+1)*a
+echo (1+a)*a
 ```
 
 ```polygolf
