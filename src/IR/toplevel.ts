@@ -1,4 +1,4 @@
-import { BaseExpr, Expr, id, Identifier, Type } from "./IR";
+import { BaseExpr, Expr } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
@@ -28,15 +28,6 @@ export interface IfStatement extends BaseExpr {
   readonly alternate?: Expr;
 }
 
-/**
- * Variable declaration.
- */
-export interface VarDeclaration extends BaseExpr {
-  readonly kind: "VarDeclaration";
-  readonly variable: Identifier;
-  readonly variableType: Type;
-}
-
 export interface ImportStatement extends BaseExpr {
   readonly kind: "ImportStatement";
   readonly name: string;
@@ -46,7 +37,7 @@ export interface ImportStatement extends BaseExpr {
 export function block(children: readonly Expr[]): Block {
   return {
     kind: "Block",
-    children: children.flatMap((x) => (x.kind === "Block" ? x.children : x)),
+    children: children.flatMap((x) => (x.kind === "Block" ? x.children : [x])),
   };
 }
 
@@ -60,17 +51,6 @@ export function ifStatement(
   alternate?: Expr
 ): IfStatement {
   return { kind: "IfStatement", condition, consequent, alternate };
-}
-
-export function varDeclaration(
-  variable: Identifier | string,
-  variableType: Type
-): VarDeclaration {
-  return {
-    kind: "VarDeclaration",
-    variable: typeof variable === "string" ? id(variable) : variable,
-    variableType,
-  };
 }
 
 export function variants(variants: readonly Expr[]): Variants {

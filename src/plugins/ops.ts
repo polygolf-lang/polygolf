@@ -10,6 +10,7 @@ import {
   IntegerType,
   isBinary,
   isConstantType,
+  isIntLiteral,
   OpCode,
   PolygolfOp,
   polygolfOp,
@@ -46,36 +47,61 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
  * @param opMap0 Each group defines operators of the same precedence, higher precedence ones first.
  * @returns The plugin closure.
  */
-export function mapPrecedenceOps(
-  ...opMap0: [UnaryOpCode | BinaryOpCode, string, boolean?][][]
+export function mapToUnaryAndBinaryOps(
+  ...opMap0: [UnaryOpCode | BinaryOpCode, string][]
 ): Plugin {
-  function opTransform(
-    recipe: [UnaryOpCode | BinaryOpCode, string, boolean?],
-    precedence: number
-  ): [OpCode, OpTransformOutput] {
-    const [op, name, rightAssociative] = recipe;
-    return [
-      op,
-      isBinary(op)
-        ? (x: readonly Expr[]) =>
-            binaryOp(
-              op,
-              x[0],
-              x[1],
-              name,
-              precedence,
-              rightAssociative ?? (op === "pow" || op === "text_concat")
-            )
-        : (x: readonly Expr[]) => unaryOp(op, x[0], name, precedence),
-    ];
-  }
-  const opMap = opMap0.flatMap((x, i) =>
-    x.map((recipe) => opTransform(recipe, opMap0.length - i))
-  );
+  const opMap = new Map(opMap0);
   return {
-    ...mapOps(opMap),
+    ...mapOps(
+      opMap0.map(([op, name]) => [
+        op,
+        isBinary(op)
+          ? (x: readonly Expr[]) => asBinaryChain(op, x, opMap)
+          : (x: readonly Expr[]) => unaryOp(op, x[0], name),
+      ])
+    ),
     name: `mapPrecedenceOps(${JSON.stringify(opMap0)})`,
   };
+}
+
+function asBinaryChain(
+  op: BinaryOpCode,
+  exprs: readonly Expr[],
+  names: Map<OpCode, string>
+): Expr {
+  if (op === "mul" && isIntLiteral(exprs[0]) && exprs[0].value < 0n) {
+    return unaryOp(
+      "neg",
+      polygolfOp("mul", ...exprs.slice(1)),
+      names.get("neg")
+    );
+  }
+  let result = exprs[0];
+  for (const expr of exprs.slice(1)) {
+    if (
+      op === "add" &&
+      expr.kind === "PolygolfOp" &&
+      expr.op === "mul" &&
+      isIntLiteral(expr.args[0]) &&
+      expr.args[0].value < 0n
+    ) {
+      result = binaryOp(
+        "sub",
+        result,
+        polygolfOp("neg", expr),
+        names.get("sub")
+      );
+    } else if (
+      op === "add" &&
+      expr.kind === "IntegerLiteral" &&
+      expr.value < 0n
+    ) {
+      result = binaryOp("sub", result, int(-expr.value), names.get("sub"));
+    } else {
+      result = binaryOp(op, result, expr, names.get(op));
+    }
+  }
+  return result;
 }
 
 export function useIndexCalls(
@@ -104,7 +130,7 @@ export function useIndexCalls(
         if (oneIndexed && !node.op.startsWith("table_")) {
           indexNode = indexCall(
             node.args[0],
-            polygolfOp("add", node.args[1], int(1n)),
+            add1(node.args[1]),
             node.op,
             true
           );
@@ -121,9 +147,8 @@ export function useIndexCalls(
   };
 }
 
-export function plus1(expr: Expr): Expr {
-  return polygolfOp("add", expr, int(1n));
-}
+export const add1 = (expr: Expr) => polygolfOp("add", expr, int(1n));
+export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
 
 export const equalityToInequality: Plugin = {
   name: "equalityToInequality",

@@ -1,3 +1,5 @@
+import { getArithmeticType } from "../common/getType";
+import { stringify } from "../common/stringify";
 import {
   Expr,
   Identifier,
@@ -6,6 +8,15 @@ import {
   UnaryOpCode,
   BinaryOpCode,
   OpCode,
+  Node,
+  IntegerLiteral,
+  MutatingBinaryOp,
+  isCommutative,
+  int,
+  isAssociative,
+  isBinary,
+  stringLiteral,
+  integerType,
 } from "./IR";
 
 /**
@@ -20,6 +31,17 @@ export interface KeyValue extends BaseExpr {
   readonly value: Expr;
 }
 
+/**
+ * This is used to represent an abstract operation.
+ * Polygolf ensures that in the IR, there will never be:
+
+ * Polygolf(neg)
+ * Polygolf(sub)
+ * Polygolf(add) as a direct child of Polygolf(add) - same with all other associative ops
+ * IntegerLiteral (if present) appears at the first position in the args list
+ * 
+ * This is ensured when using the polygolfOp contructor function and the Spine API so avoid creating such nodes manually.
+ */
 export interface PolygolfOp extends BaseExpr {
   readonly kind: "PolygolfOp";
   readonly op: OpCode;
@@ -60,37 +82,19 @@ export interface RangeIndexCall extends BaseExpr {
   readonly oneIndexed: boolean;
 }
 
-export type LValue = Identifier | IndexCall;
-
 export interface BinaryOp extends BaseExpr {
   readonly kind: "BinaryOp";
-  readonly op: BinaryOpCode;
+  readonly op: BinaryOpCode | null;
   readonly name: string;
   readonly left: Expr;
-  readonly right: Expr;
-  readonly precedence: number;
-  readonly rightAssociative: boolean;
-}
-
-/**
- * Mutating operator.
- *
- * a += 5
- */
-export interface MutatingBinaryOp extends BaseExpr {
-  readonly kind: "MutatingBinaryOp";
-  readonly op: BinaryOpCode;
-  readonly name: string;
-  readonly variable: LValue;
   readonly right: Expr;
 }
 
 export interface UnaryOp extends BaseExpr {
   readonly kind: "UnaryOp";
   readonly name: string;
-  readonly op: UnaryOpCode;
+  readonly op: UnaryOpCode | null;
   readonly arg: Expr;
-  readonly precedence: number;
 }
 
 /**
@@ -113,6 +117,12 @@ export interface Function extends BaseExpr {
   readonly expr: Expr;
 }
 
+export interface NamedArg<T extends Expr = Expr> extends BaseExpr {
+  readonly kind: "NamedArg";
+  readonly name: string;
+  readonly value: T;
+}
+
 export function keyValue(key: Expr, value: Expr): KeyValue {
   return {
     kind: "KeyValue",
@@ -121,12 +131,111 @@ export function keyValue(key: Expr, value: Expr): KeyValue {
   };
 }
 
-export function polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
+/**
+ * This assumes that the construction will not break the invariants described
+ * on `PolygolfOp` interface and hence is made private.
+ */
+function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
   return {
     kind: "PolygolfOp",
     op,
     args,
   };
+}
+
+export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
+  if (op === "neg") {
+    return polygolfOp("mul", int(-1), args[0]);
+  }
+  if (op === "sub") {
+    return polygolfOp("add", args[0], polygolfOp("neg", args[1]));
+  }
+  if (isBinary(op) && isAssociative(op)) {
+    args = args.flatMap((x) =>
+      x.kind === "PolygolfOp" && x.op === op ? x.args : [x]
+    );
+    if (op === "add") args = simplifyPolynomial(args);
+    else {
+      if (isCommutative(op)) {
+        args = args
+          .filter((x) => x.kind === "IntegerLiteral")
+          .concat(args.filter((x) => x.kind !== "IntegerLiteral"));
+      }
+      const newArgs: Expr[] = [];
+      for (const arg of args) {
+        if (newArgs.length > 0) {
+          const combined = evalBinaryOp(op, newArgs[newArgs.length - 1], arg);
+          if (combined !== null) {
+            newArgs[newArgs.length - 1] = combined;
+          } else {
+            newArgs.push(arg);
+          }
+        } else newArgs.push(arg);
+      }
+      args = newArgs;
+      if (
+        op === "mul" &&
+        args.length === 2 &&
+        isIntLiteral(args[0], -1n) &&
+        args[1].kind === "PolygolfOp" &&
+        args[1].op === "add"
+      ) {
+        return polygolfOp(
+          "add",
+          ...args[1].args.map((x) => polygolfOp("neg", x))
+        );
+      }
+    }
+    if (args.length === 1) return args[0];
+  }
+  return _polygolfOp(op, ...args);
+}
+
+function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
+  if (left.kind === "StringLiteral" && right.kind === "StringLiteral") {
+    return stringLiteral(left.value + right.value);
+  }
+  if (left.kind === "IntegerLiteral" && right.kind === "IntegerLiteral") {
+    return int(
+      getArithmeticType(
+        op,
+        integerType(left.value, left.value),
+        integerType(right.value, right.value)
+      ).low as bigint
+    );
+  }
+  return null;
+}
+
+/** Simplifies a polynomial represented as an array of terms. */
+function simplifyPolynomial(terms: Expr[]): Expr[] {
+  const coeffMap = new Map<string, [bigint, Expr]>();
+  let constant = 0n;
+  function add(coeff: bigint, rest: readonly Expr[]) {
+    const stringified = rest.map(stringify).join("");
+    if (coeffMap.has(stringified)) {
+      const [oldCoeff, expr] = coeffMap.get(stringified)!;
+      coeffMap.set(stringified, [oldCoeff + coeff, expr]);
+    } else {
+      if (rest.length === 1) coeffMap.set(stringified, [coeff, rest[0]]);
+      else coeffMap.set(stringified, [coeff, _polygolfOp("mul", ...rest)]);
+    }
+  }
+  for (const x of terms) {
+    if (x.kind === "IntegerLiteral") constant += x.value;
+    else if (x.kind === "PolygolfOp" && x.op === "mul") {
+      if (x.args[0].kind === "IntegerLiteral")
+        add(x.args[0].value, x.args.slice(1));
+      else add(1n, x.args);
+    } else add(1n, [x]);
+  }
+  const result: Expr[] = [];
+  for (const [coeff, expr] of coeffMap.values()) {
+    if (coeff === 1n) result.push(expr);
+    else if (coeff !== 0n) result.push(_polygolfOp("mul", int(coeff), expr));
+  }
+  if (result.length < 1 || constant !== 0n) result.push(int(constant));
+  return result;
 }
 
 export function functionCall(
@@ -194,12 +303,10 @@ export function rangeIndexCall(
 }
 
 export function binaryOp(
-  op: BinaryOpCode,
+  op: BinaryOpCode | null,
   left: Expr,
   right: Expr,
-  name: string = "",
-  precedence: number,
-  rightAssociative?: boolean
+  name: string = ""
 ): BinaryOp {
   return {
     kind: "BinaryOp",
@@ -207,39 +314,19 @@ export function binaryOp(
     left,
     right,
     name,
-    precedence,
-    rightAssociative:
-      rightAssociative ?? (op === "pow" || op === "text_concat"),
-  };
-}
-
-export function mutatingBinaryOp(
-  op: BinaryOpCode,
-  variable: LValue,
-  right: Expr,
-  name: string = ""
-): MutatingBinaryOp {
-  return {
-    kind: "MutatingBinaryOp",
-    op,
-    variable,
-    right,
-    name,
   };
 }
 
 export function unaryOp(
-  op: UnaryOpCode,
+  op: UnaryOpCode | null,
   arg: Expr,
-  name: string = "",
-  precedence: number
+  name: string = ""
 ): UnaryOp {
   return {
     kind: "UnaryOp",
     op,
     arg,
     name,
-    precedence,
   };
 }
 
@@ -266,7 +353,15 @@ export function func(args: (string | Identifier)[], expr: Expr): Function {
   };
 }
 
-export function print(value: Expr, newline: boolean = true): PolygolfOp {
+export function namedArg<T extends Expr>(name: string, value: T): NamedArg<T> {
+  return {
+    kind: "NamedArg",
+    name,
+    value,
+  };
+}
+
+export function print(value: Expr, newline: boolean = true): Expr {
   return polygolfOp(newline ? "println" : "print", value);
 }
 
@@ -299,4 +394,11 @@ export function getArgs(
     case "RangeIndexCall":
       return [node.collection, node.low, node.high, node.step];
   }
+}
+
+export function isIntLiteral(x: Node, val?: bigint): x is IntegerLiteral {
+  if (x.kind === "IntegerLiteral") {
+    return val === undefined || val === x.value;
+  }
+  return false;
 }

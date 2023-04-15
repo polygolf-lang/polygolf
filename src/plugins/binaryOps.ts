@@ -1,33 +1,46 @@
-import { flipOpCode, isBinary, mutatingBinaryOp, polygolfOp } from "../IR";
+import {
+  BinaryOpCode,
+  flipOpCode,
+  isBinary,
+  isCommutative,
+  mutatingBinaryOp,
+  polygolfOp,
+} from "../IR";
 import { Plugin } from "../common/Language";
+import { stringify } from "../common/stringify";
 
 // "a = a + b" --> "a += b"
-export function addMutatingBinaryOp(...ops: string[]): Plugin {
+export function addMutatingBinaryOp(
+  ...opMap0: [BinaryOpCode, string][]
+): Plugin {
+  const opMap = new Map<BinaryOpCode, string>(opMap0);
   return {
-    name: `addMutatingBinaryOp(${ops.join(", ")})`,
+    name: `addMutatingBinaryOp(${JSON.stringify(opMap0)})`,
     visit(node) {
       if (
         node.kind === "Assignment" &&
-        node.expr.kind === "BinaryOp" &&
-        ops.includes(node.expr.name)
+        node.expr.kind === "PolygolfOp" &&
+        isBinary(node.expr.op) &&
+        node.expr.args.length > 1 &&
+        opMap.has(node.expr.op)
       ) {
-        if (
-          (node.expr.left.kind === "Identifier" &&
-            node.variable.kind === "Identifier" &&
-            node.variable.name === node.expr.left.name) ||
-          (node.expr.left.kind === "IndexCall" &&
-            node.expr.left.collection.kind === "Identifier" &&
-            node.variable.kind === "IndexCall" &&
-            node.variable.collection.kind === "Identifier" &&
-            node.variable.collection.name === node.expr.left.collection.name &&
-            JSON.stringify(node.variable.index) ===
-              JSON.stringify(node.expr.left.index))
-        ) {
+        const op = node.expr.op;
+        const args = node.expr.args;
+        const name = opMap.get(op);
+        const leftValueStringified = stringify(node.variable);
+        const index = node.expr.args.findIndex(
+          (x) => stringify(x) === leftValueStringified
+        );
+        if (index === 0 || (index > 0 && isCommutative(op))) {
+          const newArgs = [
+            ...args.slice(0, index),
+            ...args.slice(index + 1, args.length),
+          ];
           return mutatingBinaryOp(
-            node.expr.op,
+            op,
             node.variable,
-            node.expr.right,
-            node.expr.name
+            args.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0],
+            name
           );
         }
       }
@@ -35,7 +48,7 @@ export function addMutatingBinaryOp(...ops: string[]): Plugin {
   };
 }
 
-// (a + b) --> (b + a)
+// (a > b) --> (b < a)
 export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
   visit(node) {

@@ -4,16 +4,17 @@ const tokenTable = {
   integer: /-?[0-9]+/,
   string: /"(?:\\.|[^"])*"/,
   variable: /\$\w+/,
-  type: ["Void", "Text", "Bool", "List", "Table", "Array", "Set", "Func"],
+  type: /[A-Z][a-z]*/,
   argv_get: "argv_get",
   nullary: ["argv", "argc", "true", "false"],
   ninf: ["-oo", "-∞"],
   pinf: ["oo", "∞"],
   variant: "/",
-  opalias: "<- + - * ^ & | ~ == != <= < >= > => # mod rem div trunc_div".split(
-    " "
-  ),
-  builtin: /\w+/,
+  opalias:
+    "<- + - * ^ & | ~ >> << == != <= < >= > => # mod rem div trunc_div".split(
+      " "
+    ),
+  builtin: /[a-z0-9_]+/,
   lparen: "(",
   rparen: ")",
   lbrace: "{",

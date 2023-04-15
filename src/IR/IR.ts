@@ -3,6 +3,9 @@ import {
   ManyToManyAssignment,
   OneToManyAssignment,
   VarDeclarationWithAssignment,
+  MutatingBinaryOp,
+  VarDeclaration,
+  VarDeclarationBlock,
 } from "./assignments";
 import {
   ArrayConstructor,
@@ -16,12 +19,12 @@ import {
   ConditionalOp,
   FunctionCall,
   MethodCall,
-  MutatingBinaryOp,
   UnaryOp,
   IndexCall,
   KeyValue,
   RangeIndexCall,
   Function,
+  NamedArg,
 } from "./exprs";
 import {
   ForRange,
@@ -31,15 +34,10 @@ import {
   ForCLike,
   WhileLoop,
   ForArgv,
+  ForDifferenceRange,
 } from "./loops";
 import { Identifier, IntegerLiteral, StringLiteral } from "./terminals";
-import {
-  Block,
-  IfStatement,
-  ImportStatement,
-  VarDeclaration,
-  Variants,
-} from "./toplevel";
+import { Block, IfStatement, ImportStatement, Variants } from "./toplevel";
 import { Type } from "./types";
 
 export * from "./assignments";
@@ -76,6 +74,7 @@ export type Expr =
   | PolygolfOp
   | VarDeclaration
   | VarDeclarationWithAssignment
+  | VarDeclarationBlock
   | Assignment
   | IndexCall
   | RangeIndexCall
@@ -97,12 +96,14 @@ export type Expr =
   | ImportStatement
   | WhileLoop
   | ForRange
+  | ForDifferenceRange
   | ForEach
   | ForEachKey
   | ForEachPair
   | ForCLike
   | ForArgv
-  | IfStatement;
+  | IfStatement
+  | NamedArg;
 
 /**
  * Program node. This should be the root node. Raw OK

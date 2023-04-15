@@ -1,359 +1,319 @@
 import { TokenTree } from "@/common/Language";
-import {
-  emitStringLiteral,
-  containsMultiExpr,
-  joinTrees,
-  needsParensPrecedence,
-  EmitError,
-} from "../../common/emit";
-import { PathFragment } from "../../common/fragments";
-import { IR } from "../../IR";
+import { emitStringLiteral, joinTrees, EmitError } from "../../common/emit";
+import { IR, isIntLiteral } from "../../IR";
+
+function precedence(expr: IR.Expr): number {
+  switch (expr.kind) {
+    case "UnaryOp":
+      return 11;
+    case "BinaryOp":
+      return binaryPrecedence(expr.name);
+    case "FunctionCall":
+      return 2;
+    case "MethodCall":
+      return 12;
+  }
+  return Infinity;
+}
+
+function binaryPrecedence(opname: string): number {
+  switch (opname) {
+    case "^":
+      return 10;
+    case "*":
+    case "div":
+    case "mod":
+    case "%%":
+    case "/%":
+    case "shl":
+    case "shr":
+      return 9;
+    case "+":
+    case "-":
+      return 8;
+    case "&":
+      return 7;
+    case "..":
+      return 6;
+    case "<":
+    case "<=":
+    case "==":
+    case "!=":
+    case ">=":
+    case ">":
+      return 5;
+    case "and":
+      return 4;
+    case "or":
+    case "xor":
+      return 3;
+  }
+  throw new Error(
+    `Programming error - unknown Nim binary operator '${opname}.'`
+  );
+}
 
 export default function emitProgram(program: IR.Program): TokenTree {
-  return emitStatement(program.body, program);
+  return emitMultiExpr(program.body, true);
 }
 
-function emitMultiExpr(expr: IR.Expr, parent: IR.Node): TokenTree {
+function emitMultiExpr(expr: IR.Expr, isRoot = false): TokenTree {
   const children = expr.kind === "Block" ? expr.children : [expr];
   // Prefer newlines over semicolons at top level for aesthetics
-  if (parent.kind === "Program") {
-    return joinTrees(
-      children.map((stmt) => emitStatement(stmt, expr)),
-      "\n"
-    );
+  if (isRoot) {
+    return joinExprs("\n", children);
   }
-  if (containsMultiExpr(children)) {
-    return [
-      "$INDENT$",
-      "\n",
-      joinTrees(
-        children.map((stmt) => emitStatement(stmt, expr)),
-        "\n"
-      ),
-      "$DEDENT$",
-    ];
+  let inner = [];
+  let needsBlock = false;
+  for (const child of children) {
+    const needsNewline =
+      "consequent" in child ||
+      ("children" in child &&
+        (child.kind !== "VarDeclarationBlock" || child.children.length > 1)) ||
+      "body" in child;
+    needsBlock =
+      needsBlock || needsNewline || child.kind.startsWith("VarDeclaration");
+    inner.push(emit(child));
+    inner.push(needsNewline ? "\n" : ";");
   }
+  inner = inner.slice(0, -1);
+  if (needsBlock) {
+    return ["$INDENT$", "\n", inner, "$DEDENT$"];
+  }
+  return inner;
+}
+
+function joinExprs(
+  delim: TokenTree,
+  exprs: readonly IR.Expr[],
+  minPrec = -Infinity
+) {
   return joinTrees(
-    children.map((stmt) => emitStatement(stmt, expr)),
-    ";"
+    delim,
+    exprs.map((x) => emit(x, minPrec))
   );
-}
-
-function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
-  switch (stmt.kind) {
-    case "Block":
-      return emitMultiExpr(stmt, parent);
-    case "VarDeclarationWithAssignment":
-      if (stmt.requiresBlock) {
-        const variables =
-          stmt.assignments.kind === "Assignment"
-            ? [stmt.assignments.variable]
-            : stmt.assignments.variables;
-        const exprs =
-          stmt.assignments.kind === "Assignment"
-            ? [stmt.assignments.expr]
-            : stmt.assignments.exprs;
-
-        return [
-          "var",
-          "$INDENT$",
-          variables.map((v, i) => [
-            "\n",
-            emitExprNoParens(v),
-            "=",
-            emitExprNoParens(exprs[i]),
-          ]),
-          "$DEDENT$",
-        ];
-      }
-      return ["var", emitExprNoParens(stmt.assignments)];
-    case "ImportStatement":
-      return [
-        stmt.name,
-        joinTrees(
-          stmt.modules.map((x) => [x]),
-          ","
-        ),
-      ];
-    case "WhileLoop":
-      return [
-        `while`,
-        emitExpr(stmt.condition, stmt),
-        ":",
-        emitMultiExpr(stmt.body, stmt),
-      ];
-    case "ForEach":
-      return [
-        `for`,
-        emitExpr(stmt.variable, stmt),
-        "in",
-        emitExpr(stmt.collection, stmt),
-        ":",
-        emitMultiExpr(stmt.body, stmt),
-      ];
-    case "ForRange": {
-      const low =
-        stmt.low.kind === "IntegerLiteral" &&
-        stmt.low.value === 0n &&
-        stmt.inclusive
-          ? []
-          : emitExpr(stmt.low, stmt);
-      if (
-        stmt.increment.kind === "IntegerLiteral" &&
-        stmt.increment.value === 1n
-      ) {
-        return [
-          "for",
-          emitExpr(stmt.variable, stmt),
-          "in",
-          low,
-          "$GLUE$",
-          stmt.inclusive ? ".." : "..<",
-          emitExpr(stmt.high, stmt),
-          ":",
-          emitMultiExpr(stmt.body, stmt),
-        ];
-      }
-      if (!stmt.inclusive) {
-        throw new EmitError(stmt, "exlusive+step");
-      }
-      return [
-        "for",
-        emitExpr(stmt.variable, stmt),
-        "in",
-        "countup",
-        "$GLUE$",
-        "(",
-        emitExpr(stmt.low, stmt),
-        ",",
-        emitExpr(stmt.high, stmt),
-        ",",
-        emitExpr(stmt.increment, stmt),
-        ")",
-        ":",
-        emitMultiExpr(stmt.body, stmt),
-      ];
-    }
-    case "IfStatement":
-      return [
-        "if",
-        emitExpr(stmt.condition, stmt),
-        ":",
-        emitMultiExpr(stmt.consequent, stmt),
-        stmt.alternate !== undefined
-          ? ["else", ":", emitMultiExpr(stmt.alternate, stmt)]
-          : [],
-      ];
-    case "Variants":
-    case "ForEachKey":
-    case "ForEachPair":
-    case "ForCLike":
-      throw new EmitError(stmt);
-    default:
-      return emitExpr(stmt, parent);
-  }
-}
-
-function emitExpr(
-  expr: IR.Expr,
-  parent: IR.Node,
-  fragment?: PathFragment
-): TokenTree {
-  const inner = emitExprNoParens(
-    expr,
-    (parent.kind === "BinaryOp" && fragment === "left") ||
-      (parent.kind === "MethodCall" && fragment === "object")
-  );
-  return needsParens(expr, parent, fragment) ? ["(", inner, ")"] : inner;
 }
 
 /**
- * Does expr need parens around it to override precedence?
- * This does not include needing parens for stuff like function calls
+ * Emits the expression.
+ * @param expr The expression to be emited.
+ * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
+ * @returns Token tree corresponding to the expression.
  */
-function needsParens(
-  expr: IR.Expr,
-  parent: IR.Node,
-  fragment?: PathFragment
-): boolean {
-  if (needsParensPrecedence(expr, parent, fragment)) {
-    return true;
-  }
-  if (parent.kind === "MethodCall" && fragment === "object") {
-    return expr.kind === "UnaryOp" || expr.kind === "BinaryOp";
-  }
-  return false;
-}
-
-function emitExprNoParens(
-  expr: IR.Expr,
-  expressionContinues: boolean = false
-): TokenTree {
-  switch (expr.kind) {
-    case "Assignment":
-      return [emitExpr(expr.variable, expr), "=", emitExpr(expr.expr, expr)];
-    case "ManyToManyAssignment":
-      return [
-        "(",
-        joinTrees(
-          expr.variables.map((v) => emitExprNoParens(v)),
-          ","
-        ),
-        ")",
-        "=",
-        "(",
-        joinTrees(
-          expr.exprs.map((x) => emitExprNoParens(x)),
-          ","
-        ),
-        ")",
-      ];
-    case "MutatingBinaryOp":
-      return [
-        emitExpr(expr.variable, expr),
-        "$GLUE$",
-        expr.name + "=",
-        emitExpr(expr.right, expr),
-      ];
-    case "Identifier":
-      return expr.name;
-    case "StringLiteral":
-      return emitStringLiteral(expr.value, [
-        [
-          `"`,
-          [
-            [`\\`, `\\\\`],
-            [`\n`, `\\n`],
-            [`\r`, `\\r`],
-            [`"`, `\\"`],
-          ],
-        ],
-        [
-          `"""`,
-          [
-            [`\\`, `\\\\`],
-            [`"""`, `\\"""`],
-          ],
-        ],
-        [
-          [`r"`, `"`],
-          [
-            [`"`, `""`],
-            [`\n`, null],
-            [`\r`, null],
-          ],
-        ],
-      ]);
-    case "IntegerLiteral":
-      return expr.value.toString();
-    case "FunctionCall":
-      if (expr.args.length === 1 && expr.args[0].kind === "StringLiteral") {
-        return [expr.ident.name, "$GLUE$", emitExpr(expr.args[0], expr)];
-      }
-      if (expressionContinues || expr.args.length > 1 || expr.args.length === 0)
+function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
+  let prec = precedence(expr);
+  const e = expr;
+  function emitNoParens(): TokenTree {
+    switch (e.kind) {
+      case "Block":
+        return emitMultiExpr(e);
+      case "VarDeclarationWithAssignment":
+        return emit(e.assignment);
+      case "VarDeclarationBlock":
+        if (e.children.length > 1)
+          return [
+            "var",
+            "$INDENT$",
+            e.children.map((x) => ["\n", emit(x)]),
+            "$DEDENT$",
+          ];
+        return ["var", emit(e.children[0])];
+      case "ImportStatement":
+        return [e.name, joinTrees(",", e.modules)];
+      case "WhileLoop":
+        return [`while`, emit(e.condition), ":", emitMultiExpr(e.body)];
+      case "ForEach":
         return [
-          expr.ident.name,
+          `for`,
+          emit(e.variable),
+          "in",
+          emit(e.collection),
+          ":",
+          emitMultiExpr(e.body),
+        ];
+      case "ForRange": {
+        const start = isIntLiteral(e.start, 0n) ? [] : emit(e.start);
+        if (isIntLiteral(e.increment, 1n)) {
+          return [
+            "for",
+            emit(e.variable),
+            "in",
+            start,
+            "$GLUE$",
+            e.inclusive ? ".." : "..<",
+            emit(e.end),
+            ":",
+            emitMultiExpr(e.body),
+          ];
+        }
+        if (!e.inclusive) {
+          throw new EmitError(e, "exlusive+step");
+        }
+        return [
+          "for",
+          emit(e.variable),
+          "in",
+          "countup",
           "$GLUE$",
           "(",
-          joinTrees(
-            expr.args.map((arg) => emitExpr(arg, expr)),
-            ","
-          ),
+          emit(e.start),
+          ",",
+          emit(e.end),
+          ",",
+          emit(e.increment),
+          ")",
+          ":",
+          emitMultiExpr(e.body),
+        ];
+      }
+      case "IfStatement":
+        return [
+          "if",
+          emit(e.condition),
+          ":",
+          emitMultiExpr(e.consequent),
+          e.alternate !== undefined
+            ? ["else", ":", emitMultiExpr(e.alternate)]
+            : [],
+        ];
+      case "Variants":
+      case "ForEachKey":
+      case "ForEachPair":
+      case "ForCLike":
+        throw new EmitError(e);
+      case "Assignment":
+        return [emit(e.variable), "=", emit(e.expr)];
+      case "ManyToManyAssignment":
+        return [
+          "(",
+          joinExprs(",", e.variables),
+          ")",
+          "=",
+          "(",
+          joinExprs(",", e.exprs),
           ")",
         ];
-      return [
-        expr.ident.name,
-        joinTrees(
-          expr.args.map((arg) => emitExpr(arg, expr)),
-          ","
-        ),
-      ];
-    case "MethodCall":
-      if (expressionContinues || expr.args.length > 1)
+      case "OneToManyAssignment":
+        return [joinExprs(",", e.variables), "=", emit(e.expr)];
+      case "MutatingBinaryOp":
+        return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
+      case "Identifier":
+        return e.name;
+      case "StringLiteral":
+        return emitStringLiteral(e.value, [
+          [
+            `"`,
+            [
+              [`\\`, `\\\\`],
+              [`\n`, `\\n`],
+              [`\r`, `\\r`],
+              [`"`, `\\"`],
+            ],
+          ],
+          [`"""`, [[`"""`, null]]],
+          [
+            [`r"`, `"`],
+            [
+              [`"`, `""`],
+              [`\n`, null],
+              [`\r`, null],
+            ],
+          ],
+        ]);
+      case "IntegerLiteral":
+        return e.value.toString();
+      case "FunctionCall":
+        if (e.args.length === 1 && e.args[0].kind === "StringLiteral") {
+          const raw = emitAsRawStringLiteral(e.args[0].value, e.ident.name);
+          if (raw !== null) {
+            prec = Infinity;
+            return raw;
+          }
+        }
+        if (e.args.length > 1) {
+          prec = 11.5;
+        }
+        if (e.args.length > 1 || e.args.length === 0)
+          return [e.ident.name, "$GLUE$", "(", joinExprs(",", e.args), ")"];
+        return [e.ident.name, joinExprs(",", e.args)];
+      case "MethodCall":
+        if (e.args.length > 1)
+          return [
+            emit(e.object, prec),
+            ".",
+            e.ident.name,
+            e.args.length > 0
+              ? ["$GLUE$", "(", joinExprs(",", e.args), ")"]
+              : [],
+          ];
+        else {
+          if (e.args.length === 1 && e.args[0].kind === "StringLiteral") {
+            const raw = emitAsRawStringLiteral(e.args[0].value, e.ident.name);
+            if (raw !== null) {
+              prec = 12;
+              return [emit(e.object, prec), ".", raw];
+            }
+          }
+          prec = 2;
+          return [
+            emit(e.object, prec),
+            ".",
+            e.ident.name,
+            e.args.length > 0 ? joinExprs(",", e.args) : [],
+          ];
+        }
+      case "BinaryOp": {
+        const rightAssoc = e.name === "^";
         return [
-          emitExpr(expr.object, expr, "object"),
-          ".",
-          expr.ident.name,
-          expr.args.length > 0
-            ? [
-                "$GLUE$",
-                "(",
-                joinTrees(
-                  expr.args.map((arg) => emitExpr(arg, expr)),
-                  ","
-                ),
-                ")",
-              ]
-            : [],
+          emit(e.left, prec + (rightAssoc ? 1 : 0)),
+          /[A-Za-z]/.test(e.name[0]) ? [] : "$GLUE$",
+          e.name,
+          emit(e.right, prec + (rightAssoc ? 0 : 1)),
         ];
-      else
+      }
+      case "UnaryOp":
+        return [e.name, emit(e.arg, prec + 1)];
+      case "ListConstructor":
+        return ["@", "[", joinExprs(",", e.exprs), "]"];
+      case "TableConstructor":
         return [
-          emitExpr(expr.object, expr, "object"),
+          "{",
+          joinTrees(
+            ",",
+            e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
+          ),
+          "}",
           ".",
-          expr.ident.name,
-          expr.args.length > 0
-            ? joinTrees(
-                expr.args.map((arg) => emitExpr(arg, expr)),
-                ","
-              )
-            : [],
+          "toTable",
         ];
-    case "BinaryOp":
-      return [
-        emitExpr(expr.left, expr, "left"),
-        /[A-Za-z]/.test(expr.name[0]) ? [] : "$GLUE$",
-        expr.name,
-        emitExpr(expr.right, expr, "right"),
-      ];
-    case "UnaryOp":
-      return [expr.name, emitExpr(expr.arg, expr)];
-    case "ListConstructor":
-      return [
-        "@",
-        "[",
-        joinTrees(
-          expr.exprs.map((x) => emitExprNoParens(x)),
-          ","
-        ),
-        "]",
-      ];
-    case "TableConstructor":
-      return [
-        "{",
-        joinTrees(
-          expr.kvPairs.map((x) => [
-            emitExprNoParens(x.key),
-            ":",
-            emitExprNoParens(x.value),
-          ]),
-          ","
-        ),
-        "}",
-        ".",
-        "toTable",
-      ];
-    case "IndexCall":
-      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
-      return [
-        emitExprNoParens(expr.collection),
-        "[",
-        emitExprNoParens(expr.index),
-        "]",
-      ];
-    case "RangeIndexCall":
-      if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
-      if (expr.step.kind !== "IntegerLiteral" || expr.step.value !== 1n)
-        throw new EmitError(expr, "step");
-      return [
-        emitExprNoParens(expr.collection),
-        "[",
-        emitExprNoParens(expr.low),
-        "..",
-        emitExprNoParens(expr.high),
-        "]",
-      ];
-
-    default:
-      throw new EmitError(expr);
+      case "IndexCall":
+        if (e.oneIndexed) throw new EmitError(expr, "one indexed");
+        return [emit(e.collection, 12), "[", emit(e.index), "]"];
+      case "RangeIndexCall":
+        if (e.oneIndexed) throw new EmitError(expr, "one indexed");
+        if (!isIntLiteral(e.step, 1n)) throw new EmitError(expr, "step");
+        return [
+          emit(e.collection, 12),
+          "[",
+          emit(e.low),
+          "..<",
+          emit(e.high),
+          "]",
+        ];
+      default:
+        throw new EmitError(expr);
+    }
   }
+
+  const inner = emitNoParens();
+  if (prec >= minimumPrec) return inner;
+  return ["(", inner, ")"];
+}
+
+function emitAsRawStringLiteral(
+  value: string,
+  prefix: string = "r"
+): string | null {
+  if (value.includes("\n") || value.includes("\r")) return null;
+  return `${prefix}"${value.replaceAll(`"`, `""`)}"`;
 }

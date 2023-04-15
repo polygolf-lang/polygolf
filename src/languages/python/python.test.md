@@ -9,25 +9,25 @@ print "3";
 print 4;
 ```
 
-```python bytes
+```python nogolf
 p=print
 p(1)
 p(2,end="")
 p(end="3")
-p(4)
+p(4,end="")
 ```
 
 ## Indexing
 
 ```polygolf
-$a <- (text_get_char "abcdefg" 4);
-$b <- (text_get_slice "abcdefg" 1 3);
-$c <- (text_reversed "abcdefg");
+$a <- (text_get_codepoint "abcdefg" 4);
+$b <- (text_get_codepoint_slice "abcdefg" 1 3);
+$c <- (text_codepoint_reversed "abcdefg");
 ```
 
-```python bytes
+```python nogolf
 a="abcdefg"[4]
-b="abcdefg"[1:3+1]
+b="abcdefg"[1:4]
 c="abcdefg"[::-1]
 ```
 
@@ -38,7 +38,7 @@ $a <- (text_split "a_bc_d_" "_");
 $b <- (text_split_whitespace " a\nbc  d");
 ```
 
-```python bytes
+```python nogolf
 a="a_bc_d_".split("_")
 b=" a\nbc  d".split()
 ```
@@ -47,6 +47,7 @@ b=" a\nbc  d".split()
 
 ```polygolf
 $a:0..10 <- 0;
+$b:0..10 <- 0;
 for $i 0 10 {
     for $j 0 10 {
         if ($i < $j) {
@@ -58,7 +59,7 @@ for $i 0 10 {
                 $a <- $j;
                 if ($i < $j) {
                     $a <- $j;
-                    $a <- $j;
+                    $a <- $b;
                 };
             };
         };
@@ -67,8 +68,8 @@ for $i 0 10 {
 };
 ```
 
-```python bytes
-a=0
+```python nogolf
+a=b=0
 for i in range(10):
  for j in range(10):
   if i<j:
@@ -76,7 +77,7 @@ for i in range(10):
     a=j
     if i<j:a=j
     a=j
-    if i<j:a=j;a=j
+    if i<j:a=j;a=b
  a=i
 ```
 

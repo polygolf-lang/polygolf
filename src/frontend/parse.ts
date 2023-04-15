@@ -20,7 +20,6 @@ import {
   int,
   assignment,
   OpCode,
-  PolygolfOp,
   whileLoop,
   voidType,
   textType,
@@ -39,7 +38,9 @@ import {
   frontendOpcodes,
   id,
   arrayConstructor,
+  toString,
   forArgv,
+  isAssociative,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -156,16 +157,8 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     (!restrictFrontend || frontendOpcodes.includes(opCode))
   ) {
     if (isBinary(opCode)) {
-      const allowNary = [
-        "add",
-        "mul",
-        "bit_and",
-        "bit_or",
-        "bit_xor",
-        "text_concat",
-      ].includes(opCode);
-      expectArity(2, allowNary ? Infinity : 2);
-      return composedPolygolfOp(opCode, args);
+      expectArity(2, isAssociative(opCode) ? Infinity : 2);
+      return polygolfOp(opCode, ...args);
     }
     expectArity(arity(opCode));
     return polygolfOp(opCode, ...args);
@@ -183,6 +176,8 @@ export const canonicalOpTable: Record<string, OpCode> = {
   "^": "pow",
   "&": "bit_and",
   "|": "bit_or",
+  "<<": "bit_shift_left",
+  ">>": "bit_shift_right",
   // bitxor, bitnot handled as special case in canonicalOp
   "==": "eq",
   "!=": "neq",
@@ -191,7 +186,7 @@ export const canonicalOpTable: Record<string, OpCode> = {
   ">=": "geq",
   ">": "gt",
   "#": "list_length",
-  "..": "text_concat",
+  "..": "concat",
 };
 
 function canonicalOp(op: string, arity: number): string {
@@ -200,15 +195,6 @@ function canonicalOp(op: string, arity: number): string {
   if (op === "-") return arity < 2 ? "neg" : "sub";
   if (op === "~") return arity < 2 ? "bit_not" : "bit_xor";
   return canonicalOpTable[op] ?? op;
-}
-
-function composedPolygolfOp(op: OpCode, args: readonly Expr[]): PolygolfOp {
-  if (args.length < 3) return polygolfOp(op, ...args);
-  return polygolfOp(
-    op,
-    composedPolygolfOp(op, args.slice(0, -1)),
-    args[args.length - 1]
-  );
 }
 
 export function userIdentifier(token: Token): Identifier {
@@ -261,11 +247,27 @@ export function typeSexpr(
     case "Void":
       expectArity(0);
       return voidType;
+    case "Int":
+      expectArity(0);
+      return intType();
+    case "Ascii":
     case "Text":
       expectArity(0, 1);
-      if (args.length === 0) return textType();
-      assertNumber(args[0]);
-      return textType(Number(args[0].value));
+      if (args.length === 0)
+        return textType(intType(), callee.value === "Ascii");
+      if (args[0].kind === "IntegerLiteral")
+        return textType(Number(args[0].value), callee.value === "Ascii");
+      if (args[0].kind === "integer")
+        return textType(args[0], callee.value === "Ascii");
+      throw new PolygolfError(
+        `Syntax error. Expected integer or integer type, got ${toString(
+          args[0]
+        )}.`,
+        {
+          line: callee.line,
+          column: callee.col,
+        }
+      );
     case "Bool":
       expectArity(0);
       return booleanType;
@@ -335,11 +337,41 @@ export function refSource(node: Node, ref?: Token | Node): Node {
 export default function parse(code: string, restrictedFrontend = true) {
   restrictFrontend = restrictedFrontend;
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-  parser.feed(code);
+  try {
+    parser.feed(code);
+  } catch (e) {
+    if (e instanceof Error && "token" in e) {
+      const token: Token = (e as any).token;
+      // https://stackoverflow.com/a/72016226/14611638
+      const expected = [
+        ...new Set(
+          ((e as any).message.match(/(?<=A ).*(?= based on:)/g) ?? []).map(
+            (s: string) => s.replace(/\s+token/i, "")
+          )
+        ),
+      ];
+      let message = `Unexpected token ${JSON.stringify(token.text)}.`;
+      if (expected.length > 0) {
+        message += ` Expected one of ${expected.join(", ")}.`;
+      }
+      throw new PolygolfError(message, {
+        line: token.line,
+        column: token.col,
+      });
+    } else {
+      throw e;
+    }
+  }
   const results = parser.results;
   if (results.length > 1) {
-    throw new Error("Ambiguous parse of code");
+    throw new Error("Ambiguous parse of code"); // this is most likely an error in the grammar
   }
-  if (results.length === 0) throw new Error("Unexpected end of code");
+  if (results.length === 0) {
+    const lines = code.split("\n");
+    throw new PolygolfError("Unexpected end of code", {
+      line: lines.length + 1,
+      column: (lines.at(-1)?.length ?? 0) + 1,
+    });
+  }
   return results[0] as Program;
 }

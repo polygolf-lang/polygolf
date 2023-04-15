@@ -77,6 +77,8 @@ export const BinaryOpCodeArray = [
   "bit_and",
   "bit_or",
   "bit_xor",
+  "bit_shift_left",
+  "bit_shift_right",
   "gcd",
   "min",
   "max",
@@ -99,20 +101,23 @@ export const BinaryOpCodeArray = [
   "array_get",
   "list_get",
   "table_get",
-  "text_get_byte",
   // other
   "list_push",
-  "text_concat",
+  "concat",
   "repeat",
   "text_contains",
-  "text_find",
+  "text_codepoint_find", // (text_codepoint_find a b) returns the codepoint-0-index of the start of the first occurence of b in a or -1 if it is not found
+  "text_byte_find", // (text_byte_find a b) returns the byte-0-index of the start of the first occurence of b in a or -1 if it is not found
   "text_split",
-  "text_get_char",
+  "text_get_byte", // returns a single byte text at the specified byte-0-index
+  "text_get_codepoint", // returns a single codepoint text at the specified codepoint-0-index
+  "text_codepoint_ord", // gets the codepoint at the specified codepoint-0-index as an integer
+  "text_byte_ord", // gets the byte at the specified byte-0-index as an integer
   "join_using",
   "right_align",
-  "int_to_bin_aligned",
-  "int_to_hex_aligned",
-  "simplify_fraction",
+  "int_to_bin_aligned", // Converts the given integer to text representing the value in binary. The result is aligned with 0s to the specified number of places.
+  "int_to_hex_aligned", // Converts the given integer to text representing the value in hexadecimal. The result is aligned with 0s to the specified number of places.
+  "simplify_fraction", // Given two integers, p,q, returns a text representation of the reduced version of the fraction p/q.
 ] as const;
 export type BinaryOpCode = typeof BinaryOpCodeArray[number];
 
@@ -127,13 +132,16 @@ export const UnaryOpCodeArray = [
   "int_to_hex",
   "text_to_int",
   "bool_to_int",
-  "byte_to_char",
+  "byte_to_text", // Returns a single byte text using the specified byte.
+  "int_to_codepoint", // Returns a single codepoint text using the specified integer.
   "list_length",
-  "text_length",
+  "text_codepoint_length", // Returns the text length in codepoints.
+  "text_byte_length", // Returns the text length in bytes.
   "text_split_whitespace",
   "sorted",
   "join",
-  "text_reversed",
+  "text_byte_reversed", // Returns a text containing the reversed order of bytes.
+  "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
 ] as const;
 export type UnaryOpCode = typeof UnaryOpCodeArray[number];
 
@@ -147,7 +155,8 @@ export const OpCodeArray = [
   "print",
   "println",
   "text_replace",
-  "text_get_slice",
+  "text_get_codepoint_slice", // Returns a slice of the input text. Indeces are codepoint-0-based, start is inclusive, end is exclusive.
+  "text_get_byte_slice", // Returns a slice of the input text. Indeces are byte-0-based, start is inclusive, end is exclusive.
   // collection set
   "array_set",
   "list_set",
@@ -178,7 +187,8 @@ export function arity(op: OpCode): number {
     case "println":
       return 1;
     case "text_replace":
-    case "text_get_slice":
+    case "text_get_byte_slice":
+    case "text_get_codepoint_slice":
     case "array_set":
     case "list_set":
     case "table_set":
@@ -186,15 +196,14 @@ export function arity(op: OpCode): number {
   }
 }
 
+/**
+ * Maps a binary op to another one with the same meaning, except the order of the arguments is swapped.
+ * This should only be used for ops that are *not* associative.
+ */
 export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
-    case "add":
-    case "mul":
     case "eq":
     case "neq":
-    case "bit_and":
-    case "bit_or":
-    case "bit_xor":
       return op;
     case "lt":
       return "gt";
@@ -210,6 +219,10 @@ export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
 
 export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
+    case "eq":
+      return "neq";
+    case "neq":
+      return "eq";
     case "lt":
       return "geq";
     case "gt":
@@ -221,3 +234,33 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   }
   return null;
 }
+
+export function isAssociative(op: OpCode): boolean {
+  return [
+    "add",
+    "mul",
+    "bit_and",
+    "bit_or",
+    "bit_xor",
+    "and",
+    "or",
+    "gcd",
+    "min",
+    "max",
+    "concat",
+  ].includes(op);
+}
+
+export const isCommutative = (op: OpCode) =>
+  [
+    "add",
+    "mul",
+    "bit_and",
+    "bit_or",
+    "bit_xor",
+    "and",
+    "or",
+    "gcd",
+    "min",
+    "max",
+  ].includes(op);

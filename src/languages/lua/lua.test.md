@@ -22,53 +22,61 @@ io.write("x")
 print("y")
 ```
 
-## Ops
+## Ops emit
 
 ```polygolf
-~ 1;
-- 1;
-1 + 2;
-1 - 2;
-1 * 2;
-1 div 2;
-1 ^ 2;
-1 mod 2;
-1 & 2;
-1 | 2;
-1 ~ 2;
-1 < 2;
-1 <= 2;
-1 == 2;
-1 >= 2;
-1 > 2;
+$a:-100..100 <- 0;
+$b:Text <- "xy";
+~ $a;
+- $a;
+$a + 2;
+$a - 2;
+$a * 2;
+$a div 2;
+$a ^ 2;
+$a mod 2;
+$a & 2;
+$a | 2;
+$a ~ 2;
+$a << 2;
+$a >> 2;
+$a < 2;
+$a <= 2;
+$a == 2;
+$a >= 2;
+$a > 2;
 array_get (array "xy" "abc") 1;
 text_get_byte "abc" 1;
-text_concat "abc" "xyz";
-text_length "abc";
+concat $b "xyz";
+text_byte_length "abc";
 int_to_text 5;
 text_to_int "5";
 ```
 
 ```lua nogolf
-~1
--1
-1+2
-1-2
-1*2
-1//2
-1^2
-1%2
-1&2
-1|2
-1~2
-1<2
-1<=2
-1==2
-1>=2
-1>2
-({"xy","abc"})[1+1]
-("abc"):byte(1+1)
-"abc".."xyz"
+a=0
+b="xy"
+~a
+-a
+a+2
+a-2
+2*a
+a//2
+a^2
+a%2
+2&a
+2|a
+2~a
+a<<2
+a>>2
+a<2
+a<=2
+a==2
+a>=2
+a>2
+({"xy","abc"})[2]
+("abc"):byte(2)
+b.."xyz"
 ("abc"):len()
 tostring(5)
 - -"5"
@@ -78,7 +86,7 @@ tostring(5)
 
 ```polygolf
 $t <- "abc";
-text_length $t;
+text_byte_length $t;
 ```
 
 ```lua nogolf
@@ -88,12 +96,12 @@ t:len()
 
 ```polygolf
 $a <- (array "abc" "xyz");
-text_length (array_get $a 1);
+text_byte_length (array_get $a 1);
 ```
 
 ```lua nogolf
 a={"abc","xyz"}
-a[1+1]:len()
+a[2]:len()
 ```
 
 ## Argv
@@ -104,7 +112,7 @@ for_argv $x 100 {
 };
 ```
 
-```lua
+```lua nogolf
 for x=0,99 do X=arg[x+1]
 print(X)end
 ```

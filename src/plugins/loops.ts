@@ -1,3 +1,4 @@
+import { Spine } from "../common/Spine";
 import { getType } from "../common/getType";
 import { Plugin } from "../common/Language";
 import {
@@ -12,7 +13,14 @@ import {
   id,
   IR,
   polygolfOp,
+  Expr,
+  Identifier,
+  Node,
+  isIntLiteral,
+  ForRange,
+  forDifferenceRange,
 } from "../IR";
+import { add1, sub1 } from "./ops";
 
 export const forRangeToForRangeInclusive: Plugin = {
   name: "forRangeToForRangeInclusive",
@@ -20,8 +28,8 @@ export const forRangeToForRangeInclusive: Plugin = {
     if (node.kind === "ForRange" && !node.inclusive)
       return forRange(
         node.variable,
-        node.low,
-        polygolfOp("sub", node.high, int(1n)),
+        node.start,
+        sub1(node.end),
         node.increment,
         node.body,
         true
@@ -29,51 +37,12 @@ export const forRangeToForRangeInclusive: Plugin = {
   },
 };
 
-export const useInclusiveForRange: Plugin = {
-  name: "useInclusiveForRange",
-  visit(node): IR.ForRange | undefined {
-    if (node.kind === "ForRange" && !node.inclusive) {
-      if (node.high.kind === "IntegerLiteral") {
-        const high = {
-          ...node.high,
-          value: node.high.value - 1n,
-        };
-        return {
-          ...node,
-          inclusive: true,
-          high,
-        };
-      } else if (node.high.kind === "BinaryOp" && node.high.op === "add") {
-        if (
-          node.high.right.kind === "IntegerLiteral" &&
-          node.high.right.value === 1n
-        ) {
-          return {
-            ...node,
-            inclusive: true,
-            high: node.high.left,
-          };
-        } else if (
-          node.high.left.kind === "IntegerLiteral" &&
-          node.high.left.value === 1n
-        ) {
-          return {
-            ...node,
-            inclusive: true,
-            high: node.high.right,
-          };
-        }
-      }
-    }
-  },
-};
-
 export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, spine.root.node);
-      const high = getType(node.high, spine.root.node);
+      const low = getType(node.start, spine.root.node);
+      const high = getType(node.end, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
@@ -82,9 +51,9 @@ export const forRangeToWhile: Plugin = {
         polygolfOp("add", node.variable, node.increment)
       );
       return block([
-        assignment(node.variable, node.low),
+        assignment(node.variable, node.start),
         whileLoop(
-          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
           block([node.body, increment])
         ),
       ]);
@@ -96,18 +65,18 @@ export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, spine.root.node);
-      const high = getType(node.high, spine.root.node);
+      const low = getType(node.start, spine.root.node);
+      const high = getType(node.end, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
       return forCLike(
-        assignment(node.variable, node.low),
+        assignment(node.variable, node.start),
         assignment(
           node.variable,
-          polygolfOp("add", node.variable, node.increment ?? int(1n))
+          polygolfOp("add", node.variable, node.increment)
         ),
-        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
         node.body
       );
     }
@@ -130,13 +99,13 @@ export const forRangeToForEachPair: Plugin = {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
-      node.low.kind === "IntegerLiteral" &&
-      node.low.value === 0n &&
-      node.high.kind === "PolygolfOp" &&
-      node.high.op === "list_length" &&
-      node.high.args[0].kind === "Identifier"
+      node.start.kind === "IntegerLiteral" &&
+      node.start.value === 0n &&
+      node.end.kind === "PolygolfOp" &&
+      node.end.op === "list_length" &&
+      node.end.args[0].kind === "Identifier"
     ) {
-      const collection = node.high.args[0];
+      const collection = node.end.args[0];
       const elementIdentifier = id(
         node.variable.name + "POLYGOLFforRangeToForEachPair"
       );
@@ -164,13 +133,13 @@ export const forRangeToForEach: Plugin = {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
-      node.low.kind === "IntegerLiteral" &&
-      node.low.value === 0n &&
-      node.high.kind === "PolygolfOp" &&
-      node.high.op === "list_length" &&
-      node.high.args[0].kind === "Identifier"
+      node.start.kind === "IntegerLiteral" &&
+      node.start.value === 0n &&
+      node.end.kind === "PolygolfOp" &&
+      node.end.op === "list_length" &&
+      node.end.args[0].kind === "Identifier"
     ) {
-      const collection = node.high.args[0];
+      const collection = node.end.args[0];
       const elementIdentifier = id(
         node.variable.name + "POLYGOLFforRangeToForEach"
       );
@@ -260,3 +229,58 @@ export const assertForArgvTopLevel: Plugin = {
     return undefined;
   },
 };
+
+export const shiftRangeOneUp: Plugin = {
+  name: "shiftRangeOneUp",
+  visit(node, spine) {
+    if (node.kind === "ForRange" && isIntLiteral(node.increment, 1n)) {
+      const bodySpine = new Spine(node.body, spine, "body");
+      const newVar = id(node.variable.name + "POLYGOLFshifted");
+      const newBodySpine = bodySpine.withReplacer((x) =>
+        isIdent(x, node.variable) ? sub1(newVar) : undefined
+      );
+      return forRange(
+        newVar,
+        add1(node.start),
+        add1(node.end),
+        int(1n),
+        newBodySpine.node as Expr,
+        node.inclusive
+      );
+    }
+  },
+};
+
+function isIdent(node: Node, ident: Identifier): node is Identifier {
+  return (
+    node.kind === "Identifier" &&
+    node.name === ident.name &&
+    node.builtin === ident.builtin
+  );
+}
+
+export function forRangeToForDifferenceRange(
+  transformPredicate: (
+    expr: ForRange,
+    spine: Spine<ForRange>
+  ) => boolean = () => true
+): Plugin {
+  return {
+    name: "forRangeToForDifferenceRange",
+    visit(node, spine) {
+      if (
+        node.kind === "ForRange" &&
+        transformPredicate(node, spine as Spine<ForRange>)
+      ) {
+        return forDifferenceRange(
+          node.variable,
+          node.start,
+          polygolfOp("sub", node.end, node.start),
+          node.increment,
+          node.body,
+          node.inclusive
+        );
+      }
+    },
+  };
+}

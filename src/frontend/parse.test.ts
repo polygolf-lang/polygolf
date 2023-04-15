@@ -1,3 +1,4 @@
+import { stringify } from "../common/stringify";
 import {
   assignment,
   Expr,
@@ -19,22 +20,9 @@ import {
   Node,
   textType,
   booleanType,
+  Type,
 } from "../IR";
 import parse from "./parse";
-
-function stringify(x: any): string {
-  // Jest complains it cannot serialize bigint
-  return JSON.stringify(
-    x,
-    (key, value) =>
-      key === "source"
-        ? undefined
-        : typeof value === "bigint"
-        ? value.toString() + "n"
-        : value,
-    2
-  );
-}
 
 function testStmtParse(desc: string, str: string, output: Node) {
   test(desc, () => {
@@ -44,6 +32,10 @@ function testStmtParse(desc: string, str: string, output: Node) {
 
 function expectExprParse(desc: string, str: string, output: Expr) {
   testStmtParse(desc, `assign $x ${str};`, assignment("x", output));
+}
+
+function expectTypeParse(type: string, output: Type) {
+  expectExprParse(type, "$a:" + type, annotate(id("a"), output));
 }
 
 describe("Parse literals", () => {
@@ -104,11 +96,7 @@ describe("Parse s-expressions", () => {
   expectExprParse(
     "..",
     "(.. $x $y $z)",
-    polygolfOp(
-      "text_concat",
-      polygolfOp("text_concat", id("x"), id("y")),
-      id("z")
-    )
+    polygolfOp("concat", polygolfOp("concat", id("x"), id("y")), id("z"))
   );
   expectExprParse("- as neg", "(- $x)", polygolfOp("neg", id("x")));
   expectExprParse("- as sub", "(- $x $y)", polygolfOp("sub", id("x"), id("y")));
@@ -121,48 +109,19 @@ describe("Parse s-expressions", () => {
 });
 
 describe("Parse annotations", () => {
-  expectExprParse(
-    "integer -oo..oo",
-    "$a:-oo..oo",
-    annotate(id("a"), integerType())
-  );
-  expectExprParse(
-    "integer 0..oo",
-    "$a:0..oo",
-    annotate(id("a"), integerType(0, undefined))
-  );
-  expectExprParse(
-    "integer -10..10",
-    "$a:-10..10",
-    annotate(id("a"), integerType(-10, 10))
-  );
-  expectExprParse("bool", "$a:Bool", annotate(id("a"), booleanType));
-  expectExprParse("text", "$a:Text", annotate(id("a"), textType()));
-  expectExprParse(
-    "text of max 120 length",
-    "$a:(Text 120)",
-    annotate(id("a"), textType(120))
-  );
-  expectExprParse(
-    "array of 5 strings",
-    "$a:(Array Text 5)",
-    annotate(id("a"), arrayType(textType(), 5))
-  );
-  expectExprParse(
-    "list of strings",
-    "$a:(List Text)",
-    annotate(id("a"), listType(textType()))
-  );
-  expectExprParse(
-    "list of lists of strings",
-    "$a:(List (List Text))",
-    annotate(id("a"), listType(listType(textType())))
-  );
-  expectExprParse(
-    "list of ints",
-    "$a:(List -999..999)",
-    annotate(id("a"), listType(integerType(-999, 999)))
-  );
+  expectTypeParse("-oo..oo", integerType());
+  expectTypeParse("0..oo", integerType(0, undefined));
+  expectTypeParse("-10..10", integerType(-10, 10));
+  expectTypeParse("Bool", booleanType);
+  expectTypeParse("Text", textType());
+  expectTypeParse("Ascii", textType(integerType(), true));
+  expectTypeParse("(Text 120)", textType(120));
+  expectTypeParse("(Text 40..120)", textType(integerType(40, 120)));
+  expectTypeParse("(Ascii 40..120)", textType(integerType(40, 120), true));
+  expectTypeParse("(Array Text 5)", arrayType(textType(), 5));
+  expectTypeParse("(List Text)", listType(textType()));
+  expectTypeParse("(List (List Text))", listType(listType(textType())));
+  expectTypeParse("(List -999..999)", listType(integerType(-999, 999)));
 });
 
 describe("Parse statements", () => {
@@ -206,5 +165,17 @@ describe("Parse variants", () => {
     "Expression variants",
     `println { 0 / 1 };`,
     print(variants([int(0n), int(1n)]), true)
+  );
+});
+
+describe("Parse unambiguously", () => {
+  testStmtParse(
+    "Nested variants",
+    `{
+      {
+        $a <- 0;
+      }
+    }`,
+    variants([variants([assignment(id("a"), int(0n))])])
   );
 });

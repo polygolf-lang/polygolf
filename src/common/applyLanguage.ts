@@ -4,6 +4,7 @@ import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
 import { getType } from "./getType";
+import { stringify } from "./stringify";
 
 // TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
 export type OptimisationLevel = "none" | "heuristic" | "full";
@@ -16,7 +17,7 @@ export interface SearchOptions {
 
 // This is what code.golf uses for char scoring
 // https://github.com/code-golf/code-golf/blob/13733cfd472011217031fb9e733ae9ac177b234b/js/_util.ts#L7
-const charLen = (str: string | null) => {
+export const charLength = (str: string | null) => {
   if (str === null) return Infinity;
   let i = 0;
   let len = 0;
@@ -46,6 +47,9 @@ const charLen = (str: string | null) => {
   return len;
 };
 
+export const byteLength = (x: string | null) =>
+  x === null ? Infinity : Buffer.byteLength(x, "utf-8");
+
 export function searchOptions(
   level: OptimisationLevel,
   objective: Objective,
@@ -57,8 +61,8 @@ export function searchOptions(
     objectiveFunction:
       objectiveFunction === undefined
         ? objective === "bytes"
-          ? (x) => (x === null ? Infinity : Buffer.byteLength(x, "utf-8"))
-          : (x) => (x === null ? Infinity : charLen(x))
+          ? byteLength
+          : charLength
         : (x) => (x === null ? Infinity : objectiveFunction(x)),
   };
 }
@@ -88,7 +92,7 @@ export default function applyLanguage(
   const bestForPacking = applyLanguageToVariants(
     language,
     language.name === "Polygolf" ? [program] : expandVariants(program),
-    searchOptions(options.level, "chars", (x) => charLen(packer(x)))
+    searchOptions(options.level, "chars", (x) => charLength(packer(x)))
   );
   const packed = packer(bestForPacking);
   if (
@@ -181,9 +185,7 @@ function golfProgram(
     //      `polygolfOp("+",a,b)` vs `functionCall("+",a,b)`)
     // room for improvement? custom compare function. Might be able to
     // O(log(nodes)) checking for duplicates instead of O(nodes) stringification
-    const s = JSON.stringify(prog, (_, value) =>
-      typeof value === "bigint" ? value.toString() + "n" : value
-    );
+    const s = stringify(prog);
     if (visited.has(s)) return;
     visited.add(s);
     try {
