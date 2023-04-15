@@ -35,10 +35,10 @@ export interface KeyValue extends BaseExpr {
  * This is used to represent an abstract operation.
  * Polygolf ensures that in the IR, there will never be:
 
- * Polygolf(neg)
- * Polygolf(sub)
- * Polygolf(add) as a direct child of Polygolf(add) - same with all other associative ops
- * IntegerLiteral (if present) appears at the first position in the args list
+ * - PolygolfOp(neg)
+ * - PolygolfOp(sub)
+ * - PolygolfOp as a direct child of a PolygolfOp with the same associative OpCode
+ * - IntegerLiteral as a nonfirst child of an associative PolygolfOp
  * 
  * This is ensured when using the polygolfOp contructor function and the Spine API so avoid creating such nodes manually.
  */
