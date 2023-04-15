@@ -38,7 +38,7 @@ export interface KeyValue extends BaseExpr {
  * - PolygolfOp(neg)
  * - PolygolfOp(sub)
  * - PolygolfOp as a direct child of a PolygolfOp with the same associative OpCode
- * - IntegerLiteral as a nonfirst child of an associative PolygolfOp
+ * - IntegerLiteral as a nonfirst child of a commutative PolygolfOp
  * 
  * This is ensured when using the polygolfOp contructor function and the Spine API so avoid creating such nodes manually.
  */
