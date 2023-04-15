@@ -17,6 +17,7 @@ import {
   isBinary,
   stringLiteral,
   integerType,
+  isConstantType,
 } from "./IR";
 
 /**
@@ -186,7 +187,14 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
         );
       }
     }
+
     if (args.length === 1) return args[0];
+  }
+  if (isBinary(op) && args.length === 2) {
+    const combined = evalBinaryOp(op, args[0], args[1]);
+    if (combined !== null) {
+      return combined;
+    }
   }
   return _polygolfOp(op, ...args);
 }
@@ -196,13 +204,12 @@ function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
     return stringLiteral(left.value + right.value);
   }
   if (left.kind === "IntegerLiteral" && right.kind === "IntegerLiteral") {
-    return int(
-      getArithmeticType(
-        op,
-        integerType(left.value, left.value),
-        integerType(right.value, right.value)
-      ).low as bigint
+    const type = getArithmeticType(
+      op,
+      integerType(left.value, left.value),
+      integerType(right.value, right.value)
     );
+    if (isConstantType(type)) return int(type.low as bigint);
   }
   return null;
 }

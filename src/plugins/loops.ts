@@ -19,6 +19,8 @@ import {
   isIntLiteral,
   ForRange,
   forDifferenceRange,
+  isSubtype,
+  integerType,
 } from "../IR";
 import { add1, sub1 } from "./ops";
 
@@ -282,3 +284,32 @@ export function forRangeToForDifferenceRange(
     },
   };
 }
+
+export const forRangeToForRangeOneStep: Plugin = {
+  name: "forRangeToForRangeOneStep",
+  visit(node, spine) {
+    if (
+      node.kind === "ForRange" &&
+      isSubtype(getType(node.increment, spine.root.node), integerType(2n))
+    ) {
+      const newVar = id(node.variable.name + "POLYGOLFOneStep");
+      return forRange(
+        newVar,
+        polygolfOp("div", node.start, node.increment),
+        polygolfOp("div", node.end, node.increment),
+        int(1n),
+        block([
+          assignment(
+            node.variable,
+            polygolfOp(
+              "add",
+              polygolfOp("mul", newVar, node.increment),
+              polygolfOp("mod", node.start, node.increment)
+            )
+          ),
+        ]),
+        node.inclusive
+      );
+    }
+  },
+};

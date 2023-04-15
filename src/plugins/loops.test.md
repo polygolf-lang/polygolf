@@ -120,3 +120,18 @@ for $iPOLYGOLFshifted 1 81 {
   println (-1 * $iPOLYGOLFshifted);
 };
 ```
+
+## One step for range
+
+```polygolf
+for $i 0 10 2 {
+  println $i;
+};
+```
+
+```polygolf loops.forRangeToForRangeOneStep
+for $iPOLYGOLFOneStep 0 5 {
+  $i <- (2 * $iPOLYGOLFOneStep);
+  println $i;
+};
+```
