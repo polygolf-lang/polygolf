@@ -135,3 +135,16 @@ for $iPOLYGOLFOneStep 0 5 {
   println $i;
 };
 ```
+
+```polygolf
+for $i -22 22 5 {
+  println $i;
+};
+```
+
+```polygolf loops.forRangeToForRangeOneStep
+for $iPOLYGOLFOneStep 0 9 {
+  $i <- ((5 * $iPOLYGOLFOneStep) + -22);
+  println $i;
+};
+```

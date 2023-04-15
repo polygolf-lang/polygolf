@@ -200,16 +200,24 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
 }
 
 function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
-  if (left.kind === "StringLiteral" && right.kind === "StringLiteral") {
+  if (
+    op === "concat" &&
+    left.kind === "StringLiteral" &&
+    right.kind === "StringLiteral"
+  ) {
     return stringLiteral(left.value + right.value);
   }
   if (left.kind === "IntegerLiteral" && right.kind === "IntegerLiteral") {
-    const type = getArithmeticType(
-      op,
-      integerType(left.value, left.value),
-      integerType(right.value, right.value)
-    );
-    if (isConstantType(type)) return int(type.low as bigint);
+    try {
+      const type = getArithmeticType(
+        op,
+        integerType(left.value, left.value),
+        integerType(right.value, right.value)
+      );
+      if (isConstantType(type)) return int(type.low);
+    } catch {
+      // The output type is not an integer.
+    }
   }
   return null;
 }

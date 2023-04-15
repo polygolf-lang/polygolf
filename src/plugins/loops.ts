@@ -295,8 +295,20 @@ export const forRangeToForRangeOneStep: Plugin = {
       const newVar = id(node.variable.name + "POLYGOLFOneStep");
       return forRange(
         newVar,
-        polygolfOp("div", node.start, node.increment),
-        polygolfOp("div", node.end, node.increment),
+        int(0n),
+        node.inclusive
+          ? polygolfOp(
+              "div",
+              polygolfOp("sub", node.end, node.start),
+              node.increment
+            )
+          : add1(
+              polygolfOp(
+                "div",
+                polygolfOp("sub", sub1(node.end), node.start),
+                node.increment
+              )
+            ),
         int(1n),
         block([
           assignment(
@@ -304,9 +316,10 @@ export const forRangeToForRangeOneStep: Plugin = {
             polygolfOp(
               "add",
               polygolfOp("mul", newVar, node.increment),
-              polygolfOp("mod", node.start, node.increment)
+              node.start
             )
           ),
+          node.body,
         ]),
         node.inclusive
       );
