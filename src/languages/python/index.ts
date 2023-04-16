@@ -37,6 +37,7 @@ import { useEquivalentTextOp } from "../../plugins/textOps";
 import { addMutatingBinaryOp } from "../../plugins/binaryOps";
 import { addOneToManyAssignments } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
+import { bitnotPlugins } from "../../plugins/arithmetic";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -52,6 +53,7 @@ const pythonLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     useEquivalentTextOp,
+    ...bitnotPlugins,
   ],
   emitPlugins: [
     forArgvToForEach,

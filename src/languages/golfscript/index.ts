@@ -26,6 +26,7 @@ import {
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
+import { bitnotPlugins } from "../../plugins/arithmetic";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
@@ -36,6 +37,7 @@ const golfscriptLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     equalityToInequality,
+    ...bitnotPlugins,
   ],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [

@@ -189,7 +189,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [emit(e.left, prec), e.name, emit(e.right, prec + 1)];
       }
       case "UnaryOp":
-        return [e.name, emit(e.arg, prec + 1)];
+        return [e.name, emit(e.arg, prec)];
       case "ListConstructor":
         return ["[", joinExprs(",", e.exprs), "]"];
       case "TableConstructor":

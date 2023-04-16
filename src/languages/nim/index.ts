@@ -38,6 +38,7 @@ import {
   groupVarDeclarations,
   noStandaloneVarDeclarations,
 } from "../../plugins/block";
+import { bitnotPlugins } from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -56,6 +57,7 @@ const nimLanguage: Language = {
     useEquivalentTextOp,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
+    ...bitnotPlugins,
   ],
   emitPlugins: [
     forArgvToForEach,

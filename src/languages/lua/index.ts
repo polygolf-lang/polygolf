@@ -22,6 +22,7 @@ import { golfLastPrint } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import { addOneToManyAssignments } from "../../plugins/block";
+import { bitnotPlugins } from "../../plugins/arithmetic";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -35,6 +36,7 @@ const luaLanguage: Language = {
     equalityToInequality,
     useEquivalentTextOp,
     shiftRangeOneUp,
+    ...bitnotPlugins,
   ],
   emitPlugins: [
     forArgvToForRange(),

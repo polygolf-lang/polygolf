@@ -29,6 +29,7 @@ import {
   forRangeToForRangeInclusive,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
+import { bitnotPlugins } from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -41,6 +42,7 @@ const swiftLanguage: Language = {
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive,
+    ...bitnotPlugins,
   ],
   emitPlugins: [
     forArgvToForEach,
