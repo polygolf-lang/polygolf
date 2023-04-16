@@ -14,7 +14,7 @@ $x <- ("prepend" .. $x);
 $n:-oo..oo <- 0;
 $a:-oo..oo <- 0;
 @MutatingBinaryOp add + $n 3;
-@MutatingBinaryOp add + $n ($a + 3);
+@MutatingBinaryOp add + $n (3 + $a);
 $x:Text <- "hello";
 @MutatingBinaryOp concat + $x " world";
 $x <- ("prepend" .. $x);
