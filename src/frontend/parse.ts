@@ -35,7 +35,7 @@ import {
   functionType,
   func,
   conditional,
-  frontendOpcodes,
+  frontendOpCodes,
   id,
   arrayConstructor,
   toString,
@@ -154,7 +154,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   }
   if (
     isOpCode(opCode) &&
-    (!restrictFrontend || frontendOpcodes.includes(opCode))
+    (!restrictFrontend || frontendOpCodes.includes(opCode))
   ) {
     if (isBinary(opCode)) {
       expectArity(2, isAssociative(opCode) ? Infinity : 2);

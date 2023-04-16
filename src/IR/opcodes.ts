@@ -1,4 +1,4 @@
-export const frontendOpcodes: OpCode[] = [
+export const frontendOpCodes: OpCode[] = [
   "add",
   "sub",
   "mul",
@@ -71,7 +71,7 @@ export const frontendOpcodes: OpCode[] = [
   "sorted",
 ];
 
-export const BinaryOpCodeArray = [
+export const BinaryOpCodes = [
   // (num, num) => num
   "add",
   "sub",
@@ -126,9 +126,9 @@ export const BinaryOpCodeArray = [
   "int_to_hex_aligned", // Converts the given integer to text representing the value in hexadecimal. The result is aligned with 0s to the specified number of places.
   "simplify_fraction", // Given two integers, p,q, returns a text representation of the reduced version of the fraction p/q.
 ] as const;
-export type BinaryOpCode = typeof BinaryOpCodeArray[number];
+export type BinaryOpCode = typeof BinaryOpCodes[number];
 
-export const UnaryOpCodeArray = [
+export const UnaryOpCodes = [
   "argv_get",
   "abs",
   "bit_not",
@@ -150,11 +150,11 @@ export const UnaryOpCodeArray = [
   "text_byte_reversed", // Returns a text containing the reversed order of bytes.
   "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
 ] as const;
-export type UnaryOpCode = typeof UnaryOpCodeArray[number];
+export type UnaryOpCode = typeof UnaryOpCodes[number];
 
-export const OpCodeArray = [
-  ...BinaryOpCodeArray,
-  ...UnaryOpCodeArray,
+export const OpCodes = [
+  ...BinaryOpCodes,
+  ...UnaryOpCodes,
   "true",
   "false",
   "argv",
@@ -170,16 +170,16 @@ export const OpCodeArray = [
   "table_set",
 ] as const;
 
-export type OpCode = typeof OpCodeArray[number];
+export type OpCode = typeof OpCodes[number];
 
 export function isOpCode(op: string): op is OpCode {
-  return OpCodeArray.includes(op as any);
+  return OpCodes.includes(op as any);
 }
 export function isUnary(op: OpCode): op is UnaryOpCode {
-  return UnaryOpCodeArray.includes(op as any);
+  return UnaryOpCodes.includes(op as any);
 }
 export function isBinary(op: OpCode): op is BinaryOpCode {
-  return BinaryOpCodeArray.includes(op as any);
+  return BinaryOpCodes.includes(op as any);
 }
 export function arity(op: OpCode): number {
   if (isUnary(op)) return 1;

@@ -12,6 +12,7 @@ import {
   isConstantType,
   isIntLiteral,
   isNegative,
+  isPolygolfOp,
   OpCode,
   PolygolfOp,
   polygolfOp,
@@ -27,7 +28,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
     name: "mapOps(...)",
     allOrNothing: true,
     visit(node, spine) {
-      if (node.kind === "PolygolfOp") {
+      if (isPolygolfOp(node)) {
         const op = node.op;
         const f = opMap.get(op);
         if (f !== undefined) {
@@ -112,8 +113,7 @@ export function useIndexCalls(
     allOrNothing: true,
     visit(node) {
       if (
-        node.kind === "PolygolfOp" &&
-        (ops.length === 0 || ops.includes(node.op)) &&
+        isPolygolfOp(node, ...ops) &&
         (node.args[0].kind === "Identifier" || node.op.endsWith("_get"))
       ) {
         let indexNode: IndexCall;
@@ -143,7 +143,7 @@ export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
 export const equalityToInequality: Plugin = {
   name: "equalityToInequality",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && (node.op === "eq" || node.op === "neq")) {
+    if (isPolygolfOp(node, "eq", "neq")) {
       const eq = node.op === "eq";
       const [a, b] = [node.args[0], node.args[1]];
       const [t1, t2] = [a, b].map((x) => getType(x, spine.root.node)) as [

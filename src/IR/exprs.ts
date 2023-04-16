@@ -21,19 +21,11 @@ import {
 
 /**
  * All expressions start as a `PolygolfOp` node.
- * Plugins (mainly `mapOps, mapPrecedenceOps` plugins) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
+ * This node is used to represent an abstract operation.
+ * Plugins (mainly `mapOps, mapToUnaryAndBinaryOps` plugins) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
  * This node should never enter the emit phase.
- */
-
-export interface KeyValue extends BaseExpr {
-  readonly kind: "KeyValue";
-  readonly key: Expr;
-  readonly value: Expr;
-}
-
-/**
- * This is used to represent an abstract operation.
- * Polygolf ensures that in the IR, there will never be:
+ 
+* Polygolf ensures that in the IR, there will never be:
 
  * - PolygolfOp(neg)
  * - PolygolfOp(sub)
@@ -42,10 +34,16 @@ export interface KeyValue extends BaseExpr {
  * 
  * This is ensured when using the polygolfOp contructor function and the Spine API so avoid creating such nodes manually.
  */
-export interface PolygolfOp extends BaseExpr {
+export interface PolygolfOp<Op extends OpCode = OpCode> extends BaseExpr {
   readonly kind: "PolygolfOp";
-  readonly op: OpCode;
+  readonly op: Op;
   readonly args: readonly Expr[];
+}
+
+export interface KeyValue extends BaseExpr {
+  readonly kind: "KeyValue";
+  readonly key: Expr;
+  readonly value: Expr;
 }
 
 export interface FunctionCall extends BaseExpr {
@@ -154,9 +152,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
     return polygolfOp("add", args[0], polygolfOp("neg", args[1]));
   }
   if (isBinary(op) && isAssociative(op)) {
-    args = args.flatMap((x) =>
-      x.kind === "PolygolfOp" && x.op === op ? x.args : [x]
-    );
+    args = args.flatMap((x) => (isPolygolfOp(x, op) ? x.args : [x]));
     if (op === "add") args = simplifyPolynomial(args);
     else {
       if (isCommutative(op)) {
@@ -178,8 +174,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
       args = newArgs;
       if (op === "mul" && args.length > 1 && isNegativeLiteral(args[0])) {
         const toNegate = args.find(
-          (x) =>
-            x.kind === "PolygolfOp" && x.op === "add" && x.args.some(isNegative)
+          (x) => isPolygolfOp(x, "add") && x.args.some(isNegative)
         );
         if (toNegate !== undefined) {
           args = args.map((x) =>
@@ -235,7 +230,7 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
   }
   for (const x of terms) {
     if (x.kind === "IntegerLiteral") constant += x.value;
-    else if (x.kind === "PolygolfOp" && x.op === "mul") {
+    else if (isPolygolfOp(x, "mul")) {
       if (x.args[0].kind === "IntegerLiteral")
         add(x.args[0].value, x.args.slice(1));
       else add(1n, x.args);
@@ -425,8 +420,15 @@ export function isNegativeLiteral(expr: Expr) {
 export function isNegative(expr: Expr) {
   return (
     isNegativeLiteral(expr) ||
-    (expr.kind === "PolygolfOp" &&
-      expr.op === "mul" &&
-      isNegativeLiteral(expr.args[0]))
+    (isPolygolfOp(expr, "mul") && isNegativeLiteral(expr.args[0]))
+  );
+}
+
+export function isPolygolfOp<Op extends OpCode>(
+  x: Node,
+  ...ops: Op[]
+): x is PolygolfOp<Op> {
+  return (
+    x.kind === "PolygolfOp" && (ops.length === 0 || ops?.includes(x.op as any))
   );
 }

@@ -1,12 +1,12 @@
 import { getType } from "../common/getType";
 import { Plugin } from "../common/Language";
-import { leq, polygolfOp } from "../IR";
+import { isPolygolfOp, leq, polygolfOp } from "../IR";
 
 export const modToRem: Plugin = {
   name: "modToRem",
   visit(node, spine) {
     const program = spine.root.node;
-    if (node.kind === "PolygolfOp" && node.op === "mod") {
+    if (isPolygolfOp(node, "mod")) {
       const rightType = getType(node.args[1], program);
       if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
@@ -27,7 +27,7 @@ export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
   visit(node, spine) {
     const program = spine.root.node;
-    if (node.kind === "PolygolfOp" && node.op === "div") {
+    if (isPolygolfOp(node, "div")) {
       const rightType = getType(node.args[1], program);
       if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);

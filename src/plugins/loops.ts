@@ -19,6 +19,7 @@ import {
   isIntLiteral,
   ForRange,
   forDifferenceRange,
+  isPolygolfOp,
 } from "../IR";
 import { add1, sub1 } from "./ops";
 
@@ -101,8 +102,7 @@ export const forRangeToForEachPair: Plugin = {
       !node.inclusive &&
       node.start.kind === "IntegerLiteral" &&
       node.start.value === 0n &&
-      node.end.kind === "PolygolfOp" &&
-      node.end.op === "list_length" &&
+      isPolygolfOp(node.end, "list_length") &&
       node.end.args[0].kind === "Identifier"
     ) {
       const collection = node.end.args[0];
@@ -135,8 +135,7 @@ export const forRangeToForEach: Plugin = {
       !node.inclusive &&
       node.start.kind === "IntegerLiteral" &&
       node.start.value === 0n &&
-      node.end.kind === "PolygolfOp" &&
-      node.end.op === "list_length" &&
+      isPolygolfOp(node.end, "list_length") &&
       node.end.args[0].kind === "Identifier"
     ) {
       const collection = node.end.args[0];

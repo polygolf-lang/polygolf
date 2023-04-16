@@ -1,4 +1,4 @@
-import { Expr, IR, polygolfOp } from "../IR";
+import { Expr, IR, isPolygolfOp, polygolfOp } from "../IR";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
 import { replaceAtIndex } from "./immutable";
 
@@ -123,7 +123,7 @@ export class Spine<N extends IR.Node = IR.Node> {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let curr = this as Spine;
       // recurse on children
-      if (this.node.kind === "PolygolfOp") {
+      if (isPolygolfOp(this.node)) {
         // Create canonical PolygolfOp instead of just replacing the chidren
         const newChildren: Expr[] = [];
         let someChildrenIsNew = false;

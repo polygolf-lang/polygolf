@@ -1,8 +1,9 @@
 import {
   BinaryOpCode,
+  BinaryOpCodes,
   flipOpCode,
-  isBinary,
   isCommutative,
+  isPolygolfOp,
   mutatingBinaryOp,
   polygolfOp,
 } from "../IR";
@@ -19,8 +20,7 @@ export function addMutatingBinaryOp(
     visit(node) {
       if (
         node.kind === "Assignment" &&
-        node.expr.kind === "PolygolfOp" &&
-        isBinary(node.expr.op) &&
+        isPolygolfOp(node.expr, ...BinaryOpCodes) &&
         node.expr.args.length > 1 &&
         opMap.has(node.expr.op)
       ) {
@@ -52,7 +52,7 @@ export function addMutatingBinaryOp(
 export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
   visit(node) {
-    if (node.kind === "PolygolfOp" && isBinary(node.op)) {
+    if (isPolygolfOp(node, ...BinaryOpCodes)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {
         return polygolfOp(flippedOpCode, node.args[1], node.args[0]);
