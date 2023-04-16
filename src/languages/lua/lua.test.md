@@ -58,7 +58,7 @@ a=0
 b="xy"
 ~a
 -a
-a+2
+2+a
 a-2
 2*a
 a//2
@@ -113,6 +113,6 @@ for_argv $x 100 {
 ```
 
 ```lua nogolf
-for x=0,99 do X=arg[x+1]
+for x=0,99 do X=arg[1+x]
 print(X)end
 ```
