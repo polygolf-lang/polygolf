@@ -145,6 +145,9 @@ function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
 
 export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   if (op === "neg") {
+    if (isIntLiteral(args[0])) {
+      return int(-args[0].value);
+    }
     return polygolfOp("mul", int(-1), args[0]);
   }
   if (op === "sub") {
@@ -173,20 +176,27 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
         } else newArgs.push(arg);
       }
       args = newArgs;
-      if (op === "mul" && args.length > 1 && isIntLiteral(args[0], 1n)) {
-        args = args.slice(1);
-      } else if (
-        op === "mul" &&
-        args.length === 2 &&
-        isIntLiteral(args[0], -1n) &&
-        args[1].kind === "PolygolfOp" &&
-        args[1].op === "add"
-      ) {
-        return polygolfOp(
-          "add",
-          ...args[1].args.map((x) => polygolfOp("neg", x))
+      if (op === "mul" && args.length > 1 && isNegativeLiteral(args[0])) {
+        const toNegate = args.find(
+          (x) =>
+            x.kind === "PolygolfOp" && x.op === "add" && x.args.some(isNegative)
         );
+        if (toNegate !== undefined) {
+          args = args.map((x) =>
+            isIntLiteral(x)
+              ? int(-x.value)
+              : x === toNegate
+              ? polygolfOp(
+                  "add",
+                  ...(x as PolygolfOp).args.map((y) => polygolfOp("neg", y))
+                )
+              : x
+          );
+        }
       }
+    }
+    if (op === "mul" && args.length > 1 && isIntLiteral(args[0], 1n)) {
+      args = args.slice(1);
     }
     if (args.length === 1) return args[0];
   }
