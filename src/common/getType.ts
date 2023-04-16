@@ -49,7 +49,7 @@ import {
 } from "../IR";
 import { byteLength, charLength } from "./applyLanguage";
 import { PolygolfError } from "./errors";
-import { getIdentifierType } from "./symbols";
+import { getIdentifierType, isIdentifierReadonly } from "./symbols";
 
 const cachedType = new WeakMap<Expr, Type>();
 const currentlyFinding = new WeakSet<Expr>();
@@ -81,6 +81,15 @@ export function calcType(expr: Expr, program: Program): Type {
     case "Variants":
       return expr.variants.map(type).reduce(union);
     case "Assignment": {
+      if (
+        expr.variable.kind === "Identifier" &&
+        isIdentifierReadonly(expr.variable, program)
+      ) {
+        throw new PolygolfError(
+          `Type error. Cannot assign to readonly identifier ${expr.variable.name}.`,
+          expr.source
+        );
+      }
       const a = type(expr.variable);
       const b = type(expr.expr);
       if (isSubtype(b, a)) {
