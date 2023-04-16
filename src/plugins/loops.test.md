@@ -37,8 +37,8 @@ for $i 0 (# $collection) {
 ```
 
 ```polygolf loops.forRangeToForEach
-@ForEach $i_forRangeToForEach $collection (
-  print $i_forRangeToForEach
+@ForEach $iPOLYGOLFforRangeToForEach $collection (
+  print $iPOLYGOLFforRangeToForEach
 );
 ```
 
@@ -59,9 +59,9 @@ for $i 0 (# $collection) {
 ```
 
 ```polygolf loops.forRangeToForEachPair
-@ForEachPair $i $i_forRangeToForEachPair $collection {
+@ForEachPair $i $iPOLYGOLFforRangeToForEachPair $collection {
   print $i;
-  print $i_forRangeToForEachPair;
+  print $iPOLYGOLFforRangeToForEachPair;
 };
 ```
 

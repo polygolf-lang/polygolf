@@ -152,13 +152,13 @@ ${[...importSet]
 
 function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars", input: string, output: string) {
   test(name, () =>
-    expect(applyLanguage(findLang(lang)!, parse(input), searchOptions(obj === "nogolf" ? "none" : "full", obj === "chars" ? "chars" : "bytes"))).toEqual(output)
+    expect(applyLanguage(findLang(lang)!, parse(input, false), searchOptions(obj === "nogolf" ? "none" : "full", obj === "chars" ? "chars" : "bytes"))).toEqual(output)
   );
 }
 
 function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
   test(name, () =>
-    expect(applyLanguage(polygolfLanguage, applyAll(getOnlyVariant(parse(input)), plugin.visit), searchOptions("none", "bytes"), true)).toEqual(output)
+    expect(applyLanguage(polygolfLanguage, applyAll(getOnlyVariant(parse(input, false)), plugin.visit), searchOptions("none", "bytes"), true)).toEqual(output)
   );
 }
 
