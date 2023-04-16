@@ -26,7 +26,7 @@ import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
-import { tableHashing } from "../../plugins/hashing";
+import { tableHashing } from "../../plugins/tables";
 import hash from "./hash";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";

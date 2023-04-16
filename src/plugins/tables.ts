@@ -127,3 +127,10 @@ export function testTableHashing(maxMod: number): Plugin {
     name: `testTableHashing(${maxMod})`,
   };
 }
+
+export const tableToListLookup: Plugin = {
+  name: "tableToListLookup",
+  visit(node, spine) {
+    return undefined;
+  },
+};
