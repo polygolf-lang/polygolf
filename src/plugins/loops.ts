@@ -107,7 +107,7 @@ export const forRangeToForEachPair: Plugin = {
     ) {
       const collection = node.end.args[0];
       const elementIdentifier = id(
-        node.variable.name + "_forRangeToForEachPair"
+        node.variable.name + "POLYGOLFforRangeToForEachPair"
       );
       const newBody = spine.getChild("body").withReplacer((innerNode) => {
         if (isListGet(innerNode, collection.name, node.variable.name))
@@ -140,7 +140,9 @@ export const forRangeToForEach: Plugin = {
       node.end.args[0].kind === "Identifier"
     ) {
       const collection = node.end.args[0];
-      const elementIdentifier = id(node.variable.name + "_forRangeToForEach");
+      const elementIdentifier = id(
+        node.variable.name + "POLYGOLFforRangeToForEach"
+      );
       const bodySpine = spine.getChild("body");
       const onlyUsedForCollectionAccess = bodySpine.everyNode(
         (n, s) =>
