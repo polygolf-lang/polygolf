@@ -68,7 +68,7 @@ if a != 0{a=1}
 if a != -12{a=1}
 if -3 != a{a=1}
 for d in -4..<4{a=d}
-for e in(a+1)*(a+1)..<99{a=1}
+for e in(1+a)*(1+a)..<99{a=1}
 ```
 
 ## Argv

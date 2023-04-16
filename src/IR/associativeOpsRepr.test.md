@@ -27,7 +27,7 @@ print ((($a + 5) + $c) + 4);
 $a:-oo..oo <- 0;
 $b:-oo..oo <- 0;
 $c:-oo..oo <- 0;
-print (+ $a $c 9);
+print (+ 9 $a $c);
 ```
 
 ```polygolf
@@ -41,7 +41,7 @@ print (((4 * $a) + 3) - $a);
 $a:-oo..oo <- 0;
 $b:-oo..oo <- 0;
 $c:-oo..oo <- 0;
-print ((3 * $a) + 3);
+print (3 + (3 * $a));
 ```
 
 ```polygolf

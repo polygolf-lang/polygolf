@@ -24,7 +24,7 @@ for $i 0 31 {
 ```
 
 ```golfscript bytes
-31,{:i;i i i*+1+puts}%
+31,{:i;1 i+i i*+puts}%
 ```
 
 ```polygolf
