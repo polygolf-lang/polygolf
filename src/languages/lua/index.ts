@@ -1,4 +1,11 @@
-import { functionCall, id, methodCall, polygolfOp, textType } from "../../IR";
+import {
+  functionCall,
+  id,
+  methodCall,
+  polygolfOp,
+  textType,
+  add1,
+} from "../../IR";
 import { Language } from "../../common/Language";
 import {
   forArgvToForRange,
@@ -8,21 +15,21 @@ import {
 
 import emitProgram from "./emit";
 import {
-  equalityToInequality,
   mapOps,
   mapToUnaryAndBinaryOps,
-  add1,
   useIndexCalls,
+  flipBinaryOps,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
-import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
+import {
+  tempVarToMultipleAssignment,
+  addOneToManyAssignments,
+} from "../../plugins/block";
 import { evalStaticExpr } from "../../plugins/static";
-import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
-import { addOneToManyAssignments } from "../../plugins/block";
-import { bitnotPlugins } from "../../plugins/arithmetic";
+import { bitnotPlugins, equalityToInequality } from "../../plugins/arithmetic";
 
 const luaLanguage: Language = {
   name: "Lua",

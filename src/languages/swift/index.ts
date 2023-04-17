@@ -6,21 +6,20 @@ import {
   namedArg,
   polygolfOp,
   stringLiteral,
+  add1,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
-  add1,
   mapOps,
   mapToUnaryAndBinaryOps,
   useIndexCalls,
-  equalityToInequality,
+  addMutatingBinaryOp,
+  flipBinaryOps,
 } from "../../plugins/ops";
-import { bitnotPlugins, truncatingOpsPlugins } from "../../plugins/arithmetic";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
-import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
@@ -29,6 +28,11 @@ import {
   forRangeToForRangeInclusive,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
+import {
+  equalityToInequality,
+  truncatingOpsPlugins,
+  bitnotPlugins,
+} from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
   name: "Swift",
