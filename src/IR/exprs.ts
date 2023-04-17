@@ -431,7 +431,9 @@ export function isPolygolfOp<Op extends OpCode>(
   x: Node,
   ...ops: Op[]
 ): x is PolygolfOp<
-  // Alias using the first type that is a match (that is a subtype).
+  // Typesafe-wise, this is the same as `x is Op`.
+  // However, this allows `Op` to be written using the type aliases.
+  // Alias using the first type that is a match (that is a subtype) and union the rest.
   // For some reason, when I alias this type, it no longer works.
   AliasedOpCode<
     Op,
