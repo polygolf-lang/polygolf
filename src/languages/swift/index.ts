@@ -17,7 +17,7 @@ import {
   useIndexCalls,
   equalityToInequality,
 } from "../../plugins/ops";
-import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
+import { bitnotPlugins, truncatingOpsPlugins } from "../../plugins/arithmetic";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
@@ -29,7 +29,6 @@ import {
   forRangeToForRangeInclusive,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
-import { bitnotPlugins } from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -46,8 +45,7 @@ const swiftLanguage: Language = {
   ],
   emitPlugins: [
     forArgvToForEach,
-    modToRem,
-    divToTruncdiv,
+    ...truncatingOpsPlugins,
     mapOps([
       ["argv", (x) => id("CommandLine.arguments[1...]", true)],
       [

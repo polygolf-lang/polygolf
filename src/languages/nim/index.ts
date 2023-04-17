@@ -2,7 +2,7 @@ import { functionCall, id, indexCall, int, rangeIndexCall } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
+import { bitnotPlugins, truncatingOpsPlugins } from "../../plugins/arithmetic";
 import {
   equalityToInequality,
   add1,
@@ -38,7 +38,6 @@ import {
   groupVarDeclarations,
   noStandaloneVarDeclarations,
 } from "../../plugins/block";
-import { bitnotPlugins } from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -62,8 +61,7 @@ const nimLanguage: Language = {
   emitPlugins: [
     forArgvToForEach,
     forArgvToForRange(),
-    modToRem,
-    divToTruncdiv,
+    ...truncatingOpsPlugins,
     useIndexCalls(),
     mapOps([
       ["argv", (x) => functionCall([], "commandLineParams")],

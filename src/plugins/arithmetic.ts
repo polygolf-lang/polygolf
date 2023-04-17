@@ -1,6 +1,50 @@
 import { Plugin } from "../common/Language";
-import { int, isIntLiteral, polygolfOp } from "../IR";
+import { int, leq, isIntLiteral, polygolfOp } from "../IR";
 import { mapOps } from "./ops";
+import { getType } from "../common/getType";
+
+export const modToRem: Plugin = {
+  name: "modToRem",
+  visit(node, spine) {
+    const program = spine.root.node;
+    if (node.kind === "PolygolfOp" && node.op === "mod") {
+      const rightType = getType(node.args[1], program);
+      if (rightType.kind !== "integer")
+        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
+      if (leq(0n, rightType.low)) {
+        return polygolfOp("rem", ...node.args);
+      } else {
+        return polygolfOp(
+          "rem",
+          polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
+          node.args[1]
+        );
+      }
+    }
+  },
+};
+
+export const divToTruncdiv: Plugin = {
+  name: "divToTruncdiv",
+  visit(node, spine) {
+    const program = spine.root.node;
+    if (node.kind === "PolygolfOp" && node.op === "div") {
+      const rightType = getType(node.args[1], program);
+      if (rightType.kind !== "integer")
+        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
+      if (leq(0n, rightType.low)) {
+        return {
+          ...node,
+          op: "trunc_div",
+        };
+      } else {
+        return undefined; // TODO
+      }
+    }
+  },
+};
+
+export const truncatingOpsPlugins = [modToRem, divToTruncdiv];
 
 export const removeBitnot: Plugin = {
   ...mapOps([["bit_not", (x) => polygolfOp("sub", int(-1), x[0])]]),
