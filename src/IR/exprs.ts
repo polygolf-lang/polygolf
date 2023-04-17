@@ -14,9 +14,12 @@ import {
   isCommutative,
   int,
   isAssociative,
-  isBinary,
   stringLiteral,
   integerType,
+  AliasedOpCode,
+  FrontendOpCode,
+  AssociativeOpCode,
+  CommutativeOpCode,
 } from "./IR";
 
 /**
@@ -151,7 +154,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   if (op === "sub") {
     return polygolfOp("add", args[0], polygolfOp("neg", args[1]));
   }
-  if (isBinary(op) && isAssociative(op)) {
+  if (isAssociative(op)) {
     args = args.flatMap((x) => (isPolygolfOp(x, op) ? x.args : [x]));
     if (op === "add") args = simplifyPolynomial(args);
     else {
@@ -427,7 +430,31 @@ export function isNegative(expr: Expr) {
 export function isPolygolfOp<Op extends OpCode>(
   x: Node,
   ...ops: Op[]
-): x is PolygolfOp<Op> {
+): x is PolygolfOp<
+  // Alias using the first type that is a match (that is a subtype).
+  // For some reason, when I alias this type, it no longer works.
+  AliasedOpCode<
+    Op,
+    OpCode,
+    AliasedOpCode<
+      Op,
+      FrontendOpCode,
+      AliasedOpCode<
+        Op,
+        BinaryOpCode,
+        AliasedOpCode<
+          Op,
+          UnaryOpCode,
+          AliasedOpCode<
+            Op,
+            AssociativeOpCode,
+            AliasedOpCode<Op, CommutativeOpCode>
+          >
+        >
+      >
+    >
+  >
+> {
   return (
     x.kind === "PolygolfOp" && (ops.length === 0 || ops?.includes(x.op as any))
   );

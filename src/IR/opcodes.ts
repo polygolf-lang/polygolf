@@ -1,4 +1,4 @@
-export const frontendOpCodes: OpCode[] = [
+export const FrontendOpCodes = [
   "add",
   "sub",
   "mul",
@@ -69,7 +69,69 @@ export const frontendOpCodes: OpCode[] = [
   "list_set",
   "table_set",
   "sorted",
-];
+] as const;
+
+// It may seem that the `string &` is redundant, but the `isPolygolf` typeguard doesn't work without it.
+export type FrontendOpCode = string & typeof FrontendOpCodes[number];
+
+export function isFrontend(op: OpCode): op is FrontendOpCode {
+  return FrontendOpCodes.includes(op as any);
+}
+
+export const UnaryOpCodes = [
+  "argv_get",
+  "abs",
+  "bit_not",
+  "neg",
+  "not",
+  "int_to_text",
+  "int_to_bin",
+  "int_to_hex",
+  "text_to_int",
+  "bool_to_int",
+  "byte_to_text", // Returns a single byte text using the specified byte.
+  "int_to_codepoint", // Returns a single codepoint text using the specified integer.
+  "list_length",
+  "text_codepoint_length", // Returns the text length in codepoints.
+  "text_byte_length", // Returns the text length in bytes.
+  "text_split_whitespace",
+  "sorted",
+  "join",
+  "text_byte_reversed", // Returns a text containing the reversed order of bytes.
+  "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
+] as const;
+export type UnaryOpCode = string & typeof UnaryOpCodes[number];
+
+export function isUnary(op: OpCode): op is UnaryOpCode {
+  return UnaryOpCodes.includes(op as any);
+}
+
+export const CommutativeOpCodes = [
+  "add",
+  "mul",
+  "bit_and",
+  "bit_or",
+  "bit_xor",
+  "and",
+  "or",
+  "gcd",
+  "min",
+  "max",
+] as const;
+
+export type CommutativeOpCode = string & typeof CommutativeOpCodes[number];
+
+export function isCommutative(op: OpCode): op is CommutativeOpCode {
+  return CommutativeOpCodes.includes(op as any);
+}
+
+export const AssociativeOpCodes = [...CommutativeOpCodes, "concat"] as const;
+
+export type AssociativeOpCode = string & typeof AssociativeOpCodes[number];
+
+export function isAssociative(op: OpCode): op is AssociativeOpCode {
+  return AssociativeOpCodes.includes(op as any);
+}
 
 export const BinaryOpCodes = [
   // (num, num) => num
@@ -126,31 +188,12 @@ export const BinaryOpCodes = [
   "int_to_hex_aligned", // Converts the given integer to text representing the value in hexadecimal. The result is aligned with 0s to the specified number of places.
   "simplify_fraction", // Given two integers, p,q, returns a text representation of the reduced version of the fraction p/q.
 ] as const;
-export type BinaryOpCode = typeof BinaryOpCodes[number];
 
-export const UnaryOpCodes = [
-  "argv_get",
-  "abs",
-  "bit_not",
-  "neg",
-  "not",
-  "int_to_text",
-  "int_to_bin",
-  "int_to_hex",
-  "text_to_int",
-  "bool_to_int",
-  "byte_to_text", // Returns a single byte text using the specified byte.
-  "int_to_codepoint", // Returns a single codepoint text using the specified integer.
-  "list_length",
-  "text_codepoint_length", // Returns the text length in codepoints.
-  "text_byte_length", // Returns the text length in bytes.
-  "text_split_whitespace",
-  "sorted",
-  "join",
-  "text_byte_reversed", // Returns a text containing the reversed order of bytes.
-  "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
-] as const;
-export type UnaryOpCode = typeof UnaryOpCodes[number];
+export type BinaryOpCode = string & typeof BinaryOpCodes[number];
+
+export function isBinary(op: OpCode): op is BinaryOpCode {
+  return BinaryOpCodes.includes(op as any);
+}
 
 export const OpCodes = [
   ...BinaryOpCodes,
@@ -170,17 +213,12 @@ export const OpCodes = [
   "table_set",
 ] as const;
 
-export type OpCode = typeof OpCodes[number];
+export type OpCode = string & typeof OpCodes[number];
 
 export function isOpCode(op: string): op is OpCode {
   return OpCodes.includes(op as any);
 }
-export function isUnary(op: OpCode): op is UnaryOpCode {
-  return UnaryOpCodes.includes(op as any);
-}
-export function isBinary(op: OpCode): op is BinaryOpCode {
-  return BinaryOpCodes.includes(op as any);
-}
+
 export function arity(op: OpCode): number {
   if (isUnary(op)) return 1;
   if (isBinary(op)) return 2;
@@ -242,32 +280,8 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   return null;
 }
 
-export function isAssociative(op: OpCode): boolean {
-  return [
-    "add",
-    "mul",
-    "bit_and",
-    "bit_or",
-    "bit_xor",
-    "and",
-    "or",
-    "gcd",
-    "min",
-    "max",
-    "concat",
-  ].includes(op);
-}
-
-export const isCommutative = (op: OpCode) =>
-  [
-    "add",
-    "mul",
-    "bit_and",
-    "bit_or",
-    "bit_xor",
-    "and",
-    "or",
-    "gcd",
-    "min",
-    "max",
-  ].includes(op);
+export type AliasedOpCode<X, Alias, Otherwise = X> = [Alias] extends [X]
+  ? [X] extends [Alias | infer Additional extends OpCode]
+    ? Alias | Additional
+    : Otherwise
+  : Otherwise;

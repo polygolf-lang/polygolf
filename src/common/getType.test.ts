@@ -30,7 +30,6 @@ import {
   functionCall,
   IntegerType,
   isAssociative,
-  isBinary,
   forRangeCommon,
   forDifferenceRange,
 } from "IR";
@@ -86,7 +85,7 @@ function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
     [[text(), text()], "error"],
     [[int(), bool], "error"],
     [[int(), text()], "error"],
-    isBinary(op) && isAssociative(op)
+    isAssociative(op)
       ? [[text(), int()], "error"]
       : [[int(), int(), int()], "error"],
     ...tests,
