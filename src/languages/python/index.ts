@@ -10,19 +10,18 @@ import {
   listType,
   textType,
   namedArg,
+  add1,
 } from "../../IR";
 import { Language } from "../../common/Language";
 
 import emitProgram, { emitPythonStringLiteral } from "./emit";
 import {
-  equalityToInequality,
   mapOps,
   mapToUnaryAndBinaryOps,
   useIndexCalls,
-  add1,
+  addMutatingBinaryOp,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
-import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
@@ -38,9 +37,12 @@ import {
   textToIntToTextGetToInt,
   useEquivalentTextOp,
 } from "../../plugins/textOps";
-import { addMutatingBinaryOp } from "../../plugins/binaryOps";
-import { addOneToManyAssignments } from "../../plugins/block";
+import {
+  addOneToManyAssignments,
+  tempVarToMultipleAssignment,
+} from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
+import { equalityToInequality } from "../../plugins/arithmetic";
 
 const pythonLanguage: Language = {
   name: "Python",

@@ -22,8 +22,9 @@ import {
   ListConstructor,
   ForRange,
   forDifferenceRange,
+  add1,
+  sub1,
 } from "../IR";
-import { add1, sub1 } from "./ops";
 import { byteLength, charLength } from "../common/applyLanguage";
 
 export const forRangeToForRangeInclusive: Plugin = {

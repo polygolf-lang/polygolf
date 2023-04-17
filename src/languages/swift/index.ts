@@ -6,21 +6,20 @@ import {
   namedArg,
   polygolfOp,
   stringLiteral,
+  add1,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
-  add1,
   mapOps,
   mapToUnaryAndBinaryOps,
   useIndexCalls,
-  equalityToInequality,
+  addMutatingBinaryOp,
+  flipBinaryOps,
 } from "../../plugins/ops";
-import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
-import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
@@ -30,6 +29,10 @@ import {
 } from "../../plugins/loops";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
+import {
+  equalityToInequality,
+  truncatingOpsPlugins,
+} from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -46,8 +49,7 @@ const swiftLanguage: Language = {
   ],
   emitPlugins: [
     forArgvToForEach,
-    modToRem,
-    divToTruncdiv,
+    ...truncatingOpsPlugins,
     mapOps([
       ["argv", (x) => id("CommandLine.arguments[1...]", true)],
       [
