@@ -32,7 +32,7 @@ $x:-oo..oo <- 0;
 ~ (-1 * $x);
 ```
 
-#
+## Division ops
 
 ```polygolf
 $a:-oo..oo <- 0;
