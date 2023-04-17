@@ -103,8 +103,7 @@ export const forRangeToForEachPair: Plugin = {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
-      node.start.kind === "IntegerLiteral" &&
-      node.start.value === 0n &&
+      isIntLiteral(node.start, 0n) &&
       node.end.kind === "PolygolfOp" &&
       node.end.op === "list_length" &&
       node.end.args[0].kind === "Identifier"
@@ -161,27 +160,23 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
       if (
         node.kind === "ForRange" &&
         !node.inclusive &&
-        node.start.kind === "IntegerLiteral" &&
-        node.start.value === 0n &&
+        isIntLiteral(node.start, 0n) &&
         ((node.end.kind === "PolygolfOp" &&
           ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
           node.end.args[0].kind === "Identifier") ||
-          node.end.kind === "IntegerLiteral")
+          isIntLiteral(node.end))
       ) {
         const indexVar = node.variable;
         const bodySpine = spine.getChild("body") as Spine<Expr>;
-        const knownLength =
-          node.end.kind === "IntegerLiteral"
-            ? Number(node.end.value)
-            : undefined;
-        const allowedOps =
-          node.end.kind === "IntegerLiteral"
-            ? ops
-            : [lengthOpToGetOp.get(node.end.op) as GetOp];
-        const collectionVar =
-          node.end.kind === "IntegerLiteral"
-            ? undefined
-            : (node.end.args[0] as Identifier);
+        const knownLength = isIntLiteral(node.end)
+          ? Number(node.end.value)
+          : undefined;
+        const allowedOps = isIntLiteral(node.end)
+          ? ops
+          : [lengthOpToGetOp.get(node.end.op) as GetOp];
+        const collectionVar = isIntLiteral(node.end)
+          ? undefined
+          : (node.end.args[0] as Identifier);
         const indexedCollection = getIndexedCollection(
           bodySpine,
           indexVar,
