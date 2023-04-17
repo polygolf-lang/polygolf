@@ -35,10 +35,10 @@ export interface KeyValue extends BaseExpr {
  * This is used to represent an abstract operation.
  * Polygolf ensures that in the IR, there will never be:
 
- * Polygolf(neg)
- * Polygolf(sub)
- * Polygolf(add) as a direct child of Polygolf(add) - same with all other associative ops
- * IntegerLiteral (if present) appears at the first position in the args list
+ * - PolygolfOp(neg)
+ * - PolygolfOp(sub)
+ * - PolygolfOp as a direct child of a PolygolfOp with the same associative OpCode
+ * - IntegerLiteral as a nonfirst child of a commutative PolygolfOp
  * 
  * This is ensured when using the polygolfOp contructor function and the Spine API so avoid creating such nodes manually.
  */
@@ -117,6 +117,12 @@ export interface Function extends BaseExpr {
   readonly expr: Expr;
 }
 
+export interface NamedArg<T extends Expr = Expr> extends BaseExpr {
+  readonly kind: "NamedArg";
+  readonly name: string;
+  readonly value: T;
+}
+
 export function keyValue(key: Expr, value: Expr): KeyValue {
   return {
     kind: "KeyValue",
@@ -139,6 +145,9 @@ function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
 
 export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   if (op === "neg") {
+    if (isIntLiteral(args[0])) {
+      return int(-args[0].value);
+    }
     return polygolfOp("mul", int(-1), args[0]);
   }
   if (op === "sub") {
@@ -167,18 +176,27 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
         } else newArgs.push(arg);
       }
       args = newArgs;
-      if (
-        op === "mul" &&
-        args.length === 2 &&
-        isIntLiteral(args[0], -1n) &&
-        args[1].kind === "PolygolfOp" &&
-        args[1].op === "add"
-      ) {
-        return polygolfOp(
-          "add",
-          ...args[1].args.map((x) => polygolfOp("neg", x))
+      if (op === "mul" && args.length > 1 && isNegativeLiteral(args[0])) {
+        const toNegate = args.find(
+          (x) =>
+            x.kind === "PolygolfOp" && x.op === "add" && x.args.some(isNegative)
         );
+        if (toNegate !== undefined) {
+          args = args.map((x) =>
+            isIntLiteral(x)
+              ? int(-x.value)
+              : x === toNegate
+              ? polygolfOp(
+                  "add",
+                  ...(x as PolygolfOp).args.map((y) => polygolfOp("neg", y))
+                )
+              : x
+          );
+        }
       }
+    }
+    if (op === "mul" && args.length > 1 && isIntLiteral(args[0], 1n)) {
+      args = args.slice(1);
     }
     if (args.length === 1) return args[0];
   }
@@ -223,12 +241,12 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
       else add(1n, x.args);
     } else add(1n, [x]);
   }
-  const result: Expr[] = [];
+  let result: Expr[] = [];
   for (const [coeff, expr] of coeffMap.values()) {
     if (coeff === 1n) result.push(expr);
     else if (coeff !== 0n) result.push(_polygolfOp("mul", int(coeff), expr));
   }
-  if (result.length < 1 || constant !== 0n) result.push(int(constant));
+  if (result.length < 1 || constant !== 0n) result = [int(constant), ...result];
   return result;
 }
 
@@ -347,6 +365,14 @@ export function func(args: (string | Identifier)[], expr: Expr): Function {
   };
 }
 
+export function namedArg<T extends Expr>(name: string, value: T): NamedArg<T> {
+  return {
+    kind: "NamedArg",
+    name,
+    value,
+  };
+}
+
 export function print(value: Expr, newline: boolean = true): Expr {
   return polygolfOp(newline ? "println" : "print", value);
 }
@@ -387,4 +413,20 @@ export function isIntLiteral(x: Node, val?: bigint): x is IntegerLiteral {
     return val === undefined || val === x.value;
   }
   return false;
+}
+
+export function isNegativeLiteral(expr: Expr) {
+  return isIntLiteral(expr) && expr.value < 0n;
+}
+
+/**
+ * Checks whether the expression is a negative integer literal or a multiplication with one.
+ */
+export function isNegative(expr: Expr) {
+  return (
+    isNegativeLiteral(expr) ||
+    (expr.kind === "PolygolfOp" &&
+      expr.op === "mul" &&
+      isNegativeLiteral(expr.args[0]))
+  );
 }

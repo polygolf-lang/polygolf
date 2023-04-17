@@ -1,4 +1,11 @@
-import { assignment, functionCall, id, rangeIndexCall } from "../../IR";
+import {
+  assignment,
+  functionCall,
+  id,
+  integerType,
+  isSubtype,
+  rangeIndexCall,
+} from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -13,8 +20,12 @@ import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr } from "../../plugins/static";
 import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
-import { forArgvToForEach } from "../../plugins/loops";
+import {
+  forArgvToForEach,
+  forRangeToForDifferenceRange,
+} from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
+import { getType } from "../../common/getType";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
@@ -28,6 +39,10 @@ const golfscriptLanguage: Language = {
   ],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
+    forRangeToForDifferenceRange(
+      (node, spine) =>
+        !isSubtype(getType(node.start, spine.root.node), integerType(0))
+    ),
     mapOps([
       ["argv", (_) => id("a", true)],
       ["true", (_) => id("1", true)],

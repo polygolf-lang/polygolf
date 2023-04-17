@@ -20,6 +20,8 @@ import {
   OpCode,
   StringLiteral,
   ListConstructor,
+  ForRange,
+  forDifferenceRange,
 } from "../IR";
 import { add1, sub1 } from "./ops";
 import { byteLength, charLength } from "../common/applyLanguage";
@@ -30,8 +32,8 @@ export const forRangeToForRangeInclusive: Plugin = {
     if (node.kind === "ForRange" && !node.inclusive)
       return forRange(
         node.variable,
-        node.low,
-        sub1(node.high),
+        node.start,
+        sub1(node.end),
         node.increment,
         node.body,
         true
@@ -43,8 +45,8 @@ export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, spine.root.node);
-      const high = getType(node.high, spine.root.node);
+      const low = getType(node.start, spine.root.node);
+      const high = getType(node.end, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
@@ -53,9 +55,9 @@ export const forRangeToWhile: Plugin = {
         polygolfOp("add", node.variable, node.increment)
       );
       return block([
-        assignment(node.variable, node.low),
+        assignment(node.variable, node.start),
         whileLoop(
-          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
           block([node.body, increment])
         ),
       ]);
@@ -67,18 +69,18 @@ export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.low, spine.root.node);
-      const high = getType(node.high, spine.root.node);
+      const low = getType(node.start, spine.root.node);
+      const high = getType(node.end, spine.root.node);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
       return forCLike(
-        assignment(node.variable, node.low),
+        assignment(node.variable, node.start),
         assignment(
           node.variable,
           polygolfOp("add", node.variable, node.increment)
         ),
-        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.high),
+        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
         node.body
       );
     }
@@ -101,15 +103,15 @@ export const forRangeToForEachPair: Plugin = {
     if (
       node.kind === "ForRange" &&
       !node.inclusive &&
-      node.low.kind === "IntegerLiteral" &&
-      node.low.value === 0n &&
-      node.high.kind === "PolygolfOp" &&
-      node.high.op === "list_length" &&
-      node.high.args[0].kind === "Identifier"
+      node.start.kind === "IntegerLiteral" &&
+      node.start.value === 0n &&
+      node.end.kind === "PolygolfOp" &&
+      node.end.op === "list_length" &&
+      node.end.args[0].kind === "Identifier"
     ) {
-      const collection = node.high.args[0];
+      const collection = node.end.args[0];
       const elementIdentifier = id(
-        node.variable.name + "_forRangeToForEachPair"
+        node.variable.name + "_POLYGOLFforRangeToForEachPair"
       );
       const newBody = spine.getChild("body").withReplacer((innerNode) => {
         if (isListGet(innerNode, collection.name, node.variable.name))
@@ -159,27 +161,27 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
       if (
         node.kind === "ForRange" &&
         !node.inclusive &&
-        node.low.kind === "IntegerLiteral" &&
-        node.low.value === 0n &&
-        ((node.high.kind === "PolygolfOp" &&
-          ops.includes(lengthOpToGetOp.get(node.high.op) as any) &&
-          node.high.args[0].kind === "Identifier") ||
-          node.high.kind === "IntegerLiteral")
+        node.start.kind === "IntegerLiteral" &&
+        node.start.value === 0n &&
+        ((node.end.kind === "PolygolfOp" &&
+          ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
+          node.end.args[0].kind === "Identifier") ||
+          node.end.kind === "IntegerLiteral")
       ) {
         const indexVar = node.variable;
         const bodySpine = spine.getChild("body") as Spine<Expr>;
         const knownLength =
-          node.high.kind === "IntegerLiteral"
-            ? Number(node.high.value)
+          node.end.kind === "IntegerLiteral"
+            ? Number(node.end.value)
             : undefined;
         const allowedOps =
-          node.high.kind === "IntegerLiteral"
+          node.end.kind === "IntegerLiteral"
             ? ops
-            : [lengthOpToGetOp.get(node.high.op) as GetOp];
+            : [lengthOpToGetOp.get(node.end.op) as GetOp];
         const collectionVar =
-          node.high.kind === "IntegerLiteral"
+          node.end.kind === "IntegerLiteral"
             ? undefined
-            : (node.high.args[0] as Identifier);
+            : (node.end.args[0] as Identifier);
         const indexedCollection = getIndexedCollection(
           bodySpine,
           indexVar,
@@ -332,14 +334,14 @@ export const shiftRangeOneUp: Plugin = {
   visit(node, spine) {
     if (node.kind === "ForRange" && isIntLiteral(node.increment, 1n)) {
       const bodySpine = new Spine(node.body, spine, "body");
-      const newVar = id(node.variable.name + "POLYGOLFshifted");
+      const newVar = id(node.variable.name + "_POLYGOLFshifted");
       const newBodySpine = bodySpine.withReplacer((x) =>
         isIdent(x, node.variable) ? sub1(newVar) : undefined
       );
       return forRange(
         newVar,
-        add1(node.low),
-        add1(node.high),
+        add1(node.start),
+        add1(node.end),
         int(1n),
         newBodySpine.node as Expr,
         node.inclusive
@@ -354,4 +356,30 @@ function isIdent(node: Node, ident: Identifier): node is Identifier {
     node.name === ident.name &&
     node.builtin === ident.builtin
   );
+}
+
+export function forRangeToForDifferenceRange(
+  transformPredicate: (
+    expr: ForRange,
+    spine: Spine<ForRange>
+  ) => boolean = () => true
+): Plugin {
+  return {
+    name: "forRangeToForDifferenceRange",
+    visit(node, spine) {
+      if (
+        node.kind === "ForRange" &&
+        transformPredicate(node, spine as Spine<ForRange>)
+      ) {
+        return forDifferenceRange(
+          node.variable,
+          node.start,
+          polygolfOp("sub", node.end, node.start),
+          node.increment,
+          node.body,
+          node.inclusive
+        );
+      }
+    },
+  };
 }

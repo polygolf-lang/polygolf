@@ -1,4 +1,12 @@
-import { functionCall, id, indexCall, methodCall, polygolfOp } from "../../IR";
+import {
+  functionCall,
+  id,
+  indexCall,
+  methodCall,
+  namedArg,
+  polygolfOp,
+  stringLiteral,
+} from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -96,8 +104,18 @@ const swiftLanguage: Language = {
           ),
       ],
       ["int_to_text", (x) => functionCall([x[0]], "String")],
-      ["text_split", (x) => methodCall(x[0], [x[1]], "split")],
-      ["repeat", (x) => functionCall([x[0], x[1]], "String")],
+      [
+        "text_split",
+        (x) => methodCall(x[0], [namedArg("separator", x[1])], "split"),
+      ],
+      [
+        "repeat",
+        (x) =>
+          functionCall(
+            [namedArg("repeating", x[0]), namedArg("count", x[1])],
+            "String"
+          ),
+      ],
       [
         "pow",
         (x) =>
@@ -115,7 +133,14 @@ const swiftLanguage: Language = {
           ),
       ],
       ["println", (x) => functionCall([x[0]], "print")],
-      ["print", (x) => functionCall([x[0]], "print")],
+      [
+        "print",
+        (x) =>
+          functionCall(
+            [x[0], namedArg("terminator", stringLiteral(""))],
+            "print"
+          ),
+      ],
       ["text_to_int", (x) => functionCall([x[0]], "Int")],
 
       ["max", (x) => functionCall(x, "max")],

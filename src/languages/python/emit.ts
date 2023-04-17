@@ -120,9 +120,9 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emitMultiExpr(e.body),
         ];
       case "ForRange": {
-        const low = emit(e.low);
-        const low0 = isIntLiteral(e.low, 0n);
-        const high = emit(e.high);
+        const start = emit(e.start);
+        const start0 = isIntLiteral(e.start, 0n);
+        const end = emit(e.end);
         const increment = emit(e.increment);
         const increment1 = isIntLiteral(e.increment, 1n);
         return [
@@ -131,8 +131,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           "in",
           "range",
           "(",
-          low0 && increment1 ? [] : [low, ","],
-          high,
+          start0 && increment1 ? [] : [start, ","],
+          end,
           increment1 ? [] : [",", increment],
           ")",
           ":",
@@ -162,6 +162,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
       case "MutatingBinaryOp":
         return [emit(e.variable), e.name + "=", emit(e.right)];
+      case "NamedArg":
+        return [e.name, "=", emit(e.value)];
       case "Identifier":
         return e.name;
       case "StringLiteral":

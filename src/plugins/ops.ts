@@ -11,6 +11,7 @@ import {
   isBinary,
   isConstantType,
   isIntLiteral,
+  isNegative,
   OpCode,
   PolygolfOp,
   polygolfOp,
@@ -73,34 +74,23 @@ function asBinaryChain(
   exprs: readonly Expr[],
   names: Map<OpCode, string>
 ): Expr {
-  if (op === "mul" && isIntLiteral(exprs[0]) && exprs[0].value < 0n) {
-    return unaryOp(
-      "neg",
-      polygolfOp("mul", ...exprs.slice(1)),
-      names.get("neg")
-    );
+  if (op === "mul" && isIntLiteral(exprs[0], -1n)) {
+    exprs = [unaryOp("neg", exprs[1], names.get("neg")), ...exprs.slice(2)];
+  }
+  if (op === "add") {
+    exprs = exprs
+      .filter((x) => !isNegative(x))
+      .concat(exprs.filter(isNegative));
   }
   let result = exprs[0];
   for (const expr of exprs.slice(1)) {
-    if (
-      op === "add" &&
-      expr.kind === "PolygolfOp" &&
-      expr.op === "mul" &&
-      isIntLiteral(expr.args[0]) &&
-      expr.args[0].value < 0n
-    ) {
+    if (op === "add" && isNegative(expr)) {
       result = binaryOp(
         "sub",
         result,
         polygolfOp("neg", expr),
         names.get("sub")
       );
-    } else if (
-      op === "add" &&
-      expr.kind === "IntegerLiteral" &&
-      expr.value < 0n
-    ) {
-      result = binaryOp("sub", result, int(-expr.value), names.get("sub"));
     } else {
       result = binaryOp(op, result, expr, names.get(op));
     }

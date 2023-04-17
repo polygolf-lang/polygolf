@@ -35,6 +35,8 @@ import {
   functionType,
   func,
   conditional,
+  frontendOpcodes,
+  id,
   arrayConstructor,
   toString,
   forArgv,
@@ -42,6 +44,7 @@ import {
 } from "../IR";
 import grammar from "./grammar";
 
+let restrictFrontend = true;
 export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   const opCode = canonicalOp(callee.name, args.length);
   function expectArity(low: number, high: number = low) {
@@ -149,7 +152,10 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       assertInteger(args[0]);
       return polygolfOp(opCode, ...args);
   }
-  if (isOpCode(opCode)) {
+  if (
+    isOpCode(opCode) &&
+    (!restrictFrontend || frontendOpcodes.includes(opCode))
+  ) {
     if (isBinary(opCode)) {
       expectArity(2, isAssociative(opCode) ? Infinity : 2);
       return polygolfOp(opCode, ...args);
@@ -191,6 +197,20 @@ function canonicalOp(op: string, arity: number): string {
   return canonicalOpTable[op] ?? op;
 }
 
+export function userIdentifier(token: Token): Identifier {
+  const name = token.value.slice(1);
+  if (name.includes("POLYGOLF") && restrictFrontend) {
+    throw new PolygolfError(
+      `Parse error. Variable names cannot contain 'POLYGOLF'`,
+      {
+        line: token.line,
+        column: token.col,
+      }
+    );
+  }
+  return id(name, false);
+}
+
 export function typeSexpr(
   callee: Token,
   args: (Type | IntegerLiteral)[]
@@ -227,6 +247,9 @@ export function typeSexpr(
     case "Void":
       expectArity(0);
       return voidType;
+    case "Int":
+      expectArity(0);
+      return intType();
     case "Ascii":
     case "Text":
       expectArity(0, 1);
@@ -311,7 +334,8 @@ export function refSource(node: Node, ref?: Token | Node): Node {
   };
 }
 
-export default function parse(code: string) {
+export default function parse(code: string, restrictedFrontend = true) {
+  restrictFrontend = restrictedFrontend;
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
   try {
     parser.feed(code);
@@ -334,6 +358,8 @@ export default function parse(code: string) {
         line: token.line,
         column: token.col,
       });
+    } else {
+      throw e;
     }
   }
   const results = parser.results;

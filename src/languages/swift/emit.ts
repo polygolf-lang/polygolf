@@ -92,20 +92,20 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emitMultiExpr(e.body),
         ];
       case "ForRange": {
-        const low = emit(e.low);
-        const high = emit(e.high);
+        const start = emit(e.start);
+        const end = emit(e.end);
         return [
           "for",
           emit(e.variable),
           "in",
           isIntLiteral(e.increment, 1n)
-            ? [low, e.inclusive ? "..." : "..<", high]
+            ? [start, e.inclusive ? "..." : "..<", end]
             : [
                 "stride",
                 "(",
                 joinTrees(",", [
-                  ["from:", low],
-                  ["to:", high],
+                  ["from:", start],
+                  ["to:", end],
                   ["by:", emit(e.increment)],
                 ]),
                 ")",
@@ -129,6 +129,8 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [emit(e.variable), "=", emit(e.expr)];
       case "MutatingBinaryOp":
         return [emit(e.variable), e.name + "=", emit(e.right)];
+      case "NamedArg":
+        return [e.name, ":", emit(e.value)];
       case "Identifier":
         return e.name;
       case "StringLiteral":
@@ -159,17 +161,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [
           e.ident.name,
           "(",
-          joinTrees(
-            ",",
-            e.op === "repeat"
-              ? [
-                  ["repeating:", emit(e.args[0])],
-                  ["count:", emit(e.args[1])],
-                ]
-              : e.op === "print"
-              ? [[emit(e.args[0])], ["terminator:", '""']]
-              : e.args.map((arg) => emit(arg))
-          ),
+          joinExprs(",", e.args),
           ")",
           e.op === "text_to_int" || e.ident.name === "UnicodeScalar" ? "!" : "",
         ];
@@ -182,12 +174,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           ".",
           e.ident.name,
           "(",
-          joinTrees(
-            ",",
-            e.op === "text_split"
-              ? [["separator:", emit(e.args[0])]]
-              : e.args.map((arg) => emit(arg))
-          ),
+          joinExprs(", ", e.args),
           ")",
         ];
       case "ConditionalOp":

@@ -18,12 +18,12 @@ for $i 0 10 {
 $i <- 0;
 while ($i < 10) {
   print $x;
-  $i <- ($i + 1);
+  $i <- (1 + $i);
 };
 ```
 
 ```polygolf loops.forRangeToForCLike
-@ForCLike ($i <- 0) ($i < 10) ($i <- ($i + 1)) (
+@ForCLike ($i <- 0) ($i < 10) ($i <- (1 + $i)) (
   print $x
 );
 ```
@@ -123,9 +123,9 @@ for $i 0 (# $collection) {
 ```
 
 ```polygolf loops.forRangeToForEachPair
-@ForEachPair $i $i_forRangeToForEachPair $collection {
+@ForEachPair $i $i_POLYGOLFforRangeToForEachPair $collection {
   print $i;
-  print $i_forRangeToForEachPair;
+  print $i_POLYGOLFforRangeToForEachPair;
 };
 ```
 
@@ -173,14 +173,14 @@ for $i 0 80 {
 ```
 
 ```polygolf loops.shiftRangeOneUp
-for $iPOLYGOLFshifted 1 81 {
-  println $iPOLYGOLFshifted;
-  println $iPOLYGOLFshifted;
-  println (3 * ($iPOLYGOLFshifted + -1));
-  println ($iPOLYGOLFshifted + 1);
-  println ($iPOLYGOLFshifted + -2);
-  println ($iPOLYGOLFshifted + -3);
-  println ((-1 * $iPOLYGOLFshifted) + 2);
-  println (-1 * $iPOLYGOLFshifted);
+for $i_POLYGOLFshifted 1 81 {
+  println $i_POLYGOLFshifted;
+  println $i_POLYGOLFshifted;
+  println (3 * (-1 + $i_POLYGOLFshifted));
+  println (1 + $i_POLYGOLFshifted);
+  println (-2 + $i_POLYGOLFshifted);
+  println (-3 + $i_POLYGOLFshifted);
+  println (2 + (-1 * $i_POLYGOLFshifted));
+  println (-1 * $i_POLYGOLFshifted);
 };
 ```
