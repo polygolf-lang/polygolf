@@ -286,6 +286,9 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
   return result;
 }
 
+export const add1 = (expr: Expr) => polygolfOp("add", expr, int(1n));
+export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
+
 export function functionCall(
   args: readonly Expr[],
   ident: string | Identifier,

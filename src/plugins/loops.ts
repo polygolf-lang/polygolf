@@ -19,8 +19,9 @@ import {
   isIntLiteral,
   ForRange,
   forDifferenceRange,
+  add1,
+  sub1,
 } from "../IR";
-import { add1, sub1 } from "./ops";
 
 export const forRangeToForRangeInclusive: Plugin = {
   name: "forRangeToForRangeInclusive",

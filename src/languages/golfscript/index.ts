@@ -5,20 +5,19 @@ import {
   integerType,
   isSubtype,
   rangeIndexCall,
+  add1,
 } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
-  equalityToInequality,
   mapOps,
   mapToUnaryAndBinaryOps,
-  add1,
   useIndexCalls,
+  flipBinaryOps,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr } from "../../plugins/static";
-import { flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import {
   forArgvToForEach,
@@ -26,6 +25,7 @@ import {
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
+import { equalityToInequality } from "../../plugins/arithmetic";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
