@@ -1,18 +1,23 @@
-import { functionCall, id, indexCall, int, rangeIndexCall } from "../../IR";
+import {
+  functionCall,
+  id,
+  indexCall,
+  int,
+  rangeIndexCall,
+  add1,
+} from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
-import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import {
-  equalityToInequality,
-  add1,
   mapOps,
   mapToUnaryAndBinaryOps,
   useIndexCalls,
+  addMutatingBinaryOp,
+  flipBinaryOps,
 } from "../../plugins/ops";
 import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
-import { tempVarToMultipleAssignment } from "../../plugins/tempVariables";
 import {
   forArgvToForEach,
   forArgvToForRange,
@@ -21,7 +26,6 @@ import {
   shiftRangeOneUp,
 } from "../../plugins/loops";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
-import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
@@ -38,7 +42,12 @@ import {
   addVarDeclarations,
   groupVarDeclarations,
   noStandaloneVarDeclarations,
+  tempVarToMultipleAssignment,
 } from "../../plugins/block";
+import {
+  equalityToInequality,
+  truncatingOpsPlugins,
+} from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -62,8 +71,7 @@ const nimLanguage: Language = {
   emitPlugins: [
     forArgvToForEach,
     forArgvToForRange(),
-    modToRem,
-    divToTruncdiv,
+    ...truncatingOpsPlugins,
     useIndexCalls(),
     mapOps([
       ["argv", (x) => functionCall([], "commandLineParams")],
