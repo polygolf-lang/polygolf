@@ -91,3 +91,26 @@ export const equalityToInequality: Plugin = {
     }
   },
 };
+
+export const applyDeMorgans: Plugin = {
+  name: "applyDeMorgans",
+  visit(node) {
+    if (node.kind === "PolygolfOp" && node.args[0]?.kind === "PolygolfOp") {
+      if (node.op === "not" && ["and", "or"].includes(node.args[0].op)) {
+        return polygolfOp(
+          node.args[0].op === "and" ? "or" : "and",
+          ...node.args[0].args.map((x) => polygolfOp("not", x))
+        );
+      }
+      if (
+        node.op === "bit_not" &&
+        ["bit_and", "bit_or"].includes(node.args[0].op)
+      ) {
+        return polygolfOp(
+          node.args[0].op === "bit_and" ? "bit_or" : "bit_and",
+          ...node.args[0].args.map((x) => polygolfOp("bit_not", x))
+        );
+      }
+    }
+  },
+};

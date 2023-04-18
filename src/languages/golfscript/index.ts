@@ -25,7 +25,7 @@ import {
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
-import { equalityToInequality } from "../../plugins/arithmetic";
+import { applyDeMorgans, equalityToInequality } from "../../plugins/arithmetic";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
@@ -36,6 +36,7 @@ const golfscriptLanguage: Language = {
     evalStaticExpr,
     golfLastPrint(),
     equalityToInequality,
+    applyDeMorgans,
   ],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [

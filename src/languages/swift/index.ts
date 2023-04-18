@@ -29,6 +29,7 @@ import {
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import {
+  applyDeMorgans,
   equalityToInequality,
   truncatingOpsPlugins,
 } from "../../plugins/arithmetic";
@@ -44,6 +45,7 @@ const swiftLanguage: Language = {
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive,
+    applyDeMorgans,
   ],
   emitPlugins: [
     forArgvToForEach,
