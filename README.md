@@ -221,8 +221,8 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Boolean arithmetic
 
-- [ ] `not(a==5 or b!=10)` ⟶ `a!=5 and b==10`
-- [ ] `~(a|b)` ⟶ `~a&~b`
+- [x] `not(a==5 or b!=10)` ⟶ `a!=5 and b==10`
+- [x] `~(a|b)` ⟶ `~a&~b`
 
 ### Variables
 
