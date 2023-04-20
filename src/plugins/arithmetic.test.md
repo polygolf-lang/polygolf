@@ -69,3 +69,70 @@ $a:-oo..oo <- 0;
 $a:-oo..oo <- 0;
 * 2 ((1 + $a) ^ 2) $a;
 ```
+
+## Bitshifts
+
+```polygolf
+$a:-oo..oo <- 0;
+* -3 $a 64;
+```
+
+```polygolf arithmetic.mulOrDivToBitShift()
+$a:-oo..oo <- 0;
+(-3 * $a) << 6;
+```
+
+```polygolf
+$a:-oo..oo <- 0;
+$b:0..oo <- 0;
+* -3 $a (2 ^ $b);
+```
+
+```polygolf arithmetic.mulOrDivToBitShift()
+$a:-oo..oo <- 0;
+$b:0..oo <- 0;
+(-3 * $a) << $b;
+```
+
+```polygolf
+$a:-oo..oo <- 0;
+$a div 64;
+```
+
+```polygolf arithmetic.mulOrDivToBitShift()
+$a:-oo..oo <- 0;
+$a >> 6;
+
+```
+
+```polygolf
+$a:-oo..oo <- 0;
+$b:0..oo <- 0;
+$a div (2 ^ $b);
+```
+
+```polygolf arithmetic.mulOrDivToBitShift()
+$a:-oo..oo <- 0;
+$b:0..oo <- 0;
+$a >> $b;
+```
+
+```polygolf
+$a:-oo..oo <- 0;
+$a << 6;
+```
+
+```polygolf arithmetic.bitShiftToMulOrDiv()
+$a:-oo..oo <- 0;
+$a * 64;
+```
+
+```polygolf
+$a:-oo..oo <- 0;
+$a >> 6;
+```
+
+```polygolf arithmetic.bitShiftToMulOrDiv()
+$a:-oo..oo <- 0;
+$a div 64;
+```

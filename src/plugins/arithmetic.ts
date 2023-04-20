@@ -8,6 +8,7 @@ import {
   isConstantType,
   isIntLiteral,
   Expr,
+  PolygolfOp,
 } from "../IR";
 import { getType } from "../common/getType";
 
@@ -103,7 +104,7 @@ export const equalityToInequality: Plugin = {
 
 export function powToMul(limit: number = 2): Plugin {
   return {
-    name: "powToMul",
+    name: `powToMul(${limit})`,
     visit(node) {
       if (node.kind === "PolygolfOp" && node.op === "pow") {
         const [a, b] = node.args;
@@ -141,3 +142,93 @@ export const mulToPow: Plugin = {
 };
 
 export const powPlugins = [powToMul(), mulToPow];
+
+export function bitShiftToMulOrDiv(
+  literalOnly = true,
+  toMul = true,
+  toDiv = true
+): Plugin {
+  return {
+    name: `bitShiftToMulOrDiv(${[literalOnly, toMul, toDiv]
+      .map((x) => (x ? "true" : "false"))
+      .toString()})`,
+    visit(node) {
+      if (
+        node.kind === "PolygolfOp" &&
+        ["bit_shift_left", "bit_shift_right"].includes(node.op)
+      ) {
+        const [a, b] = node.args;
+        if (!literalOnly || isIntLiteral(b)) {
+          if (node.op === "bit_shift_left" && toMul) {
+            return polygolfOp("mul", a, polygolfOp("pow", int(2), b));
+          }
+          if (node.op === "bit_shift_right" && toMul) {
+            return polygolfOp("div", a, polygolfOp("pow", int(2), b));
+          }
+        }
+      }
+    },
+  };
+}
+
+function getOddAnd2Exp(n: bigint): [bigint, bigint] {
+  let exp = 0n;
+  while ((n & 1n) === 0n) {
+    n >>= 1n;
+    exp++;
+  }
+  return [n, exp];
+}
+
+export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
+  return {
+    name: `mulOrDivToBitShift(${[fromMul, fromDiv]
+      .map((x) => (x ? "true" : "false"))
+      .toString()})`,
+    visit(node) {
+      if (node.kind === "PolygolfOp" && node.op === "div" && fromDiv) {
+        const [a, b] = node.args;
+        if (isIntLiteral(b)) {
+          const [n, exp] = getOddAnd2Exp(b.value);
+          if (exp > 1 && n === 1n) {
+            return polygolfOp("bit_shift_right", a, int(exp));
+          }
+        }
+        if (
+          b.kind === "PolygolfOp" &&
+          b.op === "pow" &&
+          isIntLiteral(b.args[0], 2n)
+        ) {
+          return polygolfOp("bit_shift_right", a, b.args[1]);
+        }
+      }
+      if (node.kind === "PolygolfOp" && node.op === "mul" && fromMul) {
+        if (isIntLiteral(node.args[0])) {
+          const [n, exp] = getOddAnd2Exp(node.args[0].value);
+          if (exp > 1) {
+            return polygolfOp(
+              "bit_shift_left",
+              polygolfOp("mul", int(n), ...node.args.slice(1)),
+              int(exp)
+            );
+          }
+        }
+        const powNode = node.args.find(
+          (x) =>
+            x.kind === "PolygolfOp" &&
+            x.op === "pow" &&
+            isIntLiteral(x.args[0], 2n)
+        ) as PolygolfOp | undefined;
+        if (powNode !== undefined) {
+          return polygolfOp(
+            "bit_shift_left",
+            polygolfOp("mul", ...node.args.filter((x) => x !== powNode)),
+            powNode.args[1]
+          );
+        }
+      }
+    },
+  };
+}
+
+export const bitShiftPlugins = [bitShiftToMulOrDiv(), mulOrDivToBitShift()];
