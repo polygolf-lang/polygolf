@@ -112,11 +112,11 @@ for $i 0 80 {
 for $iPOLYGOLFshifted 1 81 {
   println $iPOLYGOLFshifted;
   println $iPOLYGOLFshifted;
-  println (3 * (-1 + $iPOLYGOLFshifted));
-  println (1 + $iPOLYGOLFshifted);
-  println (-2 + $iPOLYGOLFshifted);
-  println (-3 + $iPOLYGOLFshifted);
-  println (2 + (-1 * $iPOLYGOLFshifted));
-  println (-1 * $iPOLYGOLFshifted);
+  println (3 * ($iPOLYGOLFshifted - 1));
+  println ($iPOLYGOLFshifted + 1);
+  println ($iPOLYGOLFshifted - 2);
+  println ($iPOLYGOLFshifted - 3);
+  println (2 - $iPOLYGOLFshifted);
+  println (- $iPOLYGOLFshifted);
 };
 ```
