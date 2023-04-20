@@ -47,3 +47,25 @@ $a:-oo..oo <- 0;
 ($a mod 4) > 2;
 ($a mod 4) < 3;
 ```
+
+## Power
+
+```polygolf
+$a:-oo..oo <- 0;
+(1 + $a) ^ 2;
+```
+
+```polygolf arithmetic.powToMul(2)
+$a:-oo..oo <- 0;
+(1 + $a) * (1 + $a);
+```
+
+```polygolf
+$a:-oo..oo <- 0;
+* 2 (1 + $a) $a (1 + $a);
+```
+
+```polygolf arithmetic.mulToPow
+$a:-oo..oo <- 0;
+* 2 ((1 + $a) ^ 2) $a;
+```

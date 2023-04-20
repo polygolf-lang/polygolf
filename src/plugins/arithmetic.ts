@@ -1,5 +1,14 @@
 import { Plugin } from "../common/Language";
-import { int, leq, polygolfOp, IntegerType, isConstantType } from "../IR";
+import { stringify } from "../common/stringify";
+import {
+  int,
+  leq,
+  polygolfOp,
+  IntegerType,
+  isConstantType,
+  isIntLiteral,
+  Expr,
+} from "../IR";
 import { getType } from "../common/getType";
 
 export const modToRem: Plugin = {
@@ -91,3 +100,44 @@ export const equalityToInequality: Plugin = {
     }
   },
 };
+
+export function powToMul(limit: number = 2): Plugin {
+  return {
+    name: "powToMul",
+    visit(node) {
+      if (node.kind === "PolygolfOp" && node.op === "pow") {
+        const [a, b] = node.args;
+        if (isIntLiteral(b) && b.value > 1 && b.value <= limit) {
+          return polygolfOp("mul", ...Array(Number(b.value)).fill(a));
+        }
+      }
+    },
+  };
+}
+
+export const mulToPow: Plugin = {
+  name: "mulToPow",
+  visit(node) {
+    if (node.kind === "PolygolfOp" && node.op === "mul") {
+      const factors = new Map<string, [Expr, number]>();
+      for (const e of node.args) {
+        const stringified = stringify(e);
+        factors.set(stringified, [
+          e,
+          1 + ((factors.get(stringified)?.at(1) as number) ?? 0),
+        ]);
+      }
+      const pairs = [...factors.values()];
+      if (pairs.some((pair) => pair[1] > 1)) {
+        return polygolfOp(
+          "mul",
+          ...pairs.map(([expr, exp]) =>
+            exp > 1 ? polygolfOp("pow", expr, int(exp)) : expr
+          )
+        );
+      }
+    }
+  },
+};
+
+export const powPlugins = [powToMul(), mulToPow];
