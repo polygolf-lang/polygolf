@@ -409,11 +409,14 @@ export function getArgs(
   }
 }
 
-export function isIntLiteral(x: Node, val?: bigint): x is IntegerLiteral {
-  if (x.kind === "IntegerLiteral") {
-    return val === undefined || val === x.value;
-  }
-  return false;
+export function isIntLiteral<Value extends bigint>(
+  x: Node,
+  ...vals: Value[]
+): x is IntegerLiteral<Value> {
+  return (
+    x.kind === "IntegerLiteral" &&
+    (vals.length === 0 || vals.includes(x.value as any))
+  );
 }
 
 export function isNegativeLiteral(expr: Expr) {
