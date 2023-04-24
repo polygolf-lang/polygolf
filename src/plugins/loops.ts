@@ -19,8 +19,9 @@ import {
   isIntLiteral,
   ForRange,
   forDifferenceRange,
+  add1,
+  sub1,
 } from "../IR";
-import { add1, sub1 } from "./ops";
 
 export const forRangeToForRangeInclusive: Plugin = {
   name: "forRangeToForRangeInclusive",
@@ -41,8 +42,8 @@ export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.start, spine.root.node);
-      const high = getType(node.end, spine.root.node);
+      const low = getType(node.start, spine);
+      const high = getType(node.end, spine);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
@@ -65,8 +66,8 @@ export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.start, spine.root.node);
-      const high = getType(node.end, spine.root.node);
+      const low = getType(node.start, spine);
+      const high = getType(node.end, spine);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }

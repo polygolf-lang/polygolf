@@ -19,6 +19,12 @@ import {
   integerType,
 } from "./IR";
 
+export interface ImplicitConversion extends BaseExpr {
+  readonly kind: "ImplicitConversion";
+  expr: Expr;
+  behavesLike: UnaryOpCode & `${string}_to_${string}`;
+}
+
 /**
  * All expressions start as a `PolygolfOp` node.
  * Plugins (mainly `mapOps, mapPrecedenceOps` plugins) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
@@ -123,6 +129,17 @@ export interface NamedArg<T extends Expr = Expr> extends BaseExpr {
   readonly value: T;
 }
 
+export function implicitConversion(
+  expr: Expr,
+  behavesLike: UnaryOpCode & `${string}_to_${string}`
+): ImplicitConversion {
+  return {
+    kind: "ImplicitConversion",
+    expr,
+    behavesLike,
+  };
+}
+
 export function keyValue(key: Expr, value: Expr): KeyValue {
   return {
     kind: "KeyValue",
@@ -153,6 +170,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   if (op === "sub") {
     return polygolfOp("add", args[0], polygolfOp("neg", args[1]));
   }
+
   if (isBinary(op) && isAssociative(op)) {
     args = args.flatMap((x) =>
       x.kind === "PolygolfOp" && x.op === op ? x.args : [x]
@@ -163,6 +181,14 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
         args = args
           .filter((x) => x.kind === "IntegerLiteral")
           .concat(args.filter((x) => x.kind !== "IntegerLiteral"));
+      } else {
+        args = args.filter((x) => x.kind !== "StringLiteral" || x.value !== "");
+        if (
+          args.length === 0 ||
+          (args.length === 1 && args[0].kind === "ImplicitConversion")
+        ) {
+          args = [stringLiteral(""), args[0]];
+        }
       }
       const newArgs: Expr[] = [];
       for (const arg of args) {
@@ -195,7 +221,12 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
         }
       }
     }
-    if (op === "mul" && args.length > 1 && isIntLiteral(args[0], 1n)) {
+    if (
+      op === "mul" &&
+      args.length > 1 &&
+      isIntLiteral(args[0], 1n) &&
+      args[1].kind !== "ImplicitConversion"
+    ) {
       args = args.slice(1);
     }
     if (args.length === 1) return args[0];
@@ -246,9 +277,17 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
     if (coeff === 1n) result.push(expr);
     else if (coeff !== 0n) result.push(_polygolfOp("mul", int(coeff), expr));
   }
-  if (result.length < 1 || constant !== 0n) result = [int(constant), ...result];
+  if (
+    result.length < 1 ||
+    constant !== 0n ||
+    (result.length === 1 && result[0].kind === "ImplicitConversion")
+  )
+    result = [int(constant), ...result];
   return result;
 }
+
+export const add1 = (expr: Expr) => polygolfOp("add", expr, int(1n));
+export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
 
 export function functionCall(
   args: readonly Expr[],

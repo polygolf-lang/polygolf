@@ -25,6 +25,7 @@ import {
   RangeIndexCall,
   Function,
   NamedArg,
+  ImplicitConversion,
 } from "./exprs";
 import {
   ForRange,
@@ -72,6 +73,7 @@ export type Expr =
   | KeyValue
   | Function
   | PolygolfOp
+  | ImplicitConversion
   | VarDeclaration
   | VarDeclarationWithAssignment
   | VarDeclarationBlock
