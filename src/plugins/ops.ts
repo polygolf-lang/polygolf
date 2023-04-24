@@ -38,7 +38,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
             // "as any" because TS doesn't do well with the "in" keyword
             replacement = { ...(replacement as any), op: node.op };
           }
-          return { ...replacement, type: getType(node, spine.root.node) };
+          return { ...replacement, type: getType(node, spine) };
         }
       }
     },
