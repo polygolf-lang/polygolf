@@ -42,7 +42,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
               op: node.op,
             } as const as Expr;
           }
-          return { ...replacement, type: getType(node, spine.root.node) };
+          return { ...replacement, type: getType(node, spine) };
         }
       }
     },

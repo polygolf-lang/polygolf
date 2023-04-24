@@ -34,9 +34,8 @@ export function useEquivalentTextOp(
     name: `useEquivalentTextOp(${useBytes.toString()}, ${useCodepoints.toString()})`,
     visit(node, spine) {
       if (node.kind !== "PolygolfOp") return;
-      const program = spine.root.node;
       if (node.args.length < 1) return;
-      const typeArg0 = getType(node.args[0], program);
+      const typeArg0 = getType(node.args[0], spine);
       if (
         (!useBytes && node.op.includes("codepoint")) ||
         (!useCodepoints && node.op.includes("byte"))

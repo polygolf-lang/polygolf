@@ -8,7 +8,7 @@ export const assertInt64: Plugin = {
     if (node.kind === "Program") return;
     let type: Type;
     try {
-      type = getType(node, spine.root.node);
+      type = getType(node, spine);
     } catch {
       return; // stuff like builtin identifiers etc. throw
     }

@@ -1,8 +1,11 @@
 import {
   functionCall,
   id,
+  implicitConversion,
+  int,
   methodCall,
   polygolfOp,
+  stringLiteral,
   textType,
   add1,
 } from "../../IR";
@@ -49,6 +52,20 @@ const luaLanguage: Language = {
     useEquivalentTextOp(true, false),
     mapOps([
       [
+        "text_to_int",
+        (x) =>
+          polygolfOp("mul", int(1n), implicitConversion(x[0], "text_to_int")),
+      ],
+    ]),
+    mapOps([
+      [
+        "text_to_int",
+        (x) =>
+          polygolfOp("add", int(0n), implicitConversion(x[0], "text_to_int")),
+      ],
+    ]),
+    mapOps([
+      [
         "argv_get",
         (x) =>
           polygolfOp(
@@ -67,10 +84,20 @@ const luaLanguage: Language = {
   ],
   finalEmitPlugins: [
     mapOps([
+      [
+        "int_to_text",
+        (x) =>
+          polygolfOp(
+            "concat",
+            stringLiteral(""),
+            implicitConversion(x[0], "int_to_text")
+          ),
+      ],
+    ]),
+    mapOps([
       ["text_byte_length", (x) => methodCall(x[0], [], "len")],
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
-      ["int_to_text", (x) => functionCall(x, "tostring")],
       ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
       ["print", (x) => functionCall(x, "io.write")],
       ["println", (x) => functionCall(x, "print")],
@@ -89,7 +116,6 @@ const luaLanguage: Language = {
       ["neg", "-"],
       ["list_length", "#"],
       ["bit_not", "~"],
-      ["text_to_int", "- -"],
       ["mul", "*"],
       ["div", "//"],
       ["mod", "%"],
