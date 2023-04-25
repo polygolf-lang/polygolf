@@ -4,17 +4,12 @@ import {
   Type,
   listType,
   arrayType,
-  BinaryOp,
-  UnaryOp,
-  FunctionCall,
-  MethodCall,
   integerType,
   integerTypeIncludingAll,
   IntegerType,
   PolygolfOp,
   isSubtype,
   union,
-  MutatingBinaryOp,
   toString,
   voidType,
   textType,
@@ -132,13 +127,10 @@ export function calcType(expr: Expr, program: Program): Type {
       );
     }
     case "PolygolfOp":
-    case "MethodCall":
-    case "BinaryOp":
-    case "UnaryOp":
-    case "MutatingBinaryOp":
       return getOpCodeType(expr, program);
+    case "MutatingBinaryOp":
+      return voidType;
     case "FunctionCall": {
-      if (expr.ident.builtin) return getOpCodeType(expr, program);
       const fType = type(expr.ident);
       if (fType.kind !== "Function") {
         throw new PolygolfError(
@@ -250,16 +242,7 @@ function getTypeBitNot(t: IntegerType): IntegerType {
   return integerType(sub(-1n, t.high), sub(-1n, t.low));
 }
 
-function getOpCodeType(
-  expr:
-    | BinaryOp
-    | MutatingBinaryOp
-    | UnaryOp
-    | FunctionCall
-    | MethodCall
-    | PolygolfOp,
-  program: Program
-): Type {
+function getOpCodeType(expr: PolygolfOp, program: Program): Type {
   const types = getArgs(expr).map((x) => getType(x, program));
   function expectVariadicType(expected: Type) {
     if (types.length < 2 || types.some((x, i) => !isSubtype(x, expected))) {

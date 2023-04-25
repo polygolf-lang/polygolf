@@ -2,7 +2,6 @@ import {
   getArgs,
   int,
   isFiniteBound,
-  isOpCode,
   polygolfOp,
   StringLiteral,
   stringLiteral,
@@ -58,12 +57,7 @@ function getDelim(
 export const evalStaticExpr: Plugin = {
   name: "evalStaticExpr",
   visit(node, spine) {
-    if (
-      "op" in node &&
-      node.op !== null &&
-      isOpCode(node.op) &&
-      node.kind !== "MutatingBinaryOp"
-    ) {
+    if (node.kind === "PolygolfOp") {
       const args = getArgs(node);
       let type = voidType;
       try {
