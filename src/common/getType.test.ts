@@ -41,7 +41,7 @@ const ascii = (x: number | IntegerType = int(0)) => text(x, true);
 
 /** returns identifier expression of given type */
 function e(type: Type): Identifier {
-  return { ...id("", true), type };
+  return { ...id(""), type };
 }
 
 function testExpr(

@@ -73,6 +73,15 @@ export function getIdentifierType(
   );
 }
 
+export function isIdentifierReadonly(
+  expr: IR.Identifier,
+  program: IR.Program
+): boolean {
+  if (expr.builtin) return true;
+  const definingNode = symbolTableRoot(program).get(expr.name);
+  return definingNode !== undefined && definingNode.node.kind !== "Assignment";
+}
+
 function introducedSymbols(
   spine: Spine,
   existing: Set<string>
