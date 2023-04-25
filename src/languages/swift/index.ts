@@ -19,7 +19,7 @@ import {
   flipBinaryOps,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
-import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
@@ -40,7 +40,6 @@ const swiftLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfStringListLiteral(false),
-    evalStaticExpr,
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive,
