@@ -99,8 +99,12 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_text", (x) => functionCall(x, "chr")],
     ]),
+    useUnsignedDivision,
     addMutatingBinaryOp(
       ["add", "+"],
+      ["mul", "*"],
+      ["unsigned_rem", "%%"],
+      ["unsigned_trunc_div", "/%"],
       ["mul", "*"],
       ["sub", "-"],
       ["concat", "&"]
@@ -114,6 +118,8 @@ const nimLanguage: Language = {
       ["mul", "*"],
       ["trunc_div", "div"],
       ["rem", "mod"],
+      ["unsigned_rem", "%%"],
+      ["unsigned_trunc_div", "/%"],
       ["bit_shift_left", "shl"],
       ["bit_shift_right", "shr"],
       ["add", "+"],
@@ -132,7 +138,6 @@ const nimLanguage: Language = {
       ["bit_xor", "xor"]
     ),
     useUFCS,
-    useUnsignedDivision,
     addNimImports,
     renameIdents(),
     addVarDeclarations,

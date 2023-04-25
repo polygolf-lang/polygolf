@@ -1,23 +1,25 @@
 import { Plugin } from "../common/Language";
-import { int, leq, polygolfOp, IntegerType, isConstantType } from "../IR";
+import {
+  int,
+  polygolfOp,
+  IntegerType,
+  isConstantType,
+  isSubtype,
+  integerType,
+} from "../IR";
 import { getType } from "../common/getType";
 
 export const modToRem: Plugin = {
   name: "modToRem",
   visit(node, spine) {
     if (node.kind === "PolygolfOp" && node.op === "mod") {
-      const rightType = getType(node.args[1], spine);
-      if (rightType.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
-      if (leq(0n, rightType.low)) {
-        return polygolfOp("rem", ...node.args);
-      } else {
-        return polygolfOp(
-          "rem",
-          polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
-          node.args[1]
-        );
-      }
+      return isSubtype(getType(node.args[1], spine), integerType(0))
+        ? polygolfOp("rem", ...node.args)
+        : polygolfOp(
+            "rem",
+            polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
+            node.args[1]
+          );
     }
   },
 };
@@ -26,17 +28,9 @@ export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
   visit(node, spine) {
     if (node.kind === "PolygolfOp" && node.op === "div") {
-      const rightType = getType(node.args[1], spine);
-      if (rightType.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
-      if (leq(0n, rightType.low)) {
-        return {
-          ...node,
-          op: "trunc_div",
-        };
-      } else {
-        return undefined; // TODO
-      }
+      return isSubtype(getType(node.args[1], spine), integerType(0))
+        ? polygolfOp("trunc_div", ...node.args)
+        : undefined; // TODO
     }
   },
 };

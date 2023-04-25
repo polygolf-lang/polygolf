@@ -47,6 +47,7 @@ import {
   ListType,
   isAssociative,
   polygolfOp,
+  leq,
 } from "../IR";
 import { byteLength, charLength } from "./applyLanguage";
 import { PolygolfError } from "./errors";
@@ -366,9 +367,11 @@ function getOpCodeType(
     case "mul":
     case "div":
     case "trunc_div":
+    case "unsigned_trunc_div":
     case "pow":
     case "mod":
     case "rem":
+    case "unsigned_rem":
     case "bit_and":
     case "bit_or":
     case "bit_xor":
@@ -768,6 +771,16 @@ export function getArithmeticType(
       return getIntegerTypeMod(a, b);
     case "rem":
       return getIntegerTypeRem(a, b);
+    case "unsigned_rem":
+    case "unsigned_trunc_div":
+      if (leq(0n, a.low) && leq(0n, b.low)) {
+        return getArithmeticType(
+          op === "unsigned_rem" ? "rem" : "trunc_div",
+          a,
+          b
+        );
+      }
+      return integerType();
     case "pow": {
       if (lt(b.low, 0n))
         throw new PolygolfError(
