@@ -1,13 +1,19 @@
 import { Plugin } from "../common/Language";
-import { int, leq, polygolfOp, IntegerType, isConstantType } from "../IR";
+import {
+  int,
+  leq,
+  polygolfOp,
+  IntegerType,
+  isConstantType,
+  isPolygolfOp,
+} from "../IR";
 import { getType } from "../common/getType";
 
 export const modToRem: Plugin = {
   name: "modToRem",
   visit(node, spine) {
-    const program = spine.root.node;
     if (node.kind === "PolygolfOp" && node.op === "mod") {
-      const rightType = getType(node.args[1], program);
+      const rightType = getType(node.args[1], spine);
       if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (leq(0n, rightType.low)) {
@@ -26,9 +32,8 @@ export const modToRem: Plugin = {
 export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
   visit(node, spine) {
-    const program = spine.root.node;
     if (node.kind === "PolygolfOp" && node.op === "div") {
-      const rightType = getType(node.args[1], program);
+      const rightType = getType(node.args[1], spine);
       if (rightType.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
       if (leq(0n, rightType.low)) {
@@ -51,7 +56,7 @@ export const equalityToInequality: Plugin = {
     if (node.kind === "PolygolfOp" && (node.op === "eq" || node.op === "neq")) {
       const eq = node.op === "eq";
       const [a, b] = [node.args[0], node.args[1]];
-      const [t1, t2] = [a, b].map((x) => getType(x, spine.root.node)) as [
+      const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
         IntegerType,
         IntegerType
       ];
@@ -95,22 +100,20 @@ export const equalityToInequality: Plugin = {
 export const applyDeMorgans: Plugin = {
   name: "applyDeMorgans",
   visit(node) {
-    if (node.kind === "PolygolfOp" && node.args[0]?.kind === "PolygolfOp") {
-      if (node.op === "not" && ["and", "or"].includes(node.args[0].op)) {
-        return polygolfOp(
-          node.args[0].op === "and" ? "or" : "and",
-          ...node.args[0].args.map((x) => polygolfOp("not", x))
-        );
-      }
-      if (
-        node.op === "bit_not" &&
-        ["bit_and", "bit_or"].includes(node.args[0].op)
-      ) {
-        return polygolfOp(
-          node.args[0].op === "bit_and" ? "bit_or" : "bit_and",
-          ...node.args[0].args.map((x) => polygolfOp("bit_not", x))
-        );
-      }
+    if (isPolygolfOp(node, "not") && isPolygolfOp(node.args[0], "and", "or")) {
+      return polygolfOp(
+        node.args[0].op === "and" ? "or" : "and",
+        ...node.args[0].args.map((x) => polygolfOp("not", x))
+      );
+    }
+    if (
+      isPolygolfOp(node, "bit_not") &&
+      isPolygolfOp(node.args[0], "bit_and", "bit_or")
+    ) {
+      return polygolfOp(
+        node.args[0].op === "bit_and" ? "bit_or" : "bit_and",
+        ...node.args[0].args.map((x) => polygolfOp("bit_not", x))
+      );
     }
   },
 };

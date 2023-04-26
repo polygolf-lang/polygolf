@@ -70,6 +70,8 @@ export function emitExpr(
     return result;
   }
   switch (expr.kind) {
+    case "ImplicitConversion":
+      return emitSexpr("@", expr.expr, JSON.stringify(expr.behavesLike));
     case "Block":
       return joinTrees(
         "\n",

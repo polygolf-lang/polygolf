@@ -24,9 +24,8 @@ export const useEquivalentTextOp: Plugin = {
   name: "useEquivalentTextOp",
   visit(node, spine) {
     if (node.kind !== "PolygolfOp") return;
-    const program = spine.root.node;
     if (node.args.length < 1) return;
-    const typeArg0 = getType(node.args[0], program);
+    const typeArg0 = getType(node.args[0], spine);
     if (typeArg0.kind === "text" && typeArg0.isAscii) {
       const alternative = textOpsEquivalenceAscii.get(node.op);
       if (alternative !== undefined) return { ...node, op: alternative };
