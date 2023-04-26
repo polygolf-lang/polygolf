@@ -18,9 +18,10 @@ export interface Identifier extends BaseExpr {
 /**
  * An unbounded integer constant. Raw OK
  */
-export interface IntegerLiteral extends BaseExpr {
+export interface IntegerLiteral<Value extends bigint = bigint>
+  extends BaseExpr {
   readonly kind: "IntegerLiteral";
-  readonly value: bigint;
+  readonly value: Value;
 }
 
 /**
