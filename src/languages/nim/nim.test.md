@@ -112,7 +112,7 @@ include re
 
 ```polygolf
 $a:0..1 <- 0;
-println (($a + 1) * $a);
+println_int (($a + 1) * $a);
 ```
 
 ```nim nogolf
@@ -177,7 +177,7 @@ for x in commandLineParams():x.echo
 ```polygolf
 $b <- 0;
 for $i $b 16 {
-    println $i;
+    println_int $i;
 };
 ```
 

@@ -1,4 +1,4 @@
-import { IR, Node, Program } from "../IR";
+import { IR, isPolygolfOp, Node, polygolfOp, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine } from "./Spine";
@@ -172,6 +172,15 @@ function golfProgram(
   let shortestSoFar: string;
   try {
     if (!skipTypecheck) typecheck(program);
+    program = applyAll(program, (node) => {
+      // TODO, abstract this as part of #150
+      if (isPolygolfOp(node, "print_int", "println_int")) {
+        return polygolfOp(
+          node.op === "print_int" ? "print" : "println",
+          polygolfOp("int_to_text", node.args[0])
+        );
+      }
+    });
     shortestSoFar = finalEmit(program);
   } catch (e) {
     if (isError(e)) return e;
