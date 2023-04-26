@@ -6,13 +6,14 @@ import {
   isConstantType,
   isSubtype,
   integerType,
+  isPolygolfOp,
 } from "../IR";
 import { getType } from "../common/getType";
 
 export const modToRem: Plugin = {
   name: "modToRem",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && node.op === "mod") {
+    if (isPolygolfOp(node, "mod")) {
       return isSubtype(getType(node.args[1], spine), integerType(0))
         ? polygolfOp("rem", ...node.args)
         : polygolfOp(
@@ -27,7 +28,7 @@ export const modToRem: Plugin = {
 export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && node.op === "div") {
+    if (isPolygolfOp(node, "div")) {
       return isSubtype(getType(node.args[1], spine), integerType(0))
         ? polygolfOp("trunc_div", ...node.args)
         : undefined; // TODO
@@ -40,7 +41,7 @@ export const truncatingOpsPlugins = [modToRem, divToTruncdiv];
 export const equalityToInequality: Plugin = {
   name: "equalityToInequality",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && (node.op === "eq" || node.op === "neq")) {
+    if (isPolygolfOp(node, "eq", "neq")) {
       const eq = node.op === "eq";
       const [a, b] = [node.args[0], node.args[1]];
       const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
