@@ -68,7 +68,7 @@ export const evalStaticExpr: Plugin = {
       let type = voidType;
       try {
         // encoutering nodes that we don't know the type of is fine
-        type = getType(node, spine.root.node);
+        type = getType(node, spine);
       } catch {}
       if (
         // if the inferred type of the node is a constant integer, replace it with a literal node
