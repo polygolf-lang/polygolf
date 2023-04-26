@@ -6,6 +6,7 @@ import {
   IntegerType,
   isConstantType,
   isIntLiteral,
+  isPolygolfOp,
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
@@ -107,8 +108,7 @@ export const addBitnot: Plugin = {
   name: "addBitnot",
   visit(node) {
     if (
-      node.kind === "PolygolfOp" &&
-      node.op === "add" &&
+      isPolygolfOp(node, "add") &&
       node.args.length === 2 &&
       isIntLiteral(node.args[0])
     ) {
