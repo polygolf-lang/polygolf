@@ -1,5 +1,11 @@
 import { getType } from "../common/getType";
-import { integerType, isSubtype, OpCode, polygolfOp } from "../IR";
+import {
+  integerType,
+  isPolygolfOp,
+  isSubtype,
+  OpCode,
+  polygolfOp,
+} from "../IR";
 import { Plugin } from "../common/Language";
 import { mapOps } from "./ops";
 
@@ -73,14 +79,14 @@ export const textToIntToTextGetToInt: Plugin = {
     [
       "text_byte_to_int",
       (x) =>
-        x[0].kind === "PolygolfOp" && x[0].op === "text_get_byte"
+        isPolygolfOp(x[0], "text_get_byte")
           ? polygolfOp("text_get_byte_to_int", ...x[0].args)
           : undefined,
     ],
     [
       "codepoint_to_int",
       (x) =>
-        x[0].kind === "PolygolfOp" && x[0].op === "text_get_codepoint"
+        isPolygolfOp(x[0], "text_get_codepoint")
           ? polygolfOp("text_get_codepoint_to_int", ...x[0].args)
           : undefined,
     ],

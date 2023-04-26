@@ -22,6 +22,7 @@ import {
   ListConstructor,
   ForRange,
   forDifferenceRange,
+  isPolygolfOp,
   add1,
   sub1,
 } from "../IR";
@@ -105,8 +106,7 @@ export const forRangeToForEachPair: Plugin = {
       node.kind === "ForRange" &&
       !node.inclusive &&
       isIntLiteral(node.start, 0n) &&
-      node.end.kind === "PolygolfOp" &&
-      node.end.op === "list_length" &&
+      isPolygolfOp(node.end, "list_length") &&
       node.end.args[0].kind === "Identifier"
     ) {
       const collection = node.end.args[0];
@@ -162,7 +162,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
         node.kind === "ForRange" &&
         !node.inclusive &&
         isIntLiteral(node.start, 0n) &&
-        ((node.end.kind === "PolygolfOp" &&
+        ((isPolygolfOp(node.end) &&
           ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
           node.end.args[0].kind === "Identifier") ||
           isIntLiteral(node.end))
@@ -191,7 +191,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
           );
           const newBody = bodySpine.withReplacer((n) => {
             if (
-              n.kind === "PolygolfOp" &&
+              isPolygolfOp(n) &&
               n.args[0] === indexedCollection &&
               n.args[1].kind === "Identifier" &&
               !n.args[1].builtin &&

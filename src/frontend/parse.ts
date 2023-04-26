@@ -35,12 +35,12 @@ import {
   functionType,
   func,
   conditional,
-  frontendOpcodes,
   id,
   arrayConstructor,
   toString,
   forArgv,
   isAssociative,
+  isFrontend,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -152,10 +152,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       assertInteger(args[0]);
       return polygolfOp(opCode, ...args);
   }
-  if (
-    isOpCode(opCode) &&
-    (!restrictFrontend || frontendOpcodes.includes(opCode))
-  ) {
+  if (isOpCode(opCode) && (!restrictFrontend || isFrontend(opCode))) {
     if (isBinary(opCode)) {
       expectArity(2, isAssociative(opCode) ? Infinity : 2);
       return polygolfOp(opCode, ...args);
