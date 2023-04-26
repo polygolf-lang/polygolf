@@ -13,11 +13,13 @@ import {
   isIntLiteral,
   isNegative,
   mutatingBinaryOp,
+  isPolygolfOp,
   OpCode,
   PolygolfOp,
   polygolfOp,
   unaryOp,
   UnaryOpCode,
+  BinaryOpCodes,
 } from "../IR";
 import { getType } from "../common/getType";
 import { Spine } from "../common/Spine";
@@ -29,7 +31,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
     name: "mapOps(...)",
     allOrNothing: true,
     visit(node, spine) {
-      if (node.kind === "PolygolfOp") {
+      if (isPolygolfOp(node)) {
         const op = node.op;
         const f = opMap.get(op);
         if (f !== undefined) {
@@ -38,7 +40,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
             // "as any" because TS doesn't do well with the "in" keyword
             replacement = { ...(replacement as any), op: node.op };
           }
-          return { ...replacement, type: getType(node, spine.root.node) };
+          return { ...replacement, type: getType(node, spine) };
         }
       }
     },
@@ -114,8 +116,7 @@ export function useIndexCalls(
     allOrNothing: true,
     visit(node) {
       if (
-        node.kind === "PolygolfOp" &&
-        (ops.length === 0 || ops.includes(node.op)) &&
+        isPolygolfOp(node, ...ops) &&
         (node.args[0].kind === "Identifier" || node.op.endsWith("_get"))
       ) {
         let indexNode: IndexCall;
@@ -149,8 +150,7 @@ export function addMutatingBinaryOp(
     visit(node) {
       if (
         node.kind === "Assignment" &&
-        node.expr.kind === "PolygolfOp" &&
-        isBinary(node.expr.op) &&
+        isPolygolfOp(node.expr, ...BinaryOpCodes) &&
         node.expr.args.length > 1 &&
         opMap.has(node.expr.op)
       ) {
@@ -182,7 +182,7 @@ export function addMutatingBinaryOp(
 export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
   visit(node) {
-    if (node.kind === "PolygolfOp" && isBinary(node.op)) {
+    if (isPolygolfOp(node, ...BinaryOpCodes)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {
         return polygolfOp(flippedOpCode, node.args[1], node.args[0]);

@@ -78,8 +78,8 @@ a>2
 ("abc"):byte(2)
 b.."xyz"
 ("abc"):len()
-tostring(5)
-- -"5"
+""..5
+1*"5"
 ```
 
 ## Parentheses
@@ -115,4 +115,38 @@ for_argv $x 100 {
 ```lua nogolf
 for x=0,99 do X=arg[1+x]
 print(X)end
+```
+
+## Implicit conversions
+
+```polygolf
+2 * (text_to_int "3");
+```
+
+```lua
+2*"3"
+```
+
+```polygolf
+2 + (text_to_int "3");
+```
+
+```lua
+2+"3"
+```
+
+```polygolf
+"x" .. (int_to_text 3);
+```
+
+```lua
+"x"..3
+```
+
+```polygolf
+(int_to_text 3) .. "x";
+```
+
+```lua
+3.."x"
 ```

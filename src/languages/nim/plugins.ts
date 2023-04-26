@@ -50,13 +50,12 @@ export const addNimImports: Plugin = addImports(
 export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
   visit(node, spine) {
-    const program = spine.root.node;
     if (
       node.kind === "BinaryOp" &&
       (node.op === "trunc_div" || node.op === "rem")
     ) {
-      const right = getType(node.right, program);
-      const left = getType(node.left, program);
+      const right = getType(node.right, spine);
+      const left = getType(node.left, spine);
       if (right.kind !== "integer" || left.kind !== "integer")
         throw new Error(`Unexpected type ${JSON.stringify([left, right])}.`);
       if (
