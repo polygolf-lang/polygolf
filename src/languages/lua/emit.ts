@@ -80,6 +80,8 @@ function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
   const prec = precedence(expr);
   function emitNoParens(e: IR.Expr): TokenTree {
     switch (e.kind) {
+      case "ImplicitConversion":
+        return emit(e.expr);
       case "Block":
         return joinExprs("\n", e.children);
       case "WhileLoop":

@@ -46,14 +46,17 @@ import {
   constantIntegerType,
   ListType,
   isAssociative,
+  polygolfOp,
 } from "../IR";
 import { byteLength, charLength } from "./applyLanguage";
 import { PolygolfError } from "./errors";
-import { getIdentifierType } from "./symbols";
+import { Spine } from "./Spine";
+import { getIdentifierType, isIdentifierReadonly } from "./symbols";
 
 const cachedType = new WeakMap<Expr, Type>();
 const currentlyFinding = new WeakSet<Expr>();
-export function getType(expr: Expr, program: Program): Type {
+export function getType(expr: Expr, context: Program | Spine): Type {
+  const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
   if (currentlyFinding.has(expr))
     throw new PolygolfError(
@@ -81,6 +84,15 @@ export function calcType(expr: Expr, program: Program): Type {
     case "Variants":
       return expr.variants.map(type).reduce(union);
     case "Assignment": {
+      if (
+        expr.variable.kind === "Identifier" &&
+        isIdentifierReadonly(expr.variable, program)
+      ) {
+        throw new PolygolfError(
+          `Type error. Cannot assign to readonly identifier ${expr.variable.name}.`,
+          expr.source
+        );
+      }
       const a = type(expr.variable);
       const b = type(expr.expr);
       if (isSubtype(b, a)) {
@@ -232,6 +244,9 @@ export function calcType(expr: Expr, program: Program): Type {
     case "WhileLoop":
     case "ForArgv":
       return voidType;
+    case "ImplicitConversion": {
+      return type(polygolfOp(expr.behavesLike, expr.expr));
+    }
   }
   throw new PolygolfError(
     `Type error. Unexpected node ${expr.kind}.`,
