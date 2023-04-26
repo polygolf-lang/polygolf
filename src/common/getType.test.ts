@@ -30,7 +30,6 @@ import {
   functionCall,
   IntegerType,
   isAssociative,
-  isBinary,
   forRangeCommon,
   forDifferenceRange,
 } from "IR";
@@ -41,7 +40,7 @@ const ascii = (x: number | IntegerType = int(0)) => text(x, true);
 
 /** returns identifier expression of given type */
 function e(type: Type): Identifier {
-  return { ...id("", true), type };
+  return { ...id(""), type };
 }
 
 function testExpr(
@@ -86,7 +85,7 @@ function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
     [[text(), text()], "error"],
     [[int(), bool], "error"],
     [[int(), text()], "error"],
-    isBinary(op) && isAssociative(op)
+    isAssociative(op)
       ? [[text(), int()], "error"]
       : [[int(), int(), int()], "error"],
     ...tests,
