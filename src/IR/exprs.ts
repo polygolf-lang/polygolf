@@ -21,6 +21,7 @@ import {
   AssociativeOpCode,
   CommutativeOpCode,
   isConstantType,
+  isBinary,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseExpr {
