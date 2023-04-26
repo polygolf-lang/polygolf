@@ -2,6 +2,7 @@ import {
   BinaryOpCode,
   importStatement,
   integerType,
+  isPolygolfOp,
   isSubtype,
   methodCall,
   polygolfOp,
@@ -57,10 +58,7 @@ export const addNimImports: Plugin = addImports(
 export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
   visit(node, spine) {
-    if (
-      node.kind === "PolygolfOp" &&
-      (node.op === "trunc_div" || node.op === "rem")
-    ) {
+    if (isPolygolfOp(node, "trunc_div", "rem")) {
       return isSubtype(getType(node.args[0], spine), integerType(0)) &&
         isSubtype(getType(node.args[0], spine), integerType(0))
         ? polygolfOp(("unsigned_" + node.op) as BinaryOpCode, ...node.args)
