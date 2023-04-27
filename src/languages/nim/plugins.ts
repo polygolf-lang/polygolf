@@ -61,7 +61,7 @@ export const useUnsignedDivision: Plugin = {
     if (isPolygolfOp(node, "trunc_div", "rem")) {
       return isSubtype(getType(node.args[0], spine), integerType(0)) &&
         isSubtype(getType(node.args[0], spine), integerType(0))
-        ? polygolfOp(("unsigned_" + node.op) as BinaryOpCode, ...node.args)
+        ? polygolfOp(`unsigned_${node.op}`, ...node.args)
         : undefined;
     }
   },
