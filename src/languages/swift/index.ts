@@ -17,10 +17,11 @@ import {
   useIndexCalls,
   addMutatingBinaryOp,
   flipBinaryOps,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
 import {
@@ -59,6 +60,7 @@ const swiftLanguage: Language = {
     useIndexCalls(),
   ],
   finalEmitPlugins: [
+    implicitlyConvertPrintArg,
     mapOps([
       [
         "text_get_byte",
@@ -190,6 +192,7 @@ const swiftLanguage: Language = {
     addVarDeclarations,
     groupVarDeclarations(),
     assertInt64,
+    removeImplicitConversions,
   ],
   // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
   detokenizer: function (tokenTree: TokenTree): string {

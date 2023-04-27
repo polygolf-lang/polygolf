@@ -190,3 +190,12 @@ export const flipBinaryOps: Plugin = {
     }
   },
 };
+
+export const removeImplicitConversions: Plugin = {
+  name: "removeImplicitConversions",
+  visit(node) {
+    if (node.kind === "ImplicitConversion") {
+      return node.expr;
+    }
+  },
+};

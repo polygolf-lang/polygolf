@@ -102,12 +102,12 @@ b or b
 ## Misc
 
 ```polygolf
-print (text_split "abc" "b");
+print (list_get (text_split "abc" "b") 0);
 ```
 
 ```nim
 include re
-"abc".split"b".echo
+"abc".split"b"[0].echo
 ```
 
 ```polygolf
@@ -121,11 +121,11 @@ echo (1+a)*a
 ```
 
 ```polygolf
-println (int_to_text 1);
+println ((int_to_text 1) .. "x");
 ```
 
 ```nim nogolf
-echo $1
+echo $1&"x"
 ```
 
 ```polygolf
