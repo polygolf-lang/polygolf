@@ -151,3 +151,17 @@ $a <- ($a + 2);
 a=1
 a+=2
 ```
+
+## Thruthiness
+
+```polygolf
+$a:0..oo <- 1;
+if ($a != 0) {
+    println $a;
+};
+```
+
+```python
+a=1
+if a:print(a)
+```

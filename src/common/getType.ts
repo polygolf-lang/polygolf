@@ -546,6 +546,9 @@ function getOpCodeType(
     case "not":
       expectType(booleanType);
       return booleanType;
+    case "int_to_bool":
+      expectType(integerType());
+      return booleanType;
     case "int_to_text":
     case "int_to_bin":
     case "int_to_hex": {

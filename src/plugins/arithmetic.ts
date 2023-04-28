@@ -6,6 +6,8 @@ import {
   IntegerType,
   isConstantType,
   isPolygolfOp,
+  isIntLiteral,
+  implicitConversion,
 } from "../IR";
 import { getType } from "../common/getType";
 
@@ -114,6 +116,20 @@ export const applyDeMorgans: Plugin = {
         node.args[0].op === "bit_and" ? "bit_or" : "bit_and",
         ...node.args[0].args.map((x) => polygolfOp("bit_not", x))
       );
+    }
+  },
+};
+
+export const useIntegerTruthiness: Plugin = {
+  name: "useIntegerTruthiness",
+  visit(node, spine) {
+    if (
+      isPolygolfOp(node, "neq") &&
+      isIntLiteral(node.args[1], 0n) &&
+      spine.parent!.node.kind === "IfStatement" &&
+      spine.pathFragment === "condition"
+    ) {
+      return implicitConversion(node.args[0], "int_to_bool");
     }
   },
 };
