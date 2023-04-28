@@ -31,7 +31,7 @@ import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
-import { tableHashing } from "../../plugins/tables";
+import { tableHashing, tableToListLookup } from "../../plugins/tables";
 import hash from "./hash";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
@@ -62,6 +62,7 @@ const nimLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     tableHashing(hash),
+    tableToListLookup,
     equalityToInequality,
     useEquivalentTextOp,
     shiftRangeOneUp,
@@ -99,6 +100,7 @@ const nimLanguage: Language = {
       ["abs", (x) => functionCall(x, "abs")],
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_text", (x) => functionCall(x, "chr")],
+      ["list_find", (x) => functionCall(x, "find")],
     ]),
     addMutatingBinaryOp(
       ["add", "+"],

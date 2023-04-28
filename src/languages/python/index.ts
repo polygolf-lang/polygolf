@@ -40,6 +40,7 @@ import {
 } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
 import { equalityToInequality } from "../../plugins/arithmetic";
+import { tableToListLookup } from "../../plugins/tables";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -55,6 +56,7 @@ const pythonLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     useEquivalentTextOp,
+    tableToListLookup,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -78,6 +80,7 @@ const pythonLanguage: Language = {
       ["false", (_) => int(0)],
       ["abs", (x) => functionCall([x[0]], "abs")],
       ["list_length", (x) => functionCall([x[0]], "len")],
+      ["list_find", (x) => methodCall(x[0], [x[1]], "index")],
       ["join_using", (x) => methodCall(x[1], [x[0]], "join")],
       ["join", (x) => methodCall(stringLiteral(""), [x[0]], "join")],
       ["sorted", (x) => functionCall([x[0]], "sorted")],
