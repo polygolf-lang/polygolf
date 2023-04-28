@@ -22,6 +22,7 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
   flipBinaryOps,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import {
@@ -139,6 +140,7 @@ const luaLanguage: Language = {
     renameIdents(),
     addOneToManyAssignments(),
     assertInt64,
+    removeImplicitConversions,
   ],
 };
 

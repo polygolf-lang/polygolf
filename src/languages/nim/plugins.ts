@@ -1,5 +1,4 @@
 import {
-  BinaryOpCode,
   importStatement,
   integerType,
   isPolygolfOp,
