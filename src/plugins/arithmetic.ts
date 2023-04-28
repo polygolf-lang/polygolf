@@ -124,12 +124,18 @@ export const useIntegerTruthiness: Plugin = {
   name: "useIntegerTruthiness",
   visit(node, spine) {
     if (
-      isPolygolfOp(node, "neq") &&
-      isIntLiteral(node.args[1], 0n) &&
+      isPolygolfOp(node, "eq", "neq") &&
       spine.parent!.node.kind === "IfStatement" &&
       spine.pathFragment === "condition"
     ) {
-      return implicitConversion(node.args[0], "int_to_bool");
+      const res = isIntLiteral(node.args[1], 0n)
+        ? implicitConversion(node.args[0], "int_to_bool")
+        : isIntLiteral(node.args[0], 0n)
+        ? implicitConversion(node.args[1], "int_to_bool")
+        : undefined;
+      return res !== undefined && node.op === "eq"
+        ? polygolfOp("not", res)
+        : res;
     }
   },
 };

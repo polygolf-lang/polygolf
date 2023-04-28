@@ -33,7 +33,11 @@ import { evalStaticExpr } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
-import { applyDeMorgans, equalityToInequality } from "../../plugins/arithmetic";
+import {
+  applyDeMorgans,
+  equalityToInequality,
+  useIntegerTruthiness,
+} from "../../plugins/arithmetic";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -48,6 +52,7 @@ const luaLanguage: Language = {
     useEquivalentTextOp,
     shiftRangeOneUp,
     applyDeMorgans,
+    useIntegerTruthiness,
   ],
   emitPlugins: [
     forArgvToForRange(),
