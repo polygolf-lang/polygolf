@@ -19,8 +19,10 @@ import {
   isIntLiteral,
   ForRange,
   forDifferenceRange,
+  isPolygolfOp,
+  add1,
+  sub1,
 } from "../IR";
-import { add1, sub1 } from "./ops";
 
 export const forRangeToForRangeInclusive: Plugin = {
   name: "forRangeToForRangeInclusive",
@@ -41,8 +43,8 @@ export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.start, spine.root.node);
-      const high = getType(node.end, spine.root.node);
+      const low = getType(node.start, spine);
+      const high = getType(node.end, spine);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
@@ -65,8 +67,8 @@ export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
   visit(node, spine) {
     if (node.kind === "ForRange") {
-      const low = getType(node.start, spine.root.node);
-      const high = getType(node.end, spine.root.node);
+      const low = getType(node.start, spine);
+      const high = getType(node.end, spine);
       if (low.kind !== "integer" || high.kind !== "integer") {
         throw new Error(`Unexpected type (${low.kind},${high.kind})`);
       }
@@ -101,8 +103,7 @@ export const forRangeToForEachPair: Plugin = {
       !node.inclusive &&
       node.start.kind === "IntegerLiteral" &&
       node.start.value === 0n &&
-      node.end.kind === "PolygolfOp" &&
-      node.end.op === "list_length" &&
+      isPolygolfOp(node.end, "list_length") &&
       node.end.args[0].kind === "Identifier"
     ) {
       const collection = node.end.args[0];
@@ -135,8 +136,7 @@ export const forRangeToForEach: Plugin = {
       !node.inclusive &&
       node.start.kind === "IntegerLiteral" &&
       node.start.value === 0n &&
-      node.end.kind === "PolygolfOp" &&
-      node.end.op === "list_length" &&
+      isPolygolfOp(node.end, "list_length") &&
       node.end.args[0].kind === "Identifier"
     ) {
       const collection = node.end.args[0];

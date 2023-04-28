@@ -6,6 +6,7 @@ import {
   functionCall,
   int,
   integerType,
+  isPolygolfOp,
   listConstructor,
   polygolfOp,
   StringLiteral,
@@ -37,13 +38,12 @@ export function tableHashing(
     name: "tableHashing(...)",
     visit(node, spine) {
       if (
-        node.kind === "PolygolfOp" &&
-        node.op === "table_get" &&
+        isPolygolfOp(node, "table_get") &&
         node.args[0].kind === "TableConstructor"
       ) {
         const table = node.args[0];
         const getKey = node.args[1];
-        const tableType = getType(table, spine.root.node);
+        const tableType = getType(table, spine);
         if (
           tableType.kind === "Table" &&
           tableType.key.kind === "text" &&

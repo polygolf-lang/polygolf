@@ -6,21 +6,21 @@ import {
   namedArg,
   polygolfOp,
   stringLiteral,
+  add1,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
-  add1,
   mapOps,
   mapToUnaryAndBinaryOps,
   useIndexCalls,
-  equalityToInequality,
+  addMutatingBinaryOp,
+  flipBinaryOps,
+  removeImplicitConversions,
 } from "../../plugins/ops";
-import { divToTruncdiv, modToRem } from "../../plugins/divisionOps";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
-import { addMutatingBinaryOp, flipBinaryOps } from "../../plugins/binaryOps";
 import { golfLastPrint } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
@@ -29,6 +29,10 @@ import {
   forRangeToForRangeInclusive,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
+import {
+  equalityToInequality,
+  truncatingOpsPlugins,
+} from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
   name: "Swift",
@@ -44,8 +48,7 @@ const swiftLanguage: Language = {
   ],
   emitPlugins: [
     forArgvToForEach,
-    modToRem,
-    divToTruncdiv,
+    ...truncatingOpsPlugins,
     mapOps([
       ["argv", (x) => id("CommandLine.arguments[1...]", true)],
       [
@@ -188,6 +191,7 @@ const swiftLanguage: Language = {
     addVarDeclarations,
     groupVarDeclarations(),
     assertInt64,
+    removeImplicitConversions,
   ],
   // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
   detokenizer: function (tokenTree: TokenTree): string {

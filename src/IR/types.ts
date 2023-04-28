@@ -1,3 +1,5 @@
+import { getType } from "../common/getType";
+import { Spine } from "../common/Spine";
 import {
   Expr,
   arrayConstructor,
@@ -6,6 +8,7 @@ import {
   tableConstructor,
   stringLiteral,
   int,
+  Program,
 } from "./IR";
 
 /** The type of the value of a node when evaluated */
@@ -182,6 +185,8 @@ export function textType(
   };
 }
 
+export const asciiType = textType(integerType(0), true);
+
 export function integerTypeIncludingAll(
   ...values: IntegerBound[]
 ): IntegerType {
@@ -203,6 +208,10 @@ function integerBoundMinAndMax(args: IntegerBound[]) {
 
 export function annotate(expr: Expr, type: Type): Expr {
   return { ...expr, type };
+}
+
+export function bakeType(expr: Expr, context: Program | Spine): Expr {
+  return annotate(expr, getType(expr, context));
 }
 
 export function toString(a: Type): string {

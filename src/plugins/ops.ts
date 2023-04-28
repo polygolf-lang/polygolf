@@ -1,25 +1,29 @@
 import { Plugin, OpTransformOutput } from "../common/Language";
 import {
+  add1,
   assignment,
   binaryOp,
   BinaryOpCode,
   Expr,
+  flipOpCode,
   IndexCall,
   indexCall,
-  int,
-  IntegerType,
   isBinary,
-  isConstantType,
+  isCommutative,
   isIntLiteral,
   isNegative,
+  mutatingBinaryOp,
+  isPolygolfOp,
   OpCode,
   PolygolfOp,
   polygolfOp,
   unaryOp,
   UnaryOpCode,
+  BinaryOpCodes,
 } from "../IR";
 import { getType } from "../common/getType";
-import { Spine } from "@/common/Spine";
+import { Spine } from "../common/Spine";
+import { stringify } from "../common/stringify";
 
 export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
   const opMap = new Map<string, OpTransformOutput>(opMap0);
@@ -27,7 +31,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
     name: "mapOps(...)",
     allOrNothing: true,
     visit(node, spine) {
-      if (node.kind === "PolygolfOp") {
+      if (isPolygolfOp(node)) {
         const op = node.op;
         const f = opMap.get(op);
         if (f !== undefined) {
@@ -36,7 +40,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
             // "as any" because TS doesn't do well with the "in" keyword
             replacement = { ...(replacement as any), op: node.op };
           }
-          return { ...replacement, type: getType(node, spine.root.node) };
+          return { ...replacement, type: getType(node, spine) };
         }
       }
     },
@@ -112,8 +116,7 @@ export function useIndexCalls(
     allOrNothing: true,
     visit(node) {
       if (
-        node.kind === "PolygolfOp" &&
-        (ops.length === 0 || ops.includes(node.op)) &&
+        isPolygolfOp(node, ...ops) &&
         (node.args[0].kind === "Identifier" || node.op.endsWith("_get"))
       ) {
         let indexNode: IndexCall;
@@ -137,52 +140,62 @@ export function useIndexCalls(
   };
 }
 
-export const add1 = (expr: Expr) => polygolfOp("add", expr, int(1n));
-export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
-
-export const equalityToInequality: Plugin = {
-  name: "equalityToInequality",
-  visit(node, spine) {
-    if (node.kind === "PolygolfOp" && (node.op === "eq" || node.op === "neq")) {
-      const eq = node.op === "eq";
-      const [a, b] = [node.args[0], node.args[1]];
-      const [t1, t2] = [a, b].map((x) => getType(x, spine.root.node)) as [
-        IntegerType,
-        IntegerType
-      ];
-      if (isConstantType(t1)) {
-        if (t1.low === t2.low) {
-          // (0 == $x:0..9) -> (1 > $x:0..9)
-          // (0 != $x:0..9) -> (0 < $x:0..9)
-          return eq
-            ? polygolfOp("gt", int(t1.low + 1n), b)
-            : polygolfOp("lt", int(t1.low), b);
-        }
-        if (t1.low === t2.high) {
-          // (9 == $x:0..9) -> (8 < $x:0..9)
-          // (9 != $x:0..9) -> (9 > $x:0..9)
-          return eq
-            ? polygolfOp("lt", int(t1.low - 1n), b)
-            : polygolfOp("gt", int(t1.low), b);
-        }
-      }
-
-      if (isConstantType(t2)) {
-        if (t1.low === t2.low) {
-          // ($x:0..9 == 0) -> ($x:0..9 < 1)
-          // ($x:0..9 != 0) -> ($x:0..9 > 0)
-          return eq
-            ? polygolfOp("lt", a, int(t2.low + 1n))
-            : polygolfOp("gt", a, int(t2.low));
-        }
-        if (t1.high === t2.low) {
-          // ($x:0..9 == 9) -> ($x:0..9 > 8)
-          // ($x:0..9 != 9) -> ($x:0..9 < 9)
-          return eq
-            ? polygolfOp("gt", a, int(t2.low - 1n))
-            : polygolfOp("lt", a, int(t2.low));
+// "a = a + b" --> "a += b"
+export function addMutatingBinaryOp(
+  ...opMap0: [BinaryOpCode, string][]
+): Plugin {
+  const opMap = new Map<BinaryOpCode, string>(opMap0);
+  return {
+    name: `addMutatingBinaryOp(${JSON.stringify(opMap0)})`,
+    visit(node) {
+      if (
+        node.kind === "Assignment" &&
+        isPolygolfOp(node.expr, ...BinaryOpCodes) &&
+        node.expr.args.length > 1 &&
+        opMap.has(node.expr.op)
+      ) {
+        const op = node.expr.op;
+        const args = node.expr.args;
+        const name = opMap.get(op);
+        const leftValueStringified = stringify(node.variable);
+        const index = node.expr.args.findIndex(
+          (x) => stringify(x) === leftValueStringified
+        );
+        if (index === 0 || (index > 0 && isCommutative(op))) {
+          const newArgs = [
+            ...args.slice(0, index),
+            ...args.slice(index + 1, args.length),
+          ];
+          return mutatingBinaryOp(
+            op,
+            node.variable,
+            args.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0],
+            name
+          );
         }
       }
+    },
+  };
+}
+
+// (a > b) --> (b < a)
+export const flipBinaryOps: Plugin = {
+  name: "flipBinaryOps",
+  visit(node) {
+    if (isPolygolfOp(node, ...BinaryOpCodes)) {
+      const flippedOpCode = flipOpCode(node.op);
+      if (flippedOpCode !== null) {
+        return polygolfOp(flippedOpCode, node.args[1], node.args[0]);
+      }
+    }
+  },
+};
+
+export const removeImplicitConversions: Plugin = {
+  name: "removeImplicitConversions",
+  visit(node) {
+    if (node.kind === "ImplicitConversion") {
+      return node.expr;
     }
   },
 };

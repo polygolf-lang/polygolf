@@ -1,6 +1,6 @@
 import { replaceAtIndex } from "../common/immutable";
 import { Plugin } from "../common/Language";
-import { polygolfOp, stringLiteral } from "../IR";
+import { isPolygolfOp, polygolfOp, stringLiteral } from "../IR";
 import { mapOps } from "./ops";
 
 export const printLnToPrint = mapOps([
@@ -21,12 +21,12 @@ export function golfLastPrint(toPrintln = true): Plugin {
       if (program.kind !== "Program") return;
       const newOp = toPrintln ? ("println" as const) : ("print" as const);
       const oldOp = toPrintln ? "print" : "println";
-      if (program.body.kind === "PolygolfOp" && program.body.op === oldOp) {
+      if (isPolygolfOp(program.body, oldOp)) {
         return { ...program, body: { ...program.body, op: newOp } };
       } else if (program.body.kind === "Block") {
         const oldChildren = program.body.children;
         const lastStatement = oldChildren[oldChildren.length - 1];
-        if (lastStatement.kind === "PolygolfOp" && lastStatement.op === oldOp) {
+        if (isPolygolfOp(lastStatement, oldOp)) {
           const newLastStatement = { ...lastStatement, op: newOp };
           const children = replaceAtIndex(
             oldChildren,

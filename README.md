@@ -206,6 +206,58 @@ Note the following Lua-specific features, besides the syntax:
 - foreach-range loop instead of a glorified while loop (!)
 - temporary variable replaced with simultaneous assignment (!)
 
+## Golfing plugins
+
+Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Python:
+
+### Integer arithmetic
+
+- [x] `x<=5` ⟶ `x<6`
+- [x] `x%10==0` ⟶ `x%10<1`
+- [ ] `(x+1)*(y+1)` ⟶ `~x*~y`
+- [ ] `x//32` ⟶ `x>>5`
+- [ ] `x**2` ⟶ `x*x`
+- [ ] `x*x*x` ⟶ `x**3`
+
+### Boolean arithmetic
+
+- [ ] `not(a==5 or b!=10)` ⟶ `a!=5 and b==10`
+- [ ] `~(a|b)` ⟶ `~a&~b`
+
+### Variables
+
+- [x] `x=1,y=1` ⟶ `x=y=1`
+- [x] `x=t;x=y;y=t` ⟶ `x,y=y,x`
+- [x] `x=x*3` ⟶ `x*=3`
+- [ ] `x=z;y=x*5` ⟶ `y=z*5`
+
+### Loops
+
+- [x] `for i in range(len(d)):print(d[i])` ⟶ `for i in d:print(i)`
+- [x] `for i in range(0,10,2):print(i)` ⟶ `for i in range(5):print(2*i)`
+- [x] `for i in range(10,20):print(i+1)` ⟶ `for i in range(11,21):print(i)`
+
+### Identifiers
+
+- [x] `variable=0` ⟶ `v=0`
+- [x] `print(x);print(y);print(z)` ⟶ `p=print;p(x);p(y);p(z)`
+
+### Printing
+
+- [x] `print(end="x\n")` ↔ `print("x")`
+
+### Literals
+
+- [x] `["ab","cd","e","X","?!"]` ⟶ `"ab cd e X ?!".split()`
+- [ ] `{"a":"A","b":"B","c":"C"}[x]` ⟶ `["A","B","C"][["a","b","c"].find(x)]`
+- [ ] `["A","B","C"][x]` ⟶ `"abc"[x]`
+- [ ] `["A","B","C"].find(x)` ⟶ `"abc".find(x)`
+
+### Chaining & shortcircuiting
+
+- [ ] `a<b and b<c` ⟶ `a<b<c`
+- [ ] `if a==b:print(a)` ⟶ `a==b==print(a)`
+
 ## Tips for writing solutions in Polygolf
 
 - Don't golf the Polygolf source - let Polygolf do the golfing (especially the simple stuff) for you. This includes:
