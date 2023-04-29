@@ -405,6 +405,9 @@ function getOpCodeType(
       expectType(integerType(), integerType());
       return booleanType;
     // (bool, bool) => bool
+    case "unsafe_or":
+    case "unsafe_and":
+      return booleanType;
     case "or":
     case "and":
       expectVariadicType(booleanType);
