@@ -28,6 +28,7 @@ export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
  * array prop, while `getChildFragments` gives a `PathFragment` for each entry */
 function* getChildKeys(node: IR.Node): Generator<string> {
   for (const key in node) {
+    if (key === "ops") continue; // ops is an array of strings in RelationOpChain
     const value = (node as any)[key];
     if (
       Array.isArray(value) ||

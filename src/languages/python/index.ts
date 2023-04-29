@@ -23,6 +23,8 @@ import {
   removeImplicitConversions,
   useRelationChains,
   relationChainToNestedBinaryOps,
+  ifRelationChainToLongerRelationChain,
+  ifToAnd,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
@@ -62,6 +64,8 @@ const pythonLanguage: Language = {
     useLowDecimalListPackedPrinter,
     useEquivalentTextOp,
     safeConditionalOpToCollectionGet("list"),
+    ifRelationChainToLongerRelationChain,
+    ifToAnd,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -77,6 +81,7 @@ const pythonLanguage: Language = {
           ),
       ],
     ]),
+    useRelationChains("lt", "leq", "eq", "neq", "gt", "geq"),
   ],
   finalEmitPlugins: [
     useImplicitBoolToInt,
@@ -137,7 +142,6 @@ const pythonLanguage: Language = {
       ["bit_shift_left", "<<"],
       ["bit_shift_right", ">>"]
     ),
-    useRelationChains("lt", "leq", "eq", "neq", "gt", "geq"),
     relationChainToNestedBinaryOps(
       ["lt", "<"],
       ["leq", "<="],

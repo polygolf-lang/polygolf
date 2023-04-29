@@ -39,3 +39,25 @@ $x <- ("prepend" .. $x);
 3 >= 2;
 3 <= 2;
 ```
+
+## Short-circuiting
+
+```polygolf
+if true (println "x");
+```
+
+```polygolf ops.ifToAnd
+and true (println "x");
+```
+
+<!-- It currently isn't possible to test `ops.ifRelationChainToLongerRelationChain` directly, so we use Python to test it.-->
+
+```polygolf
+$c:Int <- 1;
+if ($c == 1) (println "x");
+```
+
+```python
+c=1
+c==1==print("x")
+```

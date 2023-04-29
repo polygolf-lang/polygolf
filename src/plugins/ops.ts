@@ -213,6 +213,37 @@ export function useRelationChains(...ops: RelationOpCode[]): Plugin {
   };
 }
 
+export const ifRelationChainToLongerRelationChain: Plugin = {
+  name: "ifRelationChainToLongerRelationChain",
+  visit(node) {
+    if (
+      node.kind === "IfStatement" &&
+      node.condition.kind === "RelationOpChain" &&
+      node.alternate === undefined &&
+      isPolygolfOp(node.consequent, "print", "println")
+    ) {
+      return relationOpChain(
+        [...node.condition.args, node.consequent],
+        [...node.condition.ops, "eq"]
+      );
+    }
+  },
+};
+
+export const ifToAnd: Plugin = {
+  name: "ifToAnd",
+  visit(node) {
+    if (
+      node.kind === "IfStatement" &&
+      node.condition.kind !== "RelationOpChain" &&
+      node.alternate === undefined &&
+      isPolygolfOp(node.consequent, "print", "println")
+    ) {
+      return polygolfOp("and", node.condition, node.consequent);
+    }
+  },
+};
+
 export function relationChainToNestedBinaryOps(
   ...opMap0: [RelationOpCode, string][]
 ): Plugin {
