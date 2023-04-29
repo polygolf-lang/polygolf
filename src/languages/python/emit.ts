@@ -50,7 +50,7 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   throw new Error(
-    `Programming error - unknown Python binary operator '${opname}.'`
+    `Programming error - unknown Python binary operator '${opname}'.`
   );
 }
 

@@ -101,20 +101,28 @@ export const equalityToInequality: Plugin = {
 
 export const applyDeMorgans: Plugin = {
   name: "applyDeMorgans",
-  visit(node) {
-    if (isPolygolfOp(node, "not") && isPolygolfOp(node.args[0], "and", "or")) {
-      return polygolfOp(
-        node.args[0].op === "and" ? "or" : "and",
-        ...node.args[0].args.map((x) => polygolfOp("not", x))
+  visit(node, spine) {
+    if (isPolygolfOp(node, "and", "or", "unsafe_and", "unsafe_or")) {
+      const negation = polygolfOp(
+        node.op === "and"
+          ? "or"
+          : node.op === "or"
+          ? "and"
+          : node.op === "unsafe_and"
+          ? "unsafe_or"
+          : "unsafe_and",
+        ...node.args.map((x) => polygolfOp("not", x))
       );
+      if (getType(node, spine).kind === "void") return negation; // If we are promised we won't read the result, we don't need to negate.
+      return polygolfOp("not", negation);
     }
-    if (
-      isPolygolfOp(node, "bit_not") &&
-      isPolygolfOp(node.args[0], "bit_and", "bit_or")
-    ) {
+    if (isPolygolfOp(node, "bit_and", "bit_or")) {
       return polygolfOp(
-        node.args[0].op === "bit_and" ? "bit_or" : "bit_and",
-        ...node.args[0].args.map((x) => polygolfOp("bit_not", x))
+        "bit_not",
+        polygolfOp(
+          node.op === "bit_and" ? "bit_or" : "bit_and",
+          ...node.args.map((x) => polygolfOp("bit_not", x))
+        )
       );
     }
   },

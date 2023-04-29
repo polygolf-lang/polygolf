@@ -53,13 +53,14 @@ $a:-oo..oo <- 0;
 ```polygolf
 $a:Int <- 0;
 $b:Int <- 0;
-not (or ($a == 5) ($b != 5));
+not (or ($a == 5) ($b != 6));
 ```
 
-```polygolf arithmetic.applyDeMorgans
-$a:-oo..oo <- 0;
-$b:-oo..oo <- 0;
-and ($a != 5) ($b == 5);
+<!-- `arithmetic.applyDeMorgans` cannot be used with `applyAll` (infinite loop) hence we test it on Python. -->
+
+```python
+a=b=0
+a!=5 and b==6
 ```
 
 ```polygolf
@@ -68,8 +69,7 @@ $b:Int <- 0;
 ~ ($a | $b);
 ```
 
-```polygolf arithmetic.applyDeMorgans
-$a:-oo..oo <- 0;
-$b:-oo..oo <- 0;
-(~ $a) & (~ $b);
+```python
+a=b=0
+~a&~b
 ```
