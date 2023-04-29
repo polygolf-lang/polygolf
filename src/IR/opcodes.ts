@@ -176,6 +176,8 @@ export const BinaryOpCodes = [
   // (bool, bool) => bool
   "or",
   "and",
+  "unsafe_or",
+  "unsafe_and",
   // collection get
   "array_get",
   "list_get",
