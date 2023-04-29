@@ -133,7 +133,29 @@ export function isAssociative(op: OpCode): op is AssociativeOpCode {
   return AssociativeOpCodes.includes(op as any);
 }
 
+export const RelationOpCodes = [
+  // (num, num) => bool
+  "lt",
+  "leq",
+  "eq",
+  "neq",
+  "geq",
+  "gt",
+  // membership
+  "array_contains",
+  "list_contains",
+  "table_contains_key",
+  "set_contains",
+] as const;
+
+export type RelationOpCode = string & typeof RelationOpCodes[number];
+
+export function isRelation(op: OpCode): op is RelationOpCode {
+  return RelationOpCodes.includes(op as any);
+}
+
 export const BinaryOpCodes = [
+  ...RelationOpCodes,
   // (num, num) => num
   "add",
   "sub",
@@ -151,21 +173,9 @@ export const BinaryOpCodes = [
   "gcd",
   "min",
   "max",
-  // (num, num) => bool
-  "lt",
-  "leq",
-  "eq",
-  "neq",
-  "geq",
-  "gt",
   // (bool, bool) => bool
   "or",
   "and",
-  // membership
-  "array_contains",
-  "list_contains",
-  "table_contains_key",
-  "set_contains",
   // collection get
   "array_get",
   "list_get",

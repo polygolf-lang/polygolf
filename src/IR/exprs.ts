@@ -20,6 +20,7 @@ import {
   FrontendOpCode,
   AssociativeOpCode,
   CommutativeOpCode,
+  RelationOpCode,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseExpr {
@@ -46,6 +47,13 @@ export interface ImplicitConversion extends BaseExpr {
 export interface PolygolfOp<Op extends OpCode = OpCode> extends BaseExpr {
   readonly kind: "PolygolfOp";
   readonly op: Op;
+  readonly args: readonly Expr[];
+}
+
+export interface RelationOpChain<Op extends RelationOpCode = RelationOpCode>
+  extends BaseExpr {
+  readonly kind: "RelationOpChain";
+  readonly ops: Op[];
   readonly args: readonly Expr[];
 }
 
@@ -286,6 +294,22 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
 export const add1 = (expr: Expr) => polygolfOp("add", expr, int(1n));
 export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
 
+export function relationOpChain<Op extends RelationOpCode>(
+  args: readonly Expr[],
+  ops: Op[]
+): RelationOpChain<Op> {
+  if (args.length - 1 !== ops.length) {
+    throw new Error(
+      "Programming error. Ops array must be one shorter than args array."
+    );
+  }
+  return {
+    kind: "RelationOpChain",
+    ops,
+    args,
+  };
+}
+
 export function functionCall(
   args: readonly Expr[],
   ident: string | Identifier,
@@ -491,7 +515,11 @@ export function isPolygolfOp<Op extends OpCode>(
           AliasedOpCode<
             Op,
             AssociativeOpCode,
-            AliasedOpCode<Op, CommutativeOpCode>
+            AliasedOpCode<
+              Op,
+              CommutativeOpCode,
+              AliasedOpCode<Op, RelationOpCode>
+            >
           >
         >
       >

@@ -21,6 +21,8 @@ import {
   useIndexCalls,
   addMutatingBinaryOp,
   removeImplicitConversions,
+  useRelationChains,
+  relationChainToNestedBinaryOps,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
@@ -129,6 +131,15 @@ const pythonLanguage: Language = {
       ["bit_shift_left", "<<"],
       ["bit_shift_right", ">>"]
     ),
+    useRelationChains("lt", "leq", "eq", "neq", "gt", "geq"),
+    relationChainToNestedBinaryOps(
+      ["lt", "<"],
+      ["leq", "<="],
+      ["eq", "=="],
+      ["neq", "!="],
+      ["gt", ">"],
+      ["geq", ">="]
+    ),
     mapToUnaryAndBinaryOps(
       ["pow", "**"],
       ["neg", "-"],
@@ -145,12 +156,6 @@ const pythonLanguage: Language = {
       ["bit_and", "&"],
       ["bit_xor", "^"],
       ["bit_or", "|"],
-      ["lt", "<"],
-      ["leq", "<="],
-      ["eq", "=="],
-      ["neq", "!="],
-      ["geq", ">="],
-      ["gt", ">"],
       ["not", "not"],
       ["and", "and"],
       ["or", "or"]

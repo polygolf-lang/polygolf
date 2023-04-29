@@ -26,6 +26,7 @@ import {
   Function,
   NamedArg,
   ImplicitConversion,
+  RelationOpChain,
 } from "./exprs";
 import {
   ForRange,
@@ -73,6 +74,7 @@ export type Expr =
   | KeyValue
   | Function
   | PolygolfOp
+  | RelationOpChain
   | ImplicitConversion
   | VarDeclaration
   | VarDeclarationWithAssignment

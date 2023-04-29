@@ -20,6 +20,8 @@ import {
   unaryOp,
   UnaryOpCode,
   BinaryOpCodes,
+  relationOpChain,
+  RelationOpCode,
 } from "../IR";
 import { getType } from "../common/getType";
 import { Spine } from "../common/Spine";
@@ -199,3 +201,35 @@ export const removeImplicitConversions: Plugin = {
     }
   },
 };
+
+export function useRelationChains(...ops: RelationOpCode[]): Plugin {
+  return {
+    name: `useRelationChains(...${JSON.stringify(ops)})`,
+    visit(node) {
+      if (isPolygolfOp(node, ...ops)) {
+        return relationOpChain(node.args, [node.op]);
+      }
+    },
+  };
+}
+
+export function relationChainToNestedBinaryOps(
+  ...opMap0: [RelationOpCode, string][]
+): Plugin {
+  const opMap = new Map(opMap0);
+  return {
+    name: `relationChainToNestedBinaryOps(${JSON.stringify(opMap0)})`,
+    visit(node) {
+      if (
+        node.kind === "RelationOpChain" &&
+        node.ops.every((x) => opMap.has(x))
+      ) {
+        let result = node.args[0];
+        node.ops.forEach((op, i) => {
+          result = binaryOp(op, result, node.args[i + 1], opMap.get(op));
+        });
+        return result;
+      }
+    },
+  };
+}

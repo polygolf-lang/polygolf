@@ -83,6 +83,8 @@ export function emitExpr(
       return emitSexpr("key_value", expr.key, expr.value);
     case "PolygolfOp":
       return emitSexpr(expr.op, ...expr.args);
+    case "RelationOpChain":
+      return emitSexpr("@", ...expr.args, ...expr.ops);
     case "VarDeclaration":
       return emitSexpr("@", expr.variable, toString(expr.variableType));
     case "VarDeclarationBlock":
