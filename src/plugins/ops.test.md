@@ -46,8 +46,8 @@ $x <- ("prepend" .. $x);
 if true (println "x");
 ```
 
-```polygolf ops.ifToAnd
-and true (println "x");
+```polygolf ops.ifToUnsafeAnd
+unsafe_and true (println "x");
 ```
 
 <!-- It currently isn't possible to test `ops.ifRelationChainToLongerRelationChain` directly, so we use Python to test it.-->

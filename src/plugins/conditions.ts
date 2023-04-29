@@ -43,6 +43,19 @@ export function safeConditionalOpToCollectionGet(
   };
 }
 
+export const conditionalOpToAndOr: Plugin = {
+  name: "conditionalOpToAndOr",
+  visit(node) {
+    if (node.kind === "ConditionalOp") {
+      return polygolfOp(
+        "unsafe_or",
+        polygolfOp("unsafe_and", node.condition, node.consequent),
+        node.alternate
+      );
+    }
+  },
+};
+
 export const flipConditionalOp: Plugin = {
   name: "flipConditionalOp",
   visit(node) {

@@ -34,6 +34,7 @@ import { golfLastPrint } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import { equalityToInequality } from "../../plugins/arithmetic";
+import { conditionalOpToAndOr } from "@/plugins/conditions";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -84,6 +85,7 @@ const luaLanguage: Language = {
     useIndexCalls(true),
   ],
   finalEmitPlugins: [
+    conditionalOpToAndOr,
     mapOps([
       [
         "int_to_text",

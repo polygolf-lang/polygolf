@@ -243,8 +243,8 @@ export const ifRelationChainToLongerRelationChain: Plugin = {
   },
 };
 
-export const ifToAnd: Plugin = {
-  name: "ifToAnd",
+export const ifToUnsafeAnd: Plugin = {
+  name: "ifToUnsafeAnd",
   visit(node) {
     if (
       node.kind === "IfStatement" &&
@@ -252,7 +252,7 @@ export const ifToAnd: Plugin = {
       node.alternate === undefined &&
       isPolygolfOp(node.consequent, "print", "println")
     ) {
-      return polygolfOp("and", node.condition, node.consequent);
+      return polygolfOp("unsafe_and", node.condition, node.consequent);
     }
   },
 };

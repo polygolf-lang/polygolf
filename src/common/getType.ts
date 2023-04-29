@@ -58,11 +58,12 @@ const currentlyFinding = new WeakSet<Expr>();
 export function getType(expr: Expr, context: Program | Spine): Type {
   const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
-  if (currentlyFinding.has(expr))
+  if (currentlyFinding.has(expr)) {
     throw new PolygolfError(
       `Expression defined in terms of itself`,
       expr.source
     );
+  }
   currentlyFinding.add(expr);
   const t = calcType(expr, program);
   currentlyFinding.delete(expr);
