@@ -48,6 +48,7 @@ import {
   equalityToInequality,
   truncatingOpsPlugins,
 } from "../../plugins/arithmetic";
+import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -66,6 +67,7 @@ const nimLanguage: Language = {
     useEquivalentTextOp,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
+    safeConditionalOpToCollectionGet("array"),
   ],
   emitPlugins: [
     forArgvToForEach,

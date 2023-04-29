@@ -197,6 +197,16 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [joinExprs(",", e.variables), "=", emit(e.expr)];
       case "MutatingBinaryOp":
         return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
+      case "ConditionalOp":
+        return [
+          "if",
+          emit(e.condition),
+          ":",
+          emit(e.consequent),
+          "else",
+          ":",
+          emit(e.alternate),
+        ];
       case "Identifier":
         return e.name;
       case "StringLiteral":
@@ -273,6 +283,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       }
       case "UnaryOp":
         return [e.name, emit(e.arg, prec + 1)];
+      case "ArrayConstructor":
+        return ["[", joinExprs(",", e.exprs), "]"];
       case "ListConstructor":
         return ["@", "[", joinExprs(",", e.exprs), "]"];
       case "TableConstructor":

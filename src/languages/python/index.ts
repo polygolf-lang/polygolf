@@ -41,7 +41,11 @@ import {
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
-import { equalityToInequality } from "../../plugins/arithmetic";
+import {
+  equalityToInequality,
+  useImplicitBoolToInt,
+} from "../../plugins/arithmetic";
+import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -57,6 +61,7 @@ const pythonLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     useEquivalentTextOp,
+    safeConditionalOpToCollectionGet("list"),
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -72,9 +77,10 @@ const pythonLanguage: Language = {
           ),
       ],
     ]),
-    useIndexCalls(),
   ],
   finalEmitPlugins: [
+    useImplicitBoolToInt,
+    useIndexCalls(),
     mapOps([
       ["true", (_) => int(1)],
       ["false", (_) => int(0)],

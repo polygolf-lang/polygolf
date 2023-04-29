@@ -290,3 +290,20 @@ print "Hello \"world\"!";
 ```nim
 echo"Hello ""world""!"
 ```
+
+## Conditional ops
+
+```polygolf
+$c:Bool <- true;
+conditional $c 3 4;
+```
+
+```nim nogolf
+var c=true
+if c:3 else:4
+```
+
+```nim
+var c=true
+[4,3][c.int]
+```

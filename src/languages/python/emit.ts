@@ -170,6 +170,14 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return emitPythonStringLiteral(e.value);
       case "IntegerLiteral":
         return e.value.toString();
+      case "ConditionalOp":
+        return [
+          emit(e.consequent),
+          "if",
+          emit(e.condition),
+          "else",
+          emit(e.alternate),
+        ];
       case "FunctionCall":
         return [e.ident.name, "(", joinExprs(",", e.args), ")"];
       case "MethodCall":
@@ -192,6 +200,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "UnaryOp":
         return [e.name, emit(e.arg, prec + 1)];
       case "ListConstructor":
+      case "ArrayConstructor":
         return ["[", joinExprs(",", e.exprs), "]"];
       case "IndexCall":
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");

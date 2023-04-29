@@ -151,3 +151,17 @@ $a <- ($a + 2);
 a=1
 a+=2
 ```
+
+## Conditional ops
+
+```polygolf
+conditional true 3 4;
+```
+
+```python nogolf
+3 if 1 else 4
+```
+
+```python
+[4,3][1]
+```

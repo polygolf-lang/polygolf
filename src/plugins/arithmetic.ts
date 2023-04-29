@@ -1,5 +1,13 @@
 import { Plugin } from "../common/Language";
-import { int, leq, polygolfOp, IntegerType, isConstantType } from "../IR";
+import {
+  int,
+  leq,
+  polygolfOp,
+  IntegerType,
+  isConstantType,
+  isPolygolfOp,
+  implicitConversion,
+} from "../IR";
 import { getType } from "../common/getType";
 
 export const modToRem: Plugin = {
@@ -86,6 +94,18 @@ export const equalityToInequality: Plugin = {
             : polygolfOp("lt", a, int(t2.low));
         }
       }
+    }
+  },
+};
+
+export const useImplicitBoolToInt: Plugin = {
+  name: "useImplicitBoolToInt",
+  visit(node, spine) {
+    if (
+      isPolygolfOp(node, "bool_to_int") &&
+      isPolygolfOp(spine.parent!.node, "array_get", "list_get") // This can be extend to other ops, like "mul".
+    ) {
+      return implicitConversion(node.args[0], node.op);
     }
   },
 };
