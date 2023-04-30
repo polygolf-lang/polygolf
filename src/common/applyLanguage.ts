@@ -1,7 +1,7 @@
 import { IR, Node, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { Language, defaultDetokenizer, Plugin } from "./Language";
-import { programToSpine } from "./Spine";
+import { programToSpine, Spine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
 import { getType } from "./getType";
 import { stringify } from "./stringify";
@@ -116,12 +116,16 @@ function getFinalEmit(language: Language) {
 
 export const debugEmit = getFinalEmit(polygolfLanguage);
 
-export function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
+export function applyAll(
+  program: IR.Program,
+  visitor: Plugin["visit"],
+  bakeType = false
+) {
   return programToSpine(program).withReplacer((n, s) => {
     const repl = visitor(n, s);
     return repl === undefined
       ? undefined
-      : copySource(n, copyTypeAnnotation(n, repl));
+      : copySource(n, annotateBasedOn(repl, n, bakeType ? program : undefined));
   }).node as IR.Program;
 }
 
@@ -209,13 +213,20 @@ function golfProgram(
     for (const plugin of golfPlugins) {
       const newHist = hist.concat([plugin.name]);
       if (plugin.allOrNothing === true) {
-        pushToQueue(applyAll(program, plugin.visit), newHist);
+        pushToQueue(applyAll(program, plugin.visit, plugin.bakeType), newHist);
       } else {
         for (const altProgram of spine.compactMap((n, s) => {
           const ret = plugin.visit(n, s);
           if (ret !== undefined) {
             return s.replacedWith(
-              copySource(n, copyTypeAnnotation(n, ret)),
+              copySource(
+                n,
+                annotateBasedOn(
+                  ret,
+                  n
+                  // plugin.bakeType === true ? s : undefined
+                )
+              ),
               true
             ).root.node;
           }
@@ -228,13 +239,20 @@ function golfProgram(
   return shortestSoFar;
 }
 
-function copyTypeAnnotation(from: Node, to: Node): Node {
+function annotateBasedOn(
+  node: Node,
+  other: Node,
+  context?: Spine | Program
+): Node {
+  if (node.kind === "Program" || other.kind === "Program") {
+    return node;
+  }
   // copy type annotation if present
-  return to.kind !== "Program" &&
-    from.kind !== "Program" &&
-    from.type !== undefined
-    ? { ...to, type: from.type }
-    : to;
+  const type =
+    node.type ??
+    other.type ??
+    (context !== undefined ? getType(other, context) : undefined);
+  return { ...node, type };
 }
 
 function copySource(from: Node, to: Node): Node {

@@ -140,6 +140,8 @@ export function calcType(expr: Expr, program: Program): Type {
         expr.source
       );
     }
+    case "RelationOpChain":
+      return booleanType; // TODO typecheck inputs
     case "PolygolfOp":
     case "MethodCall":
     case "BinaryOp":

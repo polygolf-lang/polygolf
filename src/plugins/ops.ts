@@ -23,7 +23,6 @@ import {
   relationOpChain,
   RelationOpCode,
 } from "../IR";
-import { getType } from "../common/getType";
 import { Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 
@@ -32,6 +31,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
   return {
     name: "mapOps(...)",
     allOrNothing: true,
+    bakeType: true,
     visit(node, spine) {
       if (isPolygolfOp(node)) {
         const op = node.op;
@@ -42,7 +42,7 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
             // "as any" because TS doesn't do well with the "in" keyword
             replacement = { ...(replacement as any), op: node.op };
           }
-          return { ...replacement, type: getType(node, spine) };
+          return replacement;
         }
       }
     },
