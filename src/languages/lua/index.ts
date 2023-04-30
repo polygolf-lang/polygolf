@@ -29,7 +29,6 @@ import {
   tempVarToMultipleAssignment,
   addOneToManyAssignments,
 } from "../../plugins/block";
-import { evalStaticExpr } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
@@ -41,7 +40,6 @@ const luaLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     flipBinaryOps,
-    evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
     equalityToInequality,
