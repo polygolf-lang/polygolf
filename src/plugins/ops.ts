@@ -22,6 +22,8 @@ import {
   BinaryOpCodes,
   relationOpChain,
   RelationOpCode,
+  RelationOpChain,
+  RelationOpCodes,
 } from "../IR";
 import { Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -215,12 +217,33 @@ export const removeImplicitConversions: Plugin = {
   },
 };
 
-export function useRelationChains(...ops: RelationOpCode[]): Plugin {
+function chainsMatch(a: RelationOpChain, b: RelationOpChain): boolean {
+  return stringify(a.args[a.args.length - 1]) === stringify(b.args[0]);
+}
+
+function mergeChains(a: RelationOpChain, b: RelationOpChain): RelationOpChain {
+  return relationOpChain(a.args.concat(b.args.slice(1)), a.ops.concat(b.ops));
+}
+
+export function useRelationChains(...ops: readonly RelationOpCode[]): Plugin {
+  if (ops.length === 0) ops = RelationOpCodes;
   return {
     name: `useRelationChains(...${JSON.stringify(ops)})`,
     visit(node) {
       if (isPolygolfOp(node, ...ops)) {
         return relationOpChain(node.args, [node.op]);
+      }
+      if (
+        isPolygolfOp(node, "and", "unsafe_and") &&
+        node.args[0].kind === "RelationOpChain" &&
+        node.args[1].kind === "RelationOpChain" &&
+        chainsMatch(node.args[0], node.args[1])
+      ) {
+        const merged = mergeChains(node.args[0], node.args[1]);
+        if (node.op === "and" && node.args.length > 2) {
+          return polygolfOp("and", merged, ...node.args.slice(2));
+        }
+        return merged;
       }
     },
   };

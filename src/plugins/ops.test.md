@@ -61,3 +61,16 @@ if ($c == 1) (println "x");
 c=1
 c==1==print("x")
 ```
+
+## Relation chains
+
+```polygolf
+$a:Int <- 0;
+$b:Int <- 0;
+and (2 < $a) ($a < $b) ($b < 10);
+```
+
+```py
+a=b=0
+2<a<b<10
+```
