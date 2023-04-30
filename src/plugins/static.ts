@@ -44,4 +44,3 @@ function getDelim(
   }
   return String(i);
 }
-<<<<<<< HEAD
