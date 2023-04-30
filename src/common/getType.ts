@@ -65,10 +65,15 @@ export function getType(expr: Expr, context: Program | Spine): Type {
     );
   }
   currentlyFinding.add(expr);
-  const t = calcType(expr, program);
-  currentlyFinding.delete(expr);
-  cachedType.set(expr, t);
-  return t;
+  try {
+    const t = calcType(expr, program);
+    currentlyFinding.delete(expr);
+    cachedType.set(expr, t);
+    return t;
+  } catch (e) {
+    currentlyFinding.delete(expr);
+    throw e;
+  }
 }
 
 export function calcType(expr: Expr, program: Program): Type {
