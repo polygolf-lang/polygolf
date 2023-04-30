@@ -223,8 +223,8 @@ function golfProgram(
                 n,
                 annotateBasedOn(
                   ret,
-                  n
-                  // plugin.bakeType === true ? s : undefined
+                  n,
+                  plugin.bakeType === true ? s : undefined
                 )
               ),
               true
