@@ -20,6 +20,7 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
   addMutatingBinaryOp,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import {
@@ -169,6 +170,7 @@ const pythonLanguage: Language = {
       ],
       "import"
     ),
+    removeImplicitConversions,
   ],
   packers: [
     (x) =>

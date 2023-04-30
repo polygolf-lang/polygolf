@@ -15,6 +15,7 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
   flipBinaryOps,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { evalStaticExpr } from "../../plugins/static";
@@ -122,6 +123,7 @@ const golfscriptLanguage: Language = {
       short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
       general: (i: number) => "v" + i.toString(),
     }),
+    removeImplicitConversions,
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>
