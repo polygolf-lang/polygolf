@@ -124,7 +124,7 @@ $a << 6;
 
 ```polygolf arithmetic.bitShiftToMulOrDiv()
 $a:-oo..oo <- 0;
-$a * 64;
+64 * $a;
 ```
 
 ```polygolf
