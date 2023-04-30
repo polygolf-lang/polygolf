@@ -1,13 +1,4 @@
-import {
-  getArgs,
-  int,
-  isFiniteBound,
-  polygolfOp,
-  StringLiteral,
-  stringLiteral,
-  voidType,
-} from "../IR";
-import { getType } from "../common/getType";
+import { polygolfOp, StringLiteral, stringLiteral } from "../IR";
 import { Plugin } from "../common/Language";
 
 export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
@@ -53,29 +44,4 @@ function getDelim(
   }
   return String(i);
 }
-
-export const evalStaticExpr: Plugin = {
-  name: "evalStaticExpr",
-  visit(node, spine) {
-    if (node.kind === "PolygolfOp") {
-      const args = getArgs(node);
-      let type = voidType;
-      try {
-        // encoutering nodes that we don't know the type of is fine
-        type = getType(node, spine);
-      } catch {}
-      if (
-        // if the inferred type of the node is a constant integer, replace it with a literal node
-        type.kind === "integer" &&
-        isFiniteBound(type.low) &&
-        type.low === type.high
-      ) {
-        return int(type.low);
-      } else if (args.every((x) => x.kind === "StringLiteral")) {
-        const argsVals = args.map((x) => (x as StringLiteral).value);
-        if (node.op === "concat")
-          return stringLiteral(argsVals[0].concat(argsVals[1]));
-      }
-    }
-  },
-};
+<<<<<<< HEAD
