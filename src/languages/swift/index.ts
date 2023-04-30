@@ -17,6 +17,7 @@ import {
   useIndexCalls,
   addMutatingBinaryOp,
   flipBinaryOps,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { golfStringListLiteral } from "../../plugins/static";
@@ -189,6 +190,7 @@ const swiftLanguage: Language = {
     addVarDeclarations,
     groupVarDeclarations(),
     assertInt64,
+    removeImplicitConversions,
   ],
   // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
   detokenizer: function (tokenTree: TokenTree): string {

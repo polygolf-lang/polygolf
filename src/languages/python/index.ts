@@ -20,6 +20,7 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
   addMutatingBinaryOp,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
@@ -163,6 +164,7 @@ const pythonLanguage: Language = {
       ],
       "import"
     ),
+    removeImplicitConversions,
   ],
   packers: [
     (x) =>
