@@ -255,8 +255,8 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Chaining & shortcircuiting
 
-- [ ] `a<b and b<c` ⟶ `a<b<c`
-- [ ] `if a==b:print(a)` ⟶ `a==b==print(a)`
+- [x] `a<b and b<c` ⟶ `a<b<c`
+- [x] `if a==b:print(a)` ⟶ `a==b==print(a)`
 
 ## Tips for writing solutions in Polygolf
 

@@ -234,16 +234,24 @@ export function useRelationChains(...ops: readonly RelationOpCode[]): Plugin {
         return relationOpChain(node.args, [node.op]);
       }
       if (
-        isPolygolfOp(node, "and", "unsafe_and") &&
+        isPolygolfOp(node, "unsafe_and") &&
         node.args[0].kind === "RelationOpChain" &&
         node.args[1].kind === "RelationOpChain" &&
         chainsMatch(node.args[0], node.args[1])
       ) {
-        const merged = mergeChains(node.args[0], node.args[1]);
-        if (node.op === "and" && node.args.length > 2) {
-          return polygolfOp("and", merged, ...node.args.slice(2));
-        }
-        return merged;
+        return mergeChains(node.args[0], node.args[1]);
+      } else if (isPolygolfOp(node, "and")) {
+        const chains = node.args.filter(
+          (x) => x.kind === "RelationOpChain"
+        ) as RelationOpChain[];
+        for (const a of chains)
+          for (const b of chains)
+            if (a !== b && chainsMatch(a, b)) {
+              const rest = node.args.filter((x) => x !== a && x !== b);
+              return rest.length > 0
+                ? polygolfOp("and", mergeChains(a, b), ...rest)
+                : mergeChains(a, b);
+            }
       }
     },
   };

@@ -25,6 +25,7 @@ import {
   relationChainToNestedBinaryOps,
   ifRelationChainToLongerRelationChain,
   ifToUnsafeAnd,
+  flipBinaryOps,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
@@ -66,6 +67,7 @@ const pythonLanguage: Language = {
     safeConditionalOpToCollectionGet("list"),
     ifRelationChainToLongerRelationChain,
     ifToUnsafeAnd,
+    flipBinaryOps,
   ],
   emitPlugins: [
     forArgvToForEach,

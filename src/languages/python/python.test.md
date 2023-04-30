@@ -165,3 +165,16 @@ conditional true 3 4;
 ```python
 [4,3][1]
 ```
+
+## Relations
+
+```polygolf
+$a:Int <- 0;
+$b:Int <- 0;
+and (2 < $a) (10 > $a);
+```
+
+```py
+a=b=0
+10>a>2
+```

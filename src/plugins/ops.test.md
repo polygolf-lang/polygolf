@@ -67,7 +67,7 @@ c==1==print("x")
 ```polygolf
 $a:Int <- 0;
 $b:Int <- 0;
-and (2 < $a) ($a < $b) ($b < 10);
+and ($a < $b) (2 < $a) ($b < 10);
 ```
 
 ```py
