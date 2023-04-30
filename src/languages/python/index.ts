@@ -28,7 +28,7 @@ import {
   forRangeToForEach,
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
-import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
 import {
@@ -51,7 +51,6 @@ const pythonLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     golfStringListLiteral(),
-    evalStaticExpr,
     tempVarToMultipleAssignment,
     forRangeToForEach,
     golfLastPrint(),

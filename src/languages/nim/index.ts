@@ -26,7 +26,7 @@ import {
   forRangeToForRangeOneStep,
   shiftRangeOneUp,
 } from "../../plugins/loops";
-import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
@@ -57,7 +57,6 @@ const nimLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfStringListLiteral(),
-    evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
     useDecimalConstantPackedPrinter,
