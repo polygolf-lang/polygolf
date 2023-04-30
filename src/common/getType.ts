@@ -63,11 +63,17 @@ export function getType(expr: Expr, context: Program | Spine): Type {
       `Expression defined in terms of itself`,
       expr.source
     );
+
   currentlyFinding.add(expr);
-  const t = calcType(expr, program);
-  currentlyFinding.delete(expr);
-  cachedType.set(expr, t);
-  return t;
+  try {
+    const t = calcType(expr, program);
+    currentlyFinding.delete(expr);
+    cachedType.set(expr, t);
+    return t;
+  } catch (e) {
+    currentlyFinding.delete(expr);
+    throw e;
+  }
 }
 
 export function calcType(expr: Expr, program: Program): Type {
@@ -405,6 +411,9 @@ function getOpCodeType(
       expectType(integerType(), integerType());
       return booleanType;
     // (bool, bool) => bool
+    case "unsafe_or":
+    case "unsafe_and":
+      return booleanType;
     case "or":
     case "and":
       expectVariadicType(booleanType);
