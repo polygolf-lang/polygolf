@@ -235,8 +235,10 @@ function golfProgram(
         for (const altProgram of spine.compactMap((n, s) => {
           const ret = plugin.visit(n, s);
           if (ret !== undefined) {
-            return s.replacedWith(copySource(n, copyTypeAnnotation(n, ret)))
-              .root.node;
+            return s.replacedWith(
+              copySource(n, copyTypeAnnotation(n, ret)),
+              true
+            ).root.node;
           }
         })) {
           pushToQueue(altProgram, newHist);

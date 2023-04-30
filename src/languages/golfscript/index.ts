@@ -18,7 +18,6 @@ import {
   removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
-import { evalStaticExpr } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   forArgvToForEach,
@@ -32,12 +31,7 @@ const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
   emitter: emitProgram,
-  golfPlugins: [
-    flipBinaryOps,
-    evalStaticExpr,
-    golfLastPrint(),
-    equalityToInequality,
-  ],
+  golfPlugins: [flipBinaryOps, golfLastPrint(), equalityToInequality],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
     forRangeToForDifferenceRange(

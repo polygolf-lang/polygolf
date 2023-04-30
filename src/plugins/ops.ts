@@ -26,7 +26,7 @@ import { Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 
 export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
-  const opMap = new Map<string, OpTransformOutput>(opMap0);
+  const opMap = toOpMap(opMap0);
   return {
     name: "mapOps(...)",
     allOrNothing: true,
@@ -47,15 +47,28 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
   };
 }
 
+function toOpMap<Op extends OpCode, T>(opMap0: [Op, T][]) {
+  const res = new Map(opMap0);
+  for (const [a, b] of [
+    ["unsafe_and", "and"],
+    ["unsafe_or", "or"],
+  ] as any) {
+    if (!res.has(a) && res.has(b)) {
+      res.set(a, res.get(b)!);
+    }
+  }
+  return res;
+}
+
 /**
  * Plugin transforming binary and unary ops to the name and precedence in the target lang.
- * @param opMap0 Each group defines operators of the same precedence, higher precedence ones first.
+ * @param opMap0 OpCode - target op name pairs.
  * @returns The plugin closure.
  */
 export function mapToUnaryAndBinaryOps(
   ...opMap0: [UnaryOpCode | BinaryOpCode, string][]
 ): Plugin {
-  const opMap = new Map(opMap0);
+  const opMap = toOpMap(opMap0);
   return {
     ...mapOps(
       opMap0.map(([op, name]) => [
@@ -144,7 +157,7 @@ export function useIndexCalls(
 export function addMutatingBinaryOp(
   ...opMap0: [BinaryOpCode, string][]
 ): Plugin {
-  const opMap = new Map<BinaryOpCode, string>(opMap0);
+  const opMap = toOpMap(opMap0);
   return {
     name: `addMutatingBinaryOp(${JSON.stringify(opMap0)})`,
     visit(node) {
