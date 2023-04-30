@@ -1,4 +1,4 @@
-import { Expr, IR, polygolfOp } from "../IR";
+import { Expr, IR, isPolygolfOp, polygolfOp } from "../IR";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
 import { replaceAtIndex } from "./immutable";
 
@@ -63,8 +63,10 @@ export class Spine<N extends IR.Node = IR.Node> {
 
   /** Return the spine (pointing to this node) determined from replacing this
    * node with `newNode`. Replaces all of the ancestors of this node, up to the
-   * root program, to get a fresh spine up to the program node. */
-  replacedWith(newNode: IR.Node): Spine {
+   * root program, to get a fresh spine up to the program node.
+   * If `canonizeAndReturnRoot`, all `PolygolfOp`s up to the root are canonized
+   * and the root spine is returned. */
+  replacedWith(newNode: IR.Node, canonizeAndReturnRoot = false): Spine {
     if (this.parent === null || this.pathFragment === null) {
       if (newNode.kind !== "Program")
         throw new Error(
@@ -79,9 +81,26 @@ export class Spine<N extends IR.Node = IR.Node> {
         `Programming error: attempt to insert a Block into a Block`
       );
     }
-    return this.parent
-      .withChildReplaced(newNode, this.pathFragment)
-      .getChild(this.pathFragment);
+    const parentNode = this.parent.node;
+    const parent =
+      canonizeAndReturnRoot &&
+      isPolygolfOp(parentNode) &&
+      typeof this.pathFragment === "object"
+        ? this.parent.replacedWith(
+            polygolfOp(
+              parentNode.op,
+              ...(replaceAtIndex(
+                parentNode.args,
+                this.pathFragment.index,
+                newNode
+              ) as Expr[])
+            ),
+            true
+          )
+        : this.parent.withChildReplaced(newNode, this.pathFragment);
+    return canonizeAndReturnRoot
+      ? parent.root
+      : parent.getChild(this.pathFragment);
   }
 
   /** A map of a function over all nodes in pre-order traversal order, followed
@@ -123,7 +142,7 @@ export class Spine<N extends IR.Node = IR.Node> {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let curr = this as Spine;
       // recurse on children
-      if (this.node.kind === "PolygolfOp") {
+      if (isPolygolfOp(this.node)) {
         // Create canonical PolygolfOp instead of just replacing the chidren
         const newChildren: Expr[] = [];
         let someChildrenIsNew = false;

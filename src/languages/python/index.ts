@@ -20,10 +20,11 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
   addMutatingBinaryOp,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
-import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { getType } from "../../common/getType";
 import {
@@ -46,7 +47,6 @@ const pythonLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     golfStringListLiteral(),
-    evalStaticExpr,
     tempVarToMultipleAssignment,
     forRangeToForEach,
     golfLastPrint(),
@@ -102,7 +102,7 @@ const pythonLanguage: Language = {
       [
         "print",
         (x, spine) => {
-          const type = getType(x[0], spine.root.node);
+          const type = getType(x[0], spine);
           return functionCall(
             type.kind === "text"
               ? [namedArg("end", x[0])]
@@ -164,6 +164,7 @@ const pythonLanguage: Language = {
       ],
       "import"
     ),
+    removeImplicitConversions,
   ],
   packers: [
     (x) =>

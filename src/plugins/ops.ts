@@ -13,23 +13,25 @@ import {
   isIntLiteral,
   isNegative,
   mutatingBinaryOp,
+  isPolygolfOp,
   OpCode,
   PolygolfOp,
   polygolfOp,
   unaryOp,
   UnaryOpCode,
+  BinaryOpCodes,
 } from "../IR";
 import { getType } from "../common/getType";
 import { Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 
 export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
-  const opMap = new Map<string, OpTransformOutput>(opMap0);
+  const opMap = toOpMap(opMap0);
   return {
     name: "mapOps(...)",
     allOrNothing: true,
     visit(node, spine) {
-      if (node.kind === "PolygolfOp") {
+      if (isPolygolfOp(node)) {
         const op = node.op;
         const f = opMap.get(op);
         if (f !== undefined) {
@@ -38,22 +40,35 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
             // "as any" because TS doesn't do well with the "in" keyword
             replacement = { ...(replacement as any), op: node.op };
           }
-          return { ...replacement, type: getType(node, spine.root.node) };
+          return { ...replacement, type: getType(node, spine) };
         }
       }
     },
   };
 }
 
+function toOpMap<Op extends OpCode, T>(opMap0: [Op, T][]) {
+  const res = new Map(opMap0);
+  for (const [a, b] of [
+    ["unsafe_and", "and"],
+    ["unsafe_or", "or"],
+  ] as any) {
+    if (!res.has(a) && res.has(b)) {
+      res.set(a, res.get(b)!);
+    }
+  }
+  return res;
+}
+
 /**
  * Plugin transforming binary and unary ops to the name and precedence in the target lang.
- * @param opMap0 Each group defines operators of the same precedence, higher precedence ones first.
+ * @param opMap0 OpCode - target op name pairs.
  * @returns The plugin closure.
  */
 export function mapToUnaryAndBinaryOps(
   ...opMap0: [UnaryOpCode | BinaryOpCode, string][]
 ): Plugin {
-  const opMap = new Map(opMap0);
+  const opMap = toOpMap(opMap0);
   return {
     ...mapOps(
       opMap0.map(([op, name]) => [
@@ -114,8 +129,7 @@ export function useIndexCalls(
     allOrNothing: true,
     visit(node) {
       if (
-        node.kind === "PolygolfOp" &&
-        (ops.length === 0 || ops.includes(node.op)) &&
+        isPolygolfOp(node, ...ops) &&
         (node.args[0].kind === "Identifier" || node.op.endsWith("_get"))
       ) {
         let indexNode: IndexCall;
@@ -143,14 +157,13 @@ export function useIndexCalls(
 export function addMutatingBinaryOp(
   ...opMap0: [BinaryOpCode, string][]
 ): Plugin {
-  const opMap = new Map<BinaryOpCode, string>(opMap0);
+  const opMap = toOpMap(opMap0);
   return {
     name: `addMutatingBinaryOp(${JSON.stringify(opMap0)})`,
     visit(node) {
       if (
         node.kind === "Assignment" &&
-        node.expr.kind === "PolygolfOp" &&
-        isBinary(node.expr.op) &&
+        isPolygolfOp(node.expr, ...BinaryOpCodes) &&
         node.expr.args.length > 1 &&
         opMap.has(node.expr.op)
       ) {
@@ -182,11 +195,20 @@ export function addMutatingBinaryOp(
 export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
   visit(node) {
-    if (node.kind === "PolygolfOp" && isBinary(node.op)) {
+    if (isPolygolfOp(node, ...BinaryOpCodes)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {
         return polygolfOp(flippedOpCode, node.args[1], node.args[0]);
       }
+    }
+  },
+};
+
+export const removeImplicitConversions: Plugin = {
+  name: "removeImplicitConversions",
+  visit(node) {
+    if (node.kind === "ImplicitConversion") {
+      return node.expr;
     }
   },
 };

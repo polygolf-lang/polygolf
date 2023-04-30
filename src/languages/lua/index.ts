@@ -1,8 +1,11 @@
 import {
   functionCall,
   id,
+  implicitConversion,
+  int,
   methodCall,
   polygolfOp,
+  stringLiteral,
   textType,
   add1,
 } from "../../IR";
@@ -19,13 +22,13 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
   flipBinaryOps,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import {
   tempVarToMultipleAssignment,
   addOneToManyAssignments,
 } from "../../plugins/block";
-import { evalStaticExpr } from "../../plugins/static";
 import { golfLastPrint } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
@@ -37,7 +40,6 @@ const luaLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     flipBinaryOps,
-    evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
     equalityToInequality,
@@ -47,6 +49,20 @@ const luaLanguage: Language = {
   emitPlugins: [
     forArgvToForRange(),
     forRangeToForRangeInclusive,
+    mapOps([
+      [
+        "text_to_int",
+        (x) =>
+          polygolfOp("mul", int(1n), implicitConversion(x[0], "text_to_int")),
+      ],
+    ]),
+    mapOps([
+      [
+        "text_to_int",
+        (x) =>
+          polygolfOp("add", int(0n), implicitConversion(x[0], "text_to_int")),
+      ],
+    ]),
     mapOps([
       [
         "argv_get",
@@ -67,10 +83,20 @@ const luaLanguage: Language = {
   ],
   finalEmitPlugins: [
     mapOps([
+      [
+        "int_to_text",
+        (x) =>
+          polygolfOp(
+            "concat",
+            stringLiteral(""),
+            implicitConversion(x[0], "int_to_text")
+          ),
+      ],
+    ]),
+    mapOps([
       ["text_byte_length", (x) => methodCall(x[0], [], "len")],
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
-      ["int_to_text", (x) => functionCall(x, "tostring")],
       ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
       ["print", (x) => functionCall(x, "io.write")],
       ["println", (x) => functionCall(x, "print")],
@@ -89,7 +115,6 @@ const luaLanguage: Language = {
       ["neg", "-"],
       ["list_length", "#"],
       ["bit_not", "~"],
-      ["text_to_int", "- -"],
       ["mul", "*"],
       ["div", "//"],
       ["mod", "%"],
@@ -113,6 +138,7 @@ const luaLanguage: Language = {
     renameIdents(),
     addOneToManyAssignments(),
     assertInt64,
+    removeImplicitConversions,
   ],
 };
 
