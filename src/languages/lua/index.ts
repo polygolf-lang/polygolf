@@ -22,14 +22,14 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
   flipBinaryOps,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import {
   tempVarToMultipleAssignment,
   addOneToManyAssignments,
 } from "../../plugins/block";
-import { evalStaticExpr } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import { equalityToInequality } from "../../plugins/arithmetic";
@@ -40,7 +40,6 @@ const luaLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     flipBinaryOps,
-    evalStaticExpr,
     golfLastPrint(),
     tempVarToMultipleAssignment,
     equalityToInequality,
@@ -50,6 +49,7 @@ const luaLanguage: Language = {
   emitPlugins: [
     forArgvToForRange(),
     forRangeToForRangeInclusive,
+    implicitlyConvertPrintArg,
     mapOps([
       [
         "text_to_int",
@@ -139,6 +139,7 @@ const luaLanguage: Language = {
     renameIdents(),
     addOneToManyAssignments(),
     assertInt64,
+    removeImplicitConversions,
   ],
 };
 
