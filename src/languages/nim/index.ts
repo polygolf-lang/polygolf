@@ -15,6 +15,7 @@ import {
   useIndexCalls,
   addMutatingBinaryOp,
   flipBinaryOps,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
 import { renameIdents } from "../../plugins/idents";
@@ -25,8 +26,8 @@ import {
   forRangeToForRangeInclusive,
   shiftRangeOneUp,
 } from "../../plugins/loops";
-import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfStringListLiteral } from "../../plugins/static";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
@@ -60,7 +61,6 @@ const nimLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfStringListLiteral(),
-    evalStaticExpr,
     golfLastPrint(),
     forRangeToForEach("array_get", "list_get", "text_get_byte"),
     tempVarToMultipleAssignment,
@@ -84,6 +84,7 @@ const nimLanguage: Language = {
     ]),
   ],
   finalEmitPlugins: [
+    implicitlyConvertPrintArg,
     textGetToIntToTextGet,
     mapOps([
       ["true", (_) => id("true", true)],
@@ -139,7 +140,6 @@ const nimLanguage: Language = {
       ["bit_or", "or"],
       ["bit_xor", "xor"]
     ),
-    useUFCS,
     useUnsignedDivision,
     addNimImports,
     renameIdents(),
@@ -150,6 +150,8 @@ const nimLanguage: Language = {
     groupVarDeclarations((_, spine) => spine.depth <= 2),
     noStandaloneVarDeclarations,
     assertInt64,
+    removeImplicitConversions,
+    useUFCS,
   ],
   detokenizer: defaultDetokenizer((a, b) => {
     const left = a[a.length - 1];

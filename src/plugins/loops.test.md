@@ -4,27 +4,27 @@
 
 ```polygolf
 for $i 0 10 {
-  print $x;
+  print_int $x;
 };
 ```
 
 ```polygolf loops.forRangeToForRangeInclusive
 @ForRangeInclusive $i 0 9 1 (
-  print $x
+  print_int $x
 );
 ```
 
 ```polygolf loops.forRangeToWhile
 $i <- 0;
 while ($i < 10) {
-  print $x;
+  print_int $x;
   $i <- (1 + $i);
 };
 ```
 
 ```polygolf loops.forRangeToForCLike
 @ForCLike ($i <- 0) ($i < 10) ($i <- (1 + $i)) (
-  print $x
+  print_int $x
 );
 ```
 
@@ -96,13 +96,13 @@ for $i 0 5 (
 
 ```polygolf
 for $i 0 5 {
-  print (list_get (list 5 4 3 2 1) $i);
+  print_int (list_get (list 5 4 3 2 1) $i);
 };
 ```
 
 ```polygolf loops.forRangeToForEach("list_get")
 @ForEach $i_POLYGOLFforRangeToForEach (list 5 4 3 2 1) (
-  print $i_POLYGOLFforRangeToForEach
+  print_int $i_POLYGOLFforRangeToForEach
 );
 ```
 
@@ -110,22 +110,22 @@ for $i 0 5 {
 
 ```polygolf
 for $i 0 (# $collection) {
-  print $i;
-  print (list_get $collection $i);
+  print_int $i;
+  print_int (list_get $collection $i);
 };
 ```
 
 ```polygolf loops.forRangeToForEach("list_get")
 for $i 0 (# $collection) {
-  print $i;
-  print (list_get $collection $i);
+  print_int $i;
+  print_int (list_get $collection $i);
 };
 ```
 
 ```polygolf loops.forRangeToForEachPair
 @ForEachPair $i $i_POLYGOLFforRangeToForEachPair $collection {
-  print $i;
-  print $i_POLYGOLFforRangeToForEachPair;
+  print_int $i;
+  print_int $i_POLYGOLFforRangeToForEachPair;
 };
 ```
 
@@ -161,26 +161,26 @@ for $x+index 0 argc {
 
 ```polygolf
 for $i 0 80 {
-  println ($i + 1);
-  println (1 + $i);
-  println (3 * $i);
-  println ($i + 2);
-  println ($i - 1);
-  println ($i - 2);
-  println (1 - $i);
-  println (-1 - $i);
+  println_int ($i + 1);
+  println_int (1 + $i);
+  println_int (3 * $i);
+  println_int ($i + 2);
+  println_int ($i - 1);
+  println_int ($i - 2);
+  println_int (1 - $i);
+  println_int (-1 - $i);
 };
 ```
 
 ```polygolf loops.shiftRangeOneUp
 for $i_POLYGOLFshifted 1 81 {
-  println $i_POLYGOLFshifted;
-  println $i_POLYGOLFshifted;
-  println (3 * (-1 + $i_POLYGOLFshifted));
-  println (1 + $i_POLYGOLFshifted);
-  println (-2 + $i_POLYGOLFshifted);
-  println (-3 + $i_POLYGOLFshifted);
-  println (2 + (-1 * $i_POLYGOLFshifted));
-  println (-1 * $i_POLYGOLFshifted);
+  println_int $i_POLYGOLFshifted;
+  println_int $i_POLYGOLFshifted;
+  println_int (3 * (-1 + $i_POLYGOLFshifted));
+  println_int (1 + $i_POLYGOLFshifted);
+  println_int (-2 + $i_POLYGOLFshifted);
+  println_int (-3 + $i_POLYGOLFshifted);
+  println_int (2 + (-1 * $i_POLYGOLFshifted));
+  println_int (-1 * $i_POLYGOLFshifted);
 };
 ```

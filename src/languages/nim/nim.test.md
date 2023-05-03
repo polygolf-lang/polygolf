@@ -102,17 +102,17 @@ b or b
 ## Misc
 
 ```polygolf
-print (text_split "abc" "b");
+print (list_get (text_split "abc" "b") 0);
 ```
 
 ```nim
 include re
-"abc".split"b".echo
+"abc".split"b"[0].echo
 ```
 
 ```polygolf
 $a:0..1 <- 0;
-println (($a + 1) * $a);
+println_int (($a + 1) * $a);
 ```
 
 ```nim nogolf
@@ -121,11 +121,11 @@ echo (1+a)*a
 ```
 
 ```polygolf
-println (int_to_text 1);
+println ((int_to_text 1) .. "x");
 ```
 
 ```nim nogolf
-echo $1
+echo $1&"x"
 ```
 
 ```polygolf
@@ -177,7 +177,7 @@ for x in commandLineParams():x.echo
 ```polygolf
 $b <- 0;
 for $i $b 16 {
-    println $i;
+    println_int $i;
 };
 ```
 

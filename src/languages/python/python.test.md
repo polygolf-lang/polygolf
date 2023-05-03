@@ -3,10 +3,10 @@
 ## Printing
 
 ```polygolf
-println 1;
-print 2;
+println_int 1;
+print_int 2;
 print "3";
-print 4;
+print_int 4;
 ```
 
 ```python nogolf

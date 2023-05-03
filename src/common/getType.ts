@@ -63,11 +63,17 @@ export function getType(expr: Expr, context: Program | Spine): Type {
       `Expression defined in terms of itself`,
       expr.source
     );
+
   currentlyFinding.add(expr);
-  const t = calcType(expr, program);
-  currentlyFinding.delete(expr);
-  cachedType.set(expr, t);
-  return t;
+  try {
+    const t = calcType(expr, program);
+    currentlyFinding.delete(expr);
+    cachedType.set(expr, t);
+    return t;
+  } catch (e) {
+    currentlyFinding.delete(expr);
+    throw e;
+  }
 }
 
 export function calcType(expr: Expr, program: Program): Type {
@@ -269,8 +275,11 @@ function getOpCodeType(
   program: Program
 ): Type {
   const types = getArgs(expr).map((x) => getType(x, program));
-  function expectVariadicType(expected: Type) {
-    if (types.length < 2 || types.some((x, i) => !isSubtype(x, expected))) {
+  function expectVariadicType(expected: Type, minArity = 2) {
+    if (
+      types.length < minArity ||
+      types.some((x, i) => !isSubtype(x, expected))
+    ) {
       throw new PolygolfError(
         `Type error. Operator '${
           expr.op ?? "null"
@@ -405,6 +414,9 @@ function getOpCodeType(
       expectType(integerType(), integerType());
       return booleanType;
     // (bool, bool) => bool
+    case "unsafe_or":
+    case "unsafe_and":
+      return booleanType;
     case "or":
     case "and":
       expectVariadicType(booleanType);
@@ -636,6 +648,17 @@ function getOpCodeType(
       return listType(textType());
     case "print":
     case "println":
+      expectType(textType());
+      return voidType;
+    case "print_int":
+    case "println_int":
+      expectType(integerType());
+      return voidType;
+    case "println_list_joined_using":
+      expectType(listType(textType()), textType());
+      return voidType;
+    case "println_many_joined_using":
+      expectVariadicType(textType(), 1);
       return voidType;
     case "text_replace": {
       expectType(textType(), textType(integerType(1, "oo")), textType());

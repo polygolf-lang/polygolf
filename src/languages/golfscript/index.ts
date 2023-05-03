@@ -15,10 +15,10 @@ import {
   mapToUnaryAndBinaryOps,
   useIndexCalls,
   flipBinaryOps,
+  removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
-import { evalStaticExpr } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
@@ -31,18 +31,14 @@ const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
   emitter: emitProgram,
-  golfPlugins: [
-    flipBinaryOps,
-    evalStaticExpr,
-    golfLastPrint(),
-    equalityToInequality,
-  ],
+  golfPlugins: [flipBinaryOps, golfLastPrint(), equalityToInequality],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
     forRangeToForDifferenceRange(
       (node, spine) =>
         !isSubtype(getType(node.start, spine.root.node), integerType(0))
     ),
+    implicitlyConvertPrintArg,
     mapOps([
       ["argv", (_) => id("a", true)],
       ["true", (_) => id("1", true)],
@@ -120,6 +116,7 @@ const golfscriptLanguage: Language = {
       short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
       general: (i: number) => "v" + i.toString(),
     }),
+    removeImplicitConversions,
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>
