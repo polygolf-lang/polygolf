@@ -23,7 +23,11 @@ import { renameIdents } from "../../plugins/idents";
 import { golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
-import { addVarDeclarations, groupVarDeclarations, noStandaloneVarDeclarations } from "../../plugins/block";
+import {
+  addVarDeclarations,
+  groupVarDeclarations,
+  noStandaloneVarDeclarations,
+} from "../../plugins/block";
 import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
