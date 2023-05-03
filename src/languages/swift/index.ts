@@ -21,7 +21,7 @@ import {
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { golfStringListLiteral } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
 import {
@@ -59,6 +59,7 @@ const swiftLanguage: Language = {
     useIndexCalls(),
   ],
   finalEmitPlugins: [
+    implicitlyConvertPrintArg,
     mapOps([
       [
         "text_get_byte",

@@ -266,7 +266,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           }
           prec = 2;
           return [
-            emit(e.object, prec),
+            emit(e.object, precedence(e)),
             ".",
             e.ident.name,
             e.args.length > 0 ? joinExprs(",", e.args) : [],

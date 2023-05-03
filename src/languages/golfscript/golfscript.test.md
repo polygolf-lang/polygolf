@@ -1,7 +1,7 @@
 # GolfScript
 
 ```polygolf
-println (3+1);
+println_int (3+1);
 ```
 
 ```golfscript bytes
@@ -9,8 +9,8 @@ println (3+1);
 ```
 
 ```polygolf
-print 1;
-print 2;
+print_int 1;
+print_int 2;
 ```
 
 ```golfscript bytes
@@ -19,7 +19,7 @@ print 2;
 
 ```polygolf
 for $i 0 31 {
-  println ((1 + $i) + ($i * $i));
+  println_int ((1 + $i) + ($i * $i));
 };
 ```
 
@@ -29,7 +29,7 @@ for $i 0 31 {
 
 ```polygolf
 for $i 5 80 5 {
-  println $i;
+  println_int $i;
 };
 ```
 
@@ -39,7 +39,7 @@ for $i 5 80 5 {
 
 ```polygolf
 for $i -5 31 {
-  println $i;
+  println_int $i;
 };
 ```
 
@@ -50,7 +50,7 @@ for $i -5 31 {
 ```polygolf
 $a:-10..10 <- -4;
 for $i $a ($a+6) {
-  println $i;
+  println_int $i;
 };
 ```
 

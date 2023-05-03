@@ -1,4 +1,4 @@
-import { IR, Node, Program } from "../IR";
+import { IR, isPolygolfOp, Node, polygolfOp, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { Language, defaultDetokenizer, Plugin } from "./Language";
 import { programToSpine, Spine } from "./Spine";
@@ -147,9 +147,28 @@ export function applyLanguageToVariants(
       ? []
       : language.golfPlugins.concat(language.emitPlugins);
   const obj = options.objectiveFunction;
+  const preprocess = // TODO, abstract this as part of #150
+    language.name === "Polygolf"
+      ? (x: Program) => x
+      : (x: Program) =>
+          applyAll(x, (node) => {
+            if (isPolygolfOp(node, "print_int", "println_int")) {
+              return polygolfOp(
+                node.op === "print_int" ? "print" : "println",
+                polygolfOp("int_to_text", node.args[0])
+              );
+            }
+          });
   const ret = variants
     .map((variant) =>
-      golfProgram(variant, golfPlugins, finalEmit, obj, skipTypecheck)
+      golfProgram(
+        variant,
+        preprocess,
+        golfPlugins,
+        finalEmit,
+        obj,
+        skipTypecheck
+      )
     )
     .reduce((a, b) =>
       isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
@@ -165,6 +184,7 @@ export function applyLanguageToVariants(
 /** Returns an error if the program cannot be emitted */
 function golfProgram(
   program: IR.Program,
+  preprocess: (ir: IR.Program) => IR.Program,
   golfPlugins: Plugin[],
   finalEmit: (ir: IR.Program) => string,
   objective: (x: string) => number,
@@ -176,6 +196,7 @@ function golfProgram(
   let shortestSoFar: string;
   try {
     if (!skipTypecheck) typecheck(program);
+    program = preprocess(program);
     shortestSoFar = finalEmit(program);
   } catch (e) {
     if (isError(e)) return e;

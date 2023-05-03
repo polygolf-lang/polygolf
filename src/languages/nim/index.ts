@@ -26,7 +26,7 @@ import {
   shiftRangeOneUp,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
@@ -79,6 +79,7 @@ const nimLanguage: Language = {
     ]),
   ],
   finalEmitPlugins: [
+    implicitlyConvertPrintArg,
     mapOps([
       ["true", (_) => id("true", true)],
       ["false", (_) => id("true", true)],
