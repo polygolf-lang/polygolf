@@ -199,13 +199,17 @@ const swiftLanguage: Language = {
       return /[A-Za-z0-9]/.test(s);
     }
 
-    // A binary op followed by a unary op needs whitespace on both sides, and `!=` always needs it
+    // Tokens that need whitespace on both sides:
+    //   A binary op followed by a unary op
+    //   `!=`
+    //   `&` followed by any of `*+-` (without space they are interpreted together as an overflow operator)
     function needsWhiteSpaceOnBothSides(
       token: string,
       nextToken: string
     ): boolean {
       return (
         (/^[-+*/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
+        (token === `&` && /[*+-]/.test(nextToken[0])) ||
         token === `!=`
       );
     }
