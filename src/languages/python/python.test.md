@@ -91,6 +91,7 @@ if(1==1) {
         println "b";
     };
 } {
+    println "x";
     if (3==1) {
         if (4==1) {
             if (5==1) {
@@ -111,6 +112,7 @@ if 1==1:
  if 2==1:p("a")
  else:p("b")
 else:
+ p("x")
  if 3==1:
   if 4==1:
    if 5==1:p("c")
@@ -150,4 +152,21 @@ $a <- ($a + 2);
 ```python
 a=1
 a+=2
+```
+
+## Chained if
+
+```polygolf
+if true {
+    println "a";
+} {
+    if true {
+        println "b";
+    };
+};
+```
+
+```py
+if 1:print("a")
+elif 1:print("b")
 ```
