@@ -145,9 +145,11 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emit(e.condition),
           ":",
           emitMultiExpr(e.consequent),
-          e.alternate !== undefined
-            ? ["\n", "else", ":", emitMultiExpr(e.alternate)]
-            : [],
+          e.alternate === undefined
+            ? []
+            : e.alternate.kind === "IfStatement"
+            ? ["\n", "el", "$GLUE$", emit(e.alternate)]
+            : ["\n", "else", ":", emitMultiExpr(e.alternate)],
         ];
       case "Variants":
       case "ForEachKey":

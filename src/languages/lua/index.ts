@@ -29,7 +29,7 @@ import {
   tempVarToMultipleAssignment,
   addOneToManyAssignments,
 } from "../../plugins/block";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import { bitnotPlugins, equalityToInequality } from "../../plugins/arithmetic";
@@ -50,6 +50,7 @@ const luaLanguage: Language = {
   emitPlugins: [
     forArgvToForRange(),
     forRangeToForRangeInclusive,
+    implicitlyConvertPrintArg,
     mapOps([
       [
         "text_to_int",

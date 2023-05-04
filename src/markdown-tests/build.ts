@@ -250,6 +250,12 @@ function readdirSyncRecursive(p: string, a: string[] = []) {
 }
 
 for (const file of readdirSyncRecursive(process.cwd())) {
+  if (file.endsWith(".test.md.ts")) {
+    fs.unlinkSync(file);
+  }
+}
+
+for (const file of readdirSyncRecursive(process.cwd())) {
   if (file.endsWith(".test.md")) {
     const suite = compileSuite(fs.readFileSync(file).toString());
     if (suite !== "") {
