@@ -18,7 +18,7 @@ import {
   removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
@@ -38,6 +38,7 @@ const golfscriptLanguage: Language = {
       (node, spine) =>
         !isSubtype(getType(node.start, spine.root.node), integerType(0))
     ),
+    implicitlyConvertPrintArg,
     mapOps([
       ["argv", (_) => id("a", true)],
       ["true", (_) => id("1", true)],

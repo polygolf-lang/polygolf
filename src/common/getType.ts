@@ -4,17 +4,12 @@ import {
   Type,
   listType,
   arrayType,
-  BinaryOp,
-  UnaryOp,
-  FunctionCall,
-  MethodCall,
   integerType,
   integerTypeIncludingAll,
   IntegerType,
   PolygolfOp,
   isSubtype,
   union,
-  MutatingBinaryOp,
   toString,
   voidType,
   textType,
@@ -47,6 +42,7 @@ import {
   ListType,
   isAssociative,
   polygolfOp,
+  leq,
 } from "../IR";
 import { byteLength, charLength } from "./applyLanguage";
 import { PolygolfError } from "./errors";
@@ -146,13 +142,10 @@ export function calcType(expr: Expr, program: Program): Type {
       );
     }
     case "PolygolfOp":
-    case "MethodCall":
-    case "BinaryOp":
-    case "UnaryOp":
-    case "MutatingBinaryOp":
       return getOpCodeType(expr, program);
+    case "MutatingBinaryOp":
+      return voidType;
     case "FunctionCall": {
-      if (expr.ident.builtin) return getOpCodeType(expr, program);
       const fType = type(expr.ident);
       if (fType.kind !== "Function") {
         throw new PolygolfError(
@@ -264,19 +257,13 @@ function getTypeBitNot(t: IntegerType): IntegerType {
   return integerType(sub(-1n, t.high), sub(-1n, t.low));
 }
 
-function getOpCodeType(
-  expr:
-    | BinaryOp
-    | MutatingBinaryOp
-    | UnaryOp
-    | FunctionCall
-    | MethodCall
-    | PolygolfOp,
-  program: Program
-): Type {
+function getOpCodeType(expr: PolygolfOp, program: Program): Type {
   const types = getArgs(expr).map((x) => getType(x, program));
-  function expectVariadicType(expected: Type) {
-    if (types.length < 2 || types.some((x, i) => !isSubtype(x, expected))) {
+  function expectVariadicType(expected: Type, minArity = 2) {
+    if (
+      types.length < minArity ||
+      types.some((x, i) => !isSubtype(x, expected))
+    ) {
       throw new PolygolfError(
         `Type error. Operator '${
           expr.op ?? "null"
@@ -381,9 +368,11 @@ function getOpCodeType(
     case "mul":
     case "div":
     case "trunc_div":
+    case "unsigned_trunc_div":
     case "pow":
     case "mod":
     case "rem":
+    case "unsigned_rem":
     case "bit_and":
     case "bit_or":
     case "bit_xor":
@@ -645,6 +634,17 @@ function getOpCodeType(
       return listType(textType());
     case "print":
     case "println":
+      expectType(textType());
+      return voidType;
+    case "print_int":
+    case "println_int":
+      expectType(integerType());
+      return voidType;
+    case "println_list_joined_using":
+      expectType(listType(textType()), textType());
+      return voidType;
+    case "println_many_joined_using":
+      expectVariadicType(textType(), 1);
       return voidType;
     case "text_replace": {
       expectType(textType(), textType(integerType(1, "oo")), textType());
@@ -786,6 +786,16 @@ export function getArithmeticType(
       return getIntegerTypeMod(a, b);
     case "rem":
       return getIntegerTypeRem(a, b);
+    case "unsigned_rem":
+    case "unsigned_trunc_div":
+      if (leq(0n, a.low) && leq(0n, b.low)) {
+        return getArithmeticType(
+          op === "unsigned_rem" ? "rem" : "trunc_div",
+          a,
+          b
+        );
+      }
+      return integerType();
     case "pow": {
       if (lt(b.low, 0n))
         throw new PolygolfError(

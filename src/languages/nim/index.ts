@@ -26,7 +26,7 @@ import {
   shiftRangeOneUp,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
@@ -77,6 +77,7 @@ const nimLanguage: Language = {
     ]),
   ],
   finalEmitPlugins: [
+    implicitlyConvertPrintArg,
     mapOps([
       ["true", (_) => id("true", true)],
       ["false", (_) => id("true", true)],
@@ -99,8 +100,12 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_text", (x) => functionCall(x, "chr")],
     ]),
+    useUnsignedDivision,
     addMutatingBinaryOp(
       ["add", "+"],
+      ["mul", "*"],
+      ["unsigned_rem", "%%"],
+      ["unsigned_trunc_div", "/%"],
       ["mul", "*"],
       ["sub", "-"],
       ["concat", "&"]
@@ -114,6 +119,8 @@ const nimLanguage: Language = {
       ["mul", "*"],
       ["trunc_div", "div"],
       ["rem", "mod"],
+      ["unsigned_rem", "%%"],
+      ["unsigned_trunc_div", "/%"],
       ["bit_shift_left", "shl"],
       ["bit_shift_right", "shr"],
       ["add", "+"],
