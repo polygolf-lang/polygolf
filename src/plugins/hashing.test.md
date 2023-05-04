@@ -12,9 +12,9 @@ print (table_get
 ```
 
 ```polygolf hashing.testTableHashing(999)
-print (list_get (list "B" "C" "A") (((@FunctionCall ? (@BuiltinIdent "hash") (argv_get 0)):0..4294967295 mod 11) mod 3));
+print (list_get (list "B" "C" "A") (((@FunctionCall (@BuiltinIdent "hash") (argv_get 0)):0..4294967295 mod 11) mod 3));
 ```
 
 ```polygolf hashing.testTableHashing(9)
-print (list_get (list "A" "B" " " "C") (((@FunctionCall ? (@BuiltinIdent "hash") (argv_get 0)):0..4294967295 mod 9) mod 4));
+print (list_get (list "A" "B" " " "C") (((@FunctionCall (@BuiltinIdent "hash") (argv_get 0)):0..4294967295 mod 9) mod 4));
 ```
