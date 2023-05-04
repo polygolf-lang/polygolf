@@ -1,13 +1,5 @@
 # Swift
 
-```polygolf
-print "`";
-```
-
-```swift nogolf
-print("`")
-```
-
 ## Assignment
 
 ```polygolf
