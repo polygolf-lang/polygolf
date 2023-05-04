@@ -99,7 +99,6 @@ export function emitExpr(
       return emitSexpr(
         "@",
         String(expr.oneIndexed),
-        expr.op ?? "?",
         expr.collection,
         expr.index
       );
@@ -107,7 +106,6 @@ export function emitExpr(
       return emitSexpr(
         "@",
         String(expr.oneIndexed),
-        expr.op ?? "?",
         expr.collection,
         expr.low,
         expr.high,
@@ -115,26 +113,15 @@ export function emitExpr(
       );
     case "FunctionCall":
       if (expr.ident.builtin) {
-        return emitSexpr(
-          "@",
-          expr.op ?? "?",
-          ...emitExpr(expr.ident),
-          ...expr.args
-        );
+        return emitSexpr("@", ...emitExpr(expr.ident), ...expr.args);
       }
       return emitSexpr("$" + expr.ident.name, ...expr.args);
     case "MethodCall":
-      return emitSexpr(
-        "@",
-        expr.op ?? "?",
-        ...emitExpr(expr.ident),
-        expr.object,
-        ...expr.args
-      );
+      return emitSexpr("@", ...emitExpr(expr.ident), expr.object, ...expr.args);
     case "BinaryOp":
-      return emitSexpr("@", expr.op ?? "?", expr.name, expr.left, expr.right);
+      return emitSexpr("@", expr.name, expr.left, expr.right);
     case "UnaryOp":
-      return emitSexpr("@", expr.op ?? "?", expr.name, expr.arg);
+      return emitSexpr("@", expr.name, expr.arg);
     case "Identifier":
       if (expr.builtin) {
         return emitSexpr("@BuiltinIdent", JSON.stringify(expr.name));
@@ -157,7 +144,7 @@ export function emitExpr(
     case "TableConstructor":
       return emitSexpr("table", ...expr.kvPairs);
     case "MutatingBinaryOp":
-      return emitSexpr("@", expr.op, expr.name, expr.variable, expr.right);
+      return emitSexpr("@", expr.name, expr.variable, expr.right);
     case "ConditionalOp":
       return emitSexpr(
         expr.isSafe ? "conditional" : "unsafe_conditional",

@@ -68,14 +68,12 @@ export interface KeyValue extends BaseExpr {
 export interface FunctionCall extends BaseExpr {
   readonly kind: "FunctionCall";
   readonly ident: Identifier;
-  readonly op: OpCode | null;
   readonly args: readonly Expr[];
 }
 
 export interface MethodCall extends BaseExpr {
   readonly kind: "MethodCall";
   readonly ident: Identifier;
-  readonly op: OpCode | null;
   readonly object: Expr;
   readonly args: readonly Expr[];
   readonly property: boolean;
@@ -85,7 +83,6 @@ export interface IndexCall extends BaseExpr {
   readonly kind: "IndexCall";
   readonly collection: Expr;
   readonly index: Expr;
-  readonly op: OpCode | null;
   readonly oneIndexed: boolean;
 }
 
@@ -95,13 +92,11 @@ export interface RangeIndexCall extends BaseExpr {
   readonly low: Expr;
   readonly high: Expr;
   readonly step: Expr;
-  readonly op: OpCode | null;
   readonly oneIndexed: boolean;
 }
 
 export interface BinaryOp extends BaseExpr {
   readonly kind: "BinaryOp";
-  readonly op: BinaryOpCode | null;
   readonly name: string;
   readonly left: Expr;
   readonly right: Expr;
@@ -110,7 +105,6 @@ export interface BinaryOp extends BaseExpr {
 export interface UnaryOp extends BaseExpr {
   readonly kind: "UnaryOp";
   readonly name: string;
-  readonly op: UnaryOpCode | null;
   readonly arg: Expr;
 }
 
@@ -328,13 +322,11 @@ export function relationOpChain<Op extends RelationOpCode>(
 
 export function functionCall(
   args: readonly Expr[],
-  ident: string | Identifier,
-  op?: OpCode
+  ident: string | Identifier
 ): FunctionCall {
   return {
     kind: "FunctionCall",
     ident: typeof ident === "string" ? id(ident, true) : ident,
-    op: op === undefined ? null : op,
     args,
   };
 }
@@ -343,12 +335,10 @@ export function methodCall(
   object: Expr,
   args: readonly Expr[],
   ident: string | Identifier,
-  op?: OpCode,
   property = false
 ): MethodCall {
   return {
     kind: "MethodCall",
-    op: op === undefined ? null : op,
     ident: typeof ident === "string" ? id(ident, true) : ident,
     object,
     args,
@@ -359,12 +349,10 @@ export function methodCall(
 export function indexCall(
   collection: string | Expr,
   index: Expr,
-  op?: OpCode,
   oneIndexed: boolean = false
 ): IndexCall {
   return {
     kind: "IndexCall",
-    op: op === undefined ? null : op,
     collection: typeof collection === "string" ? id(collection) : collection,
     index,
     oneIndexed,
@@ -376,12 +364,10 @@ export function rangeIndexCall(
   low: Expr,
   high: Expr,
   step: Expr,
-  op?: OpCode,
   oneIndexed: boolean = false
 ): RangeIndexCall {
   return {
     kind: "RangeIndexCall",
-    op: op === undefined ? null : op,
     collection: typeof collection === "string" ? id(collection) : collection,
     low,
     high,
@@ -390,29 +376,18 @@ export function rangeIndexCall(
   };
 }
 
-export function binaryOp(
-  op: BinaryOpCode | null,
-  left: Expr,
-  right: Expr,
-  name: string = ""
-): BinaryOp {
+export function binaryOp(name: string, left: Expr, right: Expr): BinaryOp {
   return {
     kind: "BinaryOp",
-    op,
     left,
     right,
     name,
   };
 }
 
-export function unaryOp(
-  op: UnaryOpCode | null,
-  arg: Expr,
-  name: string = ""
-): UnaryOp {
+export function unaryOp(name: string, arg: Expr): UnaryOp {
   return {
     kind: "UnaryOp",
-    op,
     arg,
     name,
   };

@@ -187,7 +187,7 @@ describe("Index call", () => {
   );
   testExpr(
     "Index array",
-    indexCall(e(array(int(), 10)), e(int(0, 0)), undefined, true),
+    indexCall(e(array(int(), 10)), e(int(0, 0)), true),
     "error"
   );
   testExpr(
@@ -197,7 +197,7 @@ describe("Index call", () => {
   );
   testExpr(
     "Index list",
-    indexCall(e(list(int())), e(int(0, 0)), undefined, true),
+    indexCall(e(list(int())), e(int(0, 0)), true),
     "error"
   );
   testExpr("Index list", indexCall(e(list(int())), e(int())), "error");
