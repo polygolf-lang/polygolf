@@ -2,13 +2,15 @@ import { Plugin } from "../common/Language";
 import { stringify } from "../common/stringify";
 import {
   int,
-  leq,
   polygolfOp,
   IntegerType,
   isConstantType,
   isIntLiteral,
   Expr,
   PolygolfOp,
+  isSubtype,
+  isPolygolfOp,
+  integerType,
 } from "../IR";
 import { getType } from "../common/getType";
 
