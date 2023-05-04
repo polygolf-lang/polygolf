@@ -20,10 +20,14 @@ import {
   removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
-import { evalStaticExpr, golfStringListLiteral } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfStringListLiteral } from "../../plugins/static";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
-import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
+import {
+  addVarDeclarations,
+  groupVarDeclarations,
+  noStandaloneVarDeclarations,
+} from "../../plugins/block";
 import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
@@ -41,7 +45,6 @@ const swiftLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfStringListLiteral(false),
-    evalStaticExpr,
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive,
@@ -60,6 +63,7 @@ const swiftLanguage: Language = {
     useIndexCalls(),
   ],
   finalEmitPlugins: [
+    implicitlyConvertPrintArg,
     mapOps([
       [
         "text_get_byte",
@@ -67,10 +71,7 @@ const swiftLanguage: Language = {
           functionCall(
             [
               indexCall(
-                functionCall(
-                  [methodCall(x[0], [], "utf8", undefined, true)],
-                  "Array"
-                ),
+                functionCall([methodCall(x[0], [], "utf8", true)], "Array"),
                 x[1]
               ),
             ],
@@ -87,22 +88,17 @@ const swiftLanguage: Language = {
       ],
       [
         "int_to_codepoint",
-        (x) => functionCall([functionCall([x[0]], "UnicodeScalar")], "String"),
+        (x) =>
+          functionCall(
+            [functionCall([functionCall([x[0]], "UnicodeScalar")], "!")],
+            "String"
+          ),
       ],
-      [
-        "text_codepoint_length",
-        (x) => methodCall(x[0], [], "count", undefined, true),
-      ],
+      ["text_codepoint_length", (x) => methodCall(x[0], [], "count", true)],
       [
         "text_byte_length",
         (x) =>
-          methodCall(
-            methodCall(x[0], [], "utf8", undefined, true),
-            [],
-            "count",
-            undefined,
-            true
-          ),
+          methodCall(methodCall(x[0], [], "utf8", true), [], "count", true),
       ],
       ["int_to_text", (x) => functionCall([x[0]], "String")],
       [
@@ -142,7 +138,7 @@ const swiftLanguage: Language = {
             "print"
           ),
       ],
-      ["text_to_int", (x) => functionCall([x[0]], "Int")],
+      ["text_to_int", (x) => functionCall([functionCall([x[0]], "Int")], "!")],
 
       ["max", (x) => functionCall(x, "max")],
       ["min", (x) => functionCall(x, "min")],
@@ -190,6 +186,7 @@ const swiftLanguage: Language = {
     renameIdents(),
     addVarDeclarations,
     groupVarDeclarations(),
+    noStandaloneVarDeclarations,
     assertInt64,
     removeImplicitConversions,
   ],
@@ -199,13 +196,17 @@ const swiftLanguage: Language = {
       return /[A-Za-z0-9]/.test(s);
     }
 
-    // A binary op followed by a unary op needs whitespace on both sides, and `!=` always needs it
+    // Tokens that need whitespace on both sides:
+    //   A binary op followed by a unary op
+    //   `!=`
+    //   `&` followed by any of `*+-` (without space they are interpreted together as an overflow operator)
     function needsWhiteSpaceOnBothSides(
       token: string,
       nextToken: string
     ): boolean {
       return (
         (/^[-+*/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
+        (token === `&` && /[*+-]/.test(nextToken[0])) ||
         token === `!=`
       );
     }

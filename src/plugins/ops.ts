@@ -26,7 +26,7 @@ import { Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 
 export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
-  const opMap = new Map<string, OpTransformOutput>(opMap0);
+  const opMap = toOpMap(opMap0);
   return {
     name: "mapOps(...)",
     allOrNothing: true,
@@ -47,22 +47,35 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
   };
 }
 
+function toOpMap<Op extends OpCode, T>(opMap0: [Op, T][]) {
+  const res = new Map(opMap0);
+  for (const [a, b] of [
+    ["unsafe_and", "and"],
+    ["unsafe_or", "or"],
+  ] as any) {
+    if (!res.has(a) && res.has(b)) {
+      res.set(a, res.get(b)!);
+    }
+  }
+  return res;
+}
+
 /**
  * Plugin transforming binary and unary ops to the name and precedence in the target lang.
- * @param opMap0 Each group defines operators of the same precedence, higher precedence ones first.
+ * @param opMap0 OpCode - target op name pairs.
  * @returns The plugin closure.
  */
 export function mapToUnaryAndBinaryOps(
   ...opMap0: [UnaryOpCode | BinaryOpCode, string][]
 ): Plugin {
-  const opMap = new Map(opMap0);
+  const opMap = toOpMap(opMap0);
   return {
     ...mapOps(
       opMap0.map(([op, name]) => [
         op,
         isBinary(op)
           ? (x: readonly Expr[]) => asBinaryChain(op, x, opMap)
-          : (x: readonly Expr[]) => unaryOp(op, x[0], name),
+          : (x: readonly Expr[]) => unaryOp(name, x[0]),
       ])
     ),
     name: `mapPrecedenceOps(${JSON.stringify(opMap0)})`,
@@ -75,7 +88,7 @@ function asBinaryChain(
   names: Map<OpCode, string>
 ): Expr {
   if (op === "mul" && isIntLiteral(exprs[0], -1n)) {
-    exprs = [unaryOp("neg", exprs[1], names.get("neg")), ...exprs.slice(2)];
+    exprs = [unaryOp(names.get("neg") ?? "?", exprs[1]), ...exprs.slice(2)];
   }
   if (op === "add") {
     exprs = exprs
@@ -86,13 +99,12 @@ function asBinaryChain(
   for (const expr of exprs.slice(1)) {
     if (op === "add" && isNegative(expr)) {
       result = binaryOp(
-        "sub",
+        names.get("sub") ?? "?",
         result,
-        polygolfOp("neg", expr),
-        names.get("sub")
+        polygolfOp("neg", expr)
       );
     } else {
-      result = binaryOp(op, result, expr, names.get(op));
+      result = binaryOp(names.get(op) ?? "?", result, expr);
     }
   }
   return result;
@@ -121,14 +133,9 @@ export function useIndexCalls(
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.startsWith("table_")) {
-          indexNode = indexCall(
-            node.args[0],
-            add1(node.args[1]),
-            node.op,
-            true
-          );
+          indexNode = indexCall(node.args[0], add1(node.args[1]), true);
         } else {
-          indexNode = indexCall(node.args[0], node.args[1], node.op);
+          indexNode = indexCall(node.args[0], node.args[1]);
         }
         if (node.op.endsWith("_get")) {
           return indexNode;
@@ -144,7 +151,7 @@ export function useIndexCalls(
 export function addMutatingBinaryOp(
   ...opMap0: [BinaryOpCode, string][]
 ): Plugin {
-  const opMap = new Map<BinaryOpCode, string>(opMap0);
+  const opMap = toOpMap(opMap0);
   return {
     name: `addMutatingBinaryOp(${JSON.stringify(opMap0)})`,
     visit(node) {
@@ -156,7 +163,7 @@ export function addMutatingBinaryOp(
       ) {
         const op = node.expr.op;
         const args = node.expr.args;
-        const name = opMap.get(op);
+        const name = opMap.get(op)!;
         const leftValueStringified = stringify(node.variable);
         const index = node.expr.args.findIndex(
           (x) => stringify(x) === leftValueStringified
@@ -167,10 +174,9 @@ export function addMutatingBinaryOp(
             ...args.slice(index + 1, args.length),
           ];
           return mutatingBinaryOp(
-            op,
+            name,
             node.variable,
-            args.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0],
-            name
+            newArgs.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0]
           );
         }
       }
