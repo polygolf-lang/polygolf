@@ -1,5 +1,13 @@
 # Swift
 
+```polygolf
+print "`";
+```
+
+```swift nogolf
+print("`")
+```
+
 ## Assignment
 
 ```polygolf
@@ -92,7 +100,7 @@ $a <- ($a ~ 2):-100..100;
 max $a 2;
 min $a 2;
 abs $a;
-% array_get (array "xy" "abc") 1;
+list_get (list "xy" "abc") 1;
 text_get_byte "abc" 1;
 text_get_codepoint "abc" 1;
 concat $b "xyz";
@@ -101,9 +109,12 @@ text_codepoint_length "abc";
 int_to_codepoint 5;
 int_to_text 5;
 text_to_int "5";
+text_split "xyz" "y";
+repeat $b 3;
 table_get (table ("X" => "Y") ) "X";
 and $c $c;
 or $c $c;
+not $c;
 ```
 
 ```swift nogolf
@@ -139,6 +150,7 @@ a^=2
 max(2,a)
 min(2,a)
 abs(a)
+["xy","abc"][1]
 Int(Array("abc".utf8)[1])
 String(Array("abc")[1])
 b+"xyz"
@@ -147,9 +159,12 @@ b+"xyz"
 String(UnicodeScalar(5)!)
 String(5)
 Int("5")!
+"xyz".split(separator:"y")
+String(repeating:b,count:3)
 ["X":"Y"]["X"]!
 c&&c
 c||c
+!c
 ```
 
 ## Whitespace behavior
