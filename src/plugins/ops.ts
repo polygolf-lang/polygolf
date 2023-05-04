@@ -176,7 +176,7 @@ export function addMutatingBinaryOp(
           return mutatingBinaryOp(
             name,
             node.variable,
-            args.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0]
+            newArgs.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0]
           );
         }
       }

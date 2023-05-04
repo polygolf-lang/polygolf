@@ -1,6 +1,11 @@
 import { replaceAtIndex } from "../common/immutable";
 import { Plugin } from "../common/Language";
-import { isPolygolfOp, polygolfOp, stringLiteral } from "../IR";
+import {
+  implicitConversion,
+  isPolygolfOp,
+  polygolfOp,
+  stringLiteral,
+} from "../IR";
 import { mapOps } from "./ops";
 
 export const printLnToPrint = mapOps([
@@ -39,3 +44,15 @@ export function golfLastPrint(toPrintln = true): Plugin {
     },
   };
 }
+
+export const implicitlyConvertPrintArg: Plugin = {
+  name: "implicitlyConvertPrintArg",
+  visit(node, spine) {
+    if (
+      isPolygolfOp(node, "int_to_text") &&
+      isPolygolfOp(spine.parent!.node, "print", "println")
+    ) {
+      return implicitConversion(node.args[0], node.op);
+    }
+  },
+};

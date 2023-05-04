@@ -169,7 +169,7 @@ Example Fibonacci using variants
 $a:0..832040 <- 0;
 $b:0..1346269 <- 1;
 for $i 0 31 {
-    println $a;
+    println_int $a;
     {   % temp variable
         $t:0..1346269 <- ($a + $b):0..1346269;
         $a <- $b:0..832040;

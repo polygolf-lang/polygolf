@@ -21,9 +21,13 @@ import {
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
 import { golfStringListLiteral } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
-import { addVarDeclarations, groupVarDeclarations } from "../../plugins/block";
+import {
+  addVarDeclarations,
+  groupVarDeclarations,
+  noStandaloneVarDeclarations,
+} from "../../plugins/block";
 import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
@@ -59,6 +63,7 @@ const swiftLanguage: Language = {
     useIndexCalls(),
   ],
   finalEmitPlugins: [
+    implicitlyConvertPrintArg,
     mapOps([
       [
         "text_get_byte",
@@ -181,6 +186,7 @@ const swiftLanguage: Language = {
     renameIdents(),
     addVarDeclarations,
     groupVarDeclarations(),
+    noStandaloneVarDeclarations,
     assertInt64,
     removeImplicitConversions,
   ],
@@ -190,13 +196,17 @@ const swiftLanguage: Language = {
       return /[A-Za-z0-9]/.test(s);
     }
 
-    // A binary op followed by a unary op needs whitespace on both sides, and `!=` always needs it
+    // Tokens that need whitespace on both sides:
+    //   A binary op followed by a unary op
+    //   `!=`
+    //   `&` followed by any of `*+-` (without space they are interpreted together as an overflow operator)
     function needsWhiteSpaceOnBothSides(
       token: string,
       nextToken: string
     ): boolean {
       return (
         (/^[-+*/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
+        (token === `&` && /[*+-]/.test(nextToken[0])) ||
         token === `!=`
       );
     }
