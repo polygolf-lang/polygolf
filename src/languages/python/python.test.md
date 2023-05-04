@@ -3,10 +3,10 @@
 ## Printing
 
 ```polygolf
-println 1;
-print 2;
+println_int 1;
+print_int 2;
 print "3";
-print 4;
+print_int 4;
 ```
 
 ```python nogolf
@@ -91,6 +91,7 @@ if(1==1) {
         println "b";
     };
 } {
+    println "x";
     if (3==1) {
         if (4==1) {
             if (5==1) {
@@ -111,6 +112,7 @@ if 1==1:
  if 2==1:p("a")
  else:p("b")
 else:
+ p("x")
  if 3==1:
   if 4==1:
    if 5==1:p("c")
@@ -157,11 +159,28 @@ a+=2
 ```polygolf
 $a:0..oo <- 1;
 if ($a != 0) {
-    println $a;
+    println_int $a;
 };
 ```
 
 ```python
 a=1
 if a:print(a)
+```
+
+## Chained if
+
+```polygolf
+if true {
+    println "a";
+} {
+    if true {
+        println "b";
+    };
+};
+```
+
+```py
+if 1:print("a")
+elif 1:print("b")
 ```

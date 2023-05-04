@@ -64,6 +64,8 @@ export const FrontendOpCodes = [
   "false",
   "print",
   "println",
+  "print_int",
+  "println_int",
   "text_replace",
   "array_set",
   "list_set",
@@ -79,6 +81,10 @@ export function isFrontend(op: OpCode): op is FrontendOpCode {
 }
 
 export const UnaryOpCodes = [
+  "print",
+  "println",
+  "print_int",
+  "println_int",
   "argv_get",
   "abs",
   "bit_not",
@@ -141,9 +147,11 @@ export const BinaryOpCodes = [
   "mul",
   "div",
   "trunc_div",
+  "unsigned_trunc_div",
   "pow",
   "mod",
   "rem",
+  "unsigned_rem",
   "bit_and",
   "bit_or",
   "bit_xor",
@@ -174,6 +182,7 @@ export const BinaryOpCodes = [
   "list_get",
   "table_get",
   // other
+  "println_list_joined_using",
   "list_push",
   "concat",
   "repeat",
@@ -205,8 +214,6 @@ export const OpCodes = [
   "false",
   "argv",
   "argc",
-  "print",
-  "println",
   "text_replace",
   "text_get_codepoint_slice", // Returns a slice of the input text. Indeces are codepoint-0-based, start is inclusive, end is exclusive.
   "text_get_byte_slice", // Returns a slice of the input text. Indeces are byte-0-based, start is inclusive, end is exclusive.
@@ -214,6 +221,7 @@ export const OpCodes = [
   "array_set",
   "list_set",
   "table_set",
+  "println_many_joined_using", // Expects one text argument denoting the delimiter and then any number of texts to be joined and printed.
 ] as const;
 
 export type OpCode = string & typeof OpCodes[number];
@@ -222,6 +230,9 @@ export function isOpCode(op: string): op is OpCode {
   return OpCodes.includes(op as any);
 }
 
+/**
+ * Returns parite of an op, -1 denotes variadic.
+ */
 export function arity(op: OpCode): number {
   if (isUnary(op)) return 1;
   if (isBinary(op)) return 2;
@@ -231,9 +242,6 @@ export function arity(op: OpCode): number {
     case "argv":
     case "argc":
       return 0;
-    case "print":
-    case "println":
-      return 1;
     case "text_replace":
     case "text_get_byte_slice":
     case "text_get_codepoint_slice":
@@ -241,6 +249,8 @@ export function arity(op: OpCode): number {
     case "list_set":
     case "table_set":
       return 3;
+    case "println_many_joined_using":
+      return -1;
   }
 }
 

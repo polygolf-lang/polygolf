@@ -1,10 +1,11 @@
 import { Plugin } from "../common/Language";
 import {
   int,
-  leq,
   polygolfOp,
   IntegerType,
   isConstantType,
+  isSubtype,
+  integerType,
   isPolygolfOp,
   isIntLiteral,
   implicitConversion,
@@ -14,19 +15,14 @@ import { getType } from "../common/getType";
 export const modToRem: Plugin = {
   name: "modToRem",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && node.op === "mod") {
-      const rightType = getType(node.args[1], spine);
-      if (rightType.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
-      if (leq(0n, rightType.low)) {
-        return polygolfOp("rem", ...node.args);
-      } else {
-        return polygolfOp(
-          "rem",
-          polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
-          node.args[1]
-        );
-      }
+    if (isPolygolfOp(node, "mod")) {
+      return isSubtype(getType(node.args[1], spine), integerType(0))
+        ? polygolfOp("rem", ...node.args)
+        : polygolfOp(
+            "rem",
+            polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
+            node.args[1]
+          );
     }
   },
 };
@@ -34,18 +30,10 @@ export const modToRem: Plugin = {
 export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && node.op === "div") {
-      const rightType = getType(node.args[1], spine);
-      if (rightType.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
-      if (leq(0n, rightType.low)) {
-        return {
-          ...node,
-          op: "trunc_div",
-        };
-      } else {
-        return undefined; // TODO
-      }
+    if (isPolygolfOp(node, "div")) {
+      return isSubtype(getType(node.args[1], spine), integerType(0))
+        ? polygolfOp("trunc_div", ...node.args)
+        : undefined; // TODO
     }
   },
 };
@@ -55,7 +43,7 @@ export const truncatingOpsPlugins = [modToRem, divToTruncdiv];
 export const equalityToInequality: Plugin = {
   name: "equalityToInequality",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && (node.op === "eq" || node.op === "neq")) {
+    if (isPolygolfOp(node, "eq", "neq")) {
       const eq = node.op === "eq";
       const [a, b] = [node.args[0], node.args[1]];
       const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [

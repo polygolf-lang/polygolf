@@ -10,7 +10,7 @@ println "Hello, World!";
 
 % Looping
 for $i 0 10 {
-    println $i;
+    println_int $i;
 };
 
 % Accessing arguments
