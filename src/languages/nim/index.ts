@@ -45,6 +45,7 @@ import {
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import {
+  applyDeMorgans,
   equalityToInequality,
   truncatingOpsPlugins,
   bitnotPlugins,
@@ -67,6 +68,7 @@ const nimLanguage: Language = {
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
     ...bitnotPlugins,
+    applyDeMorgans,
   ],
   emitPlugins: [
     forArgvToForEach,

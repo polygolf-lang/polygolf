@@ -34,6 +34,7 @@ import {
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import {
+  applyDeMorgans,
   equalityToInequality,
   truncatingOpsPlugins,
   bitnotPlugins,
@@ -50,6 +51,7 @@ const swiftLanguage: Language = {
     equalityToInequality,
     forRangeToForRangeInclusive,
     ...bitnotPlugins,
+    applyDeMorgans,
   ],
   emitPlugins: [
     forArgvToForEach,

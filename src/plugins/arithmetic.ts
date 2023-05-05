@@ -8,6 +8,7 @@ import {
   integerType,
   isPolygolfOp,
   isIntLiteral,
+  implicitConversion,
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
@@ -109,3 +110,52 @@ export const addBitnot: Plugin = {
 };
 
 export const bitnotPlugins = [removeBitnot, addBitnot];
+
+export const applyDeMorgans: Plugin = {
+  name: "applyDeMorgans",
+  visit(node, spine) {
+    if (isPolygolfOp(node, "and", "or", "unsafe_and", "unsafe_or")) {
+      const negation = polygolfOp(
+        node.op === "and"
+          ? "or"
+          : node.op === "or"
+          ? "and"
+          : node.op === "unsafe_and"
+          ? "unsafe_or"
+          : "unsafe_and",
+        ...node.args.map((x) => polygolfOp("not", x))
+      );
+      if (getType(node, spine).kind === "void") return negation; // If we are promised we won't read the result, we don't need to negate.
+      return polygolfOp("not", negation);
+    }
+    if (isPolygolfOp(node, "bit_and", "bit_or")) {
+      return polygolfOp(
+        "bit_not",
+        polygolfOp(
+          node.op === "bit_and" ? "bit_or" : "bit_and",
+          ...node.args.map((x) => polygolfOp("bit_not", x))
+        )
+      );
+    }
+  },
+};
+
+export const useIntegerTruthiness: Plugin = {
+  name: "useIntegerTruthiness",
+  visit(node, spine) {
+    if (
+      isPolygolfOp(node, "eq", "neq") &&
+      spine.parent!.node.kind === "IfStatement" &&
+      spine.pathFragment === "condition"
+    ) {
+      const res = isIntLiteral(node.args[1], 0n)
+        ? implicitConversion(node.args[0], "int_to_bool")
+        : isIntLiteral(node.args[0], 0n)
+        ? implicitConversion(node.args[1], "int_to_bool")
+        : undefined;
+      return res !== undefined && node.op === "eq"
+        ? polygolfOp("not", res)
+        : res;
+    }
+  },
+};
