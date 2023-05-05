@@ -93,6 +93,7 @@ export const UnaryOpCodes = [
   "int_to_text",
   "int_to_bin",
   "int_to_hex",
+  "int_to_bool",
   "text_to_int",
   "bool_to_int",
   "byte_to_text", // Returns a single byte text using the specified byte.
