@@ -37,6 +37,7 @@ import {
   applyDeMorgans,
   equalityToInequality,
   truncatingOpsPlugins,
+  bitnotPlugins,
 } from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
@@ -49,6 +50,7 @@ const swiftLanguage: Language = {
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive,
+    ...bitnotPlugins,
     applyDeMorgans,
   ],
   emitPlugins: [

@@ -40,6 +40,7 @@ import {
 import { addImports } from "../../plugins/imports";
 import {
   applyDeMorgans,
+  bitnotPlugins,
   equalityToInequality,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
@@ -57,6 +58,7 @@ const pythonLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     useEquivalentTextOp,
+    ...bitnotPlugins,
     applyDeMorgans,
     useIntegerTruthiness,
   ],

@@ -169,10 +169,14 @@ export function addMutatingBinaryOp(
           (x) => stringify(x) === leftValueStringified
         );
         if (index === 0 || (index > 0 && isCommutative(op))) {
-          const newArgs = [
-            ...args.slice(0, index),
-            ...args.slice(index + 1, args.length),
-          ];
+          const newArgs = args.filter((x, i) => i !== index);
+          if (op === "add" && opMap.has("sub") && newArgs.every(isNegative)) {
+            return mutatingBinaryOp(
+              opMap.get("sub")!,
+              node.variable,
+              polygolfOp("neg", polygolfOp(op, ...newArgs))
+            );
+          }
           return mutatingBinaryOp(
             name,
             node.variable,

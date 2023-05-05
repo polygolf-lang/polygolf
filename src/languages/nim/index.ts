@@ -48,6 +48,7 @@ import {
   applyDeMorgans,
   equalityToInequality,
   truncatingOpsPlugins,
+  bitnotPlugins,
 } from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
@@ -66,6 +67,7 @@ const nimLanguage: Language = {
     useEquivalentTextOp,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
+    ...bitnotPlugins,
     applyDeMorgans,
   ],
   emitPlugins: [

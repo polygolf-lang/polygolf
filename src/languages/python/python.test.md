@@ -145,13 +145,17 @@ print(sys.argv[1])
 ## Mutating ops
 
 ```polygolf
-$a:0..oo <- 1;
+$a:Int <- 1;
 $a <- ($a + 2);
+$a <- ($a - 2);
+$a <- ($a - ($a * $a));
 ```
 
 ```python
 a=1
 a+=2
+a-=2
+a-=a*a
 ```
 
 ## Thruthiness

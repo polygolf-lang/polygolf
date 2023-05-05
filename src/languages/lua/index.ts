@@ -34,6 +34,7 @@ import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
   applyDeMorgans,
+  bitnotPlugins,
   equalityToInequality,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
@@ -49,6 +50,7 @@ const luaLanguage: Language = {
     equalityToInequality,
     useEquivalentTextOp,
     shiftRangeOneUp,
+    ...bitnotPlugins,
     applyDeMorgans,
     useIntegerTruthiness,
   ],
