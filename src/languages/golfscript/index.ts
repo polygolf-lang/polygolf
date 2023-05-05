@@ -82,7 +82,6 @@ const golfscriptLanguage: Language = {
       ["pow", "?"],
       ["text_to_int", "~"],
       ["abs", "abs"],
-      ["list_get", "="],
       ["list_push", "+"],
       ["list_length", ","],
       ["join_using", "*"],
