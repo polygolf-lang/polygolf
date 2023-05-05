@@ -25,13 +25,18 @@ import {
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
-import { equalityToInequality } from "../../plugins/arithmetic";
+import { bitnotPlugins, equalityToInequality } from "../../plugins/arithmetic";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
   emitter: emitProgram,
-  golfPlugins: [flipBinaryOps, golfLastPrint(), equalityToInequality],
+  golfPlugins: [
+    flipBinaryOps,
+    golfLastPrint(),
+    equalityToInequality,
+    ...bitnotPlugins,
+  ],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
     forRangeToForDifferenceRange(

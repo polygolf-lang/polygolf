@@ -36,6 +36,7 @@ import { addImports } from "../../plugins/imports";
 import {
   equalityToInequality,
   truncatingOpsPlugins,
+  bitnotPlugins,
 } from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
@@ -48,6 +49,7 @@ const swiftLanguage: Language = {
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive,
+    ...bitnotPlugins,
   ],
   emitPlugins: [
     forArgvToForEach,

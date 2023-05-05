@@ -47,6 +47,7 @@ import {
 import {
   equalityToInequality,
   truncatingOpsPlugins,
+  bitnotPlugins,
 } from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
@@ -65,6 +66,7 @@ const nimLanguage: Language = {
     useEquivalentTextOp,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
+    ...bitnotPlugins,
   ],
   emitPlugins: [
     forArgvToForEach,
