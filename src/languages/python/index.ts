@@ -38,7 +38,12 @@ import {
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
-import { equalityToInequality } from "../../plugins/arithmetic";
+import {
+  applyDeMorgans,
+  bitnotPlugins,
+  equalityToInequality,
+  useIntegerTruthiness,
+} from "../../plugins/arithmetic";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -53,6 +58,9 @@ const pythonLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     useEquivalentTextOp,
+    ...bitnotPlugins,
+    applyDeMorgans,
+    useIntegerTruthiness,
   ],
   emitPlugins: [
     forArgvToForEach,
