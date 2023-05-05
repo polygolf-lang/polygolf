@@ -50,8 +50,10 @@ import {
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import {
+  applyDeMorgans,
   equalityToInequality,
   truncatingOpsPlugins,
+  bitnotPlugins,
 } from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
@@ -70,6 +72,8 @@ const nimLanguage: Language = {
     equalityToInequality,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
+    ...bitnotPlugins,
+    applyDeMorgans,
     textToIntToTextGetToInt,
   ],
   emitPlugins: [
@@ -88,7 +92,7 @@ const nimLanguage: Language = {
     textGetToIntToTextGet,
     mapOps([
       ["true", (_) => id("true", true)],
-      ["false", (_) => id("true", true)],
+      ["false", (_) => id("false", true)],
       ["text_byte_to_int", (x) => functionCall(x, "ord")],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
@@ -108,8 +112,12 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["int_to_text_byte", (x) => functionCall(x, "chr")],
     ]),
+    useUnsignedDivision,
     addMutatingBinaryOp(
       ["add", "+"],
+      ["mul", "*"],
+      ["unsigned_rem", "%%"],
+      ["unsigned_trunc_div", "/%"],
       ["mul", "*"],
       ["sub", "-"],
       ["concat", "&"]
@@ -123,6 +131,8 @@ const nimLanguage: Language = {
       ["mul", "*"],
       ["trunc_div", "div"],
       ["rem", "mod"],
+      ["unsigned_rem", "%%"],
+      ["unsigned_trunc_div", "/%"],
       ["bit_shift_left", "shl"],
       ["bit_shift_right", "shr"],
       ["add", "+"],

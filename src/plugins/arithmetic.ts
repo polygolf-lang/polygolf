@@ -1,23 +1,29 @@
 import { Plugin } from "../common/Language";
-import { int, leq, polygolfOp, IntegerType, isConstantType } from "../IR";
+import {
+  int,
+  polygolfOp,
+  IntegerType,
+  isConstantType,
+  isSubtype,
+  integerType,
+  isPolygolfOp,
+  isIntLiteral,
+  implicitConversion,
+} from "../IR";
 import { getType } from "../common/getType";
+import { mapOps } from "./ops";
 
 export const modToRem: Plugin = {
   name: "modToRem",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && node.op === "mod") {
-      const rightType = getType(node.args[1], spine);
-      if (rightType.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
-      if (leq(0n, rightType.low)) {
-        return polygolfOp("rem", ...node.args);
-      } else {
-        return polygolfOp(
-          "rem",
-          polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
-          node.args[1]
-        );
-      }
+    if (isPolygolfOp(node, "mod")) {
+      return isSubtype(getType(node.args[1], spine), integerType(0))
+        ? polygolfOp("rem", ...node.args)
+        : polygolfOp(
+            "rem",
+            polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
+            node.args[1]
+          );
     }
   },
 };
@@ -25,18 +31,10 @@ export const modToRem: Plugin = {
 export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && node.op === "div") {
-      const rightType = getType(node.args[1], spine);
-      if (rightType.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify(rightType)}.`);
-      if (leq(0n, rightType.low)) {
-        return {
-          ...node,
-          op: "trunc_div",
-        };
-      } else {
-        return undefined; // TODO
-      }
+    if (isPolygolfOp(node, "div")) {
+      return isSubtype(getType(node.args[1], spine), integerType(0))
+        ? polygolfOp("trunc_div", ...node.args)
+        : undefined; // TODO
     }
   },
 };
@@ -46,7 +44,7 @@ export const truncatingOpsPlugins = [modToRem, divToTruncdiv];
 export const equalityToInequality: Plugin = {
   name: "equalityToInequality",
   visit(node, spine) {
-    if (node.kind === "PolygolfOp" && (node.op === "eq" || node.op === "neq")) {
+    if (isPolygolfOp(node, "eq", "neq")) {
       const eq = node.op === "eq";
       const [a, b] = [node.args[0], node.args[1]];
       const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
@@ -86,6 +84,78 @@ export const equalityToInequality: Plugin = {
             : polygolfOp("lt", a, int(t2.low));
         }
       }
+    }
+  },
+};
+
+export const removeBitnot: Plugin = {
+  ...mapOps([["bit_not", (x) => polygolfOp("sub", int(-1), x[0])]]),
+  name: "removeBitnot",
+};
+
+export const addBitnot: Plugin = {
+  name: "addBitnot",
+  visit(node) {
+    if (
+      isPolygolfOp(node, "add") &&
+      node.args.length === 2 &&
+      isIntLiteral(node.args[0])
+    ) {
+      if (node.args[0].value === 1n)
+        return polygolfOp("neg", polygolfOp("bit_not", node.args[1]));
+      if (node.args[0].value === -1n)
+        return polygolfOp("bit_not", polygolfOp("neg", node.args[1]));
+    }
+  },
+};
+
+export const bitnotPlugins = [removeBitnot, addBitnot];
+
+export const applyDeMorgans: Plugin = {
+  name: "applyDeMorgans",
+  visit(node, spine) {
+    if (isPolygolfOp(node, "and", "or", "unsafe_and", "unsafe_or")) {
+      const negation = polygolfOp(
+        node.op === "and"
+          ? "or"
+          : node.op === "or"
+          ? "and"
+          : node.op === "unsafe_and"
+          ? "unsafe_or"
+          : "unsafe_and",
+        ...node.args.map((x) => polygolfOp("not", x))
+      );
+      if (getType(node, spine).kind === "void") return negation; // If we are promised we won't read the result, we don't need to negate.
+      return polygolfOp("not", negation);
+    }
+    if (isPolygolfOp(node, "bit_and", "bit_or")) {
+      return polygolfOp(
+        "bit_not",
+        polygolfOp(
+          node.op === "bit_and" ? "bit_or" : "bit_and",
+          ...node.args.map((x) => polygolfOp("bit_not", x))
+        )
+      );
+    }
+  },
+};
+
+export const useIntegerTruthiness: Plugin = {
+  name: "useIntegerTruthiness",
+  visit(node, spine) {
+    if (
+      isPolygolfOp(node, "eq", "neq") &&
+      spine.parent!.node.kind === "IfStatement" &&
+      spine.pathFragment === "condition"
+    ) {
+      const res = isIntLiteral(node.args[1], 0n)
+        ? implicitConversion(node.args[0], "int_to_bool")
+        : isIntLiteral(node.args[0], 0n)
+        ? implicitConversion(node.args[1], "int_to_bool")
+        : undefined;
+      return res !== undefined && node.op === "eq"
+        ? polygolfOp("not", res)
+        : res;
     }
   },
 };

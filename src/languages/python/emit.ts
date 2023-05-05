@@ -50,7 +50,7 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   throw new Error(
-    `Programming error - unknown Python binary operator '${opname}.'`
+    `Programming error - unknown Python binary operator '${opname}'.`
   );
 }
 
@@ -145,9 +145,11 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emit(e.condition),
           ":",
           emitMultiExpr(e.consequent),
-          e.alternate !== undefined
-            ? ["\n", "else", ":", emitMultiExpr(e.alternate)]
-            : [],
+          e.alternate === undefined
+            ? []
+            : e.alternate.kind === "IfStatement"
+            ? ["\n", "el", "$GLUE$", emit(e.alternate)]
+            : ["\n", "else", ":", emitMultiExpr(e.alternate)],
         ];
       case "Variants":
       case "ForEachKey":
@@ -190,7 +192,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         ];
       }
       case "UnaryOp":
-        return [e.name, emit(e.arg, prec + 1)];
+        return [e.name, emit(e.arg, prec)];
       case "ListConstructor":
         return ["[", joinExprs(",", e.exprs), "]"];
       case "IndexCall":

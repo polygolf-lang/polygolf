@@ -91,6 +91,7 @@ if(1==1) {
         println "b";
     };
 } {
+    println "x";
     if (3==1) {
         if (4==1) {
             if (5==1) {
@@ -111,6 +112,7 @@ if 1==1:
  if 2==1:p("a")
  else:p("b")
 else:
+ p("x")
  if 3==1:
   if 4==1:
    if 5==1:p("c")
@@ -143,11 +145,46 @@ print(sys.argv[1])
 ## Mutating ops
 
 ```polygolf
-$a:0..oo <- 1;
+$a:Int <- 1;
 $a <- ($a + 2);
+$a <- ($a - 2);
+$a <- ($a - ($a * $a));
 ```
 
 ```python
 a=1
 a+=2
+a-=2
+a-=a*a
+```
+
+## Thruthiness
+
+```polygolf
+$a:0..oo <- 1;
+if ($a != 0) {
+    println_int $a;
+};
+```
+
+```python
+a=1
+if a:print(a)
+```
+
+## Chained if
+
+```polygolf
+if true {
+    println "a";
+} {
+    if true {
+        println "b";
+    };
+};
+```
+
+```py
+if 1:print("a")
+elif 1:print("b")
 ```

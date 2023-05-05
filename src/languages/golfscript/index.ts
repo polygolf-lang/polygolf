@@ -25,13 +25,23 @@ import {
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
-import { equalityToInequality } from "../../plugins/arithmetic";
+import {
+  bitnotPlugins,
+  applyDeMorgans,
+  equalityToInequality,
+} from "../../plugins/arithmetic";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
   emitter: emitProgram,
-  golfPlugins: [flipBinaryOps, golfLastPrint(), equalityToInequality],
+  golfPlugins: [
+    flipBinaryOps,
+    golfLastPrint(),
+    equalityToInequality,
+    ...bitnotPlugins,
+    applyDeMorgans,
+  ],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [
     forRangeToForDifferenceRange(
@@ -77,7 +87,6 @@ const golfscriptLanguage: Language = {
       ["pow", "?"],
       ["text_to_int", "~"],
       ["abs", "abs"],
-      ["list_get", "="],
       ["list_push", "+"],
       ["list_length", ","],
       ["join_using", "*"],
