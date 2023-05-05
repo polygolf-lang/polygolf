@@ -51,7 +51,7 @@ sorted $d;
 text_get_byte "abc" 1;
 concat $b "xyz";
 text_byte_length "abc";
-% int_to_text 5; %% To be uncommented once backticks can be used in MD tests
+int_to_text 5;
 text_to_int "5";
 byte_to_text 5;
 text_split "xyz" "y";
@@ -63,7 +63,7 @@ not $c;
 ```
 
 ```golfscript nogolf
-0:a;"xy":b;0 0=:c;["q""r""s"]:d;a~a-1*2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^a 2 2\?*a 2 2\?/a 2<a 2)<a 2=a 2=!a 2(>a 2>2 a[]++$1=2 a[]++$0=a abs d 1=d"t"+d,d''*d"_"*d$"abc"1=[]+''+b"xyz"+"abc","5"~5[]+''+"xyz""y"/b-1%b 3*c c and c c or c!
+0:a;"xy":b;0 0=:c;["q""r""s"]:d;a~a-1*2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^a 2 2\?*a 2 2\?/a 2<a 2)<a 2=a 2=!a 2(>a 2>2 a[]++$1=2 a[]++$0=a abs d 1=d"t"+d,d''*d"_"*d$"abc"1=[]+''+b"xyz"+"abc",5`"5"~5[]+''+"xyz""y"/b-1%b 3*c c and c c or c!
 ```
 
 ## Looping
