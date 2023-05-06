@@ -24,7 +24,7 @@ import {
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
-import { golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   packSource2to1,
@@ -52,6 +52,7 @@ const pythonLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     golfStringListLiteral(),
+    listOpsToTextOps("text_codepoint_find", "text_get_codepoint"),
     tempVarToMultipleAssignment,
     forRangeToForEach,
     golfLastPrint(),

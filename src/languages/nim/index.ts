@@ -25,7 +25,7 @@ import {
   forRangeToForRangeInclusive,
   shiftRangeOneUp,
 } from "../../plugins/loops";
-import { golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
@@ -58,6 +58,7 @@ const nimLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfStringListLiteral(),
+    listOpsToTextOps("text_byte_find", "text_get_byte"),
     golfLastPrint(),
     tempVarToMultipleAssignment,
     useDecimalConstantPackedPrinter,
