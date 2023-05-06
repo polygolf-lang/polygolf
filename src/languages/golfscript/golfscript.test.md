@@ -53,7 +53,7 @@ concat $b "xyz";
 text_byte_length "abc";
 int_to_text 5;
 text_to_int "5";
-byte_to_text 5;
+int_to_text_byte 5;
 text_split "xyz" "y";
 text_byte_reversed $b;
 repeat $b 3;

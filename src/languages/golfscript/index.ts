@@ -101,7 +101,7 @@ const golfscriptLanguage: Language = {
       ["join", "''*"],
       ["text_byte_reversed", "-1%"],
       ["text_get_byte", "=[]+''+"],
-      ["byte_to_text", "[]+''+"],
+      ["int_to_text_byte", "[]+''+"],
       ["max", "[]++$1="],
       ["min", "[]++$0="],
       ["bit_shift_left", "2\\?*"],
