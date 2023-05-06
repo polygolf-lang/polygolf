@@ -19,7 +19,7 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
 } from "../../plugins/ops";
-import { renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import { golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
@@ -189,6 +189,14 @@ const swiftLanguage: Language = {
       ["or", "||"]
     ),
     addImports([["pow", "Foundation"]], "import"),
+    alias((expr) => {
+      switch (expr.kind) {
+        case "IntegerLiteral":
+          return expr.value.toString();
+        case "StringLiteral":
+          return `${expr.value}__`;
+      }
+    }),
     renameIdents(),
     addVarDeclarations,
     groupVarDeclarations(),

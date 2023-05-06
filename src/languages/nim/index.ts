@@ -18,7 +18,7 @@ import {
   removeImplicitConversions,
 } from "../../plugins/ops";
 import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
-import { renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forArgvToForRange,
@@ -152,6 +152,17 @@ const nimLanguage: Language = {
     ),
     useUnsignedDivision,
     addNimImports,
+    alias(
+      (expr) => {
+        switch (expr.kind) {
+          case "IntegerLiteral":
+            return expr.value.toString();
+          case "StringLiteral":
+            return `${expr.value}__`;
+        }
+      },
+      [1, 7]
+    ),
     renameIdents(),
     addVarDeclarations,
     addVarDeclarationOneToManyAssignments(),

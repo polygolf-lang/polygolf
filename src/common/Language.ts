@@ -40,6 +40,7 @@ export interface Plugin {
   /** Set `allOrNothing: true` to force all replacement nodes to be applied,
    * or none. This is useful in cases such as renaming variables */
   allOrNothing?: boolean;
+  skipWhenNogolf?: boolean; // TODO temp until #150
 }
 
 type TokenTreeArray = Array<string | TokenTreeArray>;

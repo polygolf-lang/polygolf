@@ -24,7 +24,7 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
 } from "../../plugins/ops";
-import { renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import {
   tempVarToMultipleAssignment,
   addOneToManyAssignments,
@@ -144,6 +144,14 @@ const luaLanguage: Language = {
       ["and", "and"],
       ["or", "or"]
     ),
+    alias((expr) => {
+      switch (expr.kind) {
+        case "IntegerLiteral":
+          return expr.value.toString();
+        case "StringLiteral":
+          return `${expr.value}__`;
+      }
+    }),
     renameIdents(),
     addOneToManyAssignments(),
     assertInt64,

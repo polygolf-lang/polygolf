@@ -90,30 +90,25 @@ const defaultIdentGen = {
   general: (i: number) => "v" + i.toString(),
 };
 
-export const aliasBuiltins: Plugin = alias((expr: Expr) =>
-  expr.kind === "Identifier" && expr.builtin ? expr.name : undefined
-);
-
+/**
+ * Aliases repeated expressions by mapping them to new variables.
+ * @param getExprKey Calculates a key to compare expressions, `undefined` marks aliasing should not happen.
+ * @param save `[cost of referring to the alias, cost of storing the alias]` or a custom byte save function.
+ */
 export function alias(
-  getExprKey: (expr: Expr) => string | undefined = (expr: Expr) => {
-    switch (expr.kind) {
-      case "Identifier":
-        return expr.builtin ? expr.name : undefined;
-      case "IntegerLiteral":
-        return expr.value.toString();
-      case "StringLiteral":
-        return `"${expr.value}"`;
-    }
-  },
-  aliasingSave: (key: string, freq: number) => number = (
-    key: string,
-    freq: number
-  ) => (key.length - 1) * (freq - 1) - 4
+  getExprKey: (expr: Expr) => string | undefined,
+  save: ((key: string, freq: number) => number) | [number, number] = [1, 3]
 ): Plugin {
+  const aliasingSave =
+    typeof save === "function"
+      ? save
+      : (key: string, freq: number) =>
+          (key.length - save[0]) * (freq - 1) - save[0] - save[1];
   const getKey = (node: Node) =>
     node.kind === "Program" ? undefined : getExprKey(node);
   return {
     name: "alias(...)",
+    skipWhenNogolf: true,
     visit(prog, spine) {
       if (prog.kind !== "Program") return;
       // get frequency of expr

@@ -22,7 +22,7 @@ import {
   addMutatingBinaryOp,
   removeImplicitConversions,
 } from "../../plugins/ops";
-import { aliasBuiltins, renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
@@ -167,7 +167,16 @@ const pythonLanguage: Language = {
       ["and", "and"],
       ["or", "or"]
     ),
-    aliasBuiltins,
+    alias((expr) => {
+      switch (expr.kind) {
+        case "Identifier":
+          return expr.builtin ? expr.name : undefined;
+        case "IntegerLiteral":
+          return expr.value.toString();
+        case "StringLiteral":
+          return `${expr.value}__`;
+      }
+    }),
     renameIdents(),
     addOneToManyAssignments(),
     addImports(

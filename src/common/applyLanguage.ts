@@ -104,11 +104,12 @@ export default function applyLanguage(
   return bestUnpacked;
 }
 
-function getFinalEmit(language: Language) {
+function getFinalEmit(language: Language, nogolf = false) {
   const detokenizer = language.detokenizer ?? defaultDetokenizer();
   return (ir: IR.Program) => {
     const program = language.emitPlugins
       .concat(language.finalEmitPlugins)
+      .filter((x) => x.skipWhenNogolf !== true || !nogolf)
       .reduce((program, plugin) => applyAll(program, plugin.visit), ir);
     return detokenizer(language.emitter(program));
   };
@@ -137,7 +138,7 @@ export function applyLanguageToVariants(
   options: SearchOptions,
   skipTypecheck = false
 ): string {
-  const finalEmit = getFinalEmit(language);
+  const finalEmit = getFinalEmit(language, options.level === "none");
   const golfPlugins =
     options.level === "none"
       ? []
