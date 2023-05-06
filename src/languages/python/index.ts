@@ -32,7 +32,11 @@ import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
-import { useEquivalentTextOp } from "../../plugins/textOps";
+import {
+  textGetToIntToTextGet,
+  textToIntToTextGetToInt,
+  useEquivalentTextOp,
+} from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
   tempVarToMultipleAssignment,
@@ -53,12 +57,12 @@ const pythonLanguage: Language = {
   golfPlugins: [
     golfStringListLiteral(),
     tempVarToMultipleAssignment,
-    forRangeToForEach,
+    forRangeToForEach("array_get", "list_get", "text_get_codepoint"),
     golfLastPrint(),
     equalityToInequality,
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
-    useEquivalentTextOp,
+    textToIntToTextGetToInt,
     ...bitnotPlugins,
     applyDeMorgans,
     useIntegerTruthiness,
@@ -66,6 +70,7 @@ const pythonLanguage: Language = {
   ],
   emitPlugins: [
     forArgvToForEach,
+    useEquivalentTextOp(false, true),
     mapOps([
       ["argv", (x) => id("sys.argv[1:]", true)],
       [
@@ -81,6 +86,7 @@ const pythonLanguage: Language = {
     useIndexCalls(),
   ],
   finalEmitPlugins: [
+    textGetToIntToTextGet,
     implicitlyConvertPrintArg,
     mapOps([
       ["true", (_) => int(1)],
@@ -95,7 +101,7 @@ const pythonLanguage: Language = {
         "text_codepoint_reversed",
         (x) => rangeIndexCall(x[0], id("", true), id("", true), int(-1)),
       ],
-      ["text_get_byte", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
+      ["codepoint_to_int", (x) => functionCall(x, "ord")],
       ["text_get_codepoint", (x) => indexCall(x[0], x[1])],
       ["int_to_codepoint", (x) => functionCall([x[0]], "chr")],
       ["max", (x) => functionCall([x[0], x[1]], "max")],
