@@ -44,7 +44,10 @@ import {
 } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
 import {
+  applyDeMorgans,
+  bitnotPlugins,
   equalityToInequality,
+  useIntegerTruthiness,
   useImplicitBoolToInt,
 } from "../../plugins/arithmetic";
 import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
@@ -62,6 +65,9 @@ const pythonLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     useEquivalentTextOp,
+    ...bitnotPlugins,
+    applyDeMorgans,
+    useIntegerTruthiness,
     safeConditionalOpToCollectionGet("list"),
     ifRelationChainToLongerRelationChain,
     ifToUnsafeAnd,

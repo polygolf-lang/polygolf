@@ -47,7 +47,7 @@ if true (println "x");
 ```
 
 ```polygolf ops.ifToUnsafeAnd
-unsafe_and true (println "x");
+unsafe_and true (println "x"):Bool;
 ```
 
 <!-- It currently isn't possible to test `ops.ifRelationChainToLongerRelationChain` directly, so we use Python to test it.-->

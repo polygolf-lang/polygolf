@@ -45,8 +45,10 @@ import {
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import {
+  applyDeMorgans,
   equalityToInequality,
   truncatingOpsPlugins,
+  bitnotPlugins,
 } from "../../plugins/arithmetic";
 import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
 
@@ -66,6 +68,8 @@ const nimLanguage: Language = {
     useEquivalentTextOp,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
+    ...bitnotPlugins,
+    applyDeMorgans,
     safeConditionalOpToCollectionGet("array"),
   ],
   emitPlugins: [
@@ -82,7 +86,7 @@ const nimLanguage: Language = {
     implicitlyConvertPrintArg,
     mapOps([
       ["true", (_) => id("true", true)],
-      ["false", (_) => id("true", true)],
+      ["false", (_) => id("false", true)],
       ["text_byte_ord", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],

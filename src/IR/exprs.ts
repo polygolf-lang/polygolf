@@ -22,6 +22,7 @@ import {
   CommutativeOpCode,
   isConstantType,
   isBinary,
+  booleanNotOpCode,
   RelationOpCode,
 } from "./IR";
 
@@ -43,6 +44,8 @@ export interface ImplicitConversion extends BaseExpr {
  * - PolygolfOp(sub)
  * - PolygolfOp as a direct child of a PolygolfOp with the same associative OpCode
  * - IntegerLiteral as a nonfirst child of a commutative PolygolfOp
+ * - Boolean negation of a boolean negation
+ * - Boolean negation of an op that has a negated counterpart
  * 
  * This is ensured when using the polygolfOp contructor function and the Spine API so avoid creating such nodes manually.
  */
@@ -166,6 +169,18 @@ function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
 }
 
 export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
+  if (op === "not" || op === "bit_not") {
+    const arg = args[0];
+    if (isPolygolfOp(arg)) {
+      if (arg.op === op) return arg.args[0];
+      if (op === "not") {
+        const negated = booleanNotOpCode(arg.op as BinaryOpCode);
+        if (negated != null) {
+          return polygolfOp(negated, arg.args[0], arg.args[1]);
+        }
+      }
+    }
+  }
   if (op === "neg") {
     if (isIntLiteral(args[0])) {
       return int(-args[0].value);

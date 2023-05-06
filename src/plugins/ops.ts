@@ -24,6 +24,9 @@ import {
   RelationOpCode,
   RelationOpChain,
   RelationOpCodes,
+  annotate,
+  voidType,
+  booleanType,
 } from "../IR";
 import { Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -173,10 +176,14 @@ export function addMutatingBinaryOp(
           (x) => stringify(x) === leftValueStringified
         );
         if (index === 0 || (index > 0 && isCommutative(op))) {
-          const newArgs = [
-            ...args.slice(0, index),
-            ...args.slice(index + 1, args.length),
-          ];
+          const newArgs = args.filter((x, i) => i !== index);
+          if (op === "add" && opMap.has("sub") && newArgs.every(isNegative)) {
+            return mutatingBinaryOp(
+              opMap.get("sub")!,
+              node.variable,
+              polygolfOp("neg", polygolfOp(op, ...newArgs))
+            );
+          }
           return mutatingBinaryOp(
             name,
             node.variable,
@@ -276,7 +283,14 @@ export const ifToUnsafeAnd: Plugin = {
       node.alternate === undefined &&
       isPolygolfOp(node.consequent, "print", "println")
     ) {
-      return polygolfOp("unsafe_and", node.condition, node.consequent);
+      return annotate(
+        polygolfOp(
+          "unsafe_and",
+          node.condition,
+          annotate(node.consequent, booleanType) // TODO make this implicit conversion instead?
+        ),
+        voidType
+      );
     }
   },
 };

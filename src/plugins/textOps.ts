@@ -1,5 +1,5 @@
 import { getType } from "../common/getType";
-import { integerType, isSubtype, OpCode } from "../IR";
+import { integerType, isPolygolfOp, isSubtype, OpCode } from "../IR";
 import { Plugin } from "../common/Language";
 
 function toBidirectionalMap<T>(pairs: [T, T][]): Map<T, T> {
@@ -19,20 +19,25 @@ const integerOpsEquivalenceAscii = toBidirectionalMap<OpCode>([
   ["byte_to_text", "int_to_codepoint"],
 ]);
 
+const opsToSwap = [
+  ...textOpsEquivalenceAscii.keys(),
+  ...integerOpsEquivalenceAscii.keys(),
+];
+
 /** Swaps an op to another one, provided they are equivalent for the subtype. */
 export const useEquivalentTextOp: Plugin = {
   name: "useEquivalentTextOp",
   visit(node, spine) {
-    if (node.kind !== "PolygolfOp") return;
-    if (node.args.length < 1) return;
-    const typeArg0 = getType(node.args[0], spine);
-    if (typeArg0.kind === "text" && typeArg0.isAscii) {
-      const alternative = textOpsEquivalenceAscii.get(node.op);
-      if (alternative !== undefined) return { ...node, op: alternative };
-    }
-    if (isSubtype(typeArg0, integerType(0, 127))) {
-      const alternative = integerOpsEquivalenceAscii.get(node.op);
-      if (alternative !== undefined) return { ...node, op: alternative };
+    if (isPolygolfOp(node, ...opsToSwap)) {
+      const typeArg0 = getType(node.args[0], spine);
+      if (typeArg0.kind === "text" && typeArg0.isAscii) {
+        const alternative = textOpsEquivalenceAscii.get(node.op);
+        if (alternative !== undefined) return { ...node, op: alternative };
+      }
+      if (isSubtype(typeArg0, integerType(0, 127))) {
+        const alternative = integerOpsEquivalenceAscii.get(node.op);
+        if (alternative !== undefined) return { ...node, op: alternative };
+      }
     }
   },
 };
