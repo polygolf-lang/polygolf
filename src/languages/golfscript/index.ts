@@ -18,7 +18,7 @@ import {
   removeImplicitConversions,
 } from "../../plugins/ops";
 import { renameIdents } from "../../plugins/idents";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
@@ -26,7 +26,11 @@ import {
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
-import { equalityToInequality } from "../../plugins/arithmetic";
+import {
+  bitnotPlugins,
+  applyDeMorgans,
+  equalityToInequality,
+} from "../../plugins/arithmetic";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
@@ -36,6 +40,8 @@ const golfscriptLanguage: Language = {
     flipBinaryOps,
     golfLastPrint(),
     equalityToInequality,
+    ...bitnotPlugins,
+    applyDeMorgans,
     forRangeToForRangeOneStep,
   ],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
@@ -44,6 +50,7 @@ const golfscriptLanguage: Language = {
       (node, spine) =>
         !isSubtype(getType(node.start, spine.root.node), integerType(0))
     ),
+    implicitlyConvertPrintArg,
     mapOps([
       ["argv", (_) => id("a", true)],
       ["true", (_) => id("1", true)],
@@ -82,7 +89,6 @@ const golfscriptLanguage: Language = {
       ["pow", "?"],
       ["text_to_int", "~"],
       ["abs", "abs"],
-      ["list_get", "="],
       ["list_push", "+"],
       ["list_length", ","],
       ["join_using", "*"],

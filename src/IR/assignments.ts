@@ -1,13 +1,5 @@
 import { PolygolfError } from "../common/errors";
-import {
-  BaseExpr,
-  Expr,
-  id,
-  Identifier,
-  Type,
-  IndexCall,
-  BinaryOpCode,
-} from "./IR";
+import { BaseExpr, Expr, id, Identifier, Type, IndexCall } from "./IR";
 
 export type LValue = Identifier | IndexCall;
 
@@ -18,7 +10,6 @@ export type LValue = Identifier | IndexCall;
  */
 export interface MutatingBinaryOp extends BaseExpr {
   readonly kind: "MutatingBinaryOp";
-  readonly op: BinaryOpCode;
   readonly name: string;
   readonly variable: LValue;
   readonly right: Expr;
@@ -86,14 +77,12 @@ export interface VarDeclarationBlock extends BaseExpr {
 }
 
 export function mutatingBinaryOp(
-  op: BinaryOpCode,
+  name: string,
   variable: LValue,
-  right: Expr,
-  name: string = ""
+  right: Expr
 ): MutatingBinaryOp {
   return {
     kind: "MutatingBinaryOp",
-    op,
     variable,
     right,
     name,

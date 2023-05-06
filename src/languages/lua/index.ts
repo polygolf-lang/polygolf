@@ -30,10 +30,15 @@ import {
   tempVarToMultipleAssignment,
   addOneToManyAssignments,
 } from "../../plugins/block";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
-import { equalityToInequality } from "../../plugins/arithmetic";
+import {
+  applyDeMorgans,
+  bitnotPlugins,
+  equalityToInequality,
+  useIntegerTruthiness,
+} from "../../plugins/arithmetic";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -46,11 +51,15 @@ const luaLanguage: Language = {
     equalityToInequality,
     useEquivalentTextOp,
     shiftRangeOneUp,
+    ...bitnotPlugins,
+    applyDeMorgans,
+    useIntegerTruthiness,
     forRangeToForRangeOneStep,
   ],
   emitPlugins: [
     forArgvToForRange(),
     forRangeToForRangeInclusive,
+    implicitlyConvertPrintArg,
     mapOps([
       [
         "text_to_int",

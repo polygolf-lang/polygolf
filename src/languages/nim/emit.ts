@@ -256,7 +256,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           }
           prec = 2;
           return [
-            emit(e.object, prec),
+            emit(e.object, precedence(e)),
             ".",
             e.ident.name,
             e.args.length > 0 ? joinExprs(",", e.args) : [],
@@ -272,7 +272,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         ];
       }
       case "UnaryOp":
-        return [e.name, emit(e.arg, prec + 1)];
+        return [e.name, emit(e.arg, prec)];
       case "ListConstructor":
         return ["@", "[", joinExprs(",", e.exprs), "]"];
       case "TableConstructor":

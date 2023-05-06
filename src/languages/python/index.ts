@@ -29,8 +29,7 @@ import {
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
-import { getType } from "../../common/getType";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   packSource2to1,
   packSource3to1,
@@ -43,7 +42,12 @@ import {
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
-import { equalityToInequality } from "../../plugins/arithmetic";
+import {
+  applyDeMorgans,
+  bitnotPlugins,
+  equalityToInequality,
+  useIntegerTruthiness,
+} from "../../plugins/arithmetic";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -58,6 +62,9 @@ const pythonLanguage: Language = {
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     useEquivalentTextOp,
+    ...bitnotPlugins,
+    applyDeMorgans,
+    useIntegerTruthiness,
     forRangeToForRangeOneStep,
   ],
   emitPlugins: [
@@ -77,6 +84,7 @@ const pythonLanguage: Language = {
     useIndexCalls(),
   ],
   finalEmitPlugins: [
+    implicitlyConvertPrintArg,
     mapOps([
       ["true", (_) => int(1)],
       ["false", (_) => int(0)],
@@ -106,10 +114,9 @@ const pythonLanguage: Language = {
       ["println", (x) => functionCall([x[0]], "print")],
       [
         "print",
-        (x, spine) => {
-          const type = getType(x[0], spine);
+        (x) => {
           return functionCall(
-            type.kind === "text"
+            x[0].kind !== "ImplicitConversion"
               ? [namedArg("end", x[0])]
               : [x[0], namedArg("end", stringLiteral(""))],
             "print"

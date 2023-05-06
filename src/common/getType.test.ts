@@ -187,7 +187,7 @@ describe("Index call", () => {
   );
   testExpr(
     "Index array",
-    indexCall(e(array(int(), 10)), e(int(0, 0)), undefined, true),
+    indexCall(e(array(int(), 10)), e(int(0, 0)), true),
     "error"
   );
   testExpr(
@@ -197,7 +197,7 @@ describe("Index call", () => {
   );
   testExpr(
     "Index list",
-    indexCall(e(list(int())), e(int(0, 0)), undefined, true),
+    indexCall(e(list(int())), e(int(0, 0)), true),
     "error"
   );
   testExpr("Index list", indexCall(e(list(int())), e(int())), "error");
@@ -367,6 +367,34 @@ describeArithmeticOp("bit_shift_right", [
   [[int(1, 5), int(2, 3)], int(0, 1)],
   [[int("-oo", 0), int(0, "oo")], int("-oo", 0)],
   [[int(10, 50), int(2, 3)], int(1, 12)],
+]);
+
+describePolygolfOp("print", [
+  [[int()], "error"],
+  [[bool], "error"],
+  [[text(), text()], "error"],
+  [[text()], voidType],
+]);
+
+describePolygolfOp("println", [
+  [[int()], "error"],
+  [[bool], "error"],
+  [[text(), text()], "error"],
+  [[text()], voidType],
+]);
+
+describePolygolfOp("print_int", [
+  [[text()], "error"],
+  [[bool], "error"],
+  [[int(), int()], "error"],
+  [[int()], voidType],
+]);
+
+describePolygolfOp("println_int", [
+  [[text()], "error"],
+  [[bool], "error"],
+  [[int(), int()], "error"],
+  [[int()], voidType],
 ]);
 
 describePolygolfOp("or", [

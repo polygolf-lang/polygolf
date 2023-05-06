@@ -27,7 +27,7 @@ import {
   shiftRangeOneUp,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
-import { golfLastPrint } from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
@@ -46,8 +46,10 @@ import {
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import {
+  applyDeMorgans,
   equalityToInequality,
   truncatingOpsPlugins,
+  bitnotPlugins,
 } from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
@@ -66,6 +68,8 @@ const nimLanguage: Language = {
     useEquivalentTextOp,
     shiftRangeOneUp,
     forRangeToForRangeInclusive,
+    ...bitnotPlugins,
+    applyDeMorgans,
     forRangeToForRangeOneStep,
   ],
   emitPlugins: [
@@ -79,9 +83,10 @@ const nimLanguage: Language = {
     ]),
   ],
   finalEmitPlugins: [
+    implicitlyConvertPrintArg,
     mapOps([
       ["true", (_) => id("true", true)],
-      ["false", (_) => id("true", true)],
+      ["false", (_) => id("false", true)],
       ["text_byte_ord", (x) => functionCall([indexCall(x[0], x[1])], "ord")],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
@@ -101,8 +106,12 @@ const nimLanguage: Language = {
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["byte_to_text", (x) => functionCall(x, "chr")],
     ]),
+    useUnsignedDivision,
     addMutatingBinaryOp(
       ["add", "+"],
+      ["mul", "*"],
+      ["unsigned_rem", "%%"],
+      ["unsigned_trunc_div", "/%"],
       ["mul", "*"],
       ["sub", "-"],
       ["concat", "&"]
@@ -116,6 +125,8 @@ const nimLanguage: Language = {
       ["mul", "*"],
       ["trunc_div", "div"],
       ["rem", "mod"],
+      ["unsigned_rem", "%%"],
+      ["unsigned_trunc_div", "/%"],
       ["bit_shift_left", "shl"],
       ["bit_shift_right", "shr"],
       ["add", "+"],

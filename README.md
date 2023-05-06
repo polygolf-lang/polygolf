@@ -169,7 +169,7 @@ Example Fibonacci using variants
 $a:0..832040 <- 0;
 $b:0..1346269 <- 1;
 for $i 0 31 {
-    println $a;
+    println_int $a;
     {   % temp variable
         $t:0..1346269 <- ($a + $b):0..1346269;
         $a <- $b:0..832040;
@@ -214,15 +214,15 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 - [x] `x<=5` ⟶ `x<6`
 - [x] `x%10==0` ⟶ `x%10<1`
-- [ ] `(x+1)*(y+1)` ⟶ `~x*~y`
+- [x] `(x+1)*(y+1)` ⟶ `~x*~y`
 - [ ] `x//32` ⟶ `x>>5`
 - [ ] `x**2` ⟶ `x*x`
 - [ ] `x*x*x` ⟶ `x**3`
 
 ### Boolean arithmetic
 
-- [ ] `not(a==5 or b!=10)` ⟶ `a!=5 and b==10`
-- [ ] `~(a|b)` ⟶ `~a&~b`
+- [x] `not(a==5 or b!=10)` ⟶ `a!=5 and b==10`
+- [x] `~(a|b)` ⟶ `~a&~b`
 
 ### Variables
 

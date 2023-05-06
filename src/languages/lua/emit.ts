@@ -172,7 +172,7 @@ function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
         ];
       }
       case "UnaryOp":
-        return [e.name, emit(e.arg, prec + 1)];
+        return [e.name, emit(e.arg, prec)];
       case "IndexCall":
         if (!e.oneIndexed) throw new EmitError(e, "zero indexed");
         return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
