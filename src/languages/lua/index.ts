@@ -58,7 +58,7 @@ const luaLanguage: Language = {
   ],
   emitPlugins: [
     forArgvToForRange(),
-    forRangeToForRangeInclusive,
+    forRangeToForRangeInclusive(),
     implicitlyConvertPrintArg,
     mapOps([
       [

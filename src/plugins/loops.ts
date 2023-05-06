@@ -26,20 +26,26 @@ import {
   sub1,
 } from "../IR";
 
-export const forRangeToForRangeInclusive: Plugin = {
-  name: "forRangeToForRangeInclusive",
-  visit(node) {
-    if (node.kind === "ForRange" && !node.inclusive)
-      return forRange(
-        node.variable,
-        node.start,
-        sub1(node.end),
-        node.increment,
-        node.body,
-        true
-      );
-  },
-};
+export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
+  return {
+    name: `forRangeToForRangeInclusive(${skip1Step ? "true" : "false"})`,
+    visit(node) {
+      if (
+        node.kind === "ForRange" &&
+        !node.inclusive &&
+        (!skip1Step || !isIntLiteral(node.increment, 1n))
+      )
+        return forRange(
+          node.variable,
+          node.start,
+          sub1(node.end),
+          node.increment,
+          node.body,
+          true
+        );
+    },
+  };
+}
 
 export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",

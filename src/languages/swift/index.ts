@@ -50,7 +50,7 @@ const swiftLanguage: Language = {
     golfStringListLiteral(false),
     golfLastPrint(),
     equalityToInequality,
-    forRangeToForRangeInclusive,
+    forRangeToForRangeInclusive(),
     ...bitnotPlugins,
     applyDeMorgans,
     forRangeToForRangeOneStep,

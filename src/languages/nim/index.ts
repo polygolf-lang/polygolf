@@ -67,7 +67,7 @@ const nimLanguage: Language = {
     equalityToInequality,
     useEquivalentTextOp,
     shiftRangeOneUp,
-    forRangeToForRangeInclusive,
+    forRangeToForRangeInclusive(),
     ...bitnotPlugins,
     applyDeMorgans,
     forRangeToForRangeOneStep,
@@ -83,6 +83,7 @@ const nimLanguage: Language = {
     ]),
   ],
   finalEmitPlugins: [
+    forRangeToForRangeInclusive(true),
     implicitlyConvertPrintArg,
     mapOps([
       ["true", (_) => id("true", true)],

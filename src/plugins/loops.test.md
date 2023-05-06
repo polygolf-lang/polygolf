@@ -8,7 +8,7 @@ for $i 0 10 {
 };
 ```
 
-```polygolf loops.forRangeToForRangeInclusive
+```polygolf loops.forRangeToForRangeInclusive()
 @ForRangeInclusive $i 0 9 1 (
   print_int $x
 );
