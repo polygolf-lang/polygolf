@@ -1,7 +1,16 @@
 import { Plugin, IdentifierGenerator } from "common/Language";
 import { getDeclaredIdentifiers } from "../common/symbols";
 import { Spine } from "../common/Spine";
-import { assignment, block, id, Identifier, IR } from "../IR";
+import {
+  assignment,
+  block,
+  Expr,
+  id,
+  Identifier,
+  IR,
+  Node,
+  program,
+} from "../IR";
 
 function getIdentMap(
   spine: Spine<IR.Program>,
@@ -72,6 +81,7 @@ export function renameIdents(
 
 const defaultIdentGen = {
   preferred(original: string) {
+    if (original === "" || !/[A-Za-z]/.test(original[0])) return [];
     const lower = original[0].toLowerCase();
     const upper = original[0].toUpperCase();
     return [original[0], original[0] === lower ? upper : lower];
@@ -80,47 +90,49 @@ const defaultIdentGen = {
   general: (i: number) => "v" + i.toString(),
 };
 
-function defaultShouldAlias(name: string, freq: number): boolean {
-  return 3 + name.length + freq < name.length * freq;
-}
-export function aliasBuiltins(
-  shouldAlias: (name: string, freq: number) => boolean = defaultShouldAlias
+export const aliasBuiltins: Plugin = alias((expr: Expr) =>
+  expr.kind === "Identifier" && expr.builtin ? expr.name : undefined
+);
+
+export function alias(
+  getExprKey: (expr: Expr) => string | undefined = (expr: Expr) => {
+    switch (expr.kind) {
+      case "Identifier":
+        return expr.builtin ? expr.name : undefined;
+      case "IntegerLiteral":
+        return expr.value.toString();
+      case "StringLiteral":
+        return `"${expr.value}"`;
+    }
+  },
+  aliasingSave: (key: string, freq: number) => number = (
+    key: string,
+    freq: number
+  ) => (key.length - 1) * (freq - 1) - 4
 ): Plugin {
+  const getKey = (node: Node) =>
+    node.kind === "Program" ? undefined : getExprKey(node);
   return {
-    name: "aliasBuiltins(...)",
-    visit(program, spine) {
-      if (program.kind !== "Program") return;
-      // get frequency of each builtin
+    name: "alias(...)",
+    visit(prog, spine) {
+      if (prog.kind !== "Program") return;
+      // get frequency of expr
       const timesUsed = new Map<string, number>();
-      for (const name of spine.compactMap((node) => {
-        if (node.kind === "Identifier" && node.builtin) return node.name;
-      })) {
-        const freq = timesUsed.get(name) ?? 0;
-        timesUsed.set(name, freq + 1);
+      for (const key of spine.compactMap(getKey)) {
+        timesUsed.set(key, (timesUsed.get(key) ?? 0) + 1);
       }
       // apply
       const assignments: (IR.Assignment & { variable: Identifier })[] = [];
       const replacedDeep = spine.withReplacer((node) => {
-        if (
-          node.kind === "Identifier" &&
-          node.builtin &&
-          shouldAlias(node.name, timesUsed.get(node.name)!)
-        ) {
-          const alias = node.name + "POLYGOLFalias";
-          if (assignments.every((x) => x.variable.name !== alias))
-            assignments.push(assignment(alias, id(node.name, true)));
-          return { ...node, builtin: false, name: alias };
+        const key = getKey(node);
+        if (key !== undefined && aliasingSave(key, timesUsed.get(key)!) > 0) {
+          const alias = id(key + "POLYGOLFalias");
+          if (assignments.every((x) => x.variable.name !== alias.name))
+            assignments.push(assignment(alias, node as Expr));
+          return alias;
         }
       }).node as IR.Program;
-      return {
-        ...replacedDeep,
-        body: block([
-          ...assignments,
-          ...(replacedDeep.body.kind === "Block"
-            ? replacedDeep.body.children
-            : [replacedDeep.body]),
-        ]),
-      };
+      return program(block([...assignments, replacedDeep.body]));
     },
   };
 }

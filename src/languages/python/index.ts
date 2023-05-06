@@ -167,7 +167,7 @@ const pythonLanguage: Language = {
       ["and", "and"],
       ["or", "or"]
     ),
-    aliasBuiltins(),
+    aliasBuiltins,
     renameIdents(),
     addOneToManyAssignments(),
     addImports(

@@ -117,6 +117,7 @@ const golfscriptLanguage: Language = {
     renameIdents({
       // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
       preferred(original: string) {
+        if (original === "" || !/[A-Za-z]/.test(original[0])) return [];
         if (/n/i.test(original[0])) return ["N", "m", "M"];
         const lower = original[0].toLowerCase();
         const upper = original[0].toUpperCase();
