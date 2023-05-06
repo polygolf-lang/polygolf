@@ -187,7 +187,7 @@ describe("Index call", () => {
   );
   testExpr(
     "Index array",
-    indexCall(e(array(int(), 10)), e(int(0, 0)), undefined, true),
+    indexCall(e(array(int(), 10)), e(int(0, 0)), true),
     "error"
   );
   testExpr(
@@ -197,7 +197,7 @@ describe("Index call", () => {
   );
   testExpr(
     "Index list",
-    indexCall(e(list(int())), e(int(0, 0)), undefined, true),
+    indexCall(e(list(int())), e(int(0, 0)), true),
     "error"
   );
   testExpr("Index list", indexCall(e(list(int())), e(int())), "error");
@@ -528,18 +528,30 @@ describePolygolfOp("text_get_codepoint", [
   [[ascii(), int(0)], ascii(int(1, 1))],
 ]);
 
-describePolygolfOp("text_codepoint_ord", [
+describePolygolfOp("text_get_codepoint_to_int", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], int(0, 0x10ffff)],
   [[ascii(), int(0)], int(0, 127)],
 ]);
 
-describePolygolfOp("text_byte_ord", [
+describePolygolfOp("codepoint_to_int", [
+  [[text(), text()], "error"],
+  [[text()], "error"],
+  [[text(int(1, 1))], int(0, 0x10ffff)],
+]);
+
+describePolygolfOp("text_get_byte_to_int", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], int(0, 255)],
   [[ascii(), int(0)], int(0, 127)],
+]);
+
+describePolygolfOp("text_byte_to_int", [
+  [[text(), text()], "error"],
+  [[text()], "error"],
+  [[ascii(int(1, 1))], int(0, 127)],
 ]);
 
 describePolygolfOp("join_using", [
@@ -632,7 +644,7 @@ describePolygolfOp("bool_to_int", [
   [[bool], int(0, 1)],
 ]);
 
-describePolygolfOp("byte_to_text", [
+describePolygolfOp("int_to_text_byte", [
   [[text()], "error"],
   [[int(0)], "error"],
   [[int(0, 255)], text(int(1, 1))],

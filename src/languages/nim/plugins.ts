@@ -1,4 +1,11 @@
-import { importStatement, methodCall } from "../../IR";
+import {
+  importStatement,
+  integerType,
+  isPolygolfOp,
+  isSubtype,
+  methodCall,
+  polygolfOp,
+} from "../../IR";
 import { getType } from "../../common/getType";
 import { Plugin } from "../../common/Language";
 import { addImports } from "../../plugins/imports";
@@ -50,27 +57,11 @@ export const addNimImports: Plugin = addImports(
 export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
   visit(node, spine) {
-    if (
-      node.kind === "BinaryOp" &&
-      (node.op === "trunc_div" || node.op === "rem")
-    ) {
-      const right = getType(node.right, spine);
-      const left = getType(node.left, spine);
-      if (right.kind !== "integer" || left.kind !== "integer")
-        throw new Error(`Unexpected type ${JSON.stringify([left, right])}.`);
-      if (
-        left.low !== undefined &&
-        left.low >= 0n &&
-        right.low !== undefined &&
-        right.low >= 0n
-      ) {
-        const name = node.op === "trunc_div" ? "/%" : "%%";
-        if (name !== node.name)
-          return {
-            ...node,
-            name,
-          };
-      }
+    if (isPolygolfOp(node, "trunc_div", "rem")) {
+      return isSubtype(getType(node.args[0], spine), integerType(0)) &&
+        isSubtype(getType(node.args[0], spine), integerType(0))
+        ? polygolfOp(`unsigned_${node.op}`, ...node.args)
+        : undefined;
     }
   },
 };
@@ -84,7 +75,7 @@ export const useUFCS: Plugin = {
       }
       const [obj, ...args] = node.args;
       if (obj.kind !== "BinaryOp" && obj.kind !== "UnaryOp") {
-        return methodCall(obj, args, node.ident, node.op ?? undefined);
+        return methodCall(obj, args, node.ident);
       }
     }
   },

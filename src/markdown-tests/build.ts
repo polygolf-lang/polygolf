@@ -99,7 +99,7 @@ function parseSuite(markdown: string): Describe {
  */
 function extractTags(markdown: string): (Header | CodeBlock)[] {
   const result: (Header | CodeBlock)[] = [];
-  const regex = /\n(#+)([^\n]+)\n|```([^`\n]*)\n([^`]*)\n```/gs;
+  const regex = /\n(#+)([^\n]+)\n|```([^`\n]*)\n((.(?!```))*)\n```/gs;
   for (const m of ("\n" + markdown).matchAll(regex)) {
     if (m[1] !== undefined) {
       result.push({

@@ -32,7 +32,12 @@ import {
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
-import { equalityToInequality } from "../../plugins/arithmetic";
+import {
+  applyDeMorgans,
+  bitnotPlugins,
+  equalityToInequality,
+  useIntegerTruthiness,
+} from "../../plugins/arithmetic";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -43,13 +48,16 @@ const luaLanguage: Language = {
     golfLastPrint(),
     tempVarToMultipleAssignment,
     equalityToInequality,
-    useEquivalentTextOp,
     shiftRangeOneUp,
+    ...bitnotPlugins,
+    applyDeMorgans,
+    useIntegerTruthiness,
   ],
   emitPlugins: [
     forArgvToForRange(),
     forRangeToForRangeInclusive,
     implicitlyConvertPrintArg,
+    useEquivalentTextOp(true, false),
     mapOps([
       [
         "text_to_int",
@@ -108,7 +116,7 @@ const luaLanguage: Language = {
       ["min", (x) => functionCall(x, "math.min")],
       ["max", (x) => functionCall(x, "math.max")],
       ["abs", (x) => functionCall(x, "math.abs")],
-      ["byte_to_text", (x) => functionCall(x, "string.char")],
+      ["int_to_text_byte", (x) => functionCall(x, "string.char")],
     ]),
     mapToUnaryAndBinaryOps(
       ["pow", "^"],

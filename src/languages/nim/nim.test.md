@@ -21,7 +21,7 @@ text_to_int $t;
 print $t;
 println $t;
 bool_to_int $b;
-byte_to_text 48;
+int_to_text_byte 48;
 $t .. "x";
 
 ~ $n;
@@ -31,8 +31,10 @@ not $b;
 int_to_text $n;
 $n ^ 3;
 $n * $m;
-$n trunc_div 3;
-$n rem 3;
+-3 trunc_div $n;
+-3 rem $n;
+unsigned_trunc_div 3 $n;
+unsigned_rem 3 $n;
 $n << 3;
 $n >> 3;
 $n + 3;
@@ -80,8 +82,10 @@ not b
 $n
 n^3
 n*m
-n/%3
-n%%3
+-3 div n
+-3 mod n
+3/%n
+3%%n
 n shl 3
 n shr 3
 3+n

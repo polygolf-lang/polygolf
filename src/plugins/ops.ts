@@ -36,9 +36,13 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
         const f = opMap.get(op);
         if (f !== undefined) {
           let replacement = f(node.args, spine as Spine<PolygolfOp>);
+          if (replacement === undefined) return undefined;
           if ("op" in replacement && replacement.kind !== "PolygolfOp") {
             // "as any" because TS doesn't do well with the "in" keyword
-            replacement = { ...(replacement as any), op: node.op };
+            replacement = {
+              ...(replacement as any),
+              op: node.op,
+            } as const as Expr;
           }
           return { ...replacement, type: getType(node, spine) };
         }
@@ -75,7 +79,7 @@ export function mapToUnaryAndBinaryOps(
         op,
         isBinary(op)
           ? (x: readonly Expr[]) => asBinaryChain(op, x, opMap)
-          : (x: readonly Expr[]) => unaryOp(op, x[0], name),
+          : (x: readonly Expr[]) => unaryOp(name, x[0]),
       ])
     ),
     name: `mapPrecedenceOps(${JSON.stringify(opMap0)})`,
@@ -88,7 +92,7 @@ function asBinaryChain(
   names: Map<OpCode, string>
 ): Expr {
   if (op === "mul" && isIntLiteral(exprs[0], -1n)) {
-    exprs = [unaryOp("neg", exprs[1], names.get("neg")), ...exprs.slice(2)];
+    exprs = [unaryOp(names.get("neg") ?? "?", exprs[1]), ...exprs.slice(2)];
   }
   if (op === "add") {
     exprs = exprs
@@ -99,13 +103,12 @@ function asBinaryChain(
   for (const expr of exprs.slice(1)) {
     if (op === "add" && isNegative(expr)) {
       result = binaryOp(
-        "sub",
+        names.get("sub") ?? "?",
         result,
-        polygolfOp("neg", expr),
-        names.get("sub")
+        polygolfOp("neg", expr)
       );
     } else {
-      result = binaryOp(op, result, expr, names.get(op));
+      result = binaryOp(names.get(op) ?? "?", result, expr);
     }
   }
   return result;
@@ -134,14 +137,9 @@ export function useIndexCalls(
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.startsWith("table_")) {
-          indexNode = indexCall(
-            node.args[0],
-            add1(node.args[1]),
-            node.op,
-            true
-          );
+          indexNode = indexCall(node.args[0], add1(node.args[1]), true);
         } else {
-          indexNode = indexCall(node.args[0], node.args[1], node.op);
+          indexNode = indexCall(node.args[0], node.args[1]);
         }
         if (node.op.endsWith("_get")) {
           return indexNode;
@@ -169,21 +167,24 @@ export function addMutatingBinaryOp(
       ) {
         const op = node.expr.op;
         const args = node.expr.args;
-        const name = opMap.get(op);
+        const name = opMap.get(op)!;
         const leftValueStringified = stringify(node.variable);
         const index = node.expr.args.findIndex(
           (x) => stringify(x) === leftValueStringified
         );
         if (index === 0 || (index > 0 && isCommutative(op))) {
-          const newArgs = [
-            ...args.slice(0, index),
-            ...args.slice(index + 1, args.length),
-          ];
+          const newArgs = args.filter((x, i) => i !== index);
+          if (op === "add" && opMap.has("sub") && newArgs.every(isNegative)) {
+            return mutatingBinaryOp(
+              opMap.get("sub")!,
+              node.variable,
+              polygolfOp("neg", polygolfOp(op, ...newArgs))
+            );
+          }
           return mutatingBinaryOp(
-            op,
+            name,
             node.variable,
-            args.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0],
-            name
+            newArgs.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0]
           );
         }
       }
