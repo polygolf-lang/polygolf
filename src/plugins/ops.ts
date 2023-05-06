@@ -43,9 +43,13 @@ export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
         const f = opMap.get(op);
         if (f !== undefined) {
           let replacement = f(node.args, spine as Spine<PolygolfOp>);
+          if (replacement === undefined) return undefined;
           if ("op" in replacement && replacement.kind !== "PolygolfOp") {
             // "as any" because TS doesn't do well with the "in" keyword
-            replacement = { ...(replacement as any), op: node.op };
+            replacement = {
+              ...(replacement as any),
+              op: node.op,
+            } as const as Expr;
           }
           return replacement;
         }

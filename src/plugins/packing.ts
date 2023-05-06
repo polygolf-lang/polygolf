@@ -31,16 +31,19 @@ export const useDecimalConstantPackedPrinter: Plugin = {
               "concat",
               id("result"),
               polygolfOp(
-                "text_get_codepoint_slice",
+                "text_get_byte_slice",
                 polygolfOp(
                   "int_to_text",
                   polygolfOp(
                     "add",
                     int(72n),
                     polygolfOp(
-                      "text_get_byte",
-                      stringLiteral(packed),
-                      id("packindex")
+                      "text_byte_to_int",
+                      polygolfOp(
+                        "text_get_byte",
+                        stringLiteral(packed),
+                        id("packindex")
+                      )
                     )
                   )
                 ),
@@ -57,7 +60,7 @@ export const useDecimalConstantPackedPrinter: Plugin = {
 };
 
 function isLargeDecimalConstant(output: string): boolean {
-  return /\d\.\d*/.test(output) && output.length > 200;
+  return /^\d\.\d*$/.test(output) && output.length > 200;
 }
 function packDecimal(decimal: string): string {
   let result = "";
@@ -75,23 +78,29 @@ export const useLowDecimalListPackedPrinter: Plugin = {
       node.args[0].kind === "StringLiteral"
     ) {
       const packed = packLowDecimalList(node.args[0].value);
-      if (packed.length === 0) return;
+      if (packed === null) return;
       return forRangeCommon(
         ["packindex", 0, packed.length],
         print(
-          polygolfOp("text_get_byte", (stringLiteral(packed), id("packindex")))
+          polygolfOp(
+            "text_get_byte_to_int",
+            stringLiteral(packed),
+            id("packindex")
+          )
         )
       );
     }
   },
 };
 
-function packLowDecimalList(value: string): string {
-  const nums = value.split("\n").map(Number);
-  if (nums.every((x) => !isNaN(x) && x > 0 && x < 256)) {
-    return nums.map((x) => String.fromCharCode(x)).join("");
+function packLowDecimalList(value: string): string | null {
+  if (/^[\d+\n]+[\d+]$/.test(value)) {
+    const nums = value.split("\n").map(Number);
+    if (nums.every((x) => x > 0 && x < 256)) {
+      return nums.map((x) => String.fromCharCode(x)).join("");
+    }
   }
-  return "";
+  return null;
 }
 
 export function packSource2to1(source: string): string {
