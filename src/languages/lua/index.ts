@@ -50,7 +50,6 @@ const luaLanguage: Language = {
     listOpsToTextOps("text_byte_find", "text_get_byte"),
     tempVarToMultipleAssignment,
     equalityToInequality,
-    useEquivalentTextOp,
     shiftRangeOneUp,
     ...bitnotPlugins,
     applyDeMorgans,
@@ -60,6 +59,7 @@ const luaLanguage: Language = {
     forArgvToForRange(),
     forRangeToForRangeInclusive,
     implicitlyConvertPrintArg,
+    useEquivalentTextOp(true, false),
     mapOps([
       [
         "text_to_int",
@@ -118,7 +118,7 @@ const luaLanguage: Language = {
       ["min", (x) => functionCall(x, "math.min")],
       ["max", (x) => functionCall(x, "math.max")],
       ["abs", (x) => functionCall(x, "math.abs")],
-      ["byte_to_text", (x) => functionCall(x, "string.char")],
+      ["int_to_text_byte", (x) => functionCall(x, "string.char")],
     ]),
     mapToUnaryAndBinaryOps(
       ["pow", "^"],

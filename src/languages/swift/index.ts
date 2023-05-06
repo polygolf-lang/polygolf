@@ -32,6 +32,7 @@ import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
 } from "../../plugins/loops";
+import { useEquivalentTextOp } from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
   applyDeMorgans,
@@ -53,6 +54,7 @@ const swiftLanguage: Language = {
     forRangeToForRangeInclusive,
     ...bitnotPlugins,
     applyDeMorgans,
+    useEquivalentTextOp(true, true),
   ],
   emitPlugins: [
     forArgvToForEach,
