@@ -58,6 +58,7 @@ import {
   forEachKey,
   forCLike,
   namedArg,
+  methodCall,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -193,7 +194,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         expectArity(2);
         return implicitConversion(asString(args[0]) as any, args[1]);
       case "var_declaration":
-        expectArity(2);
+        expectArity(1);
         assertIdentifier(args[0]);
         return varDeclaration(args[0], args[0].type as any);
       case "var_declaration_with_assignment":
@@ -233,10 +234,15 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
           args[3],
           opCode === "range_index_call_one_indexed"
         );
-      case "method_call": {
+      case "method_call":
+      case "property_call": {
         expectArity(2, Infinity);
-        assertIdentifier(args[0]);
-        return functionCall(args.slice(0, args.length), args[0]);
+        return methodCall(
+          args[1],
+          args.slice(2),
+          asString(args[0]),
+          opCode === "property_call"
+        );
       }
       case "binary_op":
         expectArity(3);

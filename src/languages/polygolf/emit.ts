@@ -255,7 +255,7 @@ function emitExprWithoutAnnotation(
       );
     case "MethodCall":
       return emitSexpr(
-        "@",
+        expr.property ? "property_call" : "@",
         stringLiteral(expr.ident.name),
         expr.object,
         ...expr.args
