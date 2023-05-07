@@ -173,14 +173,14 @@ for $i 0 80 {
 ```
 
 ```polygolf loops.shiftRangeOneUp
-for (id "x+shift") 1 81 {
-  println_int (id "x+shift");
-  println_int (id "x+shift");
-  println_int (3 * (-1 + (id "x+shift")));
-  println_int (1 + (id "x+shift"));
-  println_int (-2 + (id "x+shift"));
-  println_int (-3 + (id "x+shift"));
-  println_int (2 + (-1 * (id "x+shift")));
-  println_int (-1 * (id "x+shift"));
+for (id "i+shift") 1 81 {
+  println_int (id "i+shift");
+  println_int (id "i+shift");
+  println_int (3 * (-1 + (id "i+shift")));
+  println_int (1 + (id "i+shift"));
+  println_int (-2 + (id "i+shift"));
+  println_int (-3 + (id "i+shift"));
+  println_int (2 + (-1 * (id "i+shift")));
+  println_int (-1 * (id "i+shift"));
 };
 ```
