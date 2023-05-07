@@ -68,25 +68,14 @@ export interface SourcePointer {
 export type Node = Program | Expr;
 
 export type Expr =
+  // Frontend nodes
   | Block
   | Variants
   | KeyValue
   | Function
   | PolygolfOp
-  | ImplicitConversion
-  | VarDeclaration
-  | VarDeclarationWithAssignment
-  | VarDeclarationBlock
   | Assignment
-  | ManyToManyAssignment
-  | OneToManyAssignment
-  | MutatingBinaryOp
-  | IndexCall
-  | RangeIndexCall
   | FunctionCall
-  | MethodCall
-  | BinaryOp
-  | UnaryOp
   | Identifier
   | StringLiteral
   | IntegerLiteral
@@ -95,16 +84,29 @@ export type Expr =
   | SetConstructor
   | TableConstructor
   | ConditionalOp
-  | ImportStatement
   | WhileLoop
   | ForRange
+  | ForArgv
+  | IfStatement
+  // Other nodes
+  | ImplicitConversion
+  | VarDeclaration
+  | VarDeclarationWithAssignment
+  | VarDeclarationBlock
+  | ManyToManyAssignment
+  | OneToManyAssignment
+  | MutatingBinaryOp
+  | IndexCall
+  | RangeIndexCall
+  | MethodCall
+  | BinaryOp
+  | UnaryOp
+  | ImportStatement
   | ForDifferenceRange
   | ForEach
   | ForEachKey
   | ForEachPair
   | ForCLike
-  | ForArgv
-  | IfStatement
   | NamedArg;
 
 /**

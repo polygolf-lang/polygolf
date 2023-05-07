@@ -122,6 +122,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   if (!callee.builtin) {
     return functionCall(args, callee);
   }
+
   switch (opCode) {
     case "key_value":
       expectArity(2);
@@ -133,74 +134,15 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       assertIdentifiers(idents);
       return func(idents, expr);
     }
-    case "implicit_conversion":
-      expectArity(2);
-      return implicitConversion(asString(args[0]) as any, args[1]);
-    case "var_declaration":
-      expectArity(2);
-      assertIdentifier(args[0]);
-      return varDeclaration(args[0], args[0].type as any);
-    case "var_declaration_with_assignment":
-      expectArity(1);
-      return varDeclarationWithAssignment(args[0] as any);
-    case "var_declaration_block":
-      return varDeclarationBlock(args as any);
     case "assign":
       expectArity(2);
       assertIdentifier(args[0]);
       return assignment(args[0], args[1]);
-    case "many_to_many_assignment": {
-      expectArity(2);
-      const vars = asArray(args[0]);
-      const exprs = asArray(args[1]);
-      assertIdentifiers(vars); // TODO too strict?
-      return manyToManyAssignment(vars, exprs);
-    }
-    case "one_to_many_assignment": {
-      expectArity(2);
-      const vars = asArray(args[0]);
-      const expr = args[1];
-      assertIdentifiers(vars); // TODO too strict?
-      return oneToManyAssignment(vars, expr);
-    }
-    case "mutating_binary_op":
-      expectArity(3);
-      assertIdentifier(args[1]);
-      return mutatingBinaryOp(asString(args[0]), args[1], args[2]);
-    case "index_call":
-    case "index_call_one_indexed":
-      expectArity(2);
-      return indexCall(args[0], args[1], opCode === "index_call_one_indexed");
-    case "range_index_call":
-    case "range_index_call_one_indexed":
-      expectArity(5);
-      return rangeIndexCall(
-        args[0],
-        args[1],
-        args[2],
-        args[3],
-        opCode === "range_index_call_one_indexed"
-      );
     case "function_call": {
       expectArity(1, Infinity);
       assertIdentifier(args[0]);
       return functionCall(args.slice(0, args.length), args[0]);
     }
-    case "method_call": {
-      expectArity(2, Infinity);
-      assertIdentifier(args[0]);
-      return functionCall(args.slice(0, args.length), args[0]);
-    }
-    case "binary_op":
-      expectArity(3);
-      return binaryOp(asString(args[0]), args[1], args[2]);
-    case "unary_op":
-      expectArity(2);
-      return binaryOp(asString(args[0]), args[1], args[2]);
-    case "builtin":
-    case "id":
-      expectArity(1);
-      return id(asString(args[0]), opCode === "builtin");
     case "array":
       expectArity(1, Infinity);
       return arrayConstructor(args);
@@ -215,9 +157,6 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     case "unsafe_conditional":
       expectArity(3);
       return conditional(args[0], args[1], args[2], opCode === "conditional");
-    case "importStatement":
-      expectArity(2, Infinity);
-      return importStatement(asString(args[0]), args.slice(1).map(asString));
     case "while":
       expectArity(2);
       return whileLoop(args[0], args[1]);
@@ -233,42 +172,6 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       assertIdentifier(variable);
       return forRange(variable, start, end, step, body);
     }
-    case "for_range_inclusive": {
-      expectArity(5);
-      const [variable, start, end, step, body] = args;
-      assertIdentifier(variable);
-      return forRange(variable, start, end, step, body, true);
-    }
-    case "for_difference_range": {
-      expectArity(5);
-      const [variable, start, difference, step, body] = args;
-      assertIdentifier(variable);
-      return forDifferenceRange(variable, start, difference, step, body, true);
-    }
-    case "for_each": {
-      expectArity(3);
-      const [variable, collection, body] = args;
-      assertIdentifier(variable);
-      return forEach(variable, collection, body);
-    }
-    case "for_each_key": {
-      expectArity(3);
-      const [variable, collection, body] = args;
-      assertIdentifier(variable);
-      return forEachKey(variable, collection, body);
-    }
-    case "for_each_pair": {
-      expectArity(3);
-      const [keyVariable, valueVariable, collection, body] = args;
-      assertIdentifier(keyVariable);
-      assertIdentifier(valueVariable);
-      return forEachPair(keyVariable, valueVariable, collection, body);
-    }
-    case "for_c_like": {
-      expectArity(4);
-      const [init, condition, append, body] = args;
-      return forCLike(init, condition, append, body);
-    }
     case "for_argv": {
       expectArity(3);
       const [variable, upperBound, body] = args;
@@ -283,10 +186,118 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       const alternate = args[2];
       return ifStatement(condition, consequent, alternate);
     }
-    case "named_arg":
-      expectArity(2);
-      return namedArg(asString(args[0]), args[1]);
   }
+  if (!restrictedFrontend)
+    switch (opCode) {
+      case "implicit_conversion":
+        expectArity(2);
+        return implicitConversion(asString(args[0]) as any, args[1]);
+      case "var_declaration":
+        expectArity(2);
+        assertIdentifier(args[0]);
+        return varDeclaration(args[0], args[0].type as any);
+      case "var_declaration_with_assignment":
+        expectArity(1);
+        return varDeclarationWithAssignment(args[0] as any);
+      case "var_declaration_block":
+        return varDeclarationBlock(args as any);
+      case "many_to_many_assignment": {
+        expectArity(2);
+        const vars = asArray(args[0]);
+        const exprs = asArray(args[1]);
+        assertIdentifiers(vars); // TODO too strict?
+        return manyToManyAssignment(vars, exprs);
+      }
+      case "one_to_many_assignment": {
+        expectArity(2);
+        const vars = asArray(args[0]);
+        const expr = args[1];
+        assertIdentifiers(vars); // TODO too strict?
+        return oneToManyAssignment(vars, expr);
+      }
+      case "mutating_binary_op":
+        expectArity(3);
+        assertIdentifier(args[1]);
+        return mutatingBinaryOp(asString(args[0]), args[1], args[2]);
+      case "index_call":
+      case "index_call_one_indexed":
+        expectArity(2);
+        return indexCall(args[0], args[1], opCode === "index_call_one_indexed");
+      case "range_index_call":
+      case "range_index_call_one_indexed":
+        expectArity(5);
+        return rangeIndexCall(
+          args[0],
+          args[1],
+          args[2],
+          args[3],
+          opCode === "range_index_call_one_indexed"
+        );
+      case "method_call": {
+        expectArity(2, Infinity);
+        assertIdentifier(args[0]);
+        return functionCall(args.slice(0, args.length), args[0]);
+      }
+      case "binary_op":
+        expectArity(3);
+        return binaryOp(asString(args[0]), args[1], args[2]);
+      case "unary_op":
+        expectArity(2);
+        return binaryOp(asString(args[0]), args[1], args[2]);
+      case "builtin":
+      case "id":
+        expectArity(1);
+        return id(asString(args[0]), opCode === "builtin");
+      case "importStatement":
+        expectArity(2, Infinity);
+        return importStatement(asString(args[0]), args.slice(1).map(asString));
+      case "for_range_inclusive": {
+        expectArity(5);
+        const [variable, start, end, step, body] = args;
+        assertIdentifier(variable);
+        return forRange(variable, start, end, step, body, true);
+      }
+      case "for_difference_range": {
+        expectArity(5);
+        const [variable, start, difference, step, body] = args;
+        assertIdentifier(variable);
+        return forDifferenceRange(
+          variable,
+          start,
+          difference,
+          step,
+          body,
+          true
+        );
+      }
+      case "for_each": {
+        expectArity(3);
+        const [variable, collection, body] = args;
+        assertIdentifier(variable);
+        return forEach(variable, collection, body);
+      }
+      case "for_each_key": {
+        expectArity(3);
+        const [variable, collection, body] = args;
+        assertIdentifier(variable);
+        return forEachKey(variable, collection, body);
+      }
+      case "for_each_pair": {
+        expectArity(3);
+        const [keyVariable, valueVariable, collection, body] = args;
+        assertIdentifier(keyVariable);
+        assertIdentifier(valueVariable);
+        return forEachPair(keyVariable, valueVariable, collection, body);
+      }
+      case "for_c_like": {
+        expectArity(4);
+        const [init, condition, append, body] = args;
+        return forCLike(init, condition, append, body);
+      }
+      case "named_arg":
+        expectArity(2);
+        return namedArg(asString(args[0]), args[1]);
+    }
   if (isOpCode(opCode) && (!restrictedFrontend || isFrontend(opCode))) {
     if (opCode === "argv_get" && restrictedFrontend) {
       assertInteger(args[0]);

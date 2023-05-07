@@ -136,6 +136,86 @@ function emitExprWithoutAnnotation(
       return emitSexpr("func", ...expr.args, expr.expr);
     case "PolygolfOp":
       return emitSexpr(expr.op, ...expr.args);
+    case "Assignment":
+      return emitSexpr("assign", expr.variable, expr.expr);
+    case "FunctionCall": {
+      const id = emitExpr(expr.ident);
+      if (typeof id === "string" && id.startsWith("$")) {
+        return emitSexpr(id, ...expr.args);
+      }
+      return emitSexpr("@", id, ...expr.args);
+    }
+    case "Identifier":
+      if (expr.builtin) {
+        return emitSexpr("Builtin", stringLiteral(expr.name));
+      } else if (/^\w+$/.test(expr.name)) {
+        return "$" + expr.name;
+      }
+      return emitSexpr("id", stringLiteral(expr.name));
+    case "StringLiteral":
+      return emitStringLiteral(expr.value);
+    case "IntegerLiteral":
+      return expr.value.toString();
+    case "ArrayConstructor":
+      return emitSexpr("array", ...expr.exprs);
+    case "ListConstructor":
+      return emitSexpr("list", ...expr.exprs);
+    case "SetConstructor":
+      return emitSexpr("set", ...expr.exprs);
+    case "TableConstructor":
+      return emitSexpr("table", ...expr.kvPairs);
+    case "ConditionalOp":
+      return emitSexpr(
+        expr.isSafe ? "conditional" : "unsafe_conditional",
+        expr.condition,
+        expr.consequent,
+        expr.alternate
+      );
+    case "WhileLoop":
+      return emitSexpr(
+        "while",
+        expr.condition,
+        ...emitExpr(expr.body, false, true)
+      );
+    case "ForRange":
+      if (expr.inclusive) {
+        return emitSexpr(
+          "ForRangeInclusive",
+          expr.variable,
+          expr.start,
+          expr.end,
+          expr.increment,
+          ...emitExpr(expr.body, false, true)
+        );
+      }
+      return emitSexpr(
+        "for",
+        expr.variable,
+        expr.start,
+        expr.end,
+        ...(expr.increment.kind === "IntegerLiteral" &&
+        expr.increment.value === 1n
+          ? []
+          : [expr.increment]),
+        ...emitExpr(expr.body, false, true)
+      );
+    case "ForArgv":
+      return emitSexpr(
+        "for_argv",
+        expr.variable,
+        expr.argcUpperBound.toString(),
+        ...emitExpr(expr.body, false, true)
+      );
+    case "IfStatement":
+      return emitSexpr(
+        "if",
+        expr.condition,
+        ...emitExpr(expr.consequent, false, true),
+        ...(expr.alternate === undefined
+          ? []
+          : [...emitExpr(expr.alternate, false, true)])
+      );
+
     case "ImplicitConversion":
       return emitSexpr("@", stringLiteral(expr.behavesLike), expr.expr);
     case "VarDeclaration":
@@ -144,8 +224,6 @@ function emitExprWithoutAnnotation(
       return emitSexpr("@", expr.assignment);
     case "VarDeclarationBlock":
       return emitSexpr("@", ...expr.children.map((x) => emitExpr(x)));
-    case "Assignment":
-      return emitSexpr("assign", expr.variable, expr.expr);
     case "ManyToManyAssignment":
       return emitSexpr(
         "@",
@@ -175,13 +253,6 @@ function emitExprWithoutAnnotation(
         expr.high,
         expr.step
       );
-    case "FunctionCall": {
-      const id = emitExpr(expr.ident);
-      if (typeof id === "string" && id.startsWith("$")) {
-        return emitSexpr(id, ...expr.args);
-      }
-      return emitSexpr("@", id, ...expr.args);
-    }
     case "MethodCall":
       return emitSexpr(
         "@",
@@ -193,64 +264,10 @@ function emitExprWithoutAnnotation(
       return emitSexpr("@", stringLiteral(expr.name), expr.left, expr.right);
     case "UnaryOp":
       return emitSexpr("@", stringLiteral(expr.name), expr.arg);
-    case "Identifier":
-      if (expr.builtin) {
-        return emitSexpr("Builtin", stringLiteral(expr.name));
-      } else if (/^\w+$/.test(expr.name)) {
-        return "$" + expr.name;
-      }
-      return emitSexpr("id", stringLiteral(expr.name));
-    case "StringLiteral":
-      return emitStringLiteral(expr.value);
-    case "IntegerLiteral":
-      return expr.value.toString();
-    case "ArrayConstructor":
-      return emitSexpr("array", ...expr.exprs);
-    case "ListConstructor":
-      return emitSexpr("list", ...expr.exprs);
-    case "SetConstructor":
-      return emitSexpr("set", ...expr.exprs);
-    case "TableConstructor":
-      return emitSexpr("table", ...expr.kvPairs);
-    case "ConditionalOp":
-      return emitSexpr(
-        expr.isSafe ? "conditional" : "unsafe_conditional",
-        expr.condition,
-        expr.consequent,
-        expr.alternate
-      );
     case "ImportStatement":
       return emitSexpr(
         "@",
         ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x))
-      );
-    case "WhileLoop":
-      return emitSexpr(
-        "while",
-        expr.condition,
-        ...emitExpr(expr.body, false, true)
-      );
-    case "ForRange":
-      if (expr.inclusive) {
-        return emitSexpr(
-          "ForRangeInclusive",
-          expr.variable,
-          expr.start,
-          expr.end,
-          expr.increment,
-          ...emitExpr(expr.body, false, true)
-        );
-      }
-      return emitSexpr(
-        "for",
-        expr.variable,
-        expr.start,
-        expr.end,
-        ...(expr.increment.kind === "IntegerLiteral" &&
-        expr.increment.value === 1n
-          ? []
-          : [expr.increment]),
-        ...emitExpr(expr.body, false, true)
       );
     case "ForDifferenceRange":
       return emitSexpr(
@@ -290,22 +307,6 @@ function emitExprWithoutAnnotation(
         expr.condition,
         expr.append,
         ...emitExpr(expr.body, false, true)
-      );
-    case "ForArgv":
-      return emitSexpr(
-        "for_argv",
-        expr.variable,
-        expr.argcUpperBound.toString(),
-        ...emitExpr(expr.body, false, true)
-      );
-    case "IfStatement":
-      return emitSexpr(
-        "if",
-        expr.condition,
-        ...emitExpr(expr.consequent, false, true),
-        ...(expr.alternate === undefined
-          ? []
-          : [...emitExpr(expr.alternate, false, true)])
       );
     case "NamedArg":
       return emitSexpr("@", stringLiteral(expr.name), expr.value);
