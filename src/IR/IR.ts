@@ -78,6 +78,9 @@ export type Expr =
   | VarDeclarationWithAssignment
   | VarDeclarationBlock
   | Assignment
+  | ManyToManyAssignment
+  | OneToManyAssignment
+  | MutatingBinaryOp
   | IndexCall
   | RangeIndexCall
   | FunctionCall
@@ -91,10 +94,7 @@ export type Expr =
   | ListConstructor
   | SetConstructor
   | TableConstructor
-  | MutatingBinaryOp
   | ConditionalOp
-  | ManyToManyAssignment
-  | OneToManyAssignment
   | ImportStatement
   | WhileLoop
   | ForRange

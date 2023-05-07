@@ -101,8 +101,6 @@ function emitExprWithoutAnnotation(
     return result;
   }
   switch (expr.kind) {
-    case "ImplicitConversion":
-      return emitSexpr("@", stringLiteral(expr.behavesLike), expr.expr);
     case "Block":
       return joinTrees(
         "\n",
@@ -112,18 +110,35 @@ function emitExprWithoutAnnotation(
       return emitVariants(expr, indent);
     case "KeyValue":
       return emitSexpr("key_value", expr.key, expr.value);
-    case "PolygolfOp":
-      return emitSexpr(expr.op, ...expr.args);
-    case "VarDeclaration":
-      return emitSexpr("@", expr.variable, ":", toString(expr.variableType));
-    case "VarDeclarationBlock":
-      return emitSexpr("@", ...expr.children.map((x) => emitExpr(x)));
-    case "VarDeclarationWithAssignment":
-      return emitSexpr("@", expr.assignment);
-    case "Assignment":
-      return emitSexpr("assign", expr.variable, expr.expr);
     case "Function":
       return emitSexpr("func", ...expr.args, expr.expr);
+    case "PolygolfOp":
+      return emitSexpr(expr.op, ...expr.args);
+    case "ImplicitConversion":
+      return emitSexpr("@", stringLiteral(expr.behavesLike), expr.expr);
+    case "VarDeclaration":
+      return emitSexpr("@", expr.variable, ":", toString(expr.variableType));
+    case "VarDeclarationWithAssignment":
+      return emitSexpr("@", expr.assignment);
+    case "VarDeclarationBlock":
+      return emitSexpr("@", ...expr.children.map((x) => emitExpr(x)));
+    case "Assignment":
+      return emitSexpr("assign", expr.variable, expr.expr);
+    case "ManyToManyAssignment":
+      return emitSexpr(
+        "@",
+        emitArrayOfExprs(expr.variables),
+        emitArrayOfExprs(expr.exprs)
+      );
+    case "OneToManyAssignment":
+      return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
+    case "MutatingBinaryOp":
+      return emitSexpr(
+        "@",
+        stringLiteral(expr.name),
+        expr.variable,
+        expr.right
+      );
     case "IndexCall":
       return emitSexpr(
         expr.oneIndexed ? "IndexCallOneIndexed" : "@",
@@ -175,13 +190,6 @@ function emitExprWithoutAnnotation(
       return emitSexpr("set", ...expr.exprs);
     case "TableConstructor":
       return emitSexpr("table", ...expr.kvPairs);
-    case "MutatingBinaryOp":
-      return emitSexpr(
-        "@",
-        stringLiteral(expr.name),
-        expr.variable,
-        expr.right
-      );
     case "ConditionalOp":
       return emitSexpr(
         expr.isSafe ? "conditional" : "unsafe_conditional",
@@ -189,14 +197,6 @@ function emitExprWithoutAnnotation(
         expr.consequent,
         expr.alternate
       );
-    case "ManyToManyAssignment":
-      return emitSexpr(
-        "@",
-        emitArrayOfExprs(expr.variables),
-        emitArrayOfExprs(expr.exprs)
-      );
-    case "OneToManyAssignment":
-      return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
     case "ImportStatement":
       return emitSexpr(
         "@",
@@ -246,13 +246,6 @@ function emitExprWithoutAnnotation(
         expr.collection,
         ...emitExpr(expr.body, false, true)
       );
-    case "ForArgv":
-      return emitSexpr(
-        "for_argv",
-        expr.variable,
-        expr.argcUpperBound.toString(),
-        ...emitExpr(expr.body, false, true)
-      );
     case "ForEachKey":
       return emitSexpr(
         "@",
@@ -274,6 +267,13 @@ function emitExprWithoutAnnotation(
         expr.init,
         expr.condition,
         expr.append,
+        ...emitExpr(expr.body, false, true)
+      );
+    case "ForArgv":
+      return emitSexpr(
+        "for_argv",
+        expr.variable,
+        expr.argcUpperBound.toString(),
         ...emitExpr(expr.body, false, true)
       );
     case "IfStatement":
