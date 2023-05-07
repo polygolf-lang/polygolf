@@ -110,9 +110,7 @@ export const forRangeToForEachPair: Plugin = {
       node.end.args[0].kind === "Identifier"
     ) {
       const collection = node.end.args[0];
-      const elementIdentifier = id(
-        node.variable.name + "_POLYGOLFforRangeToForEachPair"
-      );
+      const elementIdentifier = id(node.variable.name + "+each");
       const newBody = spine.getChild("body").withReplacer((innerNode) => {
         if (isListGet(innerNode, collection.name, node.variable.name))
           return elementIdentifier;
@@ -186,9 +184,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
           collectionVar
         );
         if (indexedCollection !== null) {
-          const elementIdentifier = id(
-            node.variable.name + "_POLYGOLFforRangeToForEach"
-          );
+          const elementIdentifier = id(node.variable.name + "+each");
           const newBody = bodySpine.withReplacer((n) => {
             if (
               isPolygolfOp(n) &&
@@ -330,7 +326,7 @@ export const shiftRangeOneUp: Plugin = {
   visit(node, spine) {
     if (node.kind === "ForRange" && isIntLiteral(node.increment, 1n)) {
       const bodySpine = new Spine(node.body, spine, "body");
-      const newVar = id(node.variable.name + "_POLYGOLFshifted");
+      const newVar = id(node.variable.name + "+shift");
       const newBodySpine = bodySpine.withReplacer((x) =>
         isIdent(x, node.variable) ? sub1(newVar) : undefined
       );

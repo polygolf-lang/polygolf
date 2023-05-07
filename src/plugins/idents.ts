@@ -106,7 +106,7 @@ export function aliasBuiltins(
           node.builtin &&
           shouldAlias(node.name, timesUsed.get(node.name)!)
         ) {
-          const alias = node.name + "POLYGOLFalias";
+          const alias = node.name + "+alias";
           if (assignments.every((x) => x.variable.name !== alias))
             assignments.push(assignment(alias, id(node.name, true)));
           return { ...node, builtin: false, name: alias };

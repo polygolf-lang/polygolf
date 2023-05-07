@@ -196,15 +196,6 @@ function canonicalOp(op: string, arity: number): string {
 
 export function userIdentifier(token: Token): Identifier {
   const name = token.value.slice(1);
-  if (name.includes("POLYGOLF") && restrictFrontend) {
-    throw new PolygolfError(
-      `Parse error. Variable names cannot contain 'POLYGOLF'`,
-      {
-        line: token.line,
-        column: token.col,
-      }
-    );
-  }
   return id(name, false);
 }
 

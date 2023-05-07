@@ -8,8 +8,8 @@ $b <- 1;
 ```
 
 ```polygolf block.addVarDeclarations
-VarDeclarationWithAssignment ($a <- 0);
-VarDeclarationWithAssignment ($b <- 1);
+var_declaration_with_assignment ($a <- 0);
+var_declaration_with_assignment ($b <- 1);
 ```
 
 ## Temporary variables
@@ -27,5 +27,5 @@ $b <- $t;
 $a <- 0;
 $b <- 1;
 print "break";
-ManyToManyAssignment { $a $b } { $b $a };
+many_to_many_assignment { $a $b } { $b $a };
 ```

@@ -71,6 +71,10 @@ function emitExprWithoutAnnotation(
   function emitSexpr(op: string, ...args: (TokenTree | Expr)[]): TokenTree {
     const isNullary = ["argv", "argc", "true", "false"].includes(op);
     if (op === "@") op = expr.kind;
+    op = op
+      .split(/\.?(?=[A-Z])/)
+      .join("_")
+      .toLowerCase();
     const result: TokenTree = [];
     if (!asStatement && !isNullary) result.push("(");
     if (indent) result.push("$INDENT$", "\n");
@@ -174,10 +178,10 @@ function emitExprWithoutAnnotation(
     case "Identifier":
       if (expr.builtin) {
         return emitSexpr("Builtin", stringLiteral(expr.name));
-      } else if (/\w+/.test(expr.name)) {
+      } else if (/^\w+$/.test(expr.name)) {
         return "$" + expr.name;
       }
-      return emitSexpr("Identifier", stringLiteral(expr.name));
+      return emitSexpr("id", stringLiteral(expr.name));
     case "StringLiteral":
       return emitStringLiteral(expr.value);
     case "IntegerLiteral":
