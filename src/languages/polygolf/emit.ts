@@ -1,6 +1,14 @@
-import { TokenTree } from "@/common/Language";
-import { joinTrees } from "../../common/emit";
-import { block, Expr, IR, toString, variants, Variants } from "../../IR";
+import { TokenTree } from "../../common/Language";
+import { emitStringLiteral, joinTrees } from "../../common/emit";
+import {
+  block,
+  Expr,
+  IR,
+  stringLiteral,
+  toString,
+  variants,
+  Variants,
+} from "../../IR";
 
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitExpr(program.body, true);
@@ -31,14 +39,38 @@ function emitVariants(expr: Variants, indent = false): TokenTree {
   ];
 }
 
+export function emitArrayOfExprs(exprs: readonly Expr[]) {
+  return [
+    "{",
+    joinTrees(
+      [],
+      exprs.map((x) =>
+        typeof x === "string" || !("kind" in x) ? [x] : emitExpr(x)
+      )
+    ),
+    "}",
+  ];
+}
+
 export function emitExpr(
+  expr: Expr,
+  asStatement = false,
+  indent = false
+): TokenTree {
+  return [
+    emitExprWithoutAnnotation(expr, asStatement, indent),
+    expr.type === undefined || asStatement ? [] : [":", toString(expr.type)],
+  ];
+}
+
+function emitExprWithoutAnnotation(
   expr: Expr,
   asStatement = false,
   indent = false
 ): TokenTree {
   function emitSexpr(op: string, ...args: (TokenTree | Expr)[]): TokenTree {
     const isNullary = ["argv", "argc", "true", "false"].includes(op);
-    if (op === "@") op += expr.kind;
+    if (op === "@") op = expr.kind;
     const result: TokenTree = [];
     if (!asStatement && !isNullary) result.push("(");
     if (indent) result.push("$INDENT$", "\n");
@@ -65,13 +97,12 @@ export function emitExpr(
     } else {
       if (indent) result.push("$DEDENT$", "\n");
       if (!isNullary) result.push(")");
-      if (expr.type !== undefined) result.push(":", toString(expr.type));
     }
     return result;
   }
   switch (expr.kind) {
     case "ImplicitConversion":
-      return emitSexpr("@", expr.expr, JSON.stringify(expr.behavesLike));
+      return emitSexpr("@", stringLiteral(expr.behavesLike), expr.expr);
     case "Block":
       return joinTrees(
         "\n",
@@ -84,7 +115,7 @@ export function emitExpr(
     case "PolygolfOp":
       return emitSexpr(expr.op, ...expr.args);
     case "VarDeclaration":
-      return emitSexpr("@", expr.variable, toString(expr.variableType));
+      return emitSexpr("@", expr.variable, ":", toString(expr.variableType));
     case "VarDeclarationBlock":
       return emitSexpr("@", ...expr.children.map((x) => emitExpr(x)));
     case "VarDeclarationWithAssignment":
@@ -95,42 +126,45 @@ export function emitExpr(
       return emitSexpr("func", ...expr.args, expr.expr);
     case "IndexCall":
       return emitSexpr(
-        "@",
-        String(expr.oneIndexed),
+        expr.oneIndexed ? "IndexCallOneIndexed" : "@",
         expr.collection,
         expr.index
       );
     case "RangeIndexCall":
       return emitSexpr(
-        "@",
-        String(expr.oneIndexed),
+        expr.oneIndexed ? "RangeIndexCallOneIndexed" : "@",
         expr.collection,
         expr.low,
         expr.high,
         expr.step
       );
-    case "FunctionCall":
-      if (expr.ident.builtin) {
-        return emitSexpr("@", ...emitExpr(expr.ident), ...expr.args);
+    case "FunctionCall": {
+      const id = emitExpr(expr.ident);
+      if (typeof id === "string" && id.startsWith("$")) {
+        return emitSexpr(id, ...expr.args);
       }
-      return emitSexpr("$" + expr.ident.name, ...expr.args);
+      return emitSexpr("@", id, ...expr.args);
+    }
     case "MethodCall":
-      return emitSexpr("@", ...emitExpr(expr.ident), expr.object, ...expr.args);
+      return emitSexpr(
+        "@",
+        stringLiteral(expr.ident.name),
+        expr.object,
+        ...expr.args
+      );
     case "BinaryOp":
-      return emitSexpr("@", expr.name, expr.left, expr.right);
+      return emitSexpr("@", stringLiteral(expr.name), expr.left, expr.right);
     case "UnaryOp":
-      return emitSexpr("@", expr.name, expr.arg);
+      return emitSexpr("@", stringLiteral(expr.name), expr.arg);
     case "Identifier":
       if (expr.builtin) {
-        return emitSexpr("@BuiltinIdent", JSON.stringify(expr.name));
-      } else {
-        return [
-          "$" + expr.name,
-          expr.type === undefined ? [] : [":", toString(expr.type)],
-        ];
+        return emitSexpr("Builtin", stringLiteral(expr.name));
+      } else if (/\w+/.test(expr.name)) {
+        return "$" + expr.name;
       }
+      return emitSexpr("Identifier", stringLiteral(expr.name));
     case "StringLiteral":
-      return JSON.stringify(expr.value);
+      return emitStringLiteral(expr.value);
     case "IntegerLiteral":
       return expr.value.toString();
     case "ArrayConstructor":
@@ -142,7 +176,12 @@ export function emitExpr(
     case "TableConstructor":
       return emitSexpr("table", ...expr.kvPairs);
     case "MutatingBinaryOp":
-      return emitSexpr("@", expr.name, expr.variable, expr.right);
+      return emitSexpr(
+        "@",
+        stringLiteral(expr.name),
+        expr.variable,
+        expr.right
+      );
     case "ConditionalOp":
       return emitSexpr(
         expr.isSafe ? "conditional" : "unsafe_conditional",
@@ -153,8 +192,8 @@ export function emitExpr(
     case "ManyToManyAssignment":
       return emitSexpr(
         "@",
-        variants([block(expr.variables)]),
-        variants([block(expr.exprs)])
+        emitArrayOfExprs(expr.variables),
+        emitArrayOfExprs(expr.exprs)
       );
     case "OneToManyAssignment":
       return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
@@ -172,7 +211,7 @@ export function emitExpr(
     case "ForRange":
       if (expr.inclusive) {
         return emitSexpr(
-          "@ForRangeInclusive",
+          "ForRangeInclusive",
           expr.variable,
           expr.start,
           expr.end,
@@ -193,7 +232,7 @@ export function emitExpr(
       );
     case "ForDifferenceRange":
       return emitSexpr(
-        "@ForDifferenceRange",
+        "@",
         expr.variable,
         expr.start,
         expr.difference,
@@ -247,7 +286,7 @@ export function emitExpr(
           : [...emitExpr(expr.alternate, false, true)])
       );
     case "NamedArg":
-      return emitSexpr("@", JSON.stringify(expr.name), ...emitExpr(expr.value));
+      return emitSexpr("@", stringLiteral(expr.name), expr.value);
   }
 }
 

@@ -15,10 +15,10 @@ $x <- ("prepend" .. $x);
 ```polygolf ops.addMutatingBinaryOp(["add","+"],["concat","+"])
 $n:-oo..oo <- 0;
 $a:-oo..oo <- 0;
-@MutatingBinaryOp + $n 3;
-@MutatingBinaryOp + $n (3 + $a);
+MutatingBinaryOp "+" $n 3;
+MutatingBinaryOp "+" $n (3 + $a);
 $x:Text <- "hello";
-@MutatingBinaryOp + $x " world";
+MutatingBinaryOp "+" $x " world";
 $x <- ("prepend" .. $x);
 ```
 
