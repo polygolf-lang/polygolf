@@ -10,6 +10,24 @@ import {
   Variants,
 } from "../../IR";
 
+/*
+How Polygolf nodes should be emitted to strings.
+
+# Identifiers
+Builtins - `(builtin "name")`
+Non-builtins - `$name` if possible or `(id "name")` otherwise
+
+# Other
+Boolean flags should be reflected in the callee name.
+All paramaters that are not `Expr`s should be listed first.
+- strings as TextLiterals
+- numbers/bigints as IntegerLiterals
+- arrays as blocks
+Then, all Expr children should follow.
+If the node has a single array of Exprs argument, it should be emitted as the variable arguments,
+instead of as a block.
+*/
+
 export default function emitProgram(program: IR.Program): TokenTree {
   return emitExpr(program.body, true);
 }

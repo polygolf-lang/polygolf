@@ -62,14 +62,14 @@ const luaLanguage: Language = {
       [
         "text_to_int",
         (x) =>
-          polygolfOp("mul", int(1n), implicitConversion(x[0], "text_to_int")),
+          polygolfOp("mul", int(1n), implicitConversion("text_to_int", x[0])),
       ],
     ]),
     mapOps([
       [
         "text_to_int",
         (x) =>
-          polygolfOp("add", int(0n), implicitConversion(x[0], "text_to_int")),
+          polygolfOp("add", int(0n), implicitConversion("text_to_int", x[0])),
       ],
     ]),
     mapOps([
@@ -98,7 +98,7 @@ const luaLanguage: Language = {
           polygolfOp(
             "concat",
             stringLiteral(""),
-            implicitConversion(x[0], "int_to_text")
+            implicitConversion("int_to_text", x[0])
           ),
       ],
     ]),

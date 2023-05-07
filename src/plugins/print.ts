@@ -52,7 +52,7 @@ export const implicitlyConvertPrintArg: Plugin = {
       isPolygolfOp(node, "int_to_text") &&
       isPolygolfOp(spine.parent!.node, "print", "println")
     ) {
-      return implicitConversion(node.args[0], node.op);
+      return implicitConversion(node.op, node.args[0]);
     }
   },
 };

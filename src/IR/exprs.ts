@@ -130,8 +130,8 @@ export interface NamedArg<T extends Expr = Expr> extends BaseExpr {
 }
 
 export function implicitConversion(
-  expr: Expr,
-  behavesLike: UnaryOpCode & `${string}_to_${string}`
+  behavesLike: UnaryOpCode & `${string}_to_${string}`,
+  expr: Expr
 ): ImplicitConversion {
   return {
     kind: "ImplicitConversion",
