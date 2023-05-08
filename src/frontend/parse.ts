@@ -60,13 +60,14 @@ import {
   namedArg,
   methodCall,
   unaryOp,
+  propertyCall,
 } from "../IR";
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
 export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   if (!callee.builtin) {
-    return functionCall(args, callee);
+    return functionCall(callee, args);
   }
   const opCode = canonicalOp(callee.name, args.length);
   function expectArity(low: number, high: number = low) {
@@ -143,7 +144,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     case "function_call": {
       expectArity(1, Infinity);
       assertIdentifier(args[0]);
-      return functionCall(args.slice(0, args.length), args[0]);
+      return functionCall(args[0], args.slice(0, args.length));
     }
     case "array":
       expectArity(1, Infinity);
@@ -235,16 +236,12 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
           args[3],
           opCode === "range_index_call_one_indexed"
         );
+      case "property_call":
+        expectArity(2);
+        return propertyCall(args[0], asString(args[1]));
       case "method_call":
-      case "property_call": {
         expectArity(2, Infinity);
-        return methodCall(
-          args[1],
-          args.slice(2),
-          asString(args[0]),
-          opCode === "property_call"
-        );
-      }
+        return methodCall(args[0], asString(args[1]), ...args.slice(2));
       case "binary_op":
         expectArity(3);
         return binaryOp(asString(args[0]), args[1], args[2]);

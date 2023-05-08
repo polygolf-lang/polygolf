@@ -89,38 +89,38 @@ const pythonLanguage: Language = {
     mapOps([
       ["true", (_) => int(1)],
       ["false", (_) => int(0)],
-      ["abs", (x) => functionCall([x[0]], "abs")],
-      ["list_length", (x) => functionCall([x[0]], "len")],
-      ["join_using", (x) => methodCall(x[1], [x[0]], "join")],
-      ["join", (x) => methodCall(stringLiteral(""), [x[0]], "join")],
-      ["sorted", (x) => functionCall([x[0]], "sorted")],
+      ["abs", (x) => functionCall("abs", x)],
+      ["list_length", (x) => functionCall("len", x)],
+      ["join_using", (x) => methodCall(x[1], "join", x[0])],
+      ["join", (x) => methodCall(stringLiteral(""), "join", x[0])],
+      ["sorted", (x) => functionCall("sorted", x[0])],
       [
         "text_codepoint_reversed",
         (x) => rangeIndexCall(x[0], id("", true), id("", true), int(-1)),
       ],
-      ["codepoint_to_int", (x) => functionCall(x, "ord")],
+      ["codepoint_to_int", (x) => functionCall("ord", x)],
       ["text_get_codepoint", (x) => indexCall(x[0], x[1])],
-      ["int_to_codepoint", (x) => functionCall([x[0]], "chr")],
-      ["max", (x) => functionCall([x[0], x[1]], "max")],
-      ["min", (x) => functionCall([x[0], x[1]], "min")],
+      ["int_to_codepoint", (x) => functionCall("chr", x)],
+      ["max", (x) => functionCall("max", x)],
+      ["min", (x) => functionCall("min", x)],
       [
         "text_get_codepoint_slice",
         (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
       ],
-      ["text_codepoint_length", (x) => functionCall([x[0]], "len")],
-      ["int_to_text", (x) => functionCall([x[0]], "str")],
-      ["text_split", (x) => methodCall(x[0], [x[1]], "split")],
-      ["text_split_whitespace", (x) => methodCall(x[0], [], "split")],
-      ["text_to_int", (x) => functionCall([x[0]], "int")],
-      ["println", (x) => functionCall([x[0]], "print")],
+      ["text_codepoint_length", (x) => functionCall("len", x)],
+      ["int_to_text", (x) => functionCall("str", x)],
+      ["text_split", (x) => methodCall(x[0], "split", x[1])],
+      ["text_split_whitespace", (x) => methodCall(x[0], "split")],
+      ["text_to_int", (x) => functionCall("int", x)],
+      ["println", (x) => functionCall("print", x)],
       [
         "print",
         (x) => {
           return functionCall(
+            "print",
             x[0].kind !== "ImplicitConversion"
               ? [namedArg("end", x[0])]
-              : [x[0], namedArg("end", stringLiteral(""))],
-            "print"
+              : [x[0], namedArg("end", stringLiteral(""))]
           );
         },
       ],

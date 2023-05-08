@@ -56,12 +56,12 @@ describe("Parse s-expressions", () => {
   expectExprParse(
     "user function",
     "($f 1 2)",
-    functionCall([int(1n), int(2n)], id("f"))
+    functionCall(id("f"), int(1n), int(2n))
   );
   expectExprParse(
     "user function on variables",
     "($f $x $y)",
-    functionCall([id("x"), id("y")], id("f"))
+    functionCall(id("f"), id("x"), id("y"))
   );
   expectExprParse("add", "(add $x $y)", polygolfOp("add", id("x"), id("y")));
   expectExprParse(

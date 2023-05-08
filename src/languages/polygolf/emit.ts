@@ -23,8 +23,8 @@ All paramaters that are not `Expr`s should be listed first.
 - strings as TextLiterals
 - numbers/bigints as IntegerLiterals
 - arrays as blocks
-Then, all Expr children should follow.
-If the node has a single array of Exprs argument, it should be emitted as the variable arguments,
+Then, all Expr children should follow in order that is typical in languages.
+If the last child is an array of Exprs argument, it should be emitted as individual arguments,
 instead of as a block.
 */
 
@@ -254,11 +254,13 @@ function emitExprWithoutAnnotation(
       );
     case "MethodCall":
       return emitSexpr(
-        expr.property ? "property_call" : "@",
-        stringLiteral(expr.ident.name),
+        "@",
         expr.object,
+        stringLiteral(expr.ident.name),
         ...expr.args
       );
+    case "PropertyCall":
+      return emitSexpr("@", expr.object, stringLiteral(expr.ident.name));
     case "BinaryOp":
       return emitSexpr("@", stringLiteral(expr.name), expr.left, expr.right);
     case "UnaryOp":

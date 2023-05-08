@@ -68,10 +68,15 @@ export interface FunctionCall extends BaseExpr {
 
 export interface MethodCall extends BaseExpr {
   readonly kind: "MethodCall";
-  readonly ident: Identifier;
   readonly object: Expr;
+  readonly ident: Identifier;
   readonly args: readonly Expr[];
-  readonly property: boolean;
+}
+
+export interface PropertyCall extends BaseExpr {
+  readonly kind: "PropertyCall";
+  readonly object: Expr;
+  readonly ident: Identifier;
 }
 
 export interface IndexCall extends BaseExpr {
@@ -312,28 +317,37 @@ export const add1 = (expr: Expr) => polygolfOp("add", expr, int(1n));
 export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
 
 export function functionCall(
-  args: readonly Expr[],
-  ident: string | Identifier
+  ident: string | Identifier,
+  ...args: readonly (Expr | readonly Expr[])[]
 ): FunctionCall {
   return {
     kind: "FunctionCall",
     ident: typeof ident === "string" ? id(ident, true) : ident,
-    args,
+    args: args.flat(),
   };
 }
 
 export function methodCall(
   object: Expr,
-  args: readonly Expr[],
   ident: string | Identifier,
-  property = false
+  ...args: readonly Expr[]
 ): MethodCall {
   return {
     kind: "MethodCall",
     ident: typeof ident === "string" ? id(ident, true) : ident,
     object,
     args,
-    property,
+  };
+}
+
+export function propertyCall(
+  object: Expr | readonly Expr[],
+  ident: string | Identifier
+): PropertyCall {
+  return {
+    kind: "PropertyCall",
+    ident: typeof ident === "string" ? id(ident, true) : ident,
+    object: [object].flat()[0],
   };
 }
 
@@ -388,7 +402,7 @@ export function conditional(
   condition: Expr,
   consequent: Expr,
   alternate: Expr,
-  isSafe: boolean
+  isSafe: boolean = true
 ): ConditionalOp {
   return {
     kind: "ConditionalOp",

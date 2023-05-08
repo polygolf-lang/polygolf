@@ -28,7 +28,7 @@ export function tableHashing(
   let hash: (x: Expr) => Expr;
   if (typeof hashNode === "string") {
     hash = (x: Expr) => ({
-      ...functionCall([x], hashNode),
+      ...functionCall(hashNode, x),
       type: integerType(0, 2 ** 32 - 1),
     });
   } else {

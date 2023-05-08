@@ -26,6 +26,7 @@ import {
   Function,
   NamedArg,
   ImplicitConversion,
+  PropertyCall,
 } from "./exprs";
 import {
   ForRange,
@@ -99,6 +100,7 @@ export type Expr =
   | IndexCall
   | RangeIndexCall
   | MethodCall
+  | PropertyCall
   | BinaryOp
   | UnaryOp
   | ImportStatement

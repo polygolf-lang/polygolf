@@ -53,8 +53,8 @@ const golfscriptLanguage: Language = {
       ["argv", (_) => id("a", true)],
       ["true", (_) => id("1", true)],
       ["false", (_) => id("0", true)],
-      ["println", (x) => functionCall(x, "puts")],
-      ["print", (x) => functionCall(x, "print")],
+      ["println", (x) => functionCall("puts", x)],
+      ["print", (x) => functionCall("print", x)],
 
       [
         "text_get_byte_slice",
