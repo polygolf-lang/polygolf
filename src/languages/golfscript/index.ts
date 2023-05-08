@@ -50,9 +50,9 @@ const golfscriptLanguage: Language = {
     ),
     implicitlyConvertPrintArg,
     mapOps([
-      ["argv", (_) => id("a", true)],
-      ["true", (_) => id("1", true)],
-      ["false", (_) => id("0", true)],
+      ["argv", () => id("a", true)],
+      ["true", () => id("1", true)],
+      ["false", () => id("0", true)],
       ["println", (x) => functionCall("puts", x)],
       ["print", (x) => functionCall("print", x)],
 

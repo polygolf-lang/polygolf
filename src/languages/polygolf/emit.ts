@@ -57,7 +57,7 @@ export function emitArrayOfExprs(exprs: readonly Expr[]) {
     "{",
     joinTrees(
       [],
-      exprs.map((x, i) => emitExpr(x, true))
+      exprs.map((x) => emitExpr(x, true))
     ),
     "}",
   ];

@@ -87,8 +87,8 @@ const pythonLanguage: Language = {
     textGetToIntToTextGet,
     implicitlyConvertPrintArg,
     mapOps([
-      ["true", (_) => int(1)],
-      ["false", (_) => int(0)],
+      ["true", () => int(1)],
+      ["false", () => int(0)],
       ["abs", (x) => functionCall("abs", x)],
       ["list_length", (x) => functionCall("len", x)],
       ["join_using", (x) => methodCall(x[1], "join", x[0])],

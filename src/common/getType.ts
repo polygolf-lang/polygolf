@@ -424,7 +424,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
     case "array_get":
       return expectGenericType("Array", ["T2", (x) => x[1]])[0];
     case "list_get":
-      return expectGenericType("List", ["0..oo", (_) => integerType(0)])[0];
+      return expectGenericType("List", ["0..oo", () => integerType(0)])[0];
     case "table_get":
       return expectGenericType("Table", ["T1", (x) => x[0]])[1];
     case "argv_get":
@@ -688,7 +688,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
     case "list_set":
       return expectGenericType(
         "List",
-        ["0..oo", (_) => integerType(0)],
+        ["0..oo", () => integerType(0)],
         ["T1", (x) => x[0]]
       )[0];
     case "table_set":

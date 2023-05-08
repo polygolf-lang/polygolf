@@ -101,8 +101,8 @@ const luaLanguage: Language = {
     ]),
     mapOps([
       ["text_byte_length", (x) => methodCall(x[0], "len")],
-      ["true", (_) => id("true", true)],
-      ["false", (_) => id("false", true)],
+      ["true", () => id("true", true)],
+      ["false", () => id("false", true)],
       ["repeat", (x) => methodCall(x[0], "rep", x[1])],
       ["print", (x) => functionCall("io.write", x)],
       ["println", (x) => functionCall("print", x)],
