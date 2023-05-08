@@ -13,11 +13,6 @@ import {
 /*
 How Polygolf nodes should be emitted to strings.
 
-# Identifiers
-Builtins - `(builtin "name")`
-Non-builtins - `$name` if possible or `(id "name")` otherwise
-
-# Other
 Boolean flags should be reflected in the callee name.
 All paramaters that are not `Expr`s should be listed first.
 - strings as TextLiterals
