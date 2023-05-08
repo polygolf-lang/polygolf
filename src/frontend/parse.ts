@@ -59,11 +59,15 @@ import {
   forCLike,
   namedArg,
   methodCall,
+  unaryOp,
 } from "../IR";
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
 export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
+  if (!callee.builtin) {
+    return functionCall(args, callee);
+  }
   const opCode = canonicalOp(callee.name, args.length);
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
@@ -119,9 +123,6 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       `Syntax error. Expected single variant block, but got ${e.kind}`,
       e.source
     );
-  }
-  if (!callee.builtin) {
-    return functionCall(args, callee);
   }
 
   switch (opCode) {
@@ -226,7 +227,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         return indexCall(args[0], args[1], opCode === "index_call_one_indexed");
       case "range_index_call":
       case "range_index_call_one_indexed":
-        expectArity(5);
+        expectArity(4);
         return rangeIndexCall(
           args[0],
           args[1],
@@ -249,12 +250,12 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         return binaryOp(asString(args[0]), args[1], args[2]);
       case "unary_op":
         expectArity(2);
-        return binaryOp(asString(args[0]), args[1], args[2]);
+        return unaryOp(asString(args[0]), args[1]);
       case "builtin":
       case "id":
         expectArity(1);
         return id(asString(args[0]), opCode === "builtin");
-      case "importStatement":
+      case "import_statement":
         expectArity(2, Infinity);
         return importStatement(asString(args[0]), args.slice(1).map(asString));
       case "for_range_inclusive": {
@@ -289,7 +290,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         return forEachKey(variable, collection, body);
       }
       case "for_each_pair": {
-        expectArity(3);
+        expectArity(4);
         const [keyVariable, valueVariable, collection, body] = args;
         assertIdentifier(keyVariable);
         assertIdentifier(valueVariable);

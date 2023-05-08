@@ -78,11 +78,11 @@ export const forRangeToForCLike: Plugin = {
       }
       return forCLike(
         assignment(node.variable, node.start),
+        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
         assignment(
           node.variable,
           polygolfOp("add", node.variable, node.increment)
         ),
-        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
         node.body
       );
     }

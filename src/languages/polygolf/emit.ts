@@ -62,9 +62,7 @@ export function emitArrayOfExprs(exprs: readonly Expr[]) {
     "{",
     joinTrees(
       [],
-      exprs.map((x) =>
-        typeof x === "string" || !("kind" in x) ? [x] : emitExpr(x)
-      )
+      exprs.map((x, i) => emitExpr(x, true))
     ),
     "}",
   ];
@@ -75,10 +73,13 @@ export function emitExpr(
   asStatement = false,
   indent = false
 ): TokenTree {
-  return [
-    emitExprWithoutAnnotation(expr, asStatement, indent),
-    expr.type === undefined || asStatement ? [] : [":", toString(expr.type)],
-  ];
+  let res = emitExprWithoutAnnotation(expr, asStatement, indent);
+  if (asStatement) {
+    if (expr.kind !== "Block") res = [res, ";"];
+  } else if (expr.type !== undefined) {
+    res = [res, ":", toString(expr.type)];
+  }
+  return res;
 }
 
 function emitExprWithoutAnnotation(
@@ -114,9 +115,7 @@ function emitExprWithoutAnnotation(
         )
       );
     }
-    if (asStatement) {
-      result.push(";");
-    } else {
+    if (!asStatement) {
       if (indent) result.push("$DEDENT$", "\n");
       if (!isNullary) result.push(")");
     }
@@ -175,7 +174,7 @@ function emitExprWithoutAnnotation(
       return emitSexpr(
         "while",
         expr.condition,
-        ...emitExpr(expr.body, false, true)
+        emitExpr(expr.body, false, true)
       );
     case "ForRange":
       if (expr.inclusive) {
@@ -185,7 +184,7 @@ function emitExprWithoutAnnotation(
           expr.start,
           expr.end,
           expr.increment,
-          ...emitExpr(expr.body, false, true)
+          emitExpr(expr.body, false, true)
         );
       }
       return emitSexpr(
@@ -197,29 +196,29 @@ function emitExprWithoutAnnotation(
         expr.increment.value === 1n
           ? []
           : [expr.increment]),
-        ...emitExpr(expr.body, false, true)
+        emitExpr(expr.body, false, true)
       );
     case "ForArgv":
       return emitSexpr(
         "for_argv",
         expr.variable,
         expr.argcUpperBound.toString(),
-        ...emitExpr(expr.body, false, true)
+        emitExpr(expr.body, false, true)
       );
     case "IfStatement":
       return emitSexpr(
         "if",
         expr.condition,
-        ...emitExpr(expr.consequent, false, true),
+        emitExpr(expr.consequent, false, true),
         ...(expr.alternate === undefined
           ? []
-          : [...emitExpr(expr.alternate, false, true)])
+          : emitExpr(expr.alternate, false, true))
       );
 
     case "ImplicitConversion":
       return emitSexpr("@", stringLiteral(expr.behavesLike), expr.expr);
     case "VarDeclaration":
-      return emitSexpr("@", expr.variable, ":", toString(expr.variableType));
+      return emitSexpr("@", { ...expr.variable, type: expr.variableType });
     case "VarDeclarationWithAssignment":
       return emitSexpr("@", expr.assignment);
     case "VarDeclarationBlock":
@@ -276,21 +275,21 @@ function emitExprWithoutAnnotation(
         expr.start,
         expr.difference,
         expr.increment,
-        ...emitExpr(expr.body, false, true)
+        emitExpr(expr.body, false, true)
       );
     case "ForEach":
       return emitSexpr(
         "@",
         expr.variable,
         expr.collection,
-        ...emitExpr(expr.body, false, true)
+        emitExpr(expr.body, false, true)
       );
     case "ForEachKey":
       return emitSexpr(
         "@",
         expr.variable,
         expr.table,
-        ...emitExpr(expr.body, false, true)
+        emitExpr(expr.body, false, true)
       );
     case "ForEachPair":
       return emitSexpr(
@@ -298,7 +297,7 @@ function emitExprWithoutAnnotation(
         expr.keyVariable,
         expr.valueVariable,
         expr.table,
-        ...emitExpr(expr.body, false, true)
+        emitExpr(expr.body, false, true)
       );
     case "ForCLike":
       return emitSexpr(
@@ -306,7 +305,7 @@ function emitExprWithoutAnnotation(
         expr.init,
         expr.condition,
         expr.append,
-        ...emitExpr(expr.body, false, true)
+        emitExpr(expr.body, false, true)
       );
     case "NamedArg":
       return emitSexpr("@", stringLiteral(expr.name), expr.value);

@@ -27,5 +27,5 @@ $b <- $t;
 $a <- 0;
 $b <- 1;
 print "break";
-many_to_many_assignment { $a $b } { $b $a };
+many_to_many_assignment { $a; $b; } { $b; $a; };
 ```
