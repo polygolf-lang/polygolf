@@ -23,25 +23,33 @@ import {
   ForRange,
   forDifferenceRange,
   isPolygolfOp,
+  isSubtype,
+  integerType,
   add1,
   sub1,
 } from "../IR";
 import { byteLength, charLength } from "../common/applyLanguage";
 
-export const forRangeToForRangeInclusive: Plugin = {
-  name: "forRangeToForRangeInclusive",
-  visit(node) {
-    if (node.kind === "ForRange" && !node.inclusive)
-      return forRange(
-        node.variable,
-        node.start,
-        sub1(node.end),
-        node.increment,
-        node.body,
-        true
-      );
-  },
-};
+export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
+  return {
+    name: `forRangeToForRangeInclusive(${skip1Step ? "true" : "false"})`,
+    visit(node) {
+      if (
+        node.kind === "ForRange" &&
+        !node.inclusive &&
+        (!skip1Step || !isIntLiteral(node.increment, 1n))
+      )
+        return forRange(
+          node.variable,
+          node.start,
+          sub1(node.end),
+          node.increment,
+          node.body,
+          true
+        );
+    },
+  };
+}
 
 export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
@@ -375,3 +383,45 @@ export function forRangeToForDifferenceRange(
     },
   };
 }
+
+export const forRangeToForRangeOneStep: Plugin = {
+  name: "forRangeToForRangeOneStep",
+  visit(node, spine) {
+    if (
+      node.kind === "ForRange" &&
+      isSubtype(getType(node.increment, spine.root.node), integerType(2n))
+    ) {
+      const newVar = id(node.variable.name + "+1step");
+      return forRange(
+        newVar,
+        int(0n),
+        node.inclusive
+          ? polygolfOp(
+              "div",
+              polygolfOp("sub", node.end, node.start),
+              node.increment
+            )
+          : add1(
+              polygolfOp(
+                "div",
+                polygolfOp("sub", sub1(node.end), node.start),
+                node.increment
+              )
+            ),
+        int(1n),
+        block([
+          assignment(
+            node.variable,
+            polygolfOp(
+              "add",
+              polygolfOp("mul", newVar, node.increment),
+              node.start
+            )
+          ),
+          node.body,
+        ]),
+        node.inclusive
+      );
+    }
+  },
+};

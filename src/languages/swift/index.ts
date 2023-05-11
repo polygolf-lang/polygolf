@@ -32,6 +32,7 @@ import {
 import {
   forArgvToForEach,
   forRangeToForRangeInclusive,
+  forRangeToForRangeOneStep,
 } from "../../plugins/loops";
 import { useEquivalentTextOp } from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
@@ -51,9 +52,10 @@ const swiftLanguage: Language = {
     golfStringListLiteral(false),
     golfLastPrint(),
     equalityToInequality,
-    forRangeToForRangeInclusive,
+    forRangeToForRangeInclusive(),
     ...bitnotPlugins,
     applyDeMorgans,
+    forRangeToForRangeOneStep,
     useEquivalentTextOp(true, true),
   ],
   emitPlugins: [
