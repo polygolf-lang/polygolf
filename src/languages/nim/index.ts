@@ -24,6 +24,7 @@ import {
   forArgvToForRange,
   forRangeToForEach,
   forRangeToForRangeInclusive,
+  forRangeToForRangeOneStep,
   shiftRangeOneUp,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
@@ -71,10 +72,11 @@ const nimLanguage: Language = {
     tableHashing(hash),
     equalityToInequality,
     shiftRangeOneUp,
-    forRangeToForRangeInclusive,
+    forRangeToForRangeInclusive(),
     ...bitnotPlugins,
     applyDeMorgans,
     textToIntToTextGetToInt,
+    forRangeToForRangeOneStep,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -88,6 +90,7 @@ const nimLanguage: Language = {
     ]),
   ],
   finalEmitPlugins: [
+    forRangeToForRangeInclusive(true),
     implicitlyConvertPrintArg,
     textGetToIntToTextGet,
     mapOps([

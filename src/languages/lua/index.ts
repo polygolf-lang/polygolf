@@ -13,6 +13,7 @@ import { Language } from "../../common/Language";
 import {
   forArgvToForRange,
   forRangeToForRangeInclusive,
+  forRangeToForRangeOneStep,
   shiftRangeOneUp,
 } from "../../plugins/loops";
 
@@ -52,10 +53,11 @@ const luaLanguage: Language = {
     ...bitnotPlugins,
     applyDeMorgans,
     useIntegerTruthiness,
+    forRangeToForRangeOneStep,
   ],
   emitPlugins: [
     forArgvToForRange(),
-    forRangeToForRangeInclusive,
+    forRangeToForRangeInclusive(),
     implicitlyConvertPrintArg,
     useEquivalentTextOp(true, false),
     mapOps([
