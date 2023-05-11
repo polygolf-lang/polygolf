@@ -28,7 +28,11 @@ import {
   flipBinaryOps,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
-import { forArgvToForEach, forRangeToForEach } from "../../plugins/loops";
+import {
+  forArgvToForEach,
+  forRangeToForEach,
+  forRangeToForRangeOneStep,
+} from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
@@ -72,6 +76,7 @@ const pythonLanguage: Language = {
     ...bitnotPlugins,
     applyDeMorgans,
     useIntegerTruthiness,
+    forRangeToForRangeOneStep,
     safeConditionalOpToCollectionGet("list"),
     ifRelationChainToLongerRelationChain,
     ifToUnsafeAnd,
