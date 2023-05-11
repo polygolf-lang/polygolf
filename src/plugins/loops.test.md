@@ -8,7 +8,7 @@ for $i 0 10 {
 };
 ```
 
-```polygolf loops.forRangeToForRangeInclusive
+```polygolf loops.forRangeToForRangeInclusive()
 @ForRangeInclusive $i 0 9 1 (
   print_int $x
 );
@@ -182,5 +182,33 @@ for $i_POLYGOLFshifted 1 81 {
   println_int (-3 + $i_POLYGOLFshifted);
   println_int (2 + (-1 * $i_POLYGOLFshifted));
   println_int (-1 * $i_POLYGOLFshifted);
+};
+```
+
+## One step for range
+
+```polygolf
+for $i 0 10 2 {
+  println $i;
+};
+```
+
+```polygolf loops.forRangeToForRangeOneStep
+for $iPOLYGOLFOneStep 0 5 {
+  $i <- (2 * $iPOLYGOLFOneStep);
+  println $i;
+};
+```
+
+```polygolf
+for $i -22 22 5 {
+  println $i;
+};
+```
+
+```polygolf loops.forRangeToForRangeOneStep
+for $iPOLYGOLFOneStep 0 9 {
+  $i <- (-22 + (5 * $iPOLYGOLFOneStep));
+  println $i;
 };
 ```
