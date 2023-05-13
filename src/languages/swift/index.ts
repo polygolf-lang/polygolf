@@ -196,7 +196,7 @@ const swiftLanguage: Language = {
         case "IntegerLiteral":
           return expr.value.toString();
         case "StringLiteral":
-          return `${expr.value}__`;
+          return `"${expr.value}"`;
       }
     }),
     renameIdents(),

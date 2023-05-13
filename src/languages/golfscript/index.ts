@@ -119,11 +119,12 @@ const golfscriptLanguage: Language = {
     renameIdents({
       // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
       preferred(original: string) {
-        if (original === "" || !/[A-Za-z]/.test(original[0])) return [];
-        if (/n/i.test(original[0])) return ["N", "m", "M"];
-        const lower = original[0].toLowerCase();
-        const upper = original[0].toUpperCase();
-        return [original[0], original[0] === lower ? upper : lower];
+        const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
+        if (firstLetter === undefined) return [];
+        if (/n/i.test(firstLetter)) return ["N", "m", "M"];
+        const lower = firstLetter.toLowerCase();
+        const upper = firstLetter.toUpperCase();
+        return [firstLetter, firstLetter === lower ? upper : lower];
       },
       short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
       general: (i: number) => "v" + i.toString(),

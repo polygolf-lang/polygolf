@@ -81,10 +81,11 @@ export function renameIdents(
 
 const defaultIdentGen = {
   preferred(original: string) {
-    if (original === "" || !/[A-Za-z]/.test(original[0])) return [];
-    const lower = original[0].toLowerCase();
-    const upper = original[0].toUpperCase();
-    return [original[0], original[0] === lower ? upper : lower];
+    const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
+    if (firstLetter === undefined) return [];
+    const lower = firstLetter.toLowerCase();
+    const upper = firstLetter.toUpperCase();
+    return [firstLetter, firstLetter === lower ? upper : lower];
   },
   short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
   general: (i: number) => "v" + i.toString(),
@@ -121,7 +122,7 @@ export function alias(
       const replacedDeep = spine.withReplacer((node) => {
         const key = getKey(node);
         if (key !== undefined && aliasingSave(key, timesUsed.get(key)!) > 0) {
-          const alias = id(key + "POLYGOLFalias");
+          const alias = id(key + "aliasPOLYGOLF");
           if (assignments.every((x) => x.variable.name !== alias.name))
             assignments.push(assignment(alias, node as Expr));
           return alias;
