@@ -23,6 +23,8 @@ println $t;
 bool_to_int $b;
 int_to_text_byte 48;
 $t .. "x";
+text_replace "a+b+c" "+" "*";
+text_replace "a*b*c" "*" "";
 
 ~ $n;
 not $b;
@@ -76,6 +78,8 @@ t.echo
 b.int
 48.chr
 t&"x"
+"a+b+c".replace("+","*")
+"a*b*c".replace"*"
 not n
 not b
 -n

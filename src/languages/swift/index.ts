@@ -153,6 +153,15 @@ const swiftLanguage: Language = {
       ["abs", (x) => functionCall([x[0]], "abs")],
       ["true", (_) => id("true", true)],
       ["false", (_) => id("false", true)],
+      [
+        "text_replace",
+        (x) =>
+          methodCall(
+            x[0],
+            [namedArg("of", x[1]), namedArg("with", x[2])],
+            "replacingOccurrences"
+          ),
+      ],
     ]),
     addMutatingBinaryOp(
       ["add", "+"],

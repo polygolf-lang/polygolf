@@ -119,6 +119,35 @@ const luaLanguage: Language = {
       ["max", (x) => functionCall(x, "math.max")],
       ["abs", (x) => functionCall(x, "math.abs")],
       ["int_to_text_byte", (x) => functionCall(x, "string.char")],
+      [
+        "text_replace",
+        ([a, b, c]) =>
+          methodCall(
+            a,
+            [
+              b.kind === "StringLiteral"
+                ? stringLiteral(
+                    b.value.replace(
+                      /(-|%|\^|\$|\(|\)|\.|\[|\]|\*|\+|\?)/g,
+                      "%$1"
+                    )
+                  )
+                : methodCall(
+                    b,
+                    [stringLiteral("(%W)"), stringLiteral("%%%1")],
+                    "gsub"
+                  ),
+              c.kind === "StringLiteral"
+                ? stringLiteral(c.value.replace("%", "%%"))
+                : methodCall(
+                    c,
+                    [stringLiteral("%%"), stringLiteral("%%%%")],
+                    "gsub"
+                  ),
+            ],
+            "gsub"
+          ),
+      ],
     ]),
     mapToUnaryAndBinaryOps(
       ["pow", "^"],

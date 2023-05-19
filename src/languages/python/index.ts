@@ -129,6 +129,7 @@ const pythonLanguage: Language = {
           );
         },
       ],
+      ["text_replace", (x) => methodCall(x[0], [x[1], x[2]], "replace")],
     ]),
     addMutatingBinaryOp(
       ["add", "+"],

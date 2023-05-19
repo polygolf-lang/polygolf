@@ -114,6 +114,16 @@ const nimLanguage: Language = {
       ["abs", (x) => functionCall(x, "abs")],
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["int_to_text_byte", (x) => functionCall(x, "chr")],
+      [
+        "text_replace",
+        (x) =>
+          functionCall(
+            x[2].kind === "StringLiteral" && x[2].value === ""
+              ? [x[0], x[1]]
+              : x,
+            "replace"
+          ),
+      ],
     ]),
     useUnsignedDivision,
     addMutatingBinaryOp(
