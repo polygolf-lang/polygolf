@@ -217,7 +217,7 @@ export const OpCodes = [
   "argv",
   "argc",
   "text_replace",
-  "text_multireplace",
+  "text_multireplace", // simultaneous replacement. Equivalent to chained text_replace if the inputs and outputs have no overlap
   "text_get_codepoint_slice", // Returns a slice of the input text. Indeces are codepoint-0-based, start is inclusive, end is exclusive.
   "text_get_byte_slice", // Returns a slice of the input text. Indeces are byte-0-based, start is inclusive, end is exclusive.
   // collection set

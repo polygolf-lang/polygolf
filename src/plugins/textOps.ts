@@ -5,6 +5,7 @@ import {
   isSubtype,
   OpCode,
   polygolfOp,
+  StringLiteral,
 } from "../IR";
 import { Plugin } from "../common/Language";
 import { mapOps } from "./ops";
@@ -101,11 +102,26 @@ export const useMultireplace: Plugin = {
       isPolygolfOp(node, "text_replace", "text_multireplace") &&
       isPolygolfOp(node.args[0], "text_replace", "text_multireplace")
     ) {
-      return polygolfOp(
-        "text_multireplace",
-        ...node.args[0].args,
-        ...node.args.slice(1)
-      );
+      const a = node.args[0].args.slice(1);
+      const b = node.args.slice(1);
+      if (
+        a.every((x) => x.kind === "StringLiteral") &&
+        b.every((x) => x.kind === "StringLiteral")
+      ) {
+        const aValues = a.map((x) => (x as StringLiteral).value);
+        const bValues = b.map((x) => (x as StringLiteral).value);
+        const aIn = [...aValues.filter((_, i) => i % 2 === 0).join()];
+        const aOut = new Set(aValues.filter((_, i) => i % 2 === 1).join());
+        const bIn = new Set(bValues.filter((_, i) => i % 2 === 0).join());
+        const bOut = new Set(bValues.filter((_, i) => i % 2 === 1).join());
+        if (
+          !aIn.some((x) => bOut.has(x)) &&
+          ![...bIn].some((x) => aOut.has(x)) &&
+          !aIn.some((x) => bIn.has(x))
+        ) {
+          return polygolfOp("text_multireplace", ...node.args[0].args, ...b);
+        }
+      }
     }
   },
 };

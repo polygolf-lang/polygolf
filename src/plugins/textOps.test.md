@@ -33,3 +33,15 @@ text_codepoint_length "ěščřžýáíé";
 int_to_text_byte 48;
 int_to_codepoint 150;
 ```
+
+```polygolf
+text_replace (text_replace "ABCD" "A" "a") "B" "b";
+text_replace (text_replace "ABCD" "A" "a") "a" "b";
+text_replace (text_replace "ABCD" "A" "a") "A" "b";
+```
+
+```polygolf textOps.useMultireplace
+text_multireplace "ABCD" "A" "a" "B" "b";
+text_replace (text_replace "ABCD" "A" "a") "a" "b";
+text_replace (text_replace "ABCD" "A" "a") "A" "b";
+```
