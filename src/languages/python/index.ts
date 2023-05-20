@@ -21,6 +21,7 @@ import {
   useIndexCalls,
   addMutatingBinaryOp,
   removeImplicitConversions,
+  methodsAsFunctions,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import {
@@ -172,6 +173,7 @@ const pythonLanguage: Language = {
       ["and", "and"],
       ["or", "or"]
     ),
+    methodsAsFunctions,
     aliasBuiltins(),
     renameIdents(),
     addOneToManyAssignments(),

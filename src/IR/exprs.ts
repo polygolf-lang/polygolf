@@ -62,7 +62,7 @@ export interface KeyValue extends BaseExpr {
 
 export interface FunctionCall extends BaseExpr {
   readonly kind: "FunctionCall";
-  readonly ident: Identifier;
+  readonly func: Expr;
   readonly args: readonly Expr[];
 }
 
@@ -124,7 +124,7 @@ export interface ConditionalOp extends BaseExpr {
 
 export interface Function extends BaseExpr {
   readonly kind: "Function";
-  readonly args: readonly Identifier[];
+  readonly args: readonly Expr[];
   readonly expr: Expr;
 }
 
@@ -317,12 +317,12 @@ export const add1 = (expr: Expr) => polygolfOp("add", expr, int(1n));
 export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
 
 export function functionCall(
-  ident: string | Identifier,
+  func: string | Expr,
   ...args: readonly (Expr | readonly Expr[])[]
 ): FunctionCall {
   return {
     kind: "FunctionCall",
-    ident: typeof ident === "string" ? id(ident, true) : ident,
+    func: typeof func === "string" ? id(func, true) : func,
     args: args.flat(),
   };
 }
@@ -413,7 +413,7 @@ export function conditional(
   };
 }
 
-export function func(args: (string | Identifier)[], expr: Expr): Function {
+export function func(args: (string | Expr)[], expr: Expr): Function {
   return {
     kind: "Function",
     args: args.map((x) => (typeof x === "string" ? id(x) : x)),

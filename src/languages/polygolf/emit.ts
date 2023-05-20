@@ -133,7 +133,7 @@ function emitExprWithoutAnnotation(
     case "Assignment":
       return emitSexpr("assign", expr.variable, expr.expr);
     case "FunctionCall": {
-      const id = emitExpr(expr.ident);
+      const id = emitExpr(expr.func);
       if (typeof id === "string" && id.startsWith("$")) {
         return emitSexpr(id, ...expr.args);
       }

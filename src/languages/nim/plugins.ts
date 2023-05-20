@@ -74,8 +74,12 @@ export const useUFCS: Plugin = {
         return;
       }
       const [obj, ...args] = node.args;
-      if (obj.kind !== "BinaryOp" && obj.kind !== "UnaryOp") {
-        return methodCall(obj, node.ident, ...args);
+      if (
+        obj.kind !== "BinaryOp" &&
+        obj.kind !== "UnaryOp" &&
+        node.func.kind === "Identifier"
+      ) {
+        return methodCall(obj, node.func, ...args);
       }
     }
   },

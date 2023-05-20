@@ -153,12 +153,12 @@ function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
       case "IntegerLiteral":
         return [e.value.toString()];
       case "FunctionCall":
-        return [e.ident.name, "(", joinExprs(",", e.args), ")"];
+        return [emit(e.func), "(", joinExprs(",", e.args), ")"];
       case "MethodCall":
         return [
           emit(e.object, Infinity),
           ":",
-          e.ident.name,
+          emit(e.ident),
           "(",
           joinExprs(",", e.args),
           ")",

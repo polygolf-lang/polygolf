@@ -30,7 +30,7 @@ function getDelim(
   strings: string[],
   useTextSplitWhitespace = true
 ): string | true {
-  const string = strings.join();
+  const string = strings.join("");
   if (!/\s/.test(string) && useTextSplitWhitespace) return true;
   for (let i = 32; i < 127; i++) {
     const c = String.fromCharCode(i);

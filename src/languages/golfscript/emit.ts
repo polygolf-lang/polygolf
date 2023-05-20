@@ -104,7 +104,7 @@ export default function emitProgram(program: IR.Program): TokenTree {
       case "Assignment":
         return [emitExpr(expr.expr), ":", emitExpr(expr.variable), ";"];
       case "Identifier":
-        return [expr.name];
+        return expr.name;
       case "StringLiteral":
         return emitStringLiteral(expr.value, [
           [
@@ -125,7 +125,7 @@ export default function emitProgram(program: IR.Program): TokenTree {
       case "IntegerLiteral":
         return expr.value.toString();
       case "FunctionCall":
-        return [expr.args.map(emitExpr), expr.ident.name];
+        return [expr.args.map(emitExpr), emitExpr(expr.func)];
       case "BinaryOp":
         return [emitExpr(expr.left), emitExpr(expr.right), expr.name];
       case "UnaryOp":

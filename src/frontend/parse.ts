@@ -144,7 +144,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     case "function_call": {
       expectArity(1, Infinity);
       assertIdentifier(args[0]);
-      return functionCall(args[0], args.slice(0, args.length));
+      return functionCall(args[0], args.slice(1));
     }
     case "array":
       expectArity(1, Infinity);

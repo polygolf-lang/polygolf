@@ -146,7 +146,7 @@ export function calcType(expr: Expr, program: Program): Type {
     case "MutatingBinaryOp":
       return voidType;
     case "FunctionCall": {
-      const fType = type(expr.ident);
+      const fType = type(expr.func);
       if (fType.kind !== "Function") {
         throw new PolygolfError(
           `Type error. Type ${toString(fType)} is not callable.`,
@@ -156,8 +156,9 @@ export function calcType(expr: Expr, program: Program): Type {
       if (expr.args.every((x, i) => isSubtype(type(x), fType.arguments[i]))) {
         return fType.result;
       }
+      console.log(expr);
       throw new PolygolfError(
-        `Type error. Function '${expr.ident.name} expected [${fType.arguments
+        `Type error. Function expected [${fType.arguments
           .map(toString)
           .join(", ")}] but got [${expr.args
           .map((x) => toString(type(x)))

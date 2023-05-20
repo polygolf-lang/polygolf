@@ -158,8 +158,9 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "IntegerLiteral":
         return e.value.toString();
       case "FunctionCall":
-        if (e.ident.name === "!") return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node
-        return [e.ident.name, "(", joinExprs(",", e.args), ")"];
+        if (e.func.kind === "Identifier" && e.func.name === "!")
+          return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node
+        return [emit(e.func), "(", joinExprs(",", e.args), ")"];
       case "PropertyCall":
         return [emit(e.object), ".", e.ident.name];
       case "MethodCall":

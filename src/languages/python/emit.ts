@@ -1,3 +1,4 @@
+import { charLength } from "../../common/applyLanguage";
 import { TokenTree } from "@/common/Language";
 import {
   containsMultiExpr,
@@ -5,7 +6,7 @@ import {
   emitStringLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral } from "../../IR";
+import { IR, isIntLiteral, StringLiteral, stringLiteral } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -173,16 +174,26 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "IntegerLiteral":
         return e.value.toString();
       case "FunctionCall":
-        return [e.ident.name, "(", joinExprs(",", e.args), ")"];
-      case "MethodCall":
         return [
-          emit(e.object),
-          ".",
-          e.ident.name,
+          emit(e.func),
           "(",
-          joinExprs(",", e.args),
+          e.args.length > 1 &&
+          e.args.every(
+            (x) => x.kind === "StringLiteral" && charLength(x.value) === 1
+          )
+            ? [
+                "*",
+                emit(
+                  stringLiteral(
+                    e.args.map((x) => (x as StringLiteral).value).join("")
+                  )
+                ),
+              ]
+            : joinExprs(",", e.args),
           ")",
         ];
+      case "PropertyCall":
+        return [emit(e.object), ".", emit(e.ident)];
       case "BinaryOp": {
         const rightAssoc = e.name === "**";
         return [

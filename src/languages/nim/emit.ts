@@ -223,8 +223,12 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "IntegerLiteral":
         return e.value.toString();
       case "FunctionCall":
-        if (e.args.length === 1 && e.args[0].kind === "StringLiteral") {
-          const raw = emitAsRawStringLiteral(e.args[0].value, e.ident.name);
+        if (
+          e.func.kind === "Identifier" &&
+          e.args.length === 1 &&
+          e.args[0].kind === "StringLiteral"
+        ) {
+          const raw = emitAsRawStringLiteral(e.args[0].value, e.func.name);
           if (raw !== null) {
             prec = Infinity;
             return raw;
@@ -234,8 +238,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           prec = 11.5;
         }
         if (e.args.length > 1 || e.args.length === 0)
-          return [e.ident.name, "$GLUE$", "(", joinExprs(",", e.args), ")"];
-        return [e.ident.name, joinExprs(",", e.args)];
+          return [emit(e.func), "$GLUE$", "(", joinExprs(",", e.args), ")"];
+        return [emit(e.func), joinExprs(",", e.args)];
       case "MethodCall":
         if (e.args.length > 1)
           return [

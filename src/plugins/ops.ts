@@ -20,6 +20,8 @@ import {
   unaryOp,
   UnaryOpCode,
   BinaryOpCodes,
+  functionCall,
+  propertyCall,
 } from "../IR";
 import { getType } from "../common/getType";
 import { Spine } from "../common/Spine";
@@ -210,6 +212,15 @@ export const removeImplicitConversions: Plugin = {
   visit(node) {
     if (node.kind === "ImplicitConversion") {
       return node.expr;
+    }
+  },
+};
+
+export const methodsAsFunctions: Plugin = {
+  name: "removeImplicitConversions",
+  visit(node) {
+    if (node.kind === "MethodCall") {
+      return functionCall(propertyCall(node.object, node.ident), node.args);
     }
   },
 };
