@@ -79,7 +79,7 @@ const nimLanguage: Language = {
     applyDeMorgans,
     textToIntToTextGetToInt,
     forRangeToForRangeOneStep,
-    useMultireplace,
+    useMultireplace(),
   ],
   emitPlugins: [
     forArgvToForEach,

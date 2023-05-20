@@ -35,13 +35,21 @@ int_to_codepoint 150;
 ```
 
 ```polygolf
-text_replace (text_replace "ABCD" "A" "a") "B" "b";
+text_replace (text_replace "ABCD" "A" "a") "BC" "b";
 text_replace (text_replace "ABCD" "A" "a") "a" "b";
 text_replace (text_replace "ABCD" "A" "a") "A" "b";
 ```
 
-```polygolf textOps.useMultireplace
-text_multireplace "ABCD" "A" "a" "B" "b";
+```polygolf textOps.useMultireplace(false)
+text_multireplace "ABCD" "A" "a" "BC" "b";
 text_replace (text_replace "ABCD" "A" "a") "a" "b";
 text_replace (text_replace "ABCD" "A" "a") "A" "b";
+```
+
+```polygolf
+text_replace (text_replace "ABCD" "A" "a") "BC" "b";
+```
+
+```polygolf textOps.useMultireplace(true)
+text_replace (text_replace "ABCD" "A" "a") "BC" "b";
 ```

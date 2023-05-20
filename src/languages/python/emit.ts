@@ -195,6 +195,15 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [e.name, emit(e.arg, prec)];
       case "ListConstructor":
         return ["[", joinExprs(",", e.exprs), "]"];
+      case "TableConstructor":
+        return [
+          "{",
+          joinTrees(
+            ",",
+            e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
+          ),
+          "}",
+        ];
       case "IndexCall":
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");
         return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
