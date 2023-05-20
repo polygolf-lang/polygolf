@@ -93,3 +93,19 @@ export const textToIntToTextGetToInt: Plugin = {
   ]),
   name: "textToIntToTextGetToInt",
 };
+
+export const useMultireplace: Plugin = {
+  name: "useMultireplace",
+  visit(node) {
+    if (
+      isPolygolfOp(node, "text_replace", "text_multireplace") &&
+      isPolygolfOp(node.args[0], "text_replace", "text_multireplace")
+    ) {
+      return polygolfOp(
+        "text_multireplace",
+        ...node.args[0].args,
+        ...node.args.slice(1)
+      );
+    }
+  },
+};

@@ -25,6 +25,7 @@ int_to_text_byte 48;
 $t .. "x";
 text_replace "a+b+c" "+" "*";
 text_replace "a*b*c" "*" "";
+text_multireplace "XYZXYZ" "Y" "b" "X" "a";
 
 ~ $n;
 not $b;
@@ -80,6 +81,7 @@ b.int
 t&"x"
 "a+b+c".replace("+","*")
 "a*b*c".replace"*"
+"XYZXYZ".multireplace {"Y":"b","X":"a"}
 not n
 not b
 -n
