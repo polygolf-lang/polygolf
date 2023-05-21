@@ -85,6 +85,7 @@ export const UnaryOpCodes = [
   "println",
   "print_int",
   "println_int",
+  "putc",
   "argv_get",
   "abs",
   "bit_not",

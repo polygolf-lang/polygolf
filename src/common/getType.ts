@@ -635,6 +635,9 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
     case "argv":
       expectType();
       return listType(textType());
+    case "putc":
+      expectType(integerType(0, 255));
+      return voidType;
     case "print":
     case "println":
       expectType(textType());
