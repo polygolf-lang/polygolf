@@ -19,6 +19,16 @@ function functionCall(name: string, ...exprs: Expr[]) {
   return fc(exprs, name);
 }
 
+function isSpecialValue(val: number) {
+  return (
+    (val > 122 && val < 128) ||
+    (val > 90 && val < 97) ||
+    (val > 31 && val < 65) ||
+    (val > 8 && val < 14) ||
+    val === 0
+  );
+}
+
 let isCurrentProgramInputless = false;
 export function limitSetOp(max: number): Plugin {
   return {
@@ -43,14 +53,7 @@ export function limitSetOp(max: number): Plugin {
             result.push(functionCall("~", node.variable));
             val = -val;
           }
-          while (
-            val > max ||
-            (val > 122 && val < 128) ||
-            (val > 90 && val < 97) ||
-            (val > 31 && val < 65) ||
-            (val > 8 && val < 14) ||
-            val === 0n
-          ) {
+          while (val > max || isSpecialValue(Number(val))) {
             if ([123n, 91n, 9n].includes(val)) {
               result.push(functionCall(")"));
               val -= 1n;
@@ -164,7 +167,10 @@ export const printTextLiteralToPutc: Plugin = {
       return block(
         [...Buffer.from(node.args[0].value, "utf8")].flatMap((x, i, a) =>
           a[i - 1] !== x
-            ? [assignment(newVar, int(x)), polygolfOp("putc", newVar)]
+            ? [
+                assignment(newVar, int(isSpecialValue(x) ? 256 + x : x)),
+                polygolfOp("putc", newVar),
+              ]
             : [polygolfOp("putc", newVar)]
         )
       );
