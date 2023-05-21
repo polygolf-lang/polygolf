@@ -1,12 +1,12 @@
 import {
   functionCall,
-  id,
   indexCall,
   methodCall,
   namedArg,
   polygolfOp,
   stringLiteral,
   add1,
+  builtin,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
@@ -61,11 +61,11 @@ const swiftLanguage: Language = {
     forArgvToForEach,
     ...truncatingOpsPlugins,
     mapOps([
-      ["argv", (x) => id("CommandLine.arguments[1...]", true)],
+      ["argv", (x) => builtin("CommandLine.arguments[1...]")],
       [
         "argv_get",
         (x) =>
-          polygolfOp("list_get", id("CommandLine.arguments", true), add1(x[0])),
+          polygolfOp("list_get", builtin("CommandLine.arguments"), add1(x[0])),
       ],
     ]),
     useIndexCalls(),
@@ -151,8 +151,8 @@ const swiftLanguage: Language = {
       ["max", (x) => functionCall(x, "max")],
       ["min", (x) => functionCall(x, "min")],
       ["abs", (x) => functionCall([x[0]], "abs")],
-      ["true", (_) => id("true", true)],
-      ["false", (_) => id("false", true)],
+      ["true", (_) => builtin("true")],
+      ["false", (_) => builtin("false")],
     ]),
     addMutatingBinaryOp(
       ["add", "+"],

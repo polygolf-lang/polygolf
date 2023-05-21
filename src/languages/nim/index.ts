@@ -1,10 +1,10 @@
 import {
   functionCall,
-  id,
   indexCall,
   int,
   rangeIndexCall,
   add1,
+  builtin,
 } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
@@ -94,8 +94,8 @@ const nimLanguage: Language = {
     implicitlyConvertPrintArg,
     textGetToIntToTextGet,
     mapOps([
-      ["true", (_) => id("true", true)],
-      ["false", (_) => id("false", true)],
+      ["true", (_) => builtin("true")],
+      ["false", (_) => builtin("false")],
       ["text_byte_to_int", (x) => functionCall(x, "ord")],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
@@ -107,7 +107,7 @@ const nimLanguage: Language = {
       ["min", (x) => functionCall(x, "min")],
       ["abs", (x) => functionCall(x, "abs")],
       ["text_to_int", (x) => functionCall(x, "parseInt")],
-      ["print", (x) => functionCall([id("stdout", true), x[0]], "write")],
+      ["print", (x) => functionCall([builtin("stdout"), x[0]], "write")],
       ["println", (x) => functionCall(x, "echo")],
       ["min", (x) => functionCall(x, "min")],
       ["max", (x) => functionCall(x, "max")],

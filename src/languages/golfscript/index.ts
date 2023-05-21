@@ -1,11 +1,11 @@
 import {
   assignment,
   functionCall,
-  id,
   integerType,
   isSubtype,
   rangeIndexCall,
   add1,
+  builtin,
 } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
@@ -52,15 +52,15 @@ const golfscriptLanguage: Language = {
     ),
     implicitlyConvertPrintArg,
     mapOps([
-      ["argv", (_) => id("a", true)],
-      ["true", (_) => id("1", true)],
-      ["false", (_) => id("0", true)],
+      ["argv", (_) => builtin("a")],
+      ["true", (_) => builtin("1")],
+      ["false", (_) => builtin("0")],
       ["println", (x) => functionCall(x, "puts")],
       ["print", (x) => functionCall(x, "print")],
 
       [
         "text_get_byte_slice",
-        (x) => rangeIndexCall(x[0], x[1], add1(x[2]), id("1", true)),
+        (x) => rangeIndexCall(x[0], x[1], add1(x[2]), builtin("1")),
       ],
     ]),
     mapToUnaryAndBinaryOps(
@@ -114,7 +114,7 @@ const golfscriptLanguage: Language = {
         ["a=", "a"],
         ["a", "a"],
       ],
-      (x) => (x.length > 0 ? assignment(x[0], id("", true)) : undefined)
+      (x) => (x.length > 0 ? assignment(x[0], builtin("")) : undefined)
     ),
     renameIdents({
       // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified

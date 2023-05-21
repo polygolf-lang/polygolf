@@ -5,6 +5,7 @@ import {
   Identifier,
   BaseExpr,
   id,
+  builtin,
   UnaryOpCode,
   BinaryOpCode,
   OpCode,
@@ -317,7 +318,7 @@ export function functionCall(
 ): FunctionCall {
   return {
     kind: "FunctionCall",
-    ident: typeof ident === "string" ? id(ident, true) : ident,
+    ident: typeof ident === "string" ? builtin(ident) : ident,
     args,
   };
 }
@@ -330,7 +331,7 @@ export function methodCall(
 ): MethodCall {
   return {
     kind: "MethodCall",
-    ident: typeof ident === "string" ? id(ident, true) : ident,
+    ident: typeof ident === "string" ? builtin(ident) : ident,
     object,
     args,
     property,

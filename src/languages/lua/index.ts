@@ -1,6 +1,5 @@
 import {
   functionCall,
-  id,
   implicitConversion,
   int,
   methodCall,
@@ -8,6 +7,7 @@ import {
   stringLiteral,
   textType,
   add1,
+  builtin,
 } from "../../IR";
 import { Language } from "../../common/Language";
 import {
@@ -78,11 +78,7 @@ const luaLanguage: Language = {
       [
         "argv_get",
         (x) =>
-          polygolfOp(
-            "list_get",
-            { ...id("arg", true), type: textType() },
-            x[0]
-          ),
+          polygolfOp("list_get", { ...builtin("arg"), type: textType() }, x[0]),
       ],
       ["text_get_byte", (x) => methodCall(x[0], [add1(x[1])], "byte")],
       [
@@ -106,15 +102,15 @@ const luaLanguage: Language = {
     ]),
     mapOps([
       ["text_byte_length", (x) => methodCall(x[0], [], "len")],
-      ["true", (_) => id("true", true)],
-      ["false", (_) => id("false", true)],
+      ["true", (_) => builtin("true")],
+      ["false", (_) => builtin("false")],
       ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
       ["print", (x) => functionCall(x, "io.write")],
       ["println", (x) => functionCall(x, "print")],
       ["min", (x) => functionCall(x, "math.min")],
       ["max", (x) => functionCall(x, "math.max")],
       ["abs", (x) => functionCall(x, "math.abs")],
-      ["argv", (x) => id("arg", true)],
+      ["argv", (x) => builtin("arg")],
       ["min", (x) => functionCall(x, "math.min")],
       ["max", (x) => functionCall(x, "math.max")],
       ["abs", (x) => functionCall(x, "math.abs")],
