@@ -49,10 +49,10 @@ if ($condValue <= 0){
 ```
 
 ```polygolf
-print "hello\n";
+print "hello-58\n100";
 ```
 
-```polygolf plugins.printTextLiteralToPutc
+```polygolf plugins.printTextLiteral
 $printVar <- 104;
 putc $printVar;
 $printVar <- 101;
@@ -62,6 +62,10 @@ putc $printVar;
 putc $printVar;
 $printVar <- 111;
 putc $printVar;
+$printVar <- -58;
+print_int $printVar;
 $printVar <- 266;
 putc $printVar;
+$printVar <- 100;
+print_int $printVar;
 ```

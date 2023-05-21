@@ -155,7 +155,7 @@ export const extractConditions: Plugin = {
   },
 };
 
-export const printTextLiteralToPutc: Plugin = {
+export const printTextLiteral: Plugin = {
   name: "printTextLiteralToPutc",
   visit(node) {
     if (
@@ -164,16 +164,42 @@ export const printTextLiteralToPutc: Plugin = {
       node.args[0].value.length > 0
     ) {
       const newVar = id("printVar");
-      return block(
-        [...Buffer.from(node.args[0].value, "utf8")].flatMap((x, i, a) =>
-          a[i - 1] !== x
-            ? [
-                assignment(newVar, int(isSpecialValue(x) ? 256 + x : x)),
-                polygolfOp("putc", newVar),
-              ]
-            : [polygolfOp("putc", newVar)]
-        )
-      );
+      const bytes = [...Buffer.from(node.args[0].value, "utf8")];
+      const res: Expr[] = [];
+      let prev = -1;
+      let decimal = "";
+      bytes.forEach((x, i) => {
+        if (
+          (x >= 48 && x <= 57) ||
+          (decimal === "" &&
+            x === 45 &&
+            i < bytes.length - 1 &&
+            bytes[i + 1] >= 48 &&
+            bytes[i + 1] <= 57)
+        ) {
+          decimal += String.fromCharCode(x);
+        } else {
+          if (decimal !== "") {
+            const value = Number(decimal);
+            decimal = "";
+            if (value !== prev) res.push(assignment(newVar, int(value)));
+            prev = value;
+            res.push(polygolfOp("print_int", newVar));
+          }
+          if (x !== prev)
+            res.push(assignment(newVar, int(isSpecialValue(x) ? 256 + x : x)));
+          prev = x;
+          res.push(polygolfOp("putc", newVar));
+        }
+      });
+      if (decimal !== "") {
+        const value = Number(decimal);
+        decimal = "";
+        if (value !== prev) res.push(assignment(newVar, int(value)));
+        prev = value;
+        res.push(polygolfOp("print_int", newVar));
+      }
+      return block(res);
     }
   },
 };

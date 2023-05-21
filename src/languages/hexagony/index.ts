@@ -8,7 +8,7 @@ import {
   decomposeExpressions,
   extractConditions,
   limitSetOp,
-  printTextLiteralToPutc,
+  printTextLiteral,
 } from "./plugins";
 
 /*
@@ -54,7 +54,7 @@ const hexagonyLanguage: Language = {
       ["mod", "%"]
     ),
     printLnToPrint,
-    printTextLiteralToPutc,
+    printTextLiteral,
     decomposeExpressions,
     limitSetOp(99999),
   ],
