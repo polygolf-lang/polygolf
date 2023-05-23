@@ -2,6 +2,7 @@ import {
   Assignment,
   Block,
   block,
+  blockOrSingle,
   Expr,
   Identifier,
   manyToManyAssignment,
@@ -15,6 +16,7 @@ import {
 import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
+import { getWrites } from "@/common/symbols";
 
 /**
  * Collects neighbouring block children matching a predicate and replaces them with a different set of children.
@@ -267,6 +269,29 @@ export const tempVarToMultipleAssignment: Plugin = {
         }
       }
       if (changed) return block(newNodes);
+    }
+  },
+};
+
+export const inlineVariables: Plugin = {
+  name: "inlineVariables",
+  visit(node, spine) {
+    if (node.kind === "Program") {
+      const writes = getWrites(spine);
+      const assignmentToInline = writes[0].parent as Spine<
+        Assignment<Identifier>
+      >; //TODO
+      return spine.withReplacer((x, s) =>
+        x == assignmentToInline.parent?.node && x.kind === "Block"
+          ? blockOrSingle(
+              x.children.filter((y) => y !== assignmentToInline.node)
+            )
+          : x.kind === "Identifier" &&
+            !x.builtin &&
+            x.name === assignmentToInline.node.variable.name
+          ? assignmentToInline.node.expr
+          : undefined
+      );
     }
   },
 };
