@@ -217,7 +217,7 @@ export const removeImplicitConversions: Plugin = {
 };
 
 export const methodsAsFunctions: Plugin = {
-  name: "removeImplicitConversions",
+  name: "methodsAsFunctions",
   visit(node) {
     if (node.kind === "MethodCall") {
       return functionCall(propertyCall(node.object, node.ident), node.args);
