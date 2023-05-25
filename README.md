@@ -215,9 +215,9 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 - [x] `x<=5` ⟶ `x<6`
 - [x] `x%10==0` ⟶ `x%10<1`
 - [x] `(x+1)*(y+1)` ⟶ `~x*~y`
-- [ ] `x//32` ⟶ `x>>5`
-- [ ] `x**2` ⟶ `x*x`
-- [ ] `x*x*x` ⟶ `x**3`
+- [x] `x//32` ⟶ `x>>5`
+- [x] `x**2` ⟶ `x*x`
+- [x] `x*x*x` ⟶ `x**3`
 
 ### Boolean arithmetic
 
@@ -244,7 +244,7 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Printing
 
-- [x] `print(end="x\n")` ↔ `print("x")`
+- [x] `print(end="x\n")` ⟷ `print("x")`
 
 ### Literals
 
