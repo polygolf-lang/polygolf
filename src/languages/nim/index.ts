@@ -122,9 +122,7 @@ const nimLanguage: Language = {
         (x) =>
           functionCall(
             "replace",
-            x[2].kind === "StringLiteral" && x[2].value === ""
-              ? [x[0], x[1]]
-              : x
+            x[2].kind === "TextLiteral" && x[2].value === "" ? [x[0], x[1]] : x
           ),
       ],
       [

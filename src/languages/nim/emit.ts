@@ -1,5 +1,5 @@
 import { TokenTree } from "@/common/Language";
-import { emitStringLiteral, joinTrees, EmitError } from "../../common/emit";
+import { emitTextLiteral, joinTrees, EmitError } from "../../common/emit";
 import { ArrayConstructor, IR, isIntLiteral } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
@@ -199,8 +199,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
       case "Identifier":
         return e.name;
-      case "StringLiteral":
-        return emitStringLiteral(e.value, [
+      case "TextLiteral":
+        return emitTextLiteral(e.value, [
           [
             `"`,
             [
@@ -226,9 +226,9 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         if (
           e.func.kind === "Identifier" &&
           e.args.length === 1 &&
-          e.args[0].kind === "StringLiteral"
+          e.args[0].kind === "TextLiteral"
         ) {
-          const raw = emitAsRawStringLiteral(e.args[0].value, e.func.name);
+          const raw = emitAsRawTextLiteral(e.args[0].value, e.func.name);
           if (raw !== null) {
             prec = Infinity;
             return raw;
@@ -251,8 +251,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
               : [],
           ];
         else {
-          if (e.args.length === 1 && e.args[0].kind === "StringLiteral") {
-            const raw = emitAsRawStringLiteral(e.args[0].value, e.ident.name);
+          if (e.args.length === 1 && e.args[0].kind === "TextLiteral") {
+            const raw = emitAsRawTextLiteral(e.args[0].value, e.ident.name);
             if (raw !== null) {
               prec = 12;
               return [emit(e.object, prec), ".", raw];
@@ -331,7 +331,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
   return ["(", inner, ")"];
 }
 
-function emitAsRawStringLiteral(
+function emitAsRawTextLiteral(
   value: string,
   prefix: string = "r"
 ): string | null {

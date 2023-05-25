@@ -1,14 +1,6 @@
 import { TokenTree } from "../../common/Language";
-import { emitStringLiteral, joinTrees } from "../../common/emit";
-import {
-  block,
-  Expr,
-  IR,
-  stringLiteral,
-  toString,
-  variants,
-  Variants,
-} from "../../IR";
+import { emitTextLiteral, joinTrees } from "../../common/emit";
+import { block, Expr, IR, text, toString, variants, Variants } from "../../IR";
 
 /*
 How Polygolf nodes should be emitted to strings.
@@ -141,13 +133,13 @@ function emitExprWithoutAnnotation(
     }
     case "Identifier":
       if (expr.builtin) {
-        return emitSexpr("Builtin", stringLiteral(expr.name));
+        return emitSexpr("Builtin", text(expr.name));
       } else if (/^\w+$/.test(expr.name)) {
         return "$" + expr.name;
       }
-      return emitSexpr("id", stringLiteral(expr.name));
-    case "StringLiteral":
-      return emitStringLiteral(expr.value);
+      return emitSexpr("id", text(expr.name));
+    case "TextLiteral":
+      return emitTextLiteral(expr.value);
     case "IntegerLiteral":
       return expr.value.toString();
     case "ArrayConstructor":
@@ -211,7 +203,7 @@ function emitExprWithoutAnnotation(
       );
 
     case "ImplicitConversion":
-      return emitSexpr("@", stringLiteral(expr.behavesLike), expr.expr);
+      return emitSexpr("@", text(expr.behavesLike), expr.expr);
     case "VarDeclaration":
       return emitSexpr("@", { ...expr.variable, type: expr.variableType });
     case "VarDeclarationWithAssignment":
@@ -227,12 +219,7 @@ function emitExprWithoutAnnotation(
     case "OneToManyAssignment":
       return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
     case "MutatingBinaryOp":
-      return emitSexpr(
-        "@",
-        stringLiteral(expr.name),
-        expr.variable,
-        expr.right
-      );
+      return emitSexpr("@", text(expr.name), expr.variable, expr.right);
     case "IndexCall":
       return emitSexpr(
         expr.oneIndexed ? "IndexCallOneIndexed" : "@",
@@ -248,18 +235,13 @@ function emitExprWithoutAnnotation(
         expr.step
       );
     case "MethodCall":
-      return emitSexpr(
-        "@",
-        expr.object,
-        stringLiteral(expr.ident.name),
-        ...expr.args
-      );
+      return emitSexpr("@", expr.object, text(expr.ident.name), ...expr.args);
     case "PropertyCall":
-      return emitSexpr("@", expr.object, stringLiteral(expr.ident.name));
+      return emitSexpr("@", expr.object, text(expr.ident.name));
     case "BinaryOp":
-      return emitSexpr("@", stringLiteral(expr.name), expr.left, expr.right);
+      return emitSexpr("@", text(expr.name), expr.left, expr.right);
     case "UnaryOp":
-      return emitSexpr("@", stringLiteral(expr.name), expr.arg);
+      return emitSexpr("@", text(expr.name), expr.arg);
     case "ImportStatement":
       return emitSexpr(
         "@",
@@ -305,7 +287,7 @@ function emitExprWithoutAnnotation(
         emitExpr(expr.body, false, true)
       );
     case "NamedArg":
-      return emitSexpr("@", stringLiteral(expr.name), expr.value);
+      return emitSexpr("@", text(expr.name), expr.value);
   }
 }
 

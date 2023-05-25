@@ -9,7 +9,7 @@ import {
   isPolygolfOp,
   listConstructor,
   polygolfOp,
-  StringLiteral,
+  TextLiteral,
 } from "../IR";
 
 /**
@@ -47,11 +47,11 @@ export function tableHashing(
         if (
           tableType.kind === "Table" &&
           tableType.key.kind === "text" &&
-          table.kvPairs.every((x) => x.key.kind === "StringLiteral")
+          table.kvPairs.every((x) => x.key.kind === "TextLiteral")
         ) {
           const searchResult = findHash(
             hashFunc,
-            table.kvPairs.map((x) => [(x.key as StringLiteral).value, x.value]),
+            table.kvPairs.map((x) => [(x.key as TextLiteral).value, x.value]),
             maxMod
           );
           if (searchResult === null) return undefined;

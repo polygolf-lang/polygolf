@@ -5,7 +5,7 @@ import {
   methodCall,
   namedArg,
   polygolfOp,
-  stringLiteral,
+  text,
   add1,
   propertyCall,
 } from "../../IR";
@@ -129,8 +129,7 @@ const swiftLanguage: Language = {
       ["println", (x) => functionCall("print", x)],
       [
         "print",
-        (x) =>
-          functionCall("print", x, namedArg("terminator", stringLiteral(""))),
+        (x) => functionCall("print", x, namedArg("terminator", text(""))),
       ],
       ["text_to_int", (x) => functionCall("!", functionCall("Int", x))],
 

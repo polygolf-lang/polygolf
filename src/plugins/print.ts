@@ -1,17 +1,12 @@
 import { replaceAtIndex } from "../common/immutable";
 import { Plugin } from "../common/Language";
-import {
-  implicitConversion,
-  isPolygolfOp,
-  polygolfOp,
-  stringLiteral,
-} from "../IR";
+import { implicitConversion, isPolygolfOp, polygolfOp, text } from "../IR";
 import { mapOps } from "./ops";
 
 export const printLnToPrint = mapOps([
   [
     "println",
-    (x) => polygolfOp("print", polygolfOp("concat", x[0], stringLiteral("\n"))),
+    (x) => polygolfOp("print", polygolfOp("concat", x[0], text("\n"))),
   ],
 ]);
 

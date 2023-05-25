@@ -168,7 +168,7 @@ export function calcType(expr: Expr, program: Program): Type {
     }
     case "Identifier":
       return getIdentifierType(expr, program);
-    case "StringLiteral": {
+    case "TextLiteral": {
       const codepoints = charLength(expr.value);
       return textType(
         integerType(codepoints, codepoints),

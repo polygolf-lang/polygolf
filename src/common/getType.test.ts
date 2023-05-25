@@ -20,7 +20,7 @@ import {
   toString,
   voidType,
   indexCall,
-  stringLiteral,
+  text as textLiteral,
   int as integerLiteral,
   arrayConstructor,
   setConstructor,
@@ -206,8 +206,8 @@ describe("Index call", () => {
 
 describe("Literals", () => {
   testExpr("int", integerLiteral(4n), int(4, 4));
-  testExpr("text", stringLiteral("ahoj"), ascii(int(4, 4)));
-  testExpr("text", stringLiteral("dobrý den"), text(int(9, 9)));
+  testExpr("text", textLiteral("ahoj"), ascii(int(4, 4)));
+  testExpr("text", textLiteral("dobrý den"), text(int(9, 9)));
   testExpr("bool", polygolfOp("true"), bool);
   testExpr("bool", polygolfOp("false"), bool);
   testExpr("array", arrayConstructor([e(int()), e(text())]), "error");

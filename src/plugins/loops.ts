@@ -18,7 +18,7 @@ import {
   Node,
   isIntLiteral,
   OpCode,
-  StringLiteral,
+  TextLiteral,
   ListConstructor,
   ForRange,
   forDifferenceRange,
@@ -237,7 +237,7 @@ function getIndexedCollection(
       return null;
     const collection = parent.args[0];
     if (
-      (collection.kind === "StringLiteral" ||
+      (collection.kind === "TextLiteral" ||
         collection.kind === "ListConstructor") &&
       literalLength(collection, allowedOps.includes("text_get_byte")) ===
         knownLength
@@ -265,7 +265,7 @@ function getIndexedCollection(
 }
 
 function literalLength(
-  expr: StringLiteral | ListConstructor,
+  expr: TextLiteral | ListConstructor,
   countTextBytes: boolean
 ): number {
   if (expr.kind === "ListConstructor") return expr.exprs.length;

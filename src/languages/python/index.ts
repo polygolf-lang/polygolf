@@ -4,7 +4,7 @@ import {
   indexCall,
   methodCall,
   rangeIndexCall,
-  stringLiteral,
+  text,
   int,
   polygolfOp,
   listType,
@@ -13,11 +13,11 @@ import {
   add1,
   tableConstructor,
   keyValue,
-  StringLiteral,
+  TextLiteral,
 } from "../../IR";
 import { Language } from "../../common/Language";
 
-import emitProgram, { emitPythonStringLiteral } from "./emit";
+import emitProgram, { emitPythonTextLiteral } from "./emit";
 import {
   mapOps,
   mapToUnaryAndBinaryOps,
@@ -104,7 +104,7 @@ const pythonLanguage: Language = {
       ["abs", (x) => functionCall("abs", x)],
       ["list_length", (x) => functionCall("len", x)],
       ["join_using", (x) => methodCall(x[1], "join", x[0])],
-      ["join", (x) => methodCall(stringLiteral(""), "join", x[0])],
+      ["join", (x) => methodCall(text(""), "join", x[0])],
       ["sorted", (x) => functionCall("sorted", x[0])],
       [
         "text_codepoint_reversed",
@@ -132,7 +132,7 @@ const pythonLanguage: Language = {
             "print",
             x[0].kind !== "ImplicitConversion"
               ? [namedArg("end", x[0])]
-              : [x[0], namedArg("end", stringLiteral(""))]
+              : [x[0], namedArg("end", text(""))]
           );
         },
       ],
@@ -144,7 +144,7 @@ const pythonLanguage: Language = {
             x[0],
             "translate",
             tableConstructor(
-              (x as StringLiteral[]).flatMap((_, i, x) =>
+              (x as TextLiteral[]).flatMap((_, i, x) =>
                 i % 2 > 0
                   ? [
                       keyValue(
@@ -217,11 +217,10 @@ const pythonLanguage: Language = {
     removeImplicitConversions,
   ],
   packers: [
-    (x) =>
-      `exec(bytes(${emitPythonStringLiteral(packSource2to1(x))},'u16')[2:])`,
+    (x) => `exec(bytes(${emitPythonTextLiteral(packSource2to1(x))},'u16')[2:])`,
     (x) => {
       if ([...x].map((x) => x.charCodeAt(0)).some((x) => x < 32)) return null;
-      return `exec(bytes(ord(c)%i+32for c in${emitPythonStringLiteral(
+      return `exec(bytes(ord(c)%i+32for c in${emitPythonTextLiteral(
         packSource3to1(x)
       )}for i in b'abc'))`;
     },

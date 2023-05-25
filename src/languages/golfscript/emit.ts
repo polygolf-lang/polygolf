@@ -1,5 +1,5 @@
 import { TokenTree } from "../../common/Language";
-import { EmitError, emitStringLiteral } from "../../common/emit";
+import { EmitError, emitTextLiteral } from "../../common/emit";
 import { int, integerType, IR, isIntLiteral, isSubtype } from "../../IR";
 import { getType } from "../../common/getType";
 
@@ -105,8 +105,8 @@ export default function emitProgram(program: IR.Program): TokenTree {
         return [emitExpr(expr.expr), ":", emitExpr(expr.variable), ";"];
       case "Identifier":
         return expr.name;
-      case "StringLiteral":
-        return emitStringLiteral(expr.value, [
+      case "TextLiteral":
+        return emitTextLiteral(expr.value, [
           [
             `"`,
             [

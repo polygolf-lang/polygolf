@@ -14,7 +14,7 @@ export function joinTrees(
  * Each option is described by the string delimiters (string or two strings) and an array of substitutions.
  * Substitution of the form `[somechar, null]` indicates that `somechar` cannot be present in the string in this option.
  */
-export function emitStringLiteral(
+export function emitTextLiteral(
   value: string,
   options: [string | [string, string], [string, string | null][]][] = [
     [

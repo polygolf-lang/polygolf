@@ -14,7 +14,7 @@ import {
   isCommutative,
   int,
   isAssociative,
-  stringLiteral,
+  text,
   integerType,
   AliasedOpCode,
   FrontendOpCode,
@@ -196,12 +196,12 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
           .filter((x) => x.kind === "IntegerLiteral")
           .concat(args.filter((x) => x.kind !== "IntegerLiteral"));
       } else {
-        args = args.filter((x) => x.kind !== "StringLiteral" || x.value !== "");
+        args = args.filter((x) => x.kind !== "TextLiteral" || x.value !== "");
         if (
           args.length === 0 ||
           (args.length === 1 && args[0].kind === "ImplicitConversion")
         ) {
-          args = [stringLiteral(""), args[0]];
+          args = [text(""), args[0]];
         }
       }
       const newArgs: Expr[] = [];
@@ -257,10 +257,10 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
 function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
   if (
     op === "concat" &&
-    left.kind === "StringLiteral" &&
-    right.kind === "StringLiteral"
+    left.kind === "TextLiteral" &&
+    right.kind === "TextLiteral"
   ) {
-    return stringLiteral(left.value + right.value);
+    return text(left.value + right.value);
   }
   if (left.kind === "IntegerLiteral" && right.kind === "IntegerLiteral") {
     try {

@@ -5,7 +5,7 @@ import {
   int,
   methodCall,
   polygolfOp,
-  stringLiteral,
+  text,
   textType,
   add1,
 } from "../../IR";
@@ -96,7 +96,7 @@ const luaLanguage: Language = {
         (x) =>
           polygolfOp(
             "concat",
-            stringLiteral(""),
+            text(""),
             implicitConversion("int_to_text", x[0])
           ),
       ],
@@ -122,24 +122,14 @@ const luaLanguage: Language = {
           methodCall(
             a,
             "gsub",
-            b.kind === "StringLiteral"
-              ? stringLiteral(
+            b.kind === "TextLiteral"
+              ? text(
                   b.value.replace(/(-|%|\^|\$|\(|\)|\.|\[|\]|\*|\+|\?)/g, "%$1")
                 )
-              : methodCall(
-                  b,
-                  "gsub",
-                  stringLiteral("(%W)"),
-                  stringLiteral("%%%1")
-                ),
-            c.kind === "StringLiteral"
-              ? stringLiteral(c.value.replace("%", "%%"))
-              : methodCall(
-                  c,
-                  "gsub",
-                  stringLiteral("%%"),
-                  stringLiteral("%%%%")
-                )
+              : methodCall(b, "gsub", text("(%W)"), text("%%%1")),
+            c.kind === "TextLiteral"
+              ? text(c.value.replace("%", "%%"))
+              : methodCall(c, "gsub", text("%%"), text("%%%%"))
           ),
       ],
     ]),

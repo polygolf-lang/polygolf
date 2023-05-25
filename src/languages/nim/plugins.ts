@@ -72,7 +72,7 @@ export const useUFCS: Plugin = {
   name: "useUFCS",
   visit(node) {
     if (node.kind === "FunctionCall" && node.args.length > 0) {
-      if (node.args.length === 1 && node.args[0].kind === "StringLiteral") {
+      if (node.args.length === 1 && node.args[0].kind === "TextLiteral") {
         return;
       }
       const [obj, ...args] = node.args;

@@ -9,7 +9,7 @@ import {
   forRange,
   variants,
   int,
-  stringLiteral,
+  text,
   id as identifier
 } from "../IR";
 import {
@@ -64,7 +64,7 @@ variable -> %variable {% d => refSource(userIdentifier(d[0]), d[0]) %}
 builtin -> (%builtin | "argv_get") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
 opalias -> (%opalias | "..") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
 nullary -> %nullary {% d => refSource(sexpr(identifier(d[0].value, true), []), d[0]) %}
-string -> %string {% d => refSource(stringLiteral(JSON.parse(d[0])), d[0]) %}
+string -> %string {% d => refSource(text(JSON.parse(d[0])), d[0]) %}
 
 type_expr -> type_range {% id %}
   | type_simple {% id %}

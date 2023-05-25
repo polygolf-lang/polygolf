@@ -5,7 +5,7 @@ import {
   isSubtype,
   OpCode,
   polygolfOp,
-  StringLiteral,
+  TextLiteral,
 } from "../IR";
 import { Plugin } from "../common/Language";
 import { mapOps } from "./ops";
@@ -114,11 +114,11 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
         const a = node.args[0].args.slice(1);
         const b = node.args.slice(1);
         if (
-          a.every((x) => x.kind === "StringLiteral") &&
-          b.every((x) => x.kind === "StringLiteral")
+          a.every((x) => x.kind === "TextLiteral") &&
+          b.every((x) => x.kind === "TextLiteral")
         ) {
-          const aValues = a.map((x) => (x as StringLiteral).value);
-          const bValues = b.map((x) => (x as StringLiteral).value);
+          const aValues = a.map((x) => (x as TextLiteral).value);
+          const bValues = b.map((x) => (x as TextLiteral).value);
           const aIn = aValues.filter((_, i) => i % 2 === 0);
           const aOut = aValues.filter((_, i) => i % 2 === 1);
           const bIn = bValues.filter((_, i) => i % 2 === 0);

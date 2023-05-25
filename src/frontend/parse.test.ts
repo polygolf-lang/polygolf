@@ -4,7 +4,7 @@ import {
   Expr,
   id,
   int,
-  stringLiteral,
+  text,
   print,
   listConstructor,
   functionCall,
@@ -42,12 +42,8 @@ describe("Parse literals", () => {
   expectExprParse("single digit", "5", int(5n));
   expectExprParse("negative integer", "-123", int(-123n));
   expectExprParse("variable", "$y", id("y"));
-  expectExprParse("string literal", '"abc"', stringLiteral("abc"));
-  expectExprParse(
-    "string with escapes",
-    '"\\u0001\\r"',
-    stringLiteral("\u0001\r")
-  );
+  expectExprParse("string literal", '"abc"', text("abc"));
+  expectExprParse("string with escapes", '"\\u0001\\r"', text("\u0001\r"));
 });
 
 describe("Parse s-expressions", () => {
@@ -149,7 +145,7 @@ describe("Parse variants", () => {
     `{ println $x; / print $x; print "\\n"; }`,
     variants([
       print(id("x"), true),
-      block([print(id("x"), false), print(stringLiteral("\n"), false)]),
+      block([print(id("x"), false), print(text("\n"), false)]),
     ])
   );
   testStmtParse(
@@ -157,8 +153,8 @@ describe("Parse variants", () => {
     `{ println $x; / print $x; print "\\n"; / print $x; print "\\n"; }`,
     variants([
       print(id("x"), true),
-      block([print(id("x"), false), print(stringLiteral("\n"), false)]),
-      block([print(id("x"), false), print(stringLiteral("\n"), false)]),
+      block([print(id("x"), false), print(text("\n"), false)]),
+      block([print(id("x"), false), print(text("\n"), false)]),
     ])
   );
   testStmtParse(

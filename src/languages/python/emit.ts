@@ -3,10 +3,10 @@ import { TokenTree } from "@/common/Language";
 import {
   containsMultiExpr,
   EmitError,
-  emitStringLiteral,
+  emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral, StringLiteral, stringLiteral } from "../../IR";
+import { IR, isIntLiteral, TextLiteral, text } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -169,8 +169,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [e.name, "=", emit(e.value)];
       case "Identifier":
         return e.name;
-      case "StringLiteral":
-        return emitPythonStringLiteral(e.value);
+      case "TextLiteral":
+        return emitPythonTextLiteral(e.value);
       case "IntegerLiteral":
         return e.value.toString();
       case "FunctionCall":
@@ -179,14 +179,12 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           "(",
           e.args.length > 1 &&
           e.args.every(
-            (x) => x.kind === "StringLiteral" && charLength(x.value) === 1
+            (x) => x.kind === "TextLiteral" && charLength(x.value) === 1
           )
             ? [
                 "*",
                 emit(
-                  stringLiteral(
-                    e.args.map((x) => (x as StringLiteral).value).join("")
-                  )
+                  text(e.args.map((x) => (x as TextLiteral).value).join(""))
                 ),
               ]
             : joinExprs(",", e.args),
@@ -245,8 +243,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
   return ["(", inner, ")"];
 }
 
-export function emitPythonStringLiteral(x: string): string {
-  return emitStringLiteral(x, [
+export function emitPythonTextLiteral(x: string): string {
+  return emitTextLiteral(x, [
     [
       `"`,
       [

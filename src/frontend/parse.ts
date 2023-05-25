@@ -108,7 +108,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     }
   }
   function asString(e: Expr): string {
-    if (e.kind === "StringLiteral") return e.value;
+    if (e.kind === "TextLiteral") return e.value;
     throw new PolygolfError(
       `Syntax error. Expected string literal, but got ${e.kind}`,
       e.source
