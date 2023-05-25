@@ -4,7 +4,7 @@ import {
   indexCall,
   methodCall,
   rangeIndexCall,
-  stringLiteral,
+  text,
   int,
   polygolfOp,
   listType,
@@ -13,17 +13,18 @@ import {
   add1,
   tableConstructor,
   keyValue,
-  StringLiteral,
+  TextLiteral,
 } from "../../IR";
 import { Language } from "../../common/Language";
 
-import emitProgram, { emitPythonStringLiteral } from "./emit";
+import emitProgram, { emitPythonTextLiteral } from "./emit";
 import {
   mapOps,
   mapToUnaryAndBinaryOps,
   useIndexCalls,
   addMutatingBinaryOp,
   removeImplicitConversions,
+  methodsAsFunctions,
 } from "../../plugins/ops";
 import { aliasBuiltins, renameIdents } from "../../plugins/idents";
 import {
@@ -80,7 +81,7 @@ const pythonLanguage: Language = {
   emitPlugins: [
     forArgvToForEach,
     useEquivalentTextOp(false, true),
-    mapOps([
+    mapOps(
       ["argv", (x) => id("sys.argv[1:]", true)],
       [
         "argv_get",
@@ -90,78 +91,76 @@ const pythonLanguage: Language = {
             { ...id("sys.argv", true), type: listType(textType()) },
             add1(x[0])
           ),
-      ],
-    ]),
+      ]
+    ),
     useIndexCalls(),
   ],
   finalEmitPlugins: [
     textGetToIntToTextGet,
     implicitlyConvertPrintArg,
-    mapOps([
-      ["true", (_) => int(1)],
-      ["false", (_) => int(0)],
-      ["abs", (x) => functionCall([x[0]], "abs")],
-      ["list_length", (x) => functionCall([x[0]], "len")],
-      ["join_using", (x) => methodCall(x[1], [x[0]], "join")],
-      ["join", (x) => methodCall(stringLiteral(""), [x[0]], "join")],
-      ["sorted", (x) => functionCall([x[0]], "sorted")],
+    mapOps(
+      ["true", () => int(1)],
+      ["false", () => int(0)],
+      ["abs", (x) => functionCall("abs", x)],
+      ["list_length", (x) => functionCall("len", x)],
+      ["join_using", (x) => methodCall(x[1], "join", x[0])],
+      ["join", (x) => methodCall(text(""), "join", x[0])],
+      ["sorted", (x) => functionCall("sorted", x[0])],
       [
         "text_codepoint_reversed",
         (x) => rangeIndexCall(x[0], id("", true), id("", true), int(-1)),
       ],
-      ["codepoint_to_int", (x) => functionCall(x, "ord")],
+      ["codepoint_to_int", (x) => functionCall("ord", x)],
       ["text_get_codepoint", (x) => indexCall(x[0], x[1])],
-      ["int_to_codepoint", (x) => functionCall([x[0]], "chr")],
-      ["max", (x) => functionCall([x[0], x[1]], "max")],
-      ["min", (x) => functionCall([x[0], x[1]], "min")],
+      ["int_to_codepoint", (x) => functionCall("chr", x)],
+      ["max", (x) => functionCall("max", x)],
+      ["min", (x) => functionCall("min", x)],
       [
         "text_get_codepoint_slice",
         (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
       ],
-      ["text_codepoint_length", (x) => functionCall([x[0]], "len")],
-      ["int_to_text", (x) => functionCall([x[0]], "str")],
-      ["text_split", (x) => methodCall(x[0], [x[1]], "split")],
-      ["text_split_whitespace", (x) => methodCall(x[0], [], "split")],
-      ["text_to_int", (x) => functionCall([x[0]], "int")],
-      ["println", (x) => functionCall([x[0]], "print")],
+      ["text_codepoint_length", (x) => functionCall("len", x)],
+      ["int_to_text", (x) => functionCall("str", x)],
+      ["text_split", (x) => methodCall(x[0], "split", x[1])],
+      ["text_split_whitespace", (x) => methodCall(x[0], "split")],
+      ["text_to_int", (x) => functionCall("int", x)],
+      ["println", (x) => functionCall("print", x)],
       [
         "print",
         (x) => {
           return functionCall(
+            "print",
             x[0].kind !== "ImplicitConversion"
               ? [namedArg("end", x[0])]
-              : [x[0], namedArg("end", stringLiteral(""))],
-            "print"
+              : [x[0], namedArg("end", text(""))]
           );
         },
       ],
-      ["text_replace", (x) => methodCall(x[0], [x[1], x[2]], "replace")],
+      ["text_replace", (x) => methodCall(x[0], "replace", x[1], x[2])],
       [
         "text_multireplace",
         (x) =>
           methodCall(
             x[0],
-            [
-              tableConstructor(
-                (x as StringLiteral[]).flatMap((_, i, x) =>
-                  i % 2 > 0
-                    ? [
-                        keyValue(
-                          int(x[i].value.codePointAt(0)!),
-                          charLength(x[i + 1].value) === 1 &&
-                            x[i + 1].value.codePointAt(0)! < 100
-                            ? int(x[i + 1].value.codePointAt(0)!)
-                            : x[i + 1]
-                        ),
-                      ]
-                    : []
-                )
-              ),
-            ],
-            "translate"
+            "translate",
+            tableConstructor(
+              (x as TextLiteral[]).flatMap((_, i, x) =>
+                i % 2 > 0
+                  ? [
+                      keyValue(
+                        int(x[i].value.codePointAt(0)!),
+                        charLength(x[i + 1].value) === 1 &&
+                          x[i + 1].value.codePointAt(0)! < 100
+                          ? int(x[i + 1].value.codePointAt(0)!)
+                          : x[i + 1]
+                      ),
+                    ]
+                  : []
+              )
+            )
           ),
-      ],
-    ]),
+      ]
+    ),
     addMutatingBinaryOp(
       ["add", "+"],
       ["concat", "+"],
@@ -204,6 +203,7 @@ const pythonLanguage: Language = {
       ["and", "and"],
       ["or", "or"]
     ),
+    methodsAsFunctions,
     aliasBuiltins(),
     renameIdents(),
     addOneToManyAssignments(),
@@ -217,11 +217,10 @@ const pythonLanguage: Language = {
     removeImplicitConversions,
   ],
   packers: [
-    (x) =>
-      `exec(bytes(${emitPythonStringLiteral(packSource2to1(x))},'u16')[2:])`,
+    (x) => `exec(bytes(${emitPythonTextLiteral(packSource2to1(x))},'u16')[2:])`,
     (x) => {
       if ([...x].map((x) => x.charCodeAt(0)).some((x) => x < 32)) return null;
-      return `exec(bytes(ord(c)%i+32for c in${emitPythonStringLiteral(
+      return `exec(bytes(ord(c)%i+32for c in${emitPythonTextLiteral(
         packSource3to1(x)
       )}for i in b'abc'))`;
     },

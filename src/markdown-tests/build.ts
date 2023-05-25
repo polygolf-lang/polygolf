@@ -1,7 +1,7 @@
 import { findLang } from "../languages/languages";
 import fs from "fs";
 import path from "path";
-import { emitStringLiteral } from "../common/emit";
+import { emitTextLiteral } from "../common/emit";
 
 interface Test {
   input: string;
@@ -172,7 +172,7 @@ function emitNode(node: Describe | Test, imports: string[]): string {
 }
 
 function stringify(x: string): string {
-  return emitStringLiteral(x, [
+  return emitTextLiteral(x, [
     [
       "`",
       [

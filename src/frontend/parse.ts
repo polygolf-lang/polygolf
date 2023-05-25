@@ -41,11 +41,34 @@ import {
   forArgv,
   isAssociative,
   isFrontend,
+  implicitConversion,
+  varDeclaration,
+  varDeclarationWithAssignment,
+  varDeclarationBlock,
+  manyToManyAssignment,
+  oneToManyAssignment,
+  mutatingBinaryOp,
+  indexCall,
+  rangeIndexCall,
+  binaryOp,
+  importStatement,
+  forDifferenceRange,
+  forEach,
+  forEachPair,
+  forEachKey,
+  forCLike,
+  namedArg,
+  methodCall,
+  unaryOp,
+  propertyCall,
 } from "../IR";
 import grammar from "./grammar";
 
-let restrictFrontend = true;
+let restrictedFrontend = true;
 export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
+  if (!callee.builtin) {
+    return functionCall(callee, args);
+  }
   const opCode = canonicalOp(callee.name, args.length);
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
@@ -84,40 +107,73 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         );
     }
   }
-  if (!callee.builtin) {
-    return functionCall(args, callee);
+  function asString(e: Expr): string {
+    if (e.kind === "TextLiteral") return e.value;
+    throw new PolygolfError(
+      `Syntax error. Expected string literal, but got ${e.kind}`,
+      e.source
+    );
   }
+  function asArray(e: Expr): readonly Expr[] {
+    if (e.kind === "Variants" && e.variants.length === 1) {
+      return e.variants[0].kind === "Block"
+        ? e.variants[0].children
+        : [e.variants[0]];
+    }
+    throw new PolygolfError(
+      `Syntax error. Expected single variant block, but got ${e.kind}`,
+      e.source
+    );
+  }
+
   switch (opCode) {
+    case "key_value":
+      expectArity(2);
+      return keyValue(args[0], args[1]);
     case "func": {
       expectArity(1, Infinity);
-      const idents = args.slice(0, args.length - 1);
+      const idents = args.slice(0, args.length);
       const expr = args[args.length - 1];
       assertIdentifiers(idents);
       return func(idents, expr);
     }
+    case "assign":
+      expectArity(2);
+      assertIdentifier(args[0]);
+      return assignment(args[0], args[1]);
+    case "function_call": {
+      expectArity(1, Infinity);
+      assertIdentifier(args[0]);
+      return functionCall(args[0], args.slice(1));
+    }
+    case "array":
+      expectArity(1, Infinity);
+      return arrayConstructor(args);
+    case "list":
+      return listConstructor(args);
+    case "set":
+      return setConstructor(args);
+    case "table":
+      assertKeyValues(args);
+      return tableConstructor(args);
+    case "conditional":
+    case "unsafe_conditional":
+      expectArity(3);
+      return conditional(args[0], args[1], args[2], opCode === "conditional");
+    case "while":
+      expectArity(2);
+      return whileLoop(args[0], args[1]);
     case "for": {
       expectArity(4, 5);
-      let variable, low, high, increment, body: Expr;
+      let variable, start, end, step, body: Expr;
       if (args.length === 5) {
-        [variable, low, high, increment, body] = args;
+        [variable, start, end, step, body] = args;
       } else {
-        [variable, low, high, body] = args;
-        increment = int(1n);
+        [variable, start, end, body] = args;
+        step = int(1n);
       }
       assertIdentifier(variable);
-      return forRange(variable, low, high, increment, body);
-    }
-    case "if": {
-      expectArity(2, 3);
-      const condition = args[0];
-      const consequent = args[1];
-      const alternate = args[2];
-      return ifStatement(condition, consequent, alternate);
-    }
-    case "while": {
-      expectArity(2);
-      const [condition, body] = args;
-      return whileLoop(condition, body);
+      return forRange(variable, start, end, step, body);
     }
     case "for_argv": {
       expectArity(3);
@@ -126,33 +182,130 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       assertInteger(upperBound);
       return forArgv(variable, Number(upperBound.value), body);
     }
-    case "key_value":
-      expectArity(2);
-      return keyValue(args[0], args[1]);
-    case "conditional":
-    case "unsafe_conditional":
-      expectArity(3);
-      return conditional(args[0], args[1], args[2], opCode === "conditional");
-    case "assign":
-      expectArity(2);
-      assertIdentifier(args[0]);
-      return assignment(args[0], args[1]);
-    case "list":
-      return listConstructor(args);
-    case "array":
-      expectArity(1, Infinity);
-      return arrayConstructor(args);
-    case "set":
-      return setConstructor(args);
-    case "table":
-      assertKeyValues(args);
-      return tableConstructor(args);
-    case "argv_get":
-      expectArity(1);
-      assertInteger(args[0]);
-      return polygolfOp(opCode, ...args);
+    case "if": {
+      expectArity(2, 3);
+      const condition = args[0];
+      const consequent = args[1];
+      const alternate = args[2];
+      return ifStatement(condition, consequent, alternate);
+    }
   }
-  if (isOpCode(opCode) && (!restrictFrontend || isFrontend(opCode))) {
+  if (!restrictedFrontend)
+    switch (opCode) {
+      case "implicit_conversion":
+        expectArity(2);
+        return implicitConversion(asString(args[0]) as any, args[1]);
+      case "var_declaration":
+        expectArity(1);
+        assertIdentifier(args[0]);
+        return varDeclaration(args[0], args[0].type as any);
+      case "var_declaration_with_assignment":
+        expectArity(1);
+        return varDeclarationWithAssignment(args[0] as any);
+      case "var_declaration_block":
+        return varDeclarationBlock(args as any);
+      case "many_to_many_assignment": {
+        expectArity(2);
+        const vars = asArray(args[0]);
+        const exprs = asArray(args[1]);
+        assertIdentifiers(vars); // TODO too strict?
+        return manyToManyAssignment(vars, exprs);
+      }
+      case "one_to_many_assignment": {
+        expectArity(2);
+        const vars = asArray(args[0]);
+        const expr = args[1];
+        assertIdentifiers(vars); // TODO too strict?
+        return oneToManyAssignment(vars, expr);
+      }
+      case "mutating_binary_op":
+        expectArity(3);
+        assertIdentifier(args[1]);
+        return mutatingBinaryOp(asString(args[0]), args[1], args[2]);
+      case "index_call":
+      case "index_call_one_indexed":
+        expectArity(2);
+        return indexCall(args[0], args[1], opCode === "index_call_one_indexed");
+      case "range_index_call":
+      case "range_index_call_one_indexed":
+        expectArity(4);
+        return rangeIndexCall(
+          args[0],
+          args[1],
+          args[2],
+          args[3],
+          opCode === "range_index_call_one_indexed"
+        );
+      case "property_call":
+        expectArity(2);
+        return propertyCall(args[0], asString(args[1]));
+      case "method_call":
+        expectArity(2, Infinity);
+        return methodCall(args[0], asString(args[1]), ...args.slice(2));
+      case "binary_op":
+        expectArity(3);
+        return binaryOp(asString(args[0]), args[1], args[2]);
+      case "unary_op":
+        expectArity(2);
+        return unaryOp(asString(args[0]), args[1]);
+      case "builtin":
+      case "id":
+        expectArity(1);
+        return id(asString(args[0]), opCode === "builtin");
+      case "import_statement":
+        expectArity(2, Infinity);
+        return importStatement(asString(args[0]), args.slice(1).map(asString));
+      case "for_range_inclusive": {
+        expectArity(5);
+        const [variable, start, end, step, body] = args;
+        assertIdentifier(variable);
+        return forRange(variable, start, end, step, body, true);
+      }
+      case "for_difference_range": {
+        expectArity(5);
+        const [variable, start, difference, step, body] = args;
+        assertIdentifier(variable);
+        return forDifferenceRange(
+          variable,
+          start,
+          difference,
+          step,
+          body,
+          true
+        );
+      }
+      case "for_each": {
+        expectArity(3);
+        const [variable, collection, body] = args;
+        assertIdentifier(variable);
+        return forEach(variable, collection, body);
+      }
+      case "for_each_key": {
+        expectArity(3);
+        const [variable, collection, body] = args;
+        assertIdentifier(variable);
+        return forEachKey(variable, collection, body);
+      }
+      case "for_each_pair": {
+        expectArity(4);
+        const [keyVariable, valueVariable, collection, body] = args;
+        assertIdentifier(keyVariable);
+        assertIdentifier(valueVariable);
+        return forEachPair(keyVariable, valueVariable, collection, body);
+      }
+      case "for_c_like": {
+        expectArity(4);
+        const [init, condition, append, body] = args;
+        return forCLike(init, condition, append, body);
+      }
+      case "named_arg":
+        expectArity(2);
+        return namedArg(asString(args[0]), args[1]);
+    }
+  if (isOpCode(opCode) && (!restrictedFrontend || isFrontend(opCode))) {
+    if (opCode === "argv_get" && restrictedFrontend) {
+      assertInteger(args[0]);
+    }
     if (isBinary(opCode)) {
       expectArity(2, isAssociative(opCode) ? Infinity : 2);
       return polygolfOp(opCode, ...args);
@@ -197,15 +350,6 @@ function canonicalOp(op: string, arity: number): string {
 
 export function userIdentifier(token: Token): Identifier {
   const name = token.value.slice(1);
-  if (name.includes("POLYGOLF") && restrictFrontend) {
-    throw new PolygolfError(
-      `Parse error. Variable names cannot contain 'POLYGOLF'`,
-      {
-        line: token.line,
-        column: token.col,
-      }
-    );
-  }
   return id(name, false);
 }
 
@@ -332,8 +476,8 @@ export function refSource(node: Node, ref?: Token | Node): Node {
   };
 }
 
-export default function parse(code: string, restrictedFrontend = true) {
-  restrictFrontend = restrictedFrontend;
+export default function parse(code: string, restrictFrontend = true) {
+  restrictedFrontend = restrictFrontend;
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
   try {
     parser.feed(code);

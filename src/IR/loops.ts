@@ -196,15 +196,15 @@ export function forEachKey(
 
 export function forCLike(
   init: Expr,
-  append: Expr,
   condition: Expr,
+  append: Expr,
   body: Expr
 ): ForCLike {
   return {
     kind: "ForCLike",
     init,
-    append,
     condition,
+    append,
     body,
   };
 }

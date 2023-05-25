@@ -87,62 +87,58 @@ const nimLanguage: Language = {
     ...truncatingOpsPlugins,
     useIndexCalls(),
     useEquivalentTextOp(true, false),
-    mapOps([
-      ["argv", (x) => functionCall([], "commandLineParams")],
-      ["argv_get", (x) => functionCall([add1(x[0])], "paramStr")],
-    ]),
+    mapOps(
+      ["argv", (x) => functionCall("commandLineParams")],
+      ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
+    ),
   ],
   finalEmitPlugins: [
     forRangeToForRangeInclusive(true),
     implicitlyConvertPrintArg,
     textGetToIntToTextGet,
-    mapOps([
-      ["true", (_) => id("true", true)],
-      ["false", (_) => id("false", true)],
-      ["text_byte_to_int", (x) => functionCall(x, "ord")],
+    mapOps(
+      ["true", () => id("true", true)],
+      ["false", () => id("false", true)],
+      ["text_byte_to_int", (x) => functionCall("ord", x)],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
-      ["text_split", (x) => functionCall(x, "split")],
-      ["text_split_whitespace", (x) => functionCall(x, "split")],
-      ["text_byte_length", (x) => functionCall(x, "len")],
-      ["repeat", (x) => functionCall(x, "repeat")],
-      ["max", (x) => functionCall(x, "max")],
-      ["min", (x) => functionCall(x, "min")],
-      ["abs", (x) => functionCall(x, "abs")],
-      ["text_to_int", (x) => functionCall(x, "parseInt")],
-      ["print", (x) => functionCall([id("stdout", true), x[0]], "write")],
-      ["println", (x) => functionCall(x, "echo")],
-      ["min", (x) => functionCall(x, "min")],
-      ["max", (x) => functionCall(x, "max")],
-      ["abs", (x) => functionCall(x, "abs")],
-      ["bool_to_int", (x) => functionCall(x, "int")],
-      ["int_to_text_byte", (x) => functionCall(x, "chr")],
+      ["text_split", (x) => functionCall("split", x)],
+      ["text_split_whitespace", (x) => functionCall("split", x)],
+      ["text_byte_length", (x) => functionCall("len", x)],
+      ["repeat", (x) => functionCall("repeat", x)],
+      ["max", (x) => functionCall("max", x)],
+      ["min", (x) => functionCall("min", x)],
+      ["abs", (x) => functionCall("abs", x)],
+      ["text_to_int", (x) => functionCall("parseInt", x)],
+      ["print", (x) => functionCall("write", id("stdout", true), x)],
+      ["println", (x) => functionCall("echo", x)],
+      ["min", (x) => functionCall("min", x)],
+      ["max", (x) => functionCall("max", x)],
+      ["abs", (x) => functionCall("abs", x)],
+      ["bool_to_int", (x) => functionCall("int", x)],
+      ["int_to_text_byte", (x) => functionCall("chr", x)],
       [
         "text_replace",
         (x) =>
           functionCall(
-            x[2].kind === "StringLiteral" && x[2].value === ""
-              ? [x[0], x[1]]
-              : x,
-            "replace"
+            "replace",
+            x[2].kind === "TextLiteral" && x[2].value === "" ? [x[0], x[1]] : x
           ),
       ],
       [
         "text_multireplace",
         (x) =>
           functionCall(
-            [
-              x[0],
-              arrayConstructor(
-                x.flatMap((_, i) =>
-                  i % 2 > 0 ? [arrayConstructor(x.slice(i, i + 2))] : []
-                ) // Polygolf doesn't have array of tuples, so we use array of arrays instead
-              ),
-            ],
-            "multireplace"
+            "multireplace",
+            x[0],
+            arrayConstructor(
+              x.flatMap((_, i) =>
+                i % 2 > 0 ? [arrayConstructor(x.slice(i, i + 2))] : []
+              ) // Polygolf doesn't have array of tuples, so we use array of arrays instead
+            )
           ),
-      ],
-    ]),
+      ]
+    ),
     useUnsignedDivision,
     addMutatingBinaryOp(
       ["add", "+"],

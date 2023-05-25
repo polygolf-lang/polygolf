@@ -20,12 +20,14 @@ import {
   unaryOp,
   UnaryOpCode,
   BinaryOpCodes,
+  functionCall,
+  propertyCall,
 } from "../IR";
 import { getType } from "../common/getType";
 import { Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 
-export function mapOps(opMap0: [OpCode, OpTransformOutput][]): Plugin {
+export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
   const opMap = toOpMap(opMap0);
   return {
     name: "mapOps(...)",
@@ -75,12 +77,15 @@ export function mapToUnaryAndBinaryOps(
   const opMap = toOpMap(opMap0);
   return {
     ...mapOps(
-      opMap0.map(([op, name]) => [
-        op,
-        isBinary(op)
-          ? (x: readonly Expr[]) => asBinaryChain(op, x, opMap)
-          : (x: readonly Expr[]) => unaryOp(name, x[0]),
-      ])
+      ...opMap0.map(
+        ([op, name]) =>
+          [
+            op,
+            isBinary(op)
+              ? (x: readonly Expr[]) => asBinaryChain(op, x, opMap)
+              : (x: readonly Expr[]) => unaryOp(name, x[0]),
+          ] satisfies [OpCode, OpTransformOutput]
+      )
     ),
     name: `mapPrecedenceOps(${JSON.stringify(opMap0)})`,
   };
@@ -210,6 +215,15 @@ export const removeImplicitConversions: Plugin = {
   visit(node) {
     if (node.kind === "ImplicitConversion") {
       return node.expr;
+    }
+  },
+};
+
+export const methodsAsFunctions: Plugin = {
+  name: "methodsAsFunctions",
+  visit(node) {
+    if (node.kind === "MethodCall") {
+      return functionCall(propertyCall(node.object, node.ident), node.args);
     }
   },
 };

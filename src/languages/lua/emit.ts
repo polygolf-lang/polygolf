@@ -1,4 +1,4 @@
-import { EmitError, emitStringLiteral, joinTrees } from "../../common/emit";
+import { EmitError, emitTextLiteral, joinTrees } from "../../common/emit";
 import { IR, isIntLiteral } from "../../IR";
 import { TokenTree } from "@/common/Language";
 
@@ -8,7 +8,7 @@ function precedence(expr: IR.Expr): number {
       return 11;
     case "BinaryOp":
       return binaryPrecedence(expr.name);
-    case "StringLiteral":
+    case "TextLiteral":
     case "ArrayConstructor":
     case "TableConstructor":
       return 1000;
@@ -122,8 +122,8 @@ function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
         return [emit(e.variable), "=", emit(e.expr)];
       case "Identifier":
         return [e.name];
-      case "StringLiteral":
-        return emitStringLiteral(e.value, [
+      case "TextLiteral":
+        return emitTextLiteral(e.value, [
           [
             `"`,
             [
@@ -153,12 +153,12 @@ function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
       case "IntegerLiteral":
         return [e.value.toString()];
       case "FunctionCall":
-        return [e.ident.name, "(", joinExprs(",", e.args), ")"];
+        return [emit(e.func), "(", joinExprs(",", e.args), ")"];
       case "MethodCall":
         return [
           emit(e.object, Infinity),
           ":",
-          e.ident.name,
+          emit(e.ident),
           "(",
           joinExprs(",", e.args),
           ")",

@@ -92,7 +92,7 @@ export const equalityToInequality: Plugin = {
 };
 
 export const removeBitnot: Plugin = {
-  ...mapOps([["bit_not", (x) => polygolfOp("sub", int(-1), x[0])]]),
+  ...mapOps(["bit_not", (x) => polygolfOp("sub", int(-1), x[0])]),
   name: "removeBitnot",
 };
 
@@ -152,9 +152,9 @@ export const useIntegerTruthiness: Plugin = {
       spine.pathFragment === "condition"
     ) {
       const res = isIntLiteral(node.args[1], 0n)
-        ? implicitConversion(node.args[0], "int_to_bool")
+        ? implicitConversion("int_to_bool", node.args[0])
         : isIntLiteral(node.args[0], 0n)
-        ? implicitConversion(node.args[1], "int_to_bool")
+        ? implicitConversion("int_to_bool", node.args[1])
         : undefined;
       return res !== undefined && node.op === "eq"
         ? polygolfOp("not", res)

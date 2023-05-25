@@ -72,12 +72,16 @@ export const useUFCS: Plugin = {
   name: "useUFCS",
   visit(node) {
     if (node.kind === "FunctionCall" && node.args.length > 0) {
-      if (node.args.length === 1 && node.args[0].kind === "StringLiteral") {
+      if (node.args.length === 1 && node.args[0].kind === "TextLiteral") {
         return;
       }
       const [obj, ...args] = node.args;
-      if (obj.kind !== "BinaryOp" && obj.kind !== "UnaryOp") {
-        return methodCall(obj, args, node.ident);
+      if (
+        obj.kind !== "BinaryOp" &&
+        obj.kind !== "UnaryOp" &&
+        node.func.kind === "Identifier"
+      ) {
+        return methodCall(obj, node.func, ...args);
       }
     }
   },

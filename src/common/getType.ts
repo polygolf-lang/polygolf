@@ -146,7 +146,7 @@ export function calcType(expr: Expr, program: Program): Type {
     case "MutatingBinaryOp":
       return voidType;
     case "FunctionCall": {
-      const fType = type(expr.ident);
+      const fType = type(expr.func);
       if (fType.kind !== "Function") {
         throw new PolygolfError(
           `Type error. Type ${toString(fType)} is not callable.`,
@@ -156,8 +156,9 @@ export function calcType(expr: Expr, program: Program): Type {
       if (expr.args.every((x, i) => isSubtype(type(x), fType.arguments[i]))) {
         return fType.result;
       }
+      console.log(expr);
       throw new PolygolfError(
-        `Type error. Function '${expr.ident.name} expected [${fType.arguments
+        `Type error. Function expected [${fType.arguments
           .map(toString)
           .join(", ")}] but got [${expr.args
           .map((x) => toString(type(x)))
@@ -167,7 +168,7 @@ export function calcType(expr: Expr, program: Program): Type {
     }
     case "Identifier":
       return getIdentifierType(expr, program);
-    case "StringLiteral": {
+    case "TextLiteral": {
       const codepoints = charLength(expr.value);
       return textType(
         integerType(codepoints, codepoints),
@@ -431,7 +432,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
     case "array_get":
       return expectGenericType("Array", ["T2", (x) => x[1]])[0];
     case "list_get":
-      return expectGenericType("List", ["0..oo", (_) => integerType(0)])[0];
+      return expectGenericType("List", ["0..oo", () => integerType(0)])[0];
     case "table_get":
       return expectGenericType("Table", ["T1", (x) => x[0]])[1];
     case "argv_get":
@@ -594,13 +595,13 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       expectType(integerType(0, 255));
       return textType(
         integerType(1n, 1n),
-        (types[0] as IntegerType).high < 128n
+        lt((types[0] as IntegerType).high, 128n)
       );
     case "int_to_codepoint":
       expectType(integerType(0, 0x10ffff));
       return textType(
         integerType(1n, 1n),
-        (types[0] as IntegerType).high < 128n
+        lt((types[0] as IntegerType).high, 128n)
       );
     case "list_length":
       expectGenericType("List");
@@ -698,7 +699,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
     case "list_set":
       return expectGenericType(
         "List",
-        ["0..oo", (_) => integerType(0)],
+        ["0..oo", () => integerType(0)],
         ["T1", (x) => x[0]]
       )[0];
     case "table_set":
