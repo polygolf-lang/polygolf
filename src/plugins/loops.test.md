@@ -176,12 +176,12 @@ for $i 0 80 {
 for $i_POLYGOLFshifted 1 81 {
   println_int $i_POLYGOLFshifted;
   println_int $i_POLYGOLFshifted;
-  println_int (3 * (-1 + $i_POLYGOLFshifted));
-  println_int (1 + $i_POLYGOLFshifted);
-  println_int (-2 + $i_POLYGOLFshifted);
-  println_int (-3 + $i_POLYGOLFshifted);
-  println_int (2 + (-1 * $i_POLYGOLFshifted));
-  println_int (-1 * $i_POLYGOLFshifted);
+  println_int (3 * ($i_POLYGOLFshifted - 1));
+  println_int ($i_POLYGOLFshifted + 1);
+  println_int ($i_POLYGOLFshifted - 2);
+  println_int ($i_POLYGOLFshifted - 3);
+  println_int (2 - $i_POLYGOLFshifted);
+  println_int (- $i_POLYGOLFshifted);
 };
 ```
 
