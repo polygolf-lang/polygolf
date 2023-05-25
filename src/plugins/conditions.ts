@@ -4,6 +4,7 @@ import {
   conditional,
   ifStatement,
   keyValue,
+  listConstructor,
   polygolfOp,
   tableConstructor,
 } from "../IR";
@@ -25,7 +26,7 @@ export function safeConditionalOpToCollectionGet(
           case "list":
             return polygolfOp(
               "list_get",
-              arrayConstructor([node.alternate, node.consequent]),
+              listConstructor([node.alternate, node.consequent]),
               polygolfOp("bool_to_int", node.condition)
             );
           case "table":

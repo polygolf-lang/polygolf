@@ -155,7 +155,7 @@ export const RelationOpCodes = [
   "set_contains",
 ] as const;
 
-export type RelationOpCode = string & typeof RelationOpCodes[number];
+export type RelationOpCode = string & (typeof RelationOpCodes)[number];
 
 export function isRelation(op: OpCode): op is RelationOpCode {
   return RelationOpCodes.includes(op as any);

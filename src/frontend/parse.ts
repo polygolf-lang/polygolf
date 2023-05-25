@@ -61,6 +61,7 @@ import {
   methodCall,
   unaryOp,
   propertyCall,
+  relationOpChain,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -248,6 +249,12 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       case "unary_op":
         expectArity(2);
         return unaryOp(asString(args[0]), args[1]);
+      case "relation_op_chain":
+        expectArity(2);
+        return relationOpChain(
+          asArray(args[0]),
+          asArray(args[1]).map(asString) as any
+        );
       case "builtin":
       case "id":
         expectArity(1);

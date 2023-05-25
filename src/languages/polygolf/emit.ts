@@ -126,7 +126,7 @@ function emitExprWithoutAnnotation(
       return emitSexpr(
         "@",
         emitArrayOfExprs(expr.args),
-        emitArrayOfExprs(expr.ops)
+        emitArrayOfExprs(expr.ops.map(text))
       );
     case "Assignment":
       return emitSexpr("assign", expr.variable, expr.expr);

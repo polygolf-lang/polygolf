@@ -321,7 +321,7 @@ export const useImplicitBoolToInt: Plugin = {
       isPolygolfOp(node, "bool_to_int") &&
       isPolygolfOp(spine.parent!.node, "array_get", "list_get") // This can be extend to other ops, like "mul".
     ) {
-      return implicitConversion(node.args[0], node.op);
+      return implicitConversion(node.op, node.args[0]);
     }
   },
 };

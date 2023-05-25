@@ -76,7 +76,6 @@ export type Expr =
   | KeyValue
   | Function
   | PolygolfOp
-  | RelationOpChain
   | Assignment
   | FunctionCall
   | Identifier
@@ -105,6 +104,7 @@ export type Expr =
   | PropertyCall
   | BinaryOp
   | UnaryOp
+  | RelationOpChain
   | ImportStatement
   | ForDifferenceRange
   | ForEach

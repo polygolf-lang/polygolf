@@ -18,6 +18,7 @@ describe("Restricted nodes: parse - emit match", () => {
     `property_call $o "name";`,
     `binary_op "name" $x $y;`,
     `unary_op "name" $x;`,
+    `relation_op_chain {$x; $y; $z} {"lt"; "leq"};`,
     `builtin "name";`,
     `id "name!";`,
     `import_statement "name" "x" "y";`,
