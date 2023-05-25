@@ -73,9 +73,13 @@ export default function applyLanguage(
   options: SearchOptions,
   skipTypecheck = false
 ): string {
+  const variants =
+    language.name === "Polygolf"
+      ? [program]
+      : expandVariants(program, language.readsFromStdinOnCodeDotGolf === true);
   const bestUnpacked = applyLanguageToVariants(
     language,
-    language.name === "Polygolf" ? [program] : expandVariants(program),
+    variants,
     options,
     skipTypecheck
   );
@@ -91,7 +95,7 @@ export default function applyLanguage(
   }
   const bestForPacking = applyLanguageToVariants(
     language,
-    language.name === "Polygolf" ? [program] : expandVariants(program),
+    variants,
     searchOptions(options.level, "chars", (x) => charLength(packer(x)))
   );
   const packed = packer(bestForPacking);

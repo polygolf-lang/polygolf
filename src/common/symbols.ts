@@ -319,3 +319,21 @@ export function hasDirectSideEffect(node: Node, spine: Spine) {
     return false;
   }
 }
+
+export function readsFromStdin(node: Node): boolean {
+  return isPolygolfOp(
+    node,
+    "read_byte",
+    "read_codepoint",
+    "read_line",
+    "read_int"
+  );
+}
+
+export function readsFromArgv(node: Node): boolean {
+  return node.kind === "ForArgv" || isPolygolfOp(node, "argv", "argv_get");
+}
+
+export function readsFromInput(node: Node): boolean {
+  return readsFromArgv(node) || readsFromStdin(node);
+}
