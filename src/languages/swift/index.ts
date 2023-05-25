@@ -27,6 +27,7 @@ import { assertInt64 } from "../../plugins/types";
 import {
   addVarDeclarations,
   groupVarDeclarations,
+  inlineVariables,
   noStandaloneVarDeclarations,
 } from "../../plugins/block";
 import {
@@ -57,6 +58,7 @@ const swiftLanguage: Language = {
     applyDeMorgans,
     forRangeToForRangeOneStep,
     useEquivalentTextOp(true, true),
+    inlineVariables,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -74,6 +76,7 @@ const swiftLanguage: Language = {
   finalEmitPlugins: [
     implicitlyConvertPrintArg,
     mapOps(
+      ["read_line", () => functionCall("readLine")],
       [
         "text_get_byte",
         (x) =>

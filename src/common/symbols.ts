@@ -1,10 +1,10 @@
 import {
   add,
-  Expr,
   Identifier,
   integerType,
   integerTypeIncludingAll,
   IR,
+  isPolygolfOp,
   isSubtype,
   lt,
   Node,
@@ -182,6 +182,13 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
   }
 }
 
+export interface VarAccess {
+  spine: Spine<Identifier>;
+  isRead: boolean;
+  isWrite: boolean;
+  order: number;
+}
+
 export function getReads(spine: Spine, variable?: string): Spine<Identifier>[] {
   return [...spine.compactMap((n, s) => getDirectReads(s, variable))].flat();
 }
@@ -261,8 +268,8 @@ function getDirectReadFragments(node: Node): PathFragment[] {
 }
 
 function getDirectPolygolfReadFragments(node: PolygolfOp): number[] {
-  switch (node.op) {
-  }
+  // switch (node.op) {
+  // }
   return node.args.map((x, i) => i);
 }
 
@@ -290,4 +297,25 @@ function getDirectPolygolfWriteFragments(node: PolygolfOp): number[] {
       return [0];
   }
   return [];
+}
+
+export function hasSideEffect(spine: Spine): boolean {
+  return spine.someNode(hasDirectSideEffect);
+}
+
+export function hasDirectSideEffect(node: Node, spine: Spine) {
+  try {
+    return (
+      isPolygolfOp(
+        node,
+        "read_byte",
+        "read_codepoint",
+        "read_line",
+        "read_int"
+      ) ||
+      (node.kind !== "Program" && getType(node, spine).kind === "void")
+    );
+  } catch {
+    return false;
+  }
 }

@@ -181,7 +181,7 @@ for_argv $x 100 {
 
 ```nim
 import os
-for x in commandLineParams():x.echo
+for x in..99:(paramStr 1+x).echo
 ```
 
 ```polygolf

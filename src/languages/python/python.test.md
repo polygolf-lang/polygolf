@@ -165,11 +165,13 @@ $a:0..oo <- 1;
 if ($a != 0) {
     println_int $a;
 };
+$a <- 1;
 ```
 
 ```python
 a=1
 if a:print(a)
+a=1
 ```
 
 ## Chained if

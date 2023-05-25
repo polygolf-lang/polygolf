@@ -31,6 +31,7 @@ import {
   applyDeMorgans,
   equalityToInequality,
 } from "../../plugins/arithmetic";
+import { inlineVariables } from "../../plugins/block";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
@@ -43,6 +44,7 @@ const golfscriptLanguage: Language = {
     ...bitnotPlugins,
     applyDeMorgans,
     forRangeToForRangeOneStep,
+    inlineVariables,
   ],
   emitPlugins: [useIndexCalls(), forArgvToForEach],
   finalEmitPlugins: [

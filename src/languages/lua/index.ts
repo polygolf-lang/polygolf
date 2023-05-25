@@ -8,6 +8,7 @@ import {
   text,
   textType,
   add1,
+  listType,
 } from "../../IR";
 import { Language } from "../../common/Language";
 import {
@@ -29,6 +30,7 @@ import { renameIdents } from "../../plugins/idents";
 import {
   tempVarToMultipleAssignment,
   addOneToManyAssignments,
+  inlineVariables,
 } from "../../plugins/block";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { useEquivalentTextOp } from "../../plugins/textOps";
@@ -54,6 +56,7 @@ const luaLanguage: Language = {
     applyDeMorgans,
     useIntegerTruthiness,
     forRangeToForRangeOneStep,
+    inlineVariables,
   ],
   emitPlugins: [
     forArgvToForRange(),
@@ -76,7 +79,7 @@ const luaLanguage: Language = {
         (x) =>
           polygolfOp(
             "list_get",
-            { ...id("arg", true), type: textType() },
+            { ...id("arg", true), type: listType(textType()) },
             x[0]
           ),
       ],
@@ -92,6 +95,7 @@ const luaLanguage: Language = {
         polygolfOp("concat", text(""), implicitConversion("int_to_text", x[0])),
     ]),
     mapOps(
+      ["read_line", () => functionCall("io.read")],
       ["text_byte_length", (x) => methodCall(x[0], "len")],
       ["true", () => id("true", true)],
       ["false", () => id("false", true)],
@@ -101,7 +105,7 @@ const luaLanguage: Language = {
       ["min", (x) => functionCall("math.min", x)],
       ["max", (x) => functionCall("math.max", x)],
       ["abs", (x) => functionCall("math.abs", x)],
-      ["argv", (x) => id("arg", true)],
+      ["argv", () => id("arg", true)],
       ["min", (x) => functionCall("math.min", x)],
       ["max", (x) => functionCall("math.max", x)],
       ["abs", (x) => functionCall("math.abs", x)],

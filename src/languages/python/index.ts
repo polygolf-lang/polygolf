@@ -48,6 +48,7 @@ import {
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
+  inlineVariables,
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
@@ -77,6 +78,7 @@ const pythonLanguage: Language = {
     useIntegerTruthiness,
     forRangeToForRangeOneStep,
     useMultireplace(true),
+    inlineVariables,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -101,6 +103,7 @@ const pythonLanguage: Language = {
     mapOps(
       ["true", () => int(1)],
       ["false", () => int(0)],
+      ["read_line", () => functionCall("readLine", id("stdin", true))],
       ["abs", (x) => functionCall("abs", x)],
       ["list_length", (x) => functionCall("len", x)],
       ["join_using", (x) => methodCall(x[1], "join", x[0])],

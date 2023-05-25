@@ -49,6 +49,7 @@ import {
   addVarDeclarationOneToManyAssignments,
   addVarDeclarations,
   groupVarDeclarations,
+  inlineVariables,
   noStandaloneVarDeclarations,
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
@@ -80,6 +81,7 @@ const nimLanguage: Language = {
     textToIntToTextGetToInt,
     forRangeToForRangeOneStep,
     useMultireplace(),
+    inlineVariables,
   ],
   emitPlugins: [
     forArgvToForEach,

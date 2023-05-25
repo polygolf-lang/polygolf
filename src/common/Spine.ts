@@ -1,6 +1,6 @@
 import { Expr, IR, isPolygolfOp, polygolfOp } from "../IR";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
-import { replaceAtIndex } from "./immutable";
+import { replaceAtIndex } from "./arrays";
 
 /** A Spine points to one node and keeps track of all of its ancestors up to
  * the root program node. The main purpose of a Spine is for traversal. */
