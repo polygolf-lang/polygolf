@@ -27,6 +27,7 @@ import {
   NamedArg,
   ImplicitConversion,
   RelationOpChain,
+  PropertyCall,
 } from "./exprs";
 import {
   ForRange,
@@ -38,7 +39,7 @@ import {
   ForArgv,
   ForDifferenceRange,
 } from "./loops";
-import { Identifier, IntegerLiteral, StringLiteral } from "./terminals";
+import { Identifier, IntegerLiteral, TextLiteral } from "./terminals";
 import { Block, IfStatement, ImportStatement, Variants } from "./toplevel";
 import { Type } from "./types";
 
@@ -69,44 +70,47 @@ export interface SourcePointer {
 export type Node = Program | Expr;
 
 export type Expr =
+  // Frontend nodes
   | Block
   | Variants
   | KeyValue
   | Function
   | PolygolfOp
   | RelationOpChain
-  | ImplicitConversion
-  | VarDeclaration
-  | VarDeclarationWithAssignment
-  | VarDeclarationBlock
   | Assignment
-  | IndexCall
-  | RangeIndexCall
   | FunctionCall
-  | MethodCall
-  | BinaryOp
-  | UnaryOp
   | Identifier
-  | StringLiteral
+  | TextLiteral
   | IntegerLiteral
   | ArrayConstructor
   | ListConstructor
   | SetConstructor
   | TableConstructor
-  | MutatingBinaryOp
   | ConditionalOp
-  | ManyToManyAssignment
-  | OneToManyAssignment
-  | ImportStatement
   | WhileLoop
   | ForRange
+  | ForArgv
+  | IfStatement
+  // Other nodes
+  | ImplicitConversion
+  | VarDeclaration
+  | VarDeclarationWithAssignment
+  | VarDeclarationBlock
+  | ManyToManyAssignment
+  | OneToManyAssignment
+  | MutatingBinaryOp
+  | IndexCall
+  | RangeIndexCall
+  | MethodCall
+  | PropertyCall
+  | BinaryOp
+  | UnaryOp
+  | ImportStatement
   | ForDifferenceRange
   | ForEach
   | ForEachKey
   | ForEachPair
   | ForCLike
-  | ForArgv
-  | IfStatement
   | NamedArg;
 
 /**

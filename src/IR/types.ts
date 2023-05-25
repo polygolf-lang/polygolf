@@ -4,7 +4,7 @@ import {
   listConstructor,
   setConstructor,
   tableConstructor,
-  stringLiteral,
+  text,
   int,
 } from "./IR";
 
@@ -443,7 +443,7 @@ export function defaultValue(a: Type): Expr {
         isFiniteBound(a.codepointLength.low) &&
         a.codepointLength.low < 2 ** 32
       ) {
-        return stringLiteral(" ".repeat(Number(a.codepointLength.low)));
+        return text(" ".repeat(Number(a.codepointLength.low)));
       }
       break;
     case "integer":

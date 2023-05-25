@@ -189,6 +189,16 @@ if 1:print("a")
 elif 1:print("b")
 ```
 
+## Multireplace
+
+```polygolf
+text_replace (text_replace (text_replace "text" "x" "s") "t" "ttt") "e" " ";
+```
+
+```py
+"text".translate({120:"s",116:"ttt",101:32})
+```
+
 ## Conditional ops
 
 ```polygolf
