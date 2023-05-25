@@ -1,7 +1,7 @@
 import { findLang } from "../languages/languages";
 import fs from "fs";
 import path from "path";
-import { emitStringLiteral } from "../common/emit";
+import { emitTextLiteral } from "../common/emit";
 
 interface Test {
   input: string;
@@ -139,6 +139,7 @@ import { findLang } from "@/languages/languages";
 import polygolfLanguage from "@/languages/polygolf";
 import { Plugin } from "@/common/Language";
 import { getOnlyVariant } from "@/common/expandVariants";
+import { normalize } from "@/common/debug";
 
 ${[...importSet]
   .map(
@@ -158,7 +159,7 @@ function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars",
 
 function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
   test(name, () =>
-    expect(applyLanguage(polygolfLanguage, applyAll(getOnlyVariant(parse(input, false)), plugin.visit), searchOptions("none", "bytes"), true)).toEqual(output)
+    expect(applyLanguage(polygolfLanguage, applyAll(getOnlyVariant(parse(input, false)), plugin.visit), searchOptions("none", "bytes"), true)).toEqual(normalize(output))
   );
 }
 
@@ -171,7 +172,7 @@ function emitNode(node: Describe | Test, imports: string[]): string {
 }
 
 function stringify(x: string): string {
-  return emitStringLiteral(x, [
+  return emitTextLiteral(x, [
     [
       "`",
       [

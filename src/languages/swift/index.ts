@@ -5,8 +5,9 @@ import {
   methodCall,
   namedArg,
   polygolfOp,
-  stringLiteral,
+  text,
   add1,
+  propertyCall,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
@@ -60,100 +61,94 @@ const swiftLanguage: Language = {
   emitPlugins: [
     forArgvToForEach,
     ...truncatingOpsPlugins,
-    mapOps([
+    mapOps(
       ["argv", (x) => id("CommandLine.arguments[1...]", true)],
       [
         "argv_get",
         (x) =>
           polygolfOp("list_get", id("CommandLine.arguments", true), add1(x[0])),
-      ],
-    ]),
+      ]
+    ),
     useIndexCalls(),
   ],
   finalEmitPlugins: [
     implicitlyConvertPrintArg,
-    mapOps([
+    mapOps(
       [
         "text_get_byte",
         (x) =>
           functionCall(
-            [
-              indexCall(
-                functionCall([methodCall(x[0], [], "utf8", true)], "Array"),
-                x[1]
-              ),
-            ],
-            "Int"
+            "Int",
+            indexCall(functionCall("Array", propertyCall(x[0], "utf8")), x[1])
           ),
       ],
       [
         "text_get_codepoint",
         (x) =>
-          functionCall(
-            [indexCall(functionCall([x[0]], "Array"), x[1])],
-            "String"
-          ),
+          functionCall("String", indexCall(functionCall("Array", x[0]), x[1])),
       ],
       [
         "int_to_codepoint",
         (x) =>
           functionCall(
-            [functionCall([functionCall([x[0]], "UnicodeScalar")], "!")],
-            "String"
+            "String",
+            functionCall("!", functionCall("UnicodeScalar", x))
           ),
       ],
-      ["text_codepoint_length", (x) => methodCall(x[0], [], "count", true)],
+      ["text_codepoint_length", (x) => propertyCall(x[0], "count")],
       [
         "text_byte_length",
-        (x) =>
-          methodCall(methodCall(x[0], [], "utf8", true), [], "count", true),
+        (x) => propertyCall(propertyCall(x[0], "utf8"), "count"),
       ],
-      ["int_to_text", (x) => functionCall([x[0]], "String")],
+      ["int_to_text", (x) => functionCall("String", x)],
       [
         "text_split",
-        (x) => methodCall(x[0], [namedArg("separator", x[1])], "split"),
+        (x) => methodCall(x[0], "split", namedArg("separator", x[1])),
       ],
       [
         "repeat",
         (x) =>
           functionCall(
-            [namedArg("repeating", x[0]), namedArg("count", x[1])],
-            "String"
+            "String",
+            namedArg("repeating", x[0]),
+            namedArg("count", x[1])
           ),
       ],
       [
         "pow",
         (x) =>
           functionCall(
-            [
-              functionCall(
-                [
-                  functionCall([x[0]], "Double"),
-                  functionCall([x[1]], "Double"),
-                ],
-                "pow"
-              ),
-            ],
-            "Int"
+            "Int",
+            functionCall(
+              "pow",
+              functionCall("Double", x[0]),
+              functionCall("Double", x[1])
+            )
           ),
       ],
-      ["println", (x) => functionCall([x[0]], "print")],
+      ["println", (x) => functionCall("print", x)],
       [
         "print",
-        (x) =>
-          functionCall(
-            [x[0], namedArg("terminator", stringLiteral(""))],
-            "print"
-          ),
+        (x) => functionCall("print", x, namedArg("terminator", text(""))),
       ],
-      ["text_to_int", (x) => functionCall([functionCall([x[0]], "Int")], "!")],
+      ["text_to_int", (x) => functionCall("!", functionCall("Int", x))],
 
-      ["max", (x) => functionCall(x, "max")],
-      ["min", (x) => functionCall(x, "min")],
-      ["abs", (x) => functionCall([x[0]], "abs")],
-      ["true", (_) => id("true", true)],
-      ["false", (_) => id("false", true)],
-    ]),
+      ["max", (x) => functionCall("max", x)],
+      ["min", (x) => functionCall("min", x)],
+      ["abs", (x) => functionCall("abs", x)],
+      ["true", () => id("true", true)],
+      ["false", () => id("false", true)],
+      [
+        "text_replace",
+        (x) =>
+          methodCall(
+            x[0],
+            "replacingOccurrences",
+            namedArg("of", x[1]),
+            namedArg("with", x[2])
+          ),
+      ]
+    ),
     addMutatingBinaryOp(
       ["add", "+"],
       ["sub", "-"],
@@ -190,12 +185,18 @@ const swiftLanguage: Language = {
       ["and", "&&"],
       ["or", "||"]
     ),
-    addImports([["pow", "Foundation"]], "import"),
+    addImports(
+      [
+        ["pow", "Foundation"],
+        ["replacingOccurrences", "Foundation"],
+      ],
+      "import"
+    ),
     alias((expr) => {
       switch (expr.kind) {
         case "IntegerLiteral":
           return expr.value.toString();
-        case "StringLiteral":
+        case "TextLiteral":
           return `"${expr.value}"`;
       }
     }),

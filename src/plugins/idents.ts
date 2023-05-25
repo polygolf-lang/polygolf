@@ -122,7 +122,7 @@ export function alias(
       const replacedDeep = spine.withReplacer((node) => {
         const key = getKey(node);
         if (key !== undefined && aliasingSave(key, timesUsed.get(key)!) > 0) {
-          const alias = id(key + "aliasPOLYGOLF");
+          const alias = id(key + "+alias");
           if (assignments.every((x) => x.variable.name !== alias.name))
             assignments.push(assignment(alias, node as Expr));
           return alias;
