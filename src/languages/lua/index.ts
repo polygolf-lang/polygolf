@@ -5,7 +5,7 @@ import {
   int,
   methodCall,
   polygolfOp,
-  stringLiteral,
+  text,
   textType,
   add1,
 } from "../../IR";
@@ -61,20 +61,16 @@ const luaLanguage: Language = {
     implicitlyConvertPrintArg,
     useEquivalentTextOp(true, false),
     mapOps([
-      [
-        "text_to_int",
-        (x) =>
-          polygolfOp("mul", int(1n), implicitConversion(x[0], "text_to_int")),
-      ],
+      "text_to_int",
+      (x) =>
+        polygolfOp("mul", int(1n), implicitConversion("text_to_int", x[0])),
     ]),
     mapOps([
-      [
-        "text_to_int",
-        (x) =>
-          polygolfOp("add", int(0n), implicitConversion(x[0], "text_to_int")),
-      ],
+      "text_to_int",
+      (x) =>
+        polygolfOp("add", int(0n), implicitConversion("text_to_int", x[0])),
     ]),
-    mapOps([
+    mapOps(
       [
         "argv_get",
         (x) =>
@@ -84,42 +80,49 @@ const luaLanguage: Language = {
             x[0]
           ),
       ],
-      ["text_get_byte", (x) => methodCall(x[0], [add1(x[1])], "byte")],
-      [
-        "text_get_byte_slice",
-        (x) => methodCall(x[0], [x[1], add1(x[2])], "sub"),
-      ],
-    ]),
+      ["text_get_byte", (x) => methodCall(x[0], "byte", add1(x[1]))],
+      ["text_get_byte_slice", (x) => methodCall(x[0], "sub", x[1], add1(x[2]))]
+    ),
     useIndexCalls(true),
   ],
   finalEmitPlugins: [
     mapOps([
-      [
-        "int_to_text",
-        (x) =>
-          polygolfOp(
-            "concat",
-            stringLiteral(""),
-            implicitConversion(x[0], "int_to_text")
-          ),
-      ],
+      "int_to_text",
+      (x) =>
+        polygolfOp("concat", text(""), implicitConversion("int_to_text", x[0])),
     ]),
-    mapOps([
-      ["text_byte_length", (x) => methodCall(x[0], [], "len")],
-      ["true", (_) => id("true", true)],
-      ["false", (_) => id("false", true)],
-      ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
-      ["print", (x) => functionCall(x, "io.write")],
-      ["println", (x) => functionCall(x, "print")],
-      ["min", (x) => functionCall(x, "math.min")],
-      ["max", (x) => functionCall(x, "math.max")],
-      ["abs", (x) => functionCall(x, "math.abs")],
+    mapOps(
+      ["text_byte_length", (x) => methodCall(x[0], "len")],
+      ["true", () => id("true", true)],
+      ["false", () => id("false", true)],
+      ["repeat", (x) => methodCall(x[0], "rep", x[1])],
+      ["print", (x) => functionCall("io.write", x)],
+      ["println", (x) => functionCall("print", x)],
+      ["min", (x) => functionCall("math.min", x)],
+      ["max", (x) => functionCall("math.max", x)],
+      ["abs", (x) => functionCall("math.abs", x)],
       ["argv", (x) => id("arg", true)],
-      ["min", (x) => functionCall(x, "math.min")],
-      ["max", (x) => functionCall(x, "math.max")],
-      ["abs", (x) => functionCall(x, "math.abs")],
-      ["int_to_text_byte", (x) => functionCall(x, "string.char")],
-    ]),
+      ["min", (x) => functionCall("math.min", x)],
+      ["max", (x) => functionCall("math.max", x)],
+      ["abs", (x) => functionCall("math.abs", x)],
+      ["int_to_text_byte", (x) => functionCall("string.char", x)],
+      [
+        "text_replace",
+        ([a, b, c]) =>
+          methodCall(
+            a,
+            "gsub",
+            b.kind === "TextLiteral"
+              ? text(
+                  b.value.replace(/(-|%|\^|\$|\(|\)|\.|\[|\]|\*|\+|\?)/g, "%$1")
+                )
+              : methodCall(b, "gsub", text("(%W)"), text("%%%1")),
+            c.kind === "TextLiteral"
+              ? text(c.value.replace("%", "%%"))
+              : methodCall(c, "gsub", text("%%"), text("%%%%"))
+          ),
+      ]
+    ),
     mapToUnaryAndBinaryOps(
       ["pow", "^"],
       ["not", "not"],

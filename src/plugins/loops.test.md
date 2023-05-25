@@ -9,7 +9,7 @@ for $i 0 10 {
 ```
 
 ```polygolf loops.forRangeToForRangeInclusive()
-@ForRangeInclusive $i 0 9 1 (
+for_range_inclusive $i 0 9 1 (
   print_int $x
 );
 ```
@@ -23,7 +23,7 @@ while ($i < 10) {
 ```
 
 ```polygolf loops.forRangeToForCLike
-@ForCLike ($i <- 0) ($i < 10) ($i <- (1 + $i)) (
+for_c_like ($i <- 0) ($i < 10) ($i <- (1 + $i)) (
   print_int $x
 );
 ```
@@ -37,8 +37,8 @@ for $i 0 (# $collection) {
 ```
 
 ```polygolf loops.forRangeToForEach("list_get")
-@ForEach $i_POLYGOLFforRangeToForEach $collection (
-  print $i_POLYGOLFforRangeToForEach
+for_each (id "i+each") $collection (
+  print (id "i+each")
 );
 ```
 
@@ -51,8 +51,8 @@ for $i 0 3 {
 
 ```polygolf loops.forRangeToForEach("array_get")
 $collection <- (array "a" "b" "c");
-@ForEach $i_POLYGOLFforRangeToForEach $collection (
-  print $i_POLYGOLFforRangeToForEach
+for_each (id "i+each") $collection (
+  print (id "i+each")
 );
 ```
 
@@ -77,8 +77,8 @@ for $i 0 10 (
 ```
 
 ```polygolf loops.forRangeToForEach("text_get_byte")
-@ForEach $i_POLYGOLFforRangeToForEach "9876543210" (
-  print $i_POLYGOLFforRangeToForEach
+for_each (id "i+each") "9876543210" (
+  print (id "i+each")
 );
 ```
 
@@ -101,8 +101,8 @@ for $i 0 5 {
 ```
 
 ```polygolf loops.forRangeToForEach("list_get")
-@ForEach $i_POLYGOLFforRangeToForEach (list 5 4 3 2 1) (
-  print_int $i_POLYGOLFforRangeToForEach
+for_each (id "i+each") (list 5 4 3 2 1) (
+  print_int (id "i+each")
 );
 ```
 
@@ -123,9 +123,9 @@ for $i 0 (# $collection) {
 ```
 
 ```polygolf loops.forRangeToForEachPair
-@ForEachPair $i $i_POLYGOLFforRangeToForEachPair $collection {
+for_each_pair $i (id "i+each") $collection {
   print_int $i;
-  print_int $i_POLYGOLFforRangeToForEachPair;
+  print_int (id "i+each");
 };
 ```
 
@@ -138,21 +138,21 @@ for_argv $x 100 {
 ```
 
 ```polygolf loops.forArgvToForEach
-@ForEach $x argv (
+for_each $x argv (
   println $x
 );
 ```
 
 ```polygolf loops.forArgvToForRange()
-for $x+index 0 100 {
-  $x <- (argv_get $x+index);
+for (id "x+index") 0 100 {
+  $x <- (argv_get (id "x+index"));
   println $x;
 };
 ```
 
 ```polygolf loops.forArgvToForRange(false)
-for $x+index 0 argc {
-  $x <- (argv_get $x+index);
+for (id "x+index") 0 argc {
+  $x <- (argv_get (id "x+index"));
   println $x;
 };
 ```
@@ -173,15 +173,15 @@ for $i 0 80 {
 ```
 
 ```polygolf loops.shiftRangeOneUp
-for $i_POLYGOLFshifted 1 81 {
-  println_int $i_POLYGOLFshifted;
-  println_int $i_POLYGOLFshifted;
-  println_int (3 * (-1 + $i_POLYGOLFshifted));
-  println_int (1 + $i_POLYGOLFshifted);
-  println_int (-2 + $i_POLYGOLFshifted);
-  println_int (-3 + $i_POLYGOLFshifted);
-  println_int (2 + (-1 * $i_POLYGOLFshifted));
-  println_int (-1 * $i_POLYGOLFshifted);
+for (id "i+shift") 1 81 {
+  println_int (id "i+shift");
+  println_int (id "i+shift");
+  println_int (3 * ((id "i+shift") - 1));
+  println_int ((id "i+shift") + 1);
+  println_int ((id "i+shift") - 2);
+  println_int ((id "i+shift") - 3);
+  println_int (2 - (id "i+shift"));
+  println_int (- (id "i+shift"));
 };
 ```
 
@@ -194,8 +194,8 @@ for $i 0 10 2 {
 ```
 
 ```polygolf loops.forRangeToForRangeOneStep
-for $iPOLYGOLFOneStep 0 5 {
-  $i <- (2 * $iPOLYGOLFOneStep);
+for (id "i+1step") 0 5 {
+  $i <- (2 * (id "i+1step"));
   println $i;
 };
 ```
@@ -207,8 +207,8 @@ for $i -22 22 5 {
 ```
 
 ```polygolf loops.forRangeToForRangeOneStep
-for $iPOLYGOLFOneStep 0 9 {
-  $i <- (-22 + (5 * $iPOLYGOLFOneStep));
+for (id "i+1step") 0 9 {
+  $i <- (-22 + (5 * (id "i+1step")));
   println $i;
 };
 ```

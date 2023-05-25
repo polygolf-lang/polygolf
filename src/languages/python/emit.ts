@@ -1,11 +1,12 @@
+import { charLength } from "../../common/applyLanguage";
 import { TokenTree } from "@/common/Language";
 import {
   containsMultiExpr,
   EmitError,
-  emitStringLiteral,
+  emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral } from "../../IR";
+import { IR, isIntLiteral, TextLiteral, text } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -168,21 +169,29 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [e.name, "=", emit(e.value)];
       case "Identifier":
         return e.name;
-      case "StringLiteral":
-        return emitPythonStringLiteral(e.value);
+      case "TextLiteral":
+        return emitPythonTextLiteral(e.value);
       case "IntegerLiteral":
         return e.value.toString();
       case "FunctionCall":
-        return [e.ident.name, "(", joinExprs(",", e.args), ")"];
-      case "MethodCall":
         return [
-          emit(e.object),
-          ".",
-          e.ident.name,
+          emit(e.func),
           "(",
-          joinExprs(",", e.args),
+          e.args.length > 1 &&
+          e.args.every(
+            (x) => x.kind === "TextLiteral" && charLength(x.value) === 1
+          )
+            ? [
+                "*",
+                emit(
+                  text(e.args.map((x) => (x as TextLiteral).value).join(""))
+                ),
+              ]
+            : joinExprs(",", e.args),
           ")",
         ];
+      case "PropertyCall":
+        return [emit(e.object), ".", emit(e.ident)];
       case "BinaryOp": {
         const rightAssoc = e.name === "**";
         return [
@@ -195,6 +204,15 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [e.name, emit(e.arg, prec)];
       case "ListConstructor":
         return ["[", joinExprs(",", e.exprs), "]"];
+      case "TableConstructor":
+        return [
+          "{",
+          joinTrees(
+            ",",
+            e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
+          ),
+          "}",
+        ];
       case "IndexCall":
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");
         return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
@@ -225,8 +243,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
   return ["(", inner, ")"];
 }
 
-export function emitPythonStringLiteral(x: string): string {
-  return emitStringLiteral(x, [
+export function emitPythonTextLiteral(x: string): string {
+  return emitTextLiteral(x, [
     [
       `"`,
       [
