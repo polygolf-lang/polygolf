@@ -199,7 +199,13 @@ const swiftLanguage: Language = {
       ["and", "&&"],
       ["or", "||"]
     ),
-    addImports([["pow", "Foundation"]], "import"),
+    addImports(
+      [
+        ["pow", "Foundation"],
+        ["replacingOccurrences", "Foundation"],
+      ],
+      "import"
+    ),
     renameIdents(),
     addVarDeclarations,
     groupVarDeclarations(),
