@@ -229,7 +229,7 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 - [x] `x=1,y=1` ⟶ `x=y=1`
 - [x] `x=t;x=y;y=t` ⟶ `x,y=y,x`
 - [x] `x=x*3` ⟶ `x*=3`
-- [ ] `x=z;y=x*5` ⟶ `y=z*5`
+- [x] `x=z;y=x*5` ⟶ `y=z*5`
 
 ### Loops
 
@@ -264,7 +264,7 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
   - Use whitespace to format the source.
   - Use comments if appropriate.
   - Use descriptive variable names - Polygolf will shorten them for you.
-  - Store intermediate results of complex expressions in auxilary variables - Polygolf will inline them for you. (To come)
+  - Store intermediate results of complex expressions in auxilary variables - Polygolf will inline them for you.
 - Help Polygolf understand the problem. This includes:
   - Explicitly annotate types of values. The type inference algorithm isn't perfect or in some cases can't even possible narrow the type down as much as you can. This is especially relevant for
     - Values coming from argv - perhaps you know they will be ascii or that they will be representing an integer in a certain range.
