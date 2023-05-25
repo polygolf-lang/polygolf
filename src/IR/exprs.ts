@@ -14,7 +14,7 @@ import {
   isCommutative,
   int,
   isAssociative,
-  stringLiteral,
+  text,
   integerType,
   AliasedOpCode,
   FrontendOpCode,
@@ -62,16 +62,21 @@ export interface KeyValue extends BaseExpr {
 
 export interface FunctionCall extends BaseExpr {
   readonly kind: "FunctionCall";
-  readonly ident: Identifier;
+  readonly func: Expr;
   readonly args: readonly Expr[];
 }
 
 export interface MethodCall extends BaseExpr {
   readonly kind: "MethodCall";
-  readonly ident: Identifier;
   readonly object: Expr;
+  readonly ident: Identifier;
   readonly args: readonly Expr[];
-  readonly property: boolean;
+}
+
+export interface PropertyCall extends BaseExpr {
+  readonly kind: "PropertyCall";
+  readonly object: Expr;
+  readonly ident: Identifier;
 }
 
 export interface IndexCall extends BaseExpr {
@@ -119,7 +124,7 @@ export interface ConditionalOp extends BaseExpr {
 
 export interface Function extends BaseExpr {
   readonly kind: "Function";
-  readonly args: readonly Identifier[];
+  readonly args: readonly Expr[];
   readonly expr: Expr;
 }
 
@@ -130,8 +135,8 @@ export interface NamedArg<T extends Expr = Expr> extends BaseExpr {
 }
 
 export function implicitConversion(
-  expr: Expr,
-  behavesLike: UnaryOpCode & `${string}_to_${string}`
+  behavesLike: UnaryOpCode & `${string}_to_${string}`,
+  expr: Expr
 ): ImplicitConversion {
   return {
     kind: "ImplicitConversion",
@@ -191,12 +196,12 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
           .filter((x) => x.kind === "IntegerLiteral")
           .concat(args.filter((x) => x.kind !== "IntegerLiteral"));
       } else {
-        args = args.filter((x) => x.kind !== "StringLiteral" || x.value !== "");
+        args = args.filter((x) => x.kind !== "TextLiteral" || x.value !== "");
         if (
           args.length === 0 ||
           (args.length === 1 && args[0].kind === "ImplicitConversion")
         ) {
-          args = [stringLiteral(""), args[0]];
+          args = [text(""), args[0]];
         }
       }
       const newArgs: Expr[] = [];
@@ -252,10 +257,10 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
 function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
   if (
     op === "concat" &&
-    left.kind === "StringLiteral" &&
-    right.kind === "StringLiteral"
+    left.kind === "TextLiteral" &&
+    right.kind === "TextLiteral"
   ) {
-    return stringLiteral(left.value + right.value);
+    return text(left.value + right.value);
   }
   if (left.kind === "IntegerLiteral" && right.kind === "IntegerLiteral") {
     try {
@@ -312,28 +317,37 @@ export const add1 = (expr: Expr) => polygolfOp("add", expr, int(1n));
 export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
 
 export function functionCall(
-  args: readonly Expr[],
-  ident: string | Identifier
+  func: string | Expr,
+  ...args: readonly (Expr | readonly Expr[])[]
 ): FunctionCall {
   return {
     kind: "FunctionCall",
-    ident: typeof ident === "string" ? id(ident, true) : ident,
-    args,
+    func: typeof func === "string" ? id(func, true) : func,
+    args: args.flat(),
   };
 }
 
 export function methodCall(
   object: Expr,
-  args: readonly Expr[],
   ident: string | Identifier,
-  property = false
+  ...args: readonly Expr[]
 ): MethodCall {
   return {
     kind: "MethodCall",
     ident: typeof ident === "string" ? id(ident, true) : ident,
     object,
     args,
-    property,
+  };
+}
+
+export function propertyCall(
+  object: Expr | readonly Expr[],
+  ident: string | Identifier
+): PropertyCall {
+  return {
+    kind: "PropertyCall",
+    ident: typeof ident === "string" ? id(ident, true) : ident,
+    object: [object].flat()[0],
   };
 }
 
@@ -388,7 +402,7 @@ export function conditional(
   condition: Expr,
   consequent: Expr,
   alternate: Expr,
-  isSafe: boolean
+  isSafe: boolean = true
 ): ConditionalOp {
   return {
     kind: "ConditionalOp",
@@ -399,7 +413,7 @@ export function conditional(
   };
 }
 
-export function func(args: (string | Identifier)[], expr: Expr): Function {
+export function func(args: (string | Expr)[], expr: Expr): Function {
   return {
     kind: "Function",
     args: args.map((x) => (typeof x === "string" ? id(x) : x)),
