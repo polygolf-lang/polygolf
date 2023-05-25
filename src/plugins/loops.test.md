@@ -176,12 +176,12 @@ for $i 0 80 {
 for (id "i+shift") 1 81 {
   println_int (id "i+shift");
   println_int (id "i+shift");
-  println_int (3 * (-1 + (id "i+shift")));
-  println_int (1 + (id "i+shift"));
-  println_int (-2 + (id "i+shift"));
-  println_int (-3 + (id "i+shift"));
-  println_int (2 + (-1 * (id "i+shift")));
-  println_int (-1 * (id "i+shift"));
+  println_int (3 * ((id "i+shift") - 1));
+  println_int ((id "i+shift") + 1);
+  println_int ((id "i+shift") - 2);
+  println_int ((id "i+shift") - 3);
+  println_int (2 - (id "i+shift"));
+  println_int (- (id "i+shift"));
 };
 ```
 
