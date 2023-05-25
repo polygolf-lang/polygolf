@@ -260,9 +260,16 @@ function getTypeBitNot(t: IntegerType): IntegerType {
 
 function getOpCodeType(expr: PolygolfOp, program: Program): Type {
   const types = getArgs(expr).map((x) => getType(x, program));
-  function expectVariadicType(expected: Type, minArity = 2) {
+  function expectVariadicType(
+    expected: Type,
+    minArityOrArityCheck: number | ((x: number) => boolean) = 2
+  ) {
+    const arityCheck =
+      typeof minArityOrArityCheck === "number"
+        ? (x: number) => x >= minArityOrArityCheck
+        : minArityOrArityCheck;
     if (
-      types.length < minArity ||
+      !arityCheck(types.length) ||
       types.some((x, i) => !isSubtype(x, expected))
     ) {
       throw new PolygolfError(
@@ -658,6 +665,9 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
         a.isAscii && c.isAscii
       );
     }
+    case "text_multireplace":
+      expectVariadicType(textType(), (x) => x > 2 && x % 2 > 0);
+      return textType();
     case "text_get_byte_slice":
     case "text_get_codepoint_slice": {
       expectType(textType(), integerType(0), integerType(0));

@@ -11,6 +11,9 @@ import {
   textType,
   namedArg,
   add1,
+  tableConstructor,
+  keyValue,
+  StringLiteral,
 } from "../../IR";
 import { Language } from "../../common/Language";
 
@@ -41,6 +44,7 @@ import {
   textGetToIntToTextGet,
   textToIntToTextGetToInt,
   useEquivalentTextOp,
+  useMultireplace,
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
@@ -53,6 +57,7 @@ import {
   equalityToInequality,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
+import { charLength } from "../../common/applyLanguage";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -71,6 +76,7 @@ const pythonLanguage: Language = {
     applyDeMorgans,
     useIntegerTruthiness,
     forRangeToForRangeOneStep,
+    useMultireplace(true),
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -129,6 +135,30 @@ const pythonLanguage: Language = {
               : [x[0], namedArg("end", stringLiteral(""))]
           );
         },
+      ],
+      ["text_replace", (x) => methodCall(x[0], "replace", x[1], x[2])],
+      [
+        "text_multireplace",
+        (x) =>
+          methodCall(
+            x[0],
+            "translate",
+            tableConstructor(
+              (x as StringLiteral[]).flatMap((_, i, x) =>
+                i % 2 > 0
+                  ? [
+                      keyValue(
+                        int(x[i].value.codePointAt(0)!),
+                        charLength(x[i + 1].value) === 1 &&
+                          x[i + 1].value.codePointAt(0)! < 100
+                          ? int(x[i + 1].value.codePointAt(0)!)
+                          : x[i + 1]
+                      ),
+                    ]
+                  : []
+              )
+            )
+          ),
       ],
     ]),
     addMutatingBinaryOp(

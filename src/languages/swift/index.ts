@@ -139,6 +139,16 @@ const swiftLanguage: Language = {
       ["abs", (x) => functionCall("abs", x)],
       ["true", () => id("true", true)],
       ["false", () => id("false", true)],
+      [
+        "text_replace",
+        (x) =>
+          methodCall(
+            x[0],
+            "replacingOccurrences",
+            namedArg("of", x[1]),
+            namedArg("with", x[2])
+          ),
+      ],
     ]),
     addMutatingBinaryOp(
       ["add", "+"],
@@ -176,7 +186,13 @@ const swiftLanguage: Language = {
       ["and", "&&"],
       ["or", "||"]
     ),
-    addImports([["pow", "Foundation"]], "import"),
+    addImports(
+      [
+        ["pow", "Foundation"],
+        ["replacingOccurrences", "Foundation"],
+      ],
+      "import"
+    ),
     renameIdents(),
     addVarDeclarations,
     groupVarDeclarations(),

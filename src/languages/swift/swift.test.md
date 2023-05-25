@@ -103,6 +103,7 @@ int_to_text 5;
 text_to_int "5";
 text_split "xyz" "y";
 repeat $b 3;
+text_replace "a+b+c" "+" "*";
 table_get (table ("X" => "Y") ) "X";
 and $c $c;
 or $c $c;
@@ -153,6 +154,7 @@ String(5)
 Int("5")!
 "xyz".split(separator:"y")
 String(repeating:b,count:3)
+"a+b+c".replacingOccurrences(of:"+", with:"*")
 ["X":"Y"]["X"]!
 c&&c
 c||c

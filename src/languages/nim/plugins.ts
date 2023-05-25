@@ -36,6 +36,8 @@ export const addNimImports: Plugin = addImports(
   [
     ["^", "math"],
     ["repeat", "strutils"],
+    ["replace", "strutils"],
+    ["multireplace", "strutils"],
     ["paramStr", "os"],
     ["commandLineParams", "os"],
     ["split", "strutils"],

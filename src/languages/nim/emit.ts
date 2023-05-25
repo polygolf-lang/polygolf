@@ -1,6 +1,6 @@
 import { TokenTree } from "@/common/Language";
 import { emitStringLiteral, joinTrees, EmitError } from "../../common/emit";
-import { IR, isIntLiteral } from "../../IR";
+import { ArrayConstructor, IR, isIntLiteral } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -279,6 +279,23 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [e.name, emit(e.arg, prec)];
       case "ListConstructor":
         return ["@", "[", joinExprs(",", e.exprs), "]"];
+      case "ArrayConstructor":
+        if (
+          e.exprs.every(
+            (x) => x.kind === "ArrayConstructor" && x.exprs.length === 2
+          )
+        ) {
+          const pairs = e.exprs as readonly ArrayConstructor[];
+          return [
+            "{",
+            joinTrees(
+              ",",
+              pairs.map((x) => [emit(x.exprs[0]), ":", emit(x.exprs[1])])
+            ),
+            "}",
+          ];
+        }
+        return ["[", joinExprs(",", e.exprs), "]"];
       case "TableConstructor":
         return [
           "{",
