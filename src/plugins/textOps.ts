@@ -5,9 +5,11 @@ import {
   isSubtype,
   OpCode,
   polygolfOp,
+  StringLiteral,
 } from "../IR";
 import { Plugin } from "../common/Language";
 import { mapOps } from "./ops";
+import { charLength } from "../common/applyLanguage";
 
 function toBidirectionalMap<T>(pairs: [T, T][]): Map<T, T> {
   return new Map<T, T>([...pairs, ...pairs.map<[T, T]>(([k, v]) => [v, k])]);
@@ -93,3 +95,49 @@ export const textToIntToTextGetToInt: Plugin = {
   ]),
   name: "textToIntToTextGetToInt",
 };
+
+/**
+ * Converts nested text_replace to a text_multireplace provided the arguments are
+ * text literals with no overlap.
+ * @param singleCharInputsOnly Only applies the transform if the input args are single characters.
+ * This is used in Python. In the future it might can generalised to some general callback filter.
+ * @returns
+ */
+export function useMultireplace(singleCharInputsOnly = false): Plugin {
+  return {
+    name: "useMultireplace",
+    visit(node) {
+      if (
+        isPolygolfOp(node, "text_replace", "text_multireplace") &&
+        isPolygolfOp(node.args[0], "text_replace", "text_multireplace")
+      ) {
+        const a = node.args[0].args.slice(1);
+        const b = node.args.slice(1);
+        if (
+          a.every((x) => x.kind === "StringLiteral") &&
+          b.every((x) => x.kind === "StringLiteral")
+        ) {
+          const aValues = a.map((x) => (x as StringLiteral).value);
+          const bValues = b.map((x) => (x as StringLiteral).value);
+          const aIn = aValues.filter((_, i) => i % 2 === 0);
+          const aOut = aValues.filter((_, i) => i % 2 === 1);
+          const bIn = bValues.filter((_, i) => i % 2 === 0);
+          const bOut = bValues.filter((_, i) => i % 2 === 1);
+          const aInSet = new Set(aIn.join());
+          const aOutSet = new Set(aOut.join());
+          const bInSet = new Set(bIn.join());
+          const bOutSet = new Set(bOut.join());
+          if (
+            (!singleCharInputsOnly ||
+              [...aIn, ...bIn].every((x) => charLength(x) === 1)) &&
+            ![...aInSet].some((x) => bInSet.has(x)) &&
+            ![...bInSet].some((x) => aOutSet.has(x)) &&
+            ![...aInSet].some((x) => bOutSet.has(x))
+          ) {
+            return polygolfOp("text_multireplace", ...node.args[0].args, ...b);
+          }
+        }
+      }
+    },
+  };
+}

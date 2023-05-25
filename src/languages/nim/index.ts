@@ -5,6 +5,7 @@ import {
   int,
   rangeIndexCall,
   add1,
+  arrayConstructor,
 } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
@@ -39,6 +40,7 @@ import {
   textGetToIntToTextGet,
   textToIntToTextGetToInt,
   useEquivalentTextOp,
+  useMultireplace,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -77,6 +79,7 @@ const nimLanguage: Language = {
     applyDeMorgans,
     textToIntToTextGetToInt,
     forRangeToForRangeOneStep,
+    useMultireplace(),
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -114,6 +117,31 @@ const nimLanguage: Language = {
       ["abs", (x) => functionCall(x, "abs")],
       ["bool_to_int", (x) => functionCall(x, "int")],
       ["int_to_text_byte", (x) => functionCall(x, "chr")],
+      [
+        "text_replace",
+        (x) =>
+          functionCall(
+            x[2].kind === "StringLiteral" && x[2].value === ""
+              ? [x[0], x[1]]
+              : x,
+            "replace"
+          ),
+      ],
+      [
+        "text_multireplace",
+        (x) =>
+          functionCall(
+            [
+              x[0],
+              arrayConstructor(
+                x.flatMap((_, i) =>
+                  i % 2 > 0 ? [arrayConstructor(x.slice(i, i + 2))] : []
+                ) // Polygolf doesn't have array of tuples, so we use array of arrays instead
+              ),
+            ],
+            "multireplace"
+          ),
+      ],
     ]),
     useUnsignedDivision,
     addMutatingBinaryOp(
@@ -178,7 +206,7 @@ const nimLanguage: Language = {
     if (
       /[A-Za-z]/.test(left) &&
       !["var", "in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"(`).includes(right) &&
+      (symbols + `"({`).includes(right) &&
       !["=", ":", ".", "::"].includes(b)
     )
       return true; // identifier meeting an operator or string literal or opening paren

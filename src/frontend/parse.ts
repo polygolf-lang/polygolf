@@ -157,7 +157,8 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       expectArity(2, isAssociative(opCode) ? Infinity : 2);
       return polygolfOp(opCode, ...args);
     }
-    expectArity(arity(opCode));
+    const ar = arity(opCode);
+    expectArity(ar, ar === -1 ? Infinity : ar);
     return polygolfOp(opCode, ...args);
   }
   throw new PolygolfError(
