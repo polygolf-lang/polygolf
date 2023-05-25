@@ -104,14 +104,13 @@ const pythonLanguage: Language = {
           ),
       ]
     ),
-    useIndexCalls(),
     useRelationChains("lt", "leq", "eq", "neq", "gt", "geq"),
   ],
   finalEmitPlugins: [
     textGetToIntToTextGet,
     useImplicitBoolToInt,
-    useIndexCalls(),
     implicitlyConvertPrintArg,
+    useIndexCalls(),
     mapOps(
       ["true", () => int(1)],
       ["false", () => int(0)],
