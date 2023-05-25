@@ -89,7 +89,7 @@ export const equalityToInequality: Plugin = {
 };
 
 export const removeBitnot: Plugin = {
-  ...mapOps([["bit_not", (x) => polygolfOp("sub", int(-1), x[0])]]),
+  ...mapOps(["bit_not", (x) => polygolfOp("sub", int(-1), x[0])]),
   name: "removeBitnot",
 };
 

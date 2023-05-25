@@ -61,19 +61,19 @@ const swiftLanguage: Language = {
   emitPlugins: [
     forArgvToForEach,
     ...truncatingOpsPlugins,
-    mapOps([
+    mapOps(
       ["argv", (x) => id("CommandLine.arguments[1...]", true)],
       [
         "argv_get",
         (x) =>
           polygolfOp("list_get", id("CommandLine.arguments", true), add1(x[0])),
-      ],
-    ]),
+      ]
+    ),
     useIndexCalls(),
   ],
   finalEmitPlugins: [
     implicitlyConvertPrintArg,
-    mapOps([
+    mapOps(
       [
         "text_get_byte",
         (x) =>
@@ -147,8 +147,8 @@ const swiftLanguage: Language = {
             namedArg("of", x[1]),
             namedArg("with", x[2])
           ),
-      ],
-    ]),
+      ]
+    ),
     addMutatingBinaryOp(
       ["add", "+"],
       ["sub", "-"],

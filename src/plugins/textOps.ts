@@ -62,7 +62,7 @@ export function useEquivalentTextOp(
 }
 
 export const textGetToIntToTextGet: Plugin = {
-  ...mapOps([
+  ...mapOps(
     [
       "text_get_byte_to_int",
       (x) => polygolfOp("text_byte_to_int", polygolfOp("text_get_byte", ...x)),
@@ -71,13 +71,13 @@ export const textGetToIntToTextGet: Plugin = {
       "text_get_codepoint_to_int",
       (x) =>
         polygolfOp("codepoint_to_int", polygolfOp("text_get_codepoint", ...x)),
-    ],
-  ]),
+    ]
+  ),
   name: "textGetToIntToTextGet",
 };
 
 export const textToIntToTextGetToInt: Plugin = {
-  ...mapOps([
+  ...mapOps(
     [
       "text_byte_to_int",
       (x) =>
@@ -91,8 +91,8 @@ export const textToIntToTextGetToInt: Plugin = {
         isPolygolfOp(x[0], "text_get_codepoint")
           ? polygolfOp("text_get_codepoint_to_int", ...x[0].args)
           : undefined,
-    ],
-  ]),
+    ]
+  ),
   name: "textToIntToTextGetToInt",
 };
 

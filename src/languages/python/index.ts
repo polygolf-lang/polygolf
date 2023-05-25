@@ -81,7 +81,7 @@ const pythonLanguage: Language = {
   emitPlugins: [
     forArgvToForEach,
     useEquivalentTextOp(false, true),
-    mapOps([
+    mapOps(
       ["argv", (x) => id("sys.argv[1:]", true)],
       [
         "argv_get",
@@ -91,14 +91,14 @@ const pythonLanguage: Language = {
             { ...id("sys.argv", true), type: listType(textType()) },
             add1(x[0])
           ),
-      ],
-    ]),
+      ]
+    ),
     useIndexCalls(),
   ],
   finalEmitPlugins: [
     textGetToIntToTextGet,
     implicitlyConvertPrintArg,
-    mapOps([
+    mapOps(
       ["true", () => int(1)],
       ["false", () => int(0)],
       ["abs", (x) => functionCall("abs", x)],
@@ -159,8 +159,8 @@ const pythonLanguage: Language = {
               )
             )
           ),
-      ],
-    ]),
+      ]
+    ),
     addMutatingBinaryOp(
       ["add", "+"],
       ["concat", "+"],

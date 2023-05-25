@@ -87,16 +87,16 @@ const nimLanguage: Language = {
     ...truncatingOpsPlugins,
     useIndexCalls(),
     useEquivalentTextOp(true, false),
-    mapOps([
+    mapOps(
       ["argv", (x) => functionCall("commandLineParams")],
-      ["argv_get", (x) => functionCall("paramStr", add1(x[0]))],
-    ]),
+      ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
+    ),
   ],
   finalEmitPlugins: [
     forRangeToForRangeInclusive(true),
     implicitlyConvertPrintArg,
     textGetToIntToTextGet,
-    mapOps([
+    mapOps(
       ["true", () => id("true", true)],
       ["false", () => id("false", true)],
       ["text_byte_to_int", (x) => functionCall("ord", x)],
@@ -137,8 +137,8 @@ const nimLanguage: Language = {
               ) // Polygolf doesn't have array of tuples, so we use array of arrays instead
             )
           ),
-      ],
-    ]),
+      ]
+    ),
     useUnsignedDivision,
     addMutatingBinaryOp(
       ["add", "+"],

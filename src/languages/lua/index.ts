@@ -61,20 +61,16 @@ const luaLanguage: Language = {
     implicitlyConvertPrintArg,
     useEquivalentTextOp(true, false),
     mapOps([
-      [
-        "text_to_int",
-        (x) =>
-          polygolfOp("mul", int(1n), implicitConversion("text_to_int", x[0])),
-      ],
+      "text_to_int",
+      (x) =>
+        polygolfOp("mul", int(1n), implicitConversion("text_to_int", x[0])),
     ]),
     mapOps([
-      [
-        "text_to_int",
-        (x) =>
-          polygolfOp("add", int(0n), implicitConversion("text_to_int", x[0])),
-      ],
+      "text_to_int",
+      (x) =>
+        polygolfOp("add", int(0n), implicitConversion("text_to_int", x[0])),
     ]),
-    mapOps([
+    mapOps(
       [
         "argv_get",
         (x) =>
@@ -85,23 +81,17 @@ const luaLanguage: Language = {
           ),
       ],
       ["text_get_byte", (x) => methodCall(x[0], "byte", add1(x[1]))],
-      ["text_get_byte_slice", (x) => methodCall(x[0], "sub", x[1], add1(x[2]))],
-    ]),
+      ["text_get_byte_slice", (x) => methodCall(x[0], "sub", x[1], add1(x[2]))]
+    ),
     useIndexCalls(true),
   ],
   finalEmitPlugins: [
     mapOps([
-      [
-        "int_to_text",
-        (x) =>
-          polygolfOp(
-            "concat",
-            text(""),
-            implicitConversion("int_to_text", x[0])
-          ),
-      ],
+      "int_to_text",
+      (x) =>
+        polygolfOp("concat", text(""), implicitConversion("int_to_text", x[0])),
     ]),
-    mapOps([
+    mapOps(
       ["text_byte_length", (x) => methodCall(x[0], "len")],
       ["true", () => id("true", true)],
       ["false", () => id("false", true)],
@@ -131,8 +121,8 @@ const luaLanguage: Language = {
               ? text(c.value.replace("%", "%%"))
               : methodCall(c, "gsub", text("%%"), text("%%%%"))
           ),
-      ],
-    ]),
+      ]
+    ),
     mapToUnaryAndBinaryOps(
       ["pow", "^"],
       ["not", "not"],

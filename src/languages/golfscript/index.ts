@@ -51,7 +51,7 @@ const golfscriptLanguage: Language = {
         !isSubtype(getType(node.start, spine.root.node), integerType(0))
     ),
     implicitlyConvertPrintArg,
-    mapOps([
+    mapOps(
       ["argv", () => id("a", true)],
       ["true", () => id("1", true)],
       ["false", () => id("0", true)],
@@ -61,8 +61,8 @@ const golfscriptLanguage: Language = {
       [
         "text_get_byte_slice",
         (x) => rangeIndexCall(x[0], x[1], add1(x[2]), id("1", true)),
-      ],
-    ]),
+      ]
+    ),
     mapToUnaryAndBinaryOps(
       ["not", "!"],
       ["bit_not", "~"],
