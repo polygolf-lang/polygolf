@@ -22,7 +22,7 @@ for_argv $arg 1000 {
 _Golfscript_
 
 ```gs
-:a;"Hello, World!"puts 10,{:i;i puts}%a{:A;A puts}%
+:a;"Hello, World!"n 10,{:i;i n}%a{:A;A n}%
 ```
 
 _Lua_
