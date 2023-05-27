@@ -165,5 +165,5 @@ $b <- "Hello";
 ```
 
 ```lua
-a=b="Hello"
+a,b="Hello"
 ```

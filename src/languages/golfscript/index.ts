@@ -17,7 +17,7 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
 } from "../../plugins/ops";
-import { renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   forArgvToForEach,
@@ -51,6 +51,14 @@ const golfscriptLanguage: Language = {
         !isSubtype(getType(node.start, spine.root.node), integerType(0))
     ),
     implicitlyConvertPrintArg,
+    alias((expr) => {
+      switch (expr.kind) {
+        case "IntegerLiteral":
+          return expr.value.toString();
+        case "TextLiteral":
+          return `"${expr.value}"`;
+      }
+    }),
     mapOps(
       ["argv", () => id("a", true)],
       ["true", () => id("1", true)],
