@@ -204,6 +204,7 @@ const pythonLanguage: Language = {
       ["or", "or"]
     ),
     methodsAsFunctions,
+    addOneToManyAssignments(),
     alias((expr) => {
       switch (expr.kind) {
         case "Identifier":
@@ -215,7 +216,6 @@ const pythonLanguage: Language = {
       }
     }),
     renameIdents(),
-    addOneToManyAssignments(),
     addImports(
       [
         ["sys.argv[1:]", "sys"],

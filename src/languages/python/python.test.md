@@ -196,3 +196,14 @@ text_replace (text_replace (text_replace "text" "x" "s") "t" "ttt") "e" " ";
 ```py
 "text".translate({120:"s",116:"ttt",101:32})
 ```
+
+## Prefer chained assingment over aliasing
+
+```polygolf
+$a <- "Hello";
+$b <- "Hello";
+```
+
+```py
+a=b="Hello"
+```

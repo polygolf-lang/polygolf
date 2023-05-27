@@ -149,6 +149,7 @@ const luaLanguage: Language = {
       ["and", "and"],
       ["or", "or"]
     ),
+    addOneToManyAssignments(),
     alias((expr) => {
       switch (expr.kind) {
         case "IntegerLiteral":
@@ -158,7 +159,6 @@ const luaLanguage: Language = {
       }
     }),
     renameIdents(),
-    addOneToManyAssignments(),
     assertInt64,
     removeImplicitConversions,
   ],
