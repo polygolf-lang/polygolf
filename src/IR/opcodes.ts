@@ -37,7 +37,7 @@ export const FrontendOpCodes = [
   "text_get_byte_slice",
   "text_get_codepoint",
   "text_get_codepoint_slice",
-  "join_using",
+  "join",
   "right_align",
   "int_to_bin_aligned",
   "int_to_hex_aligned",
@@ -57,7 +57,6 @@ export const FrontendOpCodes = [
   "text_byte_length",
   "text_codepoint_length",
   "text_split_whitespace",
-  "join",
   "text_byte_reversed",
   "text_codepoint_reversed",
   "true",
@@ -103,7 +102,6 @@ export const UnaryOpCodes = [
   "text_byte_length", // Returns the text length in bytes.
   "text_split_whitespace",
   "sorted",
-  "join",
   "text_byte_reversed", // Returns a text containing the reversed order of bytes.
   "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
 ] as const;
@@ -182,7 +180,7 @@ export const BinaryOpCodes = [
   "list_get",
   "table_get",
   // other
-  "println_list_joined_using",
+  "println_list_joined",
   "list_push",
   "concat",
   "repeat",
@@ -196,7 +194,7 @@ export const BinaryOpCodes = [
   "codepoint_to_int", // (codepoint_to_int (text_get_codepoint $x $i)) is equivalent to (text_get_codepoint_to_int $x $i), "codepoint_to_int" is the inverse of "int_to_codepoint"
   "text_get_byte_to_int", // gets the byte at the specified byte-0-index as an integer
   "text_byte_to_int", // (text_byte_to_int (text_get_byte $x $i)) is equivalent to (text_get_byte_to_int $x $i), "text_byte_to_int" is the inverse of "int_to_text_byte"
-  "join_using",
+  "join",
   "right_align",
   "int_to_bin_aligned", // Converts the given integer to text representing the value in binary. The result is aligned with 0s to the specified number of places.
   "int_to_hex_aligned", // Converts the given integer to text representing the value in hexadecimal. The result is aligned with 0s to the specified number of places.
@@ -224,7 +222,7 @@ export const OpCodes = [
   "array_set",
   "list_set",
   "table_set",
-  "println_many_joined_using", // Expects one text argument denoting the delimiter and then any number of texts to be joined and printed.
+  "println_many_joined", // Expects one text argument denoting the delimiter and then any number of texts to be joined and printed.
 ] as const;
 
 export type OpCode = string & (typeof OpCodes)[number];
@@ -252,7 +250,7 @@ export function arity(op: OpCode): number {
     case "list_set":
     case "table_set":
       return 3;
-    case "println_many_joined_using":
+    case "println_many_joined":
     case "text_multireplace":
       return -1;
   }

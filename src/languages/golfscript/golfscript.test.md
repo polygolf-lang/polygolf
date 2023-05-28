@@ -45,8 +45,7 @@ abs $a;
 list_get $d 1;
 list_push $d "t";
 list_length $d;
-join $d;
-join_using $d "_";
+join $d "_";
 sorted $d;
 text_get_byte "abc" 1;
 concat $b "xyz";
@@ -63,7 +62,7 @@ not $c;
 ```
 
 ```golfscript nogolf
-0:a;"xy":b;0 0=:c;["q""r""s"]:d;a~a-1*2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^a 2 2\?*a 2 2\?/a 2<a 2)<a 2=a 2=!a 2(>a 2>2 a[]++$1=2 a[]++$0=a abs d 1=d"t"+d,d''*d"_"*d$"abc"1=[]+''+b"xyz"+"abc",5`"5"~5[]+''+"xyz""y"/b-1%b 3*c c and c c or c!
+0:a;"xy":b;0 0=:c;["q""r""s"]:d;a~a-1*2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^a 2 2\?*a 2 2\?/a 2<a 2)<a 2=a 2=!a 2(>a 2>2 a[]++$1=2 a[]++$0=a abs d 1=d"t"+d,d"_"*d$"abc"1=[]+''+b"xyz"+"abc",5`"5"~5[]+''+"xyz""y"/b-1%b 3*c c and c c or c!
 ```
 
 ## Looping
