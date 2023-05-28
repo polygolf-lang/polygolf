@@ -101,7 +101,7 @@ const nimLanguage: Language = {
     mapOps(
       ["true", builtin("true")],
       ["false", builtin("false")],
-      ["read_line", functionCall("readLine", id("stdin", true))],
+      ["read_line", functionCall("readLine", builtin("stdin"))],
       ["text_byte_to_int", (x) => functionCall("ord", x)],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
