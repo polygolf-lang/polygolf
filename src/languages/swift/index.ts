@@ -1,6 +1,5 @@
 import {
   functionCall,
-  id,
   indexCall,
   methodCall,
   namedArg,
@@ -8,6 +7,7 @@ import {
   text,
   add1,
   propertyCall,
+  builtin,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
@@ -62,11 +62,11 @@ const swiftLanguage: Language = {
     forArgvToForEach,
     ...truncatingOpsPlugins,
     mapOps(
-      ["argv", (x) => id("CommandLine.arguments[1...]", true)],
+      ["argv", builtin("CommandLine.arguments[1...]")],
       [
         "argv_get",
         (x) =>
-          polygolfOp("list_get", id("CommandLine.arguments", true), add1(x[0])),
+          polygolfOp("list_get", builtin("CommandLine.arguments"), add1(x[0])),
       ]
     ),
     useIndexCalls(),
@@ -136,8 +136,8 @@ const swiftLanguage: Language = {
       ["max", (x) => functionCall("max", x)],
       ["min", (x) => functionCall("min", x)],
       ["abs", (x) => functionCall("abs", x)],
-      ["true", () => id("true", true)],
-      ["false", () => id("false", true)],
+      ["true", builtin("true")],
+      ["false", builtin("false")],
       [
         "text_replace",
         (x) =>
