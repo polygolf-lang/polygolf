@@ -1,6 +1,5 @@
 import {
   functionCall,
-  id,
   indexCall,
   methodCall,
   rangeIndexCall,
@@ -14,6 +13,7 @@ import {
   tableConstructor,
   keyValue,
   TextLiteral,
+  builtin,
 } from "../../IR";
 import { Language } from "../../common/Language";
 
@@ -84,13 +84,13 @@ const pythonLanguage: Language = {
     forArgvToForEach,
     useEquivalentTextOp(false, true),
     mapOps(
-      ["argv", (x) => id("sys.argv[1:]", true)],
+      ["argv", (x) => builtin("sys.argv[1:]")],
       [
         "argv_get",
         (x) =>
           polygolfOp(
             "list_get",
-            { ...id("sys.argv", true), type: listType(textType()) },
+            { ...builtin("sys.argv"), type: listType(textType()) },
             add1(x[0])
           ),
       ]
@@ -101,9 +101,9 @@ const pythonLanguage: Language = {
     textGetToIntToTextGet,
     implicitlyConvertPrintArg,
     mapOps(
-      ["true", () => int(1)],
-      ["false", () => int(0)],
-      ["read_line", () => functionCall("input")],
+      ["true", int(1)],
+      ["false", int(0)],
+      ["read_line", functionCall("input")],
       ["abs", (x) => functionCall("abs", x)],
       ["list_length", (x) => functionCall("len", x)],
       ["join_using", (x) => methodCall(x[1], "join", x[0])],
@@ -111,7 +111,7 @@ const pythonLanguage: Language = {
       ["sorted", (x) => functionCall("sorted", x[0])],
       [
         "text_codepoint_reversed",
-        (x) => rangeIndexCall(x[0], id("", true), id("", true), int(-1)),
+        (x) => rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
       ],
       ["codepoint_to_int", (x) => functionCall("ord", x)],
       ["text_get_codepoint", (x) => indexCall(x[0], x[1])],

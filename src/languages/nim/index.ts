@@ -1,11 +1,11 @@
 import {
   functionCall,
-  id,
   indexCall,
   int,
   rangeIndexCall,
   add1,
   arrayConstructor,
+  builtin,
 } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
@@ -90,7 +90,7 @@ const nimLanguage: Language = {
     useIndexCalls(),
     useEquivalentTextOp(true, false),
     mapOps(
-      ["argv", (x) => functionCall("commandLineParams")],
+      ["argv", functionCall("commandLineParams")],
       ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
     ),
   ],
@@ -99,9 +99,9 @@ const nimLanguage: Language = {
     implicitlyConvertPrintArg,
     textGetToIntToTextGet,
     mapOps(
-      ["true", () => id("true", true)],
-      ["false", () => id("false", true)],
-      ["read_line", () => functionCall("readLine", id("stdin", true))],
+      ["true", builtin("true")],
+      ["false", builtin("false")],
+      ["read_line", functionCall("readLine", id("stdin", true))],
       ["text_byte_to_int", (x) => functionCall("ord", x)],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
@@ -113,7 +113,7 @@ const nimLanguage: Language = {
       ["min", (x) => functionCall("min", x)],
       ["abs", (x) => functionCall("abs", x)],
       ["text_to_int", (x) => functionCall("parseInt", x)],
-      ["print", (x) => functionCall("write", id("stdout", true), x)],
+      ["print", (x) => functionCall("write", builtin("stdout"), x)],
       ["println", (x) => functionCall("echo", x)],
       ["min", (x) => functionCall("min", x)],
       ["max", (x) => functionCall("max", x)],

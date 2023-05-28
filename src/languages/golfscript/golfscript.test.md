@@ -10,7 +10,7 @@ print "b";
 ```
 
 ```golfscript nogolf
-1 puts 2 print"a"puts"b"print
+1 n 2"a"n"b"
 ```
 
 ## Ops emit
@@ -75,7 +75,7 @@ for $i 0 31 {
 ```
 
 ```golfscript bytes
-31,{:i;1 i+i i*+puts}%
+31,{:i;1 i+i i*+n}%
 ```
 
 ```polygolf
@@ -85,7 +85,7 @@ for $i 5 80 5 {
 ```
 
 ```golfscript nogolf
-80,5>5%{:i;i puts}%
+80,5>5%{:i;i n}%
 ```
 
 ```polygolf
@@ -95,7 +95,7 @@ for $i -5 31 {
 ```
 
 ```golfscript nogolf
-36,{5-:i;i puts}%
+36,{5-:i;i n}%
 ```
 
 ```polygolf
@@ -106,7 +106,7 @@ for $i $a ($a+6) {
 ```
 
 ```golfscript nogolf
--4:a;6,{a+:i;i puts}%
+-4:a;6,{a+:i;i n}%
 ```
 
 ## Argv
@@ -116,7 +116,7 @@ println (argv_get 5);
 ```
 
 ```golfscript nogolf
-:a;5 a=puts
+:a;5 a=n
 ```
 
 ```polygolf
@@ -126,5 +126,5 @@ for_argv $x 100 {
 ```
 
 ```golfscript nogolf
-:a;a{:x;x puts}%
+:a;a{:x;x n}%
 ```
