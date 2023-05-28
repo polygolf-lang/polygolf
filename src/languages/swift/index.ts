@@ -8,6 +8,7 @@ import {
   text,
   add1,
   propertyCall,
+  isTextLiteral,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
@@ -74,6 +75,15 @@ const swiftLanguage: Language = {
   finalEmitPlugins: [
     implicitlyConvertPrintArg,
     mapOps(
+      [
+        "join",
+        (x) =>
+          methodCall(
+            x[0],
+            "joined",
+            ...(isTextLiteral(x[1], "") ? [] : [namedArg("separator", x[1])])
+          ),
+      ],
       [
         "text_get_byte",
         (x) =>

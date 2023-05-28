@@ -54,6 +54,7 @@ text_to_int "5";
 text_replace $b "a" "A";
 text_replace $b "(" "*";
 text_replace $b $b:(Text 1..oo) $b;
+join (list "xy" "abc") "/";
 ```
 
 ```lua nogolf
@@ -86,6 +87,7 @@ b.."xyz"
 b:gsub("a","A")
 b:gsub("%(","*")
 b:gsub(b:gsub("(%W)","%%%1"),b:gsub("%%","%%%%"))
+table.concat({"xy","abc"},"/")
 ```
 
 ## Parentheses

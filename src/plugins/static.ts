@@ -1,4 +1,4 @@
-import { polygolfOp, TextLiteral, text } from "../IR";
+import { polygolfOp, TextLiteral, text, isTextLiteral } from "../IR";
 import { Plugin } from "../common/Language";
 
 export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
@@ -7,7 +7,7 @@ export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
     visit(node) {
       if (
         node.kind === "ListConstructor" &&
-        node.exprs.every((x) => x.kind === "TextLiteral")
+        node.exprs.every((x) => isTextLiteral(x))
       ) {
         const strings = (node.exprs as TextLiteral[]).map((x) => x.value);
         const delim = getDelim(strings, useTextSplitWhitespace);

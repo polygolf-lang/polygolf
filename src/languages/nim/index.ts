@@ -6,6 +6,7 @@ import {
   rangeIndexCall,
   add1,
   arrayConstructor,
+  isTextLiteral,
 } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
@@ -97,6 +98,10 @@ const nimLanguage: Language = {
     implicitlyConvertPrintArg,
     textGetToIntToTextGet,
     mapOps(
+      [
+        "join",
+        (x) => functionCall("join", isTextLiteral(x[1], "") ? [x[0]] : x),
+      ],
       ["true", () => id("true", true)],
       ["false", () => id("false", true)],
       ["text_byte_to_int", (x) => functionCall("ord", x)],
@@ -120,10 +125,7 @@ const nimLanguage: Language = {
       [
         "text_replace",
         (x) =>
-          functionCall(
-            "replace",
-            x[2].kind === "TextLiteral" && x[2].value === "" ? [x[0], x[1]] : x
-          ),
+          functionCall("replace", isTextLiteral(x[2], "") ? [x[0], x[1]] : x),
       ],
       [
         "text_multireplace",

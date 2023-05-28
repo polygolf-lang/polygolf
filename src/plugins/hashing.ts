@@ -7,6 +7,7 @@ import {
   int,
   integerType,
   isPolygolfOp,
+  isTextLiteral,
   listConstructor,
   polygolfOp,
   TextLiteral,
@@ -47,7 +48,7 @@ export function tableHashing(
         if (
           tableType.kind === "Table" &&
           tableType.key.kind === "text" &&
-          table.kvPairs.every((x) => x.key.kind === "TextLiteral")
+          table.kvPairs.every((x) => isTextLiteral(x.key))
         ) {
           const searchResult = findHash(
             hashFunc,

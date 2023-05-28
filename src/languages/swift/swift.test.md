@@ -102,6 +102,7 @@ int_to_codepoint 5;
 int_to_text 5;
 text_to_int "5";
 text_split "xyz" "y";
+join (list "xy" "abc") "/";
 repeat $b 3;
 text_replace "a+b+c" "+" "*";
 table_get (table ("X" => "Y") ) "X";
@@ -153,6 +154,7 @@ String(UnicodeScalar(5)!)
 String(5)
 Int("5")!
 "xyz".split(separator:"y")
+["xy","abc"].joined(separator:"/")
 String(repeating:b,count:3)
 "a+b+c".replacingOccurrences(of:"+", with:"*")
 ["X":"Y"]["X"]!
