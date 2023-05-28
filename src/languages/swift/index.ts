@@ -35,7 +35,10 @@ import {
   forRangeToForRangeInclusive,
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
-import { useEquivalentTextOp } from "../../plugins/textOps";
+import {
+  replaceToSplitAndJoin,
+  useEquivalentTextOp,
+} from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
   applyDeMorgans,
@@ -58,6 +61,7 @@ const swiftLanguage: Language = {
     applyDeMorgans,
     forRangeToForRangeOneStep,
     useEquivalentTextOp(true, true),
+    replaceToSplitAndJoin,
   ],
   emitPlugins: [
     forArgvToForEach,

@@ -31,6 +31,7 @@ import {
   applyDeMorgans,
   equalityToInequality,
 } from "../../plugins/arithmetic";
+import { replaceToSplitAndJoin } from "../../plugins/textOps";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
@@ -51,6 +52,7 @@ const golfscriptLanguage: Language = {
         !isSubtype(getType(node.start, spine.root.node), integerType(0))
     ),
     implicitlyConvertPrintArg,
+    replaceToSplitAndJoin,
     mapOps(
       ["argv", () => id("a", true)],
       ["true", () => id("1", true)],

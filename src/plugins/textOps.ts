@@ -142,3 +142,11 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
     },
   };
 }
+
+export const replaceToSplitAndJoin: Plugin = {
+  ...mapOps([
+    "text_replace",
+    ([x, y, z]) => polygolfOp("join", polygolfOp("text_split", x, y), z),
+  ]),
+  name: "replaceToSplitAndJoin",
+};
