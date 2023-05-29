@@ -26,7 +26,7 @@ import {
   removeImplicitConversions,
   methodsAsFunctions,
 } from "../../plugins/ops";
-import { aliasBuiltins, renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forRangeToForEach,
@@ -203,9 +203,18 @@ const pythonLanguage: Language = {
       ["or", "or"]
     ),
     methodsAsFunctions,
-    aliasBuiltins(),
-    renameIdents(),
     addOneToManyAssignments(),
+    alias((expr) => {
+      switch (expr.kind) {
+        case "Identifier":
+          return expr.builtin ? expr.name : undefined;
+        case "IntegerLiteral":
+          return expr.value.toString();
+        case "TextLiteral":
+          return `"${expr.value}"`;
+      }
+    }),
+    renameIdents(),
     addImports(
       [
         ["sys.argv[1:]", "sys"],
