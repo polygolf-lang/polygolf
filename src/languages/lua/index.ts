@@ -1,6 +1,5 @@
 import {
   functionCall,
-  id,
   implicitConversion,
   int,
   methodCall,
@@ -8,6 +7,7 @@ import {
   text,
   textType,
   add1,
+  builtin,
 } from "../../IR";
 import { Language } from "../../common/Language";
 import {
@@ -25,7 +25,7 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
 } from "../../plugins/ops";
-import { renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import {
   tempVarToMultipleAssignment,
   addOneToManyAssignments,
@@ -75,11 +75,7 @@ const luaLanguage: Language = {
       [
         "argv_get",
         (x) =>
-          polygolfOp(
-            "list_get",
-            { ...id("arg", true), type: textType() },
-            x[0]
-          ),
+          polygolfOp("list_get", { ...builtin("arg"), type: textType() }, x[0]),
       ],
       ["text_get_byte", (x) => methodCall(x[0], "byte", add1(x[1]))],
       ["text_get_byte_slice", (x) => methodCall(x[0], "sub", x[1], add1(x[2]))]
@@ -95,15 +91,15 @@ const luaLanguage: Language = {
     ]),
     mapOps(
       ["text_byte_length", (x) => methodCall(x[0], "len")],
-      ["true", () => id("true", true)],
-      ["false", () => id("false", true)],
+      ["true", builtin("true")],
+      ["false", builtin("false")],
       ["repeat", (x) => methodCall(x[0], "rep", x[1])],
       ["print", (x) => functionCall("io.write", x)],
       ["println", (x) => functionCall("print", x)],
       ["min", (x) => functionCall("math.min", x)],
       ["max", (x) => functionCall("math.max", x)],
       ["abs", (x) => functionCall("math.abs", x)],
-      ["argv", (x) => id("arg", true)],
+      ["argv", (x) => builtin("arg")],
       ["min", (x) => functionCall("math.min", x)],
       ["max", (x) => functionCall("math.max", x)],
       ["abs", (x) => functionCall("math.abs", x)],
@@ -151,8 +147,16 @@ const luaLanguage: Language = {
       ["and", "and"],
       ["or", "or"]
     ),
-    renameIdents(),
     addOneToManyAssignments(),
+    alias((expr) => {
+      switch (expr.kind) {
+        case "IntegerLiteral":
+          return expr.value.toString();
+        case "TextLiteral":
+          return `"${expr.value}"`;
+      }
+    }),
+    renameIdents(),
     assertInt64,
     removeImplicitConversions,
   ],

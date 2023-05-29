@@ -1,10 +1,9 @@
 import { Expr, IR } from "IR";
 import { Spine, Visitor } from "./Spine";
 
-export type OpTransformOutput = (
-  args: readonly IR.Expr[],
-  spine: Spine<Expr>
-) => IR.Expr | undefined;
+export type OpTransformOutput =
+  | ((args: readonly IR.Expr[], spine: Spine<Expr>) => IR.Expr | undefined)
+  | IR.Expr;
 
 export type Packer = (x: string) => string | null;
 
@@ -41,6 +40,7 @@ export interface Plugin {
    * or none. This is useful in cases such as renaming variables */
   allOrNothing?: boolean;
   bakeType?: boolean;
+  skipWhenNogolf?: boolean; // TODO temp until #150
 }
 
 type TokenTreeArray = Array<string | TokenTreeArray>;
