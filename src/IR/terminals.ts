@@ -38,6 +38,10 @@ export function id(name: string, builtin: boolean = false): Identifier {
   return { kind: "Identifier", name, builtin };
 }
 
+export function builtin(name: string): Identifier {
+  return id(name, true);
+}
+
 export function int(value: bigint | number): IntegerLiteral {
   return { kind: "IntegerLiteral", value: BigInt(value) };
 }
