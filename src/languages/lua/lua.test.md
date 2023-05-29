@@ -156,3 +156,14 @@ print(X)end
 ```lua
 3.."x"
 ```
+
+## Prefer chained assingment over aliasing
+
+```polygolf
+$a <- "Hello";
+$b <- "Hello";
+```
+
+```lua
+a,b="Hello"
+```

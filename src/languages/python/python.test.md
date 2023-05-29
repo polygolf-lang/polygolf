@@ -10,11 +10,10 @@ print_int 4;
 ```
 
 ```python nogolf
-p=print
-p(1)
-p(2,end="")
-p(end="3")
-p(4,end="")
+print(1)
+print(2,end="")
+print(end="3")
+print(4,end="")
 ```
 
 ## Indexing
@@ -107,17 +106,16 @@ if(1==1) {
 ```
 
 ```python nogolf
-p=print
 if 1==1:
- if 2==1:p("a")
- else:p("b")
+ if 2==1:print("a")
+ else:print("b")
 else:
- p("x")
+ print("x")
  if 3==1:
   if 4==1:
-   if 5==1:p("c")
-  else:p("d")
- else:p("e")
+   if 5==1:print("c")
+  else:print("d")
+ else:print("e")
 ```
 
 ## Argv
@@ -197,4 +195,15 @@ text_replace (text_replace (text_replace "text" "x" "s") "t" "ttt") "e" " ";
 
 ```py
 "text".translate({120:"s",116:"ttt",101:32})
+```
+
+## Prefer chained assingment over aliasing
+
+```polygolf
+$a <- "Hello";
+$b <- "Hello";
+```
+
+```py
+a=b="Hello"
 ```
