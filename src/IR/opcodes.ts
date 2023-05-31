@@ -25,7 +25,6 @@ export const FrontendOpCodes = [
   "array_get",
   "list_get",
   "table_get",
-  "text_get_byte",
   "list_push",
   "concat",
   "repeat",
@@ -52,14 +51,17 @@ export const FrontendOpCodes = [
   "int_to_hex",
   "text_to_int",
   "bool_to_int",
-  "int_to_text_byte",
+  "int_to_text_byte", // Returns a single byte text using the specified byte.
+  "int_to_codepoint",  // Returns a single codepoint text using the specified integer.
   "list_length",
-  "text_byte_length",
-  "text_codepoint_length",
+  "text_byte_length", // Returns the text length in bytes.
+  "text_codepoint_length", // Returns the text length in codepoints.
   "text_split_whitespace",
   "join",
-  "text_byte_reversed",
-  "text_codepoint_reversed",
+  "text_byte_reversed", // Returns a text containing the reversed order of bytes.
+  "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
+  "text_byte_to_int",
+  "codepoint_to_int",
   "true",
   "false",
   "print",
@@ -96,16 +98,16 @@ export const UnaryOpCodes = [
   "int_to_bool",
   "text_to_int",
   "bool_to_int",
-  "int_to_text_byte", // Returns a single byte text using the specified byte.
-  "int_to_codepoint", // Returns a single codepoint text using the specified integer.
+  "int_to_text_byte",
+  "int_to_codepoint",
   "list_length",
-  "text_codepoint_length", // Returns the text length in codepoints.
-  "text_byte_length", // Returns the text length in bytes.
+  "text_codepoint_length", 
+  "text_byte_length", 
   "text_split_whitespace",
   "sorted",
   "join",
-  "text_byte_reversed", // Returns a text containing the reversed order of bytes.
-  "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
+  "text_byte_reversed",
+  "text_codepoint_reversed",
 ] as const;
 export type UnaryOpCode = string & (typeof UnaryOpCodes)[number];
 

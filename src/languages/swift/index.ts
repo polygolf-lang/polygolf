@@ -75,7 +75,7 @@ const swiftLanguage: Language = {
     implicitlyConvertPrintArg,
     mapOps(
       [
-        "text_get_byte",
+        "text_get_byte_to_int",
         (x) =>
           functionCall(
             "Int",
@@ -86,6 +86,14 @@ const swiftLanguage: Language = {
         "text_get_codepoint",
         (x) =>
           functionCall("String", indexCall(functionCall("Array", x[0]), x[1])),
+      ],
+      [
+        "text_get_codepoint_to_int",
+        (x) =>
+        propertyCall(
+          indexCall(functionCall("Array", propertyCall(x[0], "unicodeScalars")), x[1]),
+          "value"
+        ),
       ],
       [
         "int_to_codepoint",

@@ -89,7 +89,7 @@ const golfscriptLanguage: Language = {
       ["gt", ">"],
       ["and", "and"],
       ["or", "or"],
-      ["text_get_byte", "="],
+      ["text_get_byte_to_int", "="],
       ["text_byte_length", ","],
       ["int_to_text", "`"],
       ["text_split", "/"],
