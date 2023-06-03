@@ -203,7 +203,7 @@ function integerBoundMinAndMax(args: IntegerBound[]) {
   );
 }
 
-export function annotate(expr: Expr, type: Type): Expr {
+export function annotate(expr: Expr, type?: Type): Expr {
   return { ...expr, type };
 }
 

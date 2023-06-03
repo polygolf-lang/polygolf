@@ -1,4 +1,4 @@
-import { Expr, IR, isPolygolfOp, polygolfOp } from "../IR";
+import { Expr, IR, annotate, isPolygolfOp, polygolfOp } from "../IR";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
 import { replaceAtIndex } from "./immutable";
 
@@ -87,13 +87,16 @@ export class Spine<N extends IR.Node = IR.Node> {
       isPolygolfOp(parentNode) &&
       typeof this.pathFragment === "object"
         ? this.parent.replacedWith(
-            polygolfOp(
-              parentNode.op,
-              ...(replaceAtIndex(
-                parentNode.args,
-                this.pathFragment.index,
-                newNode
-              ) as Expr[])
+            annotate(
+              polygolfOp(
+                parentNode.op,
+                ...(replaceAtIndex(
+                  parentNode.args,
+                  this.pathFragment.index,
+                  newNode
+                ) as Expr[])
+              ),
+              parentNode.type
             ),
             true
           )
@@ -152,7 +155,9 @@ export class Spine<N extends IR.Node = IR.Node> {
           someChildrenIsNew ||= newChild !== child;
         }
         if (someChildrenIsNew)
-          curr = curr.replacedWith(polygolfOp(this.node.op, ...newChildren));
+          curr = curr.replacedWith(
+            annotate(polygolfOp(this.node.op, ...newChildren), this.node.type)
+          );
       } else {
         for (const child of this.getChildSpines()) {
           const newChild = child.withReplacer(replacer, false, skipReplaced);

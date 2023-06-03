@@ -301,7 +301,6 @@ export const ifRelationChainToLongerRelationChain: Plugin = {
 
 export const ifToUnsafeAnd: Plugin = {
   name: "ifToUnsafeAnd",
-  bakeType: true,
   visit(node) {
     if (
       node.kind === "IfStatement" &&

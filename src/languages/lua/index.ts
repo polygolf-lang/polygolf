@@ -8,6 +8,7 @@ import {
   textType,
   add1,
   builtin,
+  listType,
 } from "../../IR";
 import { Language } from "../../common/Language";
 import {
@@ -77,7 +78,11 @@ const luaLanguage: Language = {
       [
         "argv_get",
         (x) =>
-          polygolfOp("list_get", { ...builtin("arg"), type: textType() }, x[0]),
+          polygolfOp(
+            "list_get",
+            { ...builtin("arg"), type: listType(textType()) },
+            x[0]
+          ),
       ],
       ["text_get_byte", (x) => methodCall(x[0], "byte", add1(x[1]))],
       ["text_get_byte_slice", (x) => methodCall(x[0], "sub", x[1], add1(x[2]))]
