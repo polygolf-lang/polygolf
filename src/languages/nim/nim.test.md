@@ -56,6 +56,8 @@ $n > 3;
 
 and $b $b;
 or $b $b;
+
+list_find (list "") "";
 ```
 
 ```nim nogolf
@@ -109,6 +111,7 @@ n>=3
 n>3
 b and b
 b or b
+@[""].find""
 ```
 
 ## Misc

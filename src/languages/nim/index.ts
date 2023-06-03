@@ -29,13 +29,13 @@ import {
   forRangeToForRangeOneStep,
   shiftRangeOneUp,
 } from "../../plugins/loops";
-import { golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
-import { tableHashing } from "../../plugins/hashing";
+import { tableHashing, tableToListLookup } from "../../plugins/tables";
 import hash from "./hash";
 import {
   textGetToIntToTextGet,
@@ -67,12 +67,14 @@ const nimLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfStringListLiteral(),
+    listOpsToTextOps("text_byte_find", "text_get_byte"),
     golfLastPrint(),
     forRangeToForEach("array_get", "list_get", "text_get_byte"),
     tempVarToMultipleAssignment,
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     tableHashing(hash),
+    tableToListLookup,
     equalityToInequality,
     shiftRangeOneUp,
     forRangeToForRangeInclusive(),
@@ -122,6 +124,7 @@ const nimLanguage: Language = {
       ["abs", (x) => functionCall("abs", x)],
       ["bool_to_int", (x) => functionCall("int", x)],
       ["int_to_text_byte", (x) => functionCall("chr", x)],
+      ["list_find", (x) => functionCall("find", x)],
       [
         "text_replace",
         (x) =>
