@@ -8,6 +8,8 @@ function precedence(expr: IR.Expr): number {
       return unaryPrecedence(expr.name);
     case "BinaryOp":
       return binaryPrecedence(expr.name);
+    case "ConditionalOp":
+      return 0;
   }
   return Infinity;
 }
@@ -174,7 +176,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         ];
       case "ConditionalOp":
         return [
-          emit(e.condition),
+          emit(e.condition, 1),
           "?",
           emit(e.consequent),
           ":",
