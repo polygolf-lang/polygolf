@@ -30,6 +30,22 @@ export interface Language {
   detokenizer?: Detokenizer;
 }
 
+export interface Language2 {
+  name: string;
+  extension: string;
+  phases: LanguagePhase[];
+  emitter: Emitter;
+  packers?: Packer[];
+  detokenizer?: Detokenizer;
+}
+
+export type LanguagePhaseMode = "required" | "simplegolf" | "search";
+
+export interface LanguagePhase {
+  mode: LanguagePhaseMode;
+  plugins: Plugin[];
+}
+
 export interface Plugin {
   name: string;
   /** visit should return a viable replacement node, or undefined to represent

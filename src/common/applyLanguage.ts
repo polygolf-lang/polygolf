@@ -1,6 +1,6 @@
 import { IR, isPolygolfOp, Node, polygolfOp, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
-import { Language, defaultDetokenizer, Plugin } from "./Language";
+import { Language, defaultDetokenizer, Plugin, Language2 } from "./Language";
 import { programToSpine, Spine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
 import { getType } from "./getType";
@@ -135,6 +135,57 @@ export function applyAll(
 
 function isError(x: any): x is Error {
   return x instanceof Error;
+}
+
+interface SearchState {
+  program: Program,
+  startPhase: number,
+  length: number
+}
+
+function golfProgram2(
+  language: Language2,
+  variants: IR.Program[],
+  options: SearchOptions,
+  skipTypecheck = false
+): string {
+
+}
+
+export function applyLanguage2ToVariants(
+  language: Language2,
+  variants: IR.Program[],
+  options: SearchOptions,
+  skipTypecheck = false
+): string {
+  const obj = options.objectiveFunction;
+  const ret = variants
+    .map((variant) =>
+      golfProgram2(
+        language
+        variant,
+        options,
+        skipTypecheck
+      )
+    )
+    .reduce((a, b) =>
+      isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
+    );
+  if (isError(ret)) {
+    ret.message =
+      "No variant could be compiled: " + language.name + " " + ret.message;
+    throw ret;
+  }
+  return ret;
+}
+
+function applyRequired(language: Language2, program: Program, startPhase = 0): string {
+  for(let i = startPhase; i < language.phases.length; i++){
+    const phase = language.phases[i]
+    if(phase.mode === "required"){
+      program = applyAll(program, ...phase.plugins);
+    }
+  }
 }
 
 /** Return the emitted form of the shortest non-error-throwing variant, or
