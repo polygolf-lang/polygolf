@@ -79,6 +79,7 @@ export const useUFCS: Plugin = {
       if (
         obj.kind !== "BinaryOp" &&
         obj.kind !== "UnaryOp" &&
+        obj.kind !== "ConditionalOp" &&
         node.func.kind === "Identifier"
       ) {
         return methodCall(obj, node.func, ...args);

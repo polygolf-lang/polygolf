@@ -268,7 +268,7 @@ function emit(
       case "MethodCall":
         if (e.args.length > 1)
           return [
-            emit(e.object, leftPrec, 12),
+            emit(e.object, -Infinity, 13),
             ".",
             e.ident.name,
             e.args.length > 0
@@ -284,7 +284,7 @@ function emit(
           }
           rightPrec = 2;
           return [
-            emit(e.object, leftPrecedence(e)),
+            emit(e.object, -Infinity, 13),
             ".",
             e.ident.name,
             e.args.length > 0 ? joinExprs(",", e.args) : [],
