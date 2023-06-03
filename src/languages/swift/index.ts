@@ -21,7 +21,7 @@ import {
   removeImplicitConversions,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
-import { golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -50,6 +50,7 @@ const swiftLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfStringListLiteral(false),
+    listOpsToTextOps(),
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive(),

@@ -37,7 +37,7 @@ import {
   forRangeToForEach,
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
-import { golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   packSource2to1,
@@ -63,6 +63,7 @@ import {
   useIntegerTruthiness,
   useImplicitBoolToInt,
 } from "../../plugins/arithmetic";
+import { tableToListLookup } from "../../plugins/tables";
 import { charLength } from "../../common/applyLanguage";
 import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
 
@@ -72,6 +73,7 @@ const pythonLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     golfStringListLiteral(),
+    listOpsToTextOps("text_codepoint_find", "text_get_codepoint"),
     tempVarToMultipleAssignment,
     forRangeToForEach("array_get", "list_get", "text_get_codepoint"),
     golfLastPrint(),
@@ -83,6 +85,7 @@ const pythonLanguage: Language = {
     applyDeMorgans,
     useIntegerTruthiness,
     forRangeToForRangeOneStep,
+    tableToListLookup,
     useMultireplace(true),
     safeConditionalOpToCollectionGet("list"),
     ifRelationChainToLongerRelationChain,
@@ -116,6 +119,7 @@ const pythonLanguage: Language = {
       ["false", int(0)],
       ["abs", (x) => functionCall("abs", x)],
       ["list_length", (x) => functionCall("len", x)],
+      ["list_find", (x) => methodCall(x[0], "index", x[1])],
       ["join_using", (x) => methodCall(x[1], "join", x[0])],
       ["join", (x) => methodCall(text(""), "join", x[0])],
       ["sorted", (x) => functionCall("sorted", x[0])],

@@ -249,9 +249,9 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 ### Literals
 
 - [x] `["ab","cd","e","X","?!"]` ⟶ `"ab cd e X ?!".split()`
-- [ ] `{"a":"A","b":"B","c":"C"}[x]` ⟶ `["A","B","C"][["a","b","c"].find(x)]`
-- [ ] `["A","B","C"][x]` ⟶ `"abc"[x]`
-- [ ] `["A","B","C"].find(x)` ⟶ `"abc".find(x)`
+- [x] `{"a":"A","b":"B","c":"C"}[x]` ⟶ `["A","B","C"][["a","b","c"].find(x)]`
+- [x] `["A","B","C"][x]` ⟶ `"abc"[x]`
+- [x] `["A","B","C"].find(x)` ⟶ `"abc".find(x)`
 
 ### Chaining & shortcircuiting
 

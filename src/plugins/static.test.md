@@ -19,3 +19,13 @@ list "a" "b" "c d";
 ```polygolf static.golfStringListLiteral()
 text_split "a!b!c d" "!";
 ```
+
+```polygolf
+list_get (list "a" "b" "c") 2;
+list_find (list "a" "b" "c") 2;
+```
+
+```polygolf static.listOpsToTextOps("text_get_codepoint","text_codepoint_find")
+text_get_codepoint "abc" 2;
+text_codepoint_find "abc" 2;
+```

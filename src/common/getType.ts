@@ -443,6 +443,9 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
     // other
     case "list_push":
       return expectGenericType("List", ["T1", (x) => x[0]])[0];
+    case "list_find":
+      expectGenericType("List", ["T1", (x) => x[0]]);
+      return integerType(-1, (1n << 31n) - 1n);
     case "concat": {
       expectVariadicType(textType());
       const textTypes = types as TextType[];
