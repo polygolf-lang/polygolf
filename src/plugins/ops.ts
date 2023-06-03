@@ -145,6 +145,7 @@ export function useIndexCalls(
       ops
     )})`,
     allOrNothing: true,
+    bakeType: true,
     visit(node) {
       if (
         isPolygolfOp(node, ...ops) &&
@@ -222,6 +223,7 @@ export const flipBinaryOps: Plugin = {
 
 export const removeImplicitConversions: Plugin = {
   name: "removeImplicitConversions",
+  bakeType: true,
   visit(node) {
     if (node.kind === "ImplicitConversion") {
       return node.expr;
@@ -231,6 +233,7 @@ export const removeImplicitConversions: Plugin = {
 
 export const methodsAsFunctions: Plugin = {
   name: "methodsAsFunctions",
+  bakeType: true,
   visit(node) {
     if (node.kind === "MethodCall") {
       return functionCall(propertyCall(node.object, node.ident), node.args);
@@ -280,6 +283,7 @@ export function useRelationChains(...ops: readonly RelationOpCode[]): Plugin {
 
 export const ifRelationChainToLongerRelationChain: Plugin = {
   name: "ifRelationChainToLongerRelationChain",
+  bakeType: true,
   visit(node) {
     if (
       node.kind === "IfStatement" &&
@@ -297,6 +301,7 @@ export const ifRelationChainToLongerRelationChain: Plugin = {
 
 export const ifToUnsafeAnd: Plugin = {
   name: "ifToUnsafeAnd",
+  bakeType: true,
   visit(node) {
     if (
       node.kind === "IfStatement" &&
@@ -322,6 +327,7 @@ export function relationChainToNestedBinaryOps(
   const opMap = new Map(opMap0);
   return {
     name: `relationChainToNestedBinaryOps(${JSON.stringify(opMap0)})`,
+    bakeType: true,
     visit(node) {
       if (
         node.kind === "RelationOpChain" &&

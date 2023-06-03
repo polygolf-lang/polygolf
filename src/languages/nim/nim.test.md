@@ -308,15 +308,25 @@ echo"Hello ""world""!"
 
 ```polygolf
 $c:Bool <- true;
-conditional $c 3 4;
+(conditional $c 3 4) div 2;
 ```
 
 ```nim nogolf
 var c=true
-if c:3 else:4
+(if c:3 else:4)/%2
 ```
 
 ```nim
 var c=true
-[4,3][c.int]
+[4,3][c.int]/%2
+```
+
+```polygolf
+$c:Bool <- true;
+2 + (conditional $c 3 4);
+```
+
+```nim nogolf
+var c=true
+2+if c:3 else:4
 ```

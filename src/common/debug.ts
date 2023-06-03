@@ -1,4 +1,4 @@
-import parse from "@/frontend/parse";
+import parse from "../frontend/parse";
 import { Program } from "../IR";
 import polygolfLanguage from "../languages/polygolf";
 import applyLanguage, { searchOptions } from "./applyLanguage";

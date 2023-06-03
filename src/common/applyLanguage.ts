@@ -110,7 +110,10 @@ function getFinalEmit(language: Language, nogolf = false) {
     const program = language.emitPlugins
       .concat(language.finalEmitPlugins)
       .filter((x) => x.skipWhenNogolf !== true || !nogolf)
-      .reduce((program, plugin) => applyAll(program, plugin.visit), ir);
+      .reduce(
+        (program, plugin) => applyAll(program, plugin.visit, plugin.bakeType),
+        ir
+      );
     return detokenizer(language.emitter(program));
   };
 }
@@ -152,14 +155,18 @@ export function applyLanguageToVariants(
     language.name === "Polygolf"
       ? (x: Program) => x
       : (x: Program) =>
-          applyAll(x, (node) => {
-            if (isPolygolfOp(node, "print_int", "println_int")) {
-              return polygolfOp(
-                node.op === "print_int" ? "print" : "println",
-                polygolfOp("int_to_text", node.args[0])
-              );
-            }
-          });
+          applyAll(
+            x,
+            (node) => {
+              if (isPolygolfOp(node, "print_int", "println_int")) {
+                return polygolfOp(
+                  node.op === "print_int" ? "print" : "println",
+                  polygolfOp("int_to_text", node.args[0])
+                );
+              }
+            },
+            true
+          );
   const ret = variants
     .map((variant) =>
       golfProgram(

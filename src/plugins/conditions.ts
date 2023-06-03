@@ -46,6 +46,7 @@ export function safeConditionalOpToCollectionGet(
 
 export const conditionalOpToAndOr: Plugin = {
   name: "conditionalOpToAndOr",
+  bakeType: true,
   visit(node) {
     if (node.kind === "ConditionalOp") {
       return polygolfOp(

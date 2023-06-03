@@ -2,7 +2,7 @@ import { TokenTree } from "@/common/Language";
 import { emitTextLiteral, joinTrees, EmitError } from "../../common/emit";
 import { ArrayConstructor, IR, isIntLiteral } from "../../IR";
 
-function precedence(expr: IR.Expr): number {
+function leftPrecedence(expr: IR.Expr): number {
   switch (expr.kind) {
     case "UnaryOp":
       return 11;
@@ -14,6 +14,14 @@ function precedence(expr: IR.Expr): number {
       return 12;
   }
   return Infinity;
+}
+
+function rightPrecedence(expr: IR.Expr): number {
+  switch (expr.kind) {
+    case "ConditionalOp":
+      return -Infinity;
+  }
+  return leftPrecedence(expr);
 }
 
 function binaryPrecedence(opname: string): number {
@@ -86,22 +94,29 @@ function emitMultiExpr(expr: IR.Expr, isRoot = false): TokenTree {
 function joinExprs(
   delim: TokenTree,
   exprs: readonly IR.Expr[],
-  minPrec = -Infinity
+  minLeftPrec = -Infinity,
+  minRightPrec = minLeftPrec
 ) {
   return joinTrees(
     delim,
-    exprs.map((x) => emit(x, minPrec))
+    exprs.map((x) => emit(x, minLeftPrec, minRightPrec))
   );
 }
 
 /**
  * Emits the expression.
  * @param expr The expression to be emited.
- * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
+ * @param minimumLeftPrec Minimum left precedence this expression must be to not need parens around it.
+ * @param minimumRightPrec Minimum right precedence this expression must be to not need parens around it.
  * @returns Token tree corresponding to the expression.
  */
-function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
-  let prec = precedence(expr);
+function emit(
+  expr: IR.Expr,
+  minimumLeftPrec = -Infinity,
+  minimumRightPrec = -Infinity
+): TokenTree {
+  let leftPrec = leftPrecedence(expr);
+  let rightPrec = rightPrecedence(expr);
   const e = expr;
   function emitNoParens(): TokenTree {
     switch (e.kind) {
@@ -240,12 +255,12 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         ) {
           const raw = emitAsRawTextLiteral(e.args[0].value, e.func.name);
           if (raw !== null) {
-            prec = Infinity;
+            leftPrec = rightPrec = Infinity;
             return raw;
           }
         }
         if (e.args.length > 1) {
-          prec = 11.5;
+          leftPrec = rightPrec = 11.5;
         }
         if (e.args.length > 1 || e.args.length === 0)
           return [emit(e.func), "$GLUE$", "(", joinExprs(",", e.args), ")"];
@@ -253,7 +268,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "MethodCall":
         if (e.args.length > 1)
           return [
-            emit(e.object, prec),
+            emit(e.object, leftPrec, 12),
             ".",
             e.ident.name,
             e.args.length > 0
@@ -264,13 +279,12 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           if (e.args.length === 1 && e.args[0].kind === "TextLiteral") {
             const raw = emitAsRawTextLiteral(e.args[0].value, e.ident.name);
             if (raw !== null) {
-              prec = 12;
-              return [emit(e.object, prec), ".", raw];
+              return [emit(e.object, leftPrec), ".", raw];
             }
           }
-          prec = 2;
+          rightPrec = 2;
           return [
-            emit(e.object, precedence(e)),
+            emit(e.object, leftPrecedence(e)),
             ".",
             e.ident.name,
             e.args.length > 0 ? joinExprs(",", e.args) : [],
@@ -279,14 +293,14 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "BinaryOp": {
         const rightAssoc = e.name === "^";
         return [
-          emit(e.left, prec + (rightAssoc ? 1 : 0)),
+          emit(e.left, -Infinity, leftPrec + (rightAssoc ? 1 : 0)),
           /[A-Za-z]/.test(e.name[0]) ? [] : "$GLUE$",
           e.name,
-          emit(e.right, prec + (rightAssoc ? 0 : 1)),
+          emit(e.right, leftPrec + (rightAssoc ? 0 : 1), -Infinity),
         ];
       }
       case "UnaryOp":
-        return [e.name, emit(e.arg, prec)];
+        return [e.name, emit(e.arg, leftPrec, -Infinity)];
       case "ListConstructor":
         return ["@", "[", joinExprs(",", e.exprs), "]"];
       case "ArrayConstructor":
@@ -319,12 +333,12 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         ];
       case "IndexCall":
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");
-        return [emit(e.collection, 12), "[", emit(e.index), "]"];
+        return [emit(e.collection, -Infinity, 12), "[", emit(e.index), "]"];
       case "RangeIndexCall":
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");
         if (!isIntLiteral(e.step, 1n)) throw new EmitError(expr, "step");
         return [
-          emit(e.collection, 12),
+          emit(e.collection, -Infinity, 12),
           "[",
           emit(e.low),
           "..<",
@@ -337,7 +351,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
   }
 
   const inner = emitNoParens();
-  if (prec >= minimumPrec) return inner;
+  if (leftPrec >= minimumLeftPrec && rightPrec >= minimumRightPrec)
+    return inner;
   return ["(", inner, ")"];
 }
 
