@@ -52,7 +52,7 @@ export const FrontendOpCodes = [
   "text_to_int",
   "bool_to_int",
   "int_to_text_byte", // Returns a single byte text using the specified byte.
-  "int_to_codepoint",  // Returns a single codepoint text using the specified integer.
+  "int_to_codepoint", // Returns a single codepoint text using the specified integer.
   "list_length",
   "text_byte_length", // Returns the text length in bytes.
   "text_codepoint_length", // Returns the text length in codepoints.
@@ -101,13 +101,15 @@ export const UnaryOpCodes = [
   "int_to_text_byte",
   "int_to_codepoint",
   "list_length",
-  "text_codepoint_length", 
-  "text_byte_length", 
+  "text_codepoint_length",
+  "text_byte_length",
   "text_split_whitespace",
   "sorted",
   "join",
   "text_byte_reversed",
   "text_codepoint_reversed",
+  "text_byte_to_int", // (text_byte_to_int (text_get_byte $x $i)) is equivalent to (text_get_byte_to_int $x $i), "text_byte_to_int" is the inverse of "int_to_text_byte"
+  "codepoint_to_int", // (codepoint_to_int (text_get_codepoint $x $i)) is equivalent to (text_get_codepoint_to_int $x $i), "codepoint_to_int" is the inverse of "int_to_codepoint"
 ] as const;
 export type UnaryOpCode = string & (typeof UnaryOpCodes)[number];
 
@@ -195,9 +197,7 @@ export const BinaryOpCodes = [
   "text_get_byte", // returns a single byte text at the specified byte-0-index
   "text_get_codepoint", // returns a single codepoint text at the specified codepoint-0-index
   "text_get_codepoint_to_int", // gets the codepoint at the specified codepoint-0-index as an integer
-  "codepoint_to_int", // (codepoint_to_int (text_get_codepoint $x $i)) is equivalent to (text_get_codepoint_to_int $x $i), "codepoint_to_int" is the inverse of "int_to_codepoint"
   "text_get_byte_to_int", // gets the byte at the specified byte-0-index as an integer
-  "text_byte_to_int", // (text_byte_to_int (text_get_byte $x $i)) is equivalent to (text_get_byte_to_int $x $i), "text_byte_to_int" is the inverse of "int_to_text_byte"
   "join_using",
   "right_align",
   "int_to_bin_aligned", // Converts the given integer to text representing the value in binary. The result is aligned with 0s to the specified number of places.

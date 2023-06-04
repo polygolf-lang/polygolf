@@ -78,7 +78,7 @@ a==2
 a>=2
 a>2
 ({"xy","abc"})[2]
-("abc"):byte(2)
+("abc"):sub(1,1)
 b.."xyz"
 ("abc"):len()
 ""..5
