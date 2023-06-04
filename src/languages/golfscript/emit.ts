@@ -143,8 +143,7 @@ export default function emitProgram(program: IR.Program): TokenTree {
         if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
         return [emitExpr(expr.collection), emitExpr(expr.index), "="];
       case "RangeIndexCall": {
-        if (expr.oneIndexed)
-          throw new Error("GolfScript only supports zeroIndexed access.");
+        if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
 
         return [
           emitExpr(expr.collection),
