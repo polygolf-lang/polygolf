@@ -1,8 +1,11 @@
+import { Spine } from "@/common/Spine";
 import { Plugin } from "../common/Language";
 import {
   arrayConstructor,
   conditional,
+  Expr,
   ifStatement,
+  int,
   keyValue,
   listConstructor,
   polygolfOp,
@@ -44,19 +47,43 @@ export function safeConditionalOpToCollectionGet(
   };
 }
 
-export const conditionalOpToAndOr: Plugin = {
-  name: "conditionalOpToAndOr",
-  bakeType: true,
-  visit(node) {
-    if (node.kind === "ConditionalOp") {
-      return polygolfOp(
-        "unsafe_or",
-        polygolfOp("unsafe_and", node.condition, node.consequent),
-        node.alternate
-      );
-    }
-  },
-};
+export function conditionalOpToAndOr(
+  isProvablyThruthy: (expr: Expr, spine: Spine) => boolean,
+  falseyFallback?: "list" | "array"
+): Plugin {
+  return {
+    name: "conditionalOpToAndOr",
+    bakeType: true,
+    visit(node, spine) {
+      if (node.kind === "ConditionalOp") {
+        if (isProvablyThruthy(node.consequent, spine.getChild("consequent")))
+          return polygolfOp(
+            "unsafe_or",
+            polygolfOp("unsafe_and", node.condition, node.consequent),
+            node.alternate
+          );
+        if (falseyFallback !== undefined) {
+          const op = `${falseyFallback}_get` as const;
+          const collection =
+            falseyFallback === "list" ? listConstructor : arrayConstructor;
+          return polygolfOp(
+            op,
+            polygolfOp(
+              "unsafe_or",
+              polygolfOp(
+                "unsafe_and",
+                node.condition,
+                collection([node.consequent])
+              ),
+              collection([node.alternate])
+            ),
+            int(0n)
+          );
+        }
+      }
+    },
+  };
+}
 
 export const flipConditionalOp: Plugin = {
   name: "flipConditionalOp",

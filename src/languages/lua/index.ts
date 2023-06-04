@@ -42,6 +42,7 @@ import {
 } from "../../plugins/arithmetic";
 import { conditionalOpToAndOr } from "../../plugins/conditions";
 import { listOpsToTextOps } from "../../plugins/static";
+import { getType } from "../../common/getType";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -87,10 +88,13 @@ const luaLanguage: Language = {
       ["text_get_byte", (x) => methodCall(x[0], "byte", add1(x[1]))],
       ["text_get_byte_slice", (x) => methodCall(x[0], "sub", x[1], add1(x[2]))]
     ),
-    useIndexCalls(true),
   ],
   finalEmitPlugins: [
-    conditionalOpToAndOr,
+    conditionalOpToAndOr(
+      (e, s) => !["boolean", "void"].includes(getType(e, s).kind),
+      "list"
+    ),
+    useIndexCalls(true),
     mapOps([
       "int_to_text",
       (x) =>
