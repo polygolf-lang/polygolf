@@ -96,6 +96,28 @@ export const textToIntToTextGetToInt: Plugin = {
   name: "textToIntToTextGetToInt",
 };
 
+export const textGetToTextGetToIntToText: Plugin = {
+  ...mapOps(
+    [
+      "text_get_byte",
+      (x) =>
+        polygolfOp(
+          "int_to_text_byte",
+          polygolfOp("text_get_byte_to_int", ...x)
+        ),
+    ],
+    [
+      "text_get_codepoint",
+      (x) =>
+        polygolfOp(
+          "int_to_codepoint",
+          polygolfOp("text_get_codepoint_to_int", ...x)
+        ),
+    ]
+  ),
+  name: "textGetToTextGetToIntToText",
+};
+
 /**
  * Converts nested text_replace to a text_multireplace provided the arguments are
  * text literals with no overlap.
