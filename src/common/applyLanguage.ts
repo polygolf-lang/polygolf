@@ -5,6 +5,7 @@ import { programToSpine, Spine } from "./Spine";
 import polygolfLanguage from "../languages/polygolf";
 import { getType } from "./getType";
 import { stringify } from "./stringify";
+import parse from "../frontend/parse";
 
 // TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
 export type OptimisationLevel = "none" | "heuristic" | "full";
@@ -13,6 +14,7 @@ export interface SearchOptions {
   level: OptimisationLevel;
   objective: Objective;
   objectiveFunction: (x: string | null) => number;
+  getAllVariants: boolean;
 }
 
 // This is what code.golf uses for char scoring
@@ -53,7 +55,8 @@ export const byteLength = (x: string | null) =>
 export function searchOptions(
   level: OptimisationLevel,
   objective: Objective,
-  objectiveFunction?: (x: string) => number
+  objectiveFunction?: (x: string) => number,
+  getAllVariants?: boolean
 ): SearchOptions {
   return {
     level,
@@ -64,7 +67,72 @@ export function searchOptions(
           ? byteLength
           : charLength
         : (x) => (x === null ? Infinity : objectiveFunction(x)),
+    getAllVariants: getAllVariants === true,
   };
+}
+
+export interface CompilationResult {
+  language: Language;
+  result: string | Error;
+  warnings: string[];
+}
+
+function compilationResult(
+  language: Language,
+  result: string | Error,
+  warnings: string[] = []
+): CompilationResult {
+  return {
+    language,
+    result,
+    warnings,
+  };
+}
+
+export function compile(
+  source: string,
+  options: SearchOptions,
+  ...languages: Language[]
+): CompilationResult[] {
+  const obj = options.objectiveFunction;
+  let program: Program;
+  try {
+    program = parse(source);
+  } catch (e) {
+    if (isError(e)) return [compilationResult(polygolfLanguage, e)];
+  }
+  program = program!;
+  let variants = expandVariants(program).map((x) => {
+    try {
+      typecheck(x);
+      return x;
+    } catch (e) {
+      if (isError(e)) return e;
+      throw e;
+    }
+  });
+  if (variants.every(isError)) {
+    return [compilationResult(polygolfLanguage, variants[0] as Error)];
+  }
+  if (!options.getAllVariants) variants = variants.filter((x) => !isError(x));
+
+  const result: CompilationResult[] = [];
+  for (const language of languages) {
+    const outputs = variants.map((x) =>
+      isError(x) ? x : (search(x, options, language) as string | Error)
+    );
+    if (options.getAllVariants) {
+      result.push(...outputs.map((x) => compilationResult(language, x)));
+    } else {
+      const res = outputs.reduce((a, b) =>
+        isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
+      );
+      if (isError(res))
+        res.message = "No variant could be compiled: " + res.message;
+      result.push(compilationResult(language, res));
+    }
+  }
+  return result;
 }
 
 export default function applyLanguage(
@@ -138,18 +206,9 @@ function isError(x: any): x is Error {
 }
 
 interface SearchState {
-  program: Program,
-  startPhase: number,
-  length: number
-}
-
-function golfProgram2(
-  language: Language2,
-  variants: IR.Program[],
-  options: SearchOptions,
-  skipTypecheck = false
-): string {
-
+  program: Program;
+  startPhase: number;
+  length: number;
 }
 
 export function applyLanguage2ToVariants(
@@ -160,14 +219,7 @@ export function applyLanguage2ToVariants(
 ): string {
   const obj = options.objectiveFunction;
   const ret = variants
-    .map((variant) =>
-      golfProgram2(
-        language
-        variant,
-        options,
-        skipTypecheck
-      )
-    )
+    .map((variant) => golfProgram2(language, variant, options, skipTypecheck))
     .reduce((a, b) =>
       isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
     );
@@ -179,10 +231,14 @@ export function applyLanguage2ToVariants(
   return ret;
 }
 
-function applyRequired(language: Language2, program: Program, startPhase = 0): string {
-  for(let i = startPhase; i < language.phases.length; i++){
-    const phase = language.phases[i]
-    if(phase.mode === "required"){
+function applyRequired(
+  language: Language2,
+  program: Program,
+  startPhase = 0
+): string {
+  for (let i = startPhase; i < language.phases.length; i++) {
+    const phase = language.phases[i];
+    if (phase.mode === "required") {
       program = applyAll(program, ...phase.plugins);
     }
   }

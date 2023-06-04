@@ -37,6 +37,11 @@ const options = yargs()
       description: "Use char length as objective",
       type: "boolean",
     },
+    all: {
+      alias: "a",
+      description: "Get all variants",
+      type: "boolean",
+    },
   })
   .parseSync(process.argv.slice(2));
 
@@ -54,7 +59,12 @@ try {
       const result = applyLanguage(
         lang,
         prog,
-        searchOptions("full", options.chars === true ? "chars" : "bytes")
+        searchOptions(
+          "full",
+          options.chars === true ? "chars" : "bytes",
+          undefined,
+          options.all
+        )
       );
       if (options.output !== undefined) {
         fs.mkdirSync(path.dirname(options.output), { recursive: true });
