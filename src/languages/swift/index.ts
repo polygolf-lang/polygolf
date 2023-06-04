@@ -34,7 +34,10 @@ import {
   forRangeToForRangeInclusive,
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
-import { useEquivalentTextOp } from "../../plugins/textOps";
+import {
+  useEquivalentTextOp,
+  textToIntToTextGetToInt,
+} from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
   applyDeMorgans,
@@ -57,6 +60,7 @@ const swiftLanguage: Language = {
     applyDeMorgans,
     forRangeToForRangeOneStep,
     useEquivalentTextOp(true, true),
+    textToIntToTextGetToInt,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -67,6 +71,22 @@ const swiftLanguage: Language = {
         "argv_get",
         (x) =>
           polygolfOp("list_get", builtin("CommandLine.arguments"), add1(x[0])),
+      ],
+      [
+        "codepoint_to_int",
+        (x) => polygolfOp("text_get_codepoint_to_int", x[0], builtin("0")),
+      ],
+      [
+        "text_byte_to_int",
+        (x) => polygolfOp("text_get_byte_to_int", x[0], builtin("0")),
+      ],
+      [
+        "text_get_byte",
+        (x) =>
+          polygolfOp(
+            "int_to_text_byte",
+            polygolfOp("text_get_byte_to_int", ...x)
+          ),
       ]
     ),
     useIndexCalls(),
@@ -96,6 +116,14 @@ const swiftLanguage: Language = {
               x[1]
             ),
             "value"
+          ),
+      ],
+      [
+        "int_to_text_byte",
+        (x) =>
+          functionCall(
+            "String",
+            functionCall("!", functionCall("UnicodeScalar", x))
           ),
       ],
       [
