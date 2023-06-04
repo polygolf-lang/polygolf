@@ -8,6 +8,7 @@ import {
   add1,
   propertyCall,
   builtin,
+  int,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
@@ -74,11 +75,11 @@ const swiftLanguage: Language = {
       ],
       [
         "codepoint_to_int",
-        (x) => polygolfOp("text_get_codepoint_to_int", x[0], builtin("0")),
+        (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
       ],
       [
         "text_byte_to_int",
-        (x) => polygolfOp("text_get_byte_to_int", x[0], builtin("0")),
+        (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
       ],
       [
         "text_get_byte",
