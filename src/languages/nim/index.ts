@@ -39,6 +39,7 @@ import { tableHashing } from "../../plugins/hashing";
 import hash from "./hash";
 import {
   textToIntToTextGetToInt,
+  textToIntToFirstIndexTextGetToInt,
   useEquivalentTextOp,
   useMultireplace,
 } from "../../plugins/textOps";
@@ -95,10 +96,7 @@ const nimLanguage: Language = {
   finalEmitPlugins: [
     forRangeToForRangeInclusive(true),
     implicitlyConvertPrintArg,
-    mapOps([
-      "text_byte_to_int",
-      (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
-    ]),
+    textToIntToFirstIndexTextGetToInt,
     mapOps([
       "text_get_byte_to_int",
       (x) => functionCall("ord", polygolfOp("text_get_byte", ...x)),

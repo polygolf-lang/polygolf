@@ -6,6 +6,7 @@ import {
   OpCode,
   polygolfOp,
   TextLiteral,
+  int,
 } from "../IR";
 import { Plugin } from "../common/Language";
 import { mapOps } from "./ops";
@@ -116,6 +117,20 @@ export const textGetToTextGetToIntToText: Plugin = {
     ]
   ),
   name: "textGetToTextGetToIntToText",
+};
+
+export const textToIntToFirstIndexTextGetToInt: Plugin = {
+  ...mapOps(
+    [
+      "text_byte_to_int",
+      (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
+    ],
+    [
+      "codepoint_to_int",
+      (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
+    ]
+  ),
+  name: "textToIntToFirstIndexTextGetToInt",
 };
 
 /**
