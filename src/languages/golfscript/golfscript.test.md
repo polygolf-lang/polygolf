@@ -13,6 +13,16 @@ print "b";
 1 n 2"a"n"b"
 ```
 
+```polygolf
+$x:Int <- 1;
+print_int $x;
+print_int $x;
+```
+
+```golfscript nogolf
+1:x;x x
+```
+
 ## Ops emit
 
 ```polygolf
