@@ -64,7 +64,7 @@ const golfscriptLanguage: Language = {
       ["true", builtin("1")],
       ["false", builtin("0")],
       ["println", (x) => functionCall("n", x)],
-      ["print", (x) => functionCall("", x)],
+      ["print", (x) => x[0]],
 
       [
         "text_get_byte_slice",
