@@ -188,6 +188,7 @@ export const BinaryOpCodes = [
   // other
   "println_list_joined_using",
   "list_push",
+  "list_find", // returns the 0-index of the first occurence of or -1 if it is not found
   "concat",
   "repeat",
   "text_contains",

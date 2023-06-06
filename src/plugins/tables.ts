@@ -5,6 +5,7 @@ import {
   Expr,
   functionCall,
   int,
+  IntegerLiteral,
   integerType,
   isPolygolfOp,
   listConstructor,
@@ -127,3 +128,30 @@ export function testTableHashing(maxMod: number): Plugin {
     name: `testTableHashing(${maxMod})`,
   };
 }
+
+export const tableToListLookup: Plugin = {
+  name: "tableToListLookup",
+  visit(node) {
+    if (
+      isPolygolfOp(node, "table_get") &&
+      node.args[0].kind === "TableConstructor"
+    ) {
+      const keys = node.args[0].kvPairs.map((x) => x.key);
+      if (
+        keys.every(
+          (x) => x.kind === "TextLiteral" || x.kind === "IntegerLiteral"
+        ) &&
+        new Set(keys.map((x) => (x as IntegerLiteral | TextLiteral).value))
+          .size === keys.length
+      ) {
+        const values = node.args[0].kvPairs.map((x) => x.value);
+        const at = node.args[1];
+        return polygolfOp(
+          "list_get",
+          listConstructor(values),
+          polygolfOp("list_find", listConstructor(keys), at)
+        );
+      }
+    }
+  },
+};

@@ -42,6 +42,7 @@ import {
   equalityToInequality,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
+import { listOpsToTextOps } from "../../plugins/static";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -50,6 +51,7 @@ const luaLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfLastPrint(),
+    listOpsToTextOps("text_byte_find", "text_get_byte"),
     tempVarToMultipleAssignment,
     equalityToInequality,
     shiftRangeOneUp,
