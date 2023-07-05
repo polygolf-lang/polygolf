@@ -26,13 +26,13 @@ import {
   removeImplicitConversions,
   methodsAsFunctions,
 } from "../../plugins/ops";
-import { aliasBuiltins, renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forRangeToForEach,
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
-import { golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   packSource2to1,
@@ -58,6 +58,7 @@ import {
   equalityToInequality,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
+import { tableToListLookup } from "../../plugins/tables";
 import { charLength } from "../../common/applyLanguage";
 
 const pythonLanguage: Language = {
@@ -66,6 +67,7 @@ const pythonLanguage: Language = {
   emitter: emitProgram,
   golfPlugins: [
     golfStringListLiteral(),
+    listOpsToTextOps("text_codepoint_find", "text_get_codepoint"),
     tempVarToMultipleAssignment,
     forRangeToForEach("array_get", "list_get", "text_get_codepoint"),
     golfLastPrint(),
@@ -77,6 +79,7 @@ const pythonLanguage: Language = {
     applyDeMorgans,
     useIntegerTruthiness,
     forRangeToForRangeOneStep,
+    tableToListLookup,
     useMultireplace(true),
     inlineVariables,
   ],
@@ -106,6 +109,7 @@ const pythonLanguage: Language = {
       ["read_line", functionCall("input")],
       ["abs", (x) => functionCall("abs", x)],
       ["list_length", (x) => functionCall("len", x)],
+      ["list_find", (x) => methodCall(x[0], "index", x[1])],
       ["join_using", (x) => methodCall(x[1], "join", x[0])],
       ["join", (x) => methodCall(text(""), "join", x[0])],
       ["sorted", (x) => functionCall("sorted", x[0])],
@@ -207,9 +211,18 @@ const pythonLanguage: Language = {
       ["or", "or"]
     ),
     methodsAsFunctions,
-    aliasBuiltins(),
-    renameIdents(),
     addOneToManyAssignments(),
+    alias((expr) => {
+      switch (expr.kind) {
+        case "Identifier":
+          return expr.builtin ? expr.name : undefined;
+        case "IntegerLiteral":
+          return expr.value.toString();
+        case "TextLiteral":
+          return `"${expr.value}"`;
+      }
+    }),
+    renameIdents(),
     addImports(
       [
         ["sys.argv[1:]", "sys"],

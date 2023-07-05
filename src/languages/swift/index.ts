@@ -8,6 +8,7 @@ import {
   add1,
   propertyCall,
   builtin,
+  int,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
@@ -20,8 +21,8 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
 } from "../../plugins/ops";
-import { renameIdents } from "../../plugins/idents";
-import { golfStringListLiteral } from "../../plugins/static";
+import { alias, renameIdents } from "../../plugins/idents";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -35,7 +36,10 @@ import {
   forRangeToForRangeInclusive,
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
-import { useEquivalentTextOp } from "../../plugins/textOps";
+import {
+  useEquivalentTextOp,
+  textToIntToTextGetToInt,
+} from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
   applyDeMorgans,
@@ -51,6 +55,7 @@ const swiftLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfStringListLiteral(false),
+    listOpsToTextOps(),
     golfLastPrint(),
     equalityToInequality,
     forRangeToForRangeInclusive(),
@@ -59,6 +64,7 @@ const swiftLanguage: Language = {
     forRangeToForRangeOneStep,
     useEquivalentTextOp(true, true),
     inlineVariables,
+    textToIntToTextGetToInt,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -69,6 +75,22 @@ const swiftLanguage: Language = {
         "argv_get",
         (x) =>
           polygolfOp("list_get", builtin("CommandLine.arguments"), add1(x[0])),
+      ],
+      [
+        "codepoint_to_int",
+        (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
+      ],
+      [
+        "text_byte_to_int",
+        (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
+      ],
+      [
+        "text_get_byte",
+        (x) =>
+          polygolfOp(
+            "int_to_text_byte",
+            polygolfOp("text_get_byte_to_int", ...x)
+          ),
       ]
     ),
     useIndexCalls(),
@@ -78,7 +100,7 @@ const swiftLanguage: Language = {
     mapOps(
       ["read_line", () => functionCall("readLine")],
       [
-        "text_get_byte",
+        "text_get_byte_to_int",
         (x) =>
           functionCall(
             "Int",
@@ -89,6 +111,25 @@ const swiftLanguage: Language = {
         "text_get_codepoint",
         (x) =>
           functionCall("String", indexCall(functionCall("Array", x[0]), x[1])),
+      ],
+      [
+        "text_get_codepoint_to_int",
+        (x) =>
+          propertyCall(
+            indexCall(
+              functionCall("Array", propertyCall(x[0], "unicodeScalars")),
+              x[1]
+            ),
+            "value"
+          ),
+      ],
+      [
+        "int_to_text_byte",
+        (x) =>
+          functionCall(
+            "String",
+            functionCall("!", functionCall("UnicodeScalar", x))
+          ),
       ],
       [
         "int_to_codepoint",
@@ -195,6 +236,14 @@ const swiftLanguage: Language = {
       ],
       "import"
     ),
+    alias((expr) => {
+      switch (expr.kind) {
+        case "IntegerLiteral":
+          return expr.value.toString();
+        case "TextLiteral":
+          return `"${expr.value}"`;
+      }
+    }),
     renameIdents(),
     addVarDeclarations,
     groupVarDeclarations(),

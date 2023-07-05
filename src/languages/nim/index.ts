@@ -6,6 +6,7 @@ import {
   add1,
   arrayConstructor,
   builtin,
+  polygolfOp,
 } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
@@ -19,7 +20,7 @@ import {
   removeImplicitConversions,
 } from "../../plugins/ops";
 import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
-import { renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forArgvToForRange,
@@ -28,17 +29,17 @@ import {
   forRangeToForRangeOneStep,
   shiftRangeOneUp,
 } from "../../plugins/loops";
-import { golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
-import { tableHashing } from "../../plugins/hashing";
+import { tableHashing, tableToListLookup } from "../../plugins/tables";
 import hash from "./hash";
 import {
-  textGetToIntToTextGet,
   textToIntToTextGetToInt,
+  textToIntToFirstIndexTextGetToInt,
   useEquivalentTextOp,
   useMultireplace,
 } from "../../plugins/textOps";
@@ -67,12 +68,14 @@ const nimLanguage: Language = {
   golfPlugins: [
     flipBinaryOps,
     golfStringListLiteral(),
+    listOpsToTextOps("text_byte_find", "text_get_byte"),
     golfLastPrint(),
     forRangeToForEach("array_get", "list_get", "text_get_byte"),
     tempVarToMultipleAssignment,
     useDecimalConstantPackedPrinter,
     useLowDecimalListPackedPrinter,
     tableHashing(hash),
+    tableToListLookup,
     equalityToInequality,
     shiftRangeOneUp,
     forRangeToForRangeInclusive(),
@@ -97,12 +100,15 @@ const nimLanguage: Language = {
   finalEmitPlugins: [
     forRangeToForRangeInclusive(true),
     implicitlyConvertPrintArg,
-    textGetToIntToTextGet,
+    textToIntToFirstIndexTextGetToInt,
+    mapOps([
+      "text_get_byte_to_int",
+      (x) => functionCall("ord", polygolfOp("text_get_byte", ...x)),
+    ]),
     mapOps(
       ["true", builtin("true")],
       ["false", builtin("false")],
       ["read_line", functionCall("readLine", builtin("stdin"))],
-      ["text_byte_to_int", (x) => functionCall("ord", x)],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
       ["text_split", (x) => functionCall("split", x)],
@@ -120,6 +126,7 @@ const nimLanguage: Language = {
       ["abs", (x) => functionCall("abs", x)],
       ["bool_to_int", (x) => functionCall("int", x)],
       ["int_to_text_byte", (x) => functionCall("chr", x)],
+      ["list_find", (x) => functionCall("find", x)],
       [
         "text_replace",
         (x) =>
@@ -182,6 +189,17 @@ const nimLanguage: Language = {
     ),
     useUnsignedDivision,
     addNimImports,
+    alias(
+      (expr) => {
+        switch (expr.kind) {
+          case "IntegerLiteral":
+            return expr.value.toString();
+          case "TextLiteral":
+            return `"${expr.value}"`;
+        }
+      },
+      [1, 7]
+    ),
     renameIdents(),
     addVarDeclarations,
     addVarDeclarationOneToManyAssignments(),

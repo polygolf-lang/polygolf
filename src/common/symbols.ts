@@ -111,6 +111,11 @@ function introducedSymbols(
       )
         return [node.variable.name];
       break;
+    case "OneToManyAssignment":
+    case "ManyToManyAssignment":
+      return node.variables
+        .filter((x) => x.kind === "Identifier" && !existing.has(x.name))
+        .map((x) => (x as any).name);
   }
 }
 

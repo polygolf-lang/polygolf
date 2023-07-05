@@ -29,6 +29,7 @@ import {
   sub1,
 } from "../IR";
 import { byteLength, charLength } from "../common/applyLanguage";
+import { PolygolfError } from "../common/errors";
 
 export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
   return {
@@ -311,7 +312,10 @@ export const assertForArgvTopLevel: Plugin = {
       for (const kind of spine.compactMap((x) => x.kind)) {
         if (kind === "ForArgv") {
           if (forArgvSeen)
-            throw new Error("Only a single for_argv node allowed.");
+            throw new PolygolfError(
+              "Only a single for_argv node allowed.",
+              node.source
+            );
           forArgvSeen = true;
         }
       }
@@ -322,7 +326,10 @@ export const assertForArgvTopLevel: Plugin = {
         (spine.parent?.node.kind !== "Block" ||
           spine.parent?.parent?.node.kind !== "Program")
       ) {
-        throw new Error("Node for_argv only allowed at the top level.");
+        throw new PolygolfError(
+          "Node for_argv only allowed at the top level.",
+          node.source
+        );
       }
     }
     return undefined;

@@ -1,7 +1,16 @@
 import { Plugin, IdentifierGenerator } from "common/Language";
 import { getDeclaredIdentifiers } from "../common/symbols";
 import { Spine } from "../common/Spine";
-import { assignment, block, id, Identifier, IR } from "../IR";
+import {
+  assignment,
+  block,
+  Expr,
+  id,
+  Identifier,
+  IR,
+  Node,
+  program,
+} from "../IR";
 
 function getIdentMap(
   spine: Spine<IR.Program>,
@@ -72,55 +81,54 @@ export function renameIdents(
 
 const defaultIdentGen = {
   preferred(original: string) {
-    const lower = original[0].toLowerCase();
-    const upper = original[0].toUpperCase();
-    return [original[0], original[0] === lower ? upper : lower];
+    const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
+    if (firstLetter === undefined) return [];
+    const lower = firstLetter.toLowerCase();
+    const upper = firstLetter.toUpperCase();
+    return [firstLetter, firstLetter === lower ? upper : lower];
   },
   short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
   general: (i: number) => "v" + i.toString(),
 };
 
-function defaultShouldAlias(name: string, freq: number): boolean {
-  return 3 + name.length + freq < name.length * freq;
-}
-export function aliasBuiltins(
-  shouldAlias: (name: string, freq: number) => boolean = defaultShouldAlias
+/**
+ * Aliases repeated expressions by mapping them to new variables.
+ * @param getExprKey Calculates a key to compare expressions, `undefined` marks aliasing should not happen.
+ * @param save `[cost of referring to the alias, cost of storing the alias]` or a custom byte save function.
+ */
+export function alias(
+  getExprKey: (expr: Expr) => string | undefined,
+  save: ((key: string, freq: number) => number) | [number, number] = [1, 3]
 ): Plugin {
+  const aliasingSave =
+    typeof save === "function"
+      ? save
+      : (key: string, freq: number) =>
+          (key.length - save[0]) * (freq - 1) - save[0] - save[1];
+  const getKey = (node: Node) =>
+    node.kind === "Program" ? undefined : getExprKey(node);
   return {
-    name: "aliasBuiltins(...)",
-    visit(program, spine) {
-      if (program.kind !== "Program") return;
-      // get frequency of each builtin
+    name: "alias(...)",
+    skipWhenNogolf: true,
+    visit(prog, spine) {
+      if (prog.kind !== "Program") return;
+      // get frequency of expr
       const timesUsed = new Map<string, number>();
-      for (const name of spine.compactMap((node) => {
-        if (node.kind === "Identifier" && node.builtin) return node.name;
-      })) {
-        const freq = timesUsed.get(name) ?? 0;
-        timesUsed.set(name, freq + 1);
+      for (const key of spine.compactMap(getKey)) {
+        timesUsed.set(key, (timesUsed.get(key) ?? 0) + 1);
       }
       // apply
       const assignments: (IR.Assignment & { variable: Identifier })[] = [];
       const replacedDeep = spine.withReplacer((node) => {
-        if (
-          node.kind === "Identifier" &&
-          node.builtin &&
-          shouldAlias(node.name, timesUsed.get(node.name)!)
-        ) {
-          const alias = node.name + "+alias";
-          if (assignments.every((x) => x.variable.name !== alias))
-            assignments.push(assignment(alias, id(node.name, true)));
-          return { ...node, builtin: false, name: alias };
+        const key = getKey(node);
+        if (key !== undefined && aliasingSave(key, timesUsed.get(key)!) > 0) {
+          const alias = id(key + "+alias");
+          if (assignments.every((x) => x.variable.name !== alias.name))
+            assignments.push(assignment(alias, node as Expr));
+          return alias;
         }
       }).node as IR.Program;
-      return {
-        ...replacedDeep,
-        body: block([
-          ...assignments,
-          ...(replacedDeep.body.kind === "Block"
-            ? replacedDeep.body.children
-            : [replacedDeep.body]),
-        ]),
-      };
+      return program(block([...assignments, replacedDeep.body]));
     },
   };
 }
