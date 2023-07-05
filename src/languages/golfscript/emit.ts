@@ -124,8 +124,6 @@ export default function emitProgram(program: IR.Program): TokenTree {
         ]);
       case "IntegerLiteral":
         return expr.value.toString();
-      case "FunctionCall":
-        return [expr.args.map(emitExpr), emitExpr(expr.func)];
       case "BinaryOp":
         return [emitExpr(expr.left), emitExpr(expr.right), expr.name];
       case "UnaryOp":
@@ -139,9 +137,6 @@ export default function emitProgram(program: IR.Program): TokenTree {
           emitExpr(expr.alternate),
           "if",
         ];
-      case "IndexCall":
-        if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
-        return [emitExpr(expr.collection), emitExpr(expr.index), "="];
       case "RangeIndexCall": {
         if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
 

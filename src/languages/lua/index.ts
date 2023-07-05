@@ -31,7 +31,10 @@ import {
   addOneToManyAssignments,
 } from "../../plugins/block";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
-import { useEquivalentTextOp } from "../../plugins/textOps";
+import {
+  textToIntToFirstIndexTextGetToInt,
+  useEquivalentTextOp,
+} from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
   applyDeMorgans,
@@ -62,6 +65,7 @@ const luaLanguage: Language = {
     forRangeToForRangeInclusive(),
     implicitlyConvertPrintArg,
     useEquivalentTextOp(true, false),
+    textToIntToFirstIndexTextGetToInt,
     mapOps([
       "text_to_int",
       (x) =>
@@ -78,7 +82,8 @@ const luaLanguage: Language = {
         (x) =>
           polygolfOp("list_get", { ...builtin("arg"), type: textType() }, x[0]),
       ],
-      ["text_get_byte", (x) => methodCall(x[0], "byte", add1(x[1]))],
+      ["text_get_byte_to_int", (x) => methodCall(x[0], "byte", add1(x[1]))],
+      ["text_get_byte", (x) => methodCall(x[0], "sub", add1(x[1]), add1(x[1]))],
       ["text_get_byte_slice", (x) => methodCall(x[0], "sub", x[1], add1(x[2]))]
     ),
     useIndexCalls(true),

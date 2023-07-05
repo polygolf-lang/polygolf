@@ -6,6 +6,7 @@ import {
   add1,
   arrayConstructor,
   builtin,
+  polygolfOp,
 } from "../../IR";
 import { defaultDetokenizer, Language } from "../../common/Language";
 
@@ -37,8 +38,8 @@ import {
 import { tableHashing, tableToListLookup } from "../../plugins/tables";
 import hash from "./hash";
 import {
-  textGetToIntToTextGet,
   textToIntToTextGetToInt,
+  textToIntToFirstIndexTextGetToInt,
   useEquivalentTextOp,
   useMultireplace,
 } from "../../plugins/textOps";
@@ -97,11 +98,14 @@ const nimLanguage: Language = {
   finalEmitPlugins: [
     forRangeToForRangeInclusive(true),
     implicitlyConvertPrintArg,
-    textGetToIntToTextGet,
+    textToIntToFirstIndexTextGetToInt,
+    mapOps([
+      "text_get_byte_to_int",
+      (x) => functionCall("ord", polygolfOp("text_get_byte", ...x)),
+    ]),
     mapOps(
       ["true", builtin("true")],
       ["false", builtin("false")],
-      ["text_byte_to_int", (x) => functionCall("ord", x)],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
       ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
       ["text_split", (x) => functionCall("split", x)],
