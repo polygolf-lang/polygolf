@@ -10,6 +10,8 @@ $b <- (1<2);
 
 text_get_byte $t 2;
 text_get_byte_slice $t 2 6;
+text_byte_to_int "a";
+text_get_byte_to_int "abc" 1;
 text_split $t "|";
 text_split_whitespace $t;
 text_byte_length $t;
@@ -69,6 +71,8 @@ var
  b=1<2
 t[2]
 t[2..<6]
+"a"[0].ord
+"abc"[1].ord
 t.split"|"
 t.split
 t.len

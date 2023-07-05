@@ -90,7 +90,7 @@ export function mapToUnaryAndBinaryOps(
           ] satisfies [OpCode, OpTransformOutput]
       )
     ),
-    name: `mapPrecedenceOps(${JSON.stringify(opMap0)})`,
+    name: `mapToUnaryAndBinaryOps(${JSON.stringify(opMap0)})`,
   };
 }
 
@@ -99,8 +99,9 @@ function asBinaryChain(
   exprs: readonly Expr[],
   names: Map<OpCode, string>
 ): Expr {
-  if (op === "mul" && isIntLiteral(exprs[0], -1n)) {
-    exprs = [unaryOp(names.get("neg") ?? "?", exprs[1]), ...exprs.slice(2)];
+  const negName = names.get("neg");
+  if (op === "mul" && isIntLiteral(exprs[0], -1n) && negName !== undefined) {
+    exprs = [unaryOp(negName, exprs[1]), ...exprs.slice(2)];
   }
   if (op === "add") {
     exprs = exprs
@@ -109,12 +110,9 @@ function asBinaryChain(
   }
   let result = exprs[0];
   for (const expr of exprs.slice(1)) {
-    if (op === "add" && isNegative(expr)) {
-      result = binaryOp(
-        names.get("sub") ?? "?",
-        result,
-        polygolfOp("neg", expr)
-      );
+    const subName = names.get("sub");
+    if (op === "add" && isNegative(expr) && subName !== undefined) {
+      result = binaryOp(subName, result, polygolfOp("neg", expr));
     } else {
       result = binaryOp(names.get(op) ?? "?", result, expr);
     }
