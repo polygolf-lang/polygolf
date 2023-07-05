@@ -213,8 +213,6 @@ for e in(1+a)*(1+a)..<99{a=1}
 
 ## Argv
 
-<!-- Why does the PR not update? -->
-
 ```polygolf
 for_argv $x 100 {
   println $x;
