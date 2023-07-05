@@ -127,7 +127,7 @@ export function compile(
       const res = outputs.reduce((a, b) =>
         isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
       );
-      if (isError(res))
+      if (isError(res) && variants.length > 1)
         res.message = "No variant could be compiled: " + res.message;
       result.push(compilationResult(language, res));
     }
@@ -202,26 +202,6 @@ interface SearchState {
   program: Program;
   startPhase: number;
   length: number;
-}
-
-export function applyLanguage2ToVariants(
-  language: Language2,
-  variants: IR.Program[],
-  options: SearchOptions,
-  skipTypecheck = false
-): string {
-  const obj = options.objectiveFunction;
-  const ret = variants
-    .map((variant) => golfProgram2(language, variant, options, skipTypecheck))
-    .reduce((a, b) =>
-      isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
-    );
-  if (isError(ret)) {
-    ret.message =
-      "No variant could be compiled: " + language.name + " " + ret.message;
-    throw ret;
-  }
-  return ret;
 }
 
 function applyRequired(
