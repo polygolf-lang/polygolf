@@ -4,7 +4,7 @@ import yargs from "yargs";
 import fs from "fs";
 import path from "path";
 import parse from "./frontend/parse";
-import applyLanguage, { searchOptions } from "./common/applyLanguage";
+import applyLanguage, { compilationOptions } from "./common/applyLanguage";
 import { PolygolfError } from "./common/errors";
 import languages, { findLang } from "./languages/languages";
 
@@ -59,7 +59,7 @@ try {
       const result = applyLanguage(
         lang,
         prog,
-        searchOptions(
+        compilationOptions(
           "full",
           options.chars === true ? "chars" : "bytes",
           undefined,

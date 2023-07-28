@@ -10,11 +10,12 @@ import parse from "../frontend/parse";
 // TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
 export type OptimisationLevel = "none" | "heuristic" | "full";
 export type Objective = "bytes" | "chars";
-export interface SearchOptions {
+export interface CompilationOptions {
   level: OptimisationLevel;
   objective: Objective;
   objectiveFunction: (x: string | null) => number;
   getAllVariants: boolean;
+  skipTypecheck: boolean;
 }
 
 // This is what code.golf uses for char scoring
@@ -52,12 +53,13 @@ export const charLength = (str: string | null) => {
 export const byteLength = (x: string | null) =>
   x === null ? Infinity : Buffer.byteLength(x, "utf-8");
 
-export function searchOptions(
+export function compilationOptions(
   level: OptimisationLevel,
   objective: Objective,
   objectiveFunction?: (x: string) => number,
-  getAllVariants?: boolean
-): SearchOptions {
+  getAllVariants = false,
+  skipTypecheck = false
+): CompilationOptions {
   return {
     level,
     objective,
@@ -67,18 +69,19 @@ export function searchOptions(
           ? byteLength
           : charLength
         : (x) => (x === null ? Infinity : objectiveFunction(x)),
-    getAllVariants: getAllVariants === true,
+    getAllVariants,
+    skipTypecheck,
   };
 }
 
 export interface CompilationResult {
-  language: Language;
+  language: string;
   result: string | Error;
   warnings: string[];
 }
 
 function compilationResult(
-  language: Language,
+  language: string,
   result: string | Error,
   warnings: string[] = []
 ): CompilationResult {
@@ -89,113 +92,92 @@ function compilationResult(
   };
 }
 
+export function applyAll(program: IR.Program, ...visitors: Plugin["visit"][]) {
+  return visitors.reduce(
+    (prog, visitor) =>
+      programToSpine(prog).withReplacer((n, s) => {
+        const repl = visitor(n, s);
+        return repl === undefined
+          ? undefined
+          : copySource(n, copyTypeAnnotation(n, repl));
+      }).node as IR.Program,
+    program
+  );
+}
+
+function applyRequired(
+  language: Language2,
+  program: Program,
+  startPhase = 0
+): IR.Program {
+  for (let i = startPhase; i < language.phases.length; i++) {
+    const phase = language.phases[i];
+    if (phase.mode === "required") {
+      program = applyAll(program, ...phase.plugins.map((x) => x.visit));
+    }
+  }
+  return program;
+}
+
+function isError(x: any): x is Error {
+  return x instanceof Error;
+}
+
 export function compile(
   source: string,
-  options: SearchOptions,
-  ...languages: Language[]
+  options: CompilationOptions,
+  ...languages: Language2[]
 ): CompilationResult[] {
   const obj = options.objectiveFunction;
   let program: Program;
   try {
     program = parse(source);
   } catch (e) {
-    if (isError(e)) return [compilationResult(polygolfLanguage, e)];
+    if (isError(e)) return [compilationResult("Polygolf", e)];
   }
   program = program!;
   let variants = expandVariants(program).map((x) => {
     try {
-      typecheck(x);
+      if (!options.skipTypecheck) typecheck(x);
       return x;
     } catch (e) {
-      if (isError(e)) return e;
+      if (isError(e)) return compilationResult("Polygolf", e);
       throw e;
     }
   });
-  if (variants.every(isError)) {
-    return [compilationResult(polygolfLanguage, variants[0] as Error)];
+
+  if (!options.getAllVariants) {
+    const errorlessVariants = variants.filter((x) => "body" in x);
+    if (errorlessVariants.length == 0) {
+      return [errorlessVariants[0] as CompilationResult];
+    }
+    variants = errorlessVariants;
   }
-  if (!options.getAllVariants) variants = variants.filter((x) => !isError(x));
 
   const result: CompilationResult[] = [];
   for (const language of languages) {
     const outputs = variants.map((x) =>
-      isError(x) ? x : (search(x, options, language) as string | Error)
+      "body" in x ? (search(x, options, language) as CompilationResult) : x
     );
     if (options.getAllVariants) {
-      result.push(...outputs.map((x) => compilationResult(language, x)));
+      result.push(...outputs);
     } else {
       const res = outputs.reduce((a, b) =>
-        isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
+        isError(a.result)
+          ? b
+          : isError(b.result)
+          ? a
+          : obj(a.result) < obj(b.result)
+          ? a
+          : b
       );
-      if (isError(res) && variants.length > 1)
-        res.message = "No variant could be compiled: " + res.message;
-      result.push(compilationResult(language, res));
+      if (isError(res.result) && variants.length > 1)
+        res.result.message =
+          "No variant could be compiled: " + res.result.message;
+      result.push(res);
     }
   }
   return result;
-}
-
-export default function applyLanguage(
-  language: Language,
-  program: IR.Program,
-  options: SearchOptions,
-  skipTypecheck = false
-): string {
-  const bestUnpacked = applyLanguageToVariants(
-    language,
-    language.name === "Polygolf" ? [program] : expandVariants(program),
-    options,
-    skipTypecheck
-  );
-  const packers = language.packers ?? [];
-  if (options.objective === "bytes" || packers.length < 1) return bestUnpacked;
-  function packer(code: string): string | null {
-    if ([...code].map((x) => x.charCodeAt(0)).some((x) => x > 127)) return null;
-    return packers
-      .map((x) => x(code))
-      .reduce((a, b) =>
-        options.objectiveFunction(a) < options.objectiveFunction(b) ? a : b
-      );
-  }
-  const bestForPacking = applyLanguageToVariants(
-    language,
-    language.name === "Polygolf" ? [program] : expandVariants(program),
-    searchOptions(options.level, "chars", (x) => charLength(packer(x)))
-  );
-  const packed = packer(bestForPacking);
-  if (
-    packed != null &&
-    options.objectiveFunction(packed) < options.objectiveFunction(bestUnpacked)
-  ) {
-    return packed;
-  }
-  return bestUnpacked;
-}
-
-function getFinalEmit(language: Language, nogolf = false) {
-  const detokenizer = language.detokenizer ?? defaultDetokenizer();
-  return (ir: IR.Program) => {
-    const program = language.emitPlugins
-      .concat(language.finalEmitPlugins)
-      .filter((x) => x.skipWhenNogolf !== true || !nogolf)
-      .reduce((program, plugin) => applyAll(program, plugin.visit), ir);
-    return detokenizer(language.emitter(program));
-  };
-}
-
-export const debugEmit = getFinalEmit(polygolfLanguage);
-
-export function applyAll(program: IR.Program, visitor: Plugin["visit"]) {
-  return programToSpine(program).withReplacer((n, s) => {
-    const repl = visitor(n, s);
-    return repl === undefined
-      ? undefined
-      : copySource(n, copyTypeAnnotation(n, repl));
-  }).node as IR.Program;
-}
-
-function isError(x: any): x is Error {
-  return x instanceof Error;
 }
 
 interface SearchState {
@@ -204,25 +186,14 @@ interface SearchState {
   length: number;
 }
 
-function applyRequired(
-  language: Language2,
-  program: Program,
-  startPhase = 0
-): string {
-  for (let i = startPhase; i < language.phases.length; i++) {
-    const phase = language.phases[i];
-    if (phase.mode === "required") {
-      program = applyAll(program, ...phase.plugins);
-    }
-  }
-}
+// Upper is OK
 
 /** Return the emitted form of the shortest non-error-throwing variant, or
  * throw an error if every variant throws */
 export function applyLanguageToVariants(
   language: Language,
   variants: IR.Program[],
-  options: SearchOptions,
+  options: CompilationOptions,
   skipTypecheck = false
 ): string {
   const finalEmit = getFinalEmit(language, options.level === "none");
