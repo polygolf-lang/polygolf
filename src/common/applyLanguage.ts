@@ -77,17 +77,20 @@ export function compilationOptions(
 export interface CompilationResult {
   language: string;
   result: string | Error;
+  history: string[];
   warnings: string[];
 }
 
 function compilationResult(
   language: string,
   result: string | Error,
+  history: string[] = [],
   warnings: string[] = []
 ): CompilationResult {
   return {
     language,
     result,
+    history,
     warnings,
   };
 }
@@ -105,18 +108,36 @@ export function applyAll(program: IR.Program, ...visitors: Plugin["visit"][]) {
   );
 }
 
+function applyLinear(
+  language: Language2,
+  program: Program,
+  startPhase = 0
+): IR.Program {
+  for (const phase of language.phases.slice(startPhase)) {
+    if (phase.mode !== "search") {
+      program = applyAll(program, ...phase.plugins.map((x) => x.visit));
+    }
+  }
+  return program;
+}
+
 function applyRequired(
   language: Language2,
   program: Program,
   startPhase = 0
 ): IR.Program {
-  for (let i = startPhase; i < language.phases.length; i++) {
-    const phase = language.phases[i];
+  for (const phase of language.phases.slice(startPhase)) {
     if (phase.mode === "required") {
       program = applyAll(program, ...phase.plugins.map((x) => x.visit));
     }
   }
   return program;
+}
+
+function emit(language: Language2, program: Program) {
+  return (language.detokenizer ?? defaultDetokenizer())(
+    language.emitter(program)
+  );
 }
 
 function isError(x: any): x is Error {
@@ -157,7 +178,7 @@ export function compile(
   const result: CompilationResult[] = [];
   for (const language of languages) {
     const outputs = variants.map((x) =>
-      "body" in x ? (search(x, options, language) as CompilationResult) : x
+      "body" in x ? compileVariant(x, options, language) : x
     );
     if (options.getAllVariants) {
       result.push(...outputs);
@@ -184,28 +205,12 @@ interface SearchState {
   program: Program;
   startPhase: number;
   length: number;
+  history: string[];
 }
 
-// Upper is OK
-
-/** Return the emitted form of the shortest non-error-throwing variant, or
- * throw an error if every variant throws */
-export function applyLanguageToVariants(
-  language: Language,
-  variants: IR.Program[],
-  options: CompilationOptions,
-  skipTypecheck = false
-): string {
-  const finalEmit = getFinalEmit(language, options.level === "none");
-  const golfPlugins =
-    options.level === "none"
-      ? []
-      : language.golfPlugins.concat(language.emitPlugins);
-  const obj = options.objectiveFunction;
-  const preprocess = // TODO, abstract this as part of #150
-    language.name === "Polygolf"
-      ? (x: Program) => x
-      : (x: Program) =>
+/*
+TODO: Add this to all languages as a preprocess step
+(x: Program) =>
           applyAll(x, (node) => {
             if (isPolygolfOp(node, "print_int", "println_int")) {
               return polygolfOp(
@@ -213,28 +218,44 @@ export function applyLanguageToVariants(
                 polygolfOp("int_to_text", node.args[0])
               );
             }
-          });
-  const ret = variants
-    .map((variant) =>
-      golfProgram(
-        variant,
-        preprocess,
-        golfPlugins,
-        finalEmit,
-        obj,
-        skipTypecheck
-      )
-    )
-    .reduce((a, b) =>
-      isError(a) ? b : isError(b) ? a : obj(a) < obj(b) ? a : b
-    );
-  if (isError(ret)) {
-    ret.message =
-      "No variant could be compiled: " + language.name + " " + ret.message;
-    throw ret;
+          })
+
+*/
+
+export function compileVariant(
+  program: Program,
+  options: CompilationOptions,
+  language: Language2
+): CompilationResult {
+  if (options.level === "none" || options.level === "heuristic") {
+    try {
+      return compilationResult(
+        language.name,
+        emit(
+          language,
+          (options.level === "none" ? applyRequired : applyLinear)(
+            language,
+            program
+          )
+        )
+      );
+    } catch (e) {
+      if (isError(e)) {
+        return compilationResult(language.name, e);
+      }
+      throw e;
+    }
   }
-  return ret;
+  const obj = options.objectiveFunction;
+  const finish = (prog: Program, startPhase = 0) =>
+    emit(language, applyLinear(language, prog, startPhase));
+  const visited = new Set<string>();
+  const queue = [
+    { program, startPhase: 0, length: obj(finish(program)), history: [] },
+  ];
 }
+
+// Upper is OK
 
 /** Returns an error if the program cannot be emitted */
 function golfProgram(
