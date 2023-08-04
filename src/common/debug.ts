@@ -1,7 +1,7 @@
 import parse from "../frontend/parse";
 import { Program } from "../IR";
 import polygolfLanguage from "../languages/polygolf";
-import applyLanguage, { compilationOptions } from "./applyLanguage";
+import applyLanguage, { compilationOptions } from "./compile";
 
 export default function debug(program: Program) {
   console.log(

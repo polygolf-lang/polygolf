@@ -4,7 +4,7 @@ import yargs from "yargs";
 import fs from "fs";
 import path from "path";
 import parse from "./frontend/parse";
-import applyLanguage, { compilationOptions } from "./common/applyLanguage";
+import applyLanguage, { compilationOptions } from "./common/compile";
 import { PolygolfError } from "./common/errors";
 import languages, { findLang } from "./languages/languages";
 

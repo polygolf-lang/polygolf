@@ -1,8 +1,7 @@
-import { IR, isPolygolfOp, Node, polygolfOp, Program } from "../IR";
+import { IR, Node, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
-import { Language, defaultDetokenizer, Plugin, Language2 } from "./Language";
+import { defaultDetokenizer, Plugin, Language2 } from "./Language";
 import { programToSpine } from "./Spine";
-import polygolfLanguage from "../languages/polygolf";
 import { getType } from "./getType";
 import { stringify } from "./stringify";
 import parse from "../frontend/parse";
@@ -327,8 +326,6 @@ export function compileVariant(
     shortestSoFar!.history
   );
 }
-
-// Upper is OK
 
 function copyTypeAnnotation(from: Node, to: Node): Node {
   // copy type annotation if present

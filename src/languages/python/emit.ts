@@ -1,4 +1,4 @@
-import { charLength } from "../../common/applyLanguage";
+import { charLength } from "../../common/compile";
 import { TokenTree } from "@/common/Language";
 import {
   containsMultiExpr,

@@ -1,4 +1,4 @@
-import { debugEmit } from "@/common/applyLanguage";
+import { debugEmit } from "@/common/compile";
 import parse from "./parse";
 
 describe("Restricted nodes: parse - emit match", () => {
