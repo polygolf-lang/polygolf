@@ -7,6 +7,7 @@ import { stringify } from "./stringify";
 import parse from "../frontend/parse";
 import { MinPriorityQueue } from "@datastructures-js/priority-queue";
 import { Spine } from "./Spine";
+import polygolfLanguage from "@/languages/polygolf";
 
 // TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
 export type OptimisationLevel = "none" | "heuristic" | "full";
@@ -157,7 +158,7 @@ function isError(x: any): x is Error {
   return x instanceof Error;
 }
 
-export function compile(
+export default function compile(
   source: string,
   options: CompilationOptions,
   ...languages: Language2[]
@@ -220,20 +221,6 @@ interface SearchState {
   length: number;
   history: string[];
 }
-
-/*
-TODO: Add this to all languages as a preprocess step
-(x: Program) =>
-          applyAll(x, (node) => {
-            if (isPolygolfOp(node, "print_int", "println_int")) {
-              return polygolfOp(
-                node.op === "print_int" ? "print" : "println",
-                polygolfOp("int_to_text", node.args[0])
-              );
-            }
-          })
-
-*/
 
 export function compileVariant(
   program: Program,
@@ -349,4 +336,12 @@ function typecheck(program: Program) {
     if (x.kind !== "Program") getType(x, program);
     return true;
   });
+}
+
+export function debugEmit(program: Program): string {
+  return compileVariant(
+    program,
+    compilationOptions("none", "bytes", undefined, undefined, true),
+    polygolfLanguage
+  ).result;
 }

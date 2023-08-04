@@ -10,7 +10,12 @@ import {
   builtin,
   int,
 } from "../../IR";
-import { Language, TokenTree, flattenTree } from "../../common/Language";
+import {
+  Language,
+  Language2,
+  TokenTree,
+  flattenTree,
+} from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
@@ -20,6 +25,7 @@ import {
   addMutatingBinaryOp,
   flipBinaryOps,
   removeImplicitConversions,
+  printIntToPrint,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
@@ -47,206 +53,257 @@ import {
   bitnotPlugins,
 } from "../../plugins/arithmetic";
 
-const swiftLanguage: Language = {
+const swiftLanguage: Language2 = {
   name: "Swift",
   extension: "swift",
   emitter: emitProgram,
-  golfPlugins: [
-    flipBinaryOps,
-    golfStringListLiteral(false),
-    listOpsToTextOps(),
-    golfLastPrint(),
-    equalityToInequality,
-    forRangeToForRangeInclusive(),
-    ...bitnotPlugins,
-    applyDeMorgans,
-    forRangeToForRangeOneStep,
-    useEquivalentTextOp(true, true),
-    textToIntToTextGetToInt,
-  ],
-  emitPlugins: [
-    forArgvToForEach,
-    ...truncatingOpsPlugins,
-    mapOps(
-      ["argv", builtin("CommandLine.arguments[1...]")],
-      [
-        "argv_get",
-        (x) =>
-          polygolfOp("list_get", builtin("CommandLine.arguments"), add1(x[0])),
+  phases: [
+    {
+      mode: "required",
+      plugins: [printIntToPrint],
+    },
+    {
+      mode: "search",
+      plugins: [
+        flipBinaryOps,
+        golfStringListLiteral(false),
+        listOpsToTextOps(),
+        golfLastPrint(),
+        equalityToInequality,
+        forRangeToForRangeInclusive(),
+        ...bitnotPlugins,
+        applyDeMorgans,
+        forRangeToForRangeOneStep,
+        useEquivalentTextOp(true, true),
+        textToIntToTextGetToInt,
+        forArgvToForEach,
+        ...truncatingOpsPlugins,
+        mapOps(
+          ["argv", builtin("CommandLine.arguments[1...]")],
+          [
+            "argv_get",
+            (x) =>
+              polygolfOp(
+                "list_get",
+                builtin("CommandLine.arguments"),
+                add1(x[0])
+              ),
+          ],
+          [
+            "codepoint_to_int",
+            (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
+          ],
+          [
+            "text_byte_to_int",
+            (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
+          ],
+          [
+            "text_get_byte",
+            (x) =>
+              polygolfOp(
+                "int_to_text_byte",
+                polygolfOp("text_get_byte_to_int", ...x)
+              ),
+          ]
+        ),
+        useIndexCalls(),
       ],
-      [
-        "codepoint_to_int",
-        (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
-      ],
-      [
-        "text_byte_to_int",
-        (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
-      ],
-      [
-        "text_get_byte",
-        (x) =>
-          polygolfOp(
+    },
+    {
+      mode: "required",
+      plugins: [
+        forArgvToForEach,
+        ...truncatingOpsPlugins,
+        mapOps(
+          ["argv", builtin("CommandLine.arguments[1...]")],
+          [
+            "argv_get",
+            (x) =>
+              polygolfOp(
+                "list_get",
+                builtin("CommandLine.arguments"),
+                add1(x[0])
+              ),
+          ],
+          [
+            "codepoint_to_int",
+            (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
+          ],
+          [
+            "text_byte_to_int",
+            (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
+          ],
+          [
+            "text_get_byte",
+            (x) =>
+              polygolfOp(
+                "int_to_text_byte",
+                polygolfOp("text_get_byte_to_int", ...x)
+              ),
+          ]
+        ),
+        useIndexCalls(),
+        implicitlyConvertPrintArg,
+        mapOps(
+          [
+            "text_get_byte_to_int",
+            (x) =>
+              functionCall(
+                "Int",
+                indexCall(
+                  functionCall("Array", propertyCall(x[0], "utf8")),
+                  x[1]
+                )
+              ),
+          ],
+          [
+            "text_get_codepoint",
+            (x) =>
+              functionCall(
+                "String",
+                indexCall(functionCall("Array", x[0]), x[1])
+              ),
+          ],
+          [
+            "text_get_codepoint_to_int",
+            (x) =>
+              propertyCall(
+                indexCall(
+                  functionCall("Array", propertyCall(x[0], "unicodeScalars")),
+                  x[1]
+                ),
+                "value"
+              ),
+          ],
+          [
             "int_to_text_byte",
-            polygolfOp("text_get_byte_to_int", ...x)
-          ),
-      ]
-    ),
-    useIndexCalls(),
-  ],
-  finalEmitPlugins: [
-    implicitlyConvertPrintArg,
-    mapOps(
-      [
-        "text_get_byte_to_int",
-        (x) =>
-          functionCall(
-            "Int",
-            indexCall(functionCall("Array", propertyCall(x[0], "utf8")), x[1])
-          ),
-      ],
-      [
-        "text_get_codepoint",
-        (x) =>
-          functionCall("String", indexCall(functionCall("Array", x[0]), x[1])),
-      ],
-      [
-        "text_get_codepoint_to_int",
-        (x) =>
-          propertyCall(
-            indexCall(
-              functionCall("Array", propertyCall(x[0], "unicodeScalars")),
-              x[1]
-            ),
-            "value"
-          ),
-      ],
-      [
-        "int_to_text_byte",
-        (x) =>
-          functionCall(
-            "String",
-            functionCall("!", functionCall("UnicodeScalar", x))
-          ),
-      ],
-      [
-        "int_to_codepoint",
-        (x) =>
-          functionCall(
-            "String",
-            functionCall("!", functionCall("UnicodeScalar", x))
-          ),
-      ],
-      ["text_codepoint_length", (x) => propertyCall(x[0], "count")],
-      [
-        "text_byte_length",
-        (x) => propertyCall(propertyCall(x[0], "utf8"), "count"),
-      ],
-      ["int_to_text", (x) => functionCall("String", x)],
-      [
-        "text_split",
-        (x) => methodCall(x[0], "split", namedArg("separator", x[1])),
-      ],
-      [
-        "repeat",
-        (x) =>
-          functionCall(
-            "String",
-            namedArg("repeating", x[0]),
-            namedArg("count", x[1])
-          ),
-      ],
-      [
-        "pow",
-        (x) =>
-          functionCall(
-            "Int",
-            functionCall(
-              "pow",
-              functionCall("Double", x[0]),
-              functionCall("Double", x[1])
-            )
-          ),
-      ],
-      ["println", (x) => functionCall("print", x)],
-      [
-        "print",
-        (x) => functionCall("print", x, namedArg("terminator", text(""))),
-      ],
-      ["text_to_int", (x) => functionCall("!", functionCall("Int", x))],
+            (x) =>
+              functionCall(
+                "String",
+                functionCall("!", functionCall("UnicodeScalar", x))
+              ),
+          ],
+          [
+            "int_to_codepoint",
+            (x) =>
+              functionCall(
+                "String",
+                functionCall("!", functionCall("UnicodeScalar", x))
+              ),
+          ],
+          ["text_codepoint_length", (x) => propertyCall(x[0], "count")],
+          [
+            "text_byte_length",
+            (x) => propertyCall(propertyCall(x[0], "utf8"), "count"),
+          ],
+          ["int_to_text", (x) => functionCall("String", x)],
+          [
+            "text_split",
+            (x) => methodCall(x[0], "split", namedArg("separator", x[1])),
+          ],
+          [
+            "repeat",
+            (x) =>
+              functionCall(
+                "String",
+                namedArg("repeating", x[0]),
+                namedArg("count", x[1])
+              ),
+          ],
+          [
+            "pow",
+            (x) =>
+              functionCall(
+                "Int",
+                functionCall(
+                  "pow",
+                  functionCall("Double", x[0]),
+                  functionCall("Double", x[1])
+                )
+              ),
+          ],
+          ["println", (x) => functionCall("print", x)],
+          [
+            "print",
+            (x) => functionCall("print", x, namedArg("terminator", text(""))),
+          ],
+          ["text_to_int", (x) => functionCall("!", functionCall("Int", x))],
 
-      ["max", (x) => functionCall("max", x)],
-      ["min", (x) => functionCall("min", x)],
-      ["abs", (x) => functionCall("abs", x)],
-      ["true", builtin("true")],
-      ["false", builtin("false")],
-      [
-        "text_replace",
-        (x) =>
-          methodCall(
-            x[0],
-            "replacingOccurrences",
-            namedArg("of", x[1]),
-            namedArg("with", x[2])
-          ),
-      ]
-    ),
-    addMutatingBinaryOp(
-      ["add", "+"],
-      ["sub", "-"],
-      ["mul", "*"],
-      ["trunc_div", "/"],
-      ["rem", "%"],
-      ["bit_and", "&"],
-      ["bit_or", "|"],
-      ["bit_xor", "^"],
-      ["bit_shift_left", "<<"],
-      ["bit_shift_right", ">>"]
-    ),
-    mapToUnaryAndBinaryOps(
-      ["not", "!"],
-      ["neg", "-"],
-      ["bit_not", "~"],
-      ["bit_shift_left", "<<"],
-      ["bit_shift_right", ">>"],
-      ["mul", "*"],
-      ["trunc_div", "/"],
-      ["rem", "%"],
-      ["bit_and", "&"],
-      ["add", "+"],
-      ["sub", "-"],
-      ["bit_or", "|"],
-      ["bit_xor", "^"],
-      ["concat", "+"],
-      ["lt", "<"],
-      ["leq", "<="],
-      ["eq", "=="],
-      ["neq", "!="],
-      ["geq", ">="],
-      ["gt", ">"],
-      ["and", "&&"],
-      ["or", "||"]
-    ),
-    addImports(
-      [
-        ["pow", "Foundation"],
-        ["replacingOccurrences", "Foundation"],
+          ["max", (x) => functionCall("max", x)],
+          ["min", (x) => functionCall("min", x)],
+          ["abs", (x) => functionCall("abs", x)],
+          ["true", builtin("true")],
+          ["false", builtin("false")],
+          [
+            "text_replace",
+            (x) =>
+              methodCall(
+                x[0],
+                "replacingOccurrences",
+                namedArg("of", x[1]),
+                namedArg("with", x[2])
+              ),
+          ]
+        ),
+        addMutatingBinaryOp(
+          ["add", "+"],
+          ["sub", "-"],
+          ["mul", "*"],
+          ["trunc_div", "/"],
+          ["rem", "%"],
+          ["bit_and", "&"],
+          ["bit_or", "|"],
+          ["bit_xor", "^"],
+          ["bit_shift_left", "<<"],
+          ["bit_shift_right", ">>"]
+        ),
+        mapToUnaryAndBinaryOps(
+          ["not", "!"],
+          ["neg", "-"],
+          ["bit_not", "~"],
+          ["bit_shift_left", "<<"],
+          ["bit_shift_right", ">>"],
+          ["mul", "*"],
+          ["trunc_div", "/"],
+          ["rem", "%"],
+          ["bit_and", "&"],
+          ["add", "+"],
+          ["sub", "-"],
+          ["bit_or", "|"],
+          ["bit_xor", "^"],
+          ["concat", "+"],
+          ["lt", "<"],
+          ["leq", "<="],
+          ["eq", "=="],
+          ["neq", "!="],
+          ["geq", ">="],
+          ["gt", ">"],
+          ["and", "&&"],
+          ["or", "||"]
+        ),
+        addImports(
+          [
+            ["pow", "Foundation"],
+            ["replacingOccurrences", "Foundation"],
+          ],
+          "import"
+        ),
+        alias((expr) => {
+          switch (expr.kind) {
+            case "IntegerLiteral":
+              return expr.value.toString();
+            case "TextLiteral":
+              return `"${expr.value}"`;
+          }
+        }),
+        renameIdents(),
+        addVarDeclarations,
+        groupVarDeclarations(),
+        noStandaloneVarDeclarations,
+        assertInt64,
+        removeImplicitConversions,
       ],
-      "import"
-    ),
-    alias((expr) => {
-      switch (expr.kind) {
-        case "IntegerLiteral":
-          return expr.value.toString();
-        case "TextLiteral":
-          return `"${expr.value}"`;
-      }
-    }),
-    renameIdents(),
-    addVarDeclarations,
-    groupVarDeclarations(),
-    noStandaloneVarDeclarations,
-    assertInt64,
-    removeImplicitConversions,
+    },
   ],
   // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
   detokenizer: function (tokenTree: TokenTree): string {

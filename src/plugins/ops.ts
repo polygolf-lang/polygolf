@@ -228,3 +228,14 @@ export const methodsAsFunctions: Plugin = {
     }
   },
 };
+
+export const printIntToPrint: Plugin = {
+  ...mapOps(
+    ["print_int", (x) => polygolfOp("print", polygolfOp("int_to_text", ...x))],
+    [
+      "println_int",
+      (x) => polygolfOp("println", polygolfOp("int_to_text", ...x)),
+    ]
+  ),
+  name: "printIntToPrint",
+};
