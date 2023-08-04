@@ -16,6 +16,7 @@ export interface CompilationOptions {
   objectiveFunction: (x: string | null) => number;
   getAllVariants: boolean;
   skipTypecheck: boolean;
+  restrictFrontend: boolean;
 }
 
 // This is what code.golf uses for char scoring
@@ -58,7 +59,8 @@ export function compilationOptions(
   objective: Objective,
   objectiveFunction?: (x: string) => number,
   getAllVariants = false,
-  skipTypecheck = false
+  skipTypecheck = false,
+  restrictFrontend = true
 ): CompilationOptions {
   return {
     level,
@@ -71,6 +73,7 @@ export function compilationOptions(
         : (x) => (x === null ? Infinity : objectiveFunction(x)),
     getAllVariants,
     skipTypecheck,
+    restrictFrontend,
   };
 }
 
@@ -164,7 +167,7 @@ export default function compile(
   const obj = options.objectiveFunction;
   let program: Program;
   try {
-    program = parse(source);
+    program = parse(source, options.restrictFrontend);
   } catch (e) {
     if (isError(e)) return [compilationResult("Polygolf", e)];
   }
