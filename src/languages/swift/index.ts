@@ -283,6 +283,11 @@ const swiftLanguage: Language = {
           ],
           "import"
         ),
+      ],
+    },
+    {
+      mode: "simplegolf",
+      plugins: [
         alias((expr) => {
           switch (expr.kind) {
             case "IntegerLiteral":
@@ -291,6 +296,11 @@ const swiftLanguage: Language = {
               return `"${expr.value}"`;
           }
         }),
+      ],
+    },
+    {
+      mode: "required",
+      plugins: [
         renameIdents(),
         addVarDeclarations,
         groupVarDeclarations(),

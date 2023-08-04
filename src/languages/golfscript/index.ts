@@ -78,6 +78,11 @@ const golfscriptLanguage: Language = {
             !isSubtype(getType(node.start, spine.root.node), integerType(0))
         ),
         implicitlyConvertPrintArg,
+      ],
+    },
+    {
+      mode: "simplegolf",
+      plugins: [
         alias((expr) => {
           switch (expr.kind) {
             case "IntegerLiteral":
@@ -86,6 +91,11 @@ const golfscriptLanguage: Language = {
               return `"${expr.value}"`;
           }
         }),
+      ],
+    },
+    {
+      mode: "required",
+      plugins: [
         mapOps([
           "argv_get",
           (x) => polygolfOp("list_get", polygolfOp("argv"), x[0]),

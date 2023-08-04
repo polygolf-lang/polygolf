@@ -209,6 +209,11 @@ const nimLanguage: Language = {
         ),
         useUnsignedDivision,
         addNimImports,
+      ],
+    },
+    {
+      mode: "simplegolf",
+      plugins: [
         alias(
           (expr) => {
             switch (expr.kind) {
@@ -220,6 +225,11 @@ const nimLanguage: Language = {
           },
           [1, 7]
         ),
+      ],
+    },
+    {
+      mode: "required",
+      plugins: [
         renameIdents(),
         addVarDeclarations,
         addVarDeclarationOneToManyAssignments(),

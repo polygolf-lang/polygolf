@@ -222,6 +222,11 @@ const pythonLanguage: Language = {
         ),
         methodsAsFunctions,
         addOneToManyAssignments(),
+      ],
+    },
+    {
+      mode: "simplegolf",
+      plugins: [
         alias((expr) => {
           switch (expr.kind) {
             case "Identifier":
@@ -232,6 +237,11 @@ const pythonLanguage: Language = {
               return `"${expr.value}"`;
           }
         }),
+      ],
+    },
+    {
+      mode: "required",
+      plugins: [
         renameIdents(),
         addImports(
           [

@@ -264,7 +264,7 @@ export function compileVariant(
 
   function enqueue(program: Program, startPhase: number, history: string[]) {
     if (startPhase >= language.phases.length) return;
-    if (queue.size() > 1000) return;
+    if (latestPhaseWeSawTheProg.size > 200) return;
     const stringified = stringify(program);
     const latestSeen = latestPhaseWeSawTheProg.get(stringified);
     if (latestSeen === undefined || latestSeen < startPhase) {

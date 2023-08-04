@@ -215,6 +215,11 @@ const luaLanguage: Language = {
           ["or", "or"]
         ),
         addOneToManyAssignments(),
+      ],
+    },
+    {
+      mode: "simplegolf",
+      plugins: [
         alias((expr) => {
           switch (expr.kind) {
             case "IntegerLiteral":
@@ -223,10 +228,11 @@ const luaLanguage: Language = {
               return `"${expr.value}"`;
           }
         }),
-        renameIdents(),
-        assertInt64,
-        removeImplicitConversions,
       ],
+    },
+    {
+      mode: "required",
+      plugins: [renameIdents(), assertInt64, removeImplicitConversions],
     },
   ],
 };
