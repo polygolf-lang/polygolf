@@ -6,6 +6,8 @@ import polygolfLanguage from "../languages/polygolf";
 import { getType } from "./getType";
 import { stringify } from "./stringify";
 import parse from "../frontend/parse";
+import { MinPriorityQueue } from "@datastructures-js/priority-queue";
+import { Spine } from "./Spine";
 
 // TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
 export type OptimisationLevel = "none" | "heuristic" | "full";
@@ -106,6 +108,18 @@ export function applyAll(program: IR.Program, ...visitors: Plugin["visit"][]) {
       }).node as IR.Program,
     program
   );
+}
+
+function* applyOne(spine: Spine, visitor: Plugin["visit"]) {
+  for (const altProgram of spine.compactMap((n, s) => {
+    const ret = visitor(n, s);
+    if (ret !== undefined) {
+      return s.replacedWith(copySource(n, copyTypeAnnotation(n, ret)), true)
+        .root.node;
+    }
+  })) {
+    yield altProgram;
+  }
 }
 
 function applyLinear(
@@ -237,7 +251,14 @@ export function compileVariant(
             language,
             program
           )
-        )
+        ),
+        language.phases
+          .filter(
+            options.level === "none"
+              ? (x) => x.mode === "required"
+              : (x) => x.mode !== "search"
+          )
+          .flatMap((x) => x.plugins.map((y) => y.name))
       );
     } catch (e) {
       if (isError(e)) {
@@ -249,85 +270,65 @@ export function compileVariant(
   const obj = options.objectiveFunction;
   const finish = (prog: Program, startPhase = 0) =>
     emit(language, applyLinear(language, prog, startPhase));
-  const visited = new Set<string>();
-  const queue = [
-    { program, startPhase: 0, length: obj(finish(program)), history: [] },
-  ];
-}
+  let shortestSoFar: SearchState;
+  let shortestSoFarLength: number = Infinity;
+  const latestPhaseWeSawTheProg = new Map<string, number>();
+  const queue = new MinPriorityQueue<SearchState>((x) => x.length);
 
-// Upper is OK
+  function enqueue(program: Program, startPhase: number, history: string[]) {
+    if (startPhase >= language.phases.length) return;
+    if (queue.size() > 1000) return;
+    const stringified = stringify(program);
+    const latestSeen = latestPhaseWeSawTheProg.get(stringified);
+    if (latestSeen === undefined || latestSeen < startPhase) {
+      latestPhaseWeSawTheProg.set(stringified, startPhase);
 
-/** Returns an error if the program cannot be emitted */
-function golfProgram(
-  program: IR.Program,
-  preprocess: (ir: IR.Program) => IR.Program,
-  golfPlugins: Plugin[],
-  finalEmit: (ir: IR.Program) => string,
-  objective: (x: string) => number,
-  skipTypecheck = true
-): string | Error {
-  // room for improvement: use this as an actual priority queue
-  /** Array of [program, length, plugin hist] */
-  const pq: [IR.Program, number, string[]][] = [];
-  let shortestSoFar: string;
-  try {
-    if (!skipTypecheck) typecheck(program);
-    program = preprocess(program);
-    shortestSoFar = finalEmit(program);
-  } catch (e) {
-    if (isError(e)) return e;
-    throw e;
-  }
-  const visited = new Set<string>();
-  const pushToQueue = (prog: IR.Program, hist: string[]) => {
-    // cache based on JSON.stringify instead of finalEmit because
-    //   1. finalEmit may error
-    //   2. distinct program IRs can emit to the same target code (e.g
-    //      `polygolfOp("+",a,b)` vs `functionCall("+",a,b)`)
-    // room for improvement? custom compare function. Might be able to
-    // O(log(nodes)) checking for duplicates instead of O(nodes) stringification
-    const s = stringify(prog);
-    if (visited.has(s)) return;
-    visited.add(s);
-    try {
-      const code = finalEmit(prog);
-      if (objective(code) < objective(shortestSoFar)) shortestSoFar = code;
-      // 200 is arbitrary limit for performance to stop the search, since we're
-      // currently using naive BFS with no pruning.
-      // room for improvement: prune bad options
-      if (visited.size < 200) pq.push([prog, objective(code), hist]);
-    } catch (e) {
-      console.log(e);
-      // Ignore for now, assuming it's using an unsupported language feature
-      // A warning might be appropriate
+      const length = obj(finish(program));
+      const state = { program, startPhase, length, history };
+      if (length < shortestSoFarLength) {
+        shortestSoFarLength = length;
+        shortestSoFar = state;
+      }
+      queue.enqueue(state);
     }
-  };
-  pushToQueue(program, []);
-  // BFS over the full search space
-  while (pq.length > 0) {
-    const [program, , hist] = pq.shift()!;
-    const spine = programToSpine(program);
-    for (const plugin of golfPlugins) {
-      const newHist = hist.concat([plugin.name]);
-      if (plugin.allOrNothing === true) {
-        pushToQueue(applyAll(program, plugin.visit), newHist);
-      } else {
-        for (const altProgram of spine.compactMap((n, s) => {
-          const ret = plugin.visit(n, s);
-          if (ret !== undefined) {
-            return s.replacedWith(
-              copySource(n, copyTypeAnnotation(n, ret)),
-              true
-            ).root.node;
+  }
+
+  enqueue(program, 0, []);
+
+  while (!queue.isEmpty) {
+    const state = queue.dequeue();
+    const phase = language.phases[state.startPhase];
+    enqueue(state.program, state.startPhase + 1, state.history);
+
+    if (phase.mode !== "search") {
+      enqueue(
+        applyAll(state.program, ...phase.plugins.map((x) => x.visit)),
+        state.startPhase + 1,
+        [...state.history, ...phase.plugins.map((x) => x.name)]
+      );
+    } else {
+      const spine = programToSpine(state.program);
+      for (const plugin of phase.plugins) {
+        const newHist = [...state.history, plugin.name];
+        if (plugin.allOrNothing === true) {
+          enqueue(applyAll(program, plugin.visit), state.startPhase, newHist);
+        } else {
+          for (const altProgram of applyOne(spine, plugin.visit)) {
+            enqueue(altProgram, state.startPhase, newHist);
           }
-        })) {
-          pushToQueue(altProgram, newHist);
         }
       }
     }
   }
-  return shortestSoFar;
+
+  return compilationResult(
+    language.name,
+    finish(shortestSoFar!.program, shortestSoFar!.startPhase),
+    shortestSoFar!.history
+  );
 }
+
+// Upper is OK
 
 function copyTypeAnnotation(from: Node, to: Node): Node {
   // copy type annotation if present
