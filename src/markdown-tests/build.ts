@@ -134,36 +134,34 @@ function emitSuite(describe: Describe): string {
 
   // The `@/` path is defined relatively in `tsconfig.json`, pointing to the `src` directory.
   return `import parse from "frontend/parse";
-import applyLanguage, { searchOptions, applyAll } from "@/common/applyLanguage";
-import { findLang } from "@/languages/languages";
-import polygolfLanguage from "@/languages/polygolf";
-import { Plugin } from "@/common/Language";
-import { getOnlyVariant } from "@/common/expandVariants";
-import { normalize } from "@/common/debug";
+  import compile, { compilationOptions, applyAll, debugEmit, normalize } from "@/common/compile";
+  import { findLang } from "@/languages/languages";
+  import { Plugin } from "@/common/Language";
+  import { getOnlyVariant } from "@/common/expandVariants";
 
-${[...importSet]
-  .map(
-    (x) =>
-      `import * as ${x
-        .split("/")
-        .at(-1)!
-        .replace("static", "static_")} from "./${x}";`
-  )
-  .join("\n")}
+  ${[...importSet]
+    .map(
+      (x) =>
+        `import * as ${x
+          .split("/")
+          .at(-1)!
+          .replace("static", "static_")} from "./${x}";`
+    )
+    .join("\n")}
 
-function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars", input: string, output: string) {
-  test(name, () =>
-    expect(applyLanguage(findLang(lang)!, parse(input, false), searchOptions(obj === "nogolf" ? "none" : "full", obj === "chars" ? "chars" : "bytes"))).toEqual(output)
-  );
-}
+  function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars", input: string, output: string) {
+    test(name, () =>
+      expect(compile(input, compilationOptions(obj === "nogolf" ? "none" : "full", obj === "chars" ? "chars" : "bytes", undefined, undefined, true), findLang(lang)!)[0].result).toEqual(output)
+    );
+  }
 
-function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
-  test(name, () =>
-    expect(applyLanguage(polygolfLanguage, applyAll(getOnlyVariant(parse(input, false)), plugin.visit), searchOptions("none", "bytes"), true)).toEqual(normalize(output))
-  );
-}
+  function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
+    test(name, () =>
+      expect(debugEmit(applyAll(getOnlyVariant(parse(input, false)), plugin.visit))).toEqual(normalize(output))
+    );
+  }
 
-${tests}`;
+  ${tests}`;
 }
 
 function emitNode(node: Describe | Test, imports: string[]): string {

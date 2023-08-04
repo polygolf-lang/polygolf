@@ -1,5 +1,4 @@
-import { debugEmit } from "@/common/compile";
-import parse from "./parse";
+import { normalize } from "@/common/compile";
 
 describe("Restricted nodes: parse - emit match", () => {
   for (const t of [
@@ -30,8 +29,8 @@ describe("Restricted nodes: parse - emit match", () => {
     `named_arg "name" $x;`,
   ]) {
     test(t.split(" ")[0], () => {
-      const normalized = debugEmit(parse(t, false));
-      expect(debugEmit(parse(normalized, false))).toEqual(normalized);
+      const normalized = normalize(t);
+      expect(normalize(normalized)).toEqual(normalized);
     });
   }
 });

@@ -1,15 +1,13 @@
 import { IR, Node, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { defaultDetokenizer, Plugin, Language } from "./Language";
-import { programToSpine } from "./Spine";
+import { programToSpine, Spine } from "./Spine";
 import { getType } from "./getType";
 import { stringify } from "./stringify";
 import parse from "../frontend/parse";
 import { MinPriorityQueue } from "@datastructures-js/priority-queue";
-import { Spine } from "./Spine";
-import polygolfLanguage from "@/languages/polygolf";
+import polygolfLanguage from "../languages/polygolf";
 
-// TODO: Implement heuristic search. There's currently no difference between "heuristic" and "full".
 export type OptimisationLevel = "none" | "heuristic" | "full";
 export type Objective = "bytes" | "chars";
 export interface CompilationOptions {
@@ -183,7 +181,7 @@ export default function compile(
 
   if (!options.getAllVariants) {
     const errorlessVariants = variants.filter((x) => "body" in x);
-    if (errorlessVariants.length == 0) {
+    if (errorlessVariants.length === 0) {
       return [errorlessVariants[0] as CompilationResult];
     }
     variants = errorlessVariants;
@@ -281,7 +279,7 @@ export function compileVariant(
 
   enqueue(program, 0, []);
 
-  while (!queue.isEmpty) {
+  while (!queue.isEmpty()) {
     const state = queue.dequeue();
     const phase = language.phases[state.startPhase];
     enqueue(state.program, state.startPhase + 1, state.history);
@@ -339,9 +337,17 @@ function typecheck(program: Program) {
 }
 
 export function debugEmit(program: Program): string {
-  return compileVariant(
+  const result = compileVariant(
     program,
     compilationOptions("none", "bytes", undefined, undefined, true),
     polygolfLanguage
   ).result;
+  if (typeof result === "string") {
+    return result;
+  }
+  throw result;
+}
+
+export function normalize(source: string): string {
+  return debugEmit(parse(source, false));
 }

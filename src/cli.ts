@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import yargs, { option } from "yargs";
+import yargs from "yargs";
 import fs from "fs";
 import path from "path";
 import compile, { compilationOptions } from "./common/compile";
@@ -44,7 +44,7 @@ const options = yargs()
   })
   .parseSync(process.argv.slice(2));
 
-if (options.all && options.output !== undefined) {
+if (options.all === true && options.output !== undefined) {
   throw new Error(
     "All variants options is only allowed when the output file is not specified."
   );
@@ -80,6 +80,8 @@ for (const result of compile(
       console.log(result);
     }
   } else {
+    if (!printingMultipleLangs && langs.length > 1)
+      console.log(result.language);
     handleError(result.result);
   }
   if (printingMultipleLangs) console.log("");
