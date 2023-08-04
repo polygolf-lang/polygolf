@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
-import yargs from "yargs";
+import yargs, { option } from "yargs";
 import fs from "fs";
 import path from "path";
-import parse from "./frontend/parse";
 import compile, { compilationOptions } from "./common/compile";
 import { PolygolfError } from "./common/errors";
 import languages, { findLang } from "./languages/languages";
@@ -45,46 +44,45 @@ const options = yargs()
   })
   .parseSync(process.argv.slice(2));
 
+if (options.all && options.output !== undefined) {
+  throw new Error(
+    "All variants options is only allowed when the output file is not specified."
+  );
+}
+
 const langs = options.lang === "all" ? languages : [findLang(options.lang)!];
 let input = options.input;
 if (!fs.existsSync(input)) input += ".polygolf";
 const code = fs.readFileSync(input, { encoding: "utf-8" });
-try {
-  const prog = parse(code);
-  const printingMultipleLangs =
-    langs.length > 1 && options.output === undefined;
-  for (const lang of langs) {
-    if (printingMultipleLangs) console.log(lang.name);
-    try {
-      const result = applyLanguage(
-        lang,
-        prog,
-        compilationOptions(
-          "full",
-          options.chars === true ? "chars" : "bytes",
-          undefined,
-          options.all
-        )
+const printingMultipleLangs = langs.length > 1 && options.output === undefined;
+for (const result of compile(
+  code,
+  compilationOptions(
+    "full",
+    options.chars === true ? "chars" : "bytes",
+    undefined,
+    options.all
+  ),
+  ...langs
+)) {
+  if (printingMultipleLangs) console.log(result.language);
+  if (typeof result.result === "string") {
+    if (options.output !== undefined) {
+      fs.mkdirSync(path.dirname(options.output), { recursive: true });
+      fs.writeFileSync(
+        options.output +
+          (langs.length > 1 || !options.output.includes(".")
+            ? "." + findLang(result.language)!.extension
+            : ""),
+        result.result
       );
-      if (options.output !== undefined) {
-        fs.mkdirSync(path.dirname(options.output), { recursive: true });
-        fs.writeFileSync(
-          options.output +
-            (langs.length > 1 || !options.output.includes(".")
-              ? "." + lang.extension
-              : ""),
-          result
-        );
-      } else {
-        console.log(result);
-      }
-    } catch (e) {
-      handleError(e);
+    } else {
+      console.log(result);
     }
-    if (printingMultipleLangs) console.log("");
+  } else {
+    handleError(result.result);
   }
-} catch (e) {
-  handleError(e);
+  if (printingMultipleLangs) console.log("");
 }
 
 function handleError(e: unknown) {

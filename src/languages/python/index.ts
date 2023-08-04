@@ -15,7 +15,7 @@ import {
   TextLiteral,
   builtin,
 } from "../../IR";
-import { Language, Language2 } from "../../common/Language";
+import { Language } from "../../common/Language";
 
 import emitProgram, { emitPythonTextLiteral } from "./emit";
 import {
@@ -61,7 +61,7 @@ import {
 import { tableToListLookup } from "../../plugins/tables";
 import { charLength } from "../../common/compile";
 
-const pythonLanguage: Language2 = {
+const pythonLanguage: Language = {
   name: "Python",
   extension: "py",
   emitter: emitProgram,

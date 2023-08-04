@@ -10,12 +10,7 @@ import {
   builtin,
   int,
 } from "../../IR";
-import {
-  Language,
-  Language2,
-  TokenTree,
-  flattenTree,
-} from "../../common/Language";
+import { Language, TokenTree, flattenTree } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
@@ -53,7 +48,7 @@ import {
   bitnotPlugins,
 } from "../../plugins/arithmetic";
 
-const swiftLanguage: Language2 = {
+const swiftLanguage: Language = {
   name: "Swift",
   extension: "swift",
   emitter: emitProgram,

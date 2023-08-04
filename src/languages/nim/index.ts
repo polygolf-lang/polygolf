@@ -8,7 +8,7 @@ import {
   builtin,
   polygolfOp,
 } from "../../IR";
-import { defaultDetokenizer, Language, Language2 } from "../../common/Language";
+import { defaultDetokenizer, Language } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
@@ -61,7 +61,7 @@ import {
   bitnotPlugins,
 } from "../../plugins/arithmetic";
 
-const nimLanguage: Language2 = {
+const nimLanguage: Language = {
   name: "Nim",
   extension: "nim",
   emitter: emitProgram,

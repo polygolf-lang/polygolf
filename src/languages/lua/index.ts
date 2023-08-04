@@ -9,7 +9,7 @@ import {
   add1,
   builtin,
 } from "../../IR";
-import { Language, Language2 } from "../../common/Language";
+import { Language } from "../../common/Language";
 import {
   forArgvToForRange,
   forRangeToForRangeInclusive,
@@ -45,7 +45,7 @@ import {
 } from "../../plugins/arithmetic";
 import { listOpsToTextOps } from "../../plugins/static";
 
-const luaLanguage: Language2 = {
+const luaLanguage: Language = {
   name: "Lua",
   extension: "lua",
   emitter: emitProgram,

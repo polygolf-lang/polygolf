@@ -9,28 +9,16 @@ export type Packer = (x: string) => string | null;
 
 /** A language configuration.
  *
- * Somewhat declarative setup. `applyLanguage` always starts with a frontend IR
+ * Somewhat declarative setup. `compileVariant` always starts with a frontend IR
  * and ends up with a string in the following sequence:
  *
  * (parse input) => IR
- * => (golfPlugins and emitPlugins in any order) => IR
- * => (emitPlugins in the order specified) => IR a little more limited
- * => (finalEmitPlugins in the order specified) => IR limited to nodes the emitter supports
+ * => (IR transform phases) => IR limited to nodes the emitter supports
  * => (emitter) => token list
  * => (detokenizer) => string
  */
-export interface Language {
-  name: string;
-  extension: string;
-  golfPlugins: Plugin[];
-  emitPlugins: Plugin[];
-  finalEmitPlugins: Plugin[];
-  emitter: Emitter;
-  packers?: Packer[];
-  detokenizer?: Detokenizer;
-}
 
-export interface Language2 {
+export interface Language {
   name: string;
   extension: string;
   phases: LanguagePhase[];

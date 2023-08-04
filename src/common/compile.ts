@@ -1,6 +1,6 @@
 import { IR, Node, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
-import { defaultDetokenizer, Plugin, Language2 } from "./Language";
+import { defaultDetokenizer, Plugin, Language } from "./Language";
 import { programToSpine } from "./Spine";
 import { getType } from "./getType";
 import { stringify } from "./stringify";
@@ -123,7 +123,7 @@ function* applyOne(spine: Spine, visitor: Plugin["visit"]) {
 }
 
 function applyLinear(
-  language: Language2,
+  language: Language,
   program: Program,
   startPhase = 0
 ): IR.Program {
@@ -136,7 +136,7 @@ function applyLinear(
 }
 
 function applyRequired(
-  language: Language2,
+  language: Language,
   program: Program,
   startPhase = 0
 ): IR.Program {
@@ -148,7 +148,7 @@ function applyRequired(
   return program;
 }
 
-function emit(language: Language2, program: Program) {
+function emit(language: Language, program: Program) {
   return (language.detokenizer ?? defaultDetokenizer())(
     language.emitter(program)
   );
@@ -161,7 +161,7 @@ function isError(x: any): x is Error {
 export default function compile(
   source: string,
   options: CompilationOptions,
-  ...languages: Language2[]
+  ...languages: Language[]
 ): CompilationResult[] {
   const obj = options.objectiveFunction;
   let program: Program;
@@ -225,7 +225,7 @@ interface SearchState {
 export function compileVariant(
   program: Program,
   options: CompilationOptions,
-  language: Language2
+  language: Language
 ): CompilationResult {
   if (options.level === "none" || options.level === "heuristic") {
     try {

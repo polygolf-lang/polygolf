@@ -13,7 +13,7 @@ import {
   listConstructor,
   unaryOp,
 } from "../../IR";
-import { defaultDetokenizer, Language, Language2 } from "../../common/Language";
+import { defaultDetokenizer, Language } from "../../common/Language";
 import emitProgram from "./emit";
 import {
   mapOps,
@@ -43,7 +43,7 @@ import {
   textGetToTextGetToIntToText,
 } from "../../plugins/textOps";
 
-const golfscriptLanguage: Language2 = {
+const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
   emitter: emitProgram,
