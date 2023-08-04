@@ -41,6 +41,11 @@ const options = yargs()
       description: "Get all variants",
       type: "boolean",
     },
+    debug: {
+      alias: "d",
+      description: "Print debug info, like history of applied plugins.",
+      type: "boolean",
+    },
   })
   .parseSync(process.argv.slice(2));
 
@@ -77,12 +82,15 @@ for (const result of compile(
         result.result
       );
     } else {
-      console.log(result);
+      console.log(result.result);
     }
   } else {
     if (!printingMultipleLangs && langs.length > 1)
       console.log(result.language);
     handleError(result.result);
+  }
+  if (options.debug === true) {
+    console.log("History", result.history);
   }
   if (printingMultipleLangs) console.log("");
 }

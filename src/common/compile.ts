@@ -308,7 +308,13 @@ export function compileVariant(
   return compilationResult(
     language.name,
     finish(shortestSoFar!.program, shortestSoFar!.startPhase),
-    shortestSoFar!.history
+    [
+      ...shortestSoFar!.history,
+      ...language.phases
+        .slice(shortestSoFar!.startPhase)
+        .filter((x) => x.mode !== "search")
+        .flatMap((x) => x.plugins.map((y) => y.name)),
+    ]
   );
 }
 
