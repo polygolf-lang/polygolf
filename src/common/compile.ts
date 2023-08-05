@@ -12,11 +12,17 @@ export type OptimisationLevel = "none" | "heuristic" | "full";
 export type Objective = "bytes" | "chars";
 export interface CompilationOptions {
   level: OptimisationLevel;
-  objective: Objective;
-  objectiveFunction: (x: string | null) => number;
-  getAllVariants: boolean;
-  skipTypecheck: boolean;
-  restrictFrontend: boolean;
+  objective: Objective | ((x: string | null) => number);
+  getAllVariants?: boolean;
+  skipTypecheck?: boolean;
+  restrictFrontend?: boolean;
+  asciiOnly?: boolean;
+}
+
+export function getObjectiveFunc(options: CompilationOptions) {
+  if (options.objective === "bytes") return byteLength;
+  if (options.objective === "chars") return charLength;
+  return options.objective;
 }
 
 // This is what code.golf uses for char scoring
@@ -53,29 +59,6 @@ export const charLength = (str: string | null) => {
 
 export const byteLength = (x: string | null) =>
   x === null ? Infinity : Buffer.byteLength(x, "utf-8");
-
-export function compilationOptions(
-  level: OptimisationLevel,
-  objective: Objective,
-  objectiveFunction?: (x: string) => number,
-  getAllVariants = false,
-  skipTypecheck = false,
-  restrictFrontend = true
-): CompilationOptions {
-  return {
-    level,
-    objective,
-    objectiveFunction:
-      objectiveFunction === undefined
-        ? objective === "bytes"
-          ? byteLength
-          : charLength
-        : (x) => (x === null ? Infinity : objectiveFunction(x)),
-    getAllVariants,
-    skipTypecheck,
-    restrictFrontend,
-  };
-}
 
 export interface CompilationResult {
   language: string;
@@ -164,7 +147,7 @@ export default function compile(
   options: CompilationOptions,
   ...languages: Language[]
 ): CompilationResult[] {
-  const obj = options.objectiveFunction;
+  const obj = getObjectiveFunc(options);
   let program: Program;
   try {
     program = parse(source, options.restrictFrontend);
@@ -174,7 +157,7 @@ export default function compile(
   program = program!;
   let variants = expandVariants(program).map((x) => {
     try {
-      if (!options.skipTypecheck) typecheck(x);
+      if (options.skipTypecheck !== false) typecheck(x);
       return x;
     } catch (e) {
       if (isError(e)) return compilationResult("Polygolf", e);
@@ -182,7 +165,7 @@ export default function compile(
     }
   });
 
-  if (!options.getAllVariants) {
+  if (options.getAllVariants === true) {
     const errorlessVariants = variants.filter((x) => "body" in x);
     if (errorlessVariants.length === 0) {
       return [errorlessVariants[0] as CompilationResult];
@@ -195,7 +178,7 @@ export default function compile(
     const outputs = variants.map((x) =>
       "body" in x ? compileVariant(x, options, language) : x
     );
-    if (options.getAllVariants) {
+    if (options.getAllVariants === true) {
       result.push(...outputs);
     } else {
       const res = outputs.reduce((a, b) =>
@@ -254,7 +237,7 @@ export function compileVariant(
       throw e;
     }
   }
-  const obj = options.objectiveFunction;
+  const obj = getObjectiveFunc(options);
   const finish = (prog: Program, startPhase = 0) =>
     emit(language, applyLinear(language, prog, startPhase));
   let shortestSoFar: SearchState;
@@ -348,7 +331,7 @@ function typecheck(program: Program) {
 export function debugEmit(program: Program): string {
   const result = compileVariant(
     program,
-    compilationOptions("none", "bytes", undefined, undefined, true),
+    { level: "none", objective: "bytes", skipTypecheck: true },
     polygolfLanguage
   ).result;
   if (typeof result === "string") {
