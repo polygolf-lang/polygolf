@@ -1,7 +1,7 @@
 import { IR, Node, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { defaultDetokenizer, Plugin, Language } from "./Language";
-import { programToSpine, Spine } from "./Spine";
+import { AddWarning, programToSpine, Spine } from "./Spine";
 import { getType } from "./getType";
 import { stringify } from "./stringify";
 import parse from "../frontend/parse";
@@ -64,14 +64,14 @@ export interface CompilationResult {
   language: string;
   result: string | Error;
   history: string[];
-  warnings: string[];
+  warnings: Error[];
 }
 
 function compilationResult(
   language: string,
   result: string | Error,
   history: string[] = [],
-  warnings: string[] = []
+  warnings: Error[] = []
 ): CompilationResult {
   return {
     language,
@@ -81,11 +81,16 @@ function compilationResult(
   };
 }
 
-export function applyAll(program: IR.Program, ...visitors: Plugin["visit"][]) {
+export function applyAll(
+  program: IR.Program,
+  addWarning: AddWarning,
+  compilationOptions: CompilationOptions,
+  ...visitors: Plugin["visit"][]
+) {
   return visitors.reduce(
     (prog, visitor) =>
       programToSpine(prog).withReplacer((n, s) => {
-        const repl = visitor(n, s);
+        const repl = visitor(n, s, addWarning, compilationOptions);
         return repl === undefined
           ? undefined
           : copySource(n, copyTypeAnnotation(n, repl));
@@ -94,9 +99,14 @@ export function applyAll(program: IR.Program, ...visitors: Plugin["visit"][]) {
   );
 }
 
-function* applyOne(spine: Spine, visitor: Plugin["visit"]) {
+function* applyOne(
+  spine: Spine,
+  addWarning: AddWarning,
+  compilationOptions: CompilationOptions,
+  visitor: Plugin["visit"]
+) {
   for (const altProgram of spine.compactMap((n, s) => {
-    const ret = visitor(n, s);
+    const ret = visitor(n, s, addWarning, compilationOptions);
     if (ret !== undefined) {
       return s.replacedWith(copySource(n, copyTypeAnnotation(n, ret)), true)
         .root.node;
@@ -109,11 +119,18 @@ function* applyOne(spine: Spine, visitor: Plugin["visit"]) {
 function applyLinear(
   language: Language,
   program: Program,
+  addWarning: AddWarning,
+  compilationOptions: CompilationOptions,
   startPhase = 0
 ): IR.Program {
   for (const phase of language.phases.slice(startPhase)) {
     if (phase.mode !== "search") {
-      program = applyAll(program, ...phase.plugins.map((x) => x.visit));
+      program = applyAll(
+        program,
+        addWarning,
+        compilationOptions,
+        ...phase.plugins.map((x) => x.visit)
+      );
     }
   }
   return program;
@@ -122,19 +139,31 @@ function applyLinear(
 function applyRequired(
   language: Language,
   program: Program,
+  addWarning: AddWarning,
+  compilationOptions: CompilationOptions,
   startPhase = 0
 ): IR.Program {
   for (const phase of language.phases.slice(startPhase)) {
     if (phase.mode === "required") {
-      program = applyAll(program, ...phase.plugins.map((x) => x.visit));
+      program = applyAll(
+        program,
+        addWarning,
+        compilationOptions,
+        ...phase.plugins.map((x) => x.visit)
+      );
     }
   }
   return program;
 }
 
-function emit(language: Language, program: Program) {
+function emit(
+  language: Language,
+  program: Program,
+  addWarning: AddWarning,
+  compilationOptions: CompilationOptions
+) {
   return (language.detokenizer ?? defaultDetokenizer())(
-    language.emitter(program)
+    language.emitter(program, addWarning, compilationOptions)
   );
 }
 
@@ -203,6 +232,7 @@ interface SearchState {
   program: Program;
   startPhase: number;
   length: number;
+  warnings: Error[];
   history: string[];
 }
 
@@ -213,14 +243,20 @@ export function compileVariant(
 ): CompilationResult {
   if (options.level === "none" || options.level === "heuristic") {
     try {
+      const warnings: Error[] = [];
+      const addWarning = (x: Error) => warnings.push(x);
       return compilationResult(
         language.name,
         emit(
           language,
           (options.level === "none" ? applyRequired : applyLinear)(
             language,
-            program
-          )
+            program,
+            addWarning,
+            options
+          ),
+          addWarning,
+          options
         ),
         language.phases
           .filter(
@@ -228,7 +264,8 @@ export function compileVariant(
               ? (x) => x.mode === "required"
               : (x) => x.mode !== "search"
           )
-          .flatMap((x) => x.plugins.map((y) => y.name))
+          .flatMap((x) => x.plugins.map((y) => y.name)),
+        warnings
       );
     } catch (e) {
       if (isError(e)) {
@@ -238,14 +275,25 @@ export function compileVariant(
     }
   }
   const obj = getObjectiveFunc(options);
-  const finish = (prog: Program, startPhase = 0) =>
-    emit(language, applyLinear(language, prog, startPhase));
+  const finish = (prog: Program, addWarning: AddWarning, startPhase = 0) =>
+    emit(
+      language,
+      applyLinear(language, prog, addWarning, options, startPhase),
+      addWarning,
+      options
+    );
   let shortestSoFar: SearchState;
   let shortestSoFarLength: number = Infinity;
   const latestPhaseWeSawTheProg = new Map<string, number>();
   const queue = new MinPriorityQueue<SearchState>((x) => x.length);
+  const globalWarnings: Error[] = [];
 
-  function enqueue(program: Program, startPhase: number, history: string[]) {
+  function enqueue(
+    program: Program,
+    startPhase: number,
+    history: string[],
+    warnings: Error[]
+  ) {
     if (startPhase >= language.phases.length) return;
     if (latestPhaseWeSawTheProg.size > 200) return;
     const stringified = stringify(program);
@@ -253,8 +301,12 @@ export function compileVariant(
     if (latestSeen === undefined || latestSeen < startPhase) {
       latestPhaseWeSawTheProg.set(stringified, startPhase);
 
-      const length = obj(finish(program, startPhase));
-      const state = { program, startPhase, length, history };
+      function addWarning(x: Error, isGlobal: boolean) {
+        (isGlobal ? globalWarnings : warnings).push(x);
+      }
+
+      const length = obj(finish(program, addWarning, startPhase));
+      const state = { program, startPhase, length, history, warnings };
       if (length < shortestSoFarLength) {
         shortestSoFarLength = length;
         shortestSoFar = state;
@@ -263,48 +315,74 @@ export function compileVariant(
     }
   }
 
-  enqueue(program, 0, []);
+  enqueue(program, 0, [], []);
 
   while (!queue.isEmpty()) {
     const state = queue.dequeue();
     const phase = language.phases[state.startPhase];
+    const warnings = [...state.warnings];
+
+    function addWarning(x: Error, isGlobal: boolean) {
+      (isGlobal ? globalWarnings : warnings).push(x);
+    }
 
     if (phase.mode !== "search") {
       enqueue(
-        applyAll(state.program, ...phase.plugins.map((x) => x.visit)),
+        applyAll(
+          state.program,
+          addWarning,
+          options,
+          ...phase.plugins.map((x) => x.visit)
+        ),
         state.startPhase + 1,
-        [...state.history, ...phase.plugins.map((x) => x.name)]
+        [...state.history, ...phase.plugins.map((x) => x.name)],
+        warnings
       );
     } else {
-      enqueue(state.program, state.startPhase + 1, state.history);
+      enqueue(state.program, state.startPhase + 1, state.history, warnings);
       const spine = programToSpine(state.program);
       for (const plugin of phase.plugins) {
         const newHist = [...state.history, plugin.name];
         if (plugin.allOrNothing === true) {
           enqueue(
-            applyAll(state.program, plugin.visit),
+            applyAll(state.program, addWarning, options, plugin.visit),
             state.startPhase,
-            newHist
+            newHist,
+            warnings
           );
         } else {
-          for (const altProgram of applyOne(spine, plugin.visit)) {
-            enqueue(altProgram, state.startPhase, newHist);
+          for (const altProgram of applyOne(
+            spine,
+            addWarning,
+            options,
+            plugin.visit
+          )) {
+            enqueue(altProgram, state.startPhase, newHist, warnings);
           }
         }
       }
     }
   }
 
+  globalWarnings.push(...shortestSoFar!.warnings);
+
   return compilationResult(
     language.name,
-    finish(shortestSoFar!.program, shortestSoFar!.startPhase),
+    finish(
+      shortestSoFar!.program,
+      (x: Error) => {
+        globalWarnings.push(x);
+      },
+      shortestSoFar!.startPhase
+    ),
     [
       ...shortestSoFar!.history,
       ...language.phases
         .slice(shortestSoFar!.startPhase)
         .filter((x) => x.mode !== "search")
         .flatMap((x) => x.plugins.map((y) => y.name)),
-    ]
+    ],
+    globalWarnings
   );
 }
 

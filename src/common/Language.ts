@@ -1,5 +1,6 @@
 import { Expr, IR } from "IR";
-import { Spine, Visitor } from "./Spine";
+import { AddWarning, Spine, PluginVIsitor } from "./Spine";
+import { CompilationOptions } from "./compile";
 
 export type OpTransformOutput =
   | ((args: readonly IR.Expr[], spine: Spine<Expr>) => IR.Expr | undefined)
@@ -39,7 +40,7 @@ export interface Plugin {
   /** visit should return a viable replacement node, or undefined to represent
    * no replacement. The replacement node should be different in value than
    * the initial node if it compares different under reference equality */
-  visit: Visitor<IR.Node | undefined>;
+  visit: PluginVIsitor<IR.Node | undefined>;
   /** Set `allOrNothing: true` to force all replacement nodes to be applied,
    * or none. This is useful in cases such as renaming variables */
   allOrNothing?: boolean;
@@ -67,7 +68,11 @@ export interface IdentifierGenerator {
   general: (i: number) => string;
 }
 
-export type Emitter = (program: IR.Program) => TokenTree;
+export type Emitter = (
+  program: IR.Program,
+  addWarning: AddWarning,
+  compilationOptions: CompilationOptions
+) => TokenTree;
 
 function isAlphaNum(a: string, i: number): boolean {
   return /[A-Za-z0-9]/.test(a[i]);

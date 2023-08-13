@@ -157,7 +157,7 @@ function emitSuite(describe: Describe): string {
 
   function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
     test(name, () =>
-      expect(debugEmit(applyAll(getOnlyVariant(parse(input, false)), plugin.visit))).toEqual(normalize(output))
+      expect(debugEmit(applyAll(getOnlyVariant(parse(input, false)), (x:Error) => {}, {} as any, plugin.visit))).toEqual(normalize(output))
     );
   }
 
