@@ -253,7 +253,7 @@ export function compileVariant(
     if (latestSeen === undefined || latestSeen < startPhase) {
       latestPhaseWeSawTheProg.set(stringified, startPhase);
 
-      const length = obj(finish(program));
+      const length = obj(finish(program, startPhase));
       const state = { program, startPhase, length, history };
       if (length < shortestSoFarLength) {
         shortestSoFarLength = length;
