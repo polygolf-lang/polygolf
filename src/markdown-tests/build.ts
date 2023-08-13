@@ -2,6 +2,7 @@ import { findLang } from "../languages/languages";
 import fs from "fs";
 import path from "path";
 import { emitTextLiteral } from "../common/emit";
+import { keywords } from ".";
 
 interface Test {
   input: string;
@@ -197,24 +198,32 @@ function emitDescribe(describe: Describe, imports: string[]): string {
 }
 
 function emitTest(test: Test, imports: string[]): string {
-  if (test.language === "Polygolf" && test.args[0] !== "nogolf") {
-    const m = test.args[0].match(/(.+)\.(.+)/);
-    if (m !== null) {
-      const path = m[1];
-      const plugin = m[2];
-      imports.push(path);
-      return `testPlugin(${stringify(plugin)}, ${path
-        .split("/")
-        .at(-1)!
-        .replace("static", "static_")}.${plugin}, ${stringify(
-        test.input
-      )}, ${stringify(test.output)});`;
+  const kws = test.args.filter((x) => keywords.includes(x as any));
+  const plugins = test.args.filter((x) => !keywords.includes(x as any));
+  if (test.language === "Polygolf") {
+    const pluginSymbols: string[] = [];
+    for (const plugin of plugins) {
+      const m = plugin.match(/(.+)\.(.+)/);
+      if (m !== null) {
+        const path = m[1];
+        const plugin = m[2];
+        imports.push(path);
+        pluginSymbols.push(
+          `${path.split("/").at(-1)!.replace("static", "static_")}.${plugin}`
+        );
+      } else {
+        throw new Error(`Unexpected polygolf argument ${plugin}.`);
+      }
     }
-    throw new Error(`Unexpected polygolf argument ${test.args[0]}.`);
+    return `testPlugin(${stringify(plugins.join(", "))}, [${pluginSymbols.join(
+      ", "
+    )}], ${JSON.stringify(kws)}, ${stringify(test.input)}, ${stringify(
+      test.output
+    )});`;
   }
   return `testLang(${stringify(
     [test.language, ...test.args].join(" ")
-  )}, ${stringify(test.language)}, "${test.args[0] ?? "bytes"}", ${stringify(
+  )}, ${stringify(test.language)}, ${JSON.stringify(kws)}, ${stringify(
     test.input
   )}, ${stringify(test.output)});`;
 }

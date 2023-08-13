@@ -8,7 +8,7 @@ import parse from "../frontend/parse";
 import { MinPriorityQueue } from "@datastructures-js/priority-queue";
 import polygolfLanguage from "../languages/polygolf";
 
-export type OptimisationLevel = "none" | "heuristic" | "full";
+export type OptimisationLevel = "nogolf" | "simple" | "full";
 export type Objective = "bytes" | "chars";
 export interface CompilationOptions {
   level: OptimisationLevel;
@@ -241,7 +241,7 @@ export function compileVariant(
   options: CompilationOptions,
   language: Language
 ): CompilationResult {
-  if (options.level === "none" || options.level === "heuristic") {
+  if (options.level === "nogolf" || options.level === "simple") {
     try {
       const warnings: Error[] = [];
       const addWarning = (x: Error) => warnings.push(x);
@@ -249,7 +249,7 @@ export function compileVariant(
         language.name,
         emit(
           language,
-          (options.level === "none" ? applyRequired : applyLinear)(
+          (options.level === "nogolf" ? applyRequired : applyLinear)(
             language,
             program,
             addWarning,
@@ -260,7 +260,7 @@ export function compileVariant(
         ),
         language.phases
           .filter(
-            options.level === "none"
+            options.level === "nogolf"
               ? (x) => x.mode === "required"
               : (x) => x.mode !== "search"
           )
@@ -413,7 +413,7 @@ function typecheck(program: Program) {
 export function debugEmit(program: Program): string {
   const result = compileVariant(
     program,
-    { level: "none", objective: "bytes", skipTypecheck: true },
+    { level: "nogolf", objective: "bytes", skipTypecheck: true },
     polygolfLanguage
   ).result;
   if (typeof result === "string") {
