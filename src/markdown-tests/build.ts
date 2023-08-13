@@ -133,12 +133,8 @@ function emitSuite(describe: Describe): string {
   for (const x of imports) importSet.add(x);
 
   // The `@/` path is defined relatively in `tsconfig.json`, pointing to the `src` directory.
-  return `import parse from "frontend/parse";
-  import compile, { applyAll, debugEmit, normalize } from "@/common/compile";
-  import { findLang } from "@/languages/languages";
-  import { Plugin } from "@/common/Language";
-  import { getOnlyVariant } from "@/common/expandVariants";
-
+  return `
+  import { testLang, testPlugin } from "@/markdown-tests";
   ${[...importSet]
     .map(
       (x) =>
@@ -149,17 +145,7 @@ function emitSuite(describe: Describe): string {
     )
     .join("\n")}
 
-  function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars", input: string, output: string) {
-    test(name, () =>
-      expect(compile(input, {level: obj === "nogolf" ? "none" : "full", objective: obj === "chars" ? "chars" : "bytes", restrictFrontend: false}, findLang(lang)!)[0].result).toEqual(output)
-    );
-  }
-
-  function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
-    test(name, () =>
-      expect(debugEmit(applyAll(getOnlyVariant(parse(input, false)), (x:Error) => {}, {} as any, plugin.visit))).toEqual(normalize(output))
-    );
-  }
+  
 
   ${tests}`;
 }
