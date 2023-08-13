@@ -151,7 +151,7 @@ function emitSuite(describe: Describe): string {
 
   function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars", input: string, output: string) {
     test(name, () =>
-      expect(compile(input, {level: obj === "nogolf" ? "none" : "full", objective: obj === "chars" ? "chars" : "bytes", restrictFrontend: false}), findLang(lang)!)[0].result).toEqual(output)
+      expect(compile(input, {level: obj === "nogolf" ? "none" : "full", objective: obj === "chars" ? "chars" : "bytes", restrictFrontend: false}, findLang(lang)!)[0].result).toEqual(output)
     );
   }
 

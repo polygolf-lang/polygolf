@@ -268,7 +268,6 @@ export function compileVariant(
   while (!queue.isEmpty()) {
     const state = queue.dequeue();
     const phase = language.phases[state.startPhase];
-    enqueue(state.program, state.startPhase + 1, state.history);
 
     if (phase.mode !== "search") {
       enqueue(
@@ -277,11 +276,16 @@ export function compileVariant(
         [...state.history, ...phase.plugins.map((x) => x.name)]
       );
     } else {
+      enqueue(state.program, state.startPhase + 1, state.history);
       const spine = programToSpine(state.program);
       for (const plugin of phase.plugins) {
         const newHist = [...state.history, plugin.name];
         if (plugin.allOrNothing === true) {
-          enqueue(applyAll(program, plugin.visit), state.startPhase, newHist);
+          enqueue(
+            applyAll(state.program, plugin.visit),
+            state.startPhase,
+            newHist
+          );
         } else {
           for (const altProgram of applyOne(spine, plugin.visit)) {
             enqueue(altProgram, state.startPhase, newHist);
