@@ -1,5 +1,5 @@
 import { Expr, IR } from "IR";
-import { AddWarning, Spine, PluginVIsitor } from "./Spine";
+import { AddWarning, Spine, PluginVisitor } from "./Spine";
 import { CompilationOptions } from "./compile";
 
 export type OpTransformOutput =
@@ -40,7 +40,7 @@ export interface Plugin {
   /** visit should return a viable replacement node, or undefined to represent
    * no replacement. The replacement node should be different in value than
    * the initial node if it compares different under reference equality */
-  visit: PluginVIsitor<IR.Node | undefined>;
+  visit: PluginVisitor<IR.Node | undefined>;
   /** Set `allOrNothing: true` to force all replacement nodes to be applied,
    * or none. This is useful in cases such as renaming variables */
   allOrNothing?: boolean;

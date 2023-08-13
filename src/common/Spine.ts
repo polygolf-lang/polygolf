@@ -176,7 +176,7 @@ export class Spine<N extends IR.Node = IR.Node> {
 
 export type AddWarning = (x: Error, isGlobal: boolean) => void;
 
-export type PluginVIsitor<T> = <N extends IR.Node>(
+export type PluginVisitor<T> = <N extends IR.Node>(
   node: N,
   spine: Spine<N>,
   addWarning: AddWarning,
