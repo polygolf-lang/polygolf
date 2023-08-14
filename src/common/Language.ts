@@ -35,6 +35,27 @@ export interface LanguagePhase {
   plugins: Plugin[];
 }
 
+export function required(...plugins: Plugin[]): LanguagePhase {
+  return {
+    mode: "required",
+    plugins,
+  };
+}
+
+export function simplegolf(...plugins: Plugin[]): LanguagePhase {
+  return {
+    mode: "simplegolf",
+    plugins,
+  };
+}
+
+export function search(...plugins: Plugin[]): LanguagePhase {
+  return {
+    mode: "search",
+    plugins,
+  };
+}
+
 export interface Plugin {
   name: string;
   /** visit should return a viable replacement node, or undefined to represent

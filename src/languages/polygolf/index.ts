@@ -1,5 +1,10 @@
 import { variants } from "../../IR";
-import { defaultDetokenizer, Plugin, Language } from "../../common/Language";
+import {
+  defaultDetokenizer,
+  Plugin,
+  Language,
+  required,
+} from "../../common/Language";
 import emitProgram from "./emit";
 
 const blocksAsVariants: Plugin = {
@@ -19,12 +24,7 @@ const polygolfLanguage: Language = {
   name: "Polygolf",
   extension: "polygolf",
   emitter: emitProgram,
-  phases: [
-    {
-      mode: "required",
-      plugins: [blocksAsVariants],
-    },
-  ],
+  phases: [required(blocksAsVariants)],
   detokenizer: defaultDetokenizer(
     (a, b) =>
       a !== "(" &&

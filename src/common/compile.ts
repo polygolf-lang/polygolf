@@ -116,46 +116,6 @@ function* applyOne(
   }
 }
 
-function applyLinear(
-  language: Language,
-  program: Program,
-  addWarning: AddWarning,
-  compilationOptions: CompilationOptions,
-  startPhase = 0
-): IR.Program {
-  for (const phase of language.phases.slice(startPhase)) {
-    if (phase.mode !== "search") {
-      program = applyAll(
-        program,
-        addWarning,
-        compilationOptions,
-        ...phase.plugins.map((x) => x.visit)
-      );
-    }
-  }
-  return program;
-}
-
-function applyRequired(
-  language: Language,
-  program: Program,
-  addWarning: AddWarning,
-  compilationOptions: CompilationOptions,
-  startPhase = 0
-): IR.Program {
-  for (const phase of language.phases.slice(startPhase)) {
-    if (phase.mode === "required") {
-      program = applyAll(
-        program,
-        addWarning,
-        compilationOptions,
-        ...phase.plugins.map((x) => x.visit)
-      );
-    }
-  }
-  return program;
-}
-
 function emit(
   language: Language,
   program: Program,
@@ -241,30 +201,32 @@ export function compileVariant(
   options: CompilationOptions,
   language: Language
 ): CompilationResult {
+  const phases = language.phases;
   if (options.level === "nogolf" || options.level === "simple") {
     try {
       const warnings: Error[] = [];
       const addWarning = (x: Error) => warnings.push(x);
+      const plugins = phases
+        .filter(
+          options.level === "nogolf"
+            ? (x) => x.mode === "required"
+            : (x) => x.mode !== "search"
+        )
+        .flatMap((x) => x.plugins);
       return compilationResult(
         language.name,
         emit(
           language,
-          (options.level === "nogolf" ? applyRequired : applyLinear)(
-            language,
+          applyAll(
             program,
             addWarning,
-            options
+            options,
+            ...plugins.map((x) => x.visit)
           ),
           addWarning,
           options
         ),
-        language.phases
-          .filter(
-            options.level === "nogolf"
-              ? (x) => x.mode === "required"
-              : (x) => x.mode !== "search"
-          )
-          .flatMap((x) => x.plugins.map((y) => y.name)),
+        plugins.map((y) => y.name),
         warnings
       );
     } catch (e) {
@@ -278,7 +240,15 @@ export function compileVariant(
   const finish = (prog: Program, addWarning: AddWarning, startPhase = 0) =>
     emit(
       language,
-      applyLinear(language, prog, addWarning, options, startPhase),
+      applyAll(
+        prog,
+        addWarning,
+        options,
+        ...phases
+          .slice(startPhase)
+          .filter((x) => x.mode !== "search")
+          .flatMap((x) => x.plugins.map((y) => y.visit))
+      ),
       addWarning,
       options
     );
@@ -377,7 +347,7 @@ export function compileVariant(
     ),
     [
       ...shortestSoFar!.history,
-      ...language.phases
+      ...phases
         .slice(shortestSoFar!.startPhase)
         .filter((x) => x.mode !== "search")
         .flatMap((x) => x.plugins.map((y) => y.name)),
