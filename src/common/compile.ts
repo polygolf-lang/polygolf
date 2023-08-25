@@ -188,15 +188,7 @@ export default function compile(
     if (options.getAllVariants === true) {
       result.push(...outputs);
     } else {
-      const res = outputs.reduce((a, b) =>
-        isError(a.result)
-          ? b
-          : isError(b.result)
-          ? a
-          : obj(a.result) < obj(b.result)
-          ? a
-          : b
-      );
+      const res = outputs.reduce(shorterBy(obj));
       if (isError(res.result) && variants.length > 1)
         res.result.message =
           "No variant could be compiled: " + res.result.message;
@@ -204,6 +196,19 @@ export default function compile(
     }
   }
   return result;
+}
+
+function shorterBy(
+  obj: (x: string | null) => number
+): (a: CompilationResult, b: CompilationResult) => CompilationResult {
+  return (a, b) =>
+    isError(a.result)
+      ? b
+      : isError(b.result)
+      ? a
+      : obj(a.result) < obj(b.result)
+      ? a
+      : b;
 }
 
 interface SearchState {
