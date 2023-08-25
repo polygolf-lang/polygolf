@@ -89,7 +89,8 @@ for (const result of compile(
     handleError(result.result);
   }
   if (options.debug === true) {
-    console.log("History", result.history);
+    console.log("History:");
+    console.log(result.history.map(([c, name]) => `${c} ${name}`).join("\n"));
   }
   if (printingMultipleLangs) console.log("");
 }
