@@ -9,7 +9,6 @@ import languages, { findLang } from "./languages/languages";
 
 const languageChoices = [
   ...new Set(languages.flatMap((x) => [x.name.toLowerCase(), x.extension])),
-  "all",
 ];
 
 const options = yargs()
@@ -18,7 +17,6 @@ const options = yargs()
       alias: "l",
       describe: "language to target",
       choices: languageChoices,
-      demandOption: true,
     },
     input: {
       alias: "i",
@@ -55,7 +53,8 @@ if (options.all === true && options.output !== undefined) {
   );
 }
 
-const langs = options.lang === "all" ? languages : [findLang(options.lang)!];
+const langs =
+  options.lang === undefined ? languages : [findLang(options.lang)!];
 let input = options.input;
 if (!fs.existsSync(input)) input += ".polygolf";
 const code = fs.readFileSync(input, { encoding: "utf-8" });
