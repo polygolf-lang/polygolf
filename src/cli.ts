@@ -82,14 +82,14 @@ for (const result of compile(
     } else {
       console.log(result.result);
     }
+    if (options.debug === true) {
+      console.log("History:");
+      console.log(result.history.map(([c, name]) => `${c} ${name}`).join("\n"));
+    }
   } else {
     if (!printingMultipleLangs && langs.length > 1)
       console.log(result.language);
     handleError(result.result);
-  }
-  if (options.debug === true) {
-    console.log("History:");
-    console.log(result.history.map(([c, name]) => `${c} ${name}`).join("\n"));
   }
   if (printingMultipleLangs) console.log("");
 }

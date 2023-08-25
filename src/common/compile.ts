@@ -272,6 +272,7 @@ export function compileVariant(
     ];
   }
   let shortestSoFar: SearchState;
+  let lastError: Error;
   let shortestSoFarLength: number = Infinity;
   const latestPhaseWeSawTheProg = new Map<string, number>();
   const queue = new MinPriorityQueue<SearchState>((x) => x.length);
@@ -294,13 +295,19 @@ export function compileVariant(
         (isGlobal ? globalWarnings : warnings).push(x);
       }
 
-      const length = obj(finish(program, addWarning, startPhase)[0]);
-      const state = { program, startPhase, length, history, warnings };
-      if (length < shortestSoFarLength) {
-        shortestSoFarLength = length;
-        shortestSoFar = state;
+      try {
+        const length = obj(finish(program, addWarning, startPhase)[0]);
+        const state = { program, startPhase, length, history, warnings };
+        if (length < shortestSoFarLength) {
+          shortestSoFarLength = length;
+          shortestSoFar = state;
+        }
+        queue.enqueue(state);
+      } catch (e) {
+        if (isError(e)) {
+          lastError = e;
+        }
       }
-      queue.enqueue(state);
     }
   }
 
@@ -367,6 +374,10 @@ export function compileVariant(
         }
       }
     }
+  }
+
+  if (shortestSoFar! === undefined) {
+    return compilationResult(language.name, lastError!);
   }
 
   globalWarnings.push(...shortestSoFar!.warnings);
