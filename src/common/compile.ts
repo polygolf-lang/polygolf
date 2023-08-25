@@ -198,6 +198,43 @@ export default function compile(
   return result;
 }
 
+export function compileVariant(
+  program: Program,
+  options: CompilationOptions,
+  language: Language
+): CompilationResult {
+  const obj = getObjectiveFunc(options);
+  const bestUnpacked = compileVariantNoPacking(program, options, language);
+  const packers = language.packers ?? [];
+  if (
+    options.objective === "bytes" ||
+    packers.length < 1 ||
+    isError(bestUnpacked.result)
+  )
+    return bestUnpacked;
+  function packer(code: string | null): string | null {
+    if (code === null) return null;
+    if ([...code].map((x) => x.charCodeAt(0)).some((x) => x > 127)) return null;
+    return packers
+      .map((x) => x(code))
+      .reduce((a, b) => (obj(a) < obj(b) ? a : b));
+  }
+  const bestForPacking = compileVariantNoPacking(
+    program,
+    {
+      ...options,
+      objective: (x) => charLength(packer(x)),
+    },
+    language
+  );
+  if (isError(bestForPacking.result)) return bestUnpacked;
+  const packed = packer(bestForPacking.result);
+  if (packed != null && obj(packed) < obj(bestUnpacked.result)) {
+    return { ...bestForPacking, result: packed };
+  }
+  return bestUnpacked;
+}
+
 function shorterBy(
   obj: (x: string | null) => number
 ): (a: CompilationResult, b: CompilationResult) => CompilationResult {
@@ -219,7 +256,7 @@ interface SearchState {
   history: [number, string][];
 }
 
-export function compileVariant(
+export function compileVariantNoPacking(
   program: Program,
   options: CompilationOptions,
   language: Language
@@ -440,7 +477,7 @@ function typecheck(program: Program) {
 }
 
 export function debugEmit(program: Program): string {
-  const result = compileVariant(
+  const result = compileVariantNoPacking(
     program,
     { level: "nogolf", objective: "bytes", skipTypecheck: true },
     polygolfLanguage
