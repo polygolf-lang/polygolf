@@ -1,7 +1,7 @@
 import parse from "../frontend/parse";
 import compile, {
   CompilationOptions,
-  applyAll,
+  applyAllToAllAndGetCounts,
   debugEmit,
   normalize,
 } from "../common/compile";
@@ -62,12 +62,12 @@ export function testPlugin(
   test(name, () =>
     expect(
       debugEmit(
-        applyAll(
+        applyAllToAllAndGetCounts(
           getOnlyVariant(parse(input, false)),
           () => {},
           compilationOptionsFromKeywords(args),
           ...plugins.map((x) => x.visit)
-        )
+        )[0]
       )
     ).toEqual(normalize(output))
   );

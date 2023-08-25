@@ -1,4 +1,4 @@
-import { IR, Node, Program } from "../IR";
+import { Node, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { defaultDetokenizer, Plugin, Language } from "./Language";
 import { AddWarning, programToSpine, Spine } from "./Spine";
@@ -63,14 +63,14 @@ export const byteLength = (x: string | null) =>
 export interface CompilationResult {
   language: string;
   result: string | Error;
-  history: string[];
+  history: [number, string][];
   warnings: Error[];
 }
 
 function compilationResult(
   language: string,
   result: string | Error,
-  history: string[] = [],
+  history: [number, string][] = [],
   warnings: Error[] = []
 ): CompilationResult {
   return {
@@ -81,25 +81,43 @@ function compilationResult(
   };
 }
 
-export function applyAll(
-  program: IR.Program,
+export function applyAllToAllAndGetCounts(
+  program: Program,
   addWarning: AddWarning,
   compilationOptions: CompilationOptions,
   ...visitors: Plugin["visit"][]
-) {
-  return visitors.reduce(
-    (prog, visitor) =>
-      programToSpine(prog).withReplacer((n, s) => {
-        const repl = visitor(n, s, addWarning, compilationOptions);
-        return repl === undefined
-          ? undefined
-          : copySource(n, copyTypeAnnotation(n, repl));
-      }).node as IR.Program,
-    program
-  );
+): [Program, number[]] {
+  const counts: number[] = [];
+  let result = program;
+  let c: number;
+  for (const visitor of visitors) {
+    [result, c] = applyToAllAndGetCount(
+      result,
+      addWarning,
+      compilationOptions,
+      visitor
+    );
+    counts.push(c);
+  }
+  return [result, counts];
 }
 
-function* applyOne(
+export function applyToAllAndGetCount(
+  program: Program,
+  addWarning: AddWarning,
+  compilationOptions: CompilationOptions,
+  visitor: Plugin["visit"]
+): [Program, number] {
+  const result = programToSpine(program).withReplacer((n, s) => {
+    const repl = visitor(n, s, addWarning, compilationOptions);
+    return repl === undefined
+      ? undefined
+      : copySource(n, copyTypeAnnotation(n, repl));
+  }).node as Program;
+  return [result, program === result ? 0 : 1]; // TODO it might be a bit more informative to count the actual replacements, intead of returning 1
+}
+
+function* applyToOne(
   spine: Spine,
   addWarning: AddWarning,
   compilationOptions: CompilationOptions,
@@ -193,7 +211,7 @@ interface SearchState {
   startPhase: number;
   length: number;
   warnings: Error[];
-  history: string[];
+  history: [number, string][];
 }
 
 export function compileVariant(
@@ -213,20 +231,16 @@ export function compileVariant(
             : (x) => x.mode !== "search"
         )
         .flatMap((x) => x.plugins);
+      const [res, counts] = applyAllToAllAndGetCounts(
+        program,
+        addWarning,
+        options,
+        ...plugins.map((x) => x.visit)
+      );
       return compilationResult(
         language.name,
-        emit(
-          language,
-          applyAll(
-            program,
-            addWarning,
-            options,
-            ...plugins.map((x) => x.visit)
-          ),
-          addWarning,
-          options
-        ),
-        plugins.map((y) => y.name),
+        emit(language, res, addWarning, options),
+        plugins.map((y, i) => [counts[i], y.name]),
         warnings
       );
     } catch (e) {
@@ -237,21 +251,26 @@ export function compileVariant(
     }
   }
   const obj = getObjectiveFunc(options);
-  const finish = (prog: Program, addWarning: AddWarning, startPhase = 0) =>
-    emit(
-      language,
-      applyAll(
-        prog,
-        addWarning,
-        options,
-        ...phases
-          .slice(startPhase)
-          .filter((x) => x.mode !== "search")
-          .flatMap((x) => x.plugins.map((y) => y.visit))
-      ),
+  function finish(
+    prog: Program,
+    addWarning: AddWarning,
+    startPhase = 0
+  ): [string, [number, string][]] {
+    const finishingPlugins = phases
+      .slice(startPhase)
+      .filter((x) => x.mode !== "search")
+      .flatMap((x) => x.plugins);
+    const [resProg, counts] = applyAllToAllAndGetCounts(
+      prog,
       addWarning,
-      options
+      options,
+      ...finishingPlugins.map((x) => x.visit)
     );
+    return [
+      emit(language, resProg, addWarning, options),
+      finishingPlugins.map((x, i) => [counts[i], x.name]),
+    ];
+  }
   let shortestSoFar: SearchState;
   let shortestSoFarLength: number = Infinity;
   const latestPhaseWeSawTheProg = new Map<string, number>();
@@ -261,7 +280,7 @@ export function compileVariant(
   function enqueue(
     program: Program,
     startPhase: number,
-    history: string[],
+    history: [number, string][],
     warnings: Error[]
   ) {
     if (startPhase >= language.phases.length) return;
@@ -275,7 +294,7 @@ export function compileVariant(
         (isGlobal ? globalWarnings : warnings).push(x);
       }
 
-      const length = obj(finish(program, addWarning, startPhase));
+      const length = obj(finish(program, addWarning, startPhase)[0]);
       const state = { program, startPhase, length, history, warnings };
       if (length < shortestSoFarLength) {
         shortestSoFarLength = length;
@@ -297,37 +316,53 @@ export function compileVariant(
     }
 
     if (phase.mode !== "search") {
+      const [res, counts] = applyAllToAllAndGetCounts(
+        state.program,
+        addWarning,
+        options,
+        ...phase.plugins.map((x) => x.visit)
+      );
       enqueue(
-        applyAll(
-          state.program,
-          addWarning,
-          options,
-          ...phase.plugins.map((x) => x.visit)
-        ),
+        res,
         state.startPhase + 1,
-        [...state.history, ...phase.plugins.map((x) => x.name)],
+        [
+          ...state.history,
+          ...phase.plugins.map(
+            (x, i) => [counts[i], x.name] satisfies [number, string]
+          ),
+        ],
         warnings
       );
     } else {
       enqueue(state.program, state.startPhase + 1, state.history, warnings);
       const spine = programToSpine(state.program);
       for (const plugin of phase.plugins) {
-        const newHist = [...state.history, plugin.name];
         if (plugin.allOrNothing === true) {
+          const [res, c] = applyToAllAndGetCount(
+            state.program,
+            addWarning,
+            options,
+            plugin.visit
+          );
           enqueue(
-            applyAll(state.program, addWarning, options, plugin.visit),
+            res,
             state.startPhase,
-            newHist,
+            [...state.history, [c, plugin.name]],
             warnings
           );
         } else {
-          for (const altProgram of applyOne(
+          for (const altProgram of applyToOne(
             spine,
             addWarning,
             options,
             plugin.visit
           )) {
-            enqueue(altProgram, state.startPhase, newHist, warnings);
+            enqueue(
+              altProgram,
+              state.startPhase,
+              [...state.history, [1, plugin.name]],
+              warnings
+            );
           }
         }
       }
@@ -336,24 +371,32 @@ export function compileVariant(
 
   globalWarnings.push(...shortestSoFar!.warnings);
 
+  const [result, finishingHist] = finish(
+    shortestSoFar!.program,
+    (x: Error) => {
+      globalWarnings.push(x);
+    },
+    shortestSoFar!.startPhase
+  );
+
   return compilationResult(
     language.name,
-    finish(
-      shortestSoFar!.program,
-      (x: Error) => {
-        globalWarnings.push(x);
-      },
-      shortestSoFar!.startPhase
-    ),
-    [
-      ...shortestSoFar!.history,
-      ...phases
-        .slice(shortestSoFar!.startPhase)
-        .filter((x) => x.mode !== "search")
-        .flatMap((x) => x.plugins.map((y) => y.name)),
-    ],
+    result,
+    mergeRepeatedPlugins([...shortestSoFar!.history, ...finishingHist]),
     globalWarnings
   );
+}
+
+function mergeRepeatedPlugins(history: [number, string][]): [number, string][] {
+  const result: [number, string][] = [];
+  for (const [c, name] of history) {
+    if (name === result.at(-1)?.[1]) {
+      result[result.length - 1][0] += c;
+    } else {
+      result.push([c, name]);
+    }
+  }
+  return result;
 }
 
 function copyTypeAnnotation(from: Node, to: Node): Node {
