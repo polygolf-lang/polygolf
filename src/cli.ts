@@ -82,6 +82,10 @@ for (const result of compile(
     } else {
       console.log(result.result);
     }
+    if (result.warnings.length > 0) {
+      console.log("Warnings:");
+      console.log(result.warnings.map((x) => x.message).join("\n"));
+    }
     if (options.debug === true) {
       console.log("History:");
       console.log(result.history.map(([c, name]) => `${c} ${name}`).join("\n"));
