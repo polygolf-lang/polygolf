@@ -46,8 +46,11 @@ export function testLang(
 ) {
   test(name, () =>
     expect(
-      compile(input, compilationOptionsFromKeywords(args), findLang(lang)!)[0]
-        .result
+      compile(
+        input,
+        compilationOptionsFromKeywords(args, true),
+        findLang(lang)!
+      )[0].result
     ).toEqual(output)
   );
 }
