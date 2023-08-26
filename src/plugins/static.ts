@@ -1,6 +1,6 @@
 import { isPolygolfOp, polygolfOp, TextLiteral, text } from "../IR";
 import { Plugin } from "../common/Language";
-import { byteLength, charLength } from "../common/compile";
+import { byteLength, charLength } from "../common/objective";
 
 export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
   return {

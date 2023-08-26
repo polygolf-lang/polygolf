@@ -59,7 +59,7 @@ import {
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
-import { charLength } from "../../common/compile";
+import { charLength } from "../../common/objective";
 
 const pythonLanguage: Language = {
   name: "Python",

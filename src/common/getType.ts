@@ -43,7 +43,7 @@ import {
   polygolfOp,
   leq,
 } from "../IR";
-import { byteLength, charLength } from "./compile";
+import { byteLength, charLength } from "./objective";
 import { PolygolfError } from "./errors";
 import { Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
