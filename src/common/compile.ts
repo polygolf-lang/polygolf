@@ -265,7 +265,7 @@ export function compileVariantNoPacking(
       finishingPlugins.map((x, i) => [counts[i], x.name]),
     ];
   }
-  let shortestSoFar: SearchState;
+  let shortestSoFar: SearchState | undefined;
   let lastError: Error;
   let shortestSoFarLength: number = Infinity;
   const latestPhaseWeSawTheProg = new Map<string, number>();
@@ -370,24 +370,24 @@ export function compileVariantNoPacking(
     }
   }
 
-  if (shortestSoFar! === undefined) {
+  if (shortestSoFar === undefined) {
     return compilationResult(language.name, lastError!);
   }
 
-  globalWarnings.push(...shortestSoFar!.warnings);
+  globalWarnings.push(...shortestSoFar.warnings);
 
   const [result, finishingHist] = finish(
-    shortestSoFar!.program,
+    shortestSoFar.program,
     (x: Error) => {
       globalWarnings.push(x);
     },
-    shortestSoFar!.startPhase
+    shortestSoFar.startPhase
   );
 
   return compilationResult(
     language.name,
     result,
-    mergeRepeatedPlugins([...shortestSoFar!.history, ...finishingHist]),
+    mergeRepeatedPlugins([...shortestSoFar.history, ...finishingHist]),
     globalWarnings
   );
 }
