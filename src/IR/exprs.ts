@@ -23,6 +23,7 @@ import {
   isConstantType,
   isBinary,
   booleanNotOpCode,
+  TextLiteral,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseExpr {
@@ -486,6 +487,10 @@ export function isNegative(expr: Expr) {
     isNegativeLiteral(expr) ||
     (isPolygolfOp(expr, "mul") && isNegativeLiteral(expr.args[0]))
   );
+}
+
+export function isTextLiteral(x: Node): x is TextLiteral {
+  return x.kind === "TextLiteral";
 }
 
 export function isPolygolfOp<Op extends OpCode>(

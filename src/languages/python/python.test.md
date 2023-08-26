@@ -235,3 +235,18 @@ len("rst")
 chr(99)
 chr(999)
 ```
+
+## Aliasing partially applied methods
+
+```polygolf
+$a <- (join (list "1" "2") );
+$b <- (join (list "3" "4") );
+$c <- (join (list "5" "6") );
+```
+
+```py
+j="".join
+a=j(["1","2"])
+b=j(["3","4"])
+c=j(["5","6"])
+```
