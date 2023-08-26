@@ -67,8 +67,10 @@ export function testPlugin(
       debugEmit(
         applyAllToAllAndGetCounts(
           getOnlyVariant(parse(input, false)),
-          () => {},
-          compilationOptionsFromKeywords(args),
+          {
+            addWarning: () => {},
+            options: compilationOptionsFromKeywords(args),
+          },
           ...plugins.map((x) => x.visit)
         )[0]
       )

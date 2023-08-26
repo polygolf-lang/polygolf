@@ -1,6 +1,6 @@
 import { Expr, IR } from "IR";
-import { AddWarning, Spine, PluginVisitor } from "./Spine";
-import { CompilationOptions } from "./compile";
+import { Spine, PluginVisitor } from "./Spine";
+import { CompilationContext } from "./compile";
 
 export type OpTransformOutput =
   | ((args: readonly IR.Expr[], spine: Spine<Expr>) => IR.Expr | undefined)
@@ -91,8 +91,7 @@ export interface IdentifierGenerator {
 
 export type Emitter = (
   program: IR.Program,
-  addWarning: AddWarning,
-  compilationOptions: CompilationOptions
+  context: CompilationContext
 ) => TokenTree;
 
 function isAlphaNum(a: string, i: number): boolean {

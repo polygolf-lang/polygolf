@@ -1,5 +1,5 @@
 import { Expr, IR, isPolygolfOp, polygolfOp } from "../IR";
-import { CompilationOptions } from "./compile";
+import { CompilationContext } from "./compile";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
 import { replaceAtIndex } from "./immutable";
 
@@ -174,13 +174,10 @@ export class Spine<N extends IR.Node = IR.Node> {
   }
 }
 
-export type AddWarning = (x: Error, isGlobal: boolean) => void;
-
 export type PluginVisitor<T> = <N extends IR.Node>(
   node: N,
   spine: Spine<N>,
-  addWarning: AddWarning,
-  compilationOptions: CompilationOptions
+  context: CompilationContext
 ) => T;
 
 export type Visitor<T> = <N extends IR.Node>(node: N, spine: Spine<N>) => T;

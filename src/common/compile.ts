@@ -1,7 +1,7 @@
 import { Node, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { defaultDetokenizer, Plugin, Language } from "./Language";
-import { AddWarning, programToSpine, Spine } from "./Spine";
+import { programToSpine, Spine } from "./Spine";
 import { getType } from "./getType";
 import { stringify } from "./stringify";
 import parse from "../frontend/parse";
@@ -23,6 +23,13 @@ export interface CompilationOptions {
   skipTypecheck?: boolean;
   restrictFrontend?: boolean;
   asciiOnly?: boolean;
+}
+
+export type AddWarning = (x: Error, isGlobal: boolean) => void;
+
+export interface CompilationContext {
+  options: CompilationOptions;
+  addWarning: AddWarning;
 }
 
 export interface CompilationResult {
@@ -48,20 +55,14 @@ function compilationResult(
 
 export function applyAllToAllAndGetCounts(
   program: Program,
-  addWarning: AddWarning,
-  compilationOptions: CompilationOptions,
+  context: CompilationContext,
   ...visitors: Plugin["visit"][]
 ): [Program, number[]] {
   const counts: number[] = [];
   let result = program;
   let c: number;
   for (const visitor of visitors) {
-    [result, c] = applyToAllAndGetCount(
-      result,
-      addWarning,
-      compilationOptions,
-      visitor
-    );
+    [result, c] = applyToAllAndGetCount(result, context, visitor);
     counts.push(c);
   }
   return [result, counts];
@@ -69,12 +70,11 @@ export function applyAllToAllAndGetCounts(
 
 export function applyToAllAndGetCount(
   program: Program,
-  addWarning: AddWarning,
-  compilationOptions: CompilationOptions,
+  context: CompilationContext,
   visitor: Plugin["visit"]
 ): [Program, number] {
   const result = programToSpine(program).withReplacer((n, s) => {
-    const repl = visitor(n, s, addWarning, compilationOptions);
+    const repl = visitor(n, s, context);
     return repl === undefined
       ? undefined
       : copySource(n, copyTypeAnnotation(n, repl));
@@ -84,12 +84,11 @@ export function applyToAllAndGetCount(
 
 function* applyToOne(
   spine: Spine,
-  addWarning: AddWarning,
-  compilationOptions: CompilationOptions,
+  context: CompilationContext,
   visitor: Plugin["visit"]
 ) {
   for (const altProgram of spine.compactMap((n, s) => {
-    const ret = visitor(n, s, addWarning, compilationOptions);
+    const ret = visitor(n, s, context);
     if (ret !== undefined) {
       return s.replacedWith(copySource(n, copyTypeAnnotation(n, ret)), true)
         .root.node;
@@ -102,11 +101,10 @@ function* applyToOne(
 function emit(
   language: Language,
   program: Program,
-  addWarning: AddWarning,
-  compilationOptions: CompilationOptions
+  context: CompilationContext
 ) {
   return (language.detokenizer ?? defaultDetokenizer())(
-    language.emitter(program, addWarning, compilationOptions)
+    language.emitter(program, context)
   );
 }
 
@@ -227,13 +225,12 @@ export function compileVariantNoPacking(
         .flatMap((x) => x.plugins);
       const [res, counts] = applyAllToAllAndGetCounts(
         program,
-        addWarning,
-        options,
+        { addWarning, options },
         ...plugins.map((x) => x.visit)
       );
       return compilationResult(
         language.name,
-        emit(language, res, addWarning, options),
+        emit(language, res, { addWarning, options }),
         plugins.map((y, i) => [counts[i], y.name]),
         warnings
       );
@@ -256,12 +253,11 @@ export function compileVariantNoPacking(
       .flatMap((x) => x.plugins);
     const [resProg, counts] = applyAllToAllAndGetCounts(
       prog,
-      addWarning,
-      options,
+      { addWarning, options },
       ...finishingPlugins.map((x) => x.visit)
     );
     return [
-      emit(language, resProg, addWarning, options),
+      emit(language, resProg, { addWarning, options }),
       finishingPlugins.map((x, i) => [counts[i], x.name]),
     ];
   }
@@ -319,8 +315,7 @@ export function compileVariantNoPacking(
     if (phase.mode !== "search") {
       const [res, counts] = applyAllToAllAndGetCounts(
         state.program,
-        addWarning,
-        options,
+        { addWarning, options },
         ...phase.plugins.map((x) => x.visit)
       );
       enqueue(
@@ -341,8 +336,7 @@ export function compileVariantNoPacking(
         if (plugin.allOrNothing === true) {
           const [res, c] = applyToAllAndGetCount(
             state.program,
-            addWarning,
-            options,
+            { addWarning, options },
             plugin.visit
           );
           enqueue(
@@ -354,8 +348,7 @@ export function compileVariantNoPacking(
         } else {
           for (const altProgram of applyToOne(
             spine,
-            addWarning,
-            options,
+            { addWarning, options },
             plugin.visit
           )) {
             enqueue(
