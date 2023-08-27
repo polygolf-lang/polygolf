@@ -333,31 +333,17 @@ export function compileVariantNoPacking(
       enqueue(state.program, state.startPhase + 1, state.history, warnings);
       const spine = programToSpine(state.program);
       for (const plugin of phase.plugins) {
-        if (plugin.allOrNothing === true) {
-          const [res, c] = applyToAllAndGetCount(
-            state.program,
-            { addWarning, options },
-            plugin.visit
-          );
+        for (const altProgram of applyToOne(
+          spine,
+          { addWarning, options },
+          plugin.visit
+        )) {
           enqueue(
-            res,
+            altProgram,
             state.startPhase,
-            [...state.history, [c, plugin.name]],
+            [...state.history, [1, plugin.name]],
             warnings
           );
-        } else {
-          for (const altProgram of applyToOne(
-            spine,
-            { addWarning, options },
-            plugin.visit
-          )) {
-            enqueue(
-              altProgram,
-              state.startPhase,
-              [...state.history, [1, plugin.name]],
-              warnings
-            );
-          }
         }
       }
     }

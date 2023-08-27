@@ -31,7 +31,6 @@ export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
   const opMap = toOpMap(opMap0);
   return {
     name: "mapOps(...)",
-    allOrNothing: true,
     visit(node, spine) {
       if (isPolygolfOp(node)) {
         const op = node.op;
@@ -135,7 +134,6 @@ export function useIndexCalls(
     name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
       ops
     )})`,
-    allOrNothing: true,
     visit(node) {
       if (
         isPolygolfOp(node, ...ops) &&

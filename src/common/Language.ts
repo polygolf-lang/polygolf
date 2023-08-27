@@ -62,9 +62,6 @@ export interface Plugin {
    * no replacement. The replacement node should be different in value than
    * the initial node if it compares different under reference equality */
   visit: PluginVisitor<IR.Node | undefined>;
-  /** Set `allOrNothing: true` to force all replacement nodes to be applied,
-   * or none. This is useful in cases such as renaming variables */
-  allOrNothing?: boolean;
 }
 
 type TokenTreeArray = Array<string | TokenTreeArray>;
