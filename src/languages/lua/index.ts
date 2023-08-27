@@ -8,6 +8,7 @@ import {
   textType,
   add1,
   listType,
+  isTextLiteral,
   builtin,
 } from "../../IR";
 import { Language } from "../../common/Language";
@@ -103,6 +104,11 @@ const luaLanguage: Language = {
     ]),
     mapOps(
       ["read_line", () => functionCall("io.read")],
+      [
+        "join",
+        (x) =>
+          functionCall("table.concat", isTextLiteral(x[1], "") ? [x[0]] : x),
+      ],
       ["text_byte_length", (x) => methodCall(x[0], "len")],
       ["true", builtin("true")],
       ["false", builtin("false")],
@@ -123,12 +129,12 @@ const luaLanguage: Language = {
           methodCall(
             a,
             "gsub",
-            b.kind === "TextLiteral"
+            isTextLiteral(b)
               ? text(
                   b.value.replace(/(-|%|\^|\$|\(|\)|\.|\[|\]|\*|\+|\?)/g, "%$1")
                 )
               : methodCall(b, "gsub", text("(%W)"), text("%%%1")),
-            c.kind === "TextLiteral"
+            isTextLiteral(c)
               ? text(c.value.replace("%", "%%"))
               : methodCall(c, "gsub", text("%%"), text("%%%%"))
           ),

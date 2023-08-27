@@ -473,7 +473,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
     case "text_get_codepoint":
       expectType(textType(), integerType(0));
       return textType(integerType(1, 1), (types[0] as TextType).isAscii);
-    case "join_using":
+    case "join":
       expectType(listType(textType()), textType());
       return textType(
         integerType(0, "oo"),
@@ -614,9 +614,6 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       return listType(types[0]);
     case "sorted":
       return listType(expectGenericType("List")[0]);
-    case "join":
-      expectType(listType(textType()));
-      return textType();
     case "text_byte_reversed":
     case "text_codepoint_reversed":
       expectType(textType());
@@ -651,10 +648,10 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
     case "println_int":
       expectType(integerType());
       return voidType;
-    case "println_list_joined_using":
+    case "println_list_joined":
       expectType(listType(textType()), textType());
       return voidType;
-    case "println_many_joined_using":
+    case "println_many_joined":
       expectVariadicType(textType(), 1);
       return voidType;
     case "text_replace": {

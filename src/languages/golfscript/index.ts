@@ -40,6 +40,7 @@ import {
 import {
   useEquivalentTextOp,
   textGetToTextGetToIntToText,
+  replaceToSplitAndJoin,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
 
@@ -66,6 +67,7 @@ const golfscriptLanguage: Language = {
         !isSubtype(getType(node.start, spine.root.node), integerType(0))
     ),
     implicitlyConvertPrintArg,
+    replaceToSplitAndJoin,
     alias((expr) => {
       switch (expr.kind) {
         case "IntegerLiteral":
@@ -87,7 +89,6 @@ const golfscriptLanguage: Language = {
         "text_get_byte_slice",
         (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
       ],
-      ["join", (x) => polygolfOp("join_using", x[0], text(""))],
       ["neg", (x) => polygolfOp("mul", x[0], int(-1))],
       [
         "max",
@@ -159,7 +160,7 @@ const golfscriptLanguage: Language = {
       ["list_push", "+"],
       ["list_get", "="],
       ["list_length", ","],
-      ["join_using", "*"],
+      ["join", "*"],
       ["sorted", "$"]
     ),
     mapOps(

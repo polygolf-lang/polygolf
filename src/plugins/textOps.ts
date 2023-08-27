@@ -3,6 +3,7 @@ import {
   integerType,
   isPolygolfOp,
   isSubtype,
+  isTextLiteral,
   OpCode,
   polygolfOp,
   TextLiteral,
@@ -151,8 +152,8 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
         const a = node.args[0].args.slice(1);
         const b = node.args.slice(1);
         if (
-          a.every((x) => x.kind === "TextLiteral") &&
-          b.every((x) => x.kind === "TextLiteral")
+          a.every((x) => isTextLiteral(x)) &&
+          b.every((x) => isTextLiteral(x))
         ) {
           const aValues = a.map((x) => (x as TextLiteral).value);
           const bValues = b.map((x) => (x as TextLiteral).value);
@@ -178,3 +179,11 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
     },
   };
 }
+
+export const replaceToSplitAndJoin: Plugin = {
+  ...mapOps([
+    "text_replace",
+    ([x, y, z]) => polygolfOp("join", polygolfOp("text_split", x, y), z),
+  ]),
+  name: "replaceToSplitAndJoin",
+};

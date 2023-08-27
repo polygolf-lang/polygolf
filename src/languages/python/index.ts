@@ -14,6 +14,7 @@ import {
   keyValue,
   TextLiteral,
   builtin,
+  isTextLiteral,
 } from "../../IR";
 import { Language } from "../../common/Language";
 
@@ -110,8 +111,7 @@ const pythonLanguage: Language = {
       ["abs", (x) => functionCall("abs", x)],
       ["list_length", (x) => functionCall("len", x)],
       ["list_find", (x) => methodCall(x[0], "index", x[1])],
-      ["join_using", (x) => methodCall(x[1], "join", x[0])],
-      ["join", (x) => methodCall(text(""), "join", x[0])],
+      ["join", (x) => methodCall(x[1], "join", x[0])],
       ["sorted", (x) => functionCall("sorted", x[0])],
       [
         "text_codepoint_reversed",
@@ -212,10 +212,18 @@ const pythonLanguage: Language = {
     ),
     methodsAsFunctions,
     addOneToManyAssignments(),
-    alias((expr) => {
+    alias((expr, spine) => {
       switch (expr.kind) {
         case "Identifier":
-          return expr.builtin ? expr.name : undefined;
+          return expr.builtin &&
+            (spine.parent?.node.kind !== "PropertyCall" ||
+              spine.pathFragment !== "ident")
+            ? expr.name
+            : undefined;
+        case "PropertyCall": // TODO: handle more general cases
+          return isTextLiteral(expr.object) && expr.ident.builtin
+            ? `"${expr.object.value}".${expr.ident.name}`
+            : undefined;
         case "IntegerLiteral":
           return expr.value.toString();
         case "TextLiteral":
