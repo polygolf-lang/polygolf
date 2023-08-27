@@ -124,6 +124,8 @@ concat $b "xyz";
 int_to_text 5;
 text_to_int "5";
 text_split "xyz" "y";
+join (list "xy" "abc") "/";
+join (list "12" "345") "";
 repeat $b 3;
 text_replace "a+b+c" "+" "*";
 table_get (table ("X" => "Y") ) "X";
@@ -180,6 +182,8 @@ b+"xyz"
 String(5)
 Int("5")!
 "xyz".split(separator:"y")
+["xy","abc"].joined(separator:"/")
+["12","345"].joined()
 String(repeating:b,count:3)
 "a+b+c".replacingOccurrences(of:"+", with:"*")
 ["X":"Y"]["X"]!

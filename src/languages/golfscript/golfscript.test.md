@@ -80,8 +80,7 @@ int_to_codepoint 99;
 list_get $d 1;
 list_push $d "t";
 list_length $d;
-join $d;
-join_using $d "_";
+join $d "_";
 sorted $d;
 concat $b "xyz";
 int_to_text 5;
@@ -93,7 +92,7 @@ repeat $b 3;
 ```
 
 ```golfscript nogolf
-0:a;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!a~-1 a*a abs 2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^[2 a]$1=[2 a]$0=4 a*a 4/a 2<a 3<a 2=a 2=!a 1>a 2>["abc"1=]""+["def"1=]""+"g")"h")"ijk"1="lmn"1="opq","rst",[99]""+[99]""+d 1=d"t"+d,d""*d"_"*d$b"xyz"+5`"5"~"xyz""y"/b-1%b 3*
+0:a;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!a~-1 a*a abs 2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^[2 a]$1=[2 a]$0=4 a*a 4/a 2<a 3<a 2=a 2=!a 1>a 2>["abc"1=]""+["def"1=]""+"g")"h")"ijk"1="lmn"1="opq","rst",[99]""+[99]""+d 1=d"t"+d,d"_"*d$b"xyz"+5`"5"~"xyz""y"/b-1%b 3*
 ```
 
 ## Looping
