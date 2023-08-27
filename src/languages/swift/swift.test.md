@@ -62,8 +62,18 @@ vwx
 $a:-100..100 <- 0;
 $b:Text <- "xy";
 $c <- (0==0);
+
+% Boolean
+and $c $c;
+or $c $c;
+not $c;
+
+% Unary Arithmetic
 ~ $a;
 - $a;
+abs $a;
+
+% Binary Arithmetic
 $a + 2;
 $a - 2;
 $a * 2;
@@ -75,12 +85,18 @@ $a | 2;
 $a ~ 2;
 $a << 2;
 $a >> 2;
+max $a 2;
+min $a 2;
+
+% Comparison
 $a < 2;
 $a <= 2;
 $a == 2;
 $a != 2;
 $a >= 2;
 $a > 2;
+
+% Mutating
 $a <- ($a + 2):-100..100;
 $a <- ($a - 2):-100..100;
 $a <- ($a * -2):-100..100;
@@ -89,32 +105,41 @@ $a <- ($a mod 2):-100..100;
 $a <- ($a & 2):-100..100;
 $a <- ($a | 2):-100..100;
 $a <- ($a ~ 2):-100..100;
-max $a 2;
-min $a 2;
-abs $a;
-list_get (list "xy" "abc") 1;
+
+% Text encoding
 text_get_byte "abc" 1;
 text_get_codepoint "abc" 1;
-concat $b "xyz";
+text_get_byte_to_int "abc" 1;
+text_get_codepoint_to_int "abc" 1;
 text_byte_length "abc";
 text_codepoint_length "abc";
-int_to_codepoint 5;
+text_byte_to_int "a";
+codepoint_to_int "\u00ff";
+int_to_text_byte 99;
+int_to_codepoint 999;
+
+% Other
+list_get (list "xy" "abc") 1;
+concat $b "xyz";
 int_to_text 5;
 text_to_int "5";
 text_split "xyz" "y";
+join (list "xy" "abc") "/";
+join (list "12" "345") "";
 repeat $b 3;
 text_replace "a+b+c" "+" "*";
 table_get (table ("X" => "Y") ) "X";
-and $c $c;
-or $c $c;
-not $c;
 ```
 
 ```swift nogolf
 import Foundation
 var a=0,b="xy",c=0==0
+c&&c
+c||c
+!c
 ~a
 -a
+abs(a)
 2+a
 a-2
 2*a
@@ -126,6 +151,8 @@ a%2
 2^a
 a<<2
 a>>2
+max(2,a)
+min(2,a)
 a<2
 a<=2
 a==2
@@ -140,25 +167,26 @@ a%=2
 a&=2
 a|=2
 a^=2
-max(2,a)
-min(2,a)
-abs(a)
-["xy","abc"][1]
-Int(Array("abc".utf8)[1])
+String(UnicodeScalar(Int(Array("abc".utf8)[1]))!)
 String(Array("abc")[1])
-b+"xyz"
+Int(Array("abc".utf8)[1])
+Array("abc".unicodeScalars)[1].value
 "abc".utf8.count
 "abc".count
-String(UnicodeScalar(5)!)
+Int(Array("a".utf8)[0])
+Array("ÿ".unicodeScalars)[0].value
+String(UnicodeScalar(99)!)
+String(UnicodeScalar(999)!)
+["xy","abc"][1]
+b+"xyz"
 String(5)
 Int("5")!
 "xyz".split(separator:"y")
+["xy","abc"].joined(separator:"/")
+["12","345"].joined()
 String(repeating:b,count:3)
 "a+b+c".replacingOccurrences(of:"+", with:"*")
 ["X":"Y"]["X"]!
-c&&c
-c||c
-!c
 ```
 
 ## Whitespace behavior

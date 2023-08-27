@@ -62,6 +62,7 @@ import {
   unaryOp,
   propertyCall,
   relationOpChain,
+  isTextLiteral,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -109,7 +110,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     }
   }
   function asString(e: Expr): string {
-    if (e.kind === "TextLiteral") return e.value;
+    if (isTextLiteral(e)) return e.value;
     throw new PolygolfError(
       `Syntax error. Expected string literal, but got ${e.kind}`,
       e.source

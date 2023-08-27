@@ -29,9 +29,9 @@ export interface IntegerLiteral<Value extends bigint = bigint>
  *
  * There is no distinction for byte vs unicode strings
  */
-export interface TextLiteral extends BaseExpr {
+export interface TextLiteral<Value extends string = string> extends BaseExpr {
   readonly kind: "TextLiteral";
-  readonly value: string;
+  readonly value: Value;
 }
 
 export function id(name: string, builtin: boolean = false): Identifier {

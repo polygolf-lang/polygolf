@@ -243,7 +243,7 @@ export function bitShiftToMulOrDiv(
           if (node.op === "bit_shift_left" && toMul) {
             return polygolfOp("mul", a, polygolfOp("pow", int(2), b));
           }
-          if (node.op === "bit_shift_right" && toMul) {
+          if (node.op === "bit_shift_right" && toDiv) {
             return polygolfOp("div", a, polygolfOp("pow", int(2), b));
           }
         }

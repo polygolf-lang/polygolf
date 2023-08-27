@@ -10,6 +10,8 @@ $b <- (1<2);
 
 text_get_byte $t 2;
 text_get_byte_slice $t 2 6;
+text_byte_to_int "a";
+text_get_byte_to_int "abc" 1;
 text_split $t "|";
 text_split_whitespace $t;
 text_byte_length $t;
@@ -26,6 +28,8 @@ $t .. "x";
 text_replace "a+b+c" "+" "*";
 text_replace "a*b*c" "*" "";
 text_multireplace "XYZXYZ" "Y" "b" "X" "a";
+join (list "xy" "abc") "/";
+join (list "12" "345") "";
 
 ~ $n;
 not $b;
@@ -68,6 +72,8 @@ var
  b=1<2
 t[2]
 t[2..<6]
+"a"[0].ord
+"abc"[1].ord
 t.split"|"
 t.split
 t.len
@@ -84,6 +90,8 @@ t&"x"
 "a+b+c".replace("+","*")
 "a*b*c".replace"*"
 "XYZXYZ".multireplace {"Y":"b","X":"a"}
+@["xy","abc"].join"/"
+@["12","345"].join
 not n
 not b
 -n

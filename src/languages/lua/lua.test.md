@@ -47,6 +47,9 @@ $a >= 2;
 $a > 2;
 array_get (array "xy" "abc") 1;
 text_get_byte "abc" 1;
+text_byte_to_int "a";
+text_get_byte_to_int "abc" 1;
+int_to_text_byte 99;
 concat $b "xyz";
 text_byte_length "abc";
 int_to_text 5;
@@ -55,6 +58,8 @@ text_replace $b "a" "A";
 text_replace $b "(" "*";
 text_replace $b $b:(Text 1..oo) $b;
 conditional ($a == 2) $a 3;
+join (list "xy" "abc") "/";
+join (list "12" "345") "";
 ```
 
 ```lua nogolf
@@ -79,7 +84,10 @@ a==2
 a>=2
 a>2
 ({"xy","abc"})[2]
+("abc"):sub(2,2)
+("a"):byte(1)
 ("abc"):byte(2)
+string.char(99)
 b.."xyz"
 ("abc"):len()
 ""..5
@@ -88,6 +96,8 @@ b:gsub("a","A")
 b:gsub("%(","*")
 b:gsub(b:gsub("(%W)","%%%1"),b:gsub("%%","%%%%"))
 a==2 and a or 3
+table.concat({"xy","abc"},"/")
+table.concat({"12","345"})
 ```
 
 ## Parentheses

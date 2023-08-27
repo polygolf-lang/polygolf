@@ -3,9 +3,11 @@ import {
   integerType,
   isPolygolfOp,
   isSubtype,
+  isTextLiteral,
   OpCode,
   polygolfOp,
   TextLiteral,
+  int,
 } from "../IR";
 import { Plugin } from "../common/Language";
 import { mapOps } from "./ops";
@@ -101,6 +103,42 @@ export const textToIntToTextGetToInt: Plugin = {
   name: "textToIntToTextGetToInt",
 };
 
+export const textGetToTextGetToIntToText: Plugin = {
+  ...mapOps(
+    [
+      "text_get_byte",
+      (x) =>
+        polygolfOp(
+          "int_to_text_byte",
+          polygolfOp("text_get_byte_to_int", ...x)
+        ),
+    ],
+    [
+      "text_get_codepoint",
+      (x) =>
+        polygolfOp(
+          "int_to_codepoint",
+          polygolfOp("text_get_codepoint_to_int", ...x)
+        ),
+    ]
+  ),
+  name: "textGetToTextGetToIntToText",
+};
+
+export const textToIntToFirstIndexTextGetToInt: Plugin = {
+  ...mapOps(
+    [
+      "text_byte_to_int",
+      (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
+    ],
+    [
+      "codepoint_to_int",
+      (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
+    ]
+  ),
+  name: "textToIntToFirstIndexTextGetToInt",
+};
+
 /**
  * Converts nested text_replace to a text_multireplace provided the arguments are
  * text literals with no overlap.
@@ -119,8 +157,8 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
         const a = node.args[0].args.slice(1);
         const b = node.args.slice(1);
         if (
-          a.every((x) => x.kind === "TextLiteral") &&
-          b.every((x) => x.kind === "TextLiteral")
+          a.every((x) => isTextLiteral(x)) &&
+          b.every((x) => isTextLiteral(x))
         ) {
           const aValues = a.map((x) => (x as TextLiteral).value);
           const bValues = b.map((x) => (x as TextLiteral).value);
@@ -146,3 +184,11 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
     },
   };
 }
+
+export const replaceToSplitAndJoin: Plugin = {
+  ...mapOps([
+    "text_replace",
+    ([x, y, z]) => polygolfOp("join", polygolfOp("text_split", x, y), z),
+  ]),
+  name: "replaceToSplitAndJoin",
+};

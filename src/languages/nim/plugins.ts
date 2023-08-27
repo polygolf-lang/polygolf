@@ -3,6 +3,7 @@ import {
   integerType,
   isPolygolfOp,
   isSubtype,
+  isTextLiteral,
   methodCall,
   polygolfOp,
 } from "../../IR";
@@ -38,6 +39,7 @@ export const addNimImports: Plugin = addImports(
     ["repeat", "strutils"],
     ["replace", "strutils"],
     ["multireplace", "strutils"],
+    ["join", "strutils"],
     ["paramStr", "os"],
     ["commandLineParams", "os"],
     ["split", "strutils"],
@@ -72,7 +74,7 @@ export const useUFCS: Plugin = {
   name: "useUFCS",
   visit(node) {
     if (node.kind === "FunctionCall" && node.args.length > 0) {
-      if (node.args.length === 1 && node.args[0].kind === "TextLiteral") {
+      if (node.args.length === 1 && isTextLiteral(node.args[0])) {
         return;
       }
       const [obj, ...args] = node.args;

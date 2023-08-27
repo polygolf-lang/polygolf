@@ -7,7 +7,9 @@ import {
   text,
   add1,
   propertyCall,
+  isTextLiteral,
   builtin,
+  int,
 } from "../../IR";
 import { Language, TokenTree, flattenTree } from "../../common/Language";
 
@@ -34,7 +36,11 @@ import {
   forRangeToForRangeInclusive,
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
-import { useEquivalentTextOp } from "../../plugins/textOps";
+import {
+  useEquivalentTextOp,
+  textToIntToTextGetToInt,
+  replaceToSplitAndJoin,
+} from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
   applyDeMorgans,
@@ -58,6 +64,8 @@ const swiftLanguage: Language = {
     applyDeMorgans,
     forRangeToForRangeOneStep,
     useEquivalentTextOp(true, true),
+    replaceToSplitAndJoin,
+    textToIntToTextGetToInt,
   ],
   emitPlugins: [
     forArgvToForEach,
@@ -68,6 +76,22 @@ const swiftLanguage: Language = {
         "argv_get",
         (x) =>
           polygolfOp("list_get", builtin("CommandLine.arguments"), add1(x[0])),
+      ],
+      [
+        "codepoint_to_int",
+        (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
+      ],
+      [
+        "text_byte_to_int",
+        (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
+      ],
+      [
+        "text_get_byte",
+        (x) =>
+          polygolfOp(
+            "int_to_text_byte",
+            polygolfOp("text_get_byte_to_int", ...x)
+          ),
       ]
     ),
     useIndexCalls(),
@@ -76,7 +100,16 @@ const swiftLanguage: Language = {
     implicitlyConvertPrintArg,
     mapOps(
       [
-        "text_get_byte",
+        "join",
+        (x) =>
+          methodCall(
+            x[0],
+            "joined",
+            ...(isTextLiteral(x[1], "") ? [] : [namedArg("separator", x[1])])
+          ),
+      ],
+      [
+        "text_get_byte_to_int",
         (x) =>
           functionCall(
             "Int",
@@ -87,6 +120,25 @@ const swiftLanguage: Language = {
         "text_get_codepoint",
         (x) =>
           functionCall("String", indexCall(functionCall("Array", x[0]), x[1])),
+      ],
+      [
+        "text_get_codepoint_to_int",
+        (x) =>
+          propertyCall(
+            indexCall(
+              functionCall("Array", propertyCall(x[0], "unicodeScalars")),
+              x[1]
+            ),
+            "value"
+          ),
+      ],
+      [
+        "int_to_text_byte",
+        (x) =>
+          functionCall(
+            "String",
+            functionCall("!", functionCall("UnicodeScalar", x))
+          ),
       ],
       [
         "int_to_codepoint",
