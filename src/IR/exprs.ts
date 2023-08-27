@@ -495,10 +495,6 @@ export function isNegative(expr: Expr) {
   );
 }
 
-export function isTextLiteral(x: Node): x is TextLiteral {
-  return x.kind === "TextLiteral";
-}
-
 export function isPolygolfOp<Op extends OpCode>(
   x: Node,
   ...ops: Op[]

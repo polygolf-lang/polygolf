@@ -239,9 +239,9 @@ chr(999)
 ## Aliasing partially applied methods
 
 ```polygolf
-$a <- (join (list "1" "2") );
-$b <- (join (list "3" "4") );
-$c <- (join (list "5" "6") );
+$a <- (join (list "1" "2") "" );
+$b <- (join (list "3" "4") "" );
+$c <- (join (list "5" "6") "" );
 ```
 
 ```py
