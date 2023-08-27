@@ -6,7 +6,7 @@ import {
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral, TextLiteral, text } from "../../IR";
+import { IR, isIntLiteral, TextLiteral, text, isTextLiteral } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -178,9 +178,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emit(e.func),
           "(",
           e.args.length > 1 &&
-          e.args.every(
-            (x) => x.kind === "TextLiteral" && charLength(x.value) === 1
-          )
+          e.args.every((x) => isTextLiteral(x) && charLength(x.value) === 1)
             ? [
                 "*",
                 emit(

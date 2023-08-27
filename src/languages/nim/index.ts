@@ -5,6 +5,7 @@ import {
   rangeIndexCall,
   add1,
   arrayConstructor,
+  isTextLiteral,
   builtin,
   polygolfOp,
 } from "../../IR";
@@ -104,6 +105,10 @@ const nimLanguage: Language = {
       (x) => functionCall("ord", polygolfOp("text_get_byte", ...x)),
     ]),
     mapOps(
+      [
+        "join",
+        (x) => functionCall("join", isTextLiteral(x[1], "") ? [x[0]] : x),
+      ],
       ["true", builtin("true")],
       ["false", builtin("false")],
       ["text_get_byte", (x) => indexCall(x[0], x[1])],
@@ -127,10 +132,7 @@ const nimLanguage: Language = {
       [
         "text_replace",
         (x) =>
-          functionCall(
-            "replace",
-            x[2].kind === "TextLiteral" && x[2].value === "" ? [x[0], x[1]] : x
-          ),
+          functionCall("replace", isTextLiteral(x[2], "") ? [x[0], x[1]] : x),
       ],
       [
         "text_multireplace",

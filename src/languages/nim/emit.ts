@@ -1,6 +1,6 @@
 import { TokenTree } from "@/common/Language";
 import { emitTextLiteral, joinTrees, EmitError } from "../../common/emit";
-import { ArrayConstructor, IR, isIntLiteral } from "../../IR";
+import { ArrayConstructor, IR, isIntLiteral, isTextLiteral } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -226,7 +226,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         if (
           e.func.kind === "Identifier" &&
           e.args.length === 1 &&
-          e.args[0].kind === "TextLiteral"
+          isTextLiteral(e.args[0])
         ) {
           const raw = emitAsRawTextLiteral(e.args[0].value, e.func.name);
           if (raw !== null) {
@@ -251,7 +251,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
               : [],
           ];
         else {
-          if (e.args.length === 1 && e.args[0].kind === "TextLiteral") {
+          if (e.args.length === 1 && isTextLiteral(e.args[0])) {
             const raw = emitAsRawTextLiteral(e.args[0].value, e.ident.name);
             if (raw !== null) {
               prec = 12;

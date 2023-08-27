@@ -108,8 +108,7 @@ const pythonLanguage: Language = {
       ["abs", (x) => functionCall("abs", x)],
       ["list_length", (x) => functionCall("len", x)],
       ["list_find", (x) => methodCall(x[0], "index", x[1])],
-      ["join_using", (x) => methodCall(x[1], "join", x[0])],
-      ["join", (x) => methodCall(text(""), "join", x[0])],
+      ["join", (x) => methodCall(x[1], "join", x[0])],
       ["sorted", (x) => functionCall("sorted", x[0])],
       [
         "text_codepoint_reversed",

@@ -256,11 +256,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
 }
 
 function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
-  if (
-    op === "concat" &&
-    left.kind === "TextLiteral" &&
-    right.kind === "TextLiteral"
-  ) {
+  if (op === "concat" && isTextLiteral(left) && isTextLiteral(right)) {
     return text(left.value + right.value);
   }
   if (left.kind === "IntegerLiteral" && right.kind === "IntegerLiteral") {
@@ -463,6 +459,16 @@ export function getArgs(
     case "RangeIndexCall":
       return [node.collection, node.low, node.high, node.step];
   }
+}
+
+export function isTextLiteral<Value extends string>(
+  x: Node,
+  ...vals: Value[]
+): x is TextLiteral<Value> {
+  return (
+    x.kind === "TextLiteral" &&
+    (vals.length === 0 || vals.includes(x.value as any))
+  );
 }
 
 export function isIntLiteral<Value extends bigint>(

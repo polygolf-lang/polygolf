@@ -7,6 +7,7 @@ import {
   text,
   add1,
   propertyCall,
+  isTextLiteral,
   builtin,
   int,
 } from "../../IR";
@@ -38,6 +39,7 @@ import {
 import {
   useEquivalentTextOp,
   textToIntToTextGetToInt,
+  replaceToSplitAndJoin,
 } from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
@@ -62,6 +64,7 @@ const swiftLanguage: Language = {
     applyDeMorgans,
     forRangeToForRangeOneStep,
     useEquivalentTextOp(true, true),
+    replaceToSplitAndJoin,
     textToIntToTextGetToInt,
   ],
   emitPlugins: [
@@ -96,6 +99,15 @@ const swiftLanguage: Language = {
   finalEmitPlugins: [
     implicitlyConvertPrintArg,
     mapOps(
+      [
+        "join",
+        (x) =>
+          methodCall(
+            x[0],
+            "joined",
+            ...(isTextLiteral(x[1], "") ? [] : [namedArg("separator", x[1])])
+          ),
+      ],
       [
         "text_get_byte_to_int",
         (x) =>
