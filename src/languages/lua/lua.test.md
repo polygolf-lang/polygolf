@@ -58,6 +58,7 @@ text_replace $b "a" "A";
 text_replace $b "(" "*";
 text_replace $b $b:(Text 1..oo) $b;
 join (list "xy" "abc") "/";
+join (list "12" "345") "";
 ```
 
 ```lua nogolf
@@ -94,6 +95,7 @@ b:gsub("a","A")
 b:gsub("%(","*")
 b:gsub(b:gsub("(%W)","%%%1"),b:gsub("%%","%%%%"))
 table.concat({"xy","abc"},"/")
+table.concat({"12","345"})
 ```
 
 ## Parentheses

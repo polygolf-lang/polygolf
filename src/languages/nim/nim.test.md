@@ -29,6 +29,7 @@ text_replace "a+b+c" "+" "*";
 text_replace "a*b*c" "*" "";
 text_multireplace "XYZXYZ" "Y" "b" "X" "a";
 join (list "xy" "abc") "/";
+join (list "12" "345") "";
 
 ~ $n;
 not $b;
@@ -90,6 +91,7 @@ t&"x"
 "a*b*c".replace"*"
 "XYZXYZ".multireplace {"Y":"b","X":"a"}
 @["xy","abc"].join"/"
+@["12","345"].join
 not n
 not b
 -n
