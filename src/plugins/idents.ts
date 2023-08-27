@@ -97,7 +97,7 @@ const defaultIdentGen = {
  * @param save `[cost of referring to the alias, cost of storing the alias]` or a custom byte save function.
  */
 export function alias(
-  getExprKey: (expr: Expr) => string | undefined,
+  getExprKey: (expr: Expr, spine: Spine) => string | undefined,
   save: ((key: string, freq: number) => number) | [number, number] = [1, 3]
 ): Plugin {
   const aliasingSave =
@@ -105,8 +105,8 @@ export function alias(
       ? save
       : (key: string, freq: number) =>
           (key.length - save[0]) * (freq - 1) - save[0] - save[1];
-  const getKey = (node: Node) =>
-    node.kind === "Program" ? undefined : getExprKey(node);
+  const getKey = (node: Node, spine: Spine) =>
+    node.kind === "Program" ? undefined : getExprKey(node, spine);
   return {
     name: "alias(...)",
     visit(prog, spine) {
@@ -119,7 +119,7 @@ export function alias(
       // apply
       const assignments: (IR.Assignment & { variable: Identifier })[] = [];
       const replacedDeep = spine.withReplacer((node) => {
-        const key = getKey(node);
+        const key = getKey(node, spine);
         if (key !== undefined && aliasingSave(key, timesUsed.get(key)!) > 0) {
           const alias = id(key + "+alias");
           if (assignments.every((x) => x.variable.name !== alias.name))
