@@ -116,9 +116,15 @@ Multiple output blocks can relate to a single input block.
 Supported options are
 
 - `skip` = this code block is ignored
-- `bytes` = output is golfed for bytes (this is the default)
-- `chars` = output is golfed for chars
-- `nogolf` = golf search is skipped, this should be used for testing the emitter
-- `{path}.{plugin}` = the given plugin is applied (as an emit plugin)
+- `nogolf` = sets the `compilationOptions.level` to "nogolf", so only "required" phases are applied
+- `simple` = sets the `compilationOptions.level` to "simple", so only "required" & "simple" phases are applied
+- `full` = sets the `compilationOptions.level` to "full", this is the default
+- `chars` = sets the `compilationOptions.objective` to "chars"
+- `bytes` = sets the `compilationOptions.objective` to "bytes", this is the default
+- `allVariants` = sets the `compilationOptions.allVariants` to true, default is false
+- `skipTypecheck` = sets the `compilationOptions.skipTypecheck` to true, this is the default for plugin tests
+- `typecheck` = sets the `compilationOptions.skipTypecheck` to false, this is the default for language tests
+- `restrictFrontend` = sets the `compilationOptions.restrictFrontend` to true, default is false
+- `{path}.{plugin}` = the given plugin is applied (as a required plugin)
 
 To test other aspects of Polygolf, use jest in `*.test.ts` files.
