@@ -14,7 +14,6 @@ import {
   getObjectiveFunc,
   shorterBy,
 } from "./objective";
-import { satisfies } from "semver";
 
 export type OptimisationLevel = "nogolf" | "simple" | "full";
 export interface CompilationOptions {
