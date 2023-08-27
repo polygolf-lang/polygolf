@@ -152,7 +152,6 @@ export function calcType(expr: Expr, program: Program): Type {
       if (expr.args.every((x, i) => isSubtype(type(x), fType.arguments[i]))) {
         return fType.result;
       }
-      console.log(expr);
       throw new Error(
         `Type error. Function expected [${fType.arguments
           .map(toString)
