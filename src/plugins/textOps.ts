@@ -11,7 +11,7 @@ import {
 } from "../IR";
 import { Plugin } from "../common/Language";
 import { mapOps } from "./ops";
-import { charLength } from "../common/applyLanguage";
+import { charLength } from "../common/objective";
 
 function toBidirectionalMap<T>(pairs: [T, T][]): Map<T, T> {
   return new Map<T, T>([...pairs, ...pairs.map<[T, T]>(([k, v]) => [v, k])]);

@@ -28,7 +28,7 @@ import {
   add1,
   sub1,
 } from "../IR";
-import { byteLength, charLength } from "../common/applyLanguage";
+import { byteLength, charLength } from "../common/objective";
 import { PolygolfError } from "../common/errors";
 
 export function forRangeToForRangeInclusive(skip1Step = false): Plugin {

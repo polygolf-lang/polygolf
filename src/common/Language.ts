@@ -1,5 +1,6 @@
 import { Expr, IR } from "IR";
-import { Spine, Visitor } from "./Spine";
+import { Spine, PluginVisitor } from "./Spine";
+import { CompilationContext } from "./compile";
 
 export type OpTransformOutput =
   | ((args: readonly IR.Expr[], spine: Spine<Expr>) => IR.Expr | undefined)
@@ -9,25 +10,50 @@ export type Packer = (x: string) => string | null;
 
 /** A language configuration.
  *
- * Somewhat declarative setup. `applyLanguage` always starts with a frontend IR
+ * Somewhat declarative setup. `compileVariant` always starts with a frontend IR
  * and ends up with a string in the following sequence:
  *
  * (parse input) => IR
- * => (golfPlugins and emitPlugins in any order) => IR
- * => (emitPlugins in the order specified) => IR a little more limited
- * => (finalEmitPlugins in the order specified) => IR limited to nodes the emitter supports
+ * => (IR transform phases) => IR limited to nodes the emitter supports
  * => (emitter) => token list
  * => (detokenizer) => string
  */
+
 export interface Language {
   name: string;
   extension: string;
-  golfPlugins: Plugin[];
-  emitPlugins: Plugin[];
-  finalEmitPlugins: Plugin[];
+  phases: LanguagePhase[];
   emitter: Emitter;
   packers?: Packer[];
   detokenizer?: Detokenizer;
+}
+
+export type LanguagePhaseMode = "required" | "simplegolf" | "search";
+
+export interface LanguagePhase {
+  mode: LanguagePhaseMode;
+  plugins: Plugin[];
+}
+
+export function required(...plugins: Plugin[]): LanguagePhase {
+  return {
+    mode: "required",
+    plugins,
+  };
+}
+
+export function simplegolf(...plugins: Plugin[]): LanguagePhase {
+  return {
+    mode: "simplegolf",
+    plugins,
+  };
+}
+
+export function search(...plugins: Plugin[]): LanguagePhase {
+  return {
+    mode: "search",
+    plugins,
+  };
 }
 
 export interface Plugin {
@@ -35,11 +61,7 @@ export interface Plugin {
   /** visit should return a viable replacement node, or undefined to represent
    * no replacement. The replacement node should be different in value than
    * the initial node if it compares different under reference equality */
-  visit: Visitor<IR.Node | undefined>;
-  /** Set `allOrNothing: true` to force all replacement nodes to be applied,
-   * or none. This is useful in cases such as renaming variables */
-  allOrNothing?: boolean;
-  skipWhenNogolf?: boolean; // TODO temp until #150
+  visit: PluginVisitor<IR.Node | undefined>;
 }
 
 type TokenTreeArray = Array<string | TokenTreeArray>;
@@ -64,7 +86,10 @@ export interface IdentifierGenerator {
   general: (i: number) => string;
 }
 
-export type Emitter = (program: IR.Program) => TokenTree;
+export type Emitter = (
+  program: IR.Program,
+  context: CompilationContext
+) => TokenTree;
 
 function isAlphaNum(a: string, i: number): boolean {
   return /[A-Za-z0-9]/.test(a[i]);

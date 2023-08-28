@@ -2,6 +2,7 @@ import { findLang } from "../languages/languages";
 import fs from "fs";
 import path from "path";
 import { emitTextLiteral } from "../common/emit";
+import { keywords } from ".";
 
 interface Test {
   input: string;
@@ -133,37 +134,21 @@ function emitSuite(describe: Describe): string {
   for (const x of imports) importSet.add(x);
 
   // The `@/` path is defined relatively in `tsconfig.json`, pointing to the `src` directory.
-  return `import parse from "frontend/parse";
-import applyLanguage, { searchOptions, applyAll } from "@/common/applyLanguage";
-import { findLang } from "@/languages/languages";
-import polygolfLanguage from "@/languages/polygolf";
-import { Plugin } from "@/common/Language";
-import { getOnlyVariant } from "@/common/expandVariants";
-import { normalize } from "@/common/debug";
+  return `
+  import { testLang, testPlugin } from "@/markdown-tests";
+  ${[...importSet]
+    .map(
+      (x) =>
+        `import * as ${x
+          .split("/")
+          .at(-1)!
+          .replace("static", "static_")} from "./${x}";`
+    )
+    .join("\n")}
 
-${[...importSet]
-  .map(
-    (x) =>
-      `import * as ${x
-        .split("/")
-        .at(-1)!
-        .replace("static", "static_")} from "./${x}";`
-  )
-  .join("\n")}
+  
 
-function testLang(name: string, lang: string, obj: "nogolf" | "bytes" | "chars", input: string, output: string) {
-  test(name, () =>
-    expect(applyLanguage(findLang(lang)!, parse(input, false), searchOptions(obj === "nogolf" ? "none" : "full", obj === "chars" ? "chars" : "bytes"))).toEqual(output)
-  );
-}
-
-function testPlugin(name: string, plugin: Plugin, input: string, output: string) {
-  test(name, () =>
-    expect(applyLanguage(polygolfLanguage, applyAll(getOnlyVariant(parse(input, false)), plugin.visit), searchOptions("none", "bytes"), true)).toEqual(normalize(output))
-  );
-}
-
-${tests}`;
+  ${tests}`;
 }
 
 function emitNode(node: Describe | Test, imports: string[]): string {
@@ -213,24 +198,32 @@ function emitDescribe(describe: Describe, imports: string[]): string {
 }
 
 function emitTest(test: Test, imports: string[]): string {
-  if (test.language === "Polygolf" && test.args[0] !== "nogolf") {
-    const m = test.args[0].match(/(.+)\.(.+)/);
-    if (m !== null) {
-      const path = m[1];
-      const plugin = m[2];
-      imports.push(path);
-      return `testPlugin(${stringify(plugin)}, ${path
-        .split("/")
-        .at(-1)!
-        .replace("static", "static_")}.${plugin}, ${stringify(
-        test.input
-      )}, ${stringify(test.output)});`;
+  const kws = test.args.filter((x) => keywords.includes(x as any));
+  const plugins = test.args.filter((x) => !keywords.includes(x as any));
+  if (test.language === "Polygolf") {
+    const pluginSymbols: string[] = [];
+    for (const plugin of plugins) {
+      const m = plugin.match(/(.+)\.(.+)/);
+      if (m !== null) {
+        const path = m[1];
+        const plugin = m[2];
+        imports.push(path);
+        pluginSymbols.push(
+          `${path.split("/").at(-1)!.replace("static", "static_")}.${plugin}`
+        );
+      } else {
+        throw new Error(`Unexpected polygolf argument ${plugin}.`);
+      }
     }
-    throw new Error(`Unexpected polygolf argument ${test.args[0]}.`);
+    return `testPlugin(${stringify(plugins.join(", "))}, [${pluginSymbols.join(
+      ", "
+    )}], ${JSON.stringify(kws)}, ${stringify(test.input)}, ${stringify(
+      test.output
+    )});`;
   }
   return `testLang(${stringify(
     [test.language, ...test.args].join(" ")
-  )}, ${stringify(test.language)}, "${test.args[0] ?? "bytes"}", ${stringify(
+  )}, ${stringify(test.language)}, ${JSON.stringify(kws)}, ${stringify(
     test.input
   )}, ${stringify(test.output)});`;
 }

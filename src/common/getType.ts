@@ -43,7 +43,7 @@ import {
   polygolfOp,
   leq,
 } from "../IR";
-import { byteLength, charLength } from "./applyLanguage";
+import { byteLength, charLength } from "./objective";
 import { PolygolfError } from "./errors";
 import { Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
@@ -152,7 +152,6 @@ export function calcType(expr: Expr, program: Program): Type {
       if (expr.args.every((x, i) => isSubtype(type(x), fType.arguments[i]))) {
         return fType.result;
       }
-      console.log(expr);
       throw new Error(
         `Type error. Function expected [${fType.arguments
           .map(toString)
