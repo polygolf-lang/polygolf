@@ -109,7 +109,6 @@ export function alias(
     node.kind === "Program" ? undefined : getExprKey(node, spine);
   return {
     name: "alias(...)",
-    skipWhenNogolf: true,
     visit(prog, spine) {
       if (prog.kind !== "Program") return;
       // get frequency of expr

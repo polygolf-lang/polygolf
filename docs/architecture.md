@@ -63,7 +63,15 @@ Plugins are implemented in the `src/plugins` folder.
 
 ## Intermediate Representation (IR) Transformations
 
-A language specifies transformations as a series of plugins currently executed in order. For example, the Lua target uses a plugin that converts for-range loops with exclusive upper bounds to for-range loops with inclusive upper bounds. Python does not use this plugin; Lua's `for i=0,5 do` construct includes `i=5`, but Python's `for i in range(5):` does not.
+A language specifies transformations as a series of phases. Each phase is defined by an array of plugins and a mode in which they are applied:
+
+- "required" All of the plugins must be applied in the specified order (to get an valid target language source).
+- "simplegolf" The plugins don't need to be applied to get a valid output, but they should be applied to get a shorter output. These are simple golfing plugins that are guaranteed to never make the output longer.
+- "search" These plugins might make the output shorter or longer, depending on the context. It is up to the search algorithm to determine which of these and in what order to apply.
+
+A typical language would use a single "preprocess" required phase, a single "search" phase and then a couple of "required" & "simplegolf" phases. However, the first search phase usually operates on a program that is close to the Polygolf frontend and it might be useful to include a second search phase that operates on nodes that are close to the target language, just before it is emitted.
+
+For example, the Lua target uses a plugin that converts for-range loops with exclusive upper bounds to for-range loops with inclusive upper bounds. Python does not use this plugin; Lua's `for i=0,5 do` construct includes `i=5`, but Python's `for i in range(5):` does not.
 
 You may notice that the IR Transformation has the same type input as output. This implies that the simplest target language would simply not transform the IR: this is the Polygolf target, which really just takes Polygolf code in and outputs approximately the same. Useful for debugging.
 
@@ -108,9 +116,15 @@ Multiple output blocks can relate to a single input block.
 Supported options are
 
 - `skip` = this code block is ignored
-- `bytes` = output is golfed for bytes (this is the default)
-- `chars` = output is golfed for chars
-- `nogolf` = golf search is skipped, this should be used for testing the emitter
-- `{path}.{plugin}` = the given plugin is applied (as an emit plugin)
+- `nogolf` = sets the `compilationOptions.level` to "nogolf", so only "required" phases are applied
+- `simple` = sets the `compilationOptions.level` to "simple", so only "required" & "simple" phases are applied
+- `full` = sets the `compilationOptions.level` to "full", this is the default
+- `chars` = sets the `compilationOptions.objective` to "chars"
+- `bytes` = sets the `compilationOptions.objective` to "bytes", this is the default
+- `allVariants` = sets the `compilationOptions.allVariants` to true, default is false
+- `skipTypecheck` = sets the `compilationOptions.skipTypecheck` to true, this is the default for plugin tests
+- `typecheck` = sets the `compilationOptions.skipTypecheck` to false, this is the default for language tests
+- `restrictFrontend` = sets the `compilationOptions.restrictFrontend` to true, default is false
+- `{path}.{plugin}` = the given plugin is applied (as a required plugin)
 
 To test other aspects of Polygolf, use jest in `*.test.ts` files.

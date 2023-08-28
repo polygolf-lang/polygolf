@@ -1,6 +1,4 @@
 import { IR } from "../IR";
-import { programToSpine } from "./Spine";
-import { PolygolfError } from "./errors";
 import {
   fromChildRemapFunc,
   getChild,
@@ -8,37 +6,16 @@ import {
   getChildren,
   PathFragment,
 } from "./fragments";
-import { readsFromArgv, readsFromStdin } from "./symbols";
 
 /**
  * Expand all of the variant nodes in program to get a list of fully-
  * instantiated Programs (without any Variant nodes in them)
  */
-export function expandVariants(
-  program: IR.Program,
-  preferStdin: boolean
-): IR.Program[] {
+export function expandVariants(program: IR.Program): IR.Program[] {
   const n = numVariants(program);
   if (n > 16)
     throw new Error(`Variant count ${n} exceeds arbitrary limit. Giving up`);
-  const variants = allVariantOptions(program) as IR.Program[];
-  const variantsWithMethods = variants.map((variant) => {
-    const spine = programToSpine(variant);
-    return {
-      variant,
-      readsFromArgv: spine.someNode(readsFromArgv),
-      readsFromStdin: spine.someNode(readsFromStdin),
-    };
-  });
-  if (variantsWithMethods.some((x) => x.readsFromArgv && x.readsFromStdin)) {
-    throw new PolygolfError("Program cannot read from both argv and stdin.");
-  }
-  const matching = variantsWithMethods.filter(
-    (x) =>
-      (preferStdin && !x.readsFromArgv) || (!preferStdin && !x.readsFromStdin)
-  );
-  if (matching.length > 0) return matching.map((x) => x.variant);
-  return variants;
+  return allVariantOptions(program) as IR.Program[];
 }
 
 export function getOnlyVariant(program: IR.Program): IR.Program {
