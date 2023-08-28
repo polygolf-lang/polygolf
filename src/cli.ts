@@ -95,7 +95,7 @@ for (const result of compile(
       console.log(result.language);
     handleError(result.result);
   }
-  if (printingMultipleLangs) console.log("");
+  console.log("");
 }
 
 function handleError(e: unknown) {
