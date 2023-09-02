@@ -101,6 +101,7 @@ export function addOneToManyAssignments(
     "addOneToManyAssignments",
     (expr, spine, previous) =>
       isAssignmentToIdentifier(expr) &&
+      previous.every((x) => x.variable.name !== expr.variable.name) &&
       (previous.length < 1 ||
         stringify(expr.expr) === stringify(previous[0].expr)),
     (exprs) => [
