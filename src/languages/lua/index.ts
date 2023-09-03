@@ -30,7 +30,6 @@ import {
 import { alias, renameIdents } from "../../plugins/idents";
 import {
   tempVarToMultipleAssignment,
-  addOneToManyAssignments,
   inlineVariables,
 } from "../../plugins/block";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
@@ -213,8 +212,7 @@ const luaLanguage: Language = {
         ["gt", ">"],
         ["and", "and"],
         ["or", "or"]
-      ),
-      addOneToManyAssignments()
+      )
     ),
     simplegolf(
       alias((expr) => {
