@@ -20,7 +20,7 @@ import {
   toString,
   voidType,
   indexCall,
-  stringLiteral,
+  text as textLiteral,
   int as integerLiteral,
   arrayConstructor,
   setConstructor,
@@ -171,7 +171,7 @@ describe("Assignment", () => {
 describe("Functions", () => {
   testExpr(
     "Function call wrong types",
-    functionCall([integerLiteral(1n)], id("f", false)),
+    functionCall(id("f", false), [integerLiteral(1n)]),
     "error",
     program(block([]))
   );
@@ -206,8 +206,8 @@ describe("Index call", () => {
 
 describe("Literals", () => {
   testExpr("int", integerLiteral(4n), int(4, 4));
-  testExpr("text", stringLiteral("ahoj"), ascii(int(4, 4)));
-  testExpr("text", stringLiteral("dobrý den"), text(int(9, 9)));
+  testExpr("text", textLiteral("ahoj"), ascii(int(4, 4)));
+  testExpr("text", textLiteral("dobrý den"), text(int(9, 9)));
   testExpr("bool", polygolfOp("true"), bool);
   testExpr("bool", polygolfOp("false"), bool);
   testExpr("array", arrayConstructor([e(int()), e(text())]), "error");
@@ -554,7 +554,7 @@ describePolygolfOp("text_byte_to_int", [
   [[ascii(int(1, 1))], int(0, 127)],
 ]);
 
-describePolygolfOp("join_using", [
+describePolygolfOp("join", [
   [[text(), text()], "error"],
   [[text(), list(text())], "error"],
   [[list(text()), int()], "error"],
@@ -688,12 +688,6 @@ describePolygolfOp("sorted", [
   [[text()], "error"],
   [[list(int())], list(int())],
   [[list(text())], list(text())],
-]);
-
-describePolygolfOp("join", [
-  [[list(int())], "error"],
-  [[list(text()), text()], "error"],
-  [[list(text())], text()],
 ]);
 
 describePolygolfOp("text_byte_reversed", [

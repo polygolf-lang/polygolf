@@ -4,12 +4,13 @@ import {
   int,
   methodCall,
   polygolfOp,
-  stringLiteral,
+  text,
   textType,
   add1,
+  isTextLiteral,
   builtin,
 } from "../../IR";
-import { Language } from "../../common/Language";
+import { Language, required, search, simplegolf } from "../../common/Language";
 import {
   forArgvToForRange,
   forRangeToForRangeInclusive,
@@ -24,14 +25,15 @@ import {
   useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
+  printIntToPrint,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
-import {
-  tempVarToMultipleAssignment,
-  addOneToManyAssignments,
-} from "../../plugins/block";
+import { tempVarToMultipleAssignment } from "../../plugins/block";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
-import { useEquivalentTextOp } from "../../plugins/textOps";
+import {
+  textToIntToFirstIndexTextGetToInt,
+  useEquivalentTextOp,
+} from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
   applyDeMorgans,
@@ -39,121 +41,186 @@ import {
   equalityToInequality,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
+import { listOpsToTextOps } from "../../plugins/static";
 
 const luaLanguage: Language = {
   name: "Lua",
   extension: "lua",
   emitter: emitProgram,
-  golfPlugins: [
-    flipBinaryOps,
-    golfLastPrint(),
-    tempVarToMultipleAssignment,
-    equalityToInequality,
-    shiftRangeOneUp,
-    ...bitnotPlugins,
-    applyDeMorgans,
-    useIntegerTruthiness,
-    forRangeToForRangeOneStep,
-  ],
-  emitPlugins: [
-    forArgvToForRange(),
-    forRangeToForRangeInclusive(),
-    implicitlyConvertPrintArg,
-    useEquivalentTextOp(true, false),
-    mapOps([
-      [
+  phases: [
+    required(printIntToPrint),
+    search(
+      flipBinaryOps,
+      golfLastPrint(),
+      listOpsToTextOps("text_byte_find", "text_get_byte"),
+      tempVarToMultipleAssignment,
+      equalityToInequality,
+      shiftRangeOneUp,
+      ...bitnotPlugins,
+      applyDeMorgans,
+      useIntegerTruthiness,
+      forRangeToForRangeOneStep,
+      forArgvToForRange(),
+      forRangeToForRangeInclusive(),
+      implicitlyConvertPrintArg,
+      useEquivalentTextOp(true, false),
+      textToIntToFirstIndexTextGetToInt,
+      mapOps([
         "text_to_int",
         (x) =>
-          polygolfOp("mul", int(1n), implicitConversion(x[0], "text_to_int")),
-      ],
-    ]),
-    mapOps([
-      [
+          polygolfOp("mul", int(1n), implicitConversion("text_to_int", x[0])),
+      ]),
+      mapOps([
         "text_to_int",
         (x) =>
-          polygolfOp("add", int(0n), implicitConversion(x[0], "text_to_int")),
-      ],
-    ]),
-    mapOps([
-      [
-        "argv_get",
+          polygolfOp("add", int(0n), implicitConversion("text_to_int", x[0])),
+      ]),
+      mapOps(
+        [
+          "argv_get",
+          (x) =>
+            polygolfOp(
+              "list_get",
+              { ...builtin("arg"), type: textType() },
+              x[0]
+            ),
+        ],
+        ["text_get_byte_to_int", (x) => methodCall(x[0], "byte", add1(x[1]))],
+        [
+          "text_get_byte",
+          (x) => methodCall(x[0], "sub", add1(x[1]), add1(x[1])),
+        ],
+        [
+          "text_get_byte_slice",
+          (x) => methodCall(x[0], "sub", x[1], add1(x[2])),
+        ]
+      ),
+      useIndexCalls(true)
+    ),
+    required(
+      forArgvToForRange(),
+      forRangeToForRangeInclusive(),
+      implicitlyConvertPrintArg,
+      useEquivalentTextOp(true, false),
+      textToIntToFirstIndexTextGetToInt,
+      mapOps([
+        "text_to_int",
         (x) =>
-          polygolfOp("list_get", { ...builtin("arg"), type: textType() }, x[0]),
-      ],
-      ["text_get_byte", (x) => methodCall(x[0], [add1(x[1])], "byte")],
-      [
-        "text_get_byte_slice",
-        (x) => methodCall(x[0], [x[1], add1(x[2])], "sub"),
-      ],
-    ]),
-    useIndexCalls(true),
-  ],
-  finalEmitPlugins: [
-    mapOps([
-      [
+          polygolfOp("mul", int(1n), implicitConversion("text_to_int", x[0])),
+      ]),
+      mapOps([
+        "text_to_int",
+        (x) =>
+          polygolfOp("add", int(0n), implicitConversion("text_to_int", x[0])),
+      ]),
+      mapOps(
+        [
+          "argv_get",
+          (x) =>
+            polygolfOp(
+              "list_get",
+              { ...builtin("arg"), type: textType() },
+              x[0]
+            ),
+        ],
+        ["text_get_byte_to_int", (x) => methodCall(x[0], "byte", add1(x[1]))],
+        [
+          "text_get_byte",
+          (x) => methodCall(x[0], "sub", add1(x[1]), add1(x[1])),
+        ],
+        [
+          "text_get_byte_slice",
+          (x) => methodCall(x[0], "sub", x[1], add1(x[2])),
+        ]
+      ),
+      useIndexCalls(true),
+      mapOps([
         "int_to_text",
         (x) =>
           polygolfOp(
             "concat",
-            stringLiteral(""),
-            implicitConversion(x[0], "int_to_text")
+            text(""),
+            implicitConversion("int_to_text", x[0])
           ),
-      ],
-    ]),
-    mapOps([
-      ["text_byte_length", (x) => methodCall(x[0], [], "len")],
-      ["true", (_) => builtin("true")],
-      ["false", (_) => builtin("false")],
-      ["repeat", (x) => methodCall(x[0], [x[1]], "rep")],
-      ["print", (x) => functionCall(x, "io.write")],
-      ["println", (x) => functionCall(x, "print")],
-      ["min", (x) => functionCall(x, "math.min")],
-      ["max", (x) => functionCall(x, "math.max")],
-      ["abs", (x) => functionCall(x, "math.abs")],
-      ["argv", (x) => builtin("arg")],
-      ["min", (x) => functionCall(x, "math.min")],
-      ["max", (x) => functionCall(x, "math.max")],
-      ["abs", (x) => functionCall(x, "math.abs")],
-      ["int_to_text_byte", (x) => functionCall(x, "string.char")],
-    ]),
-    mapToUnaryAndBinaryOps(
-      ["pow", "^"],
-      ["not", "not"],
-      ["neg", "-"],
-      ["list_length", "#"],
-      ["bit_not", "~"],
-      ["mul", "*"],
-      ["div", "//"],
-      ["mod", "%"],
-      ["add", "+"],
-      ["sub", "-"],
-      ["concat", ".."],
-      ["bit_shift_left", "<<"],
-      ["bit_shift_right", ">>"],
-      ["bit_and", "&"],
-      ["bit_xor", "~"],
-      ["bit_or", "|"],
-      ["lt", "<"],
-      ["leq", "<="],
-      ["eq", "=="],
-      ["neq", "~="],
-      ["geq", ">="],
-      ["gt", ">"],
-      ["and", "and"],
-      ["or", "or"]
+      ]),
+      mapOps(
+        [
+          "join",
+          (x) =>
+            functionCall("table.concat", isTextLiteral(x[1], "") ? [x[0]] : x),
+        ],
+        ["text_byte_length", (x) => methodCall(x[0], "len")],
+        ["true", builtin("true")],
+        ["false", builtin("false")],
+        ["repeat", (x) => methodCall(x[0], "rep", x[1])],
+        ["print", (x) => functionCall("io.write", x)],
+        ["println", (x) => functionCall("print", x)],
+        ["min", (x) => functionCall("math.min", x)],
+        ["max", (x) => functionCall("math.max", x)],
+        ["abs", (x) => functionCall("math.abs", x)],
+        ["argv", (x) => builtin("arg")],
+        ["min", (x) => functionCall("math.min", x)],
+        ["max", (x) => functionCall("math.max", x)],
+        ["abs", (x) => functionCall("math.abs", x)],
+        ["int_to_text_byte", (x) => functionCall("string.char", x)],
+        [
+          "text_replace",
+          ([a, b, c]) =>
+            methodCall(
+              a,
+              "gsub",
+              isTextLiteral(b)
+                ? text(
+                    b.value.replace(
+                      /(-|%|\^|\$|\(|\)|\.|\[|\]|\*|\+|\?)/g,
+                      "%$1"
+                    )
+                  )
+                : methodCall(b, "gsub", text("(%W)"), text("%%%1")),
+              isTextLiteral(c)
+                ? text(c.value.replace("%", "%%"))
+                : methodCall(c, "gsub", text("%%"), text("%%%%"))
+            ),
+        ]
+      ),
+      mapToUnaryAndBinaryOps(
+        ["pow", "^"],
+        ["not", "not"],
+        ["neg", "-"],
+        ["list_length", "#"],
+        ["bit_not", "~"],
+        ["mul", "*"],
+        ["div", "//"],
+        ["mod", "%"],
+        ["add", "+"],
+        ["sub", "-"],
+        ["concat", ".."],
+        ["bit_shift_left", "<<"],
+        ["bit_shift_right", ">>"],
+        ["bit_and", "&"],
+        ["bit_xor", "~"],
+        ["bit_or", "|"],
+        ["lt", "<"],
+        ["leq", "<="],
+        ["eq", "=="],
+        ["neq", "~="],
+        ["geq", ">="],
+        ["gt", ">"],
+        ["and", "and"],
+        ["or", "or"]
+      )
     ),
-    alias((expr) => {
-      switch (expr.kind) {
-        case "IntegerLiteral":
-          return expr.value.toString();
-        case "StringLiteral":
-          return `"${expr.value}"`;
-      }
-    }),
-    renameIdents(),
-    addOneToManyAssignments(),
-    assertInt64,
-    removeImplicitConversions,
+    simplegolf(
+      alias((expr) => {
+        switch (expr.kind) {
+          case "IntegerLiteral":
+            return expr.value.toString();
+          case "TextLiteral":
+            return `"${expr.value}"`;
+        }
+      })
+    ),
+    required(renameIdents(), assertInt64, removeImplicitConversions),
   ],
 };
 

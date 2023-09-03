@@ -6,9 +6,10 @@ import {
   id,
   int,
   isPolygolfOp,
+  isTextLiteral,
   polygolfOp,
   print,
-  stringLiteral,
+  text,
 } from "../IR";
 
 export const useDecimalConstantPackedPrinter: Plugin = {
@@ -16,13 +17,13 @@ export const useDecimalConstantPackedPrinter: Plugin = {
   visit(node) {
     if (
       isPolygolfOp(node, "print", "println") &&
-      node.args[0].kind === "StringLiteral" &&
+      isTextLiteral(node.args[0]) &&
       isLargeDecimalConstant(node.args[0].value)
     ) {
       const [prefix, main] = node.args[0].value.replace(".", ".,").split(",");
       const packed = packDecimal(main);
       return block([
-        assignment("result", stringLiteral(prefix)),
+        assignment("result", text(prefix)),
         forRangeCommon(
           ["packindex", 0, packed.length],
           assignment(
@@ -39,11 +40,7 @@ export const useDecimalConstantPackedPrinter: Plugin = {
                     int(72n),
                     polygolfOp(
                       "text_byte_to_int",
-                      polygolfOp(
-                        "text_get_byte",
-                        stringLiteral(packed),
-                        id("packindex")
-                      )
+                      polygolfOp("text_get_byte", text(packed), id("packindex"))
                     )
                   )
                 ),
@@ -73,21 +70,12 @@ function packDecimal(decimal: string): string {
 export const useLowDecimalListPackedPrinter: Plugin = {
   name: "useLowDecimalListPackedPrinter",
   visit(node) {
-    if (
-      isPolygolfOp(node, "print", "println") &&
-      node.args[0].kind === "StringLiteral"
-    ) {
+    if (isPolygolfOp(node, "print", "println") && isTextLiteral(node.args[0])) {
       const packed = packLowDecimalList(node.args[0].value);
       if (packed === null) return;
       return forRangeCommon(
         ["packindex", 0, packed.length],
-        print(
-          polygolfOp(
-            "text_get_byte_to_int",
-            stringLiteral(packed),
-            id("packindex")
-          )
-        )
+        print(polygolfOp("text_get_byte_to_int", text(packed), id("packindex")))
       );
     }
   },

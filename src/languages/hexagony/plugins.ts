@@ -12,11 +12,12 @@ import {
   ifStatement,
   polygolfOp,
   whileLoop,
+  isTextLiteral,
 } from "@/IR";
 import { Plugin } from "../../common/Language";
 
 function functionCall(name: string, ...exprs: Expr[]) {
-  return fc(exprs, name);
+  return fc(name, exprs);
 }
 
 function isSpecialValue(val: number) {
@@ -55,10 +56,10 @@ export function limitSetOp(max: number): Plugin {
           }
           while (val > max || isSpecialValue(Number(val))) {
             if ([123n, 91n, 9n].includes(val)) {
-              result.push(functionCall(")"));
+              result.push(functionCall(")", node.variable));
               val -= 1n;
             } else if ([127n, 96n, 0n].includes(val)) {
-              result.push(functionCall("("));
+              result.push(functionCall("(", node.variable));
               val += 1n;
             } else {
               result.push(functionCall((val % 10n).toString(), node.variable));
@@ -137,7 +138,7 @@ export const extractConditions: Plugin = {
           conditionOp = "gt";
           break;
         case "eq":
-          condValue = polygolfOp("pow", polygolfOp("sub", ...args), int(0n));
+          condValue = polygolfOp("pow", polygolfOp("sub", ...args), int(2n));
           conditionOp = "leq";
           break;
         default:
@@ -160,7 +161,7 @@ export const printTextLiteral: Plugin = {
   visit(node) {
     if (
       isPolygolfOp(node, "print") &&
-      node.args[0].kind === "StringLiteral" &&
+      isTextLiteral(node.args[0]) &&
       node.args[0].value.length > 0
     ) {
       const newVar = id("printVar");

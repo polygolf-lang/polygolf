@@ -3,14 +3,12 @@
 import yargs from "yargs";
 import fs from "fs";
 import path from "path";
-import parse from "./frontend/parse";
-import applyLanguage, { searchOptions } from "./common/applyLanguage";
+import compile from "./common/compile";
 import { PolygolfError } from "./common/errors";
 import languages, { findLang } from "./languages/languages";
 
 const languageChoices = [
   ...new Set(languages.flatMap((x) => [x.name.toLowerCase(), x.extension])),
-  "all",
 ];
 
 const options = yargs()
@@ -19,7 +17,6 @@ const options = yargs()
       alias: "l",
       describe: "language to target",
       choices: languageChoices,
-      demandOption: true,
     },
     input: {
       alias: "i",
@@ -37,44 +34,68 @@ const options = yargs()
       description: "Use char length as objective",
       type: "boolean",
     },
+    all: {
+      alias: "a",
+      description: "Get all variants",
+      type: "boolean",
+    },
+    debug: {
+      alias: "d",
+      description: "Print debug info, like history of applied plugins.",
+      type: "boolean",
+    },
   })
   .parseSync(process.argv.slice(2));
 
-const langs = options.lang === "all" ? languages : [findLang(options.lang)!];
+if (options.all === true && options.output !== undefined) {
+  throw new Error(
+    "All variants options is only allowed when the output file is not specified."
+  );
+}
+
+const langs =
+  options.lang === undefined ? languages : [findLang(options.lang)!];
 let input = options.input;
 if (!fs.existsSync(input)) input += ".polygolf";
 const code = fs.readFileSync(input, { encoding: "utf-8" });
-try {
-  const prog = parse(code);
-  const printingMultipleLangs =
-    langs.length > 1 && options.output === undefined;
-  for (const lang of langs) {
-    if (printingMultipleLangs) console.log(lang.name);
-    try {
-      const result = applyLanguage(
-        lang,
-        prog,
-        searchOptions("full", options.chars === true ? "chars" : "bytes")
+const printingMultipleLangs = langs.length > 1 && options.output === undefined;
+for (const result of compile(
+  code,
+  {
+    level: "full",
+    objective: options.chars === true ? "chars" : "bytes",
+    getAllVariants: options.all,
+  },
+  ...langs
+)) {
+  if (printingMultipleLangs) console.log(result.language);
+  if (typeof result.result === "string") {
+    if (options.output !== undefined) {
+      fs.mkdirSync(path.dirname(options.output), { recursive: true });
+      fs.writeFileSync(
+        options.output +
+          (langs.length > 1 || !options.output.includes(".")
+            ? "." + findLang(result.language)!.extension
+            : ""),
+        result.result
       );
-      if (options.output !== undefined) {
-        fs.mkdirSync(path.dirname(options.output), { recursive: true });
-        fs.writeFileSync(
-          options.output +
-            (langs.length > 1 || !options.output.includes(".")
-              ? "." + lang.extension
-              : ""),
-          result
-        );
-      } else {
-        console.log(result);
-      }
-    } catch (e) {
-      handleError(e);
+    } else {
+      console.log(result.result);
     }
-    if (printingMultipleLangs) console.log("");
+    if (result.warnings.length > 0) {
+      console.log("Warnings:");
+      console.log(result.warnings.map((x) => x.message).join("\n"));
+    }
+    if (options.debug === true) {
+      console.log("History:");
+      console.log(result.history.map(([c, name]) => `${c} ${name}`).join("\n"));
+    }
+  } else {
+    if (!printingMultipleLangs && langs.length > 1)
+      console.log(result.language);
+    handleError(result.result);
   }
-} catch (e) {
-  handleError(e);
+  console.log("");
 }
 
 function handleError(e: unknown) {

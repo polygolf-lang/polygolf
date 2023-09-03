@@ -186,3 +186,67 @@ if true {
 if 1:print("a")
 elif 1:print("b")
 ```
+
+## Multireplace
+
+```polygolf
+text_replace (text_replace (text_replace "text" "x" "s") "t" "ttt") "e" " ";
+```
+
+```py
+"text".translate({120:"s",116:"ttt",101:32})
+```
+
+## Prefer chained assingment over aliasing
+
+```polygolf
+$a <- "Hello";
+$b <- "Hello";
+```
+
+```py
+a=b="Hello"
+```
+
+## String encoding Ops
+
+```polygolf
+text_get_byte "abc" 1;
+text_get_codepoint "def" 1;
+text_byte_to_int "g";
+codepoint_to_int "h";
+text_get_byte_to_int "ijk" 1;
+text_get_codepoint_to_int "lmn" 1;
+text_byte_length "opq";
+text_codepoint_length "rst";
+int_to_text_byte 99;
+int_to_codepoint 999;
+```
+
+```py nogolf
+"abc"[1]
+"def"[1]
+ord("g")
+ord("h")
+ord("ijk"[1])
+ord("lmn"[1])
+len("opq")
+len("rst")
+chr(99)
+chr(999)
+```
+
+## Aliasing partially applied methods
+
+```polygolf
+$a <- (join (list "1" "2") "" );
+$b <- (join (list "3" "4") "" );
+$c <- (join (list "5" "6") "" );
+```
+
+```py
+j="".join
+a=j(["1","2"])
+b=j(["3","4"])
+c=j(["5","6"])
+```

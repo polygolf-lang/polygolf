@@ -26,20 +26,23 @@ export class Pointer {
   goTo(edge: Edge, isCw?: boolean): string {
     return "TODO";
   }
+
   goAlongAndCopy(edges: Edge[]): string {
     return "TODO";
   }
 }
 
-type Expr = { kind: string };
+interface Expr {
+  kind: string;
+}
 type CopyPath = Edge[];
-type NodeEdgeData = {
+interface NodeEdgeData {
   preCopyPaths?: CopyPath[];
   postCopyPath?: CopyPath;
   appliedTo: Edge;
   negateResult?: boolean;
   isCw?: boolean | undefined;
-};
+}
 
 export type ProgramEdgeData = Map<Expr, NodeEdgeData>;
 

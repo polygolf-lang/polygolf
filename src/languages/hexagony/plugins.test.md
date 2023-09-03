@@ -7,12 +7,12 @@ $b <- 93;
 
 ```polygolf plugins.limitSetOp(999)
 $a <- 121;
-function_call "4" $a;
-function_call "5" $a;
-function_call "~" $a;
+function_call (builtin "4") $a;
+function_call (builtin "5") $a;
+function_call (builtin "~") $a;
 $b <- 8;
-function_call ")" $b;
-function_call "3" $b;
+function_call (builtin ")") $b;
+function_call (builtin "3") $b;
 ```
 
 ```polygolf
@@ -43,9 +43,9 @@ if ($a == $b){
 ```polygolf plugins.extractConditions
 $a <- 10;
 $condValue <- (($a - $b) ^ 2);
-if ($condValue <= 0){
-    putc 77;
-};
+if ($condValue <= 0) (
+    putc 77
+);
 ```
 
 ```polygolf

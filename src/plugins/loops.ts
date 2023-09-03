@@ -18,7 +18,7 @@ import {
   Node,
   isIntLiteral,
   OpCode,
-  StringLiteral,
+  TextLiteral,
   ListConstructor,
   ForRange,
   forDifferenceRange,
@@ -28,7 +28,8 @@ import {
   add1,
   sub1,
 } from "../IR";
-import { byteLength, charLength } from "../common/applyLanguage";
+import { byteLength, charLength } from "../common/objective";
+import { PolygolfError } from "../common/errors";
 
 export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
   return {
@@ -86,11 +87,11 @@ export const forRangeToForCLike: Plugin = {
       }
       return forCLike(
         assignment(node.variable, node.start),
+        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
         assignment(
           node.variable,
           polygolfOp("add", node.variable, node.increment)
         ),
-        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
         node.body
       );
     }
@@ -118,9 +119,7 @@ export const forRangeToForEachPair: Plugin = {
       node.end.args[0].kind === "Identifier"
     ) {
       const collection = node.end.args[0];
-      const elementIdentifier = id(
-        node.variable.name + "_POLYGOLFforRangeToForEachPair"
-      );
+      const elementIdentifier = id(node.variable.name + "+each");
       const newBody = spine.getChild("body").withReplacer((innerNode) => {
         if (isListGet(innerNode, collection.name, node.variable.name))
           return elementIdentifier;
@@ -194,9 +193,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
           collectionVar
         );
         if (indexedCollection !== null) {
-          const elementIdentifier = id(
-            node.variable.name + "_POLYGOLFforRangeToForEach"
-          );
+          const elementIdentifier = id(node.variable.name + "+each");
           const newBody = bodySpine.withReplacer((n) => {
             if (
               isPolygolfOp(n) &&
@@ -241,7 +238,7 @@ function getIndexedCollection(
       return null;
     const collection = parent.args[0];
     if (
-      (collection.kind === "StringLiteral" ||
+      (collection.kind === "TextLiteral" ||
         collection.kind === "ListConstructor") &&
       literalLength(collection, allowedOps.includes("text_get_byte")) ===
         knownLength
@@ -269,7 +266,7 @@ function getIndexedCollection(
 }
 
 function literalLength(
-  expr: StringLiteral | ListConstructor,
+  expr: TextLiteral | ListConstructor,
   countTextBytes: boolean
 ): number {
   if (expr.kind === "ListConstructor") return expr.exprs.length;
@@ -315,7 +312,10 @@ export const assertForArgvTopLevel: Plugin = {
       for (const kind of spine.compactMap((x) => x.kind)) {
         if (kind === "ForArgv") {
           if (forArgvSeen)
-            throw new Error("Only a single for_argv node allowed.");
+            throw new PolygolfError(
+              "Only a single for_argv node allowed.",
+              node.source
+            );
           forArgvSeen = true;
         }
       }
@@ -326,7 +326,10 @@ export const assertForArgvTopLevel: Plugin = {
         (spine.parent?.node.kind !== "Block" ||
           spine.parent?.parent?.node.kind !== "Program")
       ) {
-        throw new Error("Node for_argv only allowed at the top level.");
+        throw new PolygolfError(
+          "Node for_argv only allowed at the top level.",
+          node.source
+        );
       }
     }
     return undefined;
@@ -338,7 +341,7 @@ export const shiftRangeOneUp: Plugin = {
   visit(node, spine) {
     if (node.kind === "ForRange" && isIntLiteral(node.increment, 1n)) {
       const bodySpine = new Spine(node.body, spine, "body");
-      const newVar = id(node.variable.name + "_POLYGOLFshifted");
+      const newVar = id(node.variable.name + "+shift");
       const newBodySpine = bodySpine.withReplacer((x) =>
         isIdent(x, node.variable) ? sub1(newVar) : undefined
       );
@@ -395,7 +398,7 @@ export const forRangeToForRangeOneStep: Plugin = {
       node.kind === "ForRange" &&
       isSubtype(getType(node.increment, spine.root.node), integerType(2n))
     ) {
-      const newVar = id(node.variable.name + "POLYGOLFOneStep");
+      const newVar = id(node.variable.name + "+1step");
       return forRange(
         newVar,
         int(0n),

@@ -29,9 +29,9 @@ export interface IntegerLiteral<Value extends bigint = bigint>
  *
  * There is no distinction for byte vs unicode strings
  */
-export interface StringLiteral extends BaseExpr {
-  readonly kind: "StringLiteral";
-  readonly value: string;
+export interface TextLiteral<Value extends string = string> extends BaseExpr {
+  readonly kind: "TextLiteral";
+  readonly value: Value;
 }
 
 export function id(name: string, builtin: boolean = false): Identifier {
@@ -46,8 +46,8 @@ export function int(value: bigint | number): IntegerLiteral {
   return { kind: "IntegerLiteral", value: BigInt(value) };
 }
 
-export function stringLiteral(value: string): StringLiteral {
-  return { kind: "StringLiteral", value };
+export function text(value: string): TextLiteral {
+  return { kind: "TextLiteral", value };
 }
 
 export function argv(): Argv {

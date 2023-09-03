@@ -2,6 +2,8 @@ import { PolygolfError } from "@/common/errors";
 import { TokenTree } from "@/common/Language";
 import { Expr, Program } from "../../IR";
 import { Pointer, ProgramEdgeData, resolveEdges } from "./memory";
+import { isIdentifier } from "@babel/types";
+import { EmitError } from "@/common/emit";
 
 export default function emitProgram(program: Program): TokenTree {
   const edgeData = resolveEdges(program);
@@ -19,7 +21,9 @@ function emitExpr(
     throw new PolygolfError(`Cannot emit expr.`, expr.source);
   switch (expr.kind) {
     case "FunctionCall":
-      return [pointer.goTo(edges.appliedTo), expr.ident.name];
+      if (isIdentifier(expr.func))
+        return [pointer.goTo(edges.appliedTo), expr.func.name];
+      throw new EmitError(expr);
     case "Assignment":
       switch (expr.expr.kind) {
         case "IntegerLiteral":

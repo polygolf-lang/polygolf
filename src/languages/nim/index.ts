@@ -4,9 +4,18 @@ import {
   int,
   rangeIndexCall,
   add1,
+  arrayConstructor,
+  isTextLiteral,
   builtin,
+  polygolfOp,
 } from "../../IR";
-import { defaultDetokenizer, Language } from "../../common/Language";
+import {
+  defaultDetokenizer,
+  Language,
+  required,
+  search,
+  simplegolf,
+} from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
@@ -16,6 +25,7 @@ import {
   addMutatingBinaryOp,
   flipBinaryOps,
   removeImplicitConversions,
+  printIntToPrint,
 } from "../../plugins/ops";
 import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
 import { alias, renameIdents } from "../../plugins/idents";
@@ -27,18 +37,19 @@ import {
   forRangeToForRangeOneStep,
   shiftRangeOneUp,
 } from "../../plugins/loops";
-import { golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
-import { tableHashing } from "../../plugins/hashing";
+import { tableHashing, tableToListLookup } from "../../plugins/tables";
 import hash from "./hash";
 import {
-  textGetToIntToTextGet,
   textToIntToTextGetToInt,
+  textToIntToFirstIndexTextGetToInt,
   useEquivalentTextOp,
+  useMultireplace,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -61,121 +72,167 @@ const nimLanguage: Language = {
   name: "Nim",
   extension: "nim",
   emitter: emitProgram,
-  golfPlugins: [
-    flipBinaryOps,
-    golfStringListLiteral(),
-    golfLastPrint(),
-    forRangeToForEach("array_get", "list_get", "text_get_byte"),
-    tempVarToMultipleAssignment,
-    useDecimalConstantPackedPrinter,
-    useLowDecimalListPackedPrinter,
-    tableHashing(hash),
-    equalityToInequality,
-    shiftRangeOneUp,
-    forRangeToForRangeInclusive(),
-    ...bitnotPlugins,
-    applyDeMorgans,
-    textToIntToTextGetToInt,
-    forRangeToForRangeOneStep,
-  ],
-  emitPlugins: [
-    forArgvToForEach,
-    forArgvToForRange(),
-    ...truncatingOpsPlugins,
-    useIndexCalls(),
-    useEquivalentTextOp(true, false),
-    mapOps([
-      ["argv", (x) => functionCall([], "commandLineParams")],
-      ["argv_get", (x) => functionCall([add1(x[0])], "paramStr")],
-    ]),
-  ],
-  finalEmitPlugins: [
-    forRangeToForRangeInclusive(true),
-    implicitlyConvertPrintArg,
-    textGetToIntToTextGet,
-    mapOps([
-      ["true", (_) => builtin("true")],
-      ["false", (_) => builtin("false")],
-      ["text_byte_to_int", (x) => functionCall(x, "ord")],
-      ["text_get_byte", (x) => indexCall(x[0], x[1])],
-      ["text_get_byte_slice", (x) => rangeIndexCall(x[0], x[1], x[2], int(1n))],
-      ["text_split", (x) => functionCall(x, "split")],
-      ["text_split_whitespace", (x) => functionCall(x, "split")],
-      ["text_byte_length", (x) => functionCall(x, "len")],
-      ["repeat", (x) => functionCall(x, "repeat")],
-      ["max", (x) => functionCall(x, "max")],
-      ["min", (x) => functionCall(x, "min")],
-      ["abs", (x) => functionCall(x, "abs")],
-      ["text_to_int", (x) => functionCall(x, "parseInt")],
-      ["print", (x) => functionCall([builtin("stdout"), x[0]], "write")],
-      ["println", (x) => functionCall(x, "echo")],
-      ["min", (x) => functionCall(x, "min")],
-      ["max", (x) => functionCall(x, "max")],
-      ["abs", (x) => functionCall(x, "abs")],
-      ["bool_to_int", (x) => functionCall(x, "int")],
-      ["int_to_text_byte", (x) => functionCall(x, "chr")],
-    ]),
-    useUnsignedDivision,
-    addMutatingBinaryOp(
-      ["add", "+"],
-      ["mul", "*"],
-      ["unsigned_rem", "%%"],
-      ["unsigned_trunc_div", "/%"],
-      ["mul", "*"],
-      ["sub", "-"],
-      ["concat", "&"]
+  phases: [
+    required(printIntToPrint),
+    search(
+      flipBinaryOps,
+      golfStringListLiteral(),
+      listOpsToTextOps("text_byte_find", "text_get_byte"),
+      golfLastPrint(),
+      forRangeToForEach("array_get", "list_get", "text_get_byte"),
+      tempVarToMultipleAssignment,
+      useDecimalConstantPackedPrinter,
+      useLowDecimalListPackedPrinter,
+      tableHashing(hash),
+      tableToListLookup,
+      equalityToInequality,
+      shiftRangeOneUp,
+      forRangeToForRangeInclusive(),
+      ...bitnotPlugins,
+      applyDeMorgans,
+      textToIntToTextGetToInt,
+      forRangeToForRangeOneStep,
+      useMultireplace(),
+      forArgvToForEach,
+      forArgvToForRange(),
+      ...truncatingOpsPlugins,
+      useIndexCalls(),
+      useEquivalentTextOp(true, false),
+      mapOps(
+        ["argv", functionCall("commandLineParams")],
+        ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
+      )
     ),
-    mapToUnaryAndBinaryOps(
-      ["bit_not", "not"],
-      ["not", "not"],
-      ["neg", "-"],
-      ["int_to_text", "$"],
-      ["pow", "^"],
-      ["mul", "*"],
-      ["trunc_div", "div"],
-      ["rem", "mod"],
-      ["unsigned_rem", "%%"],
-      ["unsigned_trunc_div", "/%"],
-      ["bit_shift_left", "shl"],
-      ["bit_shift_right", "shr"],
-      ["add", "+"],
-      ["sub", "-"],
-      ["concat", "&"],
-      ["lt", "<"],
-      ["leq", "<="],
-      ["eq", "=="],
-      ["neq", "!="],
-      ["geq", ">="],
-      ["gt", ">"],
-      ["and", "and"],
-      ["bit_and", "and"],
-      ["or", "or"],
-      ["bit_or", "or"],
-      ["bit_xor", "xor"]
+    required(
+      forArgvToForEach,
+      forArgvToForRange(),
+      ...truncatingOpsPlugins,
+      useIndexCalls(),
+      useEquivalentTextOp(true, false),
+      mapOps(
+        ["argv", functionCall("commandLineParams")],
+        ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
+      ),
+      forRangeToForRangeInclusive(true),
+      implicitlyConvertPrintArg,
+      textToIntToFirstIndexTextGetToInt,
+      mapOps([
+        "text_get_byte_to_int",
+        (x) => functionCall("ord", polygolfOp("text_get_byte", ...x)),
+      ]),
+      mapOps(
+        [
+          "join",
+          (x) => functionCall("join", isTextLiteral(x[1], "") ? [x[0]] : x),
+        ],
+        ["true", builtin("true")],
+        ["false", builtin("false")],
+        ["text_get_byte", (x) => indexCall(x[0], x[1])],
+        [
+          "text_get_byte_slice",
+          (x) => rangeIndexCall(x[0], x[1], x[2], int(1n)),
+        ],
+        ["text_split", (x) => functionCall("split", x)],
+        ["text_split_whitespace", (x) => functionCall("split", x)],
+        ["text_byte_length", (x) => functionCall("len", x)],
+        ["repeat", (x) => functionCall("repeat", x)],
+        ["max", (x) => functionCall("max", x)],
+        ["min", (x) => functionCall("min", x)],
+        ["abs", (x) => functionCall("abs", x)],
+        ["text_to_int", (x) => functionCall("parseInt", x)],
+        ["print", (x) => functionCall("write", builtin("stdout"), x)],
+        ["println", (x) => functionCall("echo", x)],
+        ["min", (x) => functionCall("min", x)],
+        ["max", (x) => functionCall("max", x)],
+        ["abs", (x) => functionCall("abs", x)],
+        ["bool_to_int", (x) => functionCall("int", x)],
+        ["int_to_text_byte", (x) => functionCall("chr", x)],
+        ["list_find", (x) => functionCall("find", x)],
+        [
+          "text_replace",
+          (x) =>
+            functionCall("replace", isTextLiteral(x[2], "") ? [x[0], x[1]] : x),
+        ],
+        [
+          "text_multireplace",
+          (x) =>
+            functionCall(
+              "multireplace",
+              x[0],
+              arrayConstructor(
+                x.flatMap((_, i) =>
+                  i % 2 > 0 ? [arrayConstructor(x.slice(i, i + 2))] : []
+                ) // Polygolf doesn't have array of tuples, so we use array of arrays instead
+              )
+            ),
+        ]
+      ),
+      useUnsignedDivision,
+      addMutatingBinaryOp(
+        ["add", "+"],
+        ["mul", "*"],
+        ["unsigned_rem", "%%"],
+        ["unsigned_trunc_div", "/%"],
+        ["mul", "*"],
+        ["sub", "-"],
+        ["concat", "&"]
+      ),
+      mapToUnaryAndBinaryOps(
+        ["bit_not", "not"],
+        ["not", "not"],
+        ["neg", "-"],
+        ["int_to_text", "$"],
+        ["pow", "^"],
+        ["mul", "*"],
+        ["trunc_div", "div"],
+        ["rem", "mod"],
+        ["unsigned_rem", "%%"],
+        ["unsigned_trunc_div", "/%"],
+        ["bit_shift_left", "shl"],
+        ["bit_shift_right", "shr"],
+        ["add", "+"],
+        ["sub", "-"],
+        ["concat", "&"],
+        ["lt", "<"],
+        ["leq", "<="],
+        ["eq", "=="],
+        ["neq", "!="],
+        ["geq", ">="],
+        ["gt", ">"],
+        ["and", "and"],
+        ["bit_and", "and"],
+        ["or", "or"],
+        ["bit_or", "or"],
+        ["bit_xor", "xor"]
+      ),
+      useUnsignedDivision,
+      addNimImports
     ),
-    useUnsignedDivision,
-    addNimImports,
-    alias(
-      (expr) => {
-        switch (expr.kind) {
-          case "IntegerLiteral":
-            return expr.value.toString();
-          case "StringLiteral":
-            return `"${expr.value}"`;
-        }
-      },
-      [1, 7]
+    simplegolf(
+      alias(
+        (expr) => {
+          switch (expr.kind) {
+            case "IntegerLiteral":
+              return expr.value.toString();
+            case "TextLiteral":
+              return `"${expr.value}"`;
+          }
+        },
+        [1, 7]
+      )
     ),
-    renameIdents(),
-    addVarDeclarations,
-    addVarDeclarationOneToManyAssignments(),
-    addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 2),
-    addManyToManyAssignments((_, spine) => spine.depth > 2),
-    groupVarDeclarations((_, spine) => spine.depth <= 2),
-    noStandaloneVarDeclarations,
-    assertInt64,
-    removeImplicitConversions,
-    useUFCS,
+    required(
+      renameIdents(),
+      addVarDeclarations,
+      addVarDeclarationOneToManyAssignments(),
+      addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 2),
+      addManyToManyAssignments((_, spine) => spine.depth > 2),
+      groupVarDeclarations((_, spine) => spine.depth <= 2),
+      noStandaloneVarDeclarations,
+      assertInt64,
+      removeImplicitConversions,
+      useUFCS
+    ),
   ],
   detokenizer: defaultDetokenizer((a, b) => {
     const left = a[a.length - 1];
@@ -189,7 +246,7 @@ const nimLanguage: Language = {
     if (
       /[A-Za-z]/.test(left) &&
       !["var", "in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"(`).includes(right) &&
+      (symbols + `"({`).includes(right) &&
       !["=", ":", ".", "::"].includes(b)
     )
       return true; // identifier meeting an operator or string literal or opening paren

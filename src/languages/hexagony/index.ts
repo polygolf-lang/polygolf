@@ -1,7 +1,7 @@
-import { Expr, functionCall as fc } from "@/IR";
+import { functionCall } from "@/IR";
 import { mapOps, mapToUnaryAndBinaryOps } from "@/plugins/ops";
 import { printLnToPrint } from "@/plugins/print";
-import { Language } from "../../common/Language";
+import { Language, required, search } from "../../common/Language";
 
 import emitProgram from "./emit";
 import {
@@ -34,35 +34,32 @@ The plugin functionality is used for this step. The rest is very much custom for
 3. Laying out the HexagonyBlocks in the hexagon. There are multiple template factories, one or more is selected based on the length and structure of the HexagonyBlock program.
 
 */
-function functionCall(name: string, ...exprs: Expr[]) {
-  return fc(exprs, name);
-}
 
 const hexagonyLanguage: Language = {
   name: "Hexagony",
   extension: "hexagony",
   emitter: emitProgram,
-  golfPlugins: [limitSetOp(128)],
-  emitPlugins: [
-    extractConditions,
-    mapToUnaryAndBinaryOps(
-      ["add", "+"],
-      ["sub", "-"],
-      ["neg", "~"],
-      ["mul", "*"],
-      ["div", ":"],
-      ["mod", "%"]
+  phases: [
+    search(limitSetOp(128)),
+    required(
+      extractConditions,
+      mapToUnaryAndBinaryOps(
+        ["add", "+"],
+        ["sub", "-"],
+        ["neg", "~"],
+        ["mul", "*"],
+        ["div", ":"],
+        ["mod", "%"]
+      ),
+      printLnToPrint,
+      printTextLiteral,
+      decomposeExpressions,
+      limitSetOp(99999),
+      mapOps(
+        ["putc", (x) => functionCall(";", x)],
+        ["print_int", (x) => functionCall("!", x)]
+      )
     ),
-    printLnToPrint,
-    printTextLiteral,
-    decomposeExpressions,
-    limitSetOp(99999),
-  ],
-  finalEmitPlugins: [
-    mapOps([
-      ["putc", (x) => functionCall(";", ...x)],
-      ["print_int", (x) => functionCall("!", ...x)],
-    ]),
   ],
 };
 

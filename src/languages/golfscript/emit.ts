@@ -1,5 +1,5 @@
 import { TokenTree } from "../../common/Language";
-import { EmitError, emitStringLiteral } from "../../common/emit";
+import { EmitError, emitTextLiteral } from "../../common/emit";
 import { int, integerType, IR, isIntLiteral, isSubtype } from "../../IR";
 import { getType } from "../../common/getType";
 
@@ -104,9 +104,9 @@ export default function emitProgram(program: IR.Program): TokenTree {
       case "Assignment":
         return [emitExpr(expr.expr), ":", emitExpr(expr.variable), ";"];
       case "Identifier":
-        return [expr.name];
-      case "StringLiteral":
-        return emitStringLiteral(expr.value, [
+        return expr.name;
+      case "TextLiteral":
+        return emitTextLiteral(expr.value, [
           [
             `"`,
             [
@@ -124,8 +124,6 @@ export default function emitProgram(program: IR.Program): TokenTree {
         ]);
       case "IntegerLiteral":
         return expr.value.toString();
-      case "FunctionCall":
-        return [expr.args.map(emitExpr), expr.ident.name];
       case "BinaryOp":
         return [emitExpr(expr.left), emitExpr(expr.right), expr.name];
       case "UnaryOp":
@@ -139,12 +137,8 @@ export default function emitProgram(program: IR.Program): TokenTree {
           emitExpr(expr.alternate),
           "if",
         ];
-      case "IndexCall":
-        if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
-        return [emitExpr(expr.collection), emitExpr(expr.index), "="];
       case "RangeIndexCall": {
-        if (expr.oneIndexed)
-          throw new Error("GolfScript only supports zeroIndexed access.");
+        if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
 
         return [
           emitExpr(expr.collection),

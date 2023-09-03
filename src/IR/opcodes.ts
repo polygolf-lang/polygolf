@@ -25,7 +25,6 @@ export const FrontendOpCodes = [
   "array_get",
   "list_get",
   "table_get",
-  "text_get_byte",
   "list_push",
   "concat",
   "repeat",
@@ -37,7 +36,7 @@ export const FrontendOpCodes = [
   "text_get_byte_slice",
   "text_get_codepoint",
   "text_get_codepoint_slice",
-  "join_using",
+  "join",
   "right_align",
   "int_to_bin_aligned",
   "int_to_hex_aligned",
@@ -52,14 +51,17 @@ export const FrontendOpCodes = [
   "int_to_hex",
   "text_to_int",
   "bool_to_int",
-  "int_to_text_byte",
+  "int_to_text_byte", // Returns a single byte text using the specified byte.
+  "int_to_codepoint", // Returns a single codepoint text using the specified integer.
   "list_length",
-  "text_byte_length",
-  "text_codepoint_length",
+  "text_byte_length", // Returns the text length in bytes.
+  "text_codepoint_length", // Returns the text length in codepoints.
   "text_split_whitespace",
   "join",
-  "text_byte_reversed",
-  "text_codepoint_reversed",
+  "text_byte_reversed", // Returns a text containing the reversed order of bytes.
+  "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
+  "text_byte_to_int",
+  "codepoint_to_int",
   "true",
   "false",
   "print",
@@ -74,7 +76,7 @@ export const FrontendOpCodes = [
 ] as const;
 
 // It may seem that the `string &` is redundant, but the `isPolygolf` typeguard doesn't work without it.
-export type FrontendOpCode = string & typeof FrontendOpCodes[number];
+export type FrontendOpCode = string & (typeof FrontendOpCodes)[number];
 
 export function isFrontend(op: OpCode): op is FrontendOpCode {
   return FrontendOpCodes.includes(op as any);
@@ -97,18 +99,19 @@ export const UnaryOpCodes = [
   "int_to_bool",
   "text_to_int",
   "bool_to_int",
-  "int_to_text_byte", // Returns a single byte text using the specified byte.
-  "int_to_codepoint", // Returns a single codepoint text using the specified integer.
+  "int_to_text_byte",
+  "int_to_codepoint",
   "list_length",
-  "text_codepoint_length", // Returns the text length in codepoints.
-  "text_byte_length", // Returns the text length in bytes.
+  "text_codepoint_length",
+  "text_byte_length",
   "text_split_whitespace",
   "sorted",
-  "join",
-  "text_byte_reversed", // Returns a text containing the reversed order of bytes.
-  "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
+  "text_byte_reversed",
+  "text_codepoint_reversed",
+  "text_byte_to_int", // (text_byte_to_int (text_get_byte $x $i)) is equivalent to (text_get_byte_to_int $x $i), "text_byte_to_int" is the inverse of "int_to_text_byte"
+  "codepoint_to_int", // (codepoint_to_int (text_get_codepoint $x $i)) is equivalent to (text_get_codepoint_to_int $x $i), "codepoint_to_int" is the inverse of "int_to_codepoint"
 ] as const;
-export type UnaryOpCode = string & typeof UnaryOpCodes[number];
+export type UnaryOpCode = string & (typeof UnaryOpCodes)[number];
 
 export function isUnary(op: OpCode): op is UnaryOpCode {
   return UnaryOpCodes.includes(op as any);
@@ -127,7 +130,7 @@ export const CommutativeOpCodes = [
   "max",
 ] as const;
 
-export type CommutativeOpCode = string & typeof CommutativeOpCodes[number];
+export type CommutativeOpCode = string & (typeof CommutativeOpCodes)[number];
 
 export function isCommutative(op: OpCode): op is CommutativeOpCode {
   return CommutativeOpCodes.includes(op as any);
@@ -135,7 +138,7 @@ export function isCommutative(op: OpCode): op is CommutativeOpCode {
 
 export const AssociativeOpCodes = [...CommutativeOpCodes, "concat"] as const;
 
-export type AssociativeOpCode = string & typeof AssociativeOpCodes[number];
+export type AssociativeOpCode = string & (typeof AssociativeOpCodes)[number];
 
 export function isAssociative(op: OpCode): op is AssociativeOpCode {
   return AssociativeOpCodes.includes(op as any);
@@ -183,8 +186,9 @@ export const BinaryOpCodes = [
   "list_get",
   "table_get",
   // other
-  "println_list_joined_using",
+  "println_list_joined",
   "list_push",
+  "list_find", // returns the 0-index of the first occurence of or -1 if it is not found
   "concat",
   "repeat",
   "text_contains",
@@ -194,17 +198,15 @@ export const BinaryOpCodes = [
   "text_get_byte", // returns a single byte text at the specified byte-0-index
   "text_get_codepoint", // returns a single codepoint text at the specified codepoint-0-index
   "text_get_codepoint_to_int", // gets the codepoint at the specified codepoint-0-index as an integer
-  "codepoint_to_int", // (codepoint_to_int (text_get_codepoint $x $i)) is equivalent to (text_get_codepoint_to_int $x $i), "codepoint_to_int" is the inverse of "int_to_codepoint"
   "text_get_byte_to_int", // gets the byte at the specified byte-0-index as an integer
-  "text_byte_to_int", // (text_byte_to_int (text_get_byte $x $i)) is equivalent to (text_get_byte_to_int $x $i), "text_byte_to_int" is the inverse of "int_to_text_byte"
-  "join_using",
+  "join",
   "right_align",
   "int_to_bin_aligned", // Converts the given integer to text representing the value in binary. The result is aligned with 0s to the specified number of places.
   "int_to_hex_aligned", // Converts the given integer to text representing the value in hexadecimal. The result is aligned with 0s to the specified number of places.
   "simplify_fraction", // Given two integers, p,q, returns a text representation of the reduced version of the fraction p/q.
 ] as const;
 
-export type BinaryOpCode = string & typeof BinaryOpCodes[number];
+export type BinaryOpCode = string & (typeof BinaryOpCodes)[number];
 
 export function isBinary(op: OpCode): op is BinaryOpCode {
   return BinaryOpCodes.includes(op as any);
@@ -218,16 +220,17 @@ export const OpCodes = [
   "argv",
   "argc",
   "text_replace",
+  "text_multireplace", // simultaneous replacement. Equivalent to chained text_replace if the inputs and outputs have no overlap
   "text_get_codepoint_slice", // Returns a slice of the input text. Indeces are codepoint-0-based, start is inclusive, end is exclusive.
   "text_get_byte_slice", // Returns a slice of the input text. Indeces are byte-0-based, start is inclusive, end is exclusive.
   // collection set
   "array_set",
   "list_set",
   "table_set",
-  "println_many_joined_using", // Expects one text argument denoting the delimiter and then any number of texts to be joined and printed.
+  "println_many_joined", // Expects one text argument denoting the delimiter and then any number of texts to be joined and printed.
 ] as const;
 
-export type OpCode = string & typeof OpCodes[number];
+export type OpCode = string & (typeof OpCodes)[number];
 
 export function isOpCode(op: string): op is OpCode {
   return OpCodes.includes(op as any);
@@ -252,7 +255,8 @@ export function arity(op: OpCode): number {
     case "list_set":
     case "table_set":
       return 3;
-    case "println_many_joined_using":
+    case "println_many_joined":
+    case "text_multireplace":
       return -1;
   }
 }
