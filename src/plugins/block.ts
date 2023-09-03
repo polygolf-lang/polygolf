@@ -6,6 +6,7 @@ import {
   blockOrSingle,
   Expr,
   Identifier,
+  isUserIdent,
   manyToManyAssignment,
   Node,
   oneToManyAssignment,
@@ -283,11 +284,14 @@ export const inlineVariables: Plugin = {
       let assignmentToInlineSpine: Spine<Assignment<Identifier>> | undefined;
       for (const a of writes.values()) {
         if (a.length === 1) {
-          const write = a[0].parent;
+          const variable = a[0].node;
+          const write = a[0].parent!;
           if (
-            write?.node.kind === "Assignment" &&
-            write?.node.variable.kind === "Identifier" &&
+            write.node.kind === "Assignment" &&
             write.parent?.node.kind === "Block" &&
+            spine.someNode(
+              (n) => n !== variable && isUserIdent(n, variable.name) // in tests variables are often never read from and we don't want to make those disappear
+            ) &&
             !hasSideEffect(write.getChild("expr"))
           ) {
             assignmentToInlineSpine = write as Spine<Assignment<Identifier>>;
