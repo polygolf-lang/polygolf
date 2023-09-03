@@ -315,8 +315,8 @@ export const inlineVariables: Plugin = {
             );
           }
         }
-        return suggestions;
       }
+      return suggestions;
     }
   },
 };

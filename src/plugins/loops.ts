@@ -282,7 +282,7 @@ export const forArgvToForEach: Plugin = {
   },
 };
 
-export function forArgvToForRange(overshoot = true): Plugin {
+export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
   return {
     name: `forArgvToForRange(${overshoot ? "" : "false"})`,
     visit(node) {
@@ -295,9 +295,14 @@ export function forArgvToForRange(overshoot = true): Plugin {
         return forRange(
           indexVar,
           int(0),
-          overshoot ? int(node.argcUpperBound) : polygolfOp("argc"),
+          overshoot
+            ? inclusive
+              ? sub1(int(node.argcUpperBound))
+              : int(node.argcUpperBound)
+            : polygolfOp("argc"),
           int(1),
-          newBody
+          newBody,
+          inclusive
         );
       }
     },

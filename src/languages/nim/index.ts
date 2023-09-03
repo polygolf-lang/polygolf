@@ -96,7 +96,7 @@ const nimLanguage: Language = {
       useMultireplace(),
       inlineVariables,
       forArgvToForEach,
-      forArgvToForRange(),
+      forArgvToForRange(true),
       ...truncatingOpsPlugins,
       useIndexCalls(),
       useEquivalentTextOp(true, false),
@@ -107,7 +107,6 @@ const nimLanguage: Language = {
     ),
     required(
       forArgvToForEach,
-      forArgvToForRange(),
       ...truncatingOpsPlugins,
       useIndexCalls(),
       useEquivalentTextOp(true, false),
