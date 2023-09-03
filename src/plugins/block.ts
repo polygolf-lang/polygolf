@@ -281,7 +281,7 @@ export const inlineVariables: Plugin = {
   visit(node, spine) {
     if (node.kind === "Program") {
       const writes = groupby(getWrites(spine), (x) => x.node.name);
-      let assignmentToInlineSpine: Spine<Assignment<Identifier>> | undefined;
+      const suggestions = [];
       for (const a of writes.values()) {
         if (a.length === 1) {
           const variable = a[0].node;
@@ -294,26 +294,28 @@ export const inlineVariables: Plugin = {
             ) &&
             !hasSideEffect(write.getChild("expr"))
           ) {
-            assignmentToInlineSpine = write as Spine<Assignment<Identifier>>;
-            break;
+            const assignmentToInlineSpine = write as Spine<
+              Assignment<Identifier>
+            >;
+            const assignment = assignmentToInlineSpine.node;
+            const assignmentParent = assignmentToInlineSpine.parent?.node;
+            suggestions.push(
+              spine.withReplacer((x) =>
+                x === assignmentParent && x.kind === "Block"
+                  ? blockOrSingle(x.children.filter((y) => y !== assignment))
+                  : x.kind === "Identifier" &&
+                    !x.builtin &&
+                    x.name === assignment.variable.name
+                  ? {
+                      ...assignment.expr,
+                      type: assignment.expr.type ?? assignment.variable.type,
+                    }
+                  : undefined
+              ).node
+            );
           }
         }
-      }
-      if (assignmentToInlineSpine !== undefined) {
-        const assignment = assignmentToInlineSpine.node;
-        const assignmentParent = assignmentToInlineSpine.parent?.node;
-        return spine.withReplacer((x) =>
-          x === assignmentParent && x.kind === "Block"
-            ? blockOrSingle(x.children.filter((y) => y !== assignment))
-            : x.kind === "Identifier" &&
-              !x.builtin &&
-              x.name === assignment.variable.name
-            ? {
-                ...assignment.expr,
-                type: assignment.expr.type ?? assignment.variable.type,
-              }
-            : undefined
-        ).node;
+        return suggestions;
       }
     }
   },
