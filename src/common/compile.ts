@@ -70,13 +70,33 @@ export function applyAllToAllAndGetCounts(
   return [result, counts];
 }
 
+function getSingleOrUndefined<T>(x: T | T[] | undefined): T | undefined {
+  if (Array.isArray(x)) {
+    if (x.length > 1)
+      throw new Error(
+        `Programming error. Expected at most 1 item, but got ${JSON.stringify(
+          x
+        )}.`
+      );
+    return x[0];
+  }
+  return x;
+}
+
+function getArray<T>(x: T | T[] | undefined): T[] {
+  if (Array.isArray(x)) {
+    return x;
+  }
+  return x === undefined ? [] : [x];
+}
+
 export function applyToAllAndGetCount(
   program: Program,
   context: CompilationContext,
   visitor: Plugin["visit"]
 ): [Program, number] {
   const result = programToSpine(program).withReplacer((n, s) => {
-    const repl = visitor(n, s, context);
+    const repl = getSingleOrUndefined(visitor(n, s, context));
     return repl === undefined
       ? undefined
       : copySource(n, copyTypeAnnotation(n, repl));
@@ -89,14 +109,14 @@ function* applyToOne(
   context: CompilationContext,
   visitor: Plugin["visit"]
 ) {
-  for (const altProgram of spine.compactMap((n, s) => {
-    const ret = visitor(n, s, context);
-    if (ret !== undefined) {
-      return s.replacedWith(copySource(n, copyTypeAnnotation(n, ret)), true)
-        .root.node;
-    }
+  for (const altPrograms of spine.compactMap((n, s) => {
+    const suggestions = getArray(visitor(n, s, context));
+    return suggestions.map(
+      (x) =>
+        s.replacedWith(copySource(n, copyTypeAnnotation(n, x)), true).root.node
+    );
   })) {
-    yield altProgram;
+    yield* altPrograms;
   }
 }
 
