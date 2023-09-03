@@ -97,7 +97,10 @@ export const decomposeExpressions: Plugin = {
         right = id(node.variable.name + "R");
       }
       if (pre.length > 0) {
-        return block([...pre, binaryOp(expr.name, left, right)]);
+        return block([
+          ...pre,
+          assignment(node.variable, binaryOp(expr.name, left, right)),
+        ]);
       }
     }
   },

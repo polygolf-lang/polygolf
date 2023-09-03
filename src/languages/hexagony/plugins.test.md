@@ -20,7 +20,7 @@ $a <- 1;
 $b <- 2;
 $c <- 3;
 $d <- 4;
-$x <- (($a + $b) * ($c + $d));
+$x <- (binary_op "*" (binary_op "+" $a $b) (binary_op "+" $c $d));
 ```
 
 ```polygolf plugins.decomposeExpressions
@@ -28,9 +28,9 @@ $a <- 1;
 $b <- 2;
 $c <- 3;
 $d <- 4;
-$xL <- ($a + $b);
-$xR <- ($c + $d);
-$x <- ($xL * $xR);
+$xL <- (binary_op "+" $a $b);
+$xR <- (binary_op "+" $c $d);
+$x <- (binary_op "*" $xL $xR);
 ```
 
 ```polygolf
