@@ -8,6 +8,7 @@ import {
   decomposeExpressions,
   extractConditions,
   limitSetOp,
+  powerToForRange,
   printTextLiteral,
 } from "./plugins";
 
@@ -43,6 +44,8 @@ const hexagonyLanguage: Language = {
     search(limitSetOp(128)),
     required(
       extractConditions,
+      decomposeExpressions,
+      powerToForRange,
       mapToUnaryAndBinaryOps(
         ["add", "+"],
         ["sub", "-"],
@@ -53,7 +56,6 @@ const hexagonyLanguage: Language = {
       ),
       printLnToPrint,
       printTextLiteral,
-      decomposeExpressions,
       limitSetOp(99999),
       mapOps(
         ["putc", (x) => functionCall(";", x)],

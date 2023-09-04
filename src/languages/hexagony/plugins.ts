@@ -7,12 +7,12 @@ import {
   isIntLiteral,
   functionCall as fc,
   id,
-  binaryOp,
   isPolygolfOp,
   ifStatement,
   polygolfOp,
   whileLoop,
   isTextLiteral,
+  forRange,
 } from "@/IR";
 import { Plugin } from "../../common/Language";
 
@@ -82,11 +82,12 @@ export const decomposeExpressions: Plugin = {
     if (
       node.kind === "Assignment" &&
       node.variable.kind === "Identifier" &&
-      node.expr.kind === "BinaryOp"
+      isPolygolfOp(node.expr) &&
+      node.expr.args.length === 2
     ) {
       const expr = node.expr;
-      let left = expr.left;
-      let right = expr.right;
+      let left = expr.args[0];
+      let right = expr.args[1];
       const pre = [];
       if (left.kind !== "Identifier") {
         pre.push(assignment(node.variable.name + "L", left));
@@ -99,9 +100,35 @@ export const decomposeExpressions: Plugin = {
       if (pre.length > 0) {
         return block([
           ...pre,
-          assignment(node.variable, binaryOp(expr.name, left, right)),
+          assignment(node.variable, polygolfOp(expr.op, left, right)),
         ]);
       }
+    }
+  },
+};
+
+export const powerToForRange: Plugin = {
+  name: "powerToForRange",
+  visit(node) {
+    if (
+      node.kind === "Assignment" &&
+      node.variable.kind === "Identifier" &&
+      isPolygolfOp(node.expr, "pow") &&
+      node.expr.args[0].kind === "Identifier"
+    ) {
+      const res = node.variable;
+      const base = node.expr.args[0];
+      const exponent = node.expr.args[1];
+      return block([
+        assignment(res, int(1n)),
+        forRange(
+          res.name + "+powerIndex",
+          int(0n),
+          exponent,
+          int(1n),
+          assignment(res, polygolfOp("mul", res, base))
+        ),
+      ]);
     }
   },
 };
