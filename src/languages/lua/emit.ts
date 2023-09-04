@@ -92,7 +92,7 @@ function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
         if (!e.inclusive) throw new EmitError(e, "exclusive");
         return [
           "for",
-          emit(e.variable),
+          e.variable === undefined ? "_" : emit(e.variable),
           "=",
           emit(e.start),
           ",",

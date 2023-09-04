@@ -128,7 +128,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         const increment1 = isIntLiteral(e.increment, 1n);
         return [
           "for",
-          emit(e.variable),
+          e.variable === undefined ? "_" : emit(e.variable),
           "in",
           "range",
           "(",

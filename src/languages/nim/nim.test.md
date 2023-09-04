@@ -311,3 +311,13 @@ print "Hello \"world\"!";
 ```nim
 echo"Hello ""world""!"
 ```
+
+## Indexless loop
+
+```polygolf
+for $i 0 10 (println "Hi");
+```
+
+```nim
+for()in..9:echo"Hi"
+```

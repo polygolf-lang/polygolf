@@ -262,6 +262,11 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         assertIdentifier(variable);
         return forRange(variable, start, end, step, body, true);
       }
+      case "for_range_inclusive_no_index": {
+        expectArity(4);
+        const [start, end, step, body] = args;
+        return forRange(undefined, start, end, step, body, true);
+      }
       case "for_difference_range": {
         expectArity(5);
         const [variable, start, difference, step, body] = args;
@@ -298,6 +303,17 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         expectArity(4);
         const [init, condition, append, body] = args;
         return forCLike(init, condition, append, body);
+      }
+      case "for_no_index": {
+        expectArity(3, 4);
+        let start, end, step, body: Expr;
+        if (args.length === 4) {
+          [start, end, step, body] = args;
+        } else {
+          [start, end, body] = args;
+          step = int(1n);
+        }
+        return forRange(undefined, start, end, step, body);
       }
       case "named_arg":
         expectArity(2);

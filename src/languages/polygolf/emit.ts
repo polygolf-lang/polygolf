@@ -165,8 +165,16 @@ function emitExprWithoutAnnotation(
       );
     case "ForRange":
       if (expr.inclusive) {
+        if (expr.variable === undefined)
+          return emitSexpr(
+            "for_range_inclusive_no_index",
+            expr.start,
+            expr.end,
+            expr.increment,
+            emitExpr(expr.body, false, true)
+          );
         return emitSexpr(
-          "ForRangeInclusive",
+          "for_range_inclusive",
           expr.variable,
           expr.start,
           expr.end,
@@ -174,6 +182,17 @@ function emitExprWithoutAnnotation(
           emitExpr(expr.body, false, true)
         );
       }
+      if (expr.variable === undefined)
+        return emitSexpr(
+          "for_no_index",
+          expr.start,
+          expr.end,
+          ...(expr.increment.kind === "IntegerLiteral" &&
+          expr.increment.value === 1n
+            ? []
+            : [expr.increment]),
+          emitExpr(expr.body, false, true)
+        );
       return emitSexpr(
         "for",
         expr.variable,

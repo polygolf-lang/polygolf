@@ -22,6 +22,8 @@ describe("Restricted nodes: parse - emit match", () => {
     `import_statement "name" "x" "y";`,
     `for_range_inclusive $x $s $e 1 $body;`,
     `for_difference_range $x $s $d 1 $body;`,
+    `for_no_index $s $e 1 $body;`,
+    `for_range_inclusive_no_index $s $e 1 $body;`,
     `for_each $x $col $body;`,
     `for_each_key $x $col $body;`,
     `for_each_pair $k $v $col $body;`,

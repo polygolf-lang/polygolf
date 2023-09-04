@@ -96,7 +96,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         const end = emit(e.end);
         return [
           "for",
-          emit(e.variable),
+          e.variable === undefined ? "_" : emit(e.variable),
           "in",
           isIntLiteral(e.increment, 1n)
             ? [start, e.inclusive ? "..." : "..<", end]

@@ -93,7 +93,7 @@ function introducedSymbols(
     case "ForEach":
     case "ForEachKey":
     case "ForArgv":
-      return [node.variable.name];
+      return node.variable === undefined ? [] : [node.variable.name];
     case "ForEachPair":
       return [node.keyVariable.name, node.valueVariable.name];
     case "Assignment":
