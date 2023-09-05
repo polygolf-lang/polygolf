@@ -187,7 +187,8 @@ function emitExprWithoutAnnotation(
       let args: Expr[] = [];
       if (!isIntLiteral(expr.increment, 1n)) args = [expr.increment, ...args];
       args = [expr.end, ...args];
-      if (!isIntLiteral(expr.start, 0n)) args = [expr.start, ...args];
+      if (!isIntLiteral(expr.start, 0n) || args.length > 1)
+        args = [expr.start, ...args];
       if (expr.variable !== undefined || args.length > 1)
         args = [expr.variable ?? id("_"), ...args];
       return emitSexpr("for", ...args, emitExpr(expr.body, false, true));
