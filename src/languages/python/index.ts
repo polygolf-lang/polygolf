@@ -33,6 +33,7 @@ import {
   forArgvToForEach,
   forRangeToForEach,
   forRangeToForRangeOneStep,
+  removeUnusedForVar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
@@ -90,6 +91,7 @@ const pythonLanguage: Language = {
     ),
     required(
       forArgvToForEach,
+      removeUnusedForVar,
       useEquivalentTextOp(false, true),
       mapOps(
         ["argv", (x) => builtin("sys.argv[1:]")],

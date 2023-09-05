@@ -315,7 +315,7 @@ echo"Hello ""world""!"
 ## Indexless loop
 
 ```polygolf
-for $i 0 10 (println "Hi");
+for 10 (println "Hi");
 ```
 
 ```nim
