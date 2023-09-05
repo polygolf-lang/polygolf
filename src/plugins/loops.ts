@@ -344,8 +344,17 @@ export const assertForArgvTopLevel: Plugin = {
 export const shiftRangeOneUp: Plugin = {
   name: "shiftRangeOneUp",
   visit(node, spine) {
-    if (node.kind === "ForRange" && isIntLiteral(node.increment, 1n)) {
-      const bodySpine = new Spine(node.body, spine, "body");
+    if (
+      node.kind === "ForRange" &&
+      isIntLiteral(node.increment, 1n) &&
+      spine.someNode(
+        (x) =>
+          isPolygolfOp(x, "add") &&
+          isIntLiteral(x.args[0], 1n) &&
+          isIdent(x.args[1], node.variable)
+      )
+    ) {
+      const bodySpine = spine.getChild("body");
       const newVar = id(node.variable.name + "+shift");
       const newBodySpine = bodySpine.withReplacer((x) =>
         isIdent(x, node.variable) ? sub1(newVar) : undefined
