@@ -1,6 +1,16 @@
 import { TokenTree } from "../../common/Language";
 import { emitTextLiteral, joinTrees } from "../../common/emit";
-import { block, Expr, IR, text, toString, variants, Variants } from "../../IR";
+import {
+  block,
+  Expr,
+  id,
+  IR,
+  isIntLiteral,
+  text,
+  toString,
+  variants,
+  Variants,
+} from "../../IR";
 
 /*
 How Polygolf nodes should be emitted to strings.
@@ -163,47 +173,25 @@ function emitExprWithoutAnnotation(
         expr.condition,
         emitExpr(expr.body, false, true)
       );
-    case "ForRange":
+    case "ForRange": {
       if (expr.inclusive) {
-        if (expr.variable === undefined)
-          return emitSexpr(
-            "for_range_inclusive_no_index",
-            expr.start,
-            expr.end,
-            expr.increment,
-            emitExpr(expr.body, false, true)
-          );
         return emitSexpr(
           "for_range_inclusive",
-          expr.variable,
+          expr.variable ?? id("_"),
           expr.start,
           expr.end,
           expr.increment,
           emitExpr(expr.body, false, true)
         );
       }
-      if (expr.variable === undefined)
-        return emitSexpr(
-          "for_no_index",
-          expr.start,
-          expr.end,
-          ...(expr.increment.kind === "IntegerLiteral" &&
-          expr.increment.value === 1n
-            ? []
-            : [expr.increment]),
-          emitExpr(expr.body, false, true)
-        );
-      return emitSexpr(
-        "for",
-        expr.variable,
-        expr.start,
-        expr.end,
-        ...(expr.increment.kind === "IntegerLiteral" &&
-        expr.increment.value === 1n
-          ? []
-          : [expr.increment]),
-        emitExpr(expr.body, false, true)
-      );
+      let args: Expr[] = [];
+      if (!isIntLiteral(expr.increment, 1n)) args = [expr.increment, ...args];
+      args = [expr.end, ...args];
+      if (!isIntLiteral(expr.start, 0n)) args = [expr.start, ...args];
+      if (expr.variable !== undefined || args.length > 1)
+        args = [expr.variable ?? id("_"), ...args];
+      return emitSexpr("for", ...args, emitExpr(expr.body, false, true));
+    }
     case "ForArgv":
       return emitSexpr(
         "for_argv",
