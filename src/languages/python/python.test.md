@@ -252,3 +252,13 @@ a=j(["1","2"])
 b=j(["3","4"])
 c=j(["5","6"])
 ```
+
+## Indexless loop
+
+```polygolf
+for 10 (println "Hi");
+```
+
+```py nogolf
+for _ in"X"*10:print("Hi")
+```
