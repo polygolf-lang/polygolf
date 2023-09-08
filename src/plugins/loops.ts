@@ -349,19 +349,17 @@ export const shiftRangeOneUp: Plugin = {
   visit(node, spine) {
     if (
       node.kind === "ForRange" &&
+      node.variable !== undefined &&
       isIntLiteral(node.increment, 1n) &&
       spine.someNode(
         (x) =>
           isPolygolfOp(x, "add") &&
           isIntLiteral(x.args[0], 1n) &&
-          isIdent(x.args[1], node.variable)
+          isIdent(x.args[1], node.variable!)
       )
     ) {
       const bodySpine = spine.getChild("body");
-      const newVar =
-        node.variable === undefined
-          ? undefined
-          : id(node.variable.name + "+shift");
+      const newVar = id(node.variable.name + "+shift");
       const newBodySpine = bodySpine.withReplacer((x) =>
         newVar !== undefined && isIdent(x, node.variable!)
           ? sub1(newVar)
