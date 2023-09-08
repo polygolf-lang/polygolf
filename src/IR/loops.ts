@@ -22,7 +22,7 @@ export interface WhileLoop extends BaseExpr {
 export interface ForRange extends BaseExpr {
   readonly kind: "ForRange";
   readonly inclusive: boolean;
-  readonly variable: Identifier;
+  readonly variable: Identifier | undefined;
   readonly start: Expr;
   readonly end: Expr;
   readonly increment: Expr;
@@ -113,7 +113,7 @@ export function whileLoop(condition: Expr, body: Expr): WhileLoop {
 }
 
 export function forRange(
-  variable: Identifier | string,
+  variable: Identifier | string | undefined,
   start: Expr,
   end: Expr,
   increment: Expr,

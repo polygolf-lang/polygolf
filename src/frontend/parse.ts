@@ -165,16 +165,29 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       expectArity(2);
       return whileLoop(args[0], args[1]);
     case "for": {
-      expectArity(4, 5);
-      let variable, start, end, step, body: Expr;
+      expectArity(2, 5);
+      let variable: Expr = id("_");
+      let start: Expr = int(0n);
+      let step: Expr = int(1n);
+      let end, body: Expr;
       if (args.length === 5) {
         [variable, start, end, step, body] = args;
-      } else {
+      } else if (args.length === 4) {
         [variable, start, end, body] = args;
-        step = int(1n);
+      } else if (args.length === 3) {
+        [variable, end, body] = args;
+      } else {
+        // args.length === 2
+        [end, body] = args;
       }
       assertIdentifier(variable);
-      return forRange(variable, start, end, step, body);
+      return forRange(
+        variable.name === "_" ? undefined : variable,
+        start,
+        end,
+        step,
+        body
+      );
     }
     case "for_argv": {
       expectArity(3);
@@ -260,7 +273,14 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         expectArity(5);
         const [variable, start, end, step, body] = args;
         assertIdentifier(variable);
-        return forRange(variable, start, end, step, body, true);
+        return forRange(
+          variable.name === "_" ? undefined : variable,
+          start,
+          end,
+          step,
+          body,
+          true
+        );
       }
       case "for_difference_range": {
         expectArity(5);
@@ -298,6 +318,17 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         expectArity(4);
         const [init, condition, append, body] = args;
         return forCLike(init, condition, append, body);
+      }
+      case "for_no_index": {
+        expectArity(3, 4);
+        let start, end, step, body: Expr;
+        if (args.length === 4) {
+          [start, end, step, body] = args;
+        } else {
+          [start, end, body] = args;
+          step = int(1n);
+        }
+        return forRange(undefined, start, end, step, body);
       }
       case "named_arg":
         expectArity(2);

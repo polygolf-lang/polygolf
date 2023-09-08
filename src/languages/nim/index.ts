@@ -35,6 +35,7 @@ import {
   forRangeToForEach,
   forRangeToForRangeInclusive,
   forRangeToForRangeOneStep,
+  removeUnusedForVar,
   shiftRangeOneUp,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
@@ -113,6 +114,7 @@ const nimLanguage: Language = {
         ["argv", functionCall("commandLineParams")],
         ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
       ),
+      removeUnusedForVar,
       forRangeToForRangeInclusive(true),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,

@@ -91,12 +91,12 @@ export type Emitter = (
   context: CompilationContext
 ) => TokenTree;
 
-function isAlphaNum(a: string, i: number): boolean {
-  return /[A-Za-z0-9]/.test(a[i]);
+function isWord(a: string, i: number): boolean {
+  return /\w/.test(a[i]);
 }
 
 export function defaultWhitespaceInsertLogic(a: string, b: string): boolean {
-  return isAlphaNum(a, a.length - 1) && isAlphaNum(b, 0);
+  return isWord(a, a.length - 1) && isWord(b, 0);
 }
 
 export function defaultDetokenizer(

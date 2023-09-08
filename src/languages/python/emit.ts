@@ -6,7 +6,15 @@ import {
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral, TextLiteral, text, isTextLiteral } from "../../IR";
+import {
+  IR,
+  isIntLiteral,
+  TextLiteral,
+  text,
+  isTextLiteral,
+  id,
+  binaryOp,
+} from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -126,19 +134,28 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         const end = emit(e.end);
         const increment = emit(e.increment);
         const increment1 = isIntLiteral(e.increment, 1n);
-        return [
-          "for",
-          emit(e.variable),
-          "in",
-          "range",
-          "(",
-          start0 && increment1 ? [] : [start, ","],
-          end,
-          increment1 ? [] : [",", increment],
-          ")",
-          ":",
-          emitMultiExpr(e.body),
-        ];
+        return e.variable === undefined && start0 && increment1
+          ? [
+              "for",
+              "_",
+              "in",
+              emit(binaryOp("*", text("X"), e.end)),
+              ":",
+              emitMultiExpr(e.body),
+            ]
+          : [
+              "for",
+              emit(e.variable ?? id("_")),
+              "in",
+              "range",
+              "(",
+              start0 && increment1 ? [] : [start, ","],
+              end,
+              increment1 ? [] : [",", increment],
+              ")",
+              ":",
+              emitMultiExpr(e.body),
+            ];
       }
       case "IfStatement":
         return [
