@@ -3,6 +3,7 @@ import { TokenTree } from "@/common/Language";
 import {
   containsMultiExpr,
   EmitError,
+  emitIntLiteral,
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
@@ -189,7 +190,11 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "TextLiteral":
         return emitPythonTextLiteral(e.value);
       case "IntegerLiteral":
-        return e.value.toString();
+        return emitIntLiteral(e, {
+          10: ["", ""],
+          16: ["0x", ""],
+          36: ["int('", "',36)"],
+        });
       case "FunctionCall":
         return [
           emit(e.func),

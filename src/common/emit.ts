@@ -1,4 +1,4 @@
-import { Expr, IR } from "IR";
+import { Expr, IR, IntegerLiteral } from "IR";
 import { PolygolfError } from "./errors";
 import { TokenTree } from "./Language";
 
@@ -62,4 +62,19 @@ export class EmitError extends PolygolfError {
     this.name = "EmitError";
     Object.setPrototypeOf(this, EmitError.prototype);
   }
+}
+
+export function shortest(x: string[]) {
+  return x.reduce((x, y) => (x.length <= y.length ? x : y));
+}
+
+export function emitIntLiteral(
+  n: IntegerLiteral,
+  bases: Record<number, [string, string]> = { 10: ["", ""] }
+) {
+  return shortest(
+    Object.entries(bases).map(
+      ([b, [pre, suf]]) => `${pre}${n.value.toString(Number(b))}${suf}`
+    )
+  );
 }
