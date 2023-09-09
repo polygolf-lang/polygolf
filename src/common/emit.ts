@@ -72,9 +72,13 @@ export function emitIntLiteral(
   n: IntegerLiteral,
   bases: Record<number, [string, string]> = { 10: ["", ""] }
 ) {
-  return shortest(
+  if (n.value > -10000 && n.value < 10000) return n.value.toString();
+  const isNegative = n.value < 0;
+  const abs = isNegative ? -n.value : n.value;
+  const absEmit = shortest(
     Object.entries(bases).map(
-      ([b, [pre, suf]]) => `${pre}${n.value.toString(Number(b))}${suf}`
+      ([b, [pre, suf]]) => `${pre}${abs.toString(Number(b))}${suf}`
     )
   );
+  return isNegative ? `-${absEmit}` : absEmit;
 }
