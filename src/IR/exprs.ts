@@ -248,7 +248,13 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   }
   if (isBinary(op) && args.length === 2) {
     const combined = evalBinaryOp(op, args[0], args[1]);
-    if (combined !== null) {
+    if (
+      combined !== null &&
+      (op !== "pow" || // only eval pow if it is a low number
+        (isIntLiteral(combined) &&
+          combined.value < 10000 &&
+          combined.value > -10000))
+    ) {
       return combined;
     }
   }

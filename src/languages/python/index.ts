@@ -57,6 +57,7 @@ import { addImports } from "../../plugins/imports";
 import {
   applyDeMorgans,
   bitnotPlugins,
+  decomposeIntLiteral,
   equalityToInequality,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
@@ -87,7 +88,8 @@ const pythonLanguage: Language = {
       useMultireplace(true),
       forArgvToForEach,
       useEquivalentTextOp(false, true),
-      useIndexCalls()
+      useIndexCalls(),
+      decomposeIntLiteral
     ),
     required(
       forArgvToForEach,

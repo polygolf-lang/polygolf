@@ -308,20 +308,38 @@ export function decomposeInt(n: bigint): IntDecomposition[] {
   const result: IntDecomposition[] = [];
   for (let k = 1n; k < 100 && k < n; k++) {
     for (let b = 2n; b < 20 && k * b < n; b++) {
-      if (k % b == 0n) continue;
-      let k_times_b_to_e = k * b;
+      if (k % b === 0n) continue;
+      let kTimesBToE = k * b;
       let e = 1n;
-      while (k_times_b_to_e * b < n) {
-        k_times_b_to_e *= b;
+      while (kTimesBToE * b < n) {
+        kTimesBToE *= b;
         e++;
       }
-      let d = n - k_times_b_to_e;
+      let d = n - kTimesBToE;
       if (d < 100) result.push([k, b, e, d]);
-      k_times_b_to_e *= b;
+      kTimesBToE *= b;
       e++;
-      d = n - k_times_b_to_e;
+      d = n - kTimesBToE;
       if (d > -100) result.push([k, b, e, d]);
     }
   }
   return result;
 }
+
+export const decomposeIntLiteral: Plugin = {
+  name: "decomposeIntLiteral",
+  visit(node) {
+    if (isIntLiteral(node) && (node.value <= -10000 || node.value >= 10000)) {
+      const decompositions = decomposeInt(node.value);
+      // TODO: consider  more than 1 decomposition once plugins can suggest multiple replacements
+      if (decompositions.length > 0) {
+        const [k, b, e, d] = decompositions[0];
+        return polygolfOp(
+          "add",
+          polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
+          int(d)
+        );
+      }
+    }
+  },
+};

@@ -55,6 +55,7 @@ import {
   equalityToInequality,
   truncatingOpsPlugins,
   bitnotPlugins,
+  decomposeIntLiteral,
 } from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
@@ -106,7 +107,8 @@ const swiftLanguage: Language = {
             ),
         ]
       ),
-      useIndexCalls()
+      useIndexCalls(),
+      decomposeIntLiteral
     ),
     required(
       forArgvToForEach,
