@@ -293,3 +293,35 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
 }
 
 export const bitShiftPlugins = [bitShiftToMulOrDiv(), mulOrDivToBitShift()];
+
+export type IntDecomposition = [
+  // [k,b,e,d] represents a number k * pow(b,e) + d
+  bigint,
+  bigint,
+  bigint,
+  bigint
+];
+
+export function decomposeInt(n: bigint): IntDecomposition[] {
+  // finds decomposition s.t. |k| < 100, b <= 20, d < |100|
+  if (n < 0) return decomposeInt(-n).map(([k, b, e, d]) => [-k, b, e, -d]);
+  const result: IntDecomposition[] = [];
+  for (let k = 1n; k < 100 && k < n; k++) {
+    for (let b = 2n; b < 20 && k * b < n; b++) {
+      if (k % b == 0n) continue;
+      let k_times_b_to_e = k * b;
+      let e = 1n;
+      while (k_times_b_to_e * b < n) {
+        k_times_b_to_e *= b;
+        e++;
+      }
+      let d = n - k_times_b_to_e;
+      if (d < 100) result.push([k, b, e, d]);
+      k_times_b_to_e *= b;
+      e++;
+      d = n - k_times_b_to_e;
+      if (d > -100) result.push([k, b, e, d]);
+    }
+  }
+  return result;
+}
