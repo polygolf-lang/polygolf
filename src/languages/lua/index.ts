@@ -40,6 +40,7 @@ import {
   bitnotPlugins,
   decomposeIntLiteral,
   equalityToInequality,
+  pickAnyInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { listOpsToTextOps } from "../../plugins/static";
@@ -100,6 +101,7 @@ const luaLanguage: Language = {
       decomposeIntLiteral
     ),
     required(
+      pickAnyInt,
       forArgvToForRange(),
       forRangeToForRangeInclusive(),
       implicitlyConvertPrintArg,

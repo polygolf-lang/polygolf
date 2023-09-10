@@ -59,6 +59,7 @@ import {
   bitnotPlugins,
   decomposeIntLiteral,
   equalityToInequality,
+  pickAnyInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
@@ -92,6 +93,7 @@ const pythonLanguage: Language = {
       decomposeIntLiteral
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       removeUnusedForVar,
       useEquivalentTextOp(false, true),

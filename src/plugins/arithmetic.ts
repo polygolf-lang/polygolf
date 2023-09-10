@@ -347,3 +347,14 @@ export const decomposeIntLiteral: Plugin = {
     }
   },
 };
+
+export const pickAnyInt: Plugin = {
+  name: "pickAnyInt",
+  visit(node) {
+    if (node.kind === "AnyIntegerLiteral") {
+      return node.low.toString().length < node.high.toString().length
+        ? int(node.low)
+        : int(node.high);
+    }
+  },
+};

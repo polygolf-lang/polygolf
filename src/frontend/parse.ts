@@ -62,6 +62,7 @@ import {
   unaryOp,
   propertyCall,
   isTextLiteral,
+  anyInt,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -202,6 +203,13 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       const consequent = args[1];
       const alternate = args[2];
       return ifStatement(condition, consequent, alternate);
+    }
+    case "any_int": {
+      expectArity(2);
+      const [low, high] = args;
+      assertInteger(low);
+      assertInteger(high);
+      return anyInt(low.value, high.value);
     }
   }
   if (!restrictedFrontend)

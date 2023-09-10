@@ -38,7 +38,12 @@ import {
   ForArgv,
   ForDifferenceRange,
 } from "./loops";
-import { Identifier, IntegerLiteral, TextLiteral } from "./terminals";
+import {
+  AnyIntegerLiteral,
+  Identifier,
+  IntegerLiteral,
+  TextLiteral,
+} from "./terminals";
 import { Block, IfStatement, ImportStatement, Variants } from "./toplevel";
 import { Type } from "./types";
 
@@ -80,6 +85,7 @@ export type Expr =
   | Identifier
   | TextLiteral
   | IntegerLiteral
+  | AnyIntegerLiteral
   | ArrayConstructor
   | ListConstructor
   | SetConstructor

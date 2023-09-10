@@ -68,6 +68,7 @@ import {
   truncatingOpsPlugins,
   bitnotPlugins,
   decomposeIntLiteral,
+  pickAnyInt,
 } from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
@@ -107,6 +108,7 @@ const nimLanguage: Language = {
       decomposeIntLiteral
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       forArgvToForRange(),
       ...truncatingOpsPlugins,

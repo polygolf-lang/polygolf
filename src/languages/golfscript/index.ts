@@ -44,6 +44,7 @@ import {
   bitShiftToMulOrDiv,
   powPlugins,
   decomposeIntLiteral,
+  pickAnyInt,
 } from "../../plugins/arithmetic";
 import {
   useEquivalentTextOp,
@@ -70,6 +71,7 @@ const golfscriptLanguage: Language = {
       decomposeIntLiteral
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       bitShiftToMulOrDiv(false, true, true),
       useEquivalentTextOp(true, false),
