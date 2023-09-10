@@ -295,55 +295,94 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
 export const bitShiftPlugins = [bitShiftToMulOrDiv(), mulOrDivToBitShift()];
 
 export type IntDecomposition = [
-  // [k,b,e,d] represents a number k * pow(b,e) + d
+  // [k,b,e,d] represents a value k * pow(b,e) + d
   bigint,
   bigint,
   bigint,
   bigint
 ];
 
-const decomposeIntCache = new Map<bigint, IntDecomposition[]>();
-export function decomposeInt(n: bigint): IntDecomposition[] {
-  // finds decomposition s.t. |k| < 100, b <= 20, d < |100|, caches the result
-  if (n < 0) return decomposeInt(-n).map(([k, b, e, d]) => [-k, b, e, -d]);
-  if (decomposeIntCache.has(n)) return decomposeIntCache.get(n)!;
+type AnyIntDecomposition = [
+  // [m,k,b,e] represents an equation m = k * pow(b,e)
+  bigint,
+  bigint,
+  bigint,
+  bigint
+];
 
-  const result: IntDecomposition[] = [];
-  for (let k = 1n; k < 100 && k < n; k++) {
-    for (let b = 2n; b < 20 && k * b < n; b++) {
-      if (k % b === 0n) continue;
-      let kTimesBToE = k * b;
-      let e = 1n;
-      while (kTimesBToE * b < n) {
-        kTimesBToE *= b;
-        e++;
-      }
-      let d = n - kTimesBToE;
-      if (d < 100) result.push([k, b, e, d]);
-      kTimesBToE *= b;
-      e++;
-      d = n - kTimesBToE;
-      if (d > -100) result.push([k, b, e, d]);
+// assert (abs(n) >= 10000)
+export function decomposeInt(n: bigint): IntDecomposition[] {
+  // return decomposeAnyInt(n, n);
+
+  const result =
+    n > 0
+      ? _decomposeAnyInt(n - 99n, n + 99n)
+      : _decomposeAnyInt(-n - 99n, -n + 99n).map(([m, k, b, e]) => [
+          -m,
+          -k,
+          b,
+          e,
+        ]);
+
+  return result.map(([m, k, b, e]) => [k, b, e, n - m]);
+}
+
+// assert (10000 <= x <= y || x <= y <= -10000)
+export function decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
+  const result =
+    x > 0
+      ? _decomposeAnyInt(x - 99n, y + 99n)
+      : _decomposeAnyInt(-y - 99n, -x + 99n).map(([m, k, b, e]) => [
+          -m,
+          -k,
+          b,
+          e,
+        ]);
+
+  return result.map(([m, k, b, e]) => [
+    k,
+    b,
+    e,
+    m > y ? m - y : m < x ? m - x : 0n,
+  ]);
+}
+
+// Find all decompositions m = k * b^e s.t. k < 100, b < 100 for all m s.t. x <= m <= y
+function _decomposeAnyInt(x: bigint, y: bigint): AnyIntDecomposition[] {
+  // Inference: 9900 < x <= y
+  const result: AnyIntDecomposition[] = [];
+  for (let b = 2n; b < 100; b++) {
+    let be = b * b; // b^e
+    for (let e = 2n; be <= y; e++, be *= b) {
+      // x / be <= k <= y / be
+      let kx = (x - 1n) / be + 1n; // round up
+      if (kx >= 100) continue;
+      let ky = y / be;
+      if (ky > 99) ky = 99n;
+      for (; kx <= ky; kx++)
+        if (kx % b !== 0n) result.push([kx * be, kx, b, e]);
     }
   }
-  decomposeIntCache.set(n, result);
   return result;
 }
 
 export const decomposeIntLiteral: Plugin = {
   name: "decomposeIntLiteral",
   visit(node) {
+    let decompositions: IntDecomposition[] = [];
     if (isIntLiteral(node) && (node.value <= -10000 || node.value >= 10000)) {
-      const decompositions = decomposeInt(node.value);
-      // TODO: consider  more than 1 decomposition once plugins can suggest multiple replacements
-      if (decompositions.length > 0) {
-        const [k, b, e, d] = decompositions[0];
-        return polygolfOp(
-          "add",
-          polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
-          int(d)
-        );
-      }
+      decompositions = decomposeInt(node.value);
+    } else if (node.kind === "AnyIntegerLiteral") {
+      decompositions = decomposeAnyInt(node.low, node.high);
+    }
+    // TODO: consider  more than 1 decomposition once plugins can suggest multiple replacements (#221)
+    if (decompositions.length > 0) {
+      const [k, b, e, d] = decompositions[0];
+      return polygolfOp(
+        "add",
+        polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
+        int(d)
+      );
     }
   },
 };
