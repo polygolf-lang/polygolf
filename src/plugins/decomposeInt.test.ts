@@ -9,11 +9,9 @@ test("decomposeInt", () => {
     [-1, 10, 10, 1],
     [5, 13, 40, -58],
   ]) {
-    const [k, b, e, d] = int;
-    expect(
-      decomposeInt(BigInt(k) * BigInt(b) ** BigInt(e) + BigInt(d)).map((x) =>
-        x.map(Number)
-      )
-    ).toEqual(expect.arrayContaining([int]));
+    const [k, b, e, d] = int.map(BigInt);
+    expect(decomposeInt(k * b ** e + d).map((x) => x.map(Number))).toEqual(
+      expect.arrayContaining([int])
+    );
   }
 });

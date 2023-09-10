@@ -302,9 +302,12 @@ export type IntDecomposition = [
   bigint
 ];
 
+const decomposeIntCache = new Map<bigint, IntDecomposition[]>();
 export function decomposeInt(n: bigint): IntDecomposition[] {
-  // finds decomposition s.t. |k| < 100, b <= 20, d < |100|
+  // finds decomposition s.t. |k| < 100, b <= 20, d < |100|, caches the result
   if (n < 0) return decomposeInt(-n).map(([k, b, e, d]) => [-k, b, e, -d]);
+  if (decomposeIntCache.has(n)) return decomposeIntCache.get(n)!;
+
   const result: IntDecomposition[] = [];
   for (let k = 1n; k < 100 && k < n; k++) {
     for (let b = 2n; b < 20 && k * b < n; b++) {
@@ -323,6 +326,7 @@ export function decomposeInt(n: bigint): IntDecomposition[] {
       if (d > -100) result.push([k, b, e, d]);
     }
   }
+  decomposeIntCache.set(n, result);
   return result;
 }
 
