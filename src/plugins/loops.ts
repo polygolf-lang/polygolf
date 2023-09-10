@@ -132,7 +132,7 @@ export const forRangeToForEachPair: Plugin = {
 };
 
 function isListGet(node: IR.Node, collection: string, index: string) {
-  if (node.kind !== "PolygolfOp" || node.op !== "list_get") return false;
+  if (!isPolygolfOp(node, "list_get")) return false;
   const args = node.args;
   return (
     args[0].kind === "Identifier" &&
@@ -234,11 +234,7 @@ function getIndexedCollection(
     const parent = s.parent!.node;
     if (n.kind !== "Identifier" || n.builtin || n.name !== indexVar.name)
       return undefined;
-    if (
-      parent.kind !== "PolygolfOp" ||
-      !(allowedOps as OpCode[]).includes(parent.op)
-    )
-      return null;
+    if (!isPolygolfOp(parent, ...allowedOps)) return null;
     const collection = parent.args[0];
     if (
       (collection.kind === "TextLiteral" ||

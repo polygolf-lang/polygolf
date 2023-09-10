@@ -167,7 +167,7 @@ export function powToMul(limit: number = 2): Plugin {
   return {
     name: `powToMul(${limit})`,
     visit(node) {
-      if (node.kind === "PolygolfOp" && node.op === "pow") {
+      if (isPolygolfOp(node, "pow")) {
         const [a, b] = node.args;
         if (isIntLiteral(b) && b.value > 1 && b.value <= limit) {
           return polygolfOp("mul", ...Array(Number(b.value)).fill(a));
@@ -180,7 +180,7 @@ export function powToMul(limit: number = 2): Plugin {
 export const mulToPow: Plugin = {
   name: "mulToPow",
   visit(node) {
-    if (node.kind === "PolygolfOp" && node.op === "mul") {
+    if (isPolygolfOp(node, "mul")) {
       const factors = new Map<string, [Expr, number]>();
       for (const e of node.args) {
         const stringified = stringify(e);
@@ -214,10 +214,7 @@ export function bitShiftToMulOrDiv(
       .map((x) => (x ? "true" : "false"))
       .toString()})`,
     visit(node) {
-      if (
-        node.kind === "PolygolfOp" &&
-        ["bit_shift_left", "bit_shift_right"].includes(node.op)
-      ) {
+      if (isPolygolfOp(node, "bit_shift_left", "bit_shift_right")) {
         const [a, b] = node.args;
         if (!literalOnly || isIntLiteral(b)) {
           if (node.op === "bit_shift_left" && toMul) {
@@ -247,7 +244,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
       .map((x) => (x ? "true" : "false"))
       .toString()})`,
     visit(node) {
-      if (node.kind === "PolygolfOp" && node.op === "div" && fromDiv) {
+      if (isPolygolfOp(node, "div") && fromDiv) {
         const [a, b] = node.args;
         if (isIntLiteral(b)) {
           const [n, exp] = getOddAnd2Exp(b.value);
@@ -255,15 +252,11 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
             return polygolfOp("bit_shift_right", a, int(exp));
           }
         }
-        if (
-          b.kind === "PolygolfOp" &&
-          b.op === "pow" &&
-          isIntLiteral(b.args[0], 2n)
-        ) {
+        if (isPolygolfOp(b, "pow") && isIntLiteral(b.args[0], 2n)) {
           return polygolfOp("bit_shift_right", a, b.args[1]);
         }
       }
-      if (node.kind === "PolygolfOp" && node.op === "mul" && fromMul) {
+      if (isPolygolfOp(node, "mul") && fromMul) {
         if (isIntLiteral(node.args[0])) {
           const [n, exp] = getOddAnd2Exp(node.args[0].value);
           if (exp > 1) {
@@ -275,10 +268,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
           }
         }
         const powNode = node.args.find(
-          (x) =>
-            x.kind === "PolygolfOp" &&
-            x.op === "pow" &&
-            isIntLiteral(x.args[0], 2n)
+          (x) => isPolygolfOp(x, "pow") && isIntLiteral(x.args[0], 2n)
         ) as PolygolfOp | undefined;
         if (powNode !== undefined) {
           return polygolfOp(
