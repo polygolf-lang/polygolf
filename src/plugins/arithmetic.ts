@@ -351,7 +351,7 @@ export function decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
 function _decomposeAnyInt(x: bigint, y: bigint): AnyIntDecomposition[] {
   // Inference: 9900 < x <= y
   const result: AnyIntDecomposition[] = [];
-  for (let b = 2n; b < 100; b++) {
+  for (const b of [2n, 10n]) {
     let be = b * b; // b^e
     for (let e = 2n; be <= y; e++, be *= b) {
       // x / be <= k <= y / be
