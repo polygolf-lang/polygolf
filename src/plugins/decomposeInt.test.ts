@@ -1,4 +1,4 @@
-import { decomposeAnyInt, decomposeInt } from "./arithmetic";
+import { decomposeInt } from "./arithmetic";
 
 test("decomposeInt", () => {
   for (const int of [

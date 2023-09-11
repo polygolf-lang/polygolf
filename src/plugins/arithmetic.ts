@@ -15,7 +15,7 @@ import {
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
-import { filterInplace } from "@/common/arrays";
+import { filterInplace } from "../common/arrays";
 
 export const modToRem: Plugin = {
   name: "modToRem",
