@@ -15,6 +15,7 @@ import {
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
+import { filterInplace } from "@/common/arrays";
 
 export const modToRem: Plugin = {
   name: "modToRem",
@@ -302,68 +303,63 @@ export type IntDecomposition = [
   bigint
 ];
 
-type AnyIntDecomposition = [
-  // [m,k,b,e] represents an equation m = k * pow(b,e)
-  bigint,
-  bigint,
-  bigint,
-  bigint
-];
-
-// assert (abs(n) >= 10000)
+// assert (10000 ≤ |n|)
 export function decomposeInt(n: bigint): IntDecomposition[] {
-  // return decomposeAnyInt(n, n);
-
-  const result =
-    n > 0
-      ? _decomposeAnyInt(n - 99n, n + 99n)
-      : _decomposeAnyInt(-n - 99n, -n + 99n).map(([m, k, b, e]) => [
-          -m,
-          -k,
-          b,
-          e,
-        ]);
-
-  return result.map(([m, k, b, e]) => [k, b, e, n - m]);
+  return decomposeAnyInt(n, n);
 }
 
-// assert (10000 <= x <= y || x <= y <= -10000)
+// assert (10000 ≤ x ≤ y || x ≤ y ≤ -10000)
 export function decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
-  const result =
-    x > 0
-      ? _decomposeAnyInt(x - 99n, y + 99n)
-      : _decomposeAnyInt(-y - 99n, -x + 99n).map(([m, k, b, e]) => [
-          -m,
-          -k,
-          b,
-          e,
-        ]);
-
-  return result.map(([m, k, b, e]) => [
-    k,
-    b,
-    e,
-    m > y ? m - y : m < x ? m - x : 0n,
-  ]);
+  return x > 0
+    ? _decomposeAnyInt(x, y)
+    : _decomposeAnyInt(-y, -x).map(([k, b, e, d]) => [-k, b, e, -d]);
 }
 
-// Find all decompositions m = k * b^e s.t. k < 100, b < 100 for all m s.t. x <= m <= y
-function _decomposeAnyInt(x: bigint, y: bigint): AnyIntDecomposition[] {
-  // Inference: 9900 < x <= y
-  const result: AnyIntDecomposition[] = [];
+function lg(n: bigint): number {
+  if (n < 0) n = -n;
+  return n > 9 ? 3 : n > 1 ? 2 : n > 0 ? 1 : 0;
+}
+
+function betterOrEqual(a: IntDecomposition, b: IntDecomposition): boolean {
+  return lg(a[0]) <= lg(b[0]) && lg(a[2]) <= lg(b[2]) && lg(a[3]) <= lg(b[3]);
+}
+
+// assert (10000 ≤ x ≤ y)
+// Find decompositions x ≤ k * b^e + d ≤ y s.t. 1 ≤ k < 100, b in {2, 10}, |d| < 100
+function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
+  const xd = x - 99n;
+  const yd = y + 99n;
+  const decompositions: IntDecomposition[] = [];
   for (const b of [2n, 10n]) {
+    const bDecompositions: IntDecomposition[] = [];
     let be = b * b; // b^e
-    for (let e = 2n; be <= y; e++, be *= b) {
-      // x / be <= k <= y / be
-      let kx = (x - 1n) / be + 1n; // round up
+    for (let e = 2n; be <= yd; e++, be *= b) {
+      // xd / be <= k <= yd / be
+      let kx = (xd - 1n) / be + 1n; // round up
       if (kx >= 100) continue;
-      let ky = y / be;
+      let ky = yd / be;
       if (ky > 99) ky = 99n;
-      for (; kx <= ky; kx++)
-        if (kx % b !== 0n) result.push([kx * be, kx, b, e]);
+      for (; kx <= ky; kx++) {
+        if (kx % b === 0n) continue;
+        const m = kx * be;
+        const d = m > y ? y - m : m < x ? x - m : 0n;
+        const newDecomposition: IntDecomposition = [kx, b, e, d];
+        if (
+          bDecompositions.some((decomposition) =>
+            betterOrEqual(decomposition, newDecomposition)
+          )
+        )
+          continue;
+        filterInplace(
+          bDecompositions,
+          (decomposition) => !betterOrEqual(newDecomposition, decomposition)
+        );
+        bDecompositions.push(newDecomposition);
+      }
     }
+    decompositions.push(...bDecompositions);
   }
-  return result;
+  return decompositions;
 }
 
 export const decomposeIntLiteral: Plugin = {
