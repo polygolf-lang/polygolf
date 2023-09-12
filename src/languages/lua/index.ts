@@ -187,8 +187,10 @@ const luaLanguage: Language = {
                 : methodCall(c, "gsub", text("%%"), text("%%%%"))
             ),
         ]
-      ),
-      base10DecompositionToFloatLiteralAsBuiltin,
+      )
+    ),
+    simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
+    required(
       mapToUnaryAndBinaryOps(
         ["pow", "^"],
         ["not", "not"],
