@@ -44,6 +44,7 @@ import {
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { listOpsToTextOps } from "../../plugins/static";
+import { base10DecompositionToFloatLiteralAsBuiltin } from "./plugins";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -187,6 +188,7 @@ const luaLanguage: Language = {
             ),
         ]
       ),
+      base10DecompositionToFloatLiteralAsBuiltin,
       mapToUnaryAndBinaryOps(
         ["pow", "^"],
         ["not", "not"],
