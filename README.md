@@ -77,7 +77,7 @@ Type expression is either
 
 ### Literals
 
-Integer literals are unbounded and written in base 10. String literals are JSON string literals.  
+Integer literals are unbounded and written in base 10. They permit scientific notation, so that `1e6` is the same as `1000000`. String literals are JSON string literals.  
 List literals are written as n-ary s-expressions:  
 `(list 1 2 3 4 5)`  
 Array and set literals are similar:  
