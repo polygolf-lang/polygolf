@@ -12,6 +12,7 @@ import {
   binaryOp,
   listConstructor,
   unaryOp,
+  isIntLiteral,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -127,9 +128,7 @@ const golfscriptLanguage: Language = {
           (x) =>
             polygolfOp(
               "lt",
-              ...(x[0].kind === "IntegerLiteral"
-                ? [sub1(x[0]), x[1]]
-                : [x[0], add1(x[1])])
+              ...(isIntLiteral(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])])
             ),
         ],
         [
@@ -137,9 +136,7 @@ const golfscriptLanguage: Language = {
           (x) =>
             polygolfOp(
               "gt",
-              ...(x[0].kind === "IntegerLiteral"
-                ? [add1(x[0]), x[1]]
-                : [x[0], sub1(x[1])])
+              ...(isIntLiteral(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])])
             ),
         ]
       ),

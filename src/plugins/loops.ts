@@ -27,6 +27,7 @@ import {
   integerType,
   add1,
   sub1,
+  isTextLiteral,
 } from "../IR";
 import { byteLength, charLength } from "../common/objective";
 import { PolygolfError } from "../common/errors";
@@ -237,8 +238,7 @@ function getIndexedCollection(
     if (!isPolygolfOp(parent, ...allowedOps)) return null;
     const collection = parent.args[0];
     if (
-      (collection.kind === "TextLiteral" ||
-        collection.kind === "ListConstructor") &&
+      (isTextLiteral(collection) || collection.kind === "ListConstructor") &&
       literalLength(collection, allowedOps.includes("text_get_byte")) ===
         knownLength
     )

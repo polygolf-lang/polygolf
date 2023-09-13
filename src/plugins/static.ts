@@ -68,7 +68,7 @@ export function listOpsToTextOps(
       if (
         isPolygolfOp(node, "list_get", "list_find") &&
         node.args[0].kind === "ListConstructor" &&
-        node.args[0].exprs.every((x) => x.kind === "TextLiteral")
+        node.args[0].exprs.every((x) => isTextLiteral(x))
       ) {
         const texts = node.args[0].exprs.map((x) => (x as TextLiteral).value);
         const joined = text(texts.join(""));

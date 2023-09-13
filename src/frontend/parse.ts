@@ -62,6 +62,7 @@ import {
   unaryOp,
   propertyCall,
   isTextLiteral,
+  isIntLiteral,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -90,7 +91,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       );
   }
   function assertInteger(e: Expr): asserts e is IntegerLiteral {
-    if (e.kind !== "IntegerLiteral")
+    if (!isIntLiteral(e))
       throw new PolygolfError(
         `Syntax error. Expected integer literal, but got ${e.kind}`,
         e.source
