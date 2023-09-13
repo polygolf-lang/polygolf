@@ -31,9 +31,11 @@ This will set up the `polygolf` command to point to the CLI script.
 Polygolf CLI supports the following options:
 
 - `--input`, `-i`: path to the input program
-- `--lang`, `-l`: target language name or its extension, or `all` for targeting all supported languages
+- `--lang`, `-l`: target language name or its extension, if omitted, targets all supported languages
 - `--output`, `-o`: output path, if omitted, output goes to stdout
 - `--chars`, `-c`: if set, switches the objective from bytes to chars
+- `--all`, `-a`: if set, outputs all input variants
+- `--debug`, `-d`: if set, outputs debug info
 
 To uninstall, use `npm uninstall polygolf --location=global`
 
