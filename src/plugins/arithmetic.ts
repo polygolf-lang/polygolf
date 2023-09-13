@@ -307,7 +307,15 @@ export function decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
 
 function lg(n: bigint): number {
   if (n < 0) n = -n;
-  return n > 9 ? 3 : n > 1 ? 2 : n > 0 ? 1 : 0;
+  return n > 99
+    ? 1 + n.toString().length
+    : n > 9
+    ? 3
+    : n > 1
+    ? 2
+    : n > 0
+    ? 1
+    : 0;
 }
 
 function betterOrEqual(a: IntDecomposition, b: IntDecomposition): boolean {
