@@ -1,28 +1,31 @@
-import { getType } from "../../common/getType";
-import { annotate, builtin, isIntLiteral, isPolygolfOp } from "../../IR";
+import {
+  Node,
+  annotate,
+  builtin,
+  integerType,
+  isIntLiteral,
+  isPolygolfOp,
+} from "../../IR";
 import { Plugin } from "../../common/Language";
 
 export const base10DecompositionToFloatLiteralAsBuiltin: Plugin = {
   name: "base10DecompositionToFloatLiteralAsBuiltin",
-  visit(node, spine) {
-    if (
-      isPolygolfOp(node, "mul") &&
-      isIntLiteral(node.args[0]) &&
-      isPolygolfOp(node.args[1], "pow") &&
-      isIntLiteral(node.args[1].args[0], 10n) &&
-      isIntLiteral(node.args[1].args[1])
-    ) {
-      return annotate(
-        builtin(`${node.args[0].value}e${node.args[1].args[1].value}`),
-        getType(node, spine)
-      );
+  visit(node) {
+    let k = 1n;
+    let pow: Node = node;
+    if (isPolygolfOp(node, "mul") && isIntLiteral(node.args[0])) {
+      k = node.args[0].value;
+      pow = node.args[1];
     }
+
     if (
-      isPolygolfOp(node, "pow") &&
-      isIntLiteral(node.args[0], 10n) &&
-      isIntLiteral(node.args[1])
+      isPolygolfOp(pow, "pow") &&
+      isIntLiteral(pow.args[0], 10n) &&
+      isIntLiteral(pow.args[1])
     ) {
-      return annotate(builtin(`1e${node.args[1].value}`), getType(node, spine));
+      const e = pow.args[1].value;
+      const value = k * 10n ** e;
+      return annotate(builtin(`${k}e${e}`), integerType(value, value));
     }
   },
 };
