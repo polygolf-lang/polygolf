@@ -17,7 +17,7 @@ import {
   setType,
   integerType as intType,
   IntegerLiteral,
-  int,
+  int as integer,
   assignment,
   OpCode,
   whileLoop,
@@ -168,8 +168,8 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     case "for": {
       expectArity(2, 5);
       let variable: Expr = id("_");
-      let start: Expr = int(0n);
-      let step: Expr = int(1n);
+      let start: Expr = integer(0n);
+      let step: Expr = integer(1n);
       let end, body: Expr;
       if (args.length === 5) {
         [variable, start, end, step, body] = args;
@@ -327,7 +327,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
           [start, end, step, body] = args;
         } else {
           [start, end, body] = args;
-          step = int(1n);
+          step = integer(1n);
         }
         return forRange(undefined, start, end, step, body);
       }
@@ -351,6 +351,11 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     `Syntax error. Unrecognized builtin: ${opCode}`,
     callee.source
   );
+}
+
+export function int(x: Token) {
+  const parts = x.toString().split("e");
+  return integer(BigInt(parts[0]) * 10n ** BigInt(parts[1] ?? "0"));
 }
 
 export const canonicalOpTable: Record<string, OpCode> = {

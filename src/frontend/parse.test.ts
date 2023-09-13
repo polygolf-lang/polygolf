@@ -41,6 +41,7 @@ function expectTypeParse(type: string, output: Type) {
 describe("Parse literals", () => {
   expectExprParse("single digit", "5", int(5n));
   expectExprParse("negative integer", "-123", int(-123n));
+  expectExprParse("scientific notation", "1e6", int(1000000n));
   expectExprParse("variable", "$y", id("y"));
   expectExprParse("string literal", '"abc"', text("abc"));
   expectExprParse("string with escapes", '"\\u0001\\r"', text("\u0001\r"));

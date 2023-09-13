@@ -8,11 +8,11 @@ import {
   ifStatement,
   forRange,
   variants,
-  int,
   text,
   id as identifier
 } from "../IR";
 import {
+  int,
   sexpr,
   typeSexpr,
   integerType,
@@ -59,7 +59,7 @@ callee -> builtin {% id %}
   | opalias {% id %}
   | variable {% id %}
 
-integer -> %integer {% d => refSource(int(BigInt(d[0])), d[0]) %}
+integer -> %integer {% d => refSource(int(d[0]), d[0]) %}
 variable -> %variable {% d => refSource(userIdentifier(d[0]), d[0]) %}
 builtin -> (%builtin | "argv_get") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
 opalias -> (%opalias | "..") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
