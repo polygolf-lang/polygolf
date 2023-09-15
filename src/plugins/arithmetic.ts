@@ -322,6 +322,10 @@ function betterOrEqual(a: IntDecomposition, b: IntDecomposition): boolean {
   return lg(a[0]) <= lg(b[0]) && lg(a[2]) <= lg(b[2]) && lg(a[3]) <= lg(b[3]);
 }
 
+function ceilDiv(a: bigint, b: bigint) {
+  return (a + (b - 1n)) / b;
+}
+
 // assert (10000 ≤ x ≤ y)
 // Find decompositions x ≤ k * b^e + d ≤ y s.t. 1 ≤ k < 100, b in {2, 10}, |d| < 100
 function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
@@ -330,18 +334,18 @@ function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
   const decompositions: IntDecomposition[] = [];
   for (const b of [2n, 10n]) {
     const bDecompositions: IntDecomposition[] = [];
-    let be = b * b; // b^e
-    for (let e = 2n; be <= yd; e++, be *= b) {
-      // xd / be <= k <= yd / be
-      let kx = (xd - 1n) / be + 1n; // round up
+    for (
+      let e = 2n, be = b * b, kx = ceilDiv(xd, be), ky = yd / be;
+      ky > 0;
+      e++, be *= b, kx = ceilDiv(kx, b), ky /= b
+    ) {
       if (kx >= 100) continue;
-      let ky = yd / be;
-      if (ky > 99) ky = 99n;
-      for (; kx <= ky; kx++) {
-        if (kx % b === 0n) continue;
-        const m = kx * be;
+      const kmax = ky > 99 ? 99n : ky;
+      for (let k = kx; k <= kmax; k++) {
+        if (k % b === 0n) continue;
+        const m = k * be;
         const d = m > y ? y - m : m < x ? x - m : 0n;
-        const newDecomposition: IntDecomposition = [kx, b, e, d];
+        const newDecomposition: IntDecomposition = [k, b, e, d];
         if (
           bDecompositions.some((decomposition) =>
             betterOrEqual(decomposition, newDecomposition)
