@@ -319,7 +319,12 @@ function lg(n: bigint): number {
 }
 
 function betterOrEqual(a: IntDecomposition, b: IntDecomposition): boolean {
-  return lg(a[0]) <= lg(b[0]) && lg(a[2]) <= lg(b[2]) && lg(a[3]) <= lg(b[3]);
+  return (
+    (a[1] === b[1] || (a[1] < 10 && 2 < b[1] && b[1] < 10)) &&
+    lg(a[0]) <= lg(b[0]) &&
+    lg(a[2]) <= lg(b[2]) &&
+    lg(a[3]) <= lg(b[3])
+  );
 }
 
 function ceilDiv(a: bigint, b: bigint) {
@@ -327,39 +332,36 @@ function ceilDiv(a: bigint, b: bigint) {
 }
 
 // assert (10000 ≤ x ≤ y)
-// Find decompositions x ≤ k * b^e + d ≤ y s.t. 1 ≤ k < 100, b in {2, 10}, |d| < 100
+// Find decompositions x ≤ k * b^e + d ≤ y s.t. 1 ≤ k < 100, 2 ≤ b ≤ 10, |d| < 100
 function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
   const xd = x - 99n;
   const yd = y + 99n;
   const decompositions: IntDecomposition[] = [];
-  for (const b of [2n, 10n]) {
-    const bDecompositions: IntDecomposition[] = [];
+  for (let b = 2n; b <= 10n; b++) {
     for (
       let e = 2n, be = b * b, kx = ceilDiv(xd, be), ky = yd / be;
-      ky > 0;
+      kx <= ky;
       e++, be *= b, kx = ceilDiv(kx, b), ky /= b
     ) {
       if (kx >= 100) continue;
       const kmax = ky > 99 ? 99n : ky;
       for (let k = kx; k <= kmax; k++) {
-        if (k % b === 0n) continue;
         const m = k * be;
         const d = m > y ? y - m : m < x ? x - m : 0n;
         const newDecomposition: IntDecomposition = [k, b, e, d];
         if (
-          bDecompositions.some((decomposition) =>
+          decompositions.some((decomposition) =>
             betterOrEqual(decomposition, newDecomposition)
           )
         )
           continue;
         filterInplace(
-          bDecompositions,
+          decompositions,
           (decomposition) => !betterOrEqual(newDecomposition, decomposition)
         );
-        bDecompositions.push(newDecomposition);
+        decompositions.push(newDecomposition);
       }
     }
-    decompositions.push(...bDecompositions);
   }
   return decompositions;
 }
@@ -373,6 +375,7 @@ export const decomposeIntLiteral: Plugin = {
     } else if (node.kind === "AnyIntegerLiteral") {
       decompositions = decomposeAnyInt(node.low, node.high);
     }
+    decompositions.sort((a, b) => (Number(a[1]) % 9) - (Number(b[1]) % 9));
     // TODO: consider  more than 1 decomposition once plugins can suggest multiple replacements (#221)
     if (decompositions.length > 0) {
       const [k, b, e, d] = decompositions[0];
