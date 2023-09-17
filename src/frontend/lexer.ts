@@ -1,7 +1,8 @@
 import moo from "moo";
 
 const tokenTable = {
-  integer: /0|-?[1-9]\d*(?:e[1-9]\d*)?/,
+  integer:
+    /0|-?[1-9]\d*(?:[eE][1-9]\d*)?|-?0x[1-9a-fA-F][\da-fA-F]*|-?0b1[01]*/,
   string: /"(?:\\.|[^"])*"/,
   variable: /\$\w+/,
   type: /[A-Z][a-z]*/,

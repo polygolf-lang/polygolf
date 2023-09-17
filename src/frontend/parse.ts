@@ -353,9 +353,15 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   );
 }
 
+function intValue(x: string): bigint {
+  if (x[0] === "-") return -intValue(x.substring(1));
+  if (x[0] === "0") return BigInt(x);
+  const parts = x.toString().split(/[eE]/);
+  return BigInt(parts[0]) * 10n ** BigInt(parts[1] ?? "0");
+}
+
 export function int(x: Token) {
-  const parts = x.toString().split("e");
-  return integer(BigInt(parts[0]) * 10n ** BigInt(parts[1] ?? "0"));
+  return integer(intValue(x.text));
 }
 
 export const canonicalOpTable: Record<string, OpCode> = {
