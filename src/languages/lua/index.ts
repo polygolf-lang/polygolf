@@ -39,6 +39,7 @@ import {
   applyDeMorgans,
   bitnotPlugins,
   equalityToInequality,
+  lowBitsPlugins,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { listOpsToTextOps } from "../../plugins/static";
@@ -57,7 +58,7 @@ const luaLanguage: Language = {
       equalityToInequality,
       shiftRangeOneUp,
       ...bitnotPlugins,
-      ...bitnotPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       useIntegerTruthiness,
       forRangeToForRangeOneStep,
