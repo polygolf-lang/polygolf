@@ -293,12 +293,12 @@ export type IntDecomposition = [
   bigint
 ];
 
-// assert (10000 ≤ |n|)
+// assert (1000 ≤ |n|)
 export function decomposeInt(n: bigint): IntDecomposition[] {
   return decomposeAnyInt(n, n);
 }
 
-// assert (10000 ≤ x ≤ y || x ≤ y ≤ -10000)
+// assert (1000 ≤ x ≤ y || x ≤ y ≤ -1000)
 export function decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
   return x > 0
     ? _decomposeAnyInt(x, y)
@@ -318,12 +318,16 @@ function lg(n: bigint): number {
     : 0;
 }
 
-function betterOrEqual(a: IntDecomposition, b: IntDecomposition): boolean {
+function betterOrEqual(
+  [k1, b1, e1, d1]: IntDecomposition,
+  [k2, b2, e2, d2]: IntDecomposition
+): boolean {
   return (
-    (a[1] === b[1] || (a[1] < 10 && 2 < b[1] && b[1] < 10)) &&
-    lg(a[0]) <= lg(b[0]) &&
-    lg(a[2]) <= lg(b[2]) &&
-    lg(a[3]) <= lg(b[3])
+    (b1 === 2n || b2 !== 2n) &&
+    (b1 === 10n || b2 !== 10n) &&
+    (k1 === 1n || k2 !== 1n) &&
+    (d1 === 0n || d2 !== 0n) &&
+    lg(k1) + lg(b1) + lg(e1) + lg(d1) <= lg(k2) + lg(b2) + lg(e2) + lg(d2)
   );
 }
 
@@ -331,7 +335,7 @@ function ceilDiv(a: bigint, b: bigint) {
   return (a + (b - 1n)) / b;
 }
 
-// assert (10000 ≤ x ≤ y)
+// assert (1000 ≤ x ≤ y)
 // Find decompositions x ≤ k * b^e + d ≤ y s.t. 1 ≤ k < 100, 2 ≤ b ≤ 10, |d| < 100
 function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
   const xd = x - 99n;
@@ -343,8 +347,8 @@ function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
       kx <= ky;
       e++, be *= b, kx = ceilDiv(kx, b), ky /= b
     ) {
-      if (kx >= 100) continue;
-      const kmax = ky > 99 ? 99n : ky;
+      if (be < 1000) continue;
+      const kmax = ky > kx ? kx + 1n : kx;
       for (let k = kx; k <= kmax; k++) {
         const m = k * be;
         const d = m > y ? y - m : m < x ? x - m : 0n;
@@ -370,7 +374,7 @@ export const decomposeIntLiteral: Plugin = {
   name: "decomposeIntLiteral",
   visit(node) {
     let decompositions: IntDecomposition[] = [];
-    if (isIntLiteral(node) && (node.value <= -10000 || node.value >= 10000)) {
+    if (isIntLiteral(node) && (node.value <= -1000 || node.value >= 1000)) {
       decompositions = decomposeInt(node.value);
     } else if (node.kind === "AnyIntegerLiteral") {
       decompositions = decomposeAnyInt(node.low, node.high);
