@@ -44,6 +44,7 @@ import {
   equalityToInequality,
   bitShiftToMulOrDiv,
   powPlugins,
+  lowBitsPlugins,
 } from "../../plugins/arithmetic";
 import {
   useEquivalentTextOp,
@@ -63,6 +64,7 @@ const golfscriptLanguage: Language = {
       equalityToInequality,
       ...bitnotPlugins,
       ...powPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       forRangeToForRangeOneStep,
       forArgvToForEach,

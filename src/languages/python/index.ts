@@ -58,6 +58,7 @@ import {
   applyDeMorgans,
   bitnotPlugins,
   equalityToInequality,
+  lowBitsPlugins,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
@@ -80,6 +81,7 @@ const pythonLanguage: Language = {
       useLowDecimalListPackedPrinter,
       textToIntToTextGetToInt,
       ...bitnotPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       useIntegerTruthiness,
       forRangeToForRangeOneStep,

@@ -57,6 +57,7 @@ const luaLanguage: Language = {
       equalityToInequality,
       shiftRangeOneUp,
       ...bitnotPlugins,
+      ...bitnotPlugins,
       applyDeMorgans,
       useIntegerTruthiness,
       forRangeToForRangeOneStep,
