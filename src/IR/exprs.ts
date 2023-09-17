@@ -252,7 +252,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
       combined !== null &&
       (!isIntLiteral(combined) ||
         op !== "pow" || // only eval pow if it is a low number
-        (combined.value < 10000 && combined.value > -10000))
+        (combined.value < 1000 && combined.value > -1000))
     ) {
       return combined;
     }
