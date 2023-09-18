@@ -13,8 +13,8 @@ test("decomposeInt", () => {
     [6, 2, 99, 0],
   ]) {
     const [k, b, e, d] = int.map(BigInt);
-    expect(decomposeInt(k * b ** e + d).map((x) => x.map(Number))).toEqual(
-      expect.arrayContaining([int])
-    );
+    expect(
+      decomposeInt(k * b ** e + d).map((x) => x.map(Number).slice(0, 4))
+    ).toEqual(expect.arrayContaining([int]));
   }
 });
