@@ -387,7 +387,7 @@ export const decomposeIntLiteral: Plugin = {
     decompositions.sort((a, b) => (Number(a[1]) % 9) - (Number(b[1]) % 9));
     // TODO: consider  more than 1 decomposition once plugins can suggest multiple replacements (#221)
     if (decompositions.length > 0) {
-      const [k, b, e, d, c] = decompositions[0];
+      const [k, b, e, d] = decompositions[0];
       return polygolfOp(
         "add",
         polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
