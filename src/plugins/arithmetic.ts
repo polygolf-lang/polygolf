@@ -286,11 +286,12 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
 export const bitShiftPlugins = [bitShiftToMulOrDiv(), mulOrDivToBitShift()];
 
 export type IntDecomposition = [
-  // [k,b,e,d] represents a value k * pow(b,e) + d
+  // [k,b,e,d,cost] represents a value k * pow(b,e) + d, cost = lg(k)+lg(b)+lg(d)
   bigint,
   bigint,
   bigint,
-  bigint
+  bigint,
+  number
 ];
 
 // assert (1000 ≤ |n|)
@@ -302,32 +303,30 @@ export function decomposeInt(n: bigint): IntDecomposition[] {
 export function decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
   return x > 0
     ? _decomposeAnyInt(x, y)
-    : _decomposeAnyInt(-y, -x).map(([k, b, e, d]) => [-k, b, e, -d]);
+    : _decomposeAnyInt(-y, -x).map(([k, b, e, d, c]) => [-k, b, e, -d, c]);
 }
 
 function lg(n: bigint): number {
   if (n < 0) n = -n;
-  return n > 99
-    ? 1 + n.toString().length
+  return n > 1000000000000
+    ? 2 + n.toString(16).length
+    : n > 99
+    ? n.toString().length
     : n > 9
-    ? 3
-    : n > 1
     ? 2
-    : n > 0
-    ? 1
-    : 0;
+    : 1;
 }
 
 function betterOrEqual(
-  [k1, b1, e1, d1]: IntDecomposition,
-  [k2, b2, e2, d2]: IntDecomposition
+  [k1, b1, e1, d1, c1]: IntDecomposition,
+  [k2, b2, e2, d2, c2]: IntDecomposition
 ): boolean {
   return (
     (b1 === 2n || b2 !== 2n) &&
     (b1 === 10n || b2 !== 10n) &&
     (k1 === 1n || k2 !== 1n) &&
     (d1 === 0n || d2 !== 0n) &&
-    lg(k1) + lg(b1) + lg(e1) + lg(d1) <= lg(k2) + lg(b2) + lg(e2) + lg(d2)
+    c1 <= c2
   );
 }
 
@@ -352,7 +351,13 @@ function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
       for (let k = kx; k <= kmax; k++) {
         const m = k * be;
         const d = m > y ? y - m : m < x ? x - m : 0n;
-        const newDecomposition: IntDecomposition = [k, b, e, d];
+        const newDecomposition: IntDecomposition = [
+          k,
+          b,
+          e,
+          d,
+          lg(k) + lg(b) + lg(e) + lg(d),
+        ];
         if (
           decompositions.some((decomposition) =>
             betterOrEqual(decomposition, newDecomposition)
@@ -382,7 +387,7 @@ export const decomposeIntLiteral: Plugin = {
     decompositions.sort((a, b) => (Number(a[1]) % 9) - (Number(b[1]) % 9));
     // TODO: consider  more than 1 decomposition once plugins can suggest multiple replacements (#221)
     if (decompositions.length > 0) {
-      const [k, b, e, d] = decompositions[0];
+      const [k, b, e, d, c] = decompositions[0];
       return polygolfOp(
         "add",
         polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
