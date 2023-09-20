@@ -214,6 +214,8 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Integer arithmetic
 
+- [x] `3145728` ⟶ `3<<20`
+- [x] `3000000` ⟶ `3e6` (in Lua, TODO in other langs where possible)
 - [x] `x<=5` ⟶ `x<6`
 - [x] `x%10==0` ⟶ `x%10<1`
 - [x] `(x+1)*(y+1)` ⟶ `~x*~y`
