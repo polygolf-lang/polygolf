@@ -235,6 +235,7 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Loops
 
+- [x] `for i in range(10):print("O")` ⟶ `for _ in"X"*10:print("O")`
 - [x] `for i in range(len(d)):print(d[i])` ⟶ `for i in d:print(i)`
 - [x] `for i in range(0,10,2):print(i)` ⟶ `for i in range(5):print(2*i)`
 - [x] `for i in range(10,20):print(i+1)` ⟶ `for i in range(11,21):print(i)`
