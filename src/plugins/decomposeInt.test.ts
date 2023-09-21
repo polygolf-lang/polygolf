@@ -2,8 +2,8 @@ import { decomposeInt } from "./arithmetic";
 
 test("decomposeInt", () => {
   for (const int of [
-    [-6, 2, 19, 1],
-    [6, 2, 19, -10],
+    [-3, 2, 29, 1],
+    [3, 2, 29, -10],
     [-1, 2, 18, 8],
     [58, 10, 17, -1],
     [-1, 10, 10, 1],

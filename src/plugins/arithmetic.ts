@@ -286,7 +286,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
 export const bitShiftPlugins = [bitShiftToMulOrDiv(), mulOrDivToBitShift()];
 
 export type IntDecomposition = [
-  // [k,b,e,d,cost] represents a value k * pow(b,e) + d, cost = lg(k)+lg(b)+lg(d)
+  // [k,b,e,d,cost] represents a value k * pow(b,e) + d, cost = lg(k)+lg(b)+lg(e)+lg(d)
   bigint,
   bigint,
   bigint,
@@ -349,6 +349,7 @@ function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
       if (be < 1000) continue;
       const kmax = ky > kx ? kx + 1n : kx;
       for (let k = kx; k <= kmax; k++) {
+        if (k % b === 0n && lg(e) === lg(e + 1n)) continue;
         const m = k * be;
         const d = m > y ? y - m : m < x ? x - m : 0n;
         const newDecomposition: IntDecomposition = [
