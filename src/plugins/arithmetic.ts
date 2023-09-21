@@ -170,7 +170,7 @@ export function powToMul(limit: number = 2): Plugin {
     visit(node) {
       if (isPolygolfOp(node, "pow")) {
         const [a, b] = node.args;
-        if (isIntLiteral(b) && b.value > 1 && b.value <= limit) {
+        if (isIntLiteral(b) && 1 < b.value && b.value <= limit) {
           return polygolfOp("mul", ...Array(Number(b.value)).fill(a));
         }
       }
