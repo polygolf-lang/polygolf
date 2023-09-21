@@ -109,7 +109,7 @@ const swiftLanguage: Language = {
         ]
       ),
       useIndexCalls(),
-      decomposeIntLiteral
+      decomposeIntLiteral()
     ),
     required(
       pickAnyInt,

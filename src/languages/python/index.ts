@@ -90,7 +90,7 @@ const pythonLanguage: Language = {
       forArgvToForEach,
       useEquivalentTextOp(false, true),
       useIndexCalls(),
-      decomposeIntLiteral
+      decomposeIntLiteral()
     ),
     required(
       pickAnyInt,

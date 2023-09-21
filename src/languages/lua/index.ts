@@ -99,7 +99,7 @@ const luaLanguage: Language = {
         ]
       ),
       useIndexCalls(true),
-      decomposeIntLiteral
+      decomposeIntLiteral(true, true, true)
     ),
     required(
       pickAnyInt,

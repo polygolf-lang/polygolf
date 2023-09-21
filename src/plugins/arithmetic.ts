@@ -295,15 +295,28 @@ export type IntDecomposition = [
 ];
 
 // assert (1000 ≤ |n|)
-export function decomposeInt(n: bigint): IntDecomposition[] {
-  return decomposeAnyInt(n, n);
+export function decomposeInt(
+  n: bigint,
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): IntDecomposition[] {
+  return decomposeAnyInt(n, n, hasScientific, hasPowers, hasShifts);
 }
 
 // assert (1000 ≤ x ≤ y || x ≤ y ≤ -1000)
-export function decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
+export function decomposeAnyInt(
+  x: bigint,
+  y: bigint,
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): IntDecomposition[] {
   return x > 0
-    ? _decomposeAnyInt(x, y)
-    : _decomposeAnyInt(-y, -x).map(([k, b, e, d, c]) => [-k, b, e, -d, c]);
+    ? _decomposeAnyInt(x, y, hasScientific, hasPowers, hasShifts)
+    : _decomposeAnyInt(-y, -x, hasScientific, hasPowers, hasShifts).map(
+        ([k, b, e, d, c]) => [-k, b, e, -d, c]
+      );
 }
 
 function lg(n: bigint): number {
@@ -317,30 +330,40 @@ function lg(n: bigint): number {
     : 1;
 }
 
-function betterOrEqual(
-  [k1, b1, e1, d1, c1]: IntDecomposition,
-  [k2, b2, e2, d2, c2]: IntDecomposition
-): boolean {
-  return (
-    (b1 === 2n || b2 !== 2n) &&
-    (b1 === 10n || b2 !== 10n) &&
-    (k1 === 1n || k2 !== 1n) &&
-    (d1 === 0n || d2 !== 0n) &&
-    c1 <= c2
-  );
-}
-
 function ceilDiv(a: bigint, b: bigint) {
   return (a + (b - 1n)) / b;
 }
 
 // assert (1000 ≤ x ≤ y)
-// Find decompositions x ≤ k * b^e + d ≤ y s.t. 1 ≤ k < 100, 2 ≤ b ≤ 10, |d| < 100
-function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
+// Find decompositions x ≤ k * b^e + d ≤ y s.t. 1000 ≤ b^e, 2 ≤ b ≤ 10, |d| < 100
+function _decomposeAnyInt(
+  x: bigint,
+  y: bigint,
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): IntDecomposition[] {
+  function betterOrEqual(
+    [k1, b1, e1, d1, c1]: IntDecomposition,
+    [k2, b2, e2, d2, c2]: IntDecomposition
+  ): boolean {
+    return (
+      (!hasShifts || b1 === 2n || b2 !== 2n) &&
+      (!hasScientific || b1 === 10n || b2 !== 10n) &&
+      (k1 === 1n || k2 !== 1n) &&
+      (d1 === 0n || d2 !== 0n) &&
+      c1 <= c2
+    );
+  }
   const xd = x - 99n;
   const yd = y + 99n;
   const decompositions: IntDecomposition[] = [];
-  for (let b = 2n; b <= 10n; b++) {
+  for (let b = 2n; b <= 10n; b += hasPowers ? 1n : 8n) {
+    if (
+      !hasPowers &&
+      ((!hasShifts && b === 2n) || (!hasScientific && b === 10n))
+    )
+      continue;
     for (
       let e = 2n, be = b * b, kx = ceilDiv(xd, be), ky = yd / be;
       kx <= ky;
@@ -376,27 +399,48 @@ function _decomposeAnyInt(x: bigint, y: bigint): IntDecomposition[] {
   return decompositions;
 }
 
-export const decomposeIntLiteral: Plugin = {
-  name: "decomposeIntLiteral",
-  visit(node) {
-    let decompositions: IntDecomposition[] = [];
-    if (isIntLiteral(node) && (node.value <= -1000 || node.value >= 1000)) {
-      decompositions = decomposeInt(node.value);
-    } else if (node.kind === "AnyIntegerLiteral") {
-      decompositions = decomposeAnyInt(node.low, node.high);
-    }
-    decompositions.sort((a, b) => (Number(a[1]) % 9) - (Number(b[1]) % 9));
-    // TODO: consider  more than 1 decomposition once plugins can suggest multiple replacements (#221)
-    if (decompositions.length > 0) {
-      const [k, b, e, d] = decompositions[0];
-      return polygolfOp(
-        "add",
-        polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
-        int(d)
-      );
-    }
-  },
-};
+export function decomposeIntLiteral(
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): Plugin {
+  return {
+    name: `decomposeIntLiteral(${JSON.stringify([
+      hasScientific,
+      hasPowers,
+      hasShifts,
+    ])})`,
+    visit(node) {
+      let decompositions: IntDecomposition[] = [];
+      if (isIntLiteral(node) && (node.value <= -1000 || node.value >= 1000)) {
+        decompositions = decomposeInt(
+          node.value,
+          hasScientific,
+          hasPowers,
+          hasShifts
+        );
+      } else if (node.kind === "AnyIntegerLiteral") {
+        decompositions = decomposeAnyInt(
+          node.low,
+          node.high,
+          hasScientific,
+          hasPowers,
+          hasShifts
+        );
+      }
+      decompositions.sort((a, b) => (Number(a[1]) % 9) - (Number(b[1]) % 9));
+      // TODO: consider  more than 1 decomposition once plugins can suggest multiple replacements (#221)
+      if (decompositions.length > 0) {
+        const [k, b, e, d] = decompositions[0];
+        return polygolfOp(
+          "add",
+          polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
+          int(d)
+        );
+      }
+    },
+  };
+}
 
 export const pickAnyInt: Plugin = {
   name: "pickAnyInt",

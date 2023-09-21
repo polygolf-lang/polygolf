@@ -105,7 +105,7 @@ const nimLanguage: Language = {
         ["argv", functionCall("commandLineParams")],
         ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
       ),
-      decomposeIntLiteral
+      decomposeIntLiteral()
     ),
     required(
       pickAnyInt,

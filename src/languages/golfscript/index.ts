@@ -69,7 +69,7 @@ const golfscriptLanguage: Language = {
       forRangeToForRangeOneStep,
       forArgvToForEach,
       bitShiftToMulOrDiv(false, true, true),
-      decomposeIntLiteral
+      decomposeIntLiteral(false, true, false)
     ),
     required(
       pickAnyInt,
