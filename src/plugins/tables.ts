@@ -5,9 +5,8 @@ import {
   Expr,
   functionCall,
   int,
-  IntegerLiteral,
   integerType,
-  isIntLiteral,
+  isOfKind,
   isPolygolfOp,
   isTextLiteral,
   listConstructor,
@@ -41,7 +40,7 @@ export function tableHashing(
     name: "tableHashing(...)",
     visit(node, spine) {
       if (
-        isPolygolfOp(node, "table_get") &&
+        isPolygolfOp("table_get")(node) &&
         node.args[0].kind === "TableConstructor"
       ) {
         const table = node.args[0];
@@ -50,7 +49,7 @@ export function tableHashing(
         if (
           tableType.kind === "Table" &&
           tableType.key.kind === "text" &&
-          table.kvPairs.every((x) => isTextLiteral(x.key))
+          table.kvPairs.every((x) => isTextLiteral()(x.key))
         ) {
           const searchResult = findHash(
             hashFunc,
@@ -135,14 +134,13 @@ export const tableToListLookup: Plugin = {
   name: "tableToListLookup",
   visit(node) {
     if (
-      isPolygolfOp(node, "table_get") &&
+      isPolygolfOp("table_get")(node) &&
       node.args[0].kind === "TableConstructor"
     ) {
       const keys = node.args[0].kvPairs.map((x) => x.key);
       if (
-        keys.every((x) => isTextLiteral(x) || isIntLiteral(x)) &&
-        new Set(keys.map((x) => (x as IntegerLiteral | TextLiteral).value))
-          .size === keys.length
+        keys.every(isOfKind("IntegerLiteral", "TextLiteral")) &&
+        new Set(keys.map((x) => x.value)).size === keys.length
       ) {
         const values = node.args[0].kvPairs.map((x) => x.value);
         const at = node.args[1];

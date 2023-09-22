@@ -169,7 +169,7 @@ function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
 export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   if (op === "not" || op === "bit_not") {
     const arg = args[0];
-    if (isPolygolfOp(arg)) {
+    if (isPolygolfOp()(arg)) {
       if (arg.op === op) return arg.args[0];
       if (op === "not") {
         const negated = booleanNotOpCode(arg.op as BinaryOpCode);
@@ -180,7 +180,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
     }
   }
   if (op === "neg") {
-    if (isIntLiteral(args[0])) {
+    if (isIntLiteral()(args[0])) {
       return int(-args[0].value);
     }
     return polygolfOp("mul", int(-1), args[0]);
@@ -189,15 +189,15 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
     return polygolfOp("add", args[0], polygolfOp("neg", args[1]));
   }
   if (isAssociative(op)) {
-    args = args.flatMap((x) => (isPolygolfOp(x, op) ? x.args : [x]));
+    args = args.flatMap((x) => (isPolygolfOp(op)(x) ? x.args : [x]));
     if (op === "add") args = simplifyPolynomial(args);
     else {
       if (isCommutative(op)) {
         args = args
-          .filter((x) => isIntLiteral(x))
-          .concat(args.filter((x) => !isIntLiteral(x)));
+          .filter((x) => isIntLiteral()(x))
+          .concat(args.filter((x) => !isIntLiteral()(x)));
       } else {
-        args = args.filter((x) => !isTextLiteral(x, ""));
+        args = args.filter((x) => !isTextLiteral("")(x));
         if (
           args.length === 0 ||
           (args.length === 1 && args[0].kind === "ImplicitConversion")
@@ -219,11 +219,11 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
       args = newArgs;
       if (op === "mul" && args.length > 1 && isNegativeLiteral(args[0])) {
         const toNegate = args.find(
-          (x) => isPolygolfOp(x, "add") && x.args.some(isNegative)
+          (x) => isPolygolfOp("add")(x) && x.args.some(isNegative)
         );
         if (toNegate !== undefined) {
           args = args.map((x) =>
-            isIntLiteral(x)
+            isIntLiteral()(x)
               ? int(-x.value)
               : x === toNegate
               ? polygolfOp(
@@ -238,7 +238,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
     if (
       op === "mul" &&
       args.length > 1 &&
-      isIntLiteral(args[0], 1n) &&
+      isIntLiteral(1n)(args[0]) &&
       args[1].kind !== "ImplicitConversion"
     ) {
       args = args.slice(1);
@@ -256,10 +256,10 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
 }
 
 function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
-  if (op === "concat" && isTextLiteral(left) && isTextLiteral(right)) {
+  if (op === "concat" && isTextLiteral()(left) && isTextLiteral()(right)) {
     return text(left.value + right.value);
   }
-  if (isIntLiteral(left) && isIntLiteral(right)) {
+  if (isIntLiteral()(left) && isIntLiteral()(right)) {
     try {
       const type = getArithmeticType(
         op,
@@ -289,9 +289,9 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
     }
   }
   for (const x of terms) {
-    if (isIntLiteral(x)) constant += x.value;
-    else if (isPolygolfOp(x, "mul")) {
-      if (isIntLiteral(x.args[0])) add(x.args[0].value, x.args.slice(1));
+    if (isIntLiteral()(x)) constant += x.value;
+    else if (isPolygolfOp("mul")(x)) {
+      if (isIntLiteral()(x.args[0])) add(x.args[0].value, x.args.slice(1));
       else add(1n, x.args);
     } else add(1n, [x]);
   }
@@ -460,28 +460,59 @@ export function getArgs(
   }
 }
 
+export function isOfKind<Kind extends Node["kind"]>(
+  ...kinds: Kind[]
+): (x: Node) => x is Node & { kind: Kind } {
+  return ((x: Node) => kinds.includes(x.kind as any)) as any;
+}
+
 export function isTextLiteral<Value extends string>(
-  x: Node,
   ...vals: Value[]
-): x is TextLiteral<Value> {
-  return (
+): (x: Node) => x is TextLiteral<Value> {
+  return ((x: Node) =>
     x.kind === "TextLiteral" &&
-    (vals.length === 0 || vals.includes(x.value as any))
-  );
+    (vals.length === 0 || vals.includes(x.value as any))) as any;
+}
+
+export function isIdent<Name extends string>(
+  ...names: (Name | Identifier<boolean, Name>)[]
+): (x: Node) => x is Identifier<boolean, Name> {
+  return ((x: Node) =>
+    x.kind === "Identifier" &&
+    (names.length === 0 ||
+      names.some(
+        (n) => (typeof n === "string" ? n : n.name) === x.name
+      ))) as any;
+}
+
+export function isBuiltinIdent<Name extends string>(
+  ...names: Name[]
+): (x: Node) => x is Identifier<true, Name> {
+  return ((x: Node) =>
+    x.kind === "Identifier" &&
+    x.builtin &&
+    (names.length === 0 || names.includes(x.name as any))) as any;
+}
+
+export function isUserIdent<Name extends string>(
+  ...names: (Name | Identifier<boolean, Name>)[]
+): (x: Node) => x is Identifier<false, Name> {
+  return ((x: Node) =>
+    x.kind === "Identifier" &&
+    !x.builtin &&
+    (names.length === 0 || names.includes(x.name as any))) as any;
 }
 
 export function isIntLiteral<Value extends bigint>(
-  x: Node,
   ...vals: Value[]
-): x is IntegerLiteral<Value> {
-  return (
+): (x: Node) => x is IntegerLiteral<Value> {
+  return ((x: Node) =>
     x.kind === "IntegerLiteral" &&
-    (vals.length === 0 || vals.includes(x.value as any))
-  );
+    (vals.length === 0 || vals.includes(x.value as any))) as any;
 }
 
 export function isNegativeLiteral(expr: Expr) {
-  return isIntLiteral(expr) && expr.value < 0n;
+  return isIntLiteral()(expr) && expr.value < 0n;
 }
 
 /**
@@ -490,14 +521,13 @@ export function isNegativeLiteral(expr: Expr) {
 export function isNegative(expr: Expr) {
   return (
     isNegativeLiteral(expr) ||
-    (isPolygolfOp(expr, "mul") && isNegativeLiteral(expr.args[0]))
+    (isPolygolfOp("mul")(expr) && isNegativeLiteral(expr.args[0]))
   );
 }
 
 export function isPolygolfOp<Op extends OpCode>(
-  x: Node,
   ...ops: Op[]
-): x is PolygolfOp<
+): (x: Node) => x is PolygolfOp<
   // Typesafe-wise, this is the same as `x is PolygolfOp<Op>`.
   // However, this allows `Op` to be written using the type aliases.
   // Alias using the first type that is a match (that is a subtype) and union the rest.
@@ -524,7 +554,7 @@ export function isPolygolfOp<Op extends OpCode>(
     >
   >
 > {
-  return (
-    x.kind === "PolygolfOp" && (ops.length === 0 || ops?.includes(x.op as any))
-  );
+  return ((x: Node) =>
+    x.kind === "PolygolfOp" &&
+    (ops.length === 0 || ops?.includes(x.op as any))) as any;
 }

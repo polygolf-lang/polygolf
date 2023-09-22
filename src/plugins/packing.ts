@@ -16,8 +16,8 @@ export const useDecimalConstantPackedPrinter: Plugin = {
   name: "useDecimalConstantPackedPrinter",
   visit(node) {
     if (
-      isPolygolfOp(node, "print", "println") &&
-      isTextLiteral(node.args[0]) &&
+      isPolygolfOp("print", "println")(node) &&
+      isTextLiteral()(node.args[0]) &&
       isLargeDecimalConstant(node.args[0].value)
     ) {
       const [prefix, main] = node.args[0].value.replace(".", ".,").split(",");
@@ -70,7 +70,10 @@ function packDecimal(decimal: string): string {
 export const useLowDecimalListPackedPrinter: Plugin = {
   name: "useLowDecimalListPackedPrinter",
   visit(node) {
-    if (isPolygolfOp(node, "print", "println") && isTextLiteral(node.args[0])) {
+    if (
+      isPolygolfOp("print", "println")(node) &&
+      isTextLiteral()(node.args[0])
+    ) {
       const packed = packLowDecimalList(node.args[0].value);
       if (packed === null) return;
       return forRangeCommon(

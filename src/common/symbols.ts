@@ -4,6 +4,7 @@ import {
   integerType,
   integerTypeIncludingAll,
   IR,
+  isIdent,
   isSubtype,
   lt,
   sub,
@@ -98,7 +99,7 @@ function introducedSymbols(
       return [node.keyVariable.name, node.valueVariable.name];
     case "Assignment":
       if (
-        node.variable.kind === "Identifier" &&
+        isIdent()(node.variable) &&
         // for backwards-compatibility, treat the first assignment of each
         // variable as a declaration. Otherwise we should:
         //    // treat every user-annotated assignment as a declaration
@@ -110,8 +111,9 @@ function introducedSymbols(
     case "OneToManyAssignment":
     case "ManyToManyAssignment":
       return node.variables
-        .filter((x) => x.kind === "Identifier" && !existing.has(x.name))
-        .map((x) => (x as any).name);
+        .filter(isIdent())
+        .filter((x) => !existing.has(x.name))
+        .map((x) => x.name);
   }
 }
 

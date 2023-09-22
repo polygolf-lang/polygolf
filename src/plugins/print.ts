@@ -19,12 +19,12 @@ export function golfLastPrint(toPrintln = true): Plugin {
       if (program.kind !== "Program") return;
       const newOp = toPrintln ? ("println" as const) : ("print" as const);
       const oldOp = toPrintln ? "print" : "println";
-      if (isPolygolfOp(program.body, oldOp)) {
+      if (isPolygolfOp(oldOp)(program.body)) {
         return { ...program, body: { ...program.body, op: newOp } };
       } else if (program.body.kind === "Block") {
         const oldChildren = program.body.children;
         const lastStatement = oldChildren[oldChildren.length - 1];
-        if (isPolygolfOp(lastStatement, oldOp)) {
+        if (isPolygolfOp(oldOp)(lastStatement)) {
           const newLastStatement = { ...lastStatement, op: newOp };
           const children = replaceAtIndex(
             oldChildren,
@@ -42,8 +42,8 @@ export const implicitlyConvertPrintArg: Plugin = {
   name: "implicitlyConvertPrintArg",
   visit(node, spine) {
     if (
-      isPolygolfOp(node, "int_to_text") &&
-      isPolygolfOp(spine.parent!.node, "print", "println")
+      isPolygolfOp("int_to_text")(node) &&
+      isPolygolfOp("print", "println")(spine.parent!.node)
     ) {
       return implicitConversion(node.op, node.args[0]);
     }

@@ -9,10 +9,13 @@ export interface Argv extends BaseExpr {
 /**
  * An identifier, such as referring to a global variable. Raw OK
  */
-export interface Identifier extends BaseExpr {
+export interface Identifier<
+  Builtin extends boolean = boolean,
+  Name extends string = string
+> extends BaseExpr {
   readonly kind: "Identifier";
-  readonly name: string;
-  readonly builtin: boolean;
+  readonly name: Name;
+  readonly builtin: Builtin;
 }
 
 /**

@@ -6,15 +6,7 @@ import {
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import {
-  IR,
-  isIntLiteral,
-  TextLiteral,
-  text,
-  isTextLiteral,
-  id,
-  binaryOp,
-} from "../../IR";
+import { IR, isIntLiteral, text, isTextLiteral, id, binaryOp } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -130,10 +122,10 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         ];
       case "ForRange": {
         const start = emit(e.start);
-        const start0 = isIntLiteral(e.start, 0n);
+        const start0 = isIntLiteral(0n)(e.start);
         const end = emit(e.end);
         const increment = emit(e.increment);
-        const increment1 = isIntLiteral(e.increment, 1n);
+        const increment1 = isIntLiteral(1n)(e.increment);
         return e.variable === undefined && start0 && increment1
           ? [
               "for",
@@ -195,13 +187,9 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emit(e.func),
           "(",
           e.args.length > 1 &&
-          e.args.every((x) => isTextLiteral(x) && charLength(x.value) === 1)
-            ? [
-                "*",
-                emit(
-                  text(e.args.map((x) => (x as TextLiteral).value).join(""))
-                ),
-              ]
+          e.args.every(isTextLiteral()) &&
+          e.args.every((x) => charLength(x.value) === 1)
+            ? ["*", emit(text(e.args.map((x) => x.value).join("")))]
             : joinExprs(",", e.args),
           ")",
         ];
@@ -234,10 +222,10 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
       case "RangeIndexCall": {
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");
         const low = emit(e.low);
-        const low0 = isIntLiteral(e.low, 0n);
+        const low0 = isIntLiteral(0n)(e.low);
         const high = emit(e.high);
         const step = emit(e.step);
-        const step1 = isIntLiteral(e.step, 1n);
+        const step1 = isIntLiteral(1n)(e.step);
         return [
           emit(e.collection, Infinity),
           "[",

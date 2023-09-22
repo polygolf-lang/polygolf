@@ -1,6 +1,8 @@
 import {
   importStatement,
   integerType,
+  isIdent,
+  isOfKind,
   isPolygolfOp,
   isSubtype,
   isTextLiteral,
@@ -61,7 +63,7 @@ export const addNimImports: Plugin = addImports(
 export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
   visit(node, spine) {
-    if (isPolygolfOp(node, "trunc_div", "rem")) {
+    if (isPolygolfOp("trunc_div", "rem")(node)) {
       return isSubtype(getType(node.args[0], spine), integerType(0)) &&
         isSubtype(getType(node.args[0], spine), integerType(0))
         ? polygolfOp(`unsigned_${node.op}`, ...node.args)
@@ -74,15 +76,11 @@ export const useUFCS: Plugin = {
   name: "useUFCS",
   visit(node) {
     if (node.kind === "FunctionCall" && node.args.length > 0) {
-      if (node.args.length === 1 && isTextLiteral(node.args[0])) {
+      if (node.args.length === 1 && isTextLiteral()(node.args[0])) {
         return;
       }
       const [obj, ...args] = node.args;
-      if (
-        obj.kind !== "BinaryOp" &&
-        obj.kind !== "UnaryOp" &&
-        node.func.kind === "Identifier"
-      ) {
+      if (!isOfKind("BinaryOp", "UnaryOp")(obj) && isIdent()(node.func)) {
         return methodCall(obj, node.func, ...args);
       }
     }

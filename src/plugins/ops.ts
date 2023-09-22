@@ -22,6 +22,7 @@ import {
   BinaryOpCodes,
   functionCall,
   propertyCall,
+  isIdent,
 } from "../IR";
 import { getType } from "../common/getType";
 import { Spine } from "../common/Spine";
@@ -32,7 +33,7 @@ export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
   return {
     name: "mapOps(...)",
     visit(node, spine) {
-      if (isPolygolfOp(node)) {
+      if (isPolygolfOp()(node)) {
         const op = node.op;
         const f = opMap.get(op);
         if (f !== undefined) {
@@ -41,7 +42,7 @@ export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
               ? f(node.args, spine as Spine<PolygolfOp>)
               : f;
           if (replacement === undefined) return undefined;
-          if ("op" in replacement && replacement.kind !== "PolygolfOp") {
+          if ("op" in replacement && !isPolygolfOp()(replacement)) {
             // "as any" because TS doesn't do well with the "in" keyword
             replacement = {
               ...(replacement as any),
@@ -99,7 +100,7 @@ function asBinaryChain(
   names: Map<OpCode, string>
 ): Expr {
   const negName = names.get("neg");
-  if (op === "mul" && isIntLiteral(exprs[0], -1n) && negName !== undefined) {
+  if (op === "mul" && isIntLiteral(-1n)(exprs[0]) && negName !== undefined) {
     exprs = [unaryOp(negName, exprs[1]), ...exprs.slice(2)];
   }
   if (op === "add") {
@@ -136,8 +137,8 @@ export function useIndexCalls(
     )})`,
     visit(node) {
       if (
-        isPolygolfOp(node, ...ops) &&
-        (node.args[0].kind === "Identifier" || node.op.endsWith("_get"))
+        isPolygolfOp(...ops)(node) &&
+        (isIdent()(node.args[0]) || node.op.endsWith("_get"))
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.startsWith("table_")) {
@@ -165,7 +166,7 @@ export function addMutatingBinaryOp(
     visit(node) {
       if (
         node.kind === "Assignment" &&
-        isPolygolfOp(node.expr, ...BinaryOpCodes) &&
+        isPolygolfOp(...BinaryOpCodes)(node.expr) &&
         node.expr.args.length > 1 &&
         opMap.has(node.expr.op)
       ) {
@@ -200,7 +201,7 @@ export function addMutatingBinaryOp(
 export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
   visit(node) {
-    if (isPolygolfOp(node, ...BinaryOpCodes)) {
+    if (isPolygolfOp(...BinaryOpCodes)(node)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {
         return polygolfOp(flippedOpCode, node.args[1], node.args[0]);

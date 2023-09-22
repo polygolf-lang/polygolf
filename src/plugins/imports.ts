@@ -1,6 +1,13 @@
 import { Spine } from "../common/Spine";
 import { Plugin } from "../common/Language";
-import { block, Expr, importStatement, program } from "../IR";
+import {
+  block,
+  Expr,
+  importStatement,
+  isBuiltinIdent,
+  isOfKind,
+  program,
+} from "../IR";
 
 /**
  * @param rules Map from expr to a import it needs or array encoded map from symbol name to import.
@@ -17,9 +24,7 @@ export function addImports( // TODO caching
     rulesFunc = function (x: Expr) {
       if (map.has(x.kind)) return map.get(x.kind)!;
       if (
-        ((x.kind === "Identifier" && x.builtin) ||
-          x.kind === "BinaryOp" ||
-          x.kind === "UnaryOp") &&
+        (isBuiltinIdent()(x) || isOfKind("BinaryOp", "UnaryOp")(x)) &&
         map.has(x.name)
       ) {
         return map.get(x.name)!;

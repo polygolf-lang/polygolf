@@ -4,8 +4,11 @@ import {
   block,
   Expr,
   Identifier,
+  isAssignment,
+  isAssignmentToIdentifier,
+  isIdent,
+  isUserIdent,
   manyToManyAssignment,
-  Node,
   oneToManyAssignment,
   VarDeclaration,
   varDeclarationBlock,
@@ -80,10 +83,7 @@ export const addVarDeclarations: Plugin = {
   visit(node) {
     if (node.kind === "Program") declared.clear();
     else if (node.kind === "Assignment") {
-      if (
-        node.variable.kind === "Identifier" &&
-        !declared.has(node.variable.name)
-      ) {
+      if (isIdent()(node.variable) && !declared.has(node.variable.name)) {
         declared.add(node.variable.name);
         return varDeclarationWithAssignment(node);
       }
@@ -142,19 +142,6 @@ export function addVarDeclarationOneToManyAssignments(
   );
 }
 
-function referencesVariable(spine: Spine<Expr>, variable: Identifier): boolean {
-  return spine.someNode(
-    (x) => x.kind === "Identifier" && !x.builtin && x.name === variable.name
-  );
-}
-
-function isAssignment(x: Node): x is Assignment {
-  return x.kind === "Assignment";
-}
-function isAssignmentToIdentifier(x: Node): x is Assignment<Identifier> {
-  return isAssignment(x) && x.variable.kind === "Identifier";
-}
-
 /**
  * Replaces `v1 = e1; v2 = e2; ... ; vn = en` with `(v1,v2,...vn)=(e1,e2,...,en)`
  */
@@ -165,7 +152,7 @@ export function addManyToManyAssignments(
     "addManyToManyAssignments",
     (expr, spine, previous) =>
       isAssignmentToIdentifier(expr) &&
-      !previous.some((x) => referencesVariable(spine, x.variable)),
+      !previous.some((x) => spine.someNode(isUserIdent(x.variable.name))),
     (exprs) => [
       manyToManyAssignment(
         exprs.map((x) => x.variable),
@@ -189,7 +176,9 @@ export function addVarDeclarationManyToManyAssignments(
     (expr, spine, previous) =>
       expr.kind === "VarDeclarationWithAssignment" &&
       isAssignmentToIdentifier(expr.assignment) &&
-      !previous.some((x) => referencesVariable(spine, x.assignment.variable)),
+      !previous.some((x) =>
+        spine.someNode(isUserIdent(x.assignment.variable.name))
+      ),
     (exprs) => [
       varDeclarationWithAssignment(
         manyToManyAssignment(
@@ -248,15 +237,11 @@ export const tempVarToMultipleAssignment: Plugin = {
         const b = node.children[i + 1];
         const c = node.children[i + 2];
         if (
-          a.kind === "Assignment" &&
-          b.kind === "Assignment" &&
-          c.kind === "Assignment" &&
-          b.expr.kind === "Identifier" &&
-          c.variable.kind === "Identifier" &&
-          b.expr.name === c.variable.name &&
-          c.expr.kind === "Identifier" &&
-          a.variable.kind === "Identifier" &&
-          c.expr.name === a.variable.name
+          isAssignmentToIdentifier(a) &&
+          isAssignment(b) &&
+          isAssignmentToIdentifier(c) &&
+          isIdent(c.variable)(b.expr) &&
+          isIdent(a.variable)(c.expr)
         ) {
           newNodes.push(
             manyToManyAssignment([b.variable, c.variable], [b.expr, a.expr])

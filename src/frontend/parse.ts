@@ -63,6 +63,7 @@ import {
   propertyCall,
   isTextLiteral,
   isIntLiteral,
+  isIdent,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -84,14 +85,14 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     }
   }
   function assertIdentifier(e: Expr): asserts e is Identifier {
-    if (e.kind !== "Identifier")
+    if (!isIdent()(e))
       throw new PolygolfError(
         `Syntax error. Application first argument must be identifier, but got ${args[0].kind}`,
         e.source
       );
   }
   function assertInteger(e: Expr): asserts e is IntegerLiteral {
-    if (!isIntLiteral(e))
+    if (!isIntLiteral()(e))
       throw new PolygolfError(
         `Syntax error. Expected integer literal, but got ${e.kind}`,
         e.source
@@ -110,7 +111,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     }
   }
   function asString(e: Expr): string {
-    if (isTextLiteral(e)) return e.value;
+    if (isTextLiteral()(e)) return e.value;
     throw new PolygolfError(
       `Syntax error. Expected string literal, but got ${e.kind}`,
       e.source

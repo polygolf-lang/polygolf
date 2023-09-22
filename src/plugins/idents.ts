@@ -8,6 +8,7 @@ import {
   id,
   Identifier,
   IR,
+  isUserIdent,
   Node,
   program,
 } from "../IR";
@@ -68,7 +69,7 @@ export function renameIdents(
       if (program.kind !== "Program") return;
       const identMap = getIdentMap(spine.root, identGen);
       return spine.withReplacer((node) => {
-        if (node.kind === "Identifier" && !node.builtin) {
+        if (isUserIdent()(node)) {
           const outputName = identMap.get(node.name);
           if (outputName === undefined)
             throw new Error("Programming error. Incomplete identMap.");

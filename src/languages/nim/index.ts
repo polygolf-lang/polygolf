@@ -125,7 +125,7 @@ const nimLanguage: Language = {
       mapOps(
         [
           "join",
-          (x) => functionCall("join", isTextLiteral(x[1], "") ? [x[0]] : x),
+          (x) => functionCall("join", isTextLiteral("")(x[1]) ? [x[0]] : x),
         ],
         ["true", builtin("true")],
         ["false", builtin("false")],
@@ -153,7 +153,7 @@ const nimLanguage: Language = {
         [
           "text_replace",
           (x) =>
-            functionCall("replace", isTextLiteral(x[2], "") ? [x[0], x[1]] : x),
+            functionCall("replace", isTextLiteral("")(x[2]) ? [x[0], x[1]] : x),
         ],
         [
           "text_multireplace",

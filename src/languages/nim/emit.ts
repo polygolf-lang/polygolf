@@ -1,6 +1,12 @@
 import { TokenTree } from "@/common/Language";
 import { emitTextLiteral, joinTrees, EmitError } from "../../common/emit";
-import { ArrayConstructor, IR, isIntLiteral, isTextLiteral } from "../../IR";
+import {
+  ArrayConstructor,
+  IR,
+  isIdent,
+  isIntLiteral,
+  isTextLiteral,
+} from "../../IR";
 
 function precedence(expr: IR.Expr): number {
   switch (expr.kind) {
@@ -132,8 +138,8 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           emitMultiExpr(e.body),
         ];
       case "ForRange": {
-        const start = isIntLiteral(e.start, 0n) ? [] : emit(e.start);
-        if (isIntLiteral(e.increment, 1n)) {
+        const start = isIntLiteral(0n)(e.start) ? [] : emit(e.start);
+        if (isIntLiteral(1n)(e.increment)) {
           return [
             "for",
             e.variable === undefined ? "()" : emit(e.variable),
@@ -224,9 +230,9 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return e.value.toString();
       case "FunctionCall":
         if (
-          e.func.kind === "Identifier" &&
+          isIdent()(e.func) &&
           e.args.length === 1 &&
-          isTextLiteral(e.args[0])
+          isTextLiteral()(e.args[0])
         ) {
           const raw = emitAsRawTextLiteral(e.args[0].value, e.func.name);
           if (raw !== null) {
@@ -251,7 +257,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
               : [],
           ];
         else {
-          if (e.args.length === 1 && isTextLiteral(e.args[0])) {
+          if (e.args.length === 1 && isTextLiteral()(e.args[0])) {
             const raw = emitAsRawTextLiteral(e.args[0].value, e.ident.name);
             if (raw !== null) {
               prec = 12;
@@ -312,7 +318,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
         return [emit(e.collection, 12), "[", emit(e.index), "]"];
       case "RangeIndexCall":
         if (e.oneIndexed) throw new EmitError(expr, "one indexed");
-        if (!isIntLiteral(e.step, 1n)) throw new EmitError(expr, "step");
+        if (!isIntLiteral(1n)(e.step)) throw new EmitError(expr, "step");
         return [
           emit(e.collection, 12),
           "[",

@@ -6,7 +6,6 @@ import {
   isTextLiteral,
   OpCode,
   polygolfOp,
-  TextLiteral,
   int,
 } from "../IR";
 import { Plugin } from "../common/Language";
@@ -43,7 +42,7 @@ export function useEquivalentTextOp(
   return {
     name: `useEquivalentTextOp(${useBytes.toString()}, ${useCodepoints.toString()})`,
     visit(node, spine) {
-      if (!isPolygolfOp(node)) return;
+      if (!isPolygolfOp()(node)) return;
       if (node.args.length < 1) return;
       const typeArg0 = getType(node.args[0], spine);
       if (
@@ -83,14 +82,14 @@ export const textToIntToTextGetToInt: Plugin = {
     [
       "text_byte_to_int",
       (x) =>
-        isPolygolfOp(x[0], "text_get_byte")
+        isPolygolfOp("text_get_byte")(x[0])
           ? polygolfOp("text_get_byte_to_int", ...x[0].args)
           : undefined,
     ],
     [
       "codepoint_to_int",
       (x) =>
-        isPolygolfOp(x[0], "text_get_codepoint")
+        isPolygolfOp("text_get_codepoint")(x[0])
           ? polygolfOp("text_get_codepoint_to_int", ...x[0].args)
           : undefined,
     ]
@@ -145,18 +144,13 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
   return {
     name: "useMultireplace",
     visit(node) {
-      if (
-        isPolygolfOp(node, "text_replace", "text_multireplace") &&
-        isPolygolfOp(node.args[0], "text_replace", "text_multireplace")
-      ) {
+      const isReplace = isPolygolfOp("text_replace", "text_multireplace");
+      if (isReplace(node) && isReplace(node.args[0])) {
         const a = node.args[0].args.slice(1);
         const b = node.args.slice(1);
-        if (
-          a.every((x) => isTextLiteral(x)) &&
-          b.every((x) => isTextLiteral(x))
-        ) {
-          const aValues = a.map((x) => (x as TextLiteral).value);
-          const bValues = b.map((x) => (x as TextLiteral).value);
+        if (a.every(isTextLiteral()) && b.every(isTextLiteral())) {
+          const aValues = a.map((x) => x.value);
+          const bValues = b.map((x) => x.value);
           const aIn = aValues.filter((_, i) => i % 2 === 0);
           const aOut = aValues.filter((_, i) => i % 2 === 1);
           const bIn = bValues.filter((_, i) => i % 2 === 0);
