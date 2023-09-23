@@ -135,18 +135,22 @@ export default function compile(
     }
   });
 
-  if (options.getAllVariants === true) {
-    const errorlessVariants = variants.filter((x) => "body" in x);
-    if (errorlessVariants.length === 0) {
+  const errorlessVariants = variants.filter((x) => "body" in x);
+  if (errorlessVariants.length === 0) {
+    if (options.getAllVariants === true) {
+      return variants as CompilationResult[];
+    } else {
       return [variants[0] as CompilationResult];
     }
+  }
+  if (options.getAllVariants !== true) {
     variants = errorlessVariants;
   }
 
   const result: CompilationResult[] = [];
   for (const language of languages) {
     const outputs = variants.map((x) =>
-      "body" in x ? compileVariant(x, options, language) : x
+      "body" in x ? compileVariant(x, options, language) : { ...x }
     );
     if (options.getAllVariants === true) {
       result.push(...outputs);
