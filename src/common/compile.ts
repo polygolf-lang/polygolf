@@ -138,7 +138,7 @@ export default function compile(
   if (options.getAllVariants === true) {
     const errorlessVariants = variants.filter((x) => "body" in x);
     if (errorlessVariants.length === 0) {
-      return [errorlessVariants[0] as CompilationResult];
+      return [variants[0] as CompilationResult];
     }
     variants = errorlessVariants;
   }
