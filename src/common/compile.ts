@@ -292,7 +292,7 @@ export function compileVariantNoPacking(
       try {
         const length = obj(finish(program, addWarning, startPhase)[0]);
         const state = { program, startPhase, length, history, warnings };
-        if (length < shortestSoFarLength) {
+        if (shortestSoFar === undefined || length < shortestSoFarLength) {
           shortestSoFarLength = length;
           shortestSoFar = state;
         }
