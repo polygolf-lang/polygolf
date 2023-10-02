@@ -260,3 +260,17 @@ for 10 (println "Hi");
 ```py nogolf
 for _ in"X"*10:print("Hi")
 ```
+
+## Text literals
+
+```polygolf
+"\n";
+"š";
+"💎";
+```
+
+```py nogolf asciiOnly
+"\n"
+"\u0161"
+"\U0001f48e"
+```

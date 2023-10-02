@@ -190,6 +190,7 @@ export function compileVariant(
     program,
     {
       ...options,
+      asciiOnly: true,
       objective: (x) => charLength(packer(x)),
     },
     language
