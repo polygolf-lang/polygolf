@@ -3,6 +3,7 @@ import { TokenTree } from "@/common/Language";
 import {
   containsMultiExpr,
   EmitError,
+  emitIntLiteral,
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
@@ -193,7 +194,11 @@ export default function emitProgram(
             context.options.asciiOnly === true
           );
         case "IntegerLiteral":
-          return e.value.toString();
+          return emitIntLiteral(e, {
+            10: ["", ""],
+            16: ["0x", ""],
+            36: ["int('", "',36)"],
+          });
         case "FunctionCall":
           return [
             emit(e.func),

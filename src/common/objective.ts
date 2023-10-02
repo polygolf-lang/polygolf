@@ -19,7 +19,7 @@ export const charLength = (str: string | null) => {
   while (i < str.length) {
     const value = str.charCodeAt(i++);
 
-    if (value >= 0xd800 && value <= 0xdbff && i < str.length) {
+    if (0xd800 <= value && value <= 0xdbff && i < str.length) {
       // It's a high surrogate, and there is a next character.
       const extra = str.charCodeAt(i++);
 
