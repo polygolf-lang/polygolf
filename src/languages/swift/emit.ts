@@ -1,5 +1,10 @@
 import { TokenTree } from "../../common/Language";
-import { EmitError, emitTextLiteral, joinTrees } from "../../common/emit";
+import {
+  EmitError,
+  emitIntLiteral,
+  emitTextLiteral,
+  joinTrees,
+} from "../../common/emit";
 import { IR, isIntLiteral } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
@@ -156,7 +161,7 @@ export function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           ],
         ]);
       case "IntegerLiteral":
-        return e.value.toString();
+        return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
       case "FunctionCall":
         if (e.func.kind === "Identifier" && e.func.name === "!")
           return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node

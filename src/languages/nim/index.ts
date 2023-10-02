@@ -67,6 +67,8 @@ import {
   equalityToInequality,
   truncatingOpsPlugins,
   bitnotPlugins,
+  decomposeIntLiteral,
+  pickAnyInt,
   lowBitsPlugins,
 } from "../../plugins/arithmetic";
 
@@ -104,9 +106,11 @@ const nimLanguage: Language = {
       mapOps(
         ["argv", functionCall("commandLineParams")],
         ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
-      )
+      ),
+      decomposeIntLiteral()
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       forArgvToForRange(),
       ...truncatingOpsPlugins,

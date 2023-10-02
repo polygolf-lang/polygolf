@@ -84,7 +84,7 @@ export const useLowDecimalListPackedPrinter: Plugin = {
 function packLowDecimalList(value: string): string | null {
   if (/^[\d+\n]+[\d+]$/.test(value)) {
     const nums = value.split("\n").map(Number);
-    if (nums.every((x) => x > 0 && x < 256)) {
+    if (nums.every((x) => 0 < x && x < 256)) {
       return nums.map((x) => String.fromCharCode(x)).join("");
     }
   }

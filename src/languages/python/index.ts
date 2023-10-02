@@ -57,8 +57,10 @@ import { addImports } from "../../plugins/imports";
 import {
   applyDeMorgans,
   bitnotPlugins,
+  decomposeIntLiteral,
   equalityToInequality,
   lowBitsPlugins,
+  pickAnyInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
@@ -89,9 +91,11 @@ const pythonLanguage: Language = {
       useMultireplace(true),
       forArgvToForEach,
       useEquivalentTextOp(false, true),
-      useIndexCalls()
+      useIndexCalls(),
+      decomposeIntLiteral()
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       removeUnusedForVar,
       useEquivalentTextOp(false, true),

@@ -1,5 +1,10 @@
 import { TokenTree } from "@/common/Language";
-import { emitTextLiteral, joinTrees, EmitError } from "../../common/emit";
+import {
+  emitTextLiteral,
+  joinTrees,
+  EmitError,
+  emitIntLiteral,
+} from "../../common/emit";
 import { ArrayConstructor, IR, isIntLiteral, isTextLiteral } from "../../IR";
 
 function precedence(expr: IR.Expr): number {
@@ -221,7 +226,7 @@ function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
           ],
         ]);
       case "IntegerLiteral":
-        return e.value.toString();
+        return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
       case "FunctionCall":
         if (
           e.func.kind === "Identifier" &&

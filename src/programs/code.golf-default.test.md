@@ -30,7 +30,7 @@ _Lua_
 ```lua
 print("Hello, World!")
 for i=0,9 do print(i)end
-for a=1,1000 do A=arg[a]
+for a=1,1e3 do A=arg[a]
 print(A)end
 ```
 

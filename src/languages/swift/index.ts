@@ -56,6 +56,8 @@ import {
   truncatingOpsPlugins,
   bitnotPlugins,
   lowBitsPlugins,
+  decomposeIntLiteral,
+  pickAnyInt,
 } from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
@@ -108,9 +110,11 @@ const swiftLanguage: Language = {
             ),
         ]
       ),
-      useIndexCalls()
+      useIndexCalls(),
+      decomposeIntLiteral()
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps(
