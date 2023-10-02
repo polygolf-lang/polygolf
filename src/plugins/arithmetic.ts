@@ -15,6 +15,7 @@ import {
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
+import { filterInplace } from "../common/arrays";
 
 export const modToRem: Plugin = {
   name: "modToRem",
@@ -169,7 +170,7 @@ export function powToMul(limit: number = 2): Plugin {
     visit(node) {
       if (isPolygolfOp(node, "pow")) {
         const [a, b] = node.args;
-        if (isIntLiteral(b) && b.value > 1 && b.value <= limit) {
+        if (isIntLiteral(b) && 1 < b.value && b.value <= limit) {
           return polygolfOp("mul", ...Array(Number(b.value)).fill(a));
         }
       }
@@ -283,3 +284,169 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
 }
 
 export const bitShiftPlugins = [bitShiftToMulOrDiv(), mulOrDivToBitShift()];
+
+export type IntDecomposition = [
+  // [k,b,e,d,cost] represents a value k * pow(b,e) + d, cost = lg(k)+lg(b)+lg(e)+lg(d)
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  number
+];
+
+// assert (1000 ≤ |n|)
+export function decomposeInt(
+  n: bigint,
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): IntDecomposition[] {
+  return decomposeAnyInt(n, n, hasScientific, hasPowers, hasShifts);
+}
+
+// assert (1000 ≤ x ≤ y || x ≤ y ≤ -1000)
+export function decomposeAnyInt(
+  x: bigint,
+  y: bigint,
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): IntDecomposition[] {
+  return x > 0
+    ? _decomposeAnyInt(x, y, hasScientific, hasPowers, hasShifts)
+    : _decomposeAnyInt(-y, -x, hasScientific, hasPowers, hasShifts).map(
+        ([k, b, e, d, c]) => [-k, b, e, -d, c]
+      );
+}
+
+function lg(n: bigint): number {
+  if (n < 0) n = -n;
+  return n > 1000000000000
+    ? 2 + n.toString(16).length
+    : n > 99
+    ? n.toString().length
+    : n > 9
+    ? 2
+    : 1;
+}
+
+function ceilDiv(a: bigint, b: bigint) {
+  return (a + (b - 1n)) / b;
+}
+
+// assert (1000 ≤ x ≤ y)
+// Find decompositions x ≤ k * b^e + d ≤ y s.t. 1000 ≤ b^e, 2 ≤ b ≤ 10, |d| < 100
+function _decomposeAnyInt(
+  x: bigint,
+  y: bigint,
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): IntDecomposition[] {
+  function betterOrEqual(
+    [k1, b1, e1, d1, c1]: IntDecomposition,
+    [k2, b2, e2, d2, c2]: IntDecomposition
+  ): boolean {
+    return (
+      (!hasShifts || b1 === 2n || b2 !== 2n) &&
+      (!hasScientific || b1 === 10n || b2 !== 10n) &&
+      (k1 === 1n || k2 !== 1n) &&
+      (d1 === 0n || d2 !== 0n) &&
+      c1 <= c2
+    );
+  }
+  const xd = x - 99n;
+  const yd = y + 99n;
+  const decompositions: IntDecomposition[] = [];
+  for (let b = 2n; b <= 10n; b += hasPowers ? 1n : 8n) {
+    if (
+      !hasPowers &&
+      ((!hasShifts && b === 2n) || (!hasScientific && b === 10n))
+    )
+      continue;
+    for (
+      let e = 2n, be = b * b, kx = ceilDiv(xd, be), ky = yd / be;
+      kx <= ky;
+      e++, be *= b, kx = ceilDiv(kx, b), ky /= b
+    ) {
+      if (be < 1000) continue;
+      const kmax = ky > kx ? kx + 1n : kx;
+      for (let k = kx; k <= kmax; k++) {
+        if (k % b === 0n && lg(e) === lg(e + 1n)) continue;
+        const m = k * be;
+        const d = m > y ? y - m : m < x ? x - m : 0n;
+        const newDecomposition: IntDecomposition = [
+          k,
+          b,
+          e,
+          d,
+          lg(k) + lg(b) + lg(e) + lg(d),
+        ];
+        if (
+          decompositions.some((decomposition) =>
+            betterOrEqual(decomposition, newDecomposition)
+          )
+        )
+          continue;
+        filterInplace(
+          decompositions,
+          (decomposition) => !betterOrEqual(newDecomposition, decomposition)
+        );
+        decompositions.push(newDecomposition);
+      }
+    }
+  }
+  return decompositions;
+}
+
+export function decomposeIntLiteral(
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): Plugin {
+  return {
+    name: `decomposeIntLiteral(${JSON.stringify([
+      hasScientific,
+      hasPowers,
+      hasShifts,
+    ])})`,
+    visit(node) {
+      let decompositions: IntDecomposition[] = [];
+      if (isIntLiteral(node) && (node.value <= -1000 || node.value >= 1000)) {
+        decompositions = decomposeInt(
+          node.value,
+          hasScientific,
+          hasPowers,
+          hasShifts
+        );
+      } else if (node.kind === "AnyIntegerLiteral") {
+        decompositions = decomposeAnyInt(
+          node.low,
+          node.high,
+          hasScientific,
+          hasPowers,
+          hasShifts
+        );
+      }
+
+      return decompositions.map(([k, b, e, d]) =>
+        polygolfOp(
+          "add",
+          polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
+          int(d)
+        )
+      );
+    },
+  };
+}
+
+export const pickAnyInt: Plugin = {
+  name: "pickAnyInt",
+  visit(node) {
+    if (node.kind === "AnyIntegerLiteral") {
+      return node.low.toString().length < node.high.toString().length
+        ? int(node.low)
+        : int(node.high);
+    }
+  },
+};

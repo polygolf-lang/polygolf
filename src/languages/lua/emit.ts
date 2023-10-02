@@ -1,4 +1,9 @@
-import { EmitError, emitTextLiteral, joinTrees } from "../../common/emit";
+import {
+  EmitError,
+  emitIntLiteral,
+  emitTextLiteral,
+  joinTrees,
+} from "../../common/emit";
 import { IR, isIntLiteral } from "../../IR";
 import { TokenTree } from "@/common/Language";
 
@@ -151,7 +156,7 @@ function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
           ],
         ]);
       case "IntegerLiteral":
-        return [e.value.toString()];
+        return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
       case "FunctionCall":
         return [emit(e.func), "(", joinExprs(",", e.args), ")"];
       case "MethodCall":
