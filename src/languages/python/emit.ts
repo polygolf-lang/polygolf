@@ -305,6 +305,6 @@ export function emitPythonTextLiteral(
         ],
       ],
     ],
-    low > 0 || high < Infinity ? mapCodepoint : undefined
+    low > 1 || high < Infinity ? mapCodepoint : undefined
   );
 }

@@ -29,7 +29,7 @@ export function emitTextLiteral(
       ],
     ],
   ],
-  codepointMap?: (x: number) => string
+  codepointMap?: (x: number, i: number, arr: number[]) => string
 ): string {
   let result = "";
   for (const [delim, escapes] of options) {
