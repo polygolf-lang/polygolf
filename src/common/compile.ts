@@ -443,7 +443,7 @@ export function debugEmit(program: Program): string {
       objective: "bytes",
       skipTypecheck: true,
       getAllVariants: false,
-      codepointRange: [0, Infinity],
+      codepointRange: [1, Infinity],
       restrictFrontend: false,
     },
     polygolfLanguage

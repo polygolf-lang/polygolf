@@ -268,7 +268,7 @@ export default function emitProgram(
 
 export function emitPythonTextLiteral(
   x: string,
-  [low, high]: [number, number] = [0, Infinity]
+  [low, high]: [number, number] = [1, Infinity]
 ): string {
   function mapCodepoint(x: number) {
     if (low <= x && x <= high) return String.fromCharCode(x);

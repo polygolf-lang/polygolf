@@ -256,7 +256,7 @@ const pythonLanguage: Language = {
   ],
   packers: [
     {
-      codepointRange: [0, Infinity],
+      codepointRange: [1, Infinity],
       pack(x) {
         return `exec(bytes(${emitPythonTextLiteral(
           packSource2to1(x)

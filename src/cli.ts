@@ -65,7 +65,7 @@ for (const result of compile(
     level: "full",
     objective: options.chars === true ? "chars" : "bytes",
     getAllVariants: options.all === true,
-    codepointRange: [0, Infinity],
+    codepointRange: [1, Infinity],
     restrictFrontend: true,
     skipTypecheck: false,
   },
