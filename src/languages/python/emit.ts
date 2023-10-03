@@ -189,10 +189,7 @@ export default function emitProgram(
         case "Identifier":
           return e.name;
         case "TextLiteral":
-          return emitPythonTextLiteral(
-            e.value,
-            context.options.asciiOnly === true
-          );
+          return emitPythonTextLiteral(e.value, context.options.codepointRange);
         case "IntegerLiteral":
           return emitIntLiteral(e, {
             10: ["", ""],
@@ -269,9 +266,12 @@ export default function emitProgram(
   return emitMultiExpr(program.body, true);
 }
 
-export function emitPythonTextLiteral(x: string, asciiOnly = false): string {
+export function emitPythonTextLiteral(
+  x: string,
+  [low, high]: [number, number] = [0, Infinity]
+): string {
   function mapCodepoint(x: number) {
-    if (x < 128) return String.fromCharCode(x);
+    if (low <= x && x <= high) return String.fromCharCode(x);
     if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
     return `\\U${x.toString(16).padStart(8, "0")}`;
   }
@@ -304,6 +304,6 @@ export function emitPythonTextLiteral(x: string, asciiOnly = false): string {
         ],
       ],
     ],
-    asciiOnly ? mapCodepoint : undefined
+    low > 0 || high < Infinity ? mapCodepoint : undefined
   );
 }

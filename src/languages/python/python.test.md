@@ -269,7 +269,7 @@ for _ in"X"*10:print("Hi")
 "💎";
 ```
 
-```py nogolf asciiOnly
+```py nogolf 0..127
 "\n"
 "\u0161"
 "\U0001f48e"
