@@ -207,7 +207,7 @@ export default function emitProgram(
         case "Identifier":
           return e.name;
         case "TextLiteral":
-          return emitNimTextLiteral(e.value);
+          return emitNimTextLiteral(e.value, context.options.codepointRange);
         case "IntegerLiteral":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":

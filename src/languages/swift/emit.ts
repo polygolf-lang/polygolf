@@ -254,9 +254,7 @@ function emitSwiftTextLiteral(
 ): string {
   function mapCodepoint(x: number) {
     if (low <= x && x <= high) return String.fromCharCode(x);
-    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
-    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
-    return `\\U${x.toString(16).padStart(8, "0")}`;
+    return `\\u{${x.toString(16)}}`;
   }
   return emitTextLiteral(
     x,
