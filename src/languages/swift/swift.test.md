@@ -234,3 +234,19 @@ argv_get 0;
 ```swift nogolf
 CommandLine.arguments[1]
 ```
+
+## Text literals
+
+```polygolf
+"\n";
+"\u000565";
+"š";
+"💎";
+```
+
+```swift nogolf 32..127
+"\n"
+"\u{5}65"
+"\u{161}"
+"\u{1f48e}"
+```

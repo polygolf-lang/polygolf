@@ -257,12 +257,21 @@ const pythonLanguage: Language = {
     ),
   ],
   packers: [
-    (x) => `exec(bytes(${emitPythonTextLiteral(packSource2to1(x))},'u16')[2:])`,
-    (x) => {
-      if ([...x].map((x) => x.charCodeAt(0)).some((x) => x < 32)) return null;
-      return `exec(bytes(ord(c)%i+32for c in${emitPythonTextLiteral(
-        packSource3to1(x)
-      )}for i in b'abc'))`;
+    {
+      codepointRange: [1, Infinity],
+      pack(x) {
+        return `exec(bytes(${emitPythonTextLiteral(
+          packSource2to1(x)
+        )},'u16')[2:])`;
+      },
+    },
+    {
+      codepointRange: [32, 127],
+      pack(x) {
+        return `exec(bytes(ord(c)%i+32for c in${emitPythonTextLiteral(
+          packSource3to1(x)
+        )}for i in b'abc'))`;
+      },
     },
   ],
 };

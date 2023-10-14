@@ -261,6 +261,22 @@ for 10 (println "Hi");
 for _ in"X"*10:print("Hi")
 ```
 
+## Text literals
+
+```polygolf
+"\n";
+"\u000565";
+"š";
+"💎";
+```
+
+```py nogolf 32..127
+"\n"
+"\x0565"
+"\u0161"
+"\U0001f48e"
+```
+
 ## Int literals
 
 ```polygolf
