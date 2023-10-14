@@ -491,12 +491,15 @@ export function isIdent<Name extends string>(
 }
 
 export function isBuiltinIdent<Name extends string>(
-  ...names: Name[]
+  ...names: (Name | Identifier<boolean, Name>)[]
 ): (x: Node) => x is Identifier<true, Name> {
   return ((x: Node) =>
     x.kind === "Identifier" &&
     x.builtin &&
-    (names.length === 0 || names.includes(x.name as any))) as any;
+    (names.length === 0 ||
+      names.some(
+        (n) => (typeof n === "string" ? n : n.name) === x.name
+      ))) as any;
 }
 
 export function isUserIdent<Name extends string>(
@@ -505,7 +508,10 @@ export function isUserIdent<Name extends string>(
   return ((x: Node) =>
     x.kind === "Identifier" &&
     !x.builtin &&
-    (names.length === 0 || names.includes(x.name as any))) as any;
+    (names.length === 0 ||
+      names.some(
+        (n) => (typeof n === "string" ? n : n.name) === x.name
+      ))) as any;
 }
 
 export function isIntLiteral<Value extends bigint>(

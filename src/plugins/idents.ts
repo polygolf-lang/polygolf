@@ -71,8 +71,13 @@ export function renameIdents(
       return spine.withReplacer((node) => {
         if (isUserIdent()(node)) {
           const outputName = identMap.get(node.name);
-          if (outputName === undefined)
-            throw new Error("Programming error. Incomplete identMap.");
+          if (outputName === undefined) {
+            throw new Error(
+              `Programming error. Incomplete identMap. Defined: ${JSON.stringify(
+                [...identMap.keys()]
+              )}, missing ${JSON.stringify(node.name)}`
+            );
+          }
           return id(outputName);
         }
       }).node;
