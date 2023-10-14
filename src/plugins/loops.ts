@@ -29,7 +29,6 @@ import {
   isTextLiteral,
   isIdent,
   isUserIdent,
-  isBuiltinIdent,
 } from "../IR";
 import { byteLength, charLength } from "../common/objective";
 import { PolygolfError } from "../common/errors";
@@ -230,7 +229,7 @@ function getIndexedCollection(
   let result: Expr | null = null;
   for (const x of spine.compactMap((n, s) => {
     const parent = s.parent!.node;
-    if (!isBuiltinIdent(indexVar.name)(n)) return undefined;
+    if (!isUserIdent(indexVar.name)(n)) return undefined;
     if (!isPolygolfOp(...allowedOps)(parent)) return null;
     const collection = parent.args[0];
     if (
