@@ -456,7 +456,7 @@ export const removeUnusedForVar: Plugin = {
   visit(node, spine) {
     if (node.kind === "ForRange" && node.variable !== undefined) {
       const variable = node.variable;
-      if (spine.everyNode((x) => x === variable || !isIdent(x, variable))) {
+      if (spine.getChild("body").everyNode((x) => !isIdent(x, variable))) {
         return forRange(
           undefined,
           node.start,
