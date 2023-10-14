@@ -17,7 +17,7 @@ import {
   setType,
   integerType as intType,
   IntegerLiteral,
-  int,
+  int as integer,
   assignment,
   OpCode,
   whileLoop,
@@ -62,6 +62,8 @@ import {
   unaryOp,
   propertyCall,
   isTextLiteral,
+  anyInt,
+  isIntLiteral,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -90,7 +92,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       );
   }
   function assertInteger(e: Expr): asserts e is IntegerLiteral {
-    if (e.kind !== "IntegerLiteral")
+    if (!isIntLiteral(e))
       throw new PolygolfError(
         `Syntax error. Expected integer literal, but got ${e.kind}`,
         e.source
@@ -165,16 +167,29 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       expectArity(2);
       return whileLoop(args[0], args[1]);
     case "for": {
-      expectArity(4, 5);
-      let variable, start, end, step, body: Expr;
+      expectArity(2, 5);
+      let variable: Expr = id("_");
+      let start: Expr = integer(0n);
+      let step: Expr = integer(1n);
+      let end, body: Expr;
       if (args.length === 5) {
         [variable, start, end, step, body] = args;
-      } else {
+      } else if (args.length === 4) {
         [variable, start, end, body] = args;
-        step = int(1n);
+      } else if (args.length === 3) {
+        [variable, end, body] = args;
+      } else {
+        // args.length === 2
+        [end, body] = args;
       }
       assertIdentifier(variable);
-      return forRange(variable, start, end, step, body);
+      return forRange(
+        variable.name === "_" ? undefined : variable,
+        start,
+        end,
+        step,
+        body
+      );
     }
     case "for_argv": {
       expectArity(3);
@@ -189,6 +204,13 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       const consequent = args[1];
       const alternate = args[2];
       return ifStatement(condition, consequent, alternate);
+    }
+    case "any_int": {
+      expectArity(2);
+      const [low, high] = args;
+      assertInteger(low);
+      assertInteger(high);
+      return anyInt(low.value, high.value);
     }
   }
   if (!restrictedFrontend)
@@ -260,7 +282,14 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         expectArity(5);
         const [variable, start, end, step, body] = args;
         assertIdentifier(variable);
-        return forRange(variable, start, end, step, body, true);
+        return forRange(
+          variable.name === "_" ? undefined : variable,
+          start,
+          end,
+          step,
+          body,
+          true
+        );
       }
       case "for_difference_range": {
         expectArity(5);
@@ -299,6 +328,17 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         const [init, condition, append, body] = args;
         return forCLike(init, condition, append, body);
       }
+      case "for_no_index": {
+        expectArity(3, 4);
+        let start, end, step, body: Expr;
+        if (args.length === 4) {
+          [start, end, step, body] = args;
+        } else {
+          [start, end, body] = args;
+          step = integer(1n);
+        }
+        return forRange(undefined, start, end, step, body);
+      }
       case "named_arg":
         expectArity(2);
         return namedArg(asString(args[0]), args[1]);
@@ -319,6 +359,17 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     `Syntax error. Unrecognized builtin: ${opCode}`,
     callee.source
   );
+}
+
+function intValue(x: string): bigint {
+  if (x[0] === "-") return -intValue(x.substring(1));
+  if (x[0] === "0") return BigInt(x);
+  const parts = x.toString().split(/[eE]/);
+  return BigInt(parts[0]) * 10n ** BigInt(parts[1] ?? "0");
+}
+
+export function int(x: Token) {
+  return integer(intValue(x.text));
 }
 
 export const canonicalOpTable: Record<string, OpCode> = {

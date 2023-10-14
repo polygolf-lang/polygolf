@@ -35,6 +35,7 @@ import {
   forRangeToForEach,
   forRangeToForRangeInclusive,
   forRangeToForRangeOneStep,
+  removeUnusedForVar,
   shiftRangeOneUp,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
@@ -66,6 +67,9 @@ import {
   equalityToInequality,
   truncatingOpsPlugins,
   bitnotPlugins,
+  decomposeIntLiteral,
+  pickAnyInt,
+  lowBitsPlugins,
 } from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
@@ -89,6 +93,7 @@ const nimLanguage: Language = {
       shiftRangeOneUp,
       forRangeToForRangeInclusive(),
       ...bitnotPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       textToIntToTextGetToInt,
       forRangeToForRangeOneStep,
@@ -101,9 +106,11 @@ const nimLanguage: Language = {
       mapOps(
         ["argv", functionCall("commandLineParams")],
         ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
-      )
+      ),
+      decomposeIntLiteral()
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       forArgvToForRange(),
       ...truncatingOpsPlugins,
@@ -113,6 +120,7 @@ const nimLanguage: Language = {
         ["argv", functionCall("commandLineParams")],
         ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
       ),
+      removeUnusedForVar,
       forRangeToForRangeInclusive(true),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,

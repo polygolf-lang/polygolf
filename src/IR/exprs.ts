@@ -195,10 +195,10 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
     else {
       if (isCommutative(op)) {
         args = args
-          .filter((x) => x.kind === "IntegerLiteral")
-          .concat(args.filter((x) => x.kind !== "IntegerLiteral"));
+          .filter((x) => isIntLiteral(x))
+          .concat(args.filter((x) => !isIntLiteral(x)));
       } else {
-        args = args.filter((x) => x.kind !== "TextLiteral" || x.value !== "");
+        args = args.filter((x) => !isTextLiteral(x, ""));
         if (
           args.length === 0 ||
           (args.length === 1 && args[0].kind === "ImplicitConversion")
@@ -249,7 +249,12 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   }
   if (isBinary(op) && args.length === 2) {
     const combined = evalBinaryOp(op, args[0], args[1]);
-    if (combined !== null) {
+    if (
+      combined !== null &&
+      (!isIntLiteral(combined) ||
+        op !== "pow" || // only eval pow if it is a low number
+        (combined.value < 1000 && combined.value > -1000))
+    ) {
       return combined;
     }
   }
@@ -260,7 +265,7 @@ function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
   if (op === "concat" && isTextLiteral(left) && isTextLiteral(right)) {
     return text(left.value + right.value);
   }
-  if (left.kind === "IntegerLiteral" && right.kind === "IntegerLiteral") {
+  if (isIntLiteral(left) && isIntLiteral(right)) {
     try {
       const type = getArithmeticType(
         op,
@@ -290,10 +295,9 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
     }
   }
   for (const x of terms) {
-    if (x.kind === "IntegerLiteral") constant += x.value;
+    if (isIntLiteral(x)) constant += x.value;
     else if (isPolygolfOp(x, "mul")) {
-      if (x.args[0].kind === "IntegerLiteral")
-        add(x.args[0].value, x.args.slice(1));
+      if (isIntLiteral(x.args[0])) add(x.args[0].value, x.args.slice(1));
       else add(1n, x.args);
     } else add(1n, [x]);
   }

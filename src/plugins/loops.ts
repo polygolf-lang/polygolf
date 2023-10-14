@@ -27,6 +27,7 @@ import {
   integerType,
   add1,
   sub1,
+  isTextLiteral,
 } from "../IR";
 import { byteLength, charLength } from "../common/objective";
 import { PolygolfError } from "../common/errors";
@@ -55,7 +56,7 @@ export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
 export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
   visit(node, spine) {
-    if (node.kind === "ForRange") {
+    if (node.kind === "ForRange" && node.variable !== undefined) {
       const low = getType(node.start, spine);
       const high = getType(node.end, spine);
       if (low.kind !== "integer" || high.kind !== "integer") {
@@ -79,7 +80,7 @@ export const forRangeToWhile: Plugin = {
 export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
   visit(node, spine) {
-    if (node.kind === "ForRange") {
+    if (node.kind === "ForRange" && node.variable !== undefined) {
       const low = getType(node.start, spine);
       const high = getType(node.end, spine);
       if (low.kind !== "integer" || high.kind !== "integer") {
@@ -113,24 +114,26 @@ export const forRangeToForEachPair: Plugin = {
   visit(node, spine) {
     if (
       node.kind === "ForRange" &&
+      node.variable !== undefined &&
       !node.inclusive &&
       isIntLiteral(node.start, 0n) &&
       isPolygolfOp(node.end, "list_length") &&
       node.end.args[0].kind === "Identifier"
     ) {
+      const variable = node.variable;
       const collection = node.end.args[0];
-      const elementIdentifier = id(node.variable.name + "+each");
+      const elementIdentifier = id(variable.name + "+each");
       const newBody = spine.getChild("body").withReplacer((innerNode) => {
-        if (isListGet(innerNode, collection.name, node.variable.name))
+        if (isListGet(innerNode, collection.name, variable.name))
           return elementIdentifier;
       }).node as IR.Expr;
-      return forEachPair(node.variable, elementIdentifier, collection, newBody);
+      return forEachPair(variable, elementIdentifier, collection, newBody);
     }
   },
 };
 
 function isListGet(node: IR.Node, collection: string, index: string) {
-  if (node.kind !== "PolygolfOp" || node.op !== "list_get") return false;
+  if (!isPolygolfOp(node, "list_get")) return false;
   const args = node.args;
   return (
     args[0].kind === "Identifier" &&
@@ -167,6 +170,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
     visit(node, spine) {
       if (
         node.kind === "ForRange" &&
+        node.variable !== undefined &&
         !node.inclusive &&
         isIntLiteral(node.start, 0n) &&
         ((isPolygolfOp(node.end) &&
@@ -231,15 +235,10 @@ function getIndexedCollection(
     const parent = s.parent!.node;
     if (n.kind !== "Identifier" || n.builtin || n.name !== indexVar.name)
       return undefined;
-    if (
-      parent.kind !== "PolygolfOp" ||
-      !(allowedOps as OpCode[]).includes(parent.op)
-    )
-      return null;
+    if (!isPolygolfOp(parent, ...allowedOps)) return null;
     const collection = parent.args[0];
     if (
-      (collection.kind === "TextLiteral" ||
-        collection.kind === "ListConstructor") &&
+      (isTextLiteral(collection) || collection.kind === "ListConstructor") &&
       literalLength(collection, allowedOps.includes("text_get_byte")) ===
         knownLength
     )
@@ -341,9 +340,14 @@ export const shiftRangeOneUp: Plugin = {
   visit(node, spine) {
     if (node.kind === "ForRange" && isIntLiteral(node.increment, 1n)) {
       const bodySpine = new Spine(node.body, spine, "body");
-      const newVar = id(node.variable.name + "+shift");
+      const newVar =
+        node.variable === undefined
+          ? undefined
+          : id(node.variable.name + "+shift");
       const newBodySpine = bodySpine.withReplacer((x) =>
-        isIdent(x, node.variable) ? sub1(newVar) : undefined
+        newVar !== undefined && isIdent(x, node.variable!)
+          ? sub1(newVar)
+          : undefined
       );
       return forRange(
         newVar,
@@ -376,6 +380,7 @@ export function forRangeToForDifferenceRange(
     visit(node, spine) {
       if (
         node.kind === "ForRange" &&
+        node.variable !== undefined &&
         transformPredicate(node, spine as Spine<ForRange>)
       ) {
         return forDifferenceRange(
@@ -396,6 +401,7 @@ export const forRangeToForRangeOneStep: Plugin = {
   visit(node, spine) {
     if (
       node.kind === "ForRange" &&
+      node.variable !== undefined &&
       isSubtype(getType(node.increment, spine.root.node), integerType(2n))
     ) {
       const newVar = id(node.variable.name + "+1step");
@@ -429,6 +435,25 @@ export const forRangeToForRangeOneStep: Plugin = {
         ]),
         node.inclusive
       );
+    }
+  },
+};
+
+export const removeUnusedForVar: Plugin = {
+  name: "removeUnusedForVar",
+  visit(node, spine) {
+    if (node.kind === "ForRange" && node.variable !== undefined) {
+      const variable = node.variable;
+      if (spine.getChild("body").everyNode((x) => !isIdent(x, variable))) {
+        return forRange(
+          undefined,
+          node.start,
+          node.end,
+          node.increment,
+          node.body,
+          node.inclusive
+        );
+      }
     }
   },
 };

@@ -31,9 +31,11 @@ This will set up the `polygolf` command to point to the CLI script.
 Polygolf CLI supports the following options:
 
 - `--input`, `-i`: path to the input program
-- `--lang`, `-l`: target language name or its extension, or `all` for targeting all supported languages
+- `--lang`, `-l`: target language name or its extension, if omitted, targets all supported languages
 - `--output`, `-o`: output path, if omitted, output goes to stdout
 - `--chars`, `-c`: if set, switches the objective from bytes to chars
+- `--all`, `-a`: if set, outputs all input variants
+- `--debug`, `-d`: if set, outputs debug info
 
 To uninstall, use `npm uninstall polygolf --location=global`
 
@@ -75,7 +77,13 @@ Type expression is either
 
 ### Literals
 
-Integer literals are unbounded and written in base 10. String literals are JSON string literals.  
+Integer literals are either
+
+- base 10 - no prefix, optionally using a scientific notation, so that `1e6` is the same as `1000000`,
+- base 2 - `0b` prefix,
+- base 16 - `0x` prefix.
+
+String literals are JSON string literals.  
 List literals are written as n-ary s-expressions:  
 `(list 1 2 3 4 5)`  
 Array and set literals are similar:  
@@ -118,7 +126,7 @@ Each variable must be first used in an assignment. Variable type is determined b
 - `key_value`, `=>` - this can only be used as a part of a table literal.
 - `func` - anonymous function literal - last argument is the body, all others are its arguments.
 - `if` - if statement - expects a boolean condition and 1-2 bodies - a consequent and an optional alternate.
-- `for` - a loop over an integer range - expects a loop variable, inclusive lower bound, exclusive upper bound, optional step and a body.
+- `for` - a loop over an integer range - expects a loop variable, inclusive lower bound, exclusive upper bound, step and a body. If step is 1, it can be omitted, if in addition start is 0, it can be omitted, if in addition the loop variable is not needed, it can be omitted.
 - `while` - a while loop. Expects a boolean condition and a body.
 - `for_argv` - a loop over input arguments. Expects a loop variable and a static integer literal representing the upper bound on the number of arguments.
 - `conditional` - a ternary conditional expression. Expects a boolean condition, a consequent and an alternate.
@@ -212,6 +220,8 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Integer arithmetic
 
+- [x] `3145728` ⟶ `3<<20`
+- [x] `3000000` ⟶ `3e6` (in Lua, TODO in other langs where possible)
 - [x] `x<=5` ⟶ `x<6`
 - [x] `x%10==0` ⟶ `x%10<1`
 - [x] `(x+1)*(y+1)` ⟶ `~x*~y`
@@ -233,6 +243,7 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Loops
 
+- [x] `for i in range(10):print("O")` ⟶ `for _ in"X"*10:print("O")`
 - [x] `for i in range(len(d)):print(d[i])` ⟶ `for i in d:print(i)`
 - [x] `for i in range(0,10,2):print(i)` ⟶ `for i in range(5):print(2*i)`
 - [x] `for i in range(10,20):print(i+1)` ⟶ `for i in range(11,21):print(i)`
@@ -268,6 +279,6 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 - Help Polygolf understand the problem. This includes:
   - Explicitly annotate types of values. The type inference algorithm isn't perfect or in some cases can't even possible narrow the type down as much as you can. This is especially relevant for
     - Values coming from argv - perhaps you know they will be ascii or that they will be representing an integer in a certain range.
-  - Complex arithmetic expressions.
+    - Complex arithmetic expressions.
   - Prefer higher level opcodes if they exist. While Polygolf aims to generally be able to convert between lower level implementation and a higher level one, the conversion from low level to high level is harder and might not always work out for you.
 - Use variants. Polygolf is WIP and the set of golfing rules it knowns is limited. If there are two different equivalent implementations that both are sometimes shorter, include them both using the variant syntax. If you believe the case is general enough and that Polygolf should be able to generate one based on the other, [open an issue](https://github.com/jared-hughes/polygolf/issues/new/choose).

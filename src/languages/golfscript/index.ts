@@ -12,6 +12,7 @@ import {
   binaryOp,
   listConstructor,
   unaryOp,
+  isIntLiteral,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -43,6 +44,9 @@ import {
   equalityToInequality,
   bitShiftToMulOrDiv,
   powPlugins,
+  lowBitsPlugins,
+  decomposeIntLiteral,
+  pickAnyInt,
 } from "../../plugins/arithmetic";
 import {
   useEquivalentTextOp,
@@ -62,12 +66,15 @@ const golfscriptLanguage: Language = {
       equalityToInequality,
       ...bitnotPlugins,
       ...powPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       forRangeToForRangeOneStep,
       forArgvToForEach,
-      bitShiftToMulOrDiv(false, true, true)
+      bitShiftToMulOrDiv(false, true, true),
+      decomposeIntLiteral(false, true, false)
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       bitShiftToMulOrDiv(false, true, true),
       useEquivalentTextOp(true, false),
@@ -127,9 +134,7 @@ const golfscriptLanguage: Language = {
           (x) =>
             polygolfOp(
               "lt",
-              ...(x[0].kind === "IntegerLiteral"
-                ? [sub1(x[0]), x[1]]
-                : [x[0], add1(x[1])])
+              ...(isIntLiteral(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])])
             ),
         ],
         [
@@ -137,9 +142,7 @@ const golfscriptLanguage: Language = {
           (x) =>
             polygolfOp(
               "gt",
-              ...(x[0].kind === "IntegerLiteral"
-                ? [add1(x[0]), x[1]]
-                : [x[0], sub1(x[1])])
+              ...(isIntLiteral(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])])
             ),
         ]
       ),

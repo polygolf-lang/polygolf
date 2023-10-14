@@ -12,9 +12,14 @@ import {
   isIntLiteral,
   implicitConversion,
   integerType,
+  Node,
+  sub1,
+  add1,
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
+import { Spine } from "@/common/Spine";
+import { filterInplace } from "../common/arrays";
 
 export const modToRem: Plugin = {
   name: "modToRem",
@@ -163,13 +168,57 @@ export const useIntegerTruthiness: Plugin = {
   },
 };
 
+function isConstantTypePowerOfTwo(n: Expr, s: Spine) {
+  const type = getType(n, s);
+  if (type.kind === "integer" && isConstantType(type)) {
+    const v = type.low;
+    return v !== 0n && (v & (v - 1n)) === 0n;
+  }
+  return false;
+}
+
+function isPowerOfTwo(n: Node, s: Spine): boolean {
+  return (
+    (n.kind !== "Program" && isConstantTypePowerOfTwo(n, s)) ||
+    (isPolygolfOp(n, "pow", "bit_shift_left") && isPowerOfTwo(n.args[0], s))
+  );
+}
+
+export const modToBitand: Plugin = {
+  name: "modToBitand",
+  visit(node, spine) {
+    if (isPolygolfOp(node, "mod")) {
+      const n = node.args[1];
+      if (isPowerOfTwo(n, spine)) {
+        return polygolfOp("bit_and", node.args[0], sub1(n));
+      }
+    }
+  },
+};
+
+export const bitandToMod: Plugin = {
+  name: "bitandToMod",
+  visit(node, spine) {
+    if (isPolygolfOp(node, "bit_and")) {
+      for (const i of [0, 1]) {
+        const n = add1(node.args[i]);
+        if (isPowerOfTwo(n, spine)) {
+          return polygolfOp("mod", node.args[1 - i], n);
+        }
+      }
+    }
+  },
+};
+
+export const lowBitsPlugins = [modToBitand, bitandToMod];
+
 export function powToMul(limit: number = 2): Plugin {
   return {
     name: `powToMul(${limit})`,
     visit(node) {
-      if (node.kind === "PolygolfOp" && node.op === "pow") {
+      if (isPolygolfOp(node, "pow")) {
         const [a, b] = node.args;
-        if (isIntLiteral(b) && b.value > 1 && b.value <= limit) {
+        if (isIntLiteral(b) && 1 < b.value && b.value <= limit) {
           return polygolfOp("mul", ...Array(Number(b.value)).fill(a));
         }
       }
@@ -180,7 +229,7 @@ export function powToMul(limit: number = 2): Plugin {
 export const mulToPow: Plugin = {
   name: "mulToPow",
   visit(node) {
-    if (node.kind === "PolygolfOp" && node.op === "mul") {
+    if (isPolygolfOp(node, "mul")) {
       const factors = new Map<string, [Expr, number]>();
       for (const e of node.args) {
         const stringified = stringify(e);
@@ -214,10 +263,7 @@ export function bitShiftToMulOrDiv(
       .map((x) => (x ? "true" : "false"))
       .toString()})`,
     visit(node) {
-      if (
-        node.kind === "PolygolfOp" &&
-        ["bit_shift_left", "bit_shift_right"].includes(node.op)
-      ) {
+      if (isPolygolfOp(node, "bit_shift_left", "bit_shift_right")) {
         const [a, b] = node.args;
         if (!literalOnly || isIntLiteral(b)) {
           if (node.op === "bit_shift_left" && toMul) {
@@ -247,7 +293,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
       .map((x) => (x ? "true" : "false"))
       .toString()})`,
     visit(node) {
-      if (node.kind === "PolygolfOp" && node.op === "div" && fromDiv) {
+      if (isPolygolfOp(node, "div") && fromDiv) {
         const [a, b] = node.args;
         if (isIntLiteral(b)) {
           const [n, exp] = getOddAnd2Exp(b.value);
@@ -255,15 +301,11 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
             return polygolfOp("bit_shift_right", a, int(exp));
           }
         }
-        if (
-          b.kind === "PolygolfOp" &&
-          b.op === "pow" &&
-          isIntLiteral(b.args[0], 2n)
-        ) {
+        if (isPolygolfOp(b, "pow") && isIntLiteral(b.args[0], 2n)) {
           return polygolfOp("bit_shift_right", a, b.args[1]);
         }
       }
-      if (node.kind === "PolygolfOp" && node.op === "mul" && fromMul) {
+      if (isPolygolfOp(node, "mul") && fromMul) {
         if (isIntLiteral(node.args[0])) {
           const [n, exp] = getOddAnd2Exp(node.args[0].value);
           if (exp > 1) {
@@ -275,10 +317,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
           }
         }
         const powNode = node.args.find(
-          (x) =>
-            x.kind === "PolygolfOp" &&
-            x.op === "pow" &&
-            isIntLiteral(x.args[0], 2n)
+          (x) => isPolygolfOp(x, "pow") && isIntLiteral(x.args[0], 2n)
         ) as PolygolfOp | undefined;
         if (powNode !== undefined) {
           return polygolfOp(
@@ -293,3 +332,169 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
 }
 
 export const bitShiftPlugins = [bitShiftToMulOrDiv(), mulOrDivToBitShift()];
+
+export type IntDecomposition = [
+  // [k,b,e,d,cost] represents a value k * pow(b,e) + d, cost = lg(k)+lg(b)+lg(e)+lg(d)
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  number
+];
+
+// assert (1000 ≤ |n|)
+export function decomposeInt(
+  n: bigint,
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): IntDecomposition[] {
+  return decomposeAnyInt(n, n, hasScientific, hasPowers, hasShifts);
+}
+
+// assert (1000 ≤ x ≤ y || x ≤ y ≤ -1000)
+export function decomposeAnyInt(
+  x: bigint,
+  y: bigint,
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): IntDecomposition[] {
+  return x > 0
+    ? _decomposeAnyInt(x, y, hasScientific, hasPowers, hasShifts)
+    : _decomposeAnyInt(-y, -x, hasScientific, hasPowers, hasShifts).map(
+        ([k, b, e, d, c]) => [-k, b, e, -d, c]
+      );
+}
+
+function lg(n: bigint): number {
+  if (n < 0) n = -n;
+  return n > 1000000000000
+    ? 2 + n.toString(16).length
+    : n > 99
+    ? n.toString().length
+    : n > 9
+    ? 2
+    : 1;
+}
+
+function ceilDiv(a: bigint, b: bigint) {
+  return (a + (b - 1n)) / b;
+}
+
+// assert (1000 ≤ x ≤ y)
+// Find decompositions x ≤ k * b^e + d ≤ y s.t. 1000 ≤ b^e, 2 ≤ b ≤ 10, |d| < 100
+function _decomposeAnyInt(
+  x: bigint,
+  y: bigint,
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): IntDecomposition[] {
+  function betterOrEqual(
+    [k1, b1, e1, d1, c1]: IntDecomposition,
+    [k2, b2, e2, d2, c2]: IntDecomposition
+  ): boolean {
+    return (
+      (!hasShifts || b1 === 2n || b2 !== 2n) &&
+      (!hasScientific || b1 === 10n || b2 !== 10n) &&
+      (k1 === 1n || k2 !== 1n) &&
+      (d1 === 0n || d2 !== 0n) &&
+      c1 <= c2
+    );
+  }
+  const xd = x - 99n;
+  const yd = y + 99n;
+  const decompositions: IntDecomposition[] = [];
+  for (let b = 2n; b <= 10n; b += hasPowers ? 1n : 8n) {
+    if (
+      !hasPowers &&
+      ((!hasShifts && b === 2n) || (!hasScientific && b === 10n))
+    )
+      continue;
+    for (
+      let e = 2n, be = b * b, kx = ceilDiv(xd, be), ky = yd / be;
+      kx <= ky;
+      e++, be *= b, kx = ceilDiv(kx, b), ky /= b
+    ) {
+      if (be < 1000) continue;
+      const kmax = ky > kx ? kx + 1n : kx;
+      for (let k = kx; k <= kmax; k++) {
+        if (k % b === 0n && lg(e) === lg(e + 1n)) continue;
+        const m = k * be;
+        const d = m > y ? y - m : m < x ? x - m : 0n;
+        const newDecomposition: IntDecomposition = [
+          k,
+          b,
+          e,
+          d,
+          lg(k) + lg(b) + lg(e) + lg(d),
+        ];
+        if (
+          decompositions.some((decomposition) =>
+            betterOrEqual(decomposition, newDecomposition)
+          )
+        )
+          continue;
+        filterInplace(
+          decompositions,
+          (decomposition) => !betterOrEqual(newDecomposition, decomposition)
+        );
+        decompositions.push(newDecomposition);
+      }
+    }
+  }
+  return decompositions;
+}
+
+export function decomposeIntLiteral(
+  hasScientific = false,
+  hasPowers = true,
+  hasShifts = true
+): Plugin {
+  return {
+    name: `decomposeIntLiteral(${JSON.stringify([
+      hasScientific,
+      hasPowers,
+      hasShifts,
+    ])})`,
+    visit(node) {
+      let decompositions: IntDecomposition[] = [];
+      if (isIntLiteral(node) && (node.value <= -1000 || node.value >= 1000)) {
+        decompositions = decomposeInt(
+          node.value,
+          hasScientific,
+          hasPowers,
+          hasShifts
+        );
+      } else if (node.kind === "AnyIntegerLiteral") {
+        decompositions = decomposeAnyInt(
+          node.low,
+          node.high,
+          hasScientific,
+          hasPowers,
+          hasShifts
+        );
+      }
+
+      return decompositions.map(([k, b, e, d]) =>
+        polygolfOp(
+          "add",
+          polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
+          int(d)
+        )
+      );
+    },
+  };
+}
+
+export const pickAnyInt: Plugin = {
+  name: "pickAnyInt",
+  visit(node) {
+    if (node.kind === "AnyIntegerLiteral") {
+      return node.low.toString().length < node.high.toString().length
+        ? int(node.low)
+        : int(node.high);
+    }
+  },
+};

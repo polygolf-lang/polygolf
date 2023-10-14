@@ -33,6 +33,7 @@ export default function emitProgram(program: IR.Program): TokenTree {
         if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
         if (!isSubtype(getType(stmt.start, program), integerType(0)))
           throw new EmitError(stmt, "potentially negative low");
+        if (stmt.variable === undefined) throw new EmitError(stmt, "indexless");
         return [
           emitExpr(stmt.end),
           ",",

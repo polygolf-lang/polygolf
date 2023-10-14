@@ -6,7 +6,10 @@ export type OpTransformOutput =
   | ((args: readonly IR.Expr[], spine: Spine<Expr>) => IR.Expr | undefined)
   | IR.Expr;
 
-export type Packer = (x: string) => string | null;
+export interface Packer {
+  codepointRange: [number, number];
+  pack: (x: string) => string | null;
+}
 
 /** A language configuration.
  *
@@ -58,10 +61,10 @@ export function search(...plugins: Plugin[]): LanguagePhase {
 
 export interface Plugin {
   name: string;
-  /** visit should return a viable replacement node, or undefined to represent
-   * no replacement. The replacement node should be different in value than
+  /** visit should return one or more viable replacement nodes, or undefined to represent
+   * no replacement. The replacement nodes should be different in value than
    * the initial node if it compares different under reference equality */
-  visit: PluginVisitor<IR.Node | undefined>;
+  visit: PluginVisitor<IR.Node[] | IR.Node | undefined>;
 }
 
 type TokenTreeArray = Array<string | TokenTreeArray>;
@@ -91,12 +94,12 @@ export type Emitter = (
   context: CompilationContext
 ) => TokenTree;
 
-function isAlphaNum(a: string, i: number): boolean {
-  return /[A-Za-z0-9]/.test(a[i]);
+function isWord(a: string, i: number): boolean {
+  return /\w/.test(a[i]);
 }
 
 export function defaultWhitespaceInsertLogic(a: string, b: string): boolean {
-  return isAlphaNum(a, a.length - 1) && isAlphaNum(b, 0);
+  return isWord(a, a.length - 1) && isWord(b, 0);
 }
 
 export function defaultDetokenizer(

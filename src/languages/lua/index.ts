@@ -38,10 +38,14 @@ import { assertInt64 } from "../../plugins/types";
 import {
   applyDeMorgans,
   bitnotPlugins,
+  decomposeIntLiteral,
   equalityToInequality,
+  lowBitsPlugins,
+  pickAnyInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { listOpsToTextOps } from "../../plugins/static";
+import { base10DecompositionToFloatLiteralAsBuiltin } from "./plugins";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -57,6 +61,7 @@ const luaLanguage: Language = {
       equalityToInequality,
       shiftRangeOneUp,
       ...bitnotPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       useIntegerTruthiness,
       forRangeToForRangeOneStep,
@@ -95,9 +100,11 @@ const luaLanguage: Language = {
           (x) => methodCall(x[0], "sub", x[1], add1(x[2])),
         ]
       ),
-      useIndexCalls(true)
+      useIndexCalls(true),
+      decomposeIntLiteral(true, true, true)
     ),
     required(
+      pickAnyInt,
       forArgvToForRange(),
       forRangeToForRangeInclusive(),
       implicitlyConvertPrintArg,
@@ -182,7 +189,10 @@ const luaLanguage: Language = {
                 : methodCall(c, "gsub", text("%%"), text("%%%%"))
             ),
         ]
-      ),
+      )
+    ),
+    simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
+    required(
       mapToUnaryAndBinaryOps(
         ["pow", "^"],
         ["not", "not"],
