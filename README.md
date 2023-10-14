@@ -77,7 +77,13 @@ Type expression is either
 
 ### Literals
 
-Integer literals are unbounded and written in base 10. String literals are JSON string literals.  
+Integer literals are either
+
+- base 10 - no prefix, optionally using a scientific notation, so that `1e6` is the same as `1000000`,
+- base 2 - `0b` prefix,
+- base 16 - `0x` prefix.
+
+String literals are JSON string literals.  
 List literals are written as n-ary s-expressions:  
 `(list 1 2 3 4 5)`  
 Array and set literals are similar:  
@@ -214,6 +220,8 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Integer arithmetic
 
+- [x] `3145728` ⟶ `3<<20`
+- [x] `3000000` ⟶ `3e6` (in Lua, TODO in other langs where possible)
 - [x] `x<=5` ⟶ `x<6`
 - [x] `x%10==0` ⟶ `x%10<1`
 - [x] `(x+1)*(y+1)` ⟶ `~x*~y`

@@ -55,6 +55,9 @@ import {
   equalityToInequality,
   truncatingOpsPlugins,
   bitnotPlugins,
+  lowBitsPlugins,
+  decomposeIntLiteral,
+  pickAnyInt,
 } from "../../plugins/arithmetic";
 
 const swiftLanguage: Language = {
@@ -71,6 +74,7 @@ const swiftLanguage: Language = {
       equalityToInequality,
       forRangeToForRangeInclusive(),
       ...bitnotPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       forRangeToForRangeOneStep,
       useEquivalentTextOp(true, true),
@@ -106,9 +110,11 @@ const swiftLanguage: Language = {
             ),
         ]
       ),
-      useIndexCalls()
+      useIndexCalls(),
+      decomposeIntLiteral()
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps(

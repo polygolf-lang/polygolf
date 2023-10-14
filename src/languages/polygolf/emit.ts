@@ -296,6 +296,8 @@ function emitExprWithoutAnnotation(
       );
     case "NamedArg":
       return emitSexpr("@", text(expr.name), expr.value);
+    case "AnyIntegerLiteral":
+      return emitSexpr("@", expr.low.toString(), expr.high.toString());
   }
 }
 

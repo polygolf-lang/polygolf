@@ -17,7 +17,7 @@ import {
   setType,
   integerType as intType,
   IntegerLiteral,
-  int,
+  int as integer,
   assignment,
   OpCode,
   whileLoop,
@@ -62,6 +62,7 @@ import {
   unaryOp,
   propertyCall,
   isTextLiteral,
+  anyInt,
   isIntLiteral,
   isIdent,
 } from "../IR";
@@ -169,8 +170,8 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     case "for": {
       expectArity(2, 5);
       let variable: Expr = id("_");
-      let start: Expr = int(0n);
-      let step: Expr = int(1n);
+      let start: Expr = integer(0n);
+      let step: Expr = integer(1n);
       let end, body: Expr;
       if (args.length === 5) {
         [variable, start, end, step, body] = args;
@@ -204,6 +205,13 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       const consequent = args[1];
       const alternate = args[2];
       return ifStatement(condition, consequent, alternate);
+    }
+    case "any_int": {
+      expectArity(2);
+      const [low, high] = args;
+      assertInteger(low);
+      assertInteger(high);
+      return anyInt(low.value, high.value);
     }
   }
   if (!restrictedFrontend)
@@ -328,7 +336,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
           [start, end, step, body] = args;
         } else {
           [start, end, body] = args;
-          step = int(1n);
+          step = integer(1n);
         }
         return forRange(undefined, start, end, step, body);
       }
@@ -352,6 +360,17 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     `Syntax error. Unrecognized builtin: ${opCode}`,
     callee.source
   );
+}
+
+function intValue(x: string): bigint {
+  if (x[0] === "-") return -intValue(x.substring(1));
+  if (x[0] === "0") return BigInt(x);
+  const parts = x.toString().split(/[eE]/);
+  return BigInt(parts[0]) * 10n ** BigInt(parts[1] ?? "0");
+}
+
+export function int(x: Token) {
+  return integer(intValue(x.text));
 }
 
 export const canonicalOpTable: Record<string, OpCode> = {

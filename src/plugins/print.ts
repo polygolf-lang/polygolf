@@ -1,4 +1,4 @@
-import { replaceAtIndex } from "../common/immutable";
+import { replaceAtIndex } from "../common/arrays";
 import { Plugin } from "../common/Language";
 import { implicitConversion, isPolygolfOp, polygolfOp, text } from "../IR";
 import { mapOps } from "./ops";

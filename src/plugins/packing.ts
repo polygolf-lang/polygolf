@@ -1,3 +1,4 @@
+import { TextDecoder, TextEncoder } from "util";
 import { Plugin } from "../common/Language";
 import {
   assignment,
@@ -11,6 +12,7 @@ import {
   print,
   text,
 } from "../IR";
+import { byteLength } from "../common/objective";
 
 export const useDecimalConstantPackedPrinter: Plugin = {
   name: "useDecimalConstantPackedPrinter",
@@ -87,7 +89,7 @@ export const useLowDecimalListPackedPrinter: Plugin = {
 function packLowDecimalList(value: string): string | null {
   if (/^[\d+\n]+[\d+]$/.test(value)) {
     const nums = value.split("\n").map(Number);
-    if (nums.every((x) => x > 0 && x < 256)) {
+    if (nums.every((x) => 0 < x && x < 256)) {
       return nums.map((x) => String.fromCharCode(x)).join("");
     }
   }
@@ -95,14 +97,8 @@ function packLowDecimalList(value: string): string | null {
 }
 
 export function packSource2to1(source: string): string {
-  while (source.length % 2 !== 0) source += " ";
-  let result = "";
-  for (let i = 0; i < source.length; i += 2) {
-    result += String.fromCharCode(
-      source.charCodeAt(i) + source.charCodeAt(i + 1) * 256
-    );
-  }
-  return result;
+  if (byteLength(source) % 2 !== 0) source += " ";
+  return new TextDecoder("utf-16").decode(new TextEncoder().encode(source));
 }
 
 export function packSource3to1(source: string): string {

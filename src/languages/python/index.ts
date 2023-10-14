@@ -57,7 +57,10 @@ import { addImports } from "../../plugins/imports";
 import {
   applyDeMorgans,
   bitnotPlugins,
+  decomposeIntLiteral,
   equalityToInequality,
+  lowBitsPlugins,
+  pickAnyInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
@@ -80,6 +83,7 @@ const pythonLanguage: Language = {
       useLowDecimalListPackedPrinter,
       textToIntToTextGetToInt,
       ...bitnotPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       useIntegerTruthiness,
       forRangeToForRangeOneStep,
@@ -87,9 +91,11 @@ const pythonLanguage: Language = {
       useMultireplace(true),
       forArgvToForEach,
       useEquivalentTextOp(false, true),
-      useIndexCalls()
+      useIndexCalls(),
+      decomposeIntLiteral()
     ),
     required(
+      pickAnyInt,
       forArgvToForEach,
       removeUnusedForVar,
       useEquivalentTextOp(false, true),
@@ -251,12 +257,21 @@ const pythonLanguage: Language = {
     ),
   ],
   packers: [
-    (x) => `exec(bytes(${emitPythonTextLiteral(packSource2to1(x))},'u16')[2:])`,
-    (x) => {
-      if ([...x].map((x) => x.charCodeAt(0)).some((x) => x < 32)) return null;
-      return `exec(bytes(ord(c)%i+32for c in${emitPythonTextLiteral(
-        packSource3to1(x)
-      )}for i in b'abc'))`;
+    {
+      codepointRange: [1, Infinity],
+      pack(x) {
+        return `exec(bytes(${emitPythonTextLiteral(
+          packSource2to1(x)
+        )},'u16')[2:])`;
+      },
+    },
+    {
+      codepointRange: [32, 127],
+      pack(x) {
+        return `exec(bytes(ord(c)%i+32for c in${emitPythonTextLiteral(
+          packSource3to1(x)
+        )}for i in b'abc'))`;
+      },
     },
   ],
 };
