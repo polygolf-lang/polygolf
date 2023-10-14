@@ -6,7 +6,10 @@ export type OpTransformOutput =
   | ((args: readonly IR.Expr[], spine: Spine<Expr>) => IR.Expr | undefined)
   | IR.Expr;
 
-export type Packer = (x: string) => string | null;
+export interface Packer {
+  codepointRange: [number, number];
+  pack: (x: string) => string | null;
+}
 
 /** A language configuration.
  *

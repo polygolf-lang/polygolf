@@ -21,10 +21,10 @@ export type OptimisationLevel = "nogolf" | "simple" | "full";
 export interface CompilationOptions {
   level: OptimisationLevel;
   objective: Objective | ObjectiveFunc;
-  getAllVariants?: boolean;
-  skipTypecheck?: boolean;
-  restrictFrontend?: boolean;
-  asciiOnly?: boolean;
+  getAllVariants: boolean;
+  skipTypecheck: boolean;
+  restrictFrontend: boolean;
+  codepointRange: [number, number];
 }
 
 export type AddWarning = (x: Error, isGlobal: boolean) => void;
@@ -103,7 +103,6 @@ export function applyToAllAndGetCount(
   }).node as Program;
   return [result, program === result ? 0 : 1]; // TODO it might be a bit more informative to count the actual replacements, intead of returning 1
 }
-
 function* applyToOne(
   spine: Spine,
   context: CompilationContext,
@@ -147,9 +146,9 @@ export default function compile(
     if (isError(e)) return [compilationResult("Polygolf", e)];
   }
   program = program!;
-  const variants = expandVariants(program).map((x) => {
+  let variants = expandVariants(program).map((x) => {
     try {
-      if (options.skipTypecheck !== false) typecheck(x);
+      if (!options.skipTypecheck) typecheck(x);
       return x;
     } catch (e) {
       if (isError(e)) return compilationResult("Polygolf", e);
@@ -158,14 +157,25 @@ export default function compile(
   });
 
   const errorlessVariants = variants.filter((x) => "body" in x) as Program[];
+  const errorVariants = variants.filter(
+    (x) => !("body" in x)
+  ) as CompilationResult[];
   if (errorlessVariants.length === 0) {
-    return [variants[0] as CompilationResult];
+    if (options.getAllVariants) {
+      return variants as CompilationResult[];
+    } else {
+      return [variants[0] as CompilationResult];
+    }
+  }
+  if (!options.getAllVariants) {
+    variants = errorlessVariants;
   }
 
   const result: CompilationResult[] = [];
+
   const variantsByInput = getVariantsByInputMethod(errorlessVariants);
   for (const language of languages) {
-    if (options.getAllVariants === true) {
+    if (options.getAllVariants) {
       const outputs = errorlessVariants.map((x) =>
         compileVariant(x, options, language)
       );
@@ -181,6 +191,14 @@ export default function compile(
       result.push(res);
     }
   }
+
+  if (options.getAllVariants) {
+    result.push(...errorVariants);
+  }
+  if (result.length < 0 && errorVariants.length > 0) {
+    result.push(errorVariants[0]);
+  }
+
   return result;
 }
 
@@ -218,35 +236,40 @@ export function compileVariant(
   language: Language
 ): CompilationResult {
   const obj = getObjectiveFunc(options);
-  const bestUnpacked = compileVariantNoPacking(program, options, language);
+  let best = compileVariantNoPacking(program, options, language);
   const packers = language.packers ?? [];
   if (
     options.objective !== "chars" ||
     packers.length < 1 ||
-    isError(bestUnpacked.result)
+    isError(best.result)
   )
-    return bestUnpacked;
-  function packer(code: string | null): string | null {
-    if (code === null) return null;
-    if ([...code].map((x) => x.charCodeAt(0)).some((x) => x > 127)) return null;
-    return packers
-      .map((x) => x(code))
-      .reduce((a, b) => (obj(a) < obj(b) ? a : b));
+    return best;
+
+  for (const packer of packers) {
+    const bestForPacking = compileVariantNoPacking(
+      program,
+      {
+        ...options,
+        codepointRange: packer.codepointRange,
+        objective: (x) => (x === null ? Infinity : charLength(packer.pack(x))),
+      },
+      language
+    );
+    if (isError(bestForPacking.result)) continue;
+    if (
+      [...bestForPacking.result]
+        .map((x) => x.charCodeAt(0))
+        .some(
+          (x) => x < packer.codepointRange[0] || x > packer.codepointRange[1]
+        )
+    )
+      continue;
+    const packed = packer.pack(bestForPacking.result);
+    if (packed != null && obj(packed) < obj(best.result as string)) {
+      best = { ...bestForPacking, result: packed };
+    }
   }
-  const bestForPacking = compileVariantNoPacking(
-    program,
-    {
-      ...options,
-      objective: (x) => charLength(packer(x)),
-    },
-    language
-  );
-  if (isError(bestForPacking.result)) return bestUnpacked;
-  const packed = packer(bestForPacking.result);
-  if (packed != null && obj(packed) < obj(bestUnpacked.result)) {
-    return { ...bestForPacking, result: packed };
-  }
-  return bestUnpacked;
+  return best;
 }
 
 interface SearchState {
@@ -339,7 +362,7 @@ export function compileVariantNoPacking(
       try {
         const length = obj(finish(program, addWarning, startPhase)[0]);
         const state = { program, startPhase, length, history, warnings };
-        if (length < shortestSoFarLength) {
+        if (shortestSoFar === undefined || length < shortestSoFarLength) {
           shortestSoFarLength = length;
           shortestSoFar = state;
         }
@@ -461,7 +484,14 @@ function typecheck(program: Program) {
 export function debugEmit(program: Program): string {
   const result = compileVariantNoPacking(
     program,
-    { level: "nogolf", objective: "bytes", skipTypecheck: true },
+    {
+      level: "nogolf",
+      objective: "bytes",
+      skipTypecheck: true,
+      getAllVariants: false,
+      codepointRange: [1, Infinity],
+      restrictFrontend: false,
+    },
     polygolfLanguage
   ).result;
   if (typeof result === "string") {

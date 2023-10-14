@@ -19,7 +19,7 @@ export const charLength = (str: string | null) => {
   while (i < str.length) {
     const value = str.charCodeAt(i++);
 
-    if (value >= 0xd800 && value <= 0xdbff && i < str.length) {
+    if (0xd800 <= value && value <= 0xdbff && i < str.length) {
       // It's a high surrogate, and there is a next character.
       const extra = str.charCodeAt(i++);
 
@@ -39,6 +39,35 @@ export const charLength = (str: string | null) => {
   }
 
   return len;
+};
+
+export const codepoints = (str: string) => {
+  let i = 0;
+  const result: number[] = [];
+
+  while (i < str.length) {
+    const value = str.charCodeAt(i++);
+
+    if (value >= 0xd800 && value <= 0xdbff && i < str.length) {
+      // It's a high surrogate, and there is a next character.
+      const extra = str.charCodeAt(i++);
+
+      // Low surrogate.
+      if ((extra & 0xfc00) === 0xdc00) {
+        result.push((((value - 0xd800) << 10) ^ (extra - 0xdc00)) + 0x10000);
+      } else {
+        // It's an unmatched surrogate; only append this code unit, in
+        // case the next code unit is the high surrogate of a
+        // surrogate pair.
+        result.push(value);
+        i--;
+      }
+    } else {
+      result.push(value);
+    }
+  }
+
+  return result;
 };
 
 export const byteLength = (x: string | null) =>

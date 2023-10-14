@@ -8,10 +8,12 @@ import { IR } from "../IR";
  * The object represents `node[prop][index]` such as
  *  `{prop: "children", index: 3}` representing `block.children[3]`
  */
+type AllKeys<T> = T extends unknown ? keyof T : never;
+
 export type PathFragment =
-  | string
+  | AllKeys<IR.Node>
   | {
-      readonly prop: string;
+      readonly prop: AllKeys<IR.Node>;
       readonly index: number;
     };
 
@@ -26,14 +28,14 @@ export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
 /** Get all keys of a node object corresponding to children nodes. This is the
  * same sequence as `getChildFragments`, but this gives one key for each
  * array prop, while `getChildFragments` gives a `PathFragment` for each entry */
-function* getChildKeys(node: IR.Node): Generator<string> {
+function* getChildKeys(node: IR.Node): Generator<AllKeys<IR.Node>> {
   for (const key in node) {
     const value = (node as any)[key];
     if (
       Array.isArray(value) ||
       (typeof value?.kind === "string" && key !== "type")
     ) {
-      yield key;
+      yield key as any;
     }
   }
 }

@@ -7,6 +7,7 @@ import {
   int,
   IntegerLiteral,
   integerType,
+  isIntLiteral,
   isPolygolfOp,
   isTextLiteral,
   listConstructor,
@@ -139,9 +140,7 @@ export const tableToListLookup: Plugin = {
     ) {
       const keys = node.args[0].kvPairs.map((x) => x.key);
       if (
-        keys.every(
-          (x) => x.kind === "TextLiteral" || x.kind === "IntegerLiteral"
-        ) &&
+        keys.every((x) => isTextLiteral(x) || isIntLiteral(x)) &&
         new Set(keys.map((x) => (x as IntegerLiteral | TextLiteral).value))
           .size === keys.length
       ) {

@@ -20,3 +20,11 @@ export function groupby<Item, By>(
   }
   return result;
 }
+
+export function filterInplace<T>(data: T[], predicate: (x: T) => boolean) {
+  let length = 0;
+  for (const item of data) {
+    if (predicate(item)) data[length++] = item;
+  }
+  data.length = length;
+}

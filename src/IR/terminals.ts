@@ -28,6 +28,15 @@ export interface IntegerLiteral<Value extends bigint = bigint>
 }
 
 /**
+ * An unbounded integer constant. Raw OK
+ */
+export interface AnyIntegerLiteral extends BaseExpr {
+  readonly kind: "AnyIntegerLiteral";
+  readonly low: bigint;
+  readonly high: bigint;
+}
+
+/**
  * A string literal suitable for printing. Raw OK
  *
  * There is no distinction for byte vs unicode strings
@@ -47,6 +56,10 @@ export function builtin(name: string): Identifier {
 
 export function int(value: bigint | number): IntegerLiteral {
   return { kind: "IntegerLiteral", value: BigInt(value) };
+}
+
+export function anyInt(low: bigint, high: bigint): AnyIntegerLiteral {
+  return { kind: "AnyIntegerLiteral", low, high };
 }
 
 export function text(value: string): TextLiteral {

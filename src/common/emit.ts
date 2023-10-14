@@ -1,6 +1,7 @@
-import { Expr, IR } from "IR";
+import { Expr, IR, IntegerLiteral } from "IR";
 import { PolygolfError } from "./errors";
 import { TokenTree } from "./Language";
+import { codepoints } from "./objective";
 
 export function joinTrees(
   sep: TokenTree,
@@ -13,6 +14,7 @@ export function joinTrees(
  * Chooses the shortest option to represent the given string as a string literal.
  * Each option is described by the string delimiters (string or two strings) and an array of substitutions.
  * Substitution of the form `[somechar, null]` indicates that `somechar` cannot be present in the string in this option.
+ * Each resulting codepoint is mapped using `codepointMap`, if provided.
  */
 export function emitTextLiteral(
   value: string,
@@ -26,7 +28,8 @@ export function emitTextLiteral(
         [`"`, `\\"`],
       ],
     ],
-  ]
+  ],
+  codepointMap?: (x: number, i: number, arr: number[]) => string
 ): string {
   let result = "";
   for (const [delim, escapes] of options) {
@@ -40,7 +43,8 @@ export function emitTextLiteral(
     else current = delim[0] + current + delim[1];
     if (result === "" || current.length < result.length) result = current;
   }
-  return result;
+  if (codepointMap === undefined) return result;
+  return codepoints(result).map(codepointMap).join("");
 }
 
 export function containsMultiExpr(exprs: readonly IR.Expr[]): boolean {
@@ -62,4 +66,23 @@ export class EmitError extends PolygolfError {
     this.name = "EmitError";
     Object.setPrototypeOf(this, EmitError.prototype);
   }
+}
+
+export function shortest(x: string[]) {
+  return x.reduce((x, y) => (x.length <= y.length ? x : y));
+}
+
+export function emitIntLiteral(
+  n: IntegerLiteral,
+  bases: Record<number, [string, string]> = { 10: ["", ""] }
+) {
+  if (-10000 < n.value && n.value < 10000) return n.value.toString();
+  const isNegative = n.value < 0;
+  const abs = isNegative ? -n.value : n.value;
+  const absEmit = shortest(
+    Object.entries(bases).map(
+      ([b, [pre, suf]]) => `${pre}${abs.toString(Number(b))}${suf}`
+    )
+  );
+  return isNegative ? `-${absEmit}` : absEmit;
 }

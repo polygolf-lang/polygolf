@@ -31,9 +31,11 @@ This will set up the `polygolf` command to point to the CLI script.
 Polygolf CLI supports the following options:
 
 - `--input`, `-i`: path to the input program
-- `--lang`, `-l`: target language name or its extension, or `all` for targeting all supported languages
+- `--lang`, `-l`: target language name or its extension, if omitted, targets all supported languages
 - `--output`, `-o`: output path, if omitted, output goes to stdout
 - `--chars`, `-c`: if set, switches the objective from bytes to chars
+- `--all`, `-a`: if set, outputs all input variants
+- `--debug`, `-d`: if set, outputs debug info
 
 To uninstall, use `npm uninstall polygolf --location=global`
 
@@ -75,7 +77,13 @@ Type expression is either
 
 ### Literals
 
-Integer literals are unbounded and written in base 10. String literals are JSON string literals.  
+Integer literals are either
+
+- base 10 - no prefix, optionally using a scientific notation, so that `1e6` is the same as `1000000`,
+- base 2 - `0b` prefix,
+- base 16 - `0x` prefix.
+
+String literals are JSON string literals.  
 List literals are written as n-ary s-expressions:  
 `(list 1 2 3 4 5)`  
 Array and set literals are similar:  
@@ -212,6 +220,8 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Integer arithmetic
 
+- [x] `3145728` ⟶ `3<<20`
+- [x] `3000000` ⟶ `3e6` (in Lua, TODO in other langs where possible)
 - [x] `x<=5` ⟶ `x<6`
 - [x] `x%10==0` ⟶ `x%10<1`
 - [x] `(x+1)*(y+1)` ⟶ `~x*~y`
@@ -233,6 +243,7 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 
 ### Loops
 
+- [x] `for i in range(10):print("O")` ⟶ `for _ in"X"*10:print("O")`
 - [x] `for i in range(len(d)):print(d[i])` ⟶ `for i in d:print(i)`
 - [x] `for i in range(0,10,2):print(i)` ⟶ `for i in range(5):print(2*i)`
 - [x] `for i in range(10,20):print(i+1)` ⟶ `for i in range(11,21):print(i)`

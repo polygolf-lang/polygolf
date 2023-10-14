@@ -19,7 +19,8 @@ export const keywords = [
   "skipTypecheck",
   "typecheck",
   "restrictFrontend",
-  "asciiOnly",
+  "1..127",
+  "32..127",
 ] as const;
 
 export function compilationOptionsFromKeywords(
@@ -30,7 +31,11 @@ export function compilationOptionsFromKeywords(
   return {
     level: is("simple") ? "simple" : is("nogolf") ? "nogolf" : "full",
     objective: is("chars") ? "chars" : "bytes",
-    asciiOnly: is("asciiOnly"),
+    codepointRange: is("1..127")
+      ? [1, 127]
+      : is("32..127")
+      ? [32, 127]
+      : [1, Infinity],
     getAllVariants: is("allVariants"),
     restrictFrontend: is("restrictFrontend"),
     skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),

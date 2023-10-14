@@ -57,9 +57,6 @@ function parseSuite(markdown: string): Describe {
       currentDescribe.children.push(newDescribe);
       currentDescribe = newDescribe;
     } else if (!tag.args.includes("skip")) {
-      if (tag.args.length > 1) {
-        throw new Error("Codeblocks expect at most one argument.");
-      }
       if (tag.language === "polygolf" && tag.args.length === 0) {
         lastInput = tag;
       } else {
