@@ -40,6 +40,7 @@ import {
   bitnotPlugins,
   decomposeIntLiteral,
   equalityToInequality,
+  lowBitsPlugins,
   pickAnyInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
@@ -60,6 +61,7 @@ const luaLanguage: Language = {
       equalityToInequality,
       shiftRangeOneUp,
       ...bitnotPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       useIntegerTruthiness,
       forRangeToForRangeOneStep,

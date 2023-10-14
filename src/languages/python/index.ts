@@ -59,6 +59,7 @@ import {
   bitnotPlugins,
   decomposeIntLiteral,
   equalityToInequality,
+  lowBitsPlugins,
   pickAnyInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
@@ -82,6 +83,7 @@ const pythonLanguage: Language = {
       useLowDecimalListPackedPrinter,
       textToIntToTextGetToInt,
       ...bitnotPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       useIntegerTruthiness,
       forRangeToForRangeOneStep,

@@ -128,6 +128,42 @@ $a:-oo..oo <- 0;
 * 2 ((1 + $a) ^ 2) $a;
 ```
 
+## Mod & bitand
+
+```polygolf
+$a:0..oo <- 0;
+$b:0..oo <- 0;
+$a mod 7;
+$a mod 8;
+$a mod (2 ^ $b);
+```
+
+```polygolf arithmetic.modToBitand
+$a:0..oo <- 0;
+$b:0..oo <- 0;
+$a mod 7;
+$a & 7;
+$a & ((2 ^ $b) - 1);
+```
+
+## Mod & bitand
+
+```polygolf
+$a:0..oo <- 0;
+$b:0..oo <- 0;
+$a & 8;
+$a & 7;
+$a & ((2 ^ $b) - 1);
+```
+
+```polygolf arithmetic.bitandToMod
+$a:0..oo <- 0;
+$b:0..oo <- 0;
+$a & 8;
+$a mod 8;
+$a mod (2 ^ $b);
+```
+
 ## Bitshifts
 
 ```polygolf

@@ -69,6 +69,7 @@ import {
   bitnotPlugins,
   decomposeIntLiteral,
   pickAnyInt,
+  lowBitsPlugins,
 } from "../../plugins/arithmetic";
 
 const nimLanguage: Language = {
@@ -92,6 +93,7 @@ const nimLanguage: Language = {
       shiftRangeOneUp,
       forRangeToForRangeInclusive(),
       ...bitnotPlugins,
+      ...lowBitsPlugins,
       applyDeMorgans,
       textToIntToTextGetToInt,
       forRangeToForRangeOneStep,

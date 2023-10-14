@@ -12,9 +12,13 @@ import {
   isIntLiteral,
   implicitConversion,
   integerType,
+  Node,
+  sub1,
+  add1,
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
+import { Spine } from "@/common/Spine";
 import { filterInplace } from "../common/arrays";
 
 export const modToRem: Plugin = {
@@ -163,6 +167,50 @@ export const useIntegerTruthiness: Plugin = {
     }
   },
 };
+
+function isConstantTypePowerOfTwo(n: Expr, s: Spine) {
+  const type = getType(n, s);
+  if (type.kind === "integer" && isConstantType(type)) {
+    const v = type.low;
+    return v !== 0n && (v & (v - 1n)) === 0n;
+  }
+  return false;
+}
+
+function isPowerOfTwo(n: Node, s: Spine): boolean {
+  return (
+    (n.kind !== "Program" && isConstantTypePowerOfTwo(n, s)) ||
+    (isPolygolfOp(n, "pow", "bit_shift_left") && isPowerOfTwo(n.args[0], s))
+  );
+}
+
+export const modToBitand: Plugin = {
+  name: "modToBitand",
+  visit(node, spine) {
+    if (isPolygolfOp(node, "mod")) {
+      const n = node.args[1];
+      if (isPowerOfTwo(n, spine)) {
+        return polygolfOp("bit_and", node.args[0], sub1(n));
+      }
+    }
+  },
+};
+
+export const bitandToMod: Plugin = {
+  name: "bitandToMod",
+  visit(node, spine) {
+    if (isPolygolfOp(node, "bit_and")) {
+      for (const i of [0, 1]) {
+        const n = add1(node.args[i]);
+        if (isPowerOfTwo(n, spine)) {
+          return polygolfOp("mod", node.args[1 - i], n);
+        }
+      }
+    }
+  },
+};
+
+export const lowBitsPlugins = [modToBitand, bitandToMod];
 
 export function powToMul(limit: number = 2): Plugin {
   return {
