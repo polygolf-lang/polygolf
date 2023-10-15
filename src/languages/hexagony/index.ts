@@ -10,6 +10,7 @@ import {
   limitSetOp,
   powerToForRange,
   printTextLiteral,
+  mapOpsToConditionals,
 } from "./plugins";
 
 /*
@@ -40,9 +41,11 @@ const hexagonyLanguage: Language = {
   name: "Hexagony",
   extension: "hexagony",
   emitter: emitProgram,
+
   phases: [
     search(limitSetOp(128)),
     required(
+      mapOpsToConditionals,
       extractConditions,
       decomposeExpressions,
       powerToForRange,

@@ -13,6 +13,7 @@ import {
   whileLoop,
   isTextLiteral,
   forRange,
+  conditional,
 } from "@/IR";
 import { Plugin } from "../../common/Language";
 
@@ -231,6 +232,35 @@ export const printTextLiteral: Plugin = {
         res.push(polygolfOp("print_int", newVar));
       }
       return block(res);
+    }
+  },
+};
+
+export const mapOpsToConditionals: Plugin = {
+  name: "mapOpsToConditionals",
+  visit(node) {
+    if (isPolygolfOp(node)) {
+      if (node.op === "abs") {
+        return conditional(
+          polygolfOp("gt", node.args[0], int(0n)),
+          node.args[0],
+          polygolfOp("neg", node.args[0])
+        );
+      }
+      if (node.op === "min") {
+        return conditional(
+          polygolfOp("gt", node.args[0], node.args[1]),
+          node.args[1],
+          node.args[0]
+        );
+      }
+      if (node.op === "max") {
+        return conditional(
+          polygolfOp("gt", node.args[0], node.args[1]),
+          node.args[0],
+          node.args[1]
+        );
+      }
     }
   },
 };

@@ -84,3 +84,19 @@ for (id "c+powerIndex") 0 $b (
     $c <- ($c * $a)
 );
 ```
+
+```polygolf
+$a <- 10;
+$b <- 10;
+min $a $b;
+max $a $b;
+abs $a;
+```
+
+```polygolf plugins.mapOpsToConditionals
+$a <- 10;
+$b <- 10;
+conditional ($a > $b) $b $a;
+conditional ($a > $b) $a $b;
+conditional ($a > 0) $a (-$a);
+```
