@@ -68,6 +68,7 @@ for (const result of compile(
     codepointRange: [1, Infinity],
     restrictFrontend: true,
     skipTypecheck: false,
+    noEmit: false,
   },
   ...langs
 )) {

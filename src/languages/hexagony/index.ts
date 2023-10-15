@@ -1,8 +1,13 @@
-import { mapToUnaryAndBinaryOps } from "@/plugins/ops";
-import { printLnToPrint } from "@/plugins/print";
-import { Language, required, search } from "../../common/Language";
+import { mapToUnaryAndBinaryOps } from "../../plugins/ops";
+import { printLnToPrint } from "../../plugins/print";
+import {
+  Language,
+  defaultDetokenizer,
+  required,
+  search,
+} from "../../common/Language";
 
-import emitProgram from "./emit";
+import emitProgram, { emitProgramLinearly } from "./emit";
 import {
   decomposeExpressions,
   extractConditions,
@@ -41,6 +46,8 @@ const hexagonyLanguage: Language = {
   name: "Hexagony",
   extension: "hexagony",
   emitter: emitProgram,
+  noEmitter: emitProgramLinearly,
+  detokenizer: defaultDetokenizer(undefined, 2),
 
   phases: [
     search(limitSetOp(128)),

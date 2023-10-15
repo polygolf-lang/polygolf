@@ -64,11 +64,20 @@ import {
   isTextLiteral,
   anyInt,
   isIntLiteral,
+  TextLiteral,
+  builtin,
 } from "../IR";
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
-export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
+export function sexpr(
+  callee: Identifier | TextLiteral,
+  args: readonly Expr[]
+): Expr {
+  if (restrictedFrontend) assertIdentifier(callee);
+  if (isTextLiteral(callee)) {
+    return functionCall(builtin(callee.value), args);
+  }
   if (!callee.builtin) {
     return functionCall(callee, args);
   }

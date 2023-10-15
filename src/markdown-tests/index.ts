@@ -17,6 +17,7 @@ export const keywords = [
   "chars",
   "allVariants",
   "skipTypecheck",
+  "noEmit",
   "typecheck",
   "restrictFrontend",
   "1..127",
@@ -39,6 +40,7 @@ export function compilationOptionsFromKeywords(
     getAllVariants: is("allVariants"),
     restrictFrontend: is("restrictFrontend"),
     skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
+    noEmit: is("noEmit"),
   };
 }
 

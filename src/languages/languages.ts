@@ -5,6 +5,7 @@ import polygolfLanguage from "./polygolf";
 import pythonLanguage from "./python";
 import swiftLanguage from "./swift";
 import golfscriptLanguage from "./golfscript";
+import hexagonyLanguage from "./hexagony";
 
 const languages = [
   golfscriptLanguage,
@@ -12,6 +13,7 @@ const languages = [
   nimLanguage,
   pythonLanguage,
   swiftLanguage,
+  hexagonyLanguage,
   polygolfLanguage,
 ];
 

@@ -58,6 +58,7 @@ stmt ->
 callee -> builtin {% id %}
   | opalias {% id %}
   | variable {% id %}
+  | string {% id %}
 
 integer -> %integer {% d => refSource(int(d[0]), d[0]) %}
 variable -> %variable {% d => refSource(userIdentifier(d[0]), d[0]) %}

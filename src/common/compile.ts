@@ -1,6 +1,6 @@
 import { Node, Program } from "../IR";
 import { expandVariants } from "./expandVariants";
-import { defaultDetokenizer, Plugin, Language } from "./Language";
+import { defaultDetokenizer, Plugin, Language, TokenTree } from "./Language";
 import { programToSpine, Spine } from "./Spine";
 import { getType } from "./getType";
 import { stringify } from "./stringify";
@@ -21,6 +21,7 @@ export interface CompilationOptions {
   objective: Objective | ObjectiveFunc;
   getAllVariants: boolean;
   skipTypecheck: boolean;
+  noEmit: boolean;
   restrictFrontend: boolean;
   codepointRange: [number, number];
 }
@@ -120,11 +121,20 @@ function* applyToOne(
 function emit(
   language: Language,
   program: Program,
-  context: CompilationContext
+  context: CompilationContext,
+  noEmit: boolean
 ) {
-  return (language.detokenizer ?? defaultDetokenizer())(
-    language.emitter(program, context)
-  );
+  let tokenTree: TokenTree;
+  if (noEmit && language.noEmitter !== undefined) {
+    try {
+      tokenTree = language.noEmitter(program, context);
+    } catch {
+      tokenTree = language.emitter(program, context);
+    }
+  } else {
+    tokenTree = language.emitter(program, context);
+  }
+  return (language.detokenizer ?? defaultDetokenizer())(tokenTree);
 }
 
 function isError(x: any): x is Error {
@@ -258,7 +268,7 @@ export function compileVariantNoPacking(
       );
       return compilationResult(
         language.name,
-        emit(language, res, { addWarning, options }),
+        emit(language, res, { addWarning, options }, options.noEmit),
         plugins.map((y, i) => [counts[i], y.name]),
         warnings
       );
@@ -273,7 +283,8 @@ export function compileVariantNoPacking(
   function finish(
     prog: Program,
     addWarning: AddWarning,
-    startPhase = 0
+    startPhase: number,
+    noEmit: boolean
   ): [string, [number, string][]] {
     const finishingPlugins = phases
       .slice(startPhase)
@@ -285,7 +296,7 @@ export function compileVariantNoPacking(
       ...finishingPlugins.map((x) => x.visit)
     );
     return [
-      emit(language, resProg, { addWarning, options }),
+      emit(language, resProg, { addWarning, options }, noEmit),
       finishingPlugins.map((x, i) => [counts[i], x.name]),
     ];
   }
@@ -314,7 +325,7 @@ export function compileVariantNoPacking(
       }
 
       try {
-        const length = obj(finish(program, addWarning, startPhase)[0]);
+        const length = obj(finish(program, addWarning, startPhase, false)[0]);
         const state = { program, startPhase, length, history, warnings };
         if (shortestSoFar === undefined || length < shortestSoFarLength) {
           shortestSoFarLength = length;
@@ -388,7 +399,8 @@ export function compileVariantNoPacking(
     (x: Error) => {
       globalWarnings.push(x);
     },
-    shortestSoFar.startPhase
+    shortestSoFar.startPhase,
+    options.noEmit
   );
 
   return compilationResult(
@@ -445,6 +457,7 @@ export function debugEmit(program: Program): string {
       getAllVariants: false,
       codepointRange: [1, Infinity],
       restrictFrontend: false,
+      noEmit: false,
     },
     polygolfLanguage
   ).result;

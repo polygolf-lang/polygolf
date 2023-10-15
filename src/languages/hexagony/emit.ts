@@ -1,51 +1,81 @@
-import { PolygolfError } from "@/common/errors";
-import { TokenTree } from "@/common/Language";
+import { EmitError, joinTrees } from "../../common/emit";
 import { Expr, Program } from "../../IR";
-import { Pointer, ProgramEdgeData, resolveEdges } from "./memory";
-import { isIdentifier } from "@babel/types";
-import { EmitError } from "@/common/emit";
+import { TokenTree } from "../../common/Language";
 
-export default function emitProgram(program: Program): TokenTree {
-  const edgeData = resolveEdges(program);
-  const pointer = new Pointer({ x: 0, y: 0, i: 0 }, true);
-  return emitExpr(program.body, edgeData, pointer);
+type HexagonyTree =
+  | {
+      kind: "Op";
+      name: string;
+    }
+  | {
+      kind: "If";
+      consequent: HexagonyTree[];
+      alternate: HexagonyTree[];
+    }
+  | {
+      kind: "While" | "WhileNot";
+      body: HexagonyTree[];
+    };
+
+function getHexagonyTree(node: Expr): HexagonyTree[] {
+  if (node.kind === "Block") {
+    return node.children.flatMap(getHexagonyTree);
+  }
+  if (
+    node.kind === "FunctionCall" &&
+    node.func.kind === "Identifier" &&
+    node.func.builtin
+  ) {
+    if (node.func.name === "If" && node.args.length === 2) {
+      return [
+        {
+          kind: "If",
+          consequent: getHexagonyTree(node.args[0]),
+          alternate: getHexagonyTree(node.args[1]),
+        },
+      ];
+    }
+    if (
+      (node.func.name === "While" || node.func.name === "WhileNot") &&
+      node.args.length === 1
+    ) {
+      return [{ kind: node.func.name, body: getHexagonyTree(node.args[0]) }];
+    }
+    if (node.args.length === 0) {
+      return [{ kind: "Op", name: node.func.name }];
+    }
+  }
+  console.log(node);
+  throw new EmitError(node);
 }
 
-function emitExpr(
-  expr: Expr,
-  edgeData: ProgramEdgeData,
-  pointer: Pointer
-): TokenTree {
-  const edges = edgeData.get(expr);
-  if (edges === undefined)
-    throw new PolygolfError(`Cannot emit expr.`, expr.source);
-  switch (expr.kind) {
-    case "FunctionCall":
-      if (isIdentifier(expr.func))
-        return [pointer.goTo(edges.appliedTo), expr.func.name];
-      throw new EmitError(expr);
-    case "Assignment":
-      switch (expr.expr.kind) {
-        case "IntegerLiteral":
-          return [
-            pointer.goTo(edges.appliedTo),
-            String.fromCodePoint(Number(expr.expr.value)),
-          ];
-        case "Identifier":
-          return [pointer.goAlongAndCopy(edges.postCopyPath ?? [])];
-        case "BinaryOp":
-          if (
-            expr.expr.left.kind === "Identifier" &&
-            expr.expr.right.kind === "Identifier"
-          ) {
-            return [
-              (edges.preCopyPaths ?? []).map((x) => pointer.goAlongAndCopy(x)),
-              pointer.goTo(edges.appliedTo, edges.isCw),
-              expr.expr.name,
-              pointer.goAlongAndCopy(edges.postCopyPath ?? []),
-            ];
-          }
-      }
+export default function emitProgram(program: Program): TokenTree {
+  const tree = getHexagonyTree(program.body);
+  return tree[0].kind;
+}
+
+export function emitProgramLinearly(program: Program): TokenTree {
+  function emitTree(x: HexagonyTree | HexagonyTree[]): TokenTree {
+    if (Array.isArray(x)) return joinTrees("\n", x.map(emitTree));
+    switch (x.kind) {
+      case "If":
+        return [
+          "If",
+          "$INDENT$",
+          "\n",
+          emitTree(x.consequent),
+          "$DEDENT$",
+          "\n",
+          "Else",
+          "$INDENT$",
+          emitTree(x.alternate),
+        ];
+      case "While":
+      case "WhileNot":
+        return [x.kind, "$INDENT$", "\n", emitTree(x.body), "$DEDENT$"];
+      case "Op":
+        return x.name;
+    }
   }
-  throw new PolygolfError(`Cannot emit node ${expr.kind}.`, expr.source);
+  return emitTree(getHexagonyTree(program.body));
 }

@@ -1,4 +1,4 @@
-import { isInputless } from "@/common/Spine";
+import { isInputless } from "../../common/Spine";
 import {
   assignment,
   block,
@@ -14,7 +14,7 @@ import {
   isTextLiteral,
   forRange,
   conditional,
-} from "@/IR";
+} from "../../IR";
 import { Plugin } from "../../common/Language";
 
 function functionCall(name: string, ...exprs: Expr[]) {

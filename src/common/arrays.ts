@@ -15,3 +15,31 @@ export function filterInplace<T>(data: T[], predicate: (x: T) => boolean) {
   }
   data.length = length;
 }
+
+export function groupConsecutive<T>(
+  data: T[],
+  predicate: (a: T, b: T) => boolean
+): T[][] {
+  if (data.length < 1) return [];
+  const result: T[][] = [];
+  let last: T[] = [data[0]];
+  data.forEach((x, xi) => {
+    if (xi > 0) {
+      if (predicate(last.at(-1)!, x)) {
+        last.push(x);
+      } else {
+        result.push(last);
+        last = [x];
+      }
+    }
+  });
+  result.push(last);
+  return result;
+}
+
+export function groupConsecutiveBy<T, Tkey>(
+  data: T[],
+  key: (a: T) => Tkey
+): T[][] {
+  return groupConsecutive(data, (a: T, b: T) => key(a) === key(b));
+}

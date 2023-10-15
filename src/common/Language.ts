@@ -27,6 +27,7 @@ export interface Language {
   extension: string;
   phases: LanguagePhase[];
   emitter: Emitter;
+  noEmitter?: Emitter; // emitter used with the `noEmit` flag
   packers?: Packer[];
   detokenizer?: Detokenizer;
 }
