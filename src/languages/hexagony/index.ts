@@ -1,5 +1,4 @@
-import { functionCall } from "@/IR";
-import { mapOps, mapToUnaryAndBinaryOps } from "@/plugins/ops";
+import { mapToUnaryAndBinaryOps } from "@/plugins/ops";
 import { printLnToPrint } from "@/plugins/print";
 import { Language, required, search } from "../../common/Language";
 
@@ -14,12 +13,12 @@ import {
 } from "./plugins";
 
 /*
-# Compilation to Hexagony comprises of 4 steps:
+# Compilation to Hexagony comprises of 3 steps:
 
 1. Transforming the input AST to an equivalent AST using only low level constructs. The only allowed variable types are ints and only allowed nodes are
 
 - `Block`
-- `FunctionCall` - one of `0123456789()~,;?!` applied to an `Identifier`
+- `UnaryOp` - one of `0123456789()~,;?!` applied to an `Identifier`
 - `Assignment` of an `IntegerLiteral` (with a value that can directly be emitted) to an `Identifier`
 - `Assignment` of an `Identifier` to a different `Identifier`
 - `Assignment` of a `BinaryOp` to an `Identifier` where the `BinaryOp`'s op is one of `+-*:%` and both args are `Identifiers`
@@ -28,12 +27,13 @@ import {
 
 Note that a>b is equivalent to (a-b)>0 and a!=b is equivalent to a-b!=0 and c!=0 is equivalent to c\*c>0.
 
-The plugin functionality is used for this step. The rest is very much custom for Hexagony.
+This is done using plugins.
 
 2. Mapping variables to registers. This is done by a DFS bruteforce. Multiple variables can map to the same registers, if their usage of the register would not overlap.
    Sometimes, it's not possible to map a variable to a single register in which case a copy isntruction will need to be inserted.
+   This is done using a plugin and after it is done, the only allowed nodes are `FunctionCall` where the function is a string of Hexagony operators and there are no arguments or the function is one of "While", "WhileNot" or "If" and arguments are FunctionCalls.
 
-3. Laying out the HexagonyBlocks in the hexagon. There are multiple template factories, one or more is selected based on the length and structure of the HexagonyBlock program.
+3. Emitting the hexagony. There are multiple template factories, one or more is selected based on the length and structure of the HexagonyBlock program.
 
 */
 
@@ -60,10 +60,7 @@ const hexagonyLanguage: Language = {
       printLnToPrint,
       printTextLiteral,
       limitSetOp(99999),
-      mapOps(
-        ["putc", (x) => functionCall(";", x)],
-        ["print_int", (x) => functionCall("!", x)]
-      )
+      mapToUnaryAndBinaryOps(["putc", ";"], ["print_int", "!"])
     ),
   ],
 };
