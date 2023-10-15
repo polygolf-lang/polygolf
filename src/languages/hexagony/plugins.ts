@@ -5,7 +5,6 @@ import {
   Expr,
   int,
   isIntLiteral,
-  functionCall as fc,
   id,
   isPolygolfOp,
   ifStatement,
@@ -14,12 +13,9 @@ import {
   isTextLiteral,
   forRange,
   conditional,
+  unaryOp,
 } from "../../IR";
 import { Plugin } from "../../common/Language";
-
-function functionCall(name: string, ...exprs: Expr[]) {
-  return fc(name, exprs);
-}
 
 function isSpecialValue(val: number) {
   return (
@@ -48,22 +44,22 @@ export function limitSetOp(max: number): Plugin {
           const result: Expr[] = [];
           let val = node.expr.value;
           if (isCurrentProgramInputless) {
-            if (val === -1n) return functionCall(",", node.variable);
-            if (val === 0n) return functionCall("?", node.variable);
+            if (val === -1n) return unaryOp(",", node.variable);
+            if (val === 0n) return unaryOp("?", node.variable);
           }
           if (val < 0) {
-            result.push(functionCall("~", node.variable));
+            result.push(unaryOp("~", node.variable));
             val = -val;
           }
           while (val > max || isSpecialValue(Number(val))) {
             if ([123n, 91n, 9n].includes(val)) {
-              result.push(functionCall(")", node.variable));
+              result.push(unaryOp(")", node.variable));
               val -= 1n;
             } else if ([127n, 96n, 0n].includes(val)) {
-              result.push(functionCall("(", node.variable));
+              result.push(unaryOp("(", node.variable));
               val += 1n;
             } else {
-              result.push(functionCall((val % 10n).toString(), node.variable));
+              result.push(unaryOp((val % 10n).toString(), node.variable));
               val /= 10n;
             }
           }

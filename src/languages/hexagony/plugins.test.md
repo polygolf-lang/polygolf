@@ -7,12 +7,12 @@ $b <- 93;
 
 ```polygolf plugins.limitSetOp(999)
 $a <- 121;
-function_call (builtin "4") $a;
-function_call (builtin "5") $a;
-function_call (builtin "~") $a;
+unary_op "4" $a;
+unary_op "5" $a;
+unary_op "~" $a;
 $b <- 8;
-function_call (builtin ")") $b;
-function_call (builtin "3") $b;
+unary_op ")" $b;
+unary_op "3" $b;
 ```
 
 ```polygolf
