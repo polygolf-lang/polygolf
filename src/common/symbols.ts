@@ -4,13 +4,17 @@ import {
   integerType,
   integerTypeIncludingAll,
   IR,
+  isPolygolfOp,
   isSubtype,
   lt,
+  Node,
+  PolygolfOp,
   sub,
   textType,
   Type,
 } from "../IR";
 import { PolygolfError } from "./errors";
+import { getChildFragments, PathFragment } from "./fragments";
 import { getCollectionTypes, getType } from "./getType";
 import { programToSpine, Spine } from "./Spine";
 
@@ -181,4 +185,160 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
         `Programming error: node of type ${node.kind} does not bind any symbol`
       );
   }
+}
+
+export interface VarAccess {
+  spine: Spine<Identifier>;
+  isRead: boolean;
+  isWrite: boolean;
+  order: number;
+}
+
+export function getReads(spine: Spine, variable?: string): Spine<Identifier>[] {
+  return [...spine.compactMap((n, s) => getDirectReads(s, variable))].flat();
+}
+
+export function getDirectReads(
+  spine: Spine,
+  variable?: string
+): Spine<Identifier>[] {
+  return getDirectReadFragments(spine.node)
+    .map((x) => spine.getChild(x))
+    .filter(
+      (x) =>
+        x !== undefined &&
+        x.node.kind === "Identifier" &&
+        !x.node.builtin &&
+        (variable === undefined || variable === x.node.name)
+    ) as Spine<Identifier>[];
+}
+
+export function getWrites(
+  spine: Spine,
+  variable?: string
+): Spine<Identifier>[] {
+  return [...spine.compactMap((n, s) => getDirectWrites(s, variable))].flat();
+}
+
+export function getDirectWrites(
+  spine: Spine,
+  variable?: string
+): Spine<Identifier>[] {
+  return getDirectWriteFragments(spine.node)
+    .map((x) => spine.getChild(x))
+    .filter(
+      (x) =>
+        x !== undefined &&
+        x.node.kind === "Identifier" &&
+        !x.node.builtin &&
+        (variable === undefined || variable === x.node.name)
+    ) as Spine<Identifier>[];
+}
+
+function getDirectReadFragments(node: Node): PathFragment[] {
+  switch (node.kind) {
+    case "Assignment":
+      return ["expr"];
+    case "ForArgv":
+      return ["body"];
+    case "ForCLike":
+      return ["condition"];
+    case "ForDifferenceRange":
+      return ["start", "difference", "increment"];
+    case "ForEach":
+      return ["collection"];
+    case "ForEachPair":
+      return ["table"];
+    case "ForRange":
+      return ["start", "end", "increment"];
+    case "IfStatement":
+      return ["condition"];
+    case "ManyToManyAssignment":
+      return node.exprs.map((x, index) => ({ prop: "exprs", index }));
+    case "OneToManyAssignment":
+      return ["expr"];
+    case "PolygolfOp":
+      return getDirectPolygolfReadFragments(node).map((index) => ({
+        prop: "args",
+        index,
+      }));
+    case "VarDeclaration":
+      return [];
+    case "VarDeclarationBlock":
+      return [];
+    case "WhileLoop":
+      return ["condition"];
+  }
+  return [...getChildFragments(node)];
+}
+
+function getDirectPolygolfReadFragments(node: PolygolfOp): number[] {
+  // switch (node.op) {
+  // }
+  return node.args.map((x, i) => i);
+}
+
+function getDirectWriteFragments(node: Node): PathFragment[] {
+  switch (node.kind) {
+    case "Assignment":
+      return ["variable"];
+    case "ManyToManyAssignment":
+    case "OneToManyAssignment":
+      return node.variables.map((x, index) => ({ prop: "variables", index }));
+    case "PolygolfOp":
+      return getDirectPolygolfWriteFragments(node).map((index) => ({
+        prop: "args",
+        index,
+      }));
+  }
+  return [];
+}
+
+function getDirectPolygolfWriteFragments(node: PolygolfOp): number[] {
+  switch (node.op) {
+    case "array_set":
+    case "list_set":
+    case "table_set":
+      return [0];
+  }
+  return [];
+}
+
+export function hasSideEffect(spine: Spine): boolean {
+  return spine.someNode(hasDirectSideEffect);
+}
+
+export function hasDirectSideEffect(node: Node, spine: Spine) {
+  try {
+    return (
+      isPolygolfOp(
+        node,
+        "read_byte",
+        "read_codepoint",
+        "read_line",
+        "read_int"
+      ) ||
+      (node.kind !== "Program" && getType(node, spine).kind === "void")
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function readsFromStdin(node: Node): boolean {
+  return isPolygolfOp(
+    node,
+    "read_byte",
+    "read_codepoint",
+    "read_line",
+    "read_int"
+  );
+}
+
+export function readsFromArgv(node: Node): boolean {
+  return node.kind === "ForArgv" || isPolygolfOp(node, "argv", "argv_get");
+}
+
+export function readsFromInput(node: Node): boolean {
+  return readsFromArgv(node) || readsFromStdin(node);
 }

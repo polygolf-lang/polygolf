@@ -475,6 +475,38 @@ export function isTextLiteral<Value extends string>(
   );
 }
 
+export function isIdent<Name extends string>(
+  x: Node,
+  ...names: Name[]
+): x is Identifier<boolean, Name> {
+  return (
+    x.kind === "Identifier" &&
+    (names.length === 0 || names.includes(x.name as any))
+  );
+}
+
+export function isBuiltinIdent<Name extends string>(
+  x: Node,
+  ...names: Name[]
+): x is Identifier<true, Name> {
+  return (
+    x.kind === "Identifier" &&
+    x.builtin &&
+    (names.length === 0 || names.includes(x.name as any))
+  );
+}
+
+export function isUserIdent<Name extends string>(
+  x: Node,
+  ...names: Name[]
+): x is Identifier<false, Name> {
+  return (
+    x.kind === "Identifier" &&
+    !x.builtin &&
+    (names.length === 0 || names.includes(x.name as any))
+  );
+}
+
 export function isIntLiteral<Value extends bigint>(
   x: Node,
   ...vals: Value[]

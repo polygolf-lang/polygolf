@@ -309,7 +309,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       throw new Error(
         `Type error. Operator '${
           expr.op ?? "null"
-        } type error. Expected [${expectedS.join(", ")}] but got [${types
+        }' type error. Expected [${expectedS.join(", ")}] but got [${types
           .map(toString)
           .join(", ")}].`
       );
@@ -623,12 +623,23 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
     case "false":
       expectType();
       return booleanType;
+    case "read_codepoint":
+      return textType(integerType(1, 1));
+    case "read_byte":
+      return textType(integerType(1, 1));
+    case "read_int":
+      return integerType();
+    case "read_line":
+      return textType();
     case "argc":
       expectType();
       return integerType(0, 2 ** 31 - 1);
     case "argv":
       expectType();
       return listType(textType());
+    case "putc":
+      expectType(integerType(0, 255));
+      return voidType;
     case "print":
     case "println":
       expectType(textType());

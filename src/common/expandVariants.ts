@@ -19,11 +19,10 @@ export function expandVariants(program: IR.Program): IR.Program[] {
 }
 
 export function getOnlyVariant(program: IR.Program): IR.Program {
-  const variants = expandVariants(program);
-  if (variants.length > 1) {
+  if (numVariants(program) > 1) {
     throw new Error("Program contains multiple variants!");
   }
-  return variants[0];
+  return allVariantOptions(program)[0] as IR.Program;
 }
 
 function numVariants(node: IR.Node): number {

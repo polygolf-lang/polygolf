@@ -1,9 +1,12 @@
+import { groupby } from "../common/arrays";
 import {
   Assignment,
   Block,
   block,
+  blockOrSingle,
   Expr,
   Identifier,
+  isUserIdent,
   manyToManyAssignment,
   Node,
   oneToManyAssignment,
@@ -15,6 +18,7 @@ import {
 import { Plugin } from "../common/Language";
 import { Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
+import { getWrites, hasSideEffect } from "../common/symbols";
 
 /**
  * Collects neighbouring block children matching a predicate and replaces them with a different set of children.
@@ -268,6 +272,51 @@ export const tempVarToMultipleAssignment: Plugin = {
         }
       }
       if (changed) return block(newNodes);
+    }
+  },
+};
+
+export const inlineVariables: Plugin = {
+  name: "inlineVariables",
+  visit(node, spine) {
+    if (node.kind === "Program") {
+      const writes = groupby(getWrites(spine), (x) => x.node.name);
+      const suggestions = [];
+      for (const a of writes.values()) {
+        if (a.length === 1) {
+          const variable = a[0].node;
+          const write = a[0].parent!;
+          if (
+            write.node.kind === "Assignment" &&
+            write.parent?.node.kind === "Block" &&
+            spine.someNode(
+              (n) => n !== variable && isUserIdent(n, variable.name) // in tests variables are often never read from and we don't want to make those disappear
+            ) &&
+            !hasSideEffect(write.getChild("expr"))
+          ) {
+            const assignmentToInlineSpine = write as Spine<
+              Assignment<Identifier>
+            >;
+            const assignment = assignmentToInlineSpine.node;
+            const assignmentParent = assignmentToInlineSpine.parent?.node;
+            suggestions.push(
+              spine.withReplacer((x) =>
+                x === assignmentParent && x.kind === "Block"
+                  ? blockOrSingle(x.children.filter((y) => y !== assignment))
+                  : x.kind === "Identifier" &&
+                    !x.builtin &&
+                    x.name === assignment.variable.name
+                  ? {
+                      ...assignment.expr,
+                      type: assignment.expr.type ?? assignment.variable.type,
+                    }
+                  : undefined
+              ).node
+            );
+          }
+        }
+      }
+      return suggestions;
     }
   },
 };

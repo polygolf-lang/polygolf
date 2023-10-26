@@ -37,6 +37,7 @@ import { assertInt64 } from "../../plugins/types";
 import {
   addVarDeclarations,
   groupVarDeclarations,
+  inlineVariables,
   noStandaloneVarDeclarations,
 } from "../../plugins/block";
 import {
@@ -78,6 +79,7 @@ const swiftLanguage: Language = {
       applyDeMorgans,
       forRangeToForRangeOneStep,
       useEquivalentTextOp(true, true),
+      inlineVariables,
       replaceToSplitAndJoin,
       textToIntToTextGetToInt,
       forArgvToForEach,
@@ -118,6 +120,7 @@ const swiftLanguage: Language = {
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps(
+        ["read_line", functionCall("readLine")],
         ["argv", builtin("CommandLine.arguments[1...]")],
         [
           "argv_get",

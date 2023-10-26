@@ -59,6 +59,7 @@ import {
   addVarDeclarationOneToManyAssignments,
   addVarDeclarations,
   groupVarDeclarations,
+  inlineVariables,
   noStandaloneVarDeclarations,
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
@@ -98,8 +99,9 @@ const nimLanguage: Language = {
       textToIntToTextGetToInt,
       forRangeToForRangeOneStep,
       useMultireplace(),
+      inlineVariables,
       forArgvToForEach,
-      forArgvToForRange(),
+      forArgvToForRange(true),
       ...truncatingOpsPlugins,
       useIndexCalls(),
       useEquivalentTextOp(true, false),
@@ -112,7 +114,6 @@ const nimLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      forArgvToForRange(),
       ...truncatingOpsPlugins,
       useIndexCalls(),
       useEquivalentTextOp(true, false),
@@ -129,6 +130,7 @@ const nimLanguage: Language = {
         (x) => functionCall("ord", polygolfOp("text_get_byte", ...x)),
       ]),
       mapOps(
+        ["read_line", functionCall("readLine", builtin("stdin"))],
         [
           "join",
           (x) => functionCall("join", isTextLiteral(x[1], "") ? [x[0]] : x),

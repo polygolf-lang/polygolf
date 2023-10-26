@@ -28,7 +28,10 @@ import {
   printIntToPrint,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
-import { tempVarToMultipleAssignment } from "../../plugins/block";
+import {
+  tempVarToMultipleAssignment,
+  inlineVariables,
+} from "../../plugins/block";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   textToIntToFirstIndexTextGetToInt,
@@ -65,6 +68,7 @@ const luaLanguage: Language = {
       applyDeMorgans,
       useIntegerTruthiness,
       forRangeToForRangeOneStep,
+      inlineVariables,
       forArgvToForRange(),
       forRangeToForRangeInclusive(),
       implicitlyConvertPrintArg,
@@ -115,11 +119,6 @@ const luaLanguage: Language = {
         (x) =>
           polygolfOp("mul", int(1n), implicitConversion("text_to_int", x[0])),
       ]),
-      mapOps([
-        "text_to_int",
-        (x) =>
-          polygolfOp("add", int(0n), implicitConversion("text_to_int", x[0])),
-      ]),
       mapOps(
         [
           "argv_get",
@@ -151,6 +150,7 @@ const luaLanguage: Language = {
           ),
       ]),
       mapOps(
+        ["read_line", functionCall("io.read")],
         [
           "join",
           (x) =>

@@ -86,6 +86,8 @@ $a:-oo..oo <- 0;
 $a:Int <- 0;
 $b:Int <- 0;
 not (or ($a == 5) ($b != 6));
+$a:Int <- 0;
+$b:Int <- 0;
 ```
 
 <!-- `arithmetic.applyDeMorgans` cannot be used with `applyAll` (infinite loop) hence we test it on Python. -->
@@ -93,17 +95,21 @@ not (or ($a == 5) ($b != 6));
 ```python
 a=b=0
 a!=5 and b==6
+a=b=0
 ```
 
 ```polygolf
 $a:Int <- 0;
 $b:Int <- 0;
 ~ ($a | $b);
+$a:Int <- 0;
+$b:Int <- 0;
 ```
 
 ```python
 a=b=0
 ~a&~b
+a=b=0
 ```
 
 ## Power

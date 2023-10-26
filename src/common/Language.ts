@@ -29,6 +29,7 @@ export interface Language {
   emitter: Emitter;
   packers?: Packer[];
   detokenizer?: Detokenizer;
+  readsFromStdinOnCodeDotGolf?: boolean;
 }
 
 export type LanguagePhaseMode = "required" | "simplegolf" | "search";

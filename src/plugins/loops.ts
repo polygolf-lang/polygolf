@@ -281,7 +281,7 @@ export const forArgvToForEach: Plugin = {
   },
 };
 
-export function forArgvToForRange(overshoot = true): Plugin {
+export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
   return {
     name: `forArgvToForRange(${overshoot ? "" : "false"})`,
     visit(node) {
@@ -294,9 +294,14 @@ export function forArgvToForRange(overshoot = true): Plugin {
         return forRange(
           indexVar,
           int(0),
-          overshoot ? int(node.argcUpperBound) : polygolfOp("argc"),
+          overshoot
+            ? inclusive
+              ? sub1(int(node.argcUpperBound))
+              : int(node.argcUpperBound)
+            : polygolfOp("argc"),
           int(1),
-          newBody
+          newBody,
+          inclusive
         );
       }
     },
@@ -338,12 +343,19 @@ export const assertForArgvTopLevel: Plugin = {
 export const shiftRangeOneUp: Plugin = {
   name: "shiftRangeOneUp",
   visit(node, spine) {
-    if (node.kind === "ForRange" && isIntLiteral(node.increment, 1n)) {
-      const bodySpine = new Spine(node.body, spine, "body");
-      const newVar =
-        node.variable === undefined
-          ? undefined
-          : id(node.variable.name + "+shift");
+    if (
+      node.kind === "ForRange" &&
+      node.variable !== undefined &&
+      isIntLiteral(node.increment, 1n) &&
+      spine.someNode(
+        (x) =>
+          isPolygolfOp(x, "add") &&
+          isIntLiteral(x.args[0], 1n) &&
+          isIdent(x.args[1], node.variable!)
+      )
+    ) {
+      const bodySpine = spine.getChild("body");
+      const newVar = id(node.variable.name + "+shift");
       const newBodySpine = bodySpine.withReplacer((x) =>
         newVar !== undefined && isIdent(x, node.variable!)
           ? sub1(newVar)
