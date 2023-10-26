@@ -5,7 +5,7 @@ import {
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral } from "../../IR";
+import { IR, isIntLiteral, isIdent } from "../../IR";
 import { CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Expr): number {
@@ -104,7 +104,7 @@ export default function emitProgram(
             "for",
             e.variable === undefined ? "_" : emit(e.variable),
             "in",
-            isIntLiteral(e.increment, 1n)
+            isIntLiteral(1n)(e.increment)
               ? [start, e.inclusive ? "..." : "..<", end]
               : [
                   "stride",
@@ -146,8 +146,7 @@ export default function emitProgram(
         case "IntegerLiteral":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
-          if (e.func.kind === "Identifier" && e.func.name === "!")
-            return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node
+          if (isIdent("!")(e.func)) return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node
           return [emit(e.func), "(", joinExprs(",", e.args), ")"];
         case "PropertyCall":
           return [emit(e.object), ".", e.ident.name];

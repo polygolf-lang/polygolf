@@ -15,7 +15,6 @@ import {
   polygolfOp,
   Expr,
   Identifier,
-  Node,
   isIntLiteral,
   OpCode,
   TextLiteral,
@@ -28,6 +27,8 @@ import {
   add1,
   sub1,
   isTextLiteral,
+  isIdent,
+  isUserIdent,
 } from "../IR";
 import { byteLength, charLength } from "../common/objective";
 import { PolygolfError } from "../common/errors";
@@ -39,7 +40,7 @@ export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
       if (
         node.kind === "ForRange" &&
         !node.inclusive &&
-        (!skip1Step || !isIntLiteral(node.increment, 1n))
+        (!skip1Step || !isIntLiteral(1n)(node.increment))
       )
         return forRange(
           node.variable,
@@ -116,9 +117,9 @@ export const forRangeToForEachPair: Plugin = {
       node.kind === "ForRange" &&
       node.variable !== undefined &&
       !node.inclusive &&
-      isIntLiteral(node.start, 0n) &&
-      isPolygolfOp(node.end, "list_length") &&
-      node.end.args[0].kind === "Identifier"
+      isIntLiteral(0n)(node.start) &&
+      isPolygolfOp("list_length")(node.end) &&
+      isIdent()(node.end.args[0])
     ) {
       const variable = node.variable;
       const collection = node.end.args[0];
@@ -133,13 +134,10 @@ export const forRangeToForEachPair: Plugin = {
 };
 
 function isListGet(node: IR.Node, collection: string, index: string) {
-  if (!isPolygolfOp(node, "list_get")) return false;
-  const args = node.args;
   return (
-    args[0].kind === "Identifier" &&
-    args[0].name === collection &&
-    args[1].kind === "Identifier" &&
-    args[1].name === index
+    isPolygolfOp("list_get")(node) &&
+    isIdent(collection)(node.args[0]) &&
+    isIdent(index)(node.args[1])
   );
 }
 
@@ -172,21 +170,21 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
         node.kind === "ForRange" &&
         node.variable !== undefined &&
         !node.inclusive &&
-        isIntLiteral(node.start, 0n) &&
-        ((isPolygolfOp(node.end) &&
+        isIntLiteral(0n)(node.start) &&
+        ((isPolygolfOp()(node.end) &&
           ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
-          node.end.args[0].kind === "Identifier") ||
-          isIntLiteral(node.end))
+          isIdent()(node.end.args[0])) ||
+          isIntLiteral()(node.end))
       ) {
         const indexVar = node.variable;
         const bodySpine = spine.getChild("body") as Spine<Expr>;
-        const knownLength = isIntLiteral(node.end)
+        const knownLength = isIntLiteral()(node.end)
           ? Number(node.end.value)
           : undefined;
-        const allowedOps = isIntLiteral(node.end)
+        const allowedOps = isIntLiteral()(node.end)
           ? ops
           : [lengthOpToGetOp.get(node.end.op) as GetOp];
-        const collectionVar = isIntLiteral(node.end)
+        const collectionVar = isIntLiteral()(node.end)
           ? undefined
           : (node.end.args[0] as Identifier);
         const indexedCollection = getIndexedCollection(
@@ -200,11 +198,9 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
           const elementIdentifier = id(node.variable.name + "+each");
           const newBody = bodySpine.withReplacer((n) => {
             if (
-              isPolygolfOp(n) &&
+              isPolygolfOp()(n) &&
               n.args[0] === indexedCollection &&
-              n.args[1].kind === "Identifier" &&
-              !n.args[1].builtin &&
-              n.args[1].name === indexVar.name
+              isUserIdent(indexVar.name)(n.args[1])
             )
               return elementIdentifier;
           }).node as IR.Expr;
@@ -233,21 +229,18 @@ function getIndexedCollection(
   let result: Expr | null = null;
   for (const x of spine.compactMap((n, s) => {
     const parent = s.parent!.node;
-    if (n.kind !== "Identifier" || n.builtin || n.name !== indexVar.name)
-      return undefined;
-    if (!isPolygolfOp(parent, ...allowedOps)) return null;
+    if (!isUserIdent(indexVar.name)(n)) return undefined;
+    if (!isPolygolfOp(...allowedOps)(parent)) return null;
     const collection = parent.args[0];
     if (
-      (isTextLiteral(collection) || collection.kind === "ListConstructor") &&
+      (isTextLiteral()(collection) || collection.kind === "ListConstructor") &&
       literalLength(collection, allowedOps.includes("text_get_byte")) ===
         knownLength
     )
       return collection;
     if (
       collectionVar !== undefined &&
-      collection.kind === "Identifier" &&
-      collection.name === collectionVar.name &&
-      !collection.builtin
+      isUserIdent(collectionVar.name)(collection)
     )
       return collection;
     const collectionType = getType(collection, s.root.node);
@@ -346,18 +339,18 @@ export const shiftRangeOneUp: Plugin = {
     if (
       node.kind === "ForRange" &&
       node.variable !== undefined &&
-      isIntLiteral(node.increment, 1n) &&
+      isIntLiteral(1n)(node.increment) &&
       spine.someNode(
         (x) =>
-          isPolygolfOp(x, "add") &&
-          isIntLiteral(x.args[0], 1n) &&
-          isIdent(x.args[1], node.variable!)
+          isPolygolfOp("add")(x) &&
+          isIntLiteral(1n)(x.args[0]) &&
+          isIdent(node.variable!)(x.args[1])
       )
     ) {
       const bodySpine = spine.getChild("body");
       const newVar = id(node.variable.name + "+shift");
       const newBodySpine = bodySpine.withReplacer((x) =>
-        newVar !== undefined && isIdent(x, node.variable!)
+        newVar !== undefined && isIdent(node.variable!)(x)
           ? sub1(newVar)
           : undefined
       );
@@ -372,14 +365,6 @@ export const shiftRangeOneUp: Plugin = {
     }
   },
 };
-
-function isIdent(node: Node, ident: Identifier): node is Identifier {
-  return (
-    node.kind === "Identifier" &&
-    node.name === ident.name &&
-    node.builtin === ident.builtin
-  );
-}
 
 export function forRangeToForDifferenceRange(
   transformPredicate: (
@@ -456,7 +441,7 @@ export const removeUnusedForVar: Plugin = {
   visit(node, spine) {
     if (node.kind === "ForRange" && node.variable !== undefined) {
       const variable = node.variable;
-      if (spine.getChild("body").everyNode((x) => !isIdent(x, variable))) {
+      if (!spine.getChild("body").someNode(isUserIdent(variable))) {
         return forRange(
           undefined,
           node.start,

@@ -85,7 +85,7 @@ export class Spine<N extends IR.Node = IR.Node> {
     const parentNode = this.parent.node;
     const parent =
       canonizeAndReturnRoot &&
-      isPolygolfOp(parentNode) &&
+      isPolygolfOp()(parentNode) &&
       typeof this.pathFragment === "object"
         ? this.parent.replacedWith(
             polygolfOp(
@@ -148,7 +148,7 @@ export class Spine<N extends IR.Node = IR.Node> {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let curr = this as Spine;
       // recurse on children
-      if (isPolygolfOp(this.node)) {
+      if (isPolygolfOp()(this.node)) {
         // Create canonical PolygolfOp instead of just replacing the chidren
         const newChildren: Expr[] = [];
         let someChildrenIsNew = false;

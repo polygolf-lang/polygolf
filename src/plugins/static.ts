@@ -1,10 +1,4 @@
-import {
-  isPolygolfOp,
-  polygolfOp,
-  TextLiteral,
-  text,
-  isTextLiteral,
-} from "../IR";
+import { isPolygolfOp, polygolfOp, text, isTextLiteral } from "../IR";
 import { Plugin } from "../common/Language";
 import { byteLength, charLength } from "../common/objective";
 
@@ -14,9 +8,9 @@ export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
     visit(node) {
       if (
         node.kind === "ListConstructor" &&
-        node.exprs.every((x) => isTextLiteral(x))
+        node.exprs.every(isTextLiteral())
       ) {
-        const strings = (node.exprs as TextLiteral[]).map((x) => x.value);
+        const strings = node.exprs.map((x) => x.value);
         const delim = getDelim(strings, useTextSplitWhitespace);
         return delim === true
           ? polygolfOp("text_split_whitespace", text(strings.join(" ")))
@@ -66,13 +60,13 @@ export function listOpsToTextOps(
     name: `listOpsToTextOps(${JSON.stringify(ops)})`,
     visit(node) {
       if (
-        isPolygolfOp(node, "list_get", "list_find") &&
+        isPolygolfOp("list_get", "list_find")(node) &&
         node.args[0].kind === "ListConstructor" &&
-        node.args[0].exprs.every((x) => isTextLiteral(x))
+        node.args[0].exprs.every(isTextLiteral())
       ) {
-        const texts = node.args[0].exprs.map((x) => (x as TextLiteral).value);
-        const joined = text(texts.join(""));
+        const texts = node.args[0].exprs.map((x) => x.value);
         if (texts.every((x) => charLength(x) === 1)) {
+          const joined = text(texts.join(""));
           if (texts.every((x) => byteLength(x) === 1)) {
             if (node.op === "list_get" && ops.includes("text_get_byte"))
               return polygolfOp("text_get_byte", joined, node.args[1]);

@@ -154,7 +154,7 @@ const luaLanguage: Language = {
         [
           "join",
           (x) =>
-            functionCall("table.concat", isTextLiteral(x[1], "") ? [x[0]] : x),
+            functionCall("table.concat", isTextLiteral("")(x[1]) ? [x[0]] : x),
         ],
         ["text_byte_length", (x) => methodCall(x[0], "len")],
         ["true", builtin("true")],
@@ -176,7 +176,7 @@ const luaLanguage: Language = {
             methodCall(
               a,
               "gsub",
-              isTextLiteral(b)
+              isTextLiteral()(b)
                 ? text(
                     b.value.replace(
                       /(-|%|\^|\$|\(|\)|\.|\[|\]|\*|\+|\?)/g,
@@ -184,7 +184,7 @@ const luaLanguage: Language = {
                     )
                   )
                 : methodCall(b, "gsub", text("(%W)"), text("%%%1")),
-              isTextLiteral(c)
+              isTextLiteral()(c)
                 ? text(c.value.replace("%", "%%"))
                 : methodCall(c, "gsub", text("%%"), text("%%%%"))
             ),

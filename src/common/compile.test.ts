@@ -18,7 +18,7 @@ const textLang: Language = {
     return (
       program.body.kind === "Block" ? program.body.children : [program.body]
     ).map((x) => {
-      if (isPolygolfOp(x) && isTextLiteral(x.args[0])) {
+      if (isPolygolfOp()(x) && isTextLiteral()(x.args[0])) {
         if (x.args[0].value.endsWith("X")) {
           context.addWarning(new PolygolfError("global warning"), true);
           context.addWarning(
@@ -39,14 +39,14 @@ const textLang: Language = {
     search({
       name: "trimEnd",
       visit(node) {
-        return isTextLiteral(node) ? text(node.value.trimEnd()) : undefined;
+        return isTextLiteral()(node) ? text(node.value.trimEnd()) : undefined;
       },
     }),
     required(nopPlugin("noop")),
     search({
       name: "appendX",
       visit(node) {
-        return isTextLiteral(node) ? text(node.value + "X") : undefined;
+        return isTextLiteral()(node) ? text(node.value + "X") : undefined;
       },
     }),
   ],

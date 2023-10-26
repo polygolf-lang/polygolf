@@ -237,7 +237,7 @@ const pythonLanguage: Language = {
               ? expr.name
               : undefined;
           case "PropertyCall": // TODO: handle more general cases
-            return isTextLiteral(expr.object) && expr.ident.builtin
+            return isTextLiteral()(expr.object) && expr.ident.builtin
               ? `"${expr.object.value}".${expr.ident.name}`
               : undefined;
           case "IntegerLiteral":

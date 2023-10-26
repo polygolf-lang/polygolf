@@ -157,7 +157,7 @@ const swiftLanguage: Language = {
             methodCall(
               x[0],
               "joined",
-              ...(isTextLiteral(x[1], "") ? [] : [namedArg("separator", x[1])])
+              ...(isTextLiteral("")(x[1]) ? [] : [namedArg("separator", x[1])])
             ),
         ],
         [

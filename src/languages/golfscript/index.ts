@@ -136,7 +136,9 @@ const golfscriptLanguage: Language = {
           (x) =>
             polygolfOp(
               "lt",
-              ...(isIntLiteral(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])])
+              ...(isIntLiteral()(x[0])
+                ? [sub1(x[0]), x[1]]
+                : [x[0], add1(x[1])])
             ),
         ],
         [
@@ -144,7 +146,9 @@ const golfscriptLanguage: Language = {
           (x) =>
             polygolfOp(
               "gt",
-              ...(isIntLiteral(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])])
+              ...(isIntLiteral()(x[0])
+                ? [add1(x[0]), x[1]]
+                : [x[0], sub1(x[1])])
             ),
         ]
       ),

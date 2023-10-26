@@ -5,7 +5,13 @@ import {
   EmitError,
   emitIntLiteral,
 } from "../../common/emit";
-import { ArrayConstructor, IR, isIntLiteral, isTextLiteral } from "../../IR";
+import {
+  ArrayConstructor,
+  IR,
+  isIdent,
+  isIntLiteral,
+  isTextLiteral,
+} from "../../IR";
 import { CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Expr): number {
@@ -139,8 +145,8 @@ export default function emitProgram(
             emitMultiExpr(e.body),
           ];
         case "ForRange": {
-          const start = isIntLiteral(e.start, 0n) ? [] : emit(e.start);
-          if (isIntLiteral(e.increment, 1n)) {
+          const start = isIntLiteral(0n)(e.start) ? [] : emit(e.start);
+          if (isIntLiteral(1n)(e.increment)) {
             return [
               "for",
               e.variable === undefined ? "()" : emit(e.variable),
@@ -212,9 +218,9 @@ export default function emitProgram(
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
           if (
-            e.func.kind === "Identifier" &&
+            isIdent()(e.func) &&
             e.args.length === 1 &&
-            isTextLiteral(e.args[0])
+            isTextLiteral()(e.args[0])
           ) {
             const [low, high] = context.options.codepointRange;
             if (low === 1 && high === Infinity) {
@@ -245,7 +251,7 @@ export default function emitProgram(
             const [low, high] = context.options.codepointRange;
             if (
               e.args.length === 1 &&
-              isTextLiteral(e.args[0]) &&
+              isTextLiteral()(e.args[0]) &&
               low === 1 &&
               high === Infinity
             ) {
@@ -309,7 +315,7 @@ export default function emitProgram(
           return [emit(e.collection, 12), "[", emit(e.index), "]"];
         case "RangeIndexCall":
           if (e.oneIndexed) throw new EmitError(expr, "one indexed");
-          if (!isIntLiteral(e.step, 1n)) throw new EmitError(expr, "step");
+          if (!isIntLiteral(1n)(e.step)) throw new EmitError(expr, "step");
           return [
             emit(e.collection, 12),
             "[",

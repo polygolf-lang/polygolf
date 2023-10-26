@@ -103,7 +103,7 @@ export default function emitProgram(
             emit(e.start),
             ",",
             emit(e.end),
-            isIntLiteral(e.increment, 1n) ? [] : [",", emit(e.increment)],
+            isIntLiteral(1n)(e.increment) ? [] : [",", emit(e.increment)],
             "do",
             emit(e.body),
             "end",

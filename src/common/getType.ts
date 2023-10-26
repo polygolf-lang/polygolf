@@ -42,6 +42,7 @@ import {
   isAssociative,
   polygolfOp,
   leq,
+  isIdent,
 } from "../IR";
 import { byteLength, charLength } from "./objective";
 import { PolygolfError } from "./errors";
@@ -89,7 +90,7 @@ export function calcType(expr: Expr, program: Program): Type {
       return expr.variants.map(type).reduce(union);
     case "Assignment": {
       if (
-        expr.variable.kind === "Identifier" &&
+        isIdent()(expr.variable) &&
         isIdentifierReadonly(expr.variable, program)
       ) {
         throw new PolygolfError(

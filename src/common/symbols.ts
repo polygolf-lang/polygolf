@@ -4,6 +4,7 @@ import {
   integerType,
   integerTypeIncludingAll,
   IR,
+  isIdent,
   isPolygolfOp,
   isSubtype,
   lt,
@@ -102,7 +103,7 @@ function introducedSymbols(
       return [node.keyVariable.name, node.valueVariable.name];
     case "Assignment":
       if (
-        node.variable.kind === "Identifier" &&
+        isIdent()(node.variable) &&
         // for backwards-compatibility, treat the first assignment of each
         // variable as a declaration. Otherwise we should:
         //    // treat every user-annotated assignment as a declaration
@@ -114,8 +115,9 @@ function introducedSymbols(
     case "OneToManyAssignment":
     case "ManyToManyAssignment":
       return node.variables
-        .filter((x) => x.kind === "Identifier" && !existing.has(x.name))
-        .map((x) => (x as any).name);
+        .filter(isIdent())
+        .filter((x) => !existing.has(x.name))
+        .map((x) => x.name);
   }
 }
 
@@ -312,12 +314,11 @@ export function hasDirectSideEffect(node: Node, spine: Spine) {
   try {
     return (
       isPolygolfOp(
-        node,
         "read_byte",
         "read_codepoint",
         "read_line",
         "read_int"
-      ) ||
+      )(node) ||
       (node.kind !== "Program" && getType(node, spine).kind === "void")
     );
   } catch {
@@ -327,16 +328,15 @@ export function hasDirectSideEffect(node: Node, spine: Spine) {
 
 export function readsFromStdin(node: Node): boolean {
   return isPolygolfOp(
-    node,
     "read_byte",
     "read_codepoint",
     "read_line",
     "read_int"
-  );
+  )(node);
 }
 
 export function readsFromArgv(node: Node): boolean {
-  return node.kind === "ForArgv" || isPolygolfOp(node, "argv", "argv_get");
+  return node.kind === "ForArgv" || isPolygolfOp("argv", "argv_get")(node);
 }
 
 export function readsFromInput(node: Node): boolean {

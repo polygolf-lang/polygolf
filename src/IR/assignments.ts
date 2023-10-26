@@ -1,5 +1,14 @@
 import { PolygolfError } from "../common/errors";
-import { BaseExpr, Expr, id, Identifier, Type, IndexCall } from "./IR";
+import {
+  BaseExpr,
+  Expr,
+  id,
+  Identifier,
+  Type,
+  IndexCall,
+  isIdent,
+  Node,
+} from "./IR";
 
 export type LValue = Identifier | IndexCall;
 
@@ -116,6 +125,13 @@ export function assignment(variable: LValue | string, expr: Expr): Assignment {
   };
 }
 
+export function isAssignment(x: Node): x is Assignment {
+  return x.kind === "Assignment";
+}
+export function isAssignmentToIdentifier(x: Node): x is Assignment<Identifier> {
+  return isAssignment(x) && isIdent()(x.variable);
+}
+
 export function manyToManyAssignment(
   variables: (LValue | string)[],
   exprs: readonly Expr[]
@@ -142,10 +158,9 @@ export function varDeclarationWithAssignment<T extends SomeAssignment>(
   assignment: T
 ): VarDeclarationWithAssignment<T> {
   if (
-    (assignment.kind === "Assignment" &&
-      assignment.variable.kind !== "Identifier") ||
-    (assignment.kind !== "Assignment" &&
-      assignment.variables.some((y) => y.kind !== "Identifier"))
+    (isAssignment(assignment) && !isIdent()(assignment.variable)) ||
+    (!isAssignment(assignment) &&
+      assignment.variables.some((y) => !isIdent()(y)))
   ) {
     throw new PolygolfError(
       "VarDeclarationWithAssignment needs assignments to variables.",

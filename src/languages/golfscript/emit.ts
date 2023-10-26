@@ -37,8 +37,8 @@ export default function emitProgram(program: IR.Program): TokenTree {
         return [
           emitExpr(stmt.end),
           ",",
-          isIntLiteral(stmt.start, 0n) ? [] : [emitExpr(stmt.start), ">"],
-          isIntLiteral(stmt.increment, 1n)
+          isIntLiteral(0n)(stmt.start) ? [] : [emitExpr(stmt.start), ">"],
+          isIntLiteral(1n)(stmt.increment)
             ? []
             : [emitExpr(stmt.increment), "%"],
           "{",
@@ -55,11 +55,11 @@ export default function emitProgram(program: IR.Program): TokenTree {
         return [
           emitExpr(stmt.difference),
           ",",
-          isIntLiteral(stmt.increment, 1n)
+          isIntLiteral(1n)(stmt.increment)
             ? []
             : [emitExpr(stmt.increment), "%"],
           "{",
-          isIntLiteral(stmt.start) && stmt.start.value < 0n
+          isIntLiteral()(stmt.start) && stmt.start.value < 0n
             ? [emitExpr(int(-stmt.start.value)), "-"]
             : [emitExpr(stmt.start), "+"],
           ":",
@@ -147,7 +147,7 @@ export default function emitProgram(program: IR.Program): TokenTree {
           "<",
           emitExpr(expr.low),
           ">",
-          isIntLiteral(expr.step, 1n) ? [] : [emitExpr(expr.step), "%"],
+          isIntLiteral(1n)(expr.step) ? [] : [emitExpr(expr.step), "%"],
         ];
       }
       default:
