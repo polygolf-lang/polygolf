@@ -51,6 +51,7 @@ import {
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
+  inlineVariables,
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
@@ -89,6 +90,7 @@ const pythonLanguage: Language = {
       forRangeToForRangeOneStep,
       tableToListLookup,
       useMultireplace(true),
+      inlineVariables,
       forArgvToForEach,
       useEquivalentTextOp(false, true),
       useIndexCalls(),
@@ -116,6 +118,7 @@ const pythonLanguage: Language = {
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps(
+        ["read_line", functionCall("input")],
         ["true", int(1)],
         ["false", int(0)],
         ["abs", (x) => functionCall("abs", x)],

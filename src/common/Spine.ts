@@ -125,6 +125,11 @@ export class Spine<N extends IR.Node = IR.Node> {
     return false;
   }
 
+  /** Returns all descendants metting the provided condition. */
+  filterNodes(cond: Visitor<boolean>) {
+    return this.compactMap((n, s) => (cond(n, s) ? n : undefined));
+  }
+
   /** Return the spine (pointing to this node) determined from replacing this
    * node and all of its children with nodes given by the provided `replacer`
    * function. Replaces all of the ancestors of this node, up to the

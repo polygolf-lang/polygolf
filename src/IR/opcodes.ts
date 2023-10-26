@@ -62,6 +62,7 @@ export const FrontendOpCodes = [
   "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
   "text_byte_to_int",
   "codepoint_to_int",
+  "read_line",
   "true",
   "false",
   "print",
@@ -73,6 +74,7 @@ export const FrontendOpCodes = [
   "list_set",
   "table_set",
   "sorted",
+  "argv_get",
 ] as const;
 
 // It may seem that the `string &` is redundant, but the `isPolygolf` typeguard doesn't work without it.
@@ -87,6 +89,7 @@ export const UnaryOpCodes = [
   "println",
   "print_int",
   "println_int",
+  "putc",
   "argv_get",
   "abs",
   "bit_not",
@@ -214,6 +217,10 @@ export function isBinary(op: OpCode): op is BinaryOpCode {
 export const OpCodes = [
   ...BinaryOpCodes,
   ...UnaryOpCodes,
+  "read_codepoint",
+  "read_byte",
+  "read_int",
+  "read_line",
   "true",
   "false",
   "argv",
@@ -246,6 +253,10 @@ export function arity(op: OpCode): number {
     case "false":
     case "argv":
     case "argc":
+    case "read_byte":
+    case "read_codepoint":
+    case "read_int":
+    case "read_line":
       return 0;
     case "text_replace":
     case "text_get_byte_slice":

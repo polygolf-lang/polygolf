@@ -53,6 +53,7 @@ import {
   textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
 } from "../../plugins/textOps";
+import { inlineVariables } from "../../plugins/block";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
@@ -69,6 +70,7 @@ const golfscriptLanguage: Language = {
       ...lowBitsPlugins,
       applyDeMorgans,
       forRangeToForRangeOneStep,
+      inlineVariables,
       forArgvToForEach,
       bitShiftToMulOrDiv(false, true, true),
       decomposeIntLiteral(false, true, false)

@@ -14,6 +14,8 @@ import {
   getObjectiveFunc,
   shorterBy,
 } from "./objective";
+import { readsFromArgv, readsFromStdin } from "./symbols";
+import { PolygolfError } from "./errors";
 
 export type OptimisationLevel = "nogolf" | "simple" | "full";
 export interface CompilationOptions {
@@ -154,7 +156,10 @@ export default function compile(
     }
   });
 
-  const errorlessVariants = variants.filter((x) => "body" in x);
+  const errorlessVariants = variants.filter((x) => "body" in x) as Program[];
+  const errorVariants = variants.filter(
+    (x) => !("body" in x)
+  ) as CompilationResult[];
   if (errorlessVariants.length === 0) {
     if (options.getAllVariants) {
       return variants as CompilationResult[];
@@ -167,13 +172,18 @@ export default function compile(
   }
 
   const result: CompilationResult[] = [];
+
+  const variantsByInput = getVariantsByInputMethod(errorlessVariants);
   for (const language of languages) {
-    const outputs = variants.map((x) =>
-      "body" in x ? compileVariant(x, options, language) : { ...x }
-    );
     if (options.getAllVariants) {
+      const outputs = errorlessVariants.map((x) =>
+        compileVariant(x, options, language)
+      );
       result.push(...outputs);
     } else {
+      const outputs = variantsByInput
+        .get(language.readsFromStdinOnCodeDotGolf === true)!
+        .map((x) => compileVariant(x, options, language));
       const res = outputs.reduce(shorterBy(obj));
       if (isError(res.result) && variants.length > 1)
         res.result.message =
@@ -181,7 +191,43 @@ export default function compile(
       result.push(res);
     }
   }
+
+  if (options.getAllVariants) {
+    result.push(...errorVariants);
+  }
+  if (result.length < 0 && errorVariants.length > 0) {
+    result.push(errorVariants[0]);
+  }
+
   return result;
+}
+
+function getVariantsByInputMethod(
+  variants: Program[]
+): Map<boolean, Program[]> {
+  const variantsWithMethods = variants.map((variant) => {
+    const spine = programToSpine(variant);
+    return {
+      variant,
+      readsFromArgv: spine.someNode(readsFromArgv),
+      readsFromStdin: spine.someNode(readsFromStdin),
+    };
+  });
+  if (variantsWithMethods.some((x) => x.readsFromArgv && x.readsFromStdin)) {
+    throw new PolygolfError("Program cannot read from both argv and stdin.");
+  }
+  return new Map<boolean, Program[]>(
+    [true, false].map((preferStdin) => {
+      const matching = variantsWithMethods.filter(
+        (x) =>
+          (preferStdin && !x.readsFromArgv) ||
+          (!preferStdin && !x.readsFromStdin)
+      );
+      if (matching.length > 0)
+        return [preferStdin, matching.map((x) => x.variant)];
+      return [preferStdin, variants];
+    })
+  );
 }
 
 export function compileVariant(

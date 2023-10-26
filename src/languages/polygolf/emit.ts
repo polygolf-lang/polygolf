@@ -85,7 +85,16 @@ function emitExprWithoutAnnotation(
   indent = false
 ): TokenTree {
   function emitSexpr(op: string, ...args: (TokenTree | Expr)[]): TokenTree {
-    const isNullary = ["argv", "argc", "true", "false"].includes(op);
+    const isNullary = [
+      "argv",
+      "argc",
+      "true",
+      "false",
+      "read_codepoint",
+      "read_byte",
+      "read_int",
+      "read_line",
+    ].includes(op);
     if (op === "@") op = expr.kind;
     op = op
       .split(/\.?(?=[A-Z])/)
