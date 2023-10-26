@@ -73,7 +73,7 @@ export const FrontendOpCodes = [
   "list_set",
   "table_set",
   "sorted",
-  "argv_get"
+  "argv_get",
 ] as const;
 
 // It may seem that the `string &` is redundant, but the `isPolygolf` typeguard doesn't work without it.
