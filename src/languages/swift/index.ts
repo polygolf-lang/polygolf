@@ -120,6 +120,7 @@ const swiftLanguage: Language = {
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps(
+        ["read_line", functionCall("readLine")],
         ["argv", builtin("CommandLine.arguments[1...]")],
         [
           "argv_get",

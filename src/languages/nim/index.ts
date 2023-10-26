@@ -130,6 +130,7 @@ const nimLanguage: Language = {
         (x) => functionCall("ord", polygolfOp("text_get_byte", ...x)),
       ]),
       mapOps(
+        ["read_line", functionCall("readLine", builtin("stdin"))],
         [
           "join",
           (x) => functionCall("join", isTextLiteral(x[1], "") ? [x[0]] : x),
