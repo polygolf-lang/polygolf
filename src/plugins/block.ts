@@ -85,7 +85,7 @@ export const addVarDeclarations: Plugin = {
   name: "addVarDeclarations",
   visit(node, spine) {
     if (spine.isRoot) declared.clear();
-    else if (node.kind === "Assignment") {
+    if (node.kind === "Assignment") {
       if (isIdent()(node.variable) && !declared.has(node.variable.name)) {
         declared.add(node.variable.name);
         return varDeclarationWithAssignment(node);

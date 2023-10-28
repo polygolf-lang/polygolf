@@ -26,7 +26,7 @@ export function golfLastPrint(toPrintln = true): Plugin {
       const newOp = toPrintln ? ("println" as const) : ("print" as const);
       const oldOp = toPrintln ? "print" : "println";
       if (isPolygolfOp(oldOp)(program)) {
-        return { ...program, body: { ...program, op: newOp } };
+        return { ...program, op: newOp };
       } else if (program.kind === "Block") {
         const oldChildren = program.children;
         const lastStatement = oldChildren[oldChildren.length - 1];
