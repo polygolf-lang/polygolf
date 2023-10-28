@@ -44,7 +44,7 @@ import {
   leq,
   isIdent,
 } from "../IR";
-import { byteLength, charLength } from "./objective";
+import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
 import { Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";

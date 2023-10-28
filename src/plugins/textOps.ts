@@ -10,7 +10,7 @@ import {
 } from "../IR";
 import { Plugin } from "../common/Language";
 import { mapOps } from "./ops";
-import { charLength } from "../common/objective";
+import { charLength } from "../common/strings";
 
 function toBidirectionalMap<T>(pairs: [T, T][]): Map<T, T> {
   return new Map<T, T>([...pairs, ...pairs.map<[T, T]>(([k, v]) => [v, k])]);

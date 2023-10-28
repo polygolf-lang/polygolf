@@ -296,3 +296,23 @@ for _ in"X"*10:print("Hi")
 -int('7m93qx4grzs1ls98c9nh5rs313rz0u',36)
 7*10**22-1
 ```
+
+## Golfing literal text list access
+
+```polygolf
+list_get (list "false" "true") 1;
+```
+
+```py
+"ftarlusee"[1::2]
+```
+
+```polygolf
+list_get (list "12345" "ABC") 1;
+println (list_get (list "12345" "ABC") 1);
+```
+
+```py simple
+["12345","ABC"][1]
+print("1A2B3C4 5"[1::2])
+```

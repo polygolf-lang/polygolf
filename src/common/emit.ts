@@ -1,7 +1,7 @@
 import { Expr, IR, IntegerLiteral } from "IR";
 import { PolygolfError } from "./errors";
 import { TokenTree } from "./Language";
-import { codepoints } from "./objective";
+import { codepoints } from "./strings";
 
 export function joinTrees(
   sep: TokenTree,

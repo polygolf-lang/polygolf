@@ -65,7 +65,8 @@ import {
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
-import { charLength } from "../../common/objective";
+import { charLength } from "../../common/strings";
+import { golfTextListLiteralIndex } from "./plugins";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -113,8 +114,10 @@ const pythonLanguage: Language = {
             ),
         ]
       ),
-      useIndexCalls(),
-
+      useIndexCalls()
+    ),
+    simplegolf(golfTextListLiteralIndex),
+    required(
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps(

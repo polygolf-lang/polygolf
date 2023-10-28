@@ -30,7 +30,7 @@ import {
   isIdent,
   isUserIdent,
 } from "../IR";
-import { byteLength, charLength } from "../common/objective";
+import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
 
 export function forRangeToForRangeInclusive(skip1Step = false): Plugin {

@@ -12,7 +12,7 @@ import {
   print,
   text,
 } from "../IR";
-import { byteLength } from "../common/objective";
+import { byteLength } from "../common/strings";
 
 export const useDecimalConstantPackedPrinter: Plugin = {
   name: "useDecimalConstantPackedPrinter",
