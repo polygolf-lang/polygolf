@@ -1,14 +1,13 @@
 import { getType } from "../common/getType";
 import { Spine } from "../common/Spine";
 import {
-  Expr,
+  Node,
   arrayConstructor,
   listConstructor,
   setConstructor,
   tableConstructor,
   text,
   int,
-  Program,
 } from "./IR";
 
 /** The type of the value of a node when evaluated */
@@ -206,11 +205,11 @@ function integerBoundMinAndMax(args: IntegerBound[]) {
   );
 }
 
-export function annotate(expr: Expr, type: Type): Expr {
+export function annotate(expr: Node, type: Type): Node {
   return { ...expr, type };
 }
 
-export function bakeType(expr: Expr, context: Program | Spine): Expr {
+export function bakeType(expr: Node, context: Node | Spine): Node {
   return annotate(expr, getType(expr, context));
 }
 
@@ -435,7 +434,7 @@ export function isConstantType(a: IntegerType): a is FiniteIntegerType {
   return isFiniteType(a) && a.low === a.high;
 }
 
-export function defaultValue(a: Type): Expr {
+export function defaultValue(a: Type): Node {
   switch (a.kind) {
     case "Array":
       return arrayConstructor([]);

@@ -6,7 +6,7 @@ import { int64Type, integerType, isSubtype, Type } from "../IR";
 export const assertInt64: Plugin = {
   name: "assertInt64",
   visit(node, spine) {
-    if (node.kind === "Program") return;
+    if (spine.isRoot) return;
     let type: Type;
     try {
       type = getType(node, spine);

@@ -12,9 +12,8 @@ const blocksAsVariants: Plugin = {
   visit(node, spine) {
     if (
       node.kind === "Block" &&
-      spine.parent !== null &&
-      spine.parent.node.kind !== "Variants" &&
-      spine.parent.node.kind !== "Program"
+      !spine.isRoot &&
+      spine.parent!.node.kind !== "Variants"
     )
       return variants([node]);
   },

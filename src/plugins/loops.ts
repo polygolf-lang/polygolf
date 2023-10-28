@@ -13,7 +13,7 @@ import {
   id,
   IR,
   polygolfOp,
-  Expr,
+  Node,
   Identifier,
   isIntLiteral,
   OpCode,
@@ -127,7 +127,7 @@ export const forRangeToForEachPair: Plugin = {
       const newBody = spine.getChild("body").withReplacer((innerNode) => {
         if (isListGet(innerNode, collection.name, variable.name))
           return elementIdentifier;
-      }).node as IR.Expr;
+      }).node;
       return forEachPair(variable, elementIdentifier, collection, newBody);
     }
   },
@@ -177,7 +177,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
           isIntLiteral()(node.end))
       ) {
         const indexVar = node.variable;
-        const bodySpine = spine.getChild("body") as Spine<Expr>;
+        const bodySpine = spine.getChild("body");
         const knownLength = isIntLiteral()(node.end)
           ? Number(node.end.value)
           : undefined;
@@ -203,7 +203,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
               isUserIdent(indexVar.name)(n.args[1])
             )
               return elementIdentifier;
-          }).node as IR.Expr;
+          }).node;
           return forEach(elementIdentifier, indexedCollection, newBody);
         }
       }
@@ -220,13 +220,13 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
  * @param collectionVar The allowed collection variable to be indexed into.
  */
 function getIndexedCollection(
-  spine: Spine<Expr>,
+  spine: Spine<Node>,
   indexVar: Identifier,
   allowedOps: GetOp[],
   knownLength?: number,
   collectionVar?: Identifier
-): Expr | null {
-  let result: Expr | null = null;
+): Node | null {
+  let result: Node | null = null;
   for (const x of spine.compactMap((n, s) => {
     const parent = s.parent!.node;
     if (!isUserIdent(indexVar.name)(n)) return undefined;
@@ -304,7 +304,7 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
 export const assertForArgvTopLevel: Plugin = {
   name: "assertForArgvTopLevel",
   visit(node, spine) {
-    if (node.kind === "Program") {
+    if (spine.isRoot) {
       let forArgvSeen = false;
       for (const kind of spine.compactMap((x) => x.kind)) {
         if (kind === "ForArgv") {
@@ -319,9 +319,10 @@ export const assertForArgvTopLevel: Plugin = {
     }
     if (node.kind === "ForArgv") {
       if (
-        spine.parent?.node.kind !== "Program" &&
-        (spine.parent?.node.kind !== "Block" ||
-          spine.parent?.parent?.node.kind !== "Program")
+        !(
+          spine.isRoot ||
+          (spine.parent?.node.kind === "Block" && spine.parent.isRoot)
+        )
       ) {
         throw new PolygolfError(
           "Node for_argv only allowed at the top level.",
@@ -359,7 +360,7 @@ export const shiftRangeOneUp: Plugin = {
         add1(node.start),
         add1(node.end),
         int(1n),
-        newBodySpine.node as Expr,
+        newBodySpine.node,
         node.inclusive
       );
     }

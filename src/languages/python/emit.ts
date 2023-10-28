@@ -1,7 +1,7 @@
 import { charLength } from "../../common/objective";
 import { TokenTree } from "@/common/Language";
 import {
-  containsMultiExpr,
+  containsMultiNode,
   EmitError,
   emitIntLiteral,
   emitTextLiteral,
@@ -10,7 +10,7 @@ import {
 import { IR, isIntLiteral, text, isTextLiteral, id, binaryOp } from "../../IR";
 import { CompilationContext } from "@/common/compile";
 
-function precedence(expr: IR.Expr): number {
+function precedence(expr: IR.Node): number {
   switch (expr.kind) {
     case "UnaryOp":
       return unaryPrecedence(expr.name);
@@ -71,24 +71,24 @@ function unaryPrecedence(opname: string): number {
 }
 
 export default function emitProgram(
-  program: IR.Program,
+  program: IR.Node,
   context: CompilationContext
 ): TokenTree {
-  function emitMultiExpr(baseExpr: IR.Expr, isRoot = false): TokenTree {
-    const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
+  function emitMultiNode(BaseNode: IR.Node, isRoot = false): TokenTree {
+    const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
     // Prefer newlines over semicolons at top level for aesthetics
     if (isRoot) {
-      return joinExprs("\n", children);
+      return joinNodes("\n", children);
     }
-    if (containsMultiExpr(children)) {
-      return ["$INDENT$", "\n", joinExprs("\n", children), "$DEDENT$"];
+    if (containsMultiNode(children)) {
+      return ["$INDENT$", "\n", joinNodes("\n", children), "$DEDENT$"];
     }
-    return joinExprs(";", children);
+    return joinNodes(";", children);
   }
 
-  function joinExprs(
+  function joinNodes(
     delim: TokenTree,
-    exprs: readonly IR.Expr[],
+    exprs: readonly IR.Node[],
     minPrec = -Infinity
   ) {
     return joinTrees(
@@ -103,16 +103,16 @@ export default function emitProgram(
    * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
    * @returns  Token tree corresponding to the expression.
    */
-  function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
+  function emit(expr: IR.Node, minimumPrec = -Infinity): TokenTree {
     const prec = precedence(expr);
-    function emitNoParens(e: IR.Expr): TokenTree {
+    function emitNoParens(e: IR.Node): TokenTree {
       switch (e.kind) {
         case "Block":
-          return emitMultiExpr(expr);
+          return emitMultiNode(expr);
         case "ImportStatement":
           return [e.name, joinTrees(",", e.modules)];
         case "WhileLoop":
-          return [`while`, emit(e.condition), ":", emitMultiExpr(e.body)];
+          return [`while`, emit(e.condition), ":", emitMultiNode(e.body)];
         case "ForEach":
           return [
             `for`,
@@ -120,7 +120,7 @@ export default function emitProgram(
             "in",
             emit(e.collection),
             ":",
-            emitMultiExpr(e.body),
+            emitMultiNode(e.body),
           ];
         case "ForRange": {
           const start = emit(e.start);
@@ -135,7 +135,7 @@ export default function emitProgram(
                 "in",
                 emit(binaryOp("*", text("X"), e.end)),
                 ":",
-                emitMultiExpr(e.body),
+                emitMultiNode(e.body),
               ]
             : [
                 "for",
@@ -148,7 +148,7 @@ export default function emitProgram(
                 increment1 ? [] : [",", increment],
                 ")",
                 ":",
-                emitMultiExpr(e.body),
+                emitMultiNode(e.body),
               ];
         }
         case "IfStatement":
@@ -156,12 +156,12 @@ export default function emitProgram(
             "if",
             emit(e.condition),
             ":",
-            emitMultiExpr(e.consequent),
+            emitMultiNode(e.consequent),
             e.alternate === undefined
               ? []
               : e.alternate.kind === "IfStatement"
               ? ["\n", "el", "$GLUE$", emit(e.alternate)]
-              : ["\n", "else", ":", emitMultiExpr(e.alternate)],
+              : ["\n", "else", ":", emitMultiNode(e.alternate)],
           ];
         case "Variants":
         case "ForEachKey":
@@ -171,7 +171,7 @@ export default function emitProgram(
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
         case "ManyToManyAssignment":
-          return [joinExprs(",", e.variables), "=", joinExprs(",", e.exprs)];
+          return [joinNodes(",", e.variables), "=", joinNodes(",", e.exprs)];
         case "OneToManyAssignment":
           return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
         case "MutatingBinaryOp":
@@ -196,7 +196,7 @@ export default function emitProgram(
             e.args.every(isTextLiteral()) &&
             e.args.every((x) => charLength(x.value) === 1)
               ? ["*", emit(text(e.args.map((x) => x.value).join("")))]
-              : joinExprs(",", e.args),
+              : joinNodes(",", e.args),
             ")",
           ];
         case "PropertyCall":
@@ -212,7 +212,7 @@ export default function emitProgram(
         case "UnaryOp":
           return [e.name, emit(e.arg, prec)];
         case "ListConstructor":
-          return ["[", joinExprs(",", e.exprs), "]"];
+          return ["[", joinNodes(",", e.exprs), "]"];
         case "TableConstructor":
           return [
             "{",
@@ -251,7 +251,7 @@ export default function emitProgram(
     if (prec >= minimumPrec) return inner;
     return ["(", inner, ")"];
   }
-  return emitMultiExpr(program.body, true);
+  return emitMultiNode(program, true);
 }
 
 export function emitPythonTextLiteral(

@@ -1,4 +1,4 @@
-import { Expr, IR, isPolygolfOp, polygolfOp } from "../IR";
+import { IR, isPolygolfOp, polygolfOp } from "../IR";
 import { CompilationContext } from "./compile";
 import { getChild, getChildFragments, PathFragment } from "./fragments";
 import { replaceAtIndex } from "./arrays";
@@ -6,23 +6,22 @@ import { replaceAtIndex } from "./arrays";
 /** A Spine points to one node and keeps track of all of its ancestors up to
  * the root program node. The main purpose of a Spine is for traversal. */
 export class Spine<N extends IR.Node = IR.Node> {
-  public readonly root: Spine<IR.Program>;
+  public readonly root: Spine<IR.Node>;
 
   constructor(
     public readonly node: N,
     public readonly parent: Spine | null,
     public readonly pathFragment: PathFragment | null
   ) {
-    const root = parent?.root ?? parent ?? this;
-    if (root.node.kind !== "Program")
-      throw new Error(
-        `Programming error: Root node should be a Program, but got ${root.node.kind}`
-      );
-    this.root = root as Spine<IR.Program>;
+    this.root = parent?.root ?? parent ?? this;
   }
 
   get depth(): number {
     return this.parent === null ? 0 : 1 + this.parent.depth;
+  }
+
+  get isRoot() {
+    return this.parent === null;
   }
 
   /** Get a list of all child spines. */
@@ -69,12 +68,6 @@ export class Spine<N extends IR.Node = IR.Node> {
    * and the root spine is returned. */
   replacedWith(newNode: IR.Node, canonizeAndReturnRoot = false): Spine {
     if (this.parent === null || this.pathFragment === null) {
-      if (newNode.kind !== "Program")
-        throw new Error(
-          `Programming error: attempt to replace the root node ` +
-            `with node of kind ${newNode.kind}`
-        );
-      // replace the root node
       return new Spine(newNode, null, null);
     }
     if (newNode.kind === "Block" && this.parent.node.kind === "Block") {
@@ -90,11 +83,11 @@ export class Spine<N extends IR.Node = IR.Node> {
         ? this.parent.replacedWith(
             polygolfOp(
               parentNode.op,
-              ...(replaceAtIndex(
+              ...replaceAtIndex(
                 parentNode.args,
                 this.pathFragment.index,
                 newNode
-              ) as Expr[])
+              )
             ),
             true
           )
@@ -150,11 +143,11 @@ export class Spine<N extends IR.Node = IR.Node> {
       // recurse on children
       if (isPolygolfOp()(this.node)) {
         // Create canonical PolygolfOp instead of just replacing the chidren
-        const newChildren: Expr[] = [];
+        const newChildren: IR.Node[] = [];
         let someChildrenIsNew = false;
         for (const child of this.getChildSpines()) {
           const newChild = child.withReplacer(replacer, false, skipReplaced);
-          newChildren.push(newChild.node as Expr);
+          newChildren.push(newChild.node);
           someChildrenIsNew ||= newChild !== child;
         }
         if (someChildrenIsNew)
@@ -187,6 +180,6 @@ export type PluginVisitor<T> = <N extends IR.Node>(
 
 export type Visitor<T> = <N extends IR.Node>(node: N, spine: Spine<N>) => T;
 
-export function programToSpine(node: IR.Program) {
+export function programToSpine(node: IR.Node) {
   return new Spine(node, null, null);
 }

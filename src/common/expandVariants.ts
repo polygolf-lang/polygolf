@@ -11,18 +11,18 @@ import {
  * Expand all of the variant nodes in program to get a list of fully-
  * instantiated Programs (without any Variant nodes in them)
  */
-export function expandVariants(program: IR.Program): IR.Program[] {
+export function expandVariants(program: IR.Node): IR.Node[] {
   const n = numVariants(program);
   if (n > 16)
     throw new Error(`Variant count ${n} exceeds arbitrary limit. Giving up`);
-  return allVariantOptions(program) as IR.Program[];
+  return allVariantOptions(program);
 }
 
-export function getOnlyVariant(program: IR.Program): IR.Program {
+export function getOnlyVariant(program: IR.Node): IR.Node {
   if (numVariants(program) > 1) {
     throw new Error("Program contains multiple variants!");
   }
-  return allVariantOptions(program)[0] as IR.Program;
+  return allVariantOptions(program)[0];
 }
 
 function numVariants(node: IR.Node): number {

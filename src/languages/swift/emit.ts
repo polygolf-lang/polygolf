@@ -8,7 +8,7 @@ import {
 import { IR, isIntLiteral, isIdent } from "../../IR";
 import { CompilationContext } from "@/common/compile";
 
-function precedence(expr: IR.Expr): number {
+function precedence(expr: IR.Node): number {
   switch (expr.kind) {
     case "UnaryOp":
       return unaryPrecedence(expr.name);
@@ -55,12 +55,12 @@ function unaryPrecedence(opname: string): number {
 }
 
 export default function emitProgram(
-  program: IR.Program,
+  program: IR.Node,
   context: CompilationContext
 ): TokenTree {
-  function joinExprs(
+  function joinNodes(
     delim: TokenTree,
-    exprs: readonly IR.Expr[],
+    exprs: readonly IR.Node[],
     minPrec = -Infinity
   ) {
     return joinTrees(
@@ -75,27 +75,27 @@ export default function emitProgram(
    * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
    * @returns Token tree corresponding to the expression.
    */
-  function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
+  function emit(expr: IR.Node, minimumPrec = -Infinity): TokenTree {
     const prec = precedence(expr);
-    function emitNoParens(e: IR.Expr): TokenTree {
+    function emitNoParens(e: IR.Node): TokenTree {
       switch (e.kind) {
         case "VarDeclarationBlock":
-          return ["var", joinExprs(",", e.children)];
+          return ["var", joinNodes(",", e.children)];
         case "VarDeclarationWithAssignment":
           return emit(e.assignment);
         case "Block":
-          return emitMultiExpr(e);
+          return emitMultiNode(e);
         case "ImportStatement":
           return [e.name, joinTrees(",", e.modules)];
         case "WhileLoop":
-          return [`while`, emit(e.condition), emitMultiExpr(e.body)];
+          return [`while`, emit(e.condition), emitMultiNode(e.body)];
         case "ForEach":
           return [
             `for`,
             emit(e.variable),
             "in",
             emit(e.collection),
-            emitMultiExpr(e.body),
+            emitMultiNode(e.body),
           ];
         case "ForRange": {
           const start = emit(e.start);
@@ -116,16 +116,16 @@ export default function emitProgram(
                   ]),
                   ")",
                 ],
-            emitMultiExpr(e.body),
+            emitMultiNode(e.body),
           ];
         }
         case "IfStatement":
           return [
             "if",
             emit(e.condition),
-            emitMultiExpr(e.consequent),
+            emitMultiNode(e.consequent),
             e.alternate !== undefined
-              ? ["else", emitMultiExpr(e.alternate)]
+              ? ["else", emitMultiNode(e.alternate)]
               : [],
           ];
         case "Variants":
@@ -147,7 +147,7 @@ export default function emitProgram(
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
           if (isIdent("!")(e.func)) return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node
-          return [emit(e.func), "(", joinExprs(",", e.args), ")"];
+          return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "PropertyCall":
           return [emit(e.object), ".", e.ident.name];
         case "MethodCall":
@@ -156,7 +156,7 @@ export default function emitProgram(
             ".",
             e.ident.name,
             "(",
-            joinExprs(", ", e.args),
+            joinNodes(", ", e.args),
             ")",
           ];
         case "ConditionalOp":
@@ -173,7 +173,7 @@ export default function emitProgram(
         case "UnaryOp":
           return [e.name, emit(e.arg, prec)];
         case "ListConstructor":
-          return ["[", joinExprs(",", e.exprs), "]"];
+          return ["[", joinNodes(",", e.exprs), "]"];
         case "TableConstructor":
           return [
             "[",
@@ -202,14 +202,14 @@ export default function emitProgram(
     return ["(", inner, ")"];
   }
 
-  function emitMultiExpr(baseExpr: IR.Expr, isRoot = false): TokenTree {
-    const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
+  function emitMultiNode(BaseNode: IR.Node, isRoot = false): TokenTree {
+    const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
     if (isRoot) {
-      return joinExprs("\n", children);
+      return joinNodes("\n", children);
     }
-    return ["{", joinExprs("\n", children), "}"];
+    return ["{", joinNodes("\n", children), "}"];
   }
-  return emitMultiExpr(program.body, true);
+  return emitMultiNode(program, true);
 }
 
 const unicode01to09repls: [string, string][] = [

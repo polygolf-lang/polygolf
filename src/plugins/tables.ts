@@ -2,7 +2,7 @@ import { getType } from "../common/getType";
 import { Plugin } from "../common/Language";
 import {
   defaultValue,
-  Expr,
+  Node,
   functionCall,
   int,
   integerType,
@@ -24,12 +24,12 @@ import {
  */
 export function tableHashing(
   hashFunc: (x: string) => number,
-  hashNode: string | ((x: Expr) => Expr) = "hash",
+  hashNode: string | ((x: Node) => Node) = "hash",
   maxMod = 9999
 ): Plugin {
-  let hash: (x: Expr) => Expr;
+  let hash: (x: Node) => Node;
   if (typeof hashNode === "string") {
-    hash = (x: Expr) => ({
+    hash = (x: Node) => ({
       ...functionCall(hashNode, x),
       type: integerType(0, 2 ** 32 - 1),
     });
@@ -84,14 +84,14 @@ export function tableHashing(
 
 function findHash( // TODO: Allow collisions in keys that map to the same value.
   hashFunc: (x: string) => number,
-  table: [string, Expr][],
+  table: [string, Node][],
   maxMod: number
-): [(Expr | null)[], number] | null {
-  const hashedTable: [number, Expr][] = table.map((x) => [
+): [(Node | null)[], number] | null {
+  const hashedTable: [number, Node][] = table.map((x) => [
     hashFunc(x[0]),
     x[1],
   ]);
-  const result: (Expr | null)[] = Array(table.length);
+  const result: (Node | null)[] = Array(table.length);
   for (let width = table.length; width < table.length * 4; width++) {
     for (let mod = width; mod <= maxMod; mod++) {
       result.fill(null);

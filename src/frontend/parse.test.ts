@@ -1,7 +1,6 @@
 import { stringify } from "../common/stringify";
 import {
   assignment,
-  Expr,
   id,
   int,
   text,
@@ -26,11 +25,11 @@ import parse from "./parse";
 
 function testStmtParse(desc: string, str: string, output: Node) {
   test(desc, () => {
-    expect(stringify(parse(str, false).body)).toEqual(stringify(output));
+    expect(stringify(parse(str, false))).toEqual(stringify(output));
   });
 }
 
-function expectExprParse(desc: string, str: string, output: Expr) {
+function expectExprParse(desc: string, str: string, output: Node) {
   testStmtParse(desc, `assign $x ${str};`, assignment("x", output));
 }
 
@@ -161,7 +160,7 @@ describe("Parse variants", () => {
     ])
   );
   testStmtParse(
-    "Expression variants",
+    "Node variants",
     `println { 0 / 1 };`,
     print(variants([int(0n), int(1n)]), true)
   );

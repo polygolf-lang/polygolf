@@ -1,4 +1,4 @@
-import { Node, Program } from "../IR";
+import { Node } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { defaultDetokenizer, Plugin, Language } from "./Language";
 import { programToSpine, Spine } from "./Spine";
@@ -56,10 +56,10 @@ function compilationResult(
 }
 
 export function applyAllToAllAndGetCounts(
-  program: Program,
+  program: Node,
   context: CompilationContext,
   ...visitors: Plugin["visit"][]
-): [Program, number[]] {
+): [Node, number[]] {
   const counts: number[] = [];
   let result = program;
   let c: number;
@@ -91,16 +91,16 @@ function getArray<T>(x: T | T[] | undefined): T[] {
 }
 
 export function applyToAllAndGetCount(
-  program: Program,
+  program: Node,
   context: CompilationContext,
   visitor: Plugin["visit"]
-): [Program, number] {
+): [Node, number] {
   const result = programToSpine(program).withReplacer((n, s) => {
     const repl = getSingleOrUndefined(visitor(n, s, context));
     return repl === undefined
       ? undefined
       : copySource(n, copyTypeAnnotation(n, repl));
-  }).node as Program;
+  }).node;
   return [result, program === result ? 0 : 1]; // TODO it might be a bit more informative to count the actual replacements, intead of returning 1
 }
 function* applyToOne(
@@ -119,11 +119,7 @@ function* applyToOne(
   }
 }
 
-function emit(
-  language: Language,
-  program: Program,
-  context: CompilationContext
-) {
+function emit(language: Language, program: Node, context: CompilationContext) {
   return (language.detokenizer ?? defaultDetokenizer())(
     language.emitter(program, context)
   );
@@ -139,7 +135,7 @@ export default function compile(
   ...languages: Language[]
 ): CompilationResult[] {
   const obj = getObjectiveFunc(options);
-  let program: Program;
+  let program: Node;
   try {
     program = parse(source, options.restrictFrontend);
   } catch (e) {
@@ -156,7 +152,7 @@ export default function compile(
     }
   });
 
-  const errorlessVariants = variants.filter((x) => "body" in x) as Program[];
+  const errorlessVariants = variants.filter((x) => !("result" in x)) as Node[];
   const errorVariants = variants.filter(
     (x) => !("body" in x)
   ) as CompilationResult[];
@@ -202,9 +198,7 @@ export default function compile(
   return result;
 }
 
-function getVariantsByInputMethod(
-  variants: Program[]
-): Map<boolean, Program[]> {
+function getVariantsByInputMethod(variants: Node[]): Map<boolean, Node[]> {
   const variantsWithMethods = variants.map((variant) => {
     const spine = programToSpine(variant);
     return {
@@ -216,7 +210,7 @@ function getVariantsByInputMethod(
   if (variantsWithMethods.some((x) => x.readsFromArgv && x.readsFromStdin)) {
     throw new PolygolfError("Program cannot read from both argv and stdin.");
   }
-  return new Map<boolean, Program[]>(
+  return new Map<boolean, Node[]>(
     [true, false].map((preferStdin) => {
       const matching = variantsWithMethods.filter(
         (x) =>
@@ -231,7 +225,7 @@ function getVariantsByInputMethod(
 }
 
 export function compileVariant(
-  program: Program,
+  program: Node,
   options: CompilationOptions,
   language: Language
 ): CompilationResult {
@@ -273,7 +267,7 @@ export function compileVariant(
 }
 
 interface SearchState {
-  program: Program;
+  program: Node;
   startPhase: number;
   length: number;
   warnings: Error[];
@@ -281,7 +275,7 @@ interface SearchState {
 }
 
 export function compileVariantNoPacking(
-  program: Program,
+  program: Node,
   options: CompilationOptions,
   language: Language
 ): CompilationResult {
@@ -317,7 +311,7 @@ export function compileVariantNoPacking(
   }
   const obj = getObjectiveFunc(options);
   function finish(
-    prog: Program,
+    prog: Node,
     addWarning: AddWarning,
     startPhase = 0
   ): [string, [number, string][]] {
@@ -343,7 +337,7 @@ export function compileVariantNoPacking(
   const globalWarnings: Error[] = [];
 
   function enqueue(
-    program: Program,
+    program: Node,
     startPhase: number,
     history: [number, string][],
     warnings: Error[]
@@ -459,11 +453,7 @@ function mergeRepeatedPlugins(history: [number, string][]): [number, string][] {
 
 function copyTypeAnnotation(from: Node, to: Node): Node {
   // copy type annotation if present
-  return to.kind !== "Program" &&
-    from.kind !== "Program" &&
-    from.type !== undefined
-    ? { ...to, type: from.type }
-    : to;
+  return from.type !== undefined ? { ...to, type: from.type } : to;
 }
 
 function copySource(from: Node, to: Node): Node {
@@ -473,15 +463,15 @@ function copySource(from: Node, to: Node): Node {
 
 /** Typecheck a program by asking all nodes about their types.
  * Throws an error on a type error; otherwise is a no-op. */
-function typecheck(program: Program) {
+function typecheck(program: Node) {
   const spine = programToSpine(program);
   spine.everyNode((x) => {
-    if (x.kind !== "Program") getType(x, program);
+    getType(x, program);
     return true;
   });
 }
 
-export function debugEmit(program: Program): string {
+export function debugEmit(program: Node): string {
   const result = compileVariantNoPacking(
     program,
     {

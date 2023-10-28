@@ -4,7 +4,7 @@ import {
   assignment,
   binaryOp,
   BinaryOpCode,
-  Expr,
+  Node,
   flipOpCode,
   IndexCall,
   indexCall,
@@ -47,9 +47,9 @@ export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
             replacement = {
               ...(replacement as any),
               op: node.op,
-            } as const as Expr;
+            };
           }
-          return { ...replacement, type: getType(node, spine) };
+          return { ...replacement!, type: getType(node, spine) };
         }
       }
     },
@@ -85,8 +85,8 @@ export function mapToUnaryAndBinaryOps(
           [
             op,
             isBinary(op)
-              ? (x: readonly Expr[]) => asBinaryChain(op, x, opMap)
-              : (x: readonly Expr[]) => unaryOp(name, x[0]),
+              ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
+              : (x: readonly Node[]) => unaryOp(name, x[0]),
           ] satisfies [OpCode, OpTransformOutput]
       )
     ),
@@ -96,9 +96,9 @@ export function mapToUnaryAndBinaryOps(
 
 function asBinaryChain(
   op: BinaryOpCode,
-  exprs: readonly Expr[],
+  exprs: readonly Node[],
   names: Map<OpCode, string>
-): Expr {
+): Node {
   const negName = names.get("neg");
   if (op === "mul" && isIntLiteral(-1n)(exprs[0]) && negName !== undefined) {
     exprs = [unaryOp(negName, exprs[1]), ...exprs.slice(2)];

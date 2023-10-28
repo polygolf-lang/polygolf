@@ -56,14 +56,11 @@ export * from "./terminals";
 export * from "./toplevel";
 export * from "./types";
 
-export interface BaseExpr extends BaseNode {
+export interface BaseNode {
+  readonly source?: SourcePointer;
   /** type: an uninferrable type, either annotated from the frontend or
    * inserted for language-specific op nodes */
   readonly type?: Type;
-}
-
-export interface BaseNode {
-  readonly source?: SourcePointer;
 }
 
 export interface SourcePointer {
@@ -71,9 +68,7 @@ export interface SourcePointer {
   readonly column: number;
 }
 
-export type Node = Program | Expr;
-
-export type Expr =
+export type Node =
   // Frontend nodes
   | Block
   | Variants
@@ -116,18 +111,3 @@ export type Expr =
   | ForEachPair
   | ForCLike
   | NamedArg;
-
-/**
- * Program node. This should be the root node. Raw OK
- */
-export interface Program extends BaseNode {
-  readonly kind: "Program";
-  readonly body: Expr;
-}
-
-export function program(body: Expr): Program {
-  return {
-    kind: "Program",
-    body,
-  };
-}

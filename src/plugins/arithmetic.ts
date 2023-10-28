@@ -5,7 +5,6 @@ import {
   polygolfOp,
   IntegerType,
   isConstantType,
-  Expr,
   PolygolfOp,
   isSubtype,
   isPolygolfOp,
@@ -168,7 +167,7 @@ export const useIntegerTruthiness: Plugin = {
   },
 };
 
-function isConstantTypePowerOfTwo(n: Expr, s: Spine) {
+function isConstantTypePowerOfTwo(n: Node, s: Spine) {
   const type = getType(n, s);
   if (type.kind === "integer" && isConstantType(type)) {
     const v = type.low;
@@ -179,7 +178,7 @@ function isConstantTypePowerOfTwo(n: Expr, s: Spine) {
 
 function isPowerOfTwo(n: Node, s: Spine): boolean {
   return (
-    (n.kind !== "Program" && isConstantTypePowerOfTwo(n, s)) ||
+    isConstantTypePowerOfTwo(n, s) ||
     (isPolygolfOp("pow", "bit_shift_left")(n) && isPowerOfTwo(n.args[0], s))
   );
 }
@@ -230,7 +229,7 @@ export const mulToPow: Plugin = {
   name: "mulToPow",
   visit(node) {
     if (isPolygolfOp("mul")(node)) {
-      const factors = new Map<string, [Expr, number]>();
+      const factors = new Map<string, [Node, number]>();
       for (const e of node.args) {
         const stringified = stringify(e);
         factors.set(stringified, [

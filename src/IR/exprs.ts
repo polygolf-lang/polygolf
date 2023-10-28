@@ -1,9 +1,8 @@
 import { getArithmeticType } from "../common/getType";
 import { stringify } from "../common/stringify";
 import {
-  Expr,
   Identifier,
-  BaseExpr,
+  BaseNode,
   id,
   UnaryOpCode,
   BinaryOpCode,
@@ -26,9 +25,9 @@ import {
   TextLiteral,
 } from "./IR";
 
-export interface ImplicitConversion extends BaseExpr {
+export interface ImplicitConversion extends BaseNode {
   readonly kind: "ImplicitConversion";
-  expr: Expr;
+  expr: Node;
   behavesLike: UnaryOpCode & `${string}_to_${string}`;
 }
 
@@ -49,64 +48,64 @@ export interface ImplicitConversion extends BaseExpr {
  * 
  * This is ensured when using the polygolfOp contructor function and the Spine API so avoid creating such nodes manually.
  */
-export interface PolygolfOp<Op extends OpCode = OpCode> extends BaseExpr {
+export interface PolygolfOp<Op extends OpCode = OpCode> extends BaseNode {
   readonly kind: "PolygolfOp";
   readonly op: Op;
-  readonly args: readonly Expr[];
+  readonly args: readonly Node[];
 }
 
-export interface KeyValue extends BaseExpr {
+export interface KeyValue extends BaseNode {
   readonly kind: "KeyValue";
-  readonly key: Expr;
-  readonly value: Expr;
+  readonly key: Node;
+  readonly value: Node;
 }
 
-export interface FunctionCall extends BaseExpr {
+export interface FunctionCall extends BaseNode {
   readonly kind: "FunctionCall";
-  readonly func: Expr;
-  readonly args: readonly Expr[];
+  readonly func: Node;
+  readonly args: readonly Node[];
 }
 
-export interface MethodCall extends BaseExpr {
+export interface MethodCall extends BaseNode {
   readonly kind: "MethodCall";
-  readonly object: Expr;
+  readonly object: Node;
   readonly ident: Identifier;
-  readonly args: readonly Expr[];
+  readonly args: readonly Node[];
 }
 
-export interface PropertyCall extends BaseExpr {
+export interface PropertyCall extends BaseNode {
   readonly kind: "PropertyCall";
-  readonly object: Expr;
+  readonly object: Node;
   readonly ident: Identifier;
 }
 
-export interface IndexCall extends BaseExpr {
+export interface IndexCall extends BaseNode {
   readonly kind: "IndexCall";
-  readonly collection: Expr;
-  readonly index: Expr;
+  readonly collection: Node;
+  readonly index: Node;
   readonly oneIndexed: boolean;
 }
 
-export interface RangeIndexCall extends BaseExpr {
+export interface RangeIndexCall extends BaseNode {
   readonly kind: "RangeIndexCall";
-  readonly collection: Expr;
-  readonly low: Expr;
-  readonly high: Expr;
-  readonly step: Expr;
+  readonly collection: Node;
+  readonly low: Node;
+  readonly high: Node;
+  readonly step: Node;
   readonly oneIndexed: boolean;
 }
 
-export interface BinaryOp extends BaseExpr {
+export interface BinaryOp extends BaseNode {
   readonly kind: "BinaryOp";
   readonly name: string;
-  readonly left: Expr;
-  readonly right: Expr;
+  readonly left: Node;
+  readonly right: Node;
 }
 
-export interface UnaryOp extends BaseExpr {
+export interface UnaryOp extends BaseNode {
   readonly kind: "UnaryOp";
   readonly name: string;
-  readonly arg: Expr;
+  readonly arg: Node;
 }
 
 /**
@@ -115,21 +114,21 @@ export interface UnaryOp extends BaseExpr {
  * Python: [alternate,consequent][condition] or consequent if condition else alternate
  * C: condition?consequent:alternate.
  */
-export interface ConditionalOp extends BaseExpr {
+export interface ConditionalOp extends BaseNode {
   readonly kind: "ConditionalOp";
-  readonly condition: Expr;
-  readonly consequent: Expr;
-  readonly alternate: Expr;
+  readonly condition: Node;
+  readonly consequent: Node;
+  readonly alternate: Node;
   readonly isSafe: boolean; // whether both branches can be safely evaluated (without creating side effects or errors - allows for more golfing)
 }
 
-export interface Function extends BaseExpr {
+export interface Function extends BaseNode {
   readonly kind: "Function";
-  readonly args: readonly Expr[];
-  readonly expr: Expr;
+  readonly args: readonly Node[];
+  readonly expr: Node;
 }
 
-export interface NamedArg<T extends Expr = Expr> extends BaseExpr {
+export interface NamedArg<T extends Node = Node> extends BaseNode {
   readonly kind: "NamedArg";
   readonly name: string;
   readonly value: T;
@@ -137,7 +136,7 @@ export interface NamedArg<T extends Expr = Expr> extends BaseExpr {
 
 export function implicitConversion(
   behavesLike: UnaryOpCode & `${string}_to_${string}`,
-  expr: Expr
+  expr: Node
 ): ImplicitConversion {
   return {
     kind: "ImplicitConversion",
@@ -146,7 +145,7 @@ export function implicitConversion(
   };
 }
 
-export function keyValue(key: Expr, value: Expr): KeyValue {
+export function keyValue(key: Node, value: Node): KeyValue {
   return {
     kind: "KeyValue",
     key,
@@ -158,7 +157,7 @@ export function keyValue(key: Expr, value: Expr): KeyValue {
  * This assumes that the construction will not break the invariants described
  * on `PolygolfOp` interface and hence is made private.
  */
-function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
+function _polygolfOp(op: OpCode, ...args: Node[]): PolygolfOp {
   return {
     kind: "PolygolfOp",
     op,
@@ -166,7 +165,7 @@ function _polygolfOp(op: OpCode, ...args: Expr[]): PolygolfOp {
   };
 }
 
-export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
+export function polygolfOp(op: OpCode, ...args: Node[]): Node {
   if (op === "not" || op === "bit_not") {
     const arg = args[0];
     if (isPolygolfOp()(arg)) {
@@ -205,7 +204,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
           args = [text(""), args[0]];
         }
       }
-      const newArgs: Expr[] = [];
+      const newArgs: Node[] = [];
       for (const arg of args) {
         if (newArgs.length > 0) {
           const combined = evalBinaryOp(op, newArgs[newArgs.length - 1], arg);
@@ -260,7 +259,7 @@ export function polygolfOp(op: OpCode, ...args: Expr[]): Expr {
   return _polygolfOp(op, ...args);
 }
 
-function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
+function evalBinaryOp(op: BinaryOpCode, left: Node, right: Node): Node | null {
   if (op === "concat" && isTextLiteral()(left) && isTextLiteral()(right)) {
     return text(left.value + right.value);
   }
@@ -280,10 +279,10 @@ function evalBinaryOp(op: BinaryOpCode, left: Expr, right: Expr): Expr | null {
 }
 
 /** Simplifies a polynomial represented as an array of terms. */
-function simplifyPolynomial(terms: Expr[]): Expr[] {
-  const coeffMap = new Map<string, [bigint, Expr]>();
+function simplifyPolynomial(terms: Node[]): Node[] {
+  const coeffMap = new Map<string, [bigint, Node]>();
   let constant = 0n;
-  function add(coeff: bigint, rest: readonly Expr[]) {
+  function add(coeff: bigint, rest: readonly Node[]) {
     const stringified = rest.map(stringify).join("");
     if (coeffMap.has(stringified)) {
       const [oldCoeff, expr] = coeffMap.get(stringified)!;
@@ -300,7 +299,7 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
       else add(1n, x.args);
     } else add(1n, [x]);
   }
-  let result: Expr[] = [];
+  let result: Node[] = [];
   for (const [coeff, expr] of coeffMap.values()) {
     if (coeff === 1n) result.push(expr);
     else if (coeff !== 0n) result.push(_polygolfOp("mul", int(coeff), expr));
@@ -314,12 +313,12 @@ function simplifyPolynomial(terms: Expr[]): Expr[] {
   return result;
 }
 
-export const add1 = (expr: Expr) => polygolfOp("add", expr, int(1n));
-export const sub1 = (expr: Expr) => polygolfOp("add", expr, int(-1n));
+export const add1 = (expr: Node) => polygolfOp("add", expr, int(1n));
+export const sub1 = (expr: Node) => polygolfOp("add", expr, int(-1n));
 
 export function functionCall(
-  func: string | Expr,
-  ...args: readonly (Expr | readonly Expr[])[]
+  func: string | Node,
+  ...args: readonly (Node | readonly Node[])[]
 ): FunctionCall {
   return {
     kind: "FunctionCall",
@@ -329,9 +328,9 @@ export function functionCall(
 }
 
 export function methodCall(
-  object: Expr,
+  object: Node,
   ident: string | Identifier,
-  ...args: readonly Expr[]
+  ...args: readonly Node[]
 ): MethodCall {
   return {
     kind: "MethodCall",
@@ -342,7 +341,7 @@ export function methodCall(
 }
 
 export function propertyCall(
-  object: Expr | readonly Expr[],
+  object: Node | readonly Node[],
   ident: string | Identifier
 ): PropertyCall {
   return {
@@ -353,8 +352,8 @@ export function propertyCall(
 }
 
 export function indexCall(
-  collection: string | Expr,
-  index: Expr,
+  collection: string | Node,
+  index: Node,
   oneIndexed: boolean = false
 ): IndexCall {
   return {
@@ -366,10 +365,10 @@ export function indexCall(
 }
 
 export function rangeIndexCall(
-  collection: string | Expr,
-  low: Expr,
-  high: Expr,
-  step: Expr,
+  collection: string | Node,
+  low: Node,
+  high: Node,
+  step: Node,
   oneIndexed: boolean = false
 ): RangeIndexCall {
   return {
@@ -382,7 +381,7 @@ export function rangeIndexCall(
   };
 }
 
-export function binaryOp(name: string, left: Expr, right: Expr): BinaryOp {
+export function binaryOp(name: string, left: Node, right: Node): BinaryOp {
   return {
     kind: "BinaryOp",
     left,
@@ -391,7 +390,7 @@ export function binaryOp(name: string, left: Expr, right: Expr): BinaryOp {
   };
 }
 
-export function unaryOp(name: string, arg: Expr): UnaryOp {
+export function unaryOp(name: string, arg: Node): UnaryOp {
   return {
     kind: "UnaryOp",
     arg,
@@ -400,9 +399,9 @@ export function unaryOp(name: string, arg: Expr): UnaryOp {
 }
 
 export function conditional(
-  condition: Expr,
-  consequent: Expr,
-  alternate: Expr,
+  condition: Node,
+  consequent: Node,
+  alternate: Node,
   isSafe: boolean = true
 ): ConditionalOp {
   return {
@@ -414,7 +413,7 @@ export function conditional(
   };
 }
 
-export function func(args: (string | Expr)[], expr: Expr): Function {
+export function func(args: (string | Node)[], expr: Node): Function {
   return {
     kind: "Function",
     args: args.map((x) => (typeof x === "string" ? id(x) : x)),
@@ -422,7 +421,7 @@ export function func(args: (string | Expr)[], expr: Expr): Function {
   };
 }
 
-export function namedArg<T extends Expr>(name: string, value: T): NamedArg<T> {
+export function namedArg<T extends Node>(name: string, value: T): NamedArg<T> {
   return {
     kind: "NamedArg",
     name,
@@ -430,7 +429,7 @@ export function namedArg<T extends Expr>(name: string, value: T): NamedArg<T> {
   };
 }
 
-export function print(value: Expr, newline: boolean = true): Expr {
+export function print(value: Node, newline: boolean = true): Node {
   return polygolfOp(newline ? "println" : "print", value);
 }
 
@@ -444,7 +443,7 @@ export function getArgs(
     | MethodCall
     | IndexCall
     | RangeIndexCall
-): readonly Expr[] {
+): readonly Node[] {
   switch (node.kind) {
     case "BinaryOp":
       return [node.left, node.right];
@@ -522,14 +521,14 @@ export function isIntLiteral<Value extends bigint>(
     (vals.length === 0 || vals.includes(x.value as any))) as any;
 }
 
-export function isNegativeLiteral(expr: Expr) {
+export function isNegativeLiteral(expr: Node) {
   return isIntLiteral()(expr) && expr.value < 0n;
 }
 
 /**
  * Checks whether the expression is a negative integer literal or a multiplication with one.
  */
-export function isNegative(expr: Expr) {
+export function isNegative(expr: Node) {
   return (
     isNegativeLiteral(expr) ||
     (isPolygolfOp("mul")(expr) && isNegativeLiteral(expr.args[0]))
