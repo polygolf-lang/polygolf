@@ -1,6 +1,5 @@
 import {
-  Program,
-  Expr,
+  Node,
   Type,
   listType,
   arrayType,
@@ -49,16 +48,13 @@ import { PolygolfError } from "./errors";
 import { Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
 
-const cachedType = new WeakMap<Expr, Type>();
-const currentlyFinding = new WeakSet<Expr>();
-export function getType(expr: Expr, context: Program | Spine): Type {
+const cachedType = new WeakMap<Node, Type>();
+const currentlyFinding = new WeakSet<Node>();
+export function getType(expr: Node, context: Node | Spine): Type {
   const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
   if (currentlyFinding.has(expr))
-    throw new PolygolfError(
-      `Expression defined in terms of itself`,
-      expr.source
-    );
+    throw new PolygolfError(`Node defined in terms of itself`, expr.source);
 
   currentlyFinding.add(expr);
   try {
@@ -75,11 +71,11 @@ export function getType(expr: Expr, context: Program | Spine): Type {
   }
 }
 
-export function calcType(expr: Expr, program: Program): Type {
+export function calcType(expr: Node, program: Node): Type {
   // user-annotated node
   if (expr.type !== undefined) return expr.type;
   // type inference
-  const type = (e: Expr) => getType(e, program);
+  const type = (e: Node) => getType(e, program);
   switch (expr.kind) {
     case "Function":
       return functionType(expr.args.map(type), type(expr.expr));
@@ -248,7 +244,7 @@ function getTypeBitNot(t: IntegerType): IntegerType {
   return integerType(sub(-1n, t.high), sub(-1n, t.low));
 }
 
-function getOpCodeType(expr: PolygolfOp, program: Program): Type {
+function getOpCodeType(expr: PolygolfOp, program: Node): Type {
   const types = getArgs(expr).map((x) => getType(x, program));
   function expectVariadicType(
     expected: Type,
@@ -901,7 +897,7 @@ export function getArithmeticType(
   throw new Error(`Type error. Unknown opcode. ${op ?? "null"}`);
 }
 
-export function getCollectionTypes(expr: Expr, program: Program): Type[] {
+export function getCollectionTypes(expr: Node, program: Node): Type[] {
   const exprType = getType(expr, program);
   switch (exprType.kind) {
     case "Array":

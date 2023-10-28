@@ -1,10 +1,10 @@
-import { Expr, IR } from "IR";
+import { IR } from "IR";
 import { Spine, PluginVisitor } from "./Spine";
 import { CompilationContext } from "./compile";
 
 export type OpTransformOutput =
-  | ((args: readonly IR.Expr[], spine: Spine<Expr>) => IR.Expr | undefined)
-  | IR.Expr;
+  | ((args: readonly IR.Node[], spine: Spine<IR.Node>) => IR.Node | undefined)
+  | IR.Node;
 
 export interface Packer {
   codepointRange: [number, number];
@@ -91,7 +91,7 @@ export interface IdentifierGenerator {
 }
 
 export type Emitter = (
-  program: IR.Program,
+  program: IR.Node,
   context: CompilationContext
 ) => TokenTree;
 

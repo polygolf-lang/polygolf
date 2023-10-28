@@ -2,10 +2,8 @@ import { PolygolfError } from "../common/errors";
 import { Token } from "moo";
 import nearley from "nearley";
 import {
-  Expr,
   functionCall,
   Identifier,
-  Program,
   forRange,
   ifStatement,
   listConstructor,
@@ -69,7 +67,7 @@ import {
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
-export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
+export function sexpr(callee: Identifier, args: readonly Node[]): Node {
   if (!callee.builtin) {
     return functionCall(callee, args);
   }
@@ -85,24 +83,24 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       );
     }
   }
-  function assertIdentifier(e: Expr): asserts e is Identifier {
+  function assertIdentifier(e: Node): asserts e is Identifier {
     if (!isIdent()(e))
       throw new PolygolfError(
         `Syntax error. Application first argument must be identifier, but got ${args[0].kind}`,
         e.source
       );
   }
-  function assertInteger(e: Expr): asserts e is IntegerLiteral {
+  function assertInteger(e: Node): asserts e is IntegerLiteral {
     if (!isIntLiteral()(e))
       throw new PolygolfError(
         `Syntax error. Expected integer literal, but got ${e.kind}`,
         e.source
       );
   }
-  function assertIdentifiers(e: readonly Expr[]): asserts e is Identifier[] {
+  function assertIdentifiers(e: readonly Node[]): asserts e is Identifier[] {
     e.forEach(assertIdentifier);
   }
-  function assertKeyValues(e: readonly Expr[]): asserts e is KeyValue[] {
+  function assertKeyValues(e: readonly Node[]): asserts e is KeyValue[] {
     for (const x of e) {
       if (x.kind !== "KeyValue")
         throw new PolygolfError(
@@ -111,14 +109,14 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         );
     }
   }
-  function asString(e: Expr): string {
+  function asString(e: Node): string {
     if (isTextLiteral()(e)) return e.value;
     throw new PolygolfError(
       `Syntax error. Expected string literal, but got ${e.kind}`,
       e.source
     );
   }
-  function asArray(e: Expr): readonly Expr[] {
+  function asArray(e: Node): readonly Node[] {
     if (e.kind === "Variants" && e.variants.length === 1) {
       return e.variants[0].kind === "Block"
         ? e.variants[0].children
@@ -169,10 +167,10 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       return whileLoop(args[0], args[1]);
     case "for": {
       expectArity(2, 5);
-      let variable: Expr = id("_");
-      let start: Expr = integer(0n);
-      let step: Expr = integer(1n);
-      let end, body: Expr;
+      let variable: Node = id("_");
+      let start: Node = integer(0n);
+      let step: Node = integer(1n);
+      let end, body: Node;
       if (args.length === 5) {
         [variable, start, end, step, body] = args;
       } else if (args.length === 4) {
@@ -331,7 +329,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       }
       case "for_no_index": {
         expectArity(3, 4);
-        let start, end, step, body: Expr;
+        let start, end, step, body: Node;
         if (args.length === 4) {
           [start, end, step, body] = args;
         } else {
@@ -504,7 +502,7 @@ export function typeSexpr(
   }
 }
 
-export function annotate(expr: Expr, valueType: [any, Type] | null): Expr {
+export function annotate(expr: Node, valueType: [any, Type] | null): Node {
   if (valueType === null) return expr;
   return { ...expr, type: valueType[1] };
 }
@@ -568,5 +566,5 @@ export default function parse(code: string, restrictFrontend = true) {
       column: (lines.at(-1)?.length ?? 0) + 1,
     });
   }
-  return results[0] as Program;
+  return results[0] as Node;
 }

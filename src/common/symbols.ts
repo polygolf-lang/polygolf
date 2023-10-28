@@ -32,14 +32,14 @@ class SymbolTable extends Map<string, Spine> {
   }
 }
 
-const symbolTableCache = new WeakMap<IR.Program, SymbolTable>();
+const symbolTableCache = new WeakMap<IR.Node, SymbolTable>();
 /** Get the symbol table for a program.
  *
  * Caching is done based on the program only: the function accumulates
  * symbols using a visitor, so performance can potentially be improved by
  * recursively merging symbol tables to avoid needing to re-traverse the whole
  * tree for every small change. */
-function symbolTableRoot(program: IR.Program): SymbolTable {
+function symbolTableRoot(program: IR.Node): SymbolTable {
   if (symbolTableCache.has(program)) return symbolTableCache.get(program)!;
   const existing = new Set<string>();
   const defs = [
@@ -64,14 +64,11 @@ function symbolTableRoot(program: IR.Program): SymbolTable {
   return table;
 }
 
-export function getDeclaredIdentifiers(program: IR.Program) {
+export function getDeclaredIdentifiers(program: IR.Node) {
   return symbolTableRoot(program).keys();
 }
 
-export function getIdentifierType(
-  expr: IR.Identifier,
-  program: IR.Program
-): Type {
+export function getIdentifierType(expr: IR.Identifier, program: IR.Node): Type {
   return getTypeFromBinding(
     expr.name,
     symbolTableRoot(program).getRequired(expr.name)
@@ -80,7 +77,7 @@ export function getIdentifierType(
 
 export function isIdentifierReadonly(
   expr: IR.Identifier,
-  program: IR.Program
+  program: IR.Node
 ): boolean {
   if (expr.builtin) return true;
   const definingNode = symbolTableRoot(program).get(expr.name);
@@ -318,8 +315,7 @@ export function hasDirectSideEffect(node: Node, spine: Spine) {
         "read_codepoint",
         "read_line",
         "read_int"
-      )(node) ||
-      (node.kind !== "Program" && getType(node, spine).kind === "void")
+      )(node) || getType(node, spine).kind === "void"
     );
   } catch {
     return false;

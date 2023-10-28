@@ -1,4 +1,4 @@
-import { Expr, IR, IntegerLiteral } from "IR";
+import { IR, IntegerLiteral, Node } from "IR";
 import { PolygolfError } from "./errors";
 import { TokenTree } from "./Language";
 import { codepoints } from "./objective";
@@ -47,7 +47,7 @@ export function emitTextLiteral(
   return codepoints(result).map(codepointMap).join("");
 }
 
-export function containsMultiExpr(exprs: readonly IR.Expr[]): boolean {
+export function containsMultiNode(exprs: readonly IR.Node[]): boolean {
   for (const expr of exprs) {
     if ("consequent" in expr || "children" in expr || "body" in expr) {
       return true;
@@ -57,7 +57,7 @@ export function containsMultiExpr(exprs: readonly IR.Expr[]): boolean {
 }
 
 export class EmitError extends PolygolfError {
-  constructor(expr: Expr, detail?: string) {
+  constructor(expr: Node, detail?: string) {
     if (detail === undefined && "op" in expr && expr.op !== null)
       detail = expr.op;
     detail = detail === undefined ? "" : ` (${detail})`;

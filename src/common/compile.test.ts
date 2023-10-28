@@ -15,24 +15,24 @@ const textLang: Language = {
   name: "text",
   extension: "txt",
   emitter(program, context) {
-    return (
-      program.body.kind === "Block" ? program.body.children : [program.body]
-    ).map((x) => {
-      if (isPolygolfOp()(x) && isTextLiteral()(x.args[0])) {
-        if (x.args[0].value.endsWith("X")) {
-          context.addWarning(new PolygolfError("global warning"), true);
+    return (program.kind === "Block" ? program.children : [program]).map(
+      (x) => {
+        if (isPolygolfOp()(x) && isTextLiteral()(x.args[0])) {
+          if (x.args[0].value.endsWith("X")) {
+            context.addWarning(new PolygolfError("global warning"), true);
+            context.addWarning(
+              new PolygolfError("local warning that should not be visible"),
+              false
+            );
+          }
           context.addWarning(
-            new PolygolfError("local warning that should not be visible"),
+            new PolygolfError("local warning that should be visible"),
             false
           );
-        }
-        context.addWarning(
-          new PolygolfError("local warning that should be visible"),
-          false
-        );
-        return [x.args[0].value];
-      } else throw new EmitError(x);
-    });
+          return [x.args[0].value];
+        } else throw new EmitError(x);
+      }
+    );
   },
   detokenizer: defaultDetokenizer(() => false),
   phases: [

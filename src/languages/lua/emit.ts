@@ -8,7 +8,7 @@ import {
 import { IR, isIntLiteral } from "../../IR";
 import { TokenTree } from "@/common/Language";
 
-function precedence(expr: IR.Expr): number {
+function precedence(expr: IR.Node): number {
   switch (expr.kind) {
     case "UnaryOp":
       return 11;
@@ -62,12 +62,12 @@ function binaryPrecedence(opname: string): number {
 }
 
 export default function emitProgram(
-  program: IR.Program,
+  program: IR.Node,
   context: CompilationContext
 ): TokenTree {
-  function joinExprs(
+  function joinNodes(
     delim: TokenTree,
-    exprs: readonly IR.Expr[],
+    exprs: readonly IR.Node[],
     minPrec = -Infinity
   ) {
     return joinTrees(
@@ -82,18 +82,18 @@ export default function emitProgram(
    * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
    * @returns Token tree corresponding to the expression.
    */
-  function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
+  function emit(expr: IR.Node, minimumPrec: number = -Infinity): TokenTree {
     const prec = precedence(expr);
-    function emitNoParens(e: IR.Expr): TokenTree {
+    function emitNoParens(e: IR.Node): TokenTree {
       switch (e.kind) {
         case "Block":
-          return joinExprs("\n", e.children);
+          return joinNodes("\n", e.children);
         case "WhileLoop":
           return [`while`, emit(e.condition), "do", emit(e.body), "end"];
         case "OneToManyAssignment":
-          return [joinExprs(",", e.variables), "=", emit(e.expr)];
+          return [joinNodes(",", e.variables), "=", emit(e.expr)];
         case "ManyToManyAssignment":
-          return [joinExprs(",", e.variables), "=", joinExprs(",", e.exprs)];
+          return [joinNodes(",", e.variables), "=", joinNodes(",", e.exprs)];
         case "ForRange": {
           if (!e.inclusive) throw new EmitError(e, "exclusive");
           return [
@@ -133,14 +133,14 @@ export default function emitProgram(
         case "IntegerLiteral":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
-          return [emit(e.func), "(", joinExprs(",", e.args), ")"];
+          return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "MethodCall":
           return [
             emit(e.object, Infinity),
             ":",
             emit(e.ident),
             "(",
-            joinExprs(",", e.args),
+            joinNodes(",", e.args),
             ")",
           ];
         case "BinaryOp": {
@@ -158,7 +158,7 @@ export default function emitProgram(
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
         case "ListConstructor":
         case "ArrayConstructor":
-          return ["{", joinExprs(",", e.exprs), "}"];
+          return ["{", joinNodes(",", e.exprs), "}"];
 
         default:
           throw new EmitError(e);
@@ -169,7 +169,7 @@ export default function emitProgram(
     if (prec >= minimumPrec) return inner;
     return ["(", inner, ")"];
   }
-  return emit(program.body);
+  return emit(program);
 }
 
 function emitLuaTextLiteral(
