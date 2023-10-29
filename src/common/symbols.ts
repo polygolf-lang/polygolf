@@ -1,23 +1,23 @@
 import {
   add,
-  Identifier,
+  type Identifier,
   integerType,
   integerTypeIncludingAll,
-  IR,
+  type IR,
   isIdent,
   isPolygolfOp,
   isSubtype,
   lt,
-  Node,
-  PolygolfOp,
+  type Node,
+  type PolygolfOp,
   sub,
   textType,
-  Type,
+  type Type,
 } from "../IR";
 import { PolygolfError } from "./errors";
-import { getChildFragments, PathFragment } from "./fragments";
+import { getChildFragments, type PathFragment } from "./fragments";
 import { getCollectionTypes, getType } from "./getType";
-import { programToSpine, Spine } from "./Spine";
+import { programToSpine, type Spine } from "./Spine";
 
 /** Map from a name to the node that defines/binds it. */
 class SymbolTable extends Map<string, Spine> {
@@ -26,28 +26,29 @@ class SymbolTable extends Map<string, Spine> {
     if (ret === undefined)
       throw new Error(
         `Symbol not found: ${key}. ` +
-          `Defined symbols: ${[...this.keys()].join(", ")}`
+          `Defined symbols: ${[...this.keys()].join(", ")}`,
       );
     return ret;
   }
 }
 
-const symbolTableCache = new WeakMap<IR.Program, SymbolTable>();
+const symbolTableCache = new WeakMap<IR.Node, SymbolTable>();
 /** Get the symbol table for a program.
  *
  * Caching is done based on the program only: the function accumulates
  * symbols using a visitor, so performance can potentially be improved by
  * recursively merging symbol tables to avoid needing to re-traverse the whole
  * tree for every small change. */
-function symbolTableRoot(program: IR.Program): SymbolTable {
+function symbolTableRoot(program: IR.Node): SymbolTable {
   if (symbolTableCache.has(program)) return symbolTableCache.get(program)!;
   const existing = new Set<string>();
   const defs = [
-    ...programToSpine(program).compactMap((_, s) =>
-      introducedSymbols(s, existing)?.map((name) => {
-        existing.add(name);
-        return [name, s] as const;
-      })
+    ...programToSpine(program).compactMap(
+      (_, s) =>
+        introducedSymbols(s, existing)?.map((name) => {
+          existing.add(name);
+          return [name, s] as const;
+        }),
     ),
   ].flat(1);
   const table = new SymbolTable(defs);
@@ -55,7 +56,7 @@ function symbolTableRoot(program: IR.Program): SymbolTable {
   if (table.size < defs.length) {
     const sortedNames = defs.map(([name]) => name).sort();
     const duplicate = sortedNames.find(
-      (name, i) => i > 0 && sortedNames[i - 1] === name
+      (name, i) => i > 0 && sortedNames[i - 1] === name,
     );
     if (duplicate !== undefined)
       throw new Error(`Duplicate symbol: ${duplicate}`);
@@ -64,23 +65,20 @@ function symbolTableRoot(program: IR.Program): SymbolTable {
   return table;
 }
 
-export function getDeclaredIdentifiers(program: IR.Program) {
+export function getDeclaredIdentifiers(program: IR.Node) {
   return symbolTableRoot(program).keys();
 }
 
-export function getIdentifierType(
-  expr: IR.Identifier,
-  program: IR.Program
-): Type {
+export function getIdentifierType(expr: IR.Identifier, program: IR.Node): Type {
   return getTypeFromBinding(
     expr.name,
-    symbolTableRoot(program).getRequired(expr.name)
+    symbolTableRoot(program).getRequired(expr.name),
   );
 }
 
 export function isIdentifierReadonly(
   expr: IR.Identifier,
-  program: IR.Program
+  program: IR.Node,
 ): boolean {
   if (expr.builtin) return true;
   const definingNode = symbolTableRoot(program).get(expr.name);
@@ -89,7 +87,7 @@ export function isIdentifierReadonly(
 
 function introducedSymbols(
   spine: Spine,
-  existing: Set<string>
+  existing: Set<string>,
 ): string[] | undefined {
   const node = spine.node;
   switch (node.kind) {
@@ -130,7 +128,7 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
       const start = getType(node.start, program);
       let end = getType(
         node.kind === "ForRange" ? node.end : node.difference,
-        program
+        program,
       );
       const step = getType(node.increment, program);
       if (
@@ -140,7 +138,7 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
       ) {
         throw new PolygolfError(
           `Unexpected for range type (${start.kind},${end.kind},${step.kind})`,
-          node.source
+          node.source,
         );
       }
       if (node.kind === "ForDifferenceRange")
@@ -148,12 +146,12 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
       if (lt(0n, step.low))
         return integerType(
           start.low,
-          node.inclusive ? end.high : sub(end.high, 1n)
+          node.inclusive ? end.high : sub(end.high, 1n),
         );
       if (lt(step.high, 0n))
         return integerType(
           node.inclusive ? end.low : add(end.low, 1n),
-          start.high
+          start.high,
         );
       return integerTypeIncludingAll(start.low, start.high, end.low, end.high);
     }
@@ -178,13 +176,13 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
           `Value of type ${assignedType.kind} cannot be assigned to ${
             (node.variable as Identifier).name
           } of type ${node.variable.type.kind}`,
-          node.source
+          node.source,
         );
       return node.variable.type ?? assignedType;
     }
     default:
       throw new Error(
-        `Programming error: node of type ${node.kind} does not bind any symbol`
+        `Programming error: node of type ${node.kind} does not bind any symbol`,
       );
   }
 }
@@ -202,7 +200,7 @@ export function getReads(spine: Spine, variable?: string): Spine<Identifier>[] {
 
 export function getDirectReads(
   spine: Spine,
-  variable?: string
+  variable?: string,
 ): Spine<Identifier>[] {
   return getDirectReadFragments(spine.node)
     .map((x) => spine.getChild(x))
@@ -211,20 +209,20 @@ export function getDirectReads(
         x !== undefined &&
         x.node.kind === "Identifier" &&
         !x.node.builtin &&
-        (variable === undefined || variable === x.node.name)
+        (variable === undefined || variable === x.node.name),
     ) as Spine<Identifier>[];
 }
 
 export function getWrites(
   spine: Spine,
-  variable?: string
+  variable?: string,
 ): Spine<Identifier>[] {
   return [...spine.compactMap((n, s) => getDirectWrites(s, variable))].flat();
 }
 
 export function getDirectWrites(
   spine: Spine,
-  variable?: string
+  variable?: string,
 ): Spine<Identifier>[] {
   return getDirectWriteFragments(spine.node)
     .map((x) => spine.getChild(x))
@@ -233,7 +231,7 @@ export function getDirectWrites(
         x !== undefined &&
         x.node.kind === "Identifier" &&
         !x.node.builtin &&
-        (variable === undefined || variable === x.node.name)
+        (variable === undefined || variable === x.node.name),
     ) as Spine<Identifier>[];
 }
 
@@ -317,9 +315,8 @@ export function hasDirectSideEffect(node: Node, spine: Spine) {
         "read_byte",
         "read_codepoint",
         "read_line",
-        "read_int"
-      )(node) ||
-      (node.kind !== "Program" && getType(node, spine).kind === "void")
+        "read_int",
+      )(node) || getType(node, spine).kind === "void"
     );
   } catch {
     return false;
@@ -331,7 +328,7 @@ export function readsFromStdin(node: Node): boolean {
     "read_byte",
     "read_codepoint",
     "read_line",
-    "read_int"
+    "read_int",
   )(node);
 }
 

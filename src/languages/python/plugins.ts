@@ -8,7 +8,7 @@ import {
   rangeIndexCall,
   text,
 } from "../../IR";
-import { Plugin } from "../../common/Language";
+import { type Plugin } from "../../common/Language";
 import { chars } from "../../common/strings";
 
 export const golfTextListLiteralIndex: Plugin = {
@@ -26,7 +26,7 @@ export const golfTextListLiteralIndex: Plugin = {
       // the length can never increase and it can only decrease by one
       values.forEach((x, i) => {
         x.targetLength = Math.max(
-          ...values.map((y, j) => y.chars.length - Number(j < i))
+          ...values.map((y, j) => y.chars.length - Number(j < i)),
         );
       });
       if (
@@ -45,9 +45,9 @@ export const golfTextListLiteralIndex: Plugin = {
             text(combined),
             node.index,
             builtin(""),
-            int(values.length)
+            int(values.length),
           ),
-          getType(node, spine)
+          getType(node, spine),
         );
       }
     }

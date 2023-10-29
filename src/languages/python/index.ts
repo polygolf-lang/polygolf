@@ -12,11 +12,16 @@ import {
   add1,
   tableConstructor,
   keyValue,
-  TextLiteral,
+  type TextLiteral,
   builtin,
   isTextLiteral,
 } from "../../IR";
-import { Language, required, search, simplegolf } from "../../common/Language";
+import {
+  type Language,
+  required,
+  search,
+  simplegolf,
+} from "../../common/Language";
 
 import emitProgram, { emitPythonTextLiteral } from "./emit";
 import {
@@ -95,7 +100,7 @@ const pythonLanguage: Language = {
       forArgvToForEach,
       useEquivalentTextOp(false, true),
       useIndexCalls(),
-      decomposeIntLiteral()
+      decomposeIntLiteral(),
     ),
     required(
       pickAnyInt,
@@ -110,11 +115,11 @@ const pythonLanguage: Language = {
             polygolfOp(
               "list_get",
               { ...builtin("sys.argv"), type: listType(textType()) },
-              add1(x[0])
+              add1(x[0]),
             ),
-        ]
+        ],
       ),
-      useIndexCalls()
+      useIndexCalls(),
     ),
     simplegolf(golfTextListLiteralIndex),
     required(
@@ -156,7 +161,7 @@ const pythonLanguage: Language = {
               "print",
               x[0].kind !== "ImplicitConversion"
                 ? [namedArg("end", x[0])]
-                : [x[0], namedArg("end", text(""))]
+                : [x[0], namedArg("end", text(""))],
             );
           },
         ],
@@ -176,14 +181,14 @@ const pythonLanguage: Language = {
                           charLength(x[i + 1].value) === 1 &&
                             x[i + 1].value.codePointAt(0)! < 100
                             ? int(x[i + 1].value.codePointAt(0)!)
-                            : x[i + 1]
+                            : x[i + 1],
                         ),
                       ]
-                    : []
-                )
-              )
+                    : [],
+                ),
+              ),
             ),
-        ]
+        ],
       ),
       addMutatingBinaryOp(
         ["add", "+"],
@@ -199,7 +204,7 @@ const pythonLanguage: Language = {
         ["bit_xor", "^"],
         ["bit_or", "|"],
         ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"]
+        ["bit_shift_right", ">>"],
       ),
       mapToUnaryAndBinaryOps(
         ["pow", "**"],
@@ -225,10 +230,10 @@ const pythonLanguage: Language = {
         ["gt", ">"],
         ["not", "not"],
         ["and", "and"],
-        ["or", "or"]
+        ["or", "or"],
       ),
       methodsAsFunctions,
-      addOneToManyAssignments()
+      addOneToManyAssignments(),
     ),
     simplegolf(
       alias((expr, spine) => {
@@ -248,7 +253,7 @@ const pythonLanguage: Language = {
           case "TextLiteral":
             return `"${expr.value}"`;
         }
-      })
+      }),
     ),
     required(
       renameIdents(),
@@ -257,9 +262,9 @@ const pythonLanguage: Language = {
           ["sys.argv[1:]", "sys"],
           ["sys.argv", "sys"],
         ],
-        "import"
+        "import",
       ),
-      removeImplicitConversions
+      removeImplicitConversions,
     ),
   ],
   packers: [
@@ -267,7 +272,7 @@ const pythonLanguage: Language = {
       codepointRange: [1, Infinity],
       pack(x) {
         return `exec(bytes(${emitPythonTextLiteral(
-          packSource2to1(x)
+          packSource2to1(x),
         )},'u16')[2:])`;
       },
     },
@@ -275,7 +280,7 @@ const pythonLanguage: Language = {
       codepointRange: [32, 127],
       pack(x) {
         return `exec(bytes(ord(c)%i+32for c in${emitPythonTextLiteral(
-          packSource3to1(x)
+          packSource3to1(x),
         )}for i in b'abc'))`;
       },
     },

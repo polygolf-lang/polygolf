@@ -1,9 +1,8 @@
 import {
   assignment,
   block,
-  Expr,
   id,
-  Identifier,
+  type Identifier,
   integerType as int,
   textType as text,
   booleanType as bool,
@@ -11,10 +10,9 @@ import {
   arrayType as array,
   setType as set,
   tableType as table,
-  OpCode,
+  type OpCode,
   polygolfOp,
-  program,
-  Type,
+  type Type,
   listConstructor,
   variants,
   toString,
@@ -28,10 +26,11 @@ import {
   tableConstructor,
   listType,
   functionCall,
-  IntegerType,
+  type IntegerType,
   isAssociative,
   forRangeCommon,
   forDifferenceRange,
+  type Node,
 } from "IR";
 import { PolygolfError } from "./errors";
 import { calcType } from "./getType";
@@ -43,11 +42,11 @@ function e(type: Type): Identifier {
   return { ...id(""), type };
 }
 
-function testExpr(
+function testNode(
   name: string,
-  expr: Expr,
+  expr: Node,
   result: Type | "error",
-  prog = program(block([]))
+  prog: Node = block([]),
 ) {
   test(name, () => {
     if (result === "error") expect(() => calcType(expr, prog)).toThrow();
@@ -59,9 +58,9 @@ function testPolygolfOp(
   name: string,
   op: OpCode,
   args: Type[],
-  result: Type | "error"
+  result: Type | "error",
 ) {
-  testExpr(name, { kind: "PolygolfOp", op, args: args.map(e) }, result);
+  testNode(name, { kind: "PolygolfOp", op, args: args.map(e) }, result);
 }
 
 function describePolygolfOp(op: OpCode, tests: [Type[], Type | "error"][]) {
@@ -74,7 +73,7 @@ function describePolygolfOp(op: OpCode, tests: [Type[], Type | "error"][]) {
           (result === "error" ? "error" : toString(result)),
         op,
         args,
-        result
+        result,
       );
     }
   });
@@ -94,156 +93,153 @@ function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
 
 describe("Bindings", () => {
   const empty = block([]);
-  testExpr(
+  testNode(
     "for range positive step exclusive",
     id("i"),
     int(0, 9),
-    program(forRangeCommon(["i", 0, 10], empty))
+    forRangeCommon(["i", 0, 10], empty),
   );
-  testExpr(
+  testNode(
     "for range positive step inclusive",
     id("i"),
     int(0, 10),
-    program(forRangeCommon(["i", 0, 10, 1, true], empty))
+    forRangeCommon(["i", 0, 10, 1, true], empty),
   );
-  testExpr(
+  testNode(
     "for range negative step exclusive",
     id("i"),
     int(1, 10),
-    program(forRangeCommon(["i", 10, 0, -1], empty))
+    forRangeCommon(["i", 10, 0, -1], empty),
   );
-  testExpr(
+  testNode(
     "for range negative step inclusive",
     id("i"),
     int(0, 10),
-    program(forRangeCommon(["i", 10, 0, -1, true], empty))
+    forRangeCommon(["i", 10, 0, -1, true], empty),
   );
-  testExpr(
+  testNode(
     "for range general",
     id("i"),
     int(-12, 12),
-    program(
-      forRangeCommon(
-        ["i", e(int(-10, 10)), e(int(-12, 12)), e(int(-1, 1)), true],
-        empty
-      )
-    )
+
+    forRangeCommon(
+      ["i", e(int(-10, 10)), e(int(-12, 12)), e(int(-1, 1)), true],
+      empty,
+    ),
   );
-  testExpr(
+  testNode(
     "for difference range",
     id("i"),
     int(10, 14),
-    program(
-      forDifferenceRange(
-        "i",
-        integerLiteral(10),
-        integerLiteral(5),
-        integerLiteral(1),
-        empty
-      )
-    )
+    forDifferenceRange(
+      "i",
+      integerLiteral(10),
+      integerLiteral(5),
+      integerLiteral(1),
+      empty,
+    ),
   );
 });
 
 describe("Block", () => {
-  testExpr("block", block([]), voidType);
+  testNode("block", block([]), voidType);
 });
 
 describe("Variants", () => {
-  testExpr("variants", variants([e(int()), e(bool)]), "error");
-  testExpr("variants", variants([e(int(10, 30)), e(int(20, 40))]), int(10, 40));
+  testNode("variants", variants([e(int()), e(bool)]), "error");
+  testNode("variants", variants([e(int(10, 30)), e(int(20, 40))]), int(10, 40));
 });
 
 describe("Assignment", () => {
-  testExpr("assign bool to int", assignment(e(int()), e(bool)), "error");
-  testExpr(
+  testNode("assign bool to int", assignment(e(int()), e(bool)), "error");
+  testNode(
     "assign empty list",
     assignment(e(list(text())), listConstructor([])),
-    list("void")
+    list("void"),
   );
   test("Self-referential assignment", () => {
     const aLHS = id("a");
     const expr = assignment(aLHS, polygolfOp("add", id("a"), e(int(1))));
-    expect(() => calcType(aLHS, program(block([expr])))).toThrow(PolygolfError);
+    expect(() => calcType(aLHS, block([expr]))).toThrow(PolygolfError);
   });
 });
 
 describe("Functions", () => {
-  testExpr(
+  testNode(
     "Function call wrong types",
     functionCall(id("f", false), [integerLiteral(1n)]),
     "error",
-    program(block([]))
+    block([]),
   );
 });
 
 describe("Index call", () => {
-  testExpr("Index int", indexCall(e(int()), e(int())), "error");
-  testExpr("Index array", indexCall(e(array(int(), 10)), e(int())), "error");
-  testExpr(
+  testNode("Index int", indexCall(e(int()), e(int())), "error");
+  testNode("Index array", indexCall(e(array(int(), 10)), e(int())), "error");
+  testNode(
     "Index array",
     indexCall(e(array(int(), 10)), e(int(10, 10))),
-    "error"
+    "error",
   );
-  testExpr(
+  testNode(
     "Index array",
     indexCall(e(array(int(), 10)), e(int(0, 0)), true),
-    "error"
+    "error",
   );
-  testExpr(
+  testNode(
     "Index array",
     indexCall(e(array(text(), 10)), e(int(0, 9))),
-    text()
+    text(),
   );
-  testExpr(
+  testNode(
     "Index list",
     indexCall(e(list(int())), e(int(0, 0)), true),
-    "error"
+    "error",
   );
-  testExpr("Index list", indexCall(e(list(int())), e(int())), "error");
-  testExpr("Index list", indexCall(e(list(text())), e(int(0))), text());
+  testNode("Index list", indexCall(e(list(int())), e(int())), "error");
+  testNode("Index list", indexCall(e(list(text())), e(int(0))), text());
 });
 
 describe("Literals", () => {
-  testExpr("int", integerLiteral(4n), int(4, 4));
-  testExpr("text", textLiteral("ahoj"), ascii(int(4, 4)));
-  testExpr("text", textLiteral("dobrý den"), text(int(9, 9)));
-  testExpr("bool", polygolfOp("true"), bool);
-  testExpr("bool", polygolfOp("false"), bool);
-  testExpr("array", arrayConstructor([e(int()), e(text())]), "error");
-  testExpr(
+  testNode("int", integerLiteral(4n), int(4, 4));
+  testNode("text", textLiteral("ahoj"), ascii(int(4, 4)));
+  testNode("text", textLiteral("dobrý den"), text(int(9, 9)));
+  testNode("bool", polygolfOp("true"), bool);
+  testNode("bool", polygolfOp("false"), bool);
+  testNode("array", arrayConstructor([e(int()), e(text())]), "error");
+  testNode(
     "array",
     arrayConstructor([e(int(10, 30)), e(int(20, 40))]),
-    array(int(10, 40), 2)
+    array(int(10, 40), 2),
   );
-  testExpr("list", listConstructor([e(int()), e(text())]), "error");
-  testExpr(
+  testNode("list", listConstructor([e(int()), e(text())]), "error");
+  testNode(
     "list",
     listConstructor([e(int(10, 30)), e(int(20, 40))]),
-    list(int(10, 40))
+    list(int(10, 40)),
   );
-  testExpr("set", setConstructor([e(int()), e(text())]), "error");
-  testExpr(
+  testNode("set", setConstructor([e(int()), e(text())]), "error");
+  testNode(
     "set",
     setConstructor([e(int(10, 30)), e(int(20, 40))]),
-    set(int(10, 40))
+    set(int(10, 40)),
   );
-  testExpr(
+  testNode(
     "table",
     tableConstructor([
       keyValue(e(text()), e(int())),
       keyValue(e(text()), e(text())),
     ]),
-    "error"
+    "error",
   );
-  testExpr("table", tableConstructor([e(text()) as any, e(int())]), "error");
-  testExpr(
+  testNode("table", tableConstructor([e(text()) as any, e(int())]), "error");
+  testNode(
     "table",
     tableConstructor([
       keyValue(e(text(10)), e(int(100, 200))),
       keyValue(e(text(20)), e(int(-100, -50))),
     ]),
-    table(text(20), int(-100, 200))
+    table(text(20), int(-100, 200)),
   );
 });
 

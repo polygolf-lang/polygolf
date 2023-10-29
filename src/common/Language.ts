@@ -1,10 +1,10 @@
-import { Expr, IR } from "IR";
-import { Spine, PluginVisitor } from "./Spine";
-import { CompilationContext } from "./compile";
+import { type IR } from "IR";
+import { type Spine, type PluginVisitor } from "./Spine";
+import { type CompilationContext } from "./compile";
 
 export type OpTransformOutput =
-  | ((args: readonly IR.Expr[], spine: Spine<Expr>) => IR.Expr | undefined)
-  | IR.Expr;
+  | ((args: readonly IR.Node[], spine: Spine<IR.Node>) => IR.Node | undefined)
+  | IR.Node;
 
 export interface Packer {
   codepointRange: [number, number];
@@ -91,8 +91,8 @@ export interface IdentifierGenerator {
 }
 
 export type Emitter = (
-  program: IR.Program,
-  context: CompilationContext
+  program: IR.Node,
+  context: CompilationContext,
 ) => TokenTree;
 
 function isWord(a: string, i: number): boolean {
@@ -105,7 +105,7 @@ export function defaultWhitespaceInsertLogic(a: string, b: string): boolean {
 
 export function defaultDetokenizer(
   whitespace: WhitespaceInsertLogic = defaultWhitespaceInsertLogic,
-  indent = 1
+  indent = 1,
 ): Detokenizer {
   return function (tokenTree: TokenTree): string {
     const tokens: string[] = flattenTree(tokenTree);

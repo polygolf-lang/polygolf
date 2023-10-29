@@ -11,7 +11,7 @@ import {
 } from "../../IR";
 import {
   defaultDetokenizer,
-  Language,
+  type Language,
   required,
   search,
   simplegolf,
@@ -107,9 +107,9 @@ const nimLanguage: Language = {
       useEquivalentTextOp(true, false),
       mapOps(
         ["argv", functionCall("commandLineParams")],
-        ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
+        ["argv_get", (x) => functionCall("paramStr", add1(x[0]))],
       ),
-      decomposeIntLiteral()
+      decomposeIntLiteral(),
     ),
     required(
       pickAnyInt,
@@ -119,7 +119,7 @@ const nimLanguage: Language = {
       useEquivalentTextOp(true, false),
       mapOps(
         ["argv", functionCall("commandLineParams")],
-        ["argv_get", (x) => functionCall("paramStr", add1(x[0]))]
+        ["argv_get", (x) => functionCall("paramStr", add1(x[0]))],
       ),
       removeUnusedForVar,
       forRangeToForRangeInclusive(true),
@@ -171,11 +171,11 @@ const nimLanguage: Language = {
               x[0],
               arrayConstructor(
                 x.flatMap((_, i) =>
-                  i % 2 > 0 ? [arrayConstructor(x.slice(i, i + 2))] : []
-                ) // Polygolf doesn't have array of tuples, so we use array of arrays instead
-              )
+                  i % 2 > 0 ? [arrayConstructor(x.slice(i, i + 2))] : [],
+                ), // Polygolf doesn't have array of tuples, so we use array of arrays instead
+              ),
             ),
-        ]
+        ],
       ),
       useUnsignedDivision,
       addMutatingBinaryOp(
@@ -185,7 +185,7 @@ const nimLanguage: Language = {
         ["unsigned_trunc_div", "/%"],
         ["mul", "*"],
         ["sub", "-"],
-        ["concat", "&"]
+        ["concat", "&"],
       ),
       mapToUnaryAndBinaryOps(
         ["bit_not", "not"],
@@ -213,10 +213,10 @@ const nimLanguage: Language = {
         ["bit_and", "and"],
         ["or", "or"],
         ["bit_or", "or"],
-        ["bit_xor", "xor"]
+        ["bit_xor", "xor"],
       ),
       useUnsignedDivision,
-      addNimImports
+      addNimImports,
     ),
     simplegolf(
       alias(
@@ -228,20 +228,20 @@ const nimLanguage: Language = {
               return `"${expr.value}"`;
           }
         },
-        [1, 7]
-      )
+        [1, 7],
+      ),
     ),
     required(
       renameIdents(),
       addVarDeclarations,
       addVarDeclarationOneToManyAssignments(),
-      addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 2),
-      addManyToManyAssignments((_, spine) => spine.depth > 2),
-      groupVarDeclarations((_, spine) => spine.depth <= 2),
+      addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 1),
+      addManyToManyAssignments((_, spine) => spine.depth > 1),
+      groupVarDeclarations((_, spine) => spine.depth <= 1),
       noStandaloneVarDeclarations,
       assertInt64,
       removeImplicitConversions,
-      useUFCS
+      useUFCS,
     ),
   ],
   detokenizer: defaultDetokenizer((a, b) => {

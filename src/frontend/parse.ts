@@ -1,34 +1,32 @@
 import { PolygolfError } from "../common/errors";
-import { Token } from "moo";
+import { type Token } from "moo";
 import nearley from "nearley";
 import {
-  Expr,
   functionCall,
-  Identifier,
-  Program,
+  type Identifier,
   forRange,
   ifStatement,
   listConstructor,
   polygolfOp,
-  Type,
+  type Type,
   listType,
   arrayType,
   tableType,
   setType,
   integerType as intType,
-  IntegerLiteral,
+  type IntegerLiteral,
   int as integer,
   assignment,
-  OpCode,
+  type OpCode,
   whileLoop,
   voidType,
   textType,
   booleanType,
-  Node,
+  type Node,
   keyValue,
   setConstructor,
   tableConstructor,
-  KeyValue,
+  type KeyValue,
   isOpCode,
   isBinary,
   arity,
@@ -69,7 +67,7 @@ import {
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
-export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
+export function sexpr(callee: Identifier, args: readonly Node[]): Node {
   if (!callee.builtin) {
     return functionCall(callee, args);
   }
@@ -81,44 +79,44 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
           `Expected ${low}${low === high ? "" : ".." + String(high)} but got ${
             args.length
           }.`,
-        callee.source
+        callee.source,
       );
     }
   }
-  function assertIdentifier(e: Expr): asserts e is Identifier {
+  function assertIdentifier(e: Node): asserts e is Identifier {
     if (!isIdent()(e))
       throw new PolygolfError(
         `Syntax error. Application first argument must be identifier, but got ${args[0].kind}`,
-        e.source
+        e.source,
       );
   }
-  function assertInteger(e: Expr): asserts e is IntegerLiteral {
+  function assertInteger(e: Node): asserts e is IntegerLiteral {
     if (!isIntLiteral()(e))
       throw new PolygolfError(
         `Syntax error. Expected integer literal, but got ${e.kind}`,
-        e.source
+        e.source,
       );
   }
-  function assertIdentifiers(e: readonly Expr[]): asserts e is Identifier[] {
+  function assertIdentifiers(e: readonly Node[]): asserts e is Identifier[] {
     e.forEach(assertIdentifier);
   }
-  function assertKeyValues(e: readonly Expr[]): asserts e is KeyValue[] {
+  function assertKeyValues(e: readonly Node[]): asserts e is KeyValue[] {
     for (const x of e) {
       if (x.kind !== "KeyValue")
         throw new PolygolfError(
           `Syntax error. Application ${opCode} requires list of key-value pairs as argument`,
-          x.source
+          x.source,
         );
     }
   }
-  function asString(e: Expr): string {
+  function asString(e: Node): string {
     if (isTextLiteral()(e)) return e.value;
     throw new PolygolfError(
       `Syntax error. Expected string literal, but got ${e.kind}`,
-      e.source
+      e.source,
     );
   }
-  function asArray(e: Expr): readonly Expr[] {
+  function asArray(e: Node): readonly Node[] {
     if (e.kind === "Variants" && e.variants.length === 1) {
       return e.variants[0].kind === "Block"
         ? e.variants[0].children
@@ -126,7 +124,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
     }
     throw new PolygolfError(
       `Syntax error. Expected single variant block, but got ${e.kind}`,
-      e.source
+      e.source,
     );
   }
 
@@ -169,10 +167,10 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       return whileLoop(args[0], args[1]);
     case "for": {
       expectArity(2, 5);
-      let variable: Expr = id("_");
-      let start: Expr = integer(0n);
-      let step: Expr = integer(1n);
-      let end, body: Expr;
+      let variable: Node = id("_");
+      let start: Node = integer(0n);
+      let step: Node = integer(1n);
+      let end, body: Node;
       if (args.length === 5) {
         [variable, start, end, step, body] = args;
       } else if (args.length === 4) {
@@ -189,7 +187,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
         start,
         end,
         step,
-        body
+        body,
       );
     }
     case "for_argv": {
@@ -258,7 +256,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
           args[1],
           args[2],
           args[3],
-          opCode === "range_index_call_one_indexed"
+          opCode === "range_index_call_one_indexed",
         );
       case "property_call":
         expectArity(2);
@@ -289,7 +287,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
           end,
           step,
           body,
-          true
+          true,
         );
       }
       case "for_difference_range": {
@@ -302,7 +300,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
           difference,
           step,
           body,
-          true
+          true,
         );
       }
       case "for_each": {
@@ -331,7 +329,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
       }
       case "for_no_index": {
         expectArity(3, 4);
-        let start, end, step, body: Expr;
+        let start, end, step, body: Node;
         if (args.length === 4) {
           [start, end, step, body] = args;
         } else {
@@ -358,7 +356,7 @@ export function sexpr(callee: Identifier, args: readonly Expr[]): Expr {
   }
   throw new PolygolfError(
     `Syntax error. Unrecognized builtin: ${opCode}`,
-    callee.source
+    callee.source,
   );
 }
 
@@ -408,7 +406,7 @@ export function userIdentifier(token: Token): Identifier {
 
 export function typeSexpr(
   callee: Token,
-  args: (Type | IntegerLiteral)[]
+  args: (Type | IntegerLiteral)[],
 ): Type {
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
@@ -417,7 +415,7 @@ export function typeSexpr(
           `Expected ${low}${low === high ? "" : ".." + String(high)} but got ${
             args.length
           }.`,
-        { line: callee.line, column: callee.col }
+        { line: callee.line, column: callee.col },
       );
     }
   }
@@ -456,12 +454,12 @@ export function typeSexpr(
         return textType(args[0], callee.value === "Ascii");
       throw new PolygolfError(
         `Syntax error. Expected integer or integer type, got ${toString(
-          args[0]
+          args[0],
         )}.`,
         {
           line: callee.line,
           column: callee.col,
-        }
+        },
       );
     case "Bool":
       expectArity(0);
@@ -491,7 +489,7 @@ export function typeSexpr(
       assertTypes(args);
       return functionType(
         args.slice(0, args.length - 1),
-        args[args.length - 1]
+        args[args.length - 1],
       );
     default:
       throw new PolygolfError(
@@ -499,23 +497,23 @@ export function typeSexpr(
         {
           line: callee.line,
           column: callee.col,
-        }
+        },
       );
   }
 }
 
-export function annotate(expr: Expr, valueType: [any, Type] | null): Expr {
+export function annotate(expr: Node, valueType: [any, Type] | null): Node {
   if (valueType === null) return expr;
   return { ...expr, type: valueType[1] };
 }
 
 export function integerType(
   low: "-oo" | "-∞" | IntegerLiteral,
-  high: "oo" | "∞" | IntegerLiteral
+  high: "oo" | "∞" | IntegerLiteral,
 ): Type {
   return intType(
     typeof low === "string" ? undefined : low.value,
-    typeof high === "string" ? undefined : high.value
+    typeof high === "string" ? undefined : high.value,
   );
 }
 
@@ -541,8 +539,8 @@ export default function parse(code: string, restrictFrontend = true) {
       const expected = [
         ...new Set(
           ((e as any).message.match(/(?<=A ).*(?= based on:)/g) ?? []).map(
-            (s: string) => s.replace(/\s+token/i, "")
-          )
+            (s: string) => s.replace(/\s+token/i, ""),
+          ),
         ),
       ];
       let message = `Unexpected token ${JSON.stringify(token.text)}.`;
@@ -568,5 +566,5 @@ export default function parse(code: string, restrictFrontend = true) {
       column: (lines.at(-1)?.length ?? 0) + 1,
     });
   }
-  return results[0] as Program;
+  return results[0] as Node;
 }

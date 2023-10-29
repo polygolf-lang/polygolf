@@ -1,28 +1,27 @@
 import {
-  Program,
-  Expr,
-  Type,
+  type Node,
+  type Type,
   listType,
   arrayType,
   integerType,
   integerTypeIncludingAll,
-  IntegerType,
-  PolygolfOp,
+  type IntegerType,
+  type PolygolfOp,
   isSubtype,
   union,
   toString,
   voidType,
   textType,
-  TextType,
+  type TextType,
   booleanType,
-  OpCode,
+  type OpCode,
   setType,
   tableType,
-  KeyValueType,
+  type KeyValueType,
   keyValueType,
   getArgs,
   functionType,
-  IntegerBound,
+  type IntegerBound,
   max,
   min,
   add,
@@ -38,7 +37,7 @@ import {
   typeContains,
   isConstantType,
   constantIntegerType,
-  ListType,
+  type ListType,
   isAssociative,
   polygolfOp,
   leq,
@@ -46,19 +45,16 @@ import {
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
-import { Spine } from "./Spine";
+import { type Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
 
-const cachedType = new WeakMap<Expr, Type>();
-const currentlyFinding = new WeakSet<Expr>();
-export function getType(expr: Expr, context: Program | Spine): Type {
+const cachedType = new WeakMap<Node, Type>();
+const currentlyFinding = new WeakSet<Node>();
+export function getType(expr: Node, context: Node | Spine): Type {
   const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
   if (currentlyFinding.has(expr))
-    throw new PolygolfError(
-      `Expression defined in terms of itself`,
-      expr.source
-    );
+    throw new PolygolfError(`Node defined in terms of itself`, expr.source);
 
   currentlyFinding.add(expr);
   try {
@@ -75,11 +71,11 @@ export function getType(expr: Expr, context: Program | Spine): Type {
   }
 }
 
-export function calcType(expr: Expr, program: Program): Type {
+export function calcType(expr: Node, program: Node): Type {
   // user-annotated node
   if (expr.type !== undefined) return expr.type;
   // type inference
-  const type = (e: Expr) => getType(e, program);
+  const type = (e: Node) => getType(e, program);
   switch (expr.kind) {
     case "Function":
       return functionType(expr.args.map(type), type(expr.expr));
@@ -95,7 +91,7 @@ export function calcType(expr: Expr, program: Program): Type {
       ) {
         throw new PolygolfError(
           `Type error. Cannot assign to readonly identifier ${expr.variable.name}.`,
-          expr.source
+          expr.source,
         );
       }
       const a = type(expr.variable);
@@ -104,7 +100,7 @@ export function calcType(expr: Expr, program: Program): Type {
         return b;
       }
       throw new Error(
-        `Type error. Cannot assign ${toString(b)} to ${toString(a)}.`
+        `Type error. Cannot assign ${toString(b)} to ${toString(a)}.`,
       );
     }
     case "IndexCall": {
@@ -131,14 +127,14 @@ export function calcType(expr: Expr, program: Program): Type {
         }
         default:
           throw new Error(
-            "Type error. IndexCall must be used on a collection."
+            "Type error. IndexCall must be used on a collection.",
           );
       }
       if (isSubtype(b, expectedIndex)) {
         return result;
       }
       throw new Error(
-        `Type error. Cannot index ${toString(a)} with ${toString(b)}.`
+        `Type error. Cannot index ${toString(a)} with ${toString(b)}.`,
       );
     }
     case "PolygolfOp":
@@ -158,7 +154,7 @@ export function calcType(expr: Expr, program: Program): Type {
           .map(toString)
           .join(", ")}] but got [${expr.args
           .map((x) => toString(type(x)))
-          .join(", ")}].`
+          .join(", ")}].`,
       );
     }
     case "Identifier":
@@ -167,7 +163,7 @@ export function calcType(expr: Expr, program: Program): Type {
       const codepoints = charLength(expr.value);
       return textType(
         integerType(codepoints, codepoints),
-        codepoints === byteLength(expr.value)
+        codepoints === byteLength(expr.value),
       );
     }
     case "IntegerLiteral":
@@ -175,7 +171,7 @@ export function calcType(expr: Expr, program: Program): Type {
     case "ArrayConstructor":
       return arrayType(
         expr.exprs.map(type).reduce((a, b) => union(a, b)),
-        expr.exprs.length
+        expr.exprs.length,
       );
     case "ListConstructor":
       return expr.exprs.length > 0
@@ -191,8 +187,8 @@ export function calcType(expr: Expr, program: Program): Type {
       if (k.kind === "integer" || k.kind === "text") return keyValueType(k, v);
       throw new Error(
         `Type error. Operator 'key_value' error. Expected [-oo..oo | Text, T1] but got [${toString(
-          k
-        )}, ${toString(v)}].`
+          k,
+        )}, ${toString(v)}].`,
       );
     }
     case "TableConstructor": {
@@ -204,12 +200,12 @@ export function calcType(expr: Expr, program: Program): Type {
         return expr.kvPairs.length > 0
           ? tableType(
               kTypes.reduce((a, b) => union(a, b) as any),
-              vTypes.reduce((a, b) => union(a, b))
+              vTypes.reduce((a, b) => union(a, b)),
             )
           : tableType(integerType(), "void");
       }
       throw new Error(
-        "Programming error. Type of KeyValue nodes should always be KeyValue."
+        "Programming error. Type of KeyValue nodes should always be KeyValue.",
       );
     }
     case "ConditionalOp": {
@@ -220,10 +216,10 @@ export function calcType(expr: Expr, program: Program): Type {
         `Type error. Operator '${
           expr.isSafe ? "conditional" : "unsafe_conditional"
         }' error. Expected [Boolean, T1, T1] but got [${toString(
-          conditionType
+          conditionType,
         )}, ${toString(type(expr.condition))}, ${toString(
-          type(expr.alternate)
-        )}].`
+          type(expr.alternate),
+        )}].`,
       );
     }
     case "ManyToManyAssignment":
@@ -248,11 +244,11 @@ function getTypeBitNot(t: IntegerType): IntegerType {
   return integerType(sub(-1n, t.high), sub(-1n, t.low));
 }
 
-function getOpCodeType(expr: PolygolfOp, program: Program): Type {
+function getOpCodeType(expr: PolygolfOp, program: Node): Type {
   const types = getArgs(expr).map((x) => getType(x, program));
   function expectVariadicType(
     expected: Type,
-    minArityOrArityCheck: number | ((x: number) => boolean) = 2
+    minArityOrArityCheck: number | ((x: number) => boolean) = 2,
   ) {
     const arityCheck =
       typeof minArityOrArityCheck === "number"
@@ -267,7 +263,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
           expr.op ?? "null"
         }' type error. Expected [...${toString(expected)}] but got [${types
           .map(toString)
-          .join(", ")}].`
+          .join(", ")}].`,
       );
     }
   }
@@ -281,7 +277,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
           expr.op ?? "null"
         }' type error. Expected [${expected
           .map(toString)
-          .join(", ")}] but got [${types.map(toString).join(", ")}].`
+          .join(", ")}] but got [${types.map(toString).join(", ")}].`,
       );
     }
   }
@@ -312,7 +308,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
           expr.op ?? "null"
         }' type error. Expected [${expectedS.join(", ")}] but got [${types
           .map(toString)
-          .join(", ")}].`
+          .join(", ")}].`,
       );
     }
     if (types.length !== expected.length) _throw();
@@ -355,7 +351,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       const [a, b] = types as [IntegerType, IntegerType];
       return integerType(
         1n,
-        min(max(abs(a.low), abs(a.high)), max(abs(b.low), abs(b.high)))
+        min(max(abs(a.low), abs(a.high)), max(abs(b.low), abs(b.high))),
       );
     }
     case "add":
@@ -382,7 +378,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
         expectType(integerType(), integerType());
       }
       return types.reduce((a, b) =>
-        getArithmeticType(op, a as IntegerType, b as IntegerType)
+        getArithmeticType(op, a as IntegerType, b as IntegerType),
       );
     }
     // (num, num) => bool
@@ -438,7 +434,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
         textTypes
           .map((x) => x.codepointLength)
           .reduce((a, b) => getArithmeticType("add", a, b)),
-        textTypes.every((x) => x.isAscii)
+        textTypes.every((x) => x.isAscii),
       );
     }
     case "repeat": {
@@ -446,7 +442,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       const [t, i] = types as [TextType, IntegerType];
       return textType(
         getArithmeticType("mul", t.codepointLength, i),
-        t.isAscii
+        t.isAscii,
       );
     }
     case "text_contains":
@@ -462,10 +458,10 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
             (types[0] as TextType).codepointLength.high,
             expr.op === "text_byte_find" && !(types[0] as TextType).isAscii
               ? 4n
-              : 1n
+              : 1n,
           ),
-          (types[1] as TextType).codepointLength.low
-        )
+          (types[1] as TextType).codepointLength.low,
+        ),
       );
     case "text_split":
       expectType(textType(), textType());
@@ -479,7 +475,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       return textType(
         integerType(0, "oo"),
         ((types[0] as ListType).member as TextType).isAscii &&
-          (types[1] as TextType).isAscii
+          (types[1] as TextType).isAscii,
       );
     case "right_align":
       expectType(textType(), integerType(0));
@@ -493,11 +489,12 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
         return textType(
           integerTypeIncludingAll(
             BigInt(
-              t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16).length
+              t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16)
+                .length,
             ),
-            t2.high
+            t2.high,
           ),
-          true
+          true,
         );
       }
       return textType(integerType(), true);
@@ -512,9 +509,9 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
             0,
             1 +
               Math.max(t1.low.toString().length, t1.high.toString().length) +
-              Math.max(t2.low.toString().length, t2.high.toString().length)
+              Math.max(t2.low.toString().length, t2.high.toString().length),
           ),
-          true
+          true,
         );
       return textType();
     }
@@ -526,7 +523,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
         return integerType(0, max(neg(t.low), t.high));
       return integerType(
         min(abs(t.low), abs(t.high)),
-        max(abs(t.low), abs(t.high))
+        max(abs(t.low), abs(t.high)),
       );
     }
     case "bit_not": {
@@ -560,12 +557,12 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
                     ? 2
                     : expr.op === "int_to_hex"
                     ? 16
-                    : 10
-                ).length
-              )
-            )
+                    : 10,
+                ).length,
+              ),
+            ),
           ),
-          true
+          true,
         );
       return textType(integerType(1), true);
     }
@@ -575,7 +572,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       if (!isFiniteType(t.codepointLength)) return integerType();
       return integerType(
         1n - 10n ** (t.codepointLength.high - 1n),
-        10n ** t.codepointLength.high - 1n
+        10n ** t.codepointLength.high - 1n,
       );
     }
     case "bool_to_int":
@@ -585,13 +582,13 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       expectType(integerType(0, 255));
       return textType(
         integerType(1n, 1n),
-        lt((types[0] as IntegerType).high, 128n)
+        lt((types[0] as IntegerType).high, 128n),
       );
     case "int_to_codepoint":
       expectType(integerType(0, 0x10ffff));
       return textType(
         integerType(1n, 1n),
-        lt((types[0] as IntegerType).high, 128n)
+        lt((types[0] as IntegerType).high, 128n),
       );
     case "list_length":
       expectGenericType("List");
@@ -603,8 +600,8 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
         codepointLength.low,
         min(
           1n << 31n,
-          mul(codepointLength.high, (types[0] as TextType).isAscii ? 1n : 4n)
-        )
+          mul(codepointLength.high, (types[0] as TextType).isAscii ? 1n : 4n),
+        ),
       );
     }
     case "text_codepoint_length":
@@ -660,7 +657,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       const [a, c] = [types[0], types[2]] as TextType[];
       return textType(
         getArithmeticType("mul", a.codepointLength, c.codepointLength),
-        a.isAscii && c.isAscii
+        a.isAscii && c.isAscii,
       );
     }
     case "text_multireplace":
@@ -672,7 +669,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       const [t, i1, i2] = types as [TextType, IntegerType, IntegerType];
       const maximum = min(
         t.codepointLength.high,
-        max(0n, sub(i2.high, i1.low))
+        max(0n, sub(i2.high, i1.low)),
       );
       return textType(integerType(0n, maximum), t.isAscii);
     }
@@ -692,23 +689,23 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
       return expectGenericType(
         "Array",
         ["T2", (x) => x[1]],
-        ["T1", (x) => x[0]]
+        ["T1", (x) => x[0]],
       )[0];
     case "list_set":
       return expectGenericType(
         "List",
         ["0..oo", () => integerType(0)],
-        ["T1", (x) => x[0]]
+        ["T1", (x) => x[0]],
       )[0];
     case "table_set":
       return expectGenericType(
         "Table",
         ["T1", (x) => x[0]],
-        ["T2", (x) => x[1]]
+        ["T2", (x) => x[1]],
       )[1];
     case null:
       throw new Error(
-        "Cannot determine type based on null opcode - this is most likely a programming error - a plugin introduced a node missing both an opcode and a type annotation."
+        "Cannot determine type based on null opcode - this is most likely a programming error - a plugin introduced a node missing both an opcode and a type annotation.",
       );
   }
 }
@@ -716,7 +713,7 @@ function getOpCodeType(expr: PolygolfOp, program: Program): Type {
 export function getArithmeticType(
   op: OpCode,
   a: IntegerType, // left argument
-  b: IntegerType // right argument
+  b: IntegerType, // right argument
 ): IntegerType {
   switch (op) {
     case "min":
@@ -742,7 +739,7 @@ export function getArithmeticType(
         M(a.low, b.low),
         M(a.low, b.high),
         M(a.high, b.low),
-        M(a.high, b.high)
+        M(a.high, b.high),
       );
     }
     case "div": {
@@ -750,13 +747,13 @@ export function getArithmeticType(
       if (lt(b.low, 0n)) {
         values.push(
           floorDiv(a.low, min(-1n, b.high)),
-          floorDiv(a.high, min(-1n, b.high))
+          floorDiv(a.high, min(-1n, b.high)),
         );
       }
       if (lt(0n, b.high)) {
         values.push(
           floorDiv(a.low, max(1n, b.low)),
-          floorDiv(a.high, max(1n, b.low))
+          floorDiv(a.high, max(1n, b.low)),
         );
       }
       if (
@@ -782,13 +779,13 @@ export function getArithmeticType(
       if (lt(b.low, 0n)) {
         values.push(
           truncDiv(a.low, min(-1n, b.high)),
-          truncDiv(a.high, min(-1n, b.high))
+          truncDiv(a.high, min(-1n, b.high)),
         );
       }
       if (lt(0n, b.high)) {
         values.push(
           truncDiv(a.low, max(1n, b.low)),
-          truncDiv(a.high, max(1n, b.low))
+          truncDiv(a.high, max(1n, b.low)),
         );
       }
       if (b.low === "-oo" || b.high === "oo") values.push(0n);
@@ -809,7 +806,7 @@ export function getArithmeticType(
         return getArithmeticType(
           op === "unsigned_rem" ? "rem" : "trunc_div",
           a,
-          b
+          b,
         );
       }
       return integerType();
@@ -817,7 +814,7 @@ export function getArithmeticType(
       if (lt(b.low, 0n))
         throw new Error(
           `Type error. Operator 'pow' expected [-oo..oo, 0..oo] but got ` +
-            `[${toString(a)}, ${toString(b)}].`
+            `[${toString(a)}, ${toString(b)}].`,
         );
       const values: IntegerBound[] = [];
 
@@ -850,7 +847,7 @@ export function getArithmeticType(
           // unless b is known to be 0.
           if (a.low === "-oo")
             values.push(
-              ...(b.high === 0n ? [1n] : (["-oo", "oo"] as IntegerBound[]))
+              ...(b.high === 0n ? [1n] : (["-oo", "oo"] as IntegerBound[])),
             );
         } else {
           // If the parity of b is fixed, negative unbounded a results
@@ -871,19 +868,19 @@ export function getArithmeticType(
     }
     case "bit_and":
       return getTypeBitNot(
-        getArithmeticType("bit_or", getTypeBitNot(a), getTypeBitNot(b))
+        getArithmeticType("bit_or", getTypeBitNot(a), getTypeBitNot(b)),
       );
     case "bit_shift_left":
       return getArithmeticType(
         "mul",
         a,
-        getArithmeticType("pow", integerType(2, 2), b)
+        getArithmeticType("pow", integerType(2, 2), b),
       );
     case "bit_shift_right":
       return getArithmeticType(
         "div",
         a,
-        getArithmeticType("pow", integerType(2, 2), b)
+        getArithmeticType("pow", integerType(2, 2), b),
       );
     case "bit_or":
     case "bit_xor": {
@@ -901,7 +898,7 @@ export function getArithmeticType(
   throw new Error(`Type error. Unknown opcode. ${op ?? "null"}`);
 }
 
-export function getCollectionTypes(expr: Expr, program: Program): Type[] {
+export function getCollectionTypes(expr: Node, program: Node): Type[] {
   const exprType = getType(expr, program);
   switch (exprType.kind) {
     case "Array":
@@ -919,7 +916,7 @@ export function getCollectionTypes(expr: Expr, program: Program): Type[] {
 function getIntegerTypeMod(a: IntegerType, b: IntegerType): IntegerType {
   if (isConstantType(a) && isConstantType(b)) {
     return constantIntegerType(
-      a.low - b.low * (floorDiv(a.low, b.low) as bigint)
+      a.low - b.low * (floorDiv(a.low, b.low) as bigint),
     );
   }
   const values: IntegerBound[] = [];

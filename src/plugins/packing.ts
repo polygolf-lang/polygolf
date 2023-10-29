@@ -1,5 +1,5 @@
 import { TextDecoder, TextEncoder } from "util";
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import {
   assignment,
   block,
@@ -42,15 +42,19 @@ export const useDecimalConstantPackedPrinter: Plugin = {
                     int(72n),
                     polygolfOp(
                       "text_byte_to_int",
-                      polygolfOp("text_get_byte", text(packed), id("packindex"))
-                    )
-                  )
+                      polygolfOp(
+                        "text_get_byte",
+                        text(packed),
+                        id("packindex"),
+                      ),
+                    ),
+                  ),
                 ),
                 int(1n),
-                int(2n)
-              )
-            )
-          )
+                int(2n),
+              ),
+            ),
+          ),
         ),
         print(id("result")),
       ]);
@@ -80,7 +84,9 @@ export const useLowDecimalListPackedPrinter: Plugin = {
       if (packed === null) return;
       return forRangeCommon(
         ["packindex", 0, packed.length],
-        print(polygolfOp("text_get_byte_to_int", text(packed), id("packindex")))
+        print(
+          polygolfOp("text_get_byte_to_int", text(packed), id("packindex")),
+        ),
       );
     }
   },

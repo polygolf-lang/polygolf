@@ -1,8 +1,8 @@
-import { BaseExpr } from "./IR";
+import { type BaseNode } from "./IR";
 /**
  * Program input (array of strings) as niladic variable.
  */
-export interface Argv extends BaseExpr {
+export interface Argv extends BaseNode {
   readonly kind: "Argv";
 }
 
@@ -11,8 +11,8 @@ export interface Argv extends BaseExpr {
  */
 export interface Identifier<
   Builtin extends boolean = boolean,
-  Name extends string = string
-> extends BaseExpr {
+  Name extends string = string,
+> extends BaseNode {
   readonly kind: "Identifier";
   readonly name: Name;
   readonly builtin: Builtin;
@@ -22,7 +22,7 @@ export interface Identifier<
  * An unbounded integer constant. Raw OK
  */
 export interface IntegerLiteral<Value extends bigint = bigint>
-  extends BaseExpr {
+  extends BaseNode {
   readonly kind: "IntegerLiteral";
   readonly value: Value;
 }
@@ -30,7 +30,7 @@ export interface IntegerLiteral<Value extends bigint = bigint>
 /**
  * An unbounded integer constant. Raw OK
  */
-export interface AnyIntegerLiteral extends BaseExpr {
+export interface AnyIntegerLiteral extends BaseNode {
   readonly kind: "AnyIntegerLiteral";
   readonly low: bigint;
   readonly high: bigint;
@@ -41,7 +41,7 @@ export interface AnyIntegerLiteral extends BaseExpr {
  *
  * There is no distinction for byte vs unicode strings
  */
-export interface TextLiteral<Value extends string = string> extends BaseExpr {
+export interface TextLiteral<Value extends string = string> extends BaseNode {
   readonly kind: "TextLiteral";
   readonly value: Value;
 }

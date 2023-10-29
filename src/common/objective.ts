@@ -1,4 +1,4 @@
-import { CompilationOptions, CompilationResult } from "./compile";
+import { type CompilationOptions, type CompilationResult } from "./compile";
 import { byteLength, charLength } from "./strings";
 
 export type Objective = "bytes" | "chars";
@@ -15,7 +15,7 @@ function isError(x: any): x is Error {
 }
 
 export function shorterBy(
-  obj: ObjectiveFunc
+  obj: ObjectiveFunc,
 ): (a: CompilationResult, b: CompilationResult) => CompilationResult {
   return (a, b) =>
     isError(a.result)

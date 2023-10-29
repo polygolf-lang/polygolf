@@ -1,14 +1,13 @@
 import { getType } from "../common/getType";
-import { Spine } from "../common/Spine";
+import { type Spine } from "../common/Spine";
 import {
-  Expr,
+  type Node,
   arrayConstructor,
   listConstructor,
   setConstructor,
   tableConstructor,
   text,
   int,
-  Program,
 } from "./IR";
 
 /** The type of the value of a node when evaluated */
@@ -68,7 +67,7 @@ export const booleanType: Type = { kind: "boolean" };
 export const voidType: Type = { kind: "void" };
 export const int64Type: Type = integerType(
   -9223372036854775808n,
-  9223372036854775807n
+  9223372036854775807n,
 );
 
 export function type(type: Type | "void" | "boolean" | "int64"): Type {
@@ -94,7 +93,7 @@ export function functionType(args: Type[], result: Type): FunctionType {
 
 export function keyValueType(
   key: IntegerType | TextType,
-  value: Type | "void" | "boolean"
+  value: Type | "void" | "boolean",
 ): Type {
   return {
     kind: "KeyValue",
@@ -105,7 +104,7 @@ export function keyValueType(
 
 export function tableType(
   key: IntegerType | TextType,
-  value: Type | "void" | "boolean"
+  value: Type | "void" | "boolean",
 ): TableType {
   return {
     kind: "Table",
@@ -130,7 +129,7 @@ export function listType(member: Type | "void" | "boolean"): ListType {
 
 export function arrayType(
   member: Type | "void" | "boolean",
-  length: number
+  length: number,
 ): ArrayType {
   return {
     kind: "Array",
@@ -141,7 +140,7 @@ export function arrayType(
 
 export function integerType(
   low: IntegerBound | number = "-oo",
-  high: IntegerBound | number = "oo"
+  high: IntegerBound | number = "oo",
 ): IntegerType {
   function toIntegerBound(x: IntegerBound | number): IntegerBound {
     if (x === -Infinity || x === "-oo") return "-oo";
@@ -170,7 +169,7 @@ export function constantIntegerType(c: bigint): FiniteIntegerType {
 
 export function textType(
   codepointLength: IntegerType | number = integerType(0, "oo"),
-  isAscii = false
+  isAscii = false,
 ): TextType {
   if (typeof codepointLength === "number") {
     codepointLength = integerType(0n, codepointLength);
@@ -202,15 +201,15 @@ function integerBoundMinAndMax(args: IntegerBound[]) {
     ([cMin, cMax], e) => {
       return [min(cMin, e), max(cMax, e)];
     },
-    [args[0], args[0]]
+    [args[0], args[0]],
   );
 }
 
-export function annotate(expr: Expr, type: Type): Expr {
+export function annotate(expr: Node, type: Type): Node {
   return { ...expr, type };
 }
 
-export function bakeType(expr: Expr, context: Program | Spine): Expr {
+export function bakeType(expr: Node, context: Node | Spine): Node {
   return annotate(expr, getType(expr, context));
 }
 
@@ -218,7 +217,7 @@ export function toString(a: Type): string {
   switch (a.kind) {
     case "Function":
       return `(Func ${a.arguments.map(toString).join(" ")} ${toString(
-        a.result
+        a.result,
       )})`;
     case "List":
       return `(List ${toString(a.member)})`;
@@ -248,7 +247,7 @@ export function intersection(a: Type, b: Type): Type {
   if (a.kind === "Function" && b.kind === "Function") {
     return functionType(
       a.arguments.map((t, i) => union(t, b.arguments[i])),
-      intersection(a.result, b.result)
+      intersection(a.result, b.result),
     );
   } else if (a.kind === "List" && b.kind === "List") {
     if (a.member.kind === "void") return b;
@@ -264,14 +263,14 @@ export function intersection(a: Type, b: Type): Type {
   } else if (a.kind === "KeyValue" && b.kind === "KeyValue") {
     return keyValueType(
       intersection(a.key, b.key) as any,
-      intersection(a.value, b.value)
+      intersection(a.value, b.value),
     );
   } else if (a.kind === "Table" && b.kind === "Table") {
     if (a.value.kind === "void") return b;
     if (b.value.kind === "void") return a;
     return tableType(
       intersection(a.key, b.key) as any,
-      intersection(a.value, b.value)
+      intersection(a.value, b.value),
     );
   } else if (a.kind === "integer" && b.kind === "integer") {
     const low = max(a.low, b.low);
@@ -280,7 +279,7 @@ export function intersection(a: Type, b: Type): Type {
   } else if (a.kind === "text" && b.kind === "text") {
     return textType(
       intersection(a.codepointLength, b.codepointLength) as IntegerType,
-      a.isAscii || b.isAscii
+      a.isAscii || b.isAscii,
     );
   } else if (a.kind === b.kind) {
     return a;
@@ -293,7 +292,7 @@ export function union(a: Type, b: Type): Type {
     if (a.kind === "Function" && b.kind === "Function") {
       return functionType(
         a.arguments.map((t, i) => intersection(t, b.arguments[i])),
-        union(a.result, b.result)
+        union(a.result, b.result),
       );
     } else if (a.kind === "List" && b.kind === "List") {
       if (a.member.kind === "void") return b;
@@ -319,7 +318,7 @@ export function union(a: Type, b: Type): Type {
     } else if (a.kind === "text" && b.kind === "text") {
       return textType(
         union(a.codepointLength, b.codepointLength) as IntegerType,
-        a.isAscii && b.isAscii
+        a.isAscii && b.isAscii,
       );
     } else if (a.kind === b.kind) {
       return a;
@@ -329,7 +328,7 @@ export function union(a: Type, b: Type): Type {
     throw new Error(
       `Cannot model union of ${toString(a)} and ${toString(b)}.\n${
         e instanceof Error ? e.message : ""
-      }`
+      }`,
     );
   }
 }
@@ -435,7 +434,7 @@ export function isConstantType(a: IntegerType): a is FiniteIntegerType {
   return isFiniteType(a) && a.low === a.high;
 }
 
-export function defaultValue(a: Type): Expr {
+export function defaultValue(a: Type): Node {
   switch (a.kind) {
     case "Array":
       return arrayConstructor([]);

@@ -1,14 +1,14 @@
-import { CompilationContext } from "@/common/compile";
+import { type CompilationContext } from "@/common/compile";
 import {
   EmitError,
   emitIntLiteral,
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral } from "../../IR";
-import { TokenTree } from "@/common/Language";
+import { type IR, isIntLiteral } from "../../IR";
+import { type TokenTree } from "@/common/Language";
 
-function precedence(expr: IR.Expr): number {
+function precedence(expr: IR.Node): number {
   switch (expr.kind) {
     case "UnaryOp":
       return 11;
@@ -57,22 +57,22 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   throw new Error(
-    `Programming error - unknown Lua binary operator '${opname}.'`
+    `Programming error - unknown Lua binary operator '${opname}.'`,
   );
 }
 
 export default function emitProgram(
-  program: IR.Program,
-  context: CompilationContext
+  program: IR.Node,
+  context: CompilationContext,
 ): TokenTree {
-  function joinExprs(
+  function joinNodes(
     delim: TokenTree,
-    exprs: readonly IR.Expr[],
-    minPrec = -Infinity
+    exprs: readonly IR.Node[],
+    minPrec = -Infinity,
   ) {
     return joinTrees(
       delim,
-      exprs.map((x) => emit(x, minPrec))
+      exprs.map((x) => emit(x, minPrec)),
     );
   }
 
@@ -82,18 +82,18 @@ export default function emitProgram(
    * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
    * @returns Token tree corresponding to the expression.
    */
-  function emit(expr: IR.Expr, minimumPrec: number = -Infinity): TokenTree {
+  function emit(expr: IR.Node, minimumPrec: number = -Infinity): TokenTree {
     const prec = precedence(expr);
-    function emitNoParens(e: IR.Expr): TokenTree {
+    function emitNoParens(e: IR.Node): TokenTree {
       switch (e.kind) {
         case "Block":
-          return joinExprs("\n", e.children);
+          return joinNodes("\n", e.children);
         case "WhileLoop":
           return [`while`, emit(e.condition), "do", emit(e.body), "end"];
         case "OneToManyAssignment":
-          return [joinExprs(",", e.variables), "=", emit(e.expr)];
+          return [joinNodes(",", e.variables), "=", emit(e.expr)];
         case "ManyToManyAssignment":
-          return [joinExprs(",", e.variables), "=", joinExprs(",", e.exprs)];
+          return [joinNodes(",", e.variables), "=", joinNodes(",", e.exprs)];
         case "ForRange": {
           if (!e.inclusive) throw new EmitError(e, "exclusive");
           return [
@@ -133,14 +133,14 @@ export default function emitProgram(
         case "IntegerLiteral":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
-          return [emit(e.func), "(", joinExprs(",", e.args), ")"];
+          return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "MethodCall":
           return [
             emit(e.object, Infinity),
             ":",
             emit(e.ident),
             "(",
-            joinExprs(",", e.args),
+            joinNodes(",", e.args),
             ")",
           ];
         case "BinaryOp": {
@@ -158,7 +158,7 @@ export default function emitProgram(
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
         case "ListConstructor":
         case "ArrayConstructor":
-          return ["{", joinExprs(",", e.exprs), "}"];
+          return ["{", joinNodes(",", e.exprs), "}"];
 
         default:
           throw new EmitError(e);
@@ -169,12 +169,12 @@ export default function emitProgram(
     if (prec >= minimumPrec) return inner;
     return ["(", inner, ")"];
   }
-  return emit(program.body);
+  return emit(program);
 }
 
 function emitLuaTextLiteral(
   x: string,
-  [low, high]: [number, number] = [1, Infinity]
+  [low, high]: [number, number] = [1, Infinity],
 ): string {
   function mapCodepoint(x: number, i: number, arr: number[]) {
     if (low <= x && x <= high) return String.fromCharCode(x);
@@ -213,6 +213,6 @@ function emitLuaTextLiteral(
         ],
       ],
     ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined
+    low > 1 || high < Infinity ? mapCodepoint : undefined,
   );
 }

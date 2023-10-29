@@ -1,13 +1,12 @@
 import { PolygolfError } from "../common/errors";
 import {
-  BaseExpr,
-  Expr,
+  type BaseNode,
   id,
-  Identifier,
-  Type,
-  IndexCall,
+  type Identifier,
+  type Type,
+  type IndexCall,
   isIdent,
-  Node,
+  type Node,
 } from "./IR";
 
 export type LValue = Identifier | IndexCall;
@@ -17,17 +16,17 @@ export type LValue = Identifier | IndexCall;
  *
  * a += 5
  */
-export interface MutatingBinaryOp extends BaseExpr {
+export interface MutatingBinaryOp extends BaseNode {
   readonly kind: "MutatingBinaryOp";
   readonly name: string;
   readonly variable: LValue;
-  readonly right: Expr;
+  readonly right: Node;
 }
 
 /**
  * Variable declaration.
  */
-export interface VarDeclaration extends BaseExpr {
+export interface VarDeclaration extends BaseNode {
   readonly kind: "VarDeclaration";
   readonly variable: Identifier;
   readonly variableType: Type;
@@ -39,10 +38,10 @@ export interface VarDeclaration extends BaseExpr {
  * Since many languages lack assignment expressions, assignments are
  * statement-level by default.
  */
-export interface Assignment<T extends LValue = LValue> extends BaseExpr {
+export interface Assignment<T extends LValue = LValue> extends BaseNode {
   readonly kind: "Assignment";
   readonly variable: T;
-  readonly expr: Expr;
+  readonly expr: Node;
 }
 
 /**
@@ -50,10 +49,10 @@ export interface Assignment<T extends LValue = LValue> extends BaseExpr {
  *
  * (a,b)=(b,a).
  */
-export interface ManyToManyAssignment extends BaseExpr {
+export interface ManyToManyAssignment extends BaseNode {
   readonly kind: "ManyToManyAssignment";
   readonly variables: readonly LValue[];
-  readonly exprs: readonly Expr[];
+  readonly exprs: readonly Node[];
 }
 
 /**
@@ -61,10 +60,10 @@ export interface ManyToManyAssignment extends BaseExpr {
  *
  * a=b=c=1.
  */
-export interface OneToManyAssignment extends BaseExpr {
+export interface OneToManyAssignment extends BaseNode {
   readonly kind: "OneToManyAssignment";
   readonly variables: readonly LValue[];
-  readonly expr: Expr;
+  readonly expr: Node;
 }
 
 export type SomeAssignment =
@@ -75,12 +74,12 @@ export type SomeAssignment =
  * Variable declaration with assignment
  */
 export interface VarDeclarationWithAssignment<T = SomeAssignment>
-  extends BaseExpr {
+  extends BaseNode {
   readonly kind: "VarDeclarationWithAssignment";
   readonly assignment: T;
 }
 
-export interface VarDeclarationBlock extends BaseExpr {
+export interface VarDeclarationBlock extends BaseNode {
   readonly kind: "VarDeclarationBlock";
   readonly children: (VarDeclaration | VarDeclarationWithAssignment)[];
 }
@@ -88,7 +87,7 @@ export interface VarDeclarationBlock extends BaseExpr {
 export function mutatingBinaryOp(
   name: string,
   variable: LValue,
-  right: Expr
+  right: Node,
 ): MutatingBinaryOp {
   return {
     kind: "MutatingBinaryOp",
@@ -100,7 +99,7 @@ export function mutatingBinaryOp(
 
 export function varDeclaration(
   variable: Identifier | string,
-  variableType: Type
+  variableType: Type,
 ): VarDeclaration {
   return {
     kind: "VarDeclaration",
@@ -111,13 +110,13 @@ export function varDeclaration(
 
 export function assignment(
   variable: Identifier | string,
-  expr: Expr
+  expr: Node,
 ): Assignment<Identifier>;
 export function assignment(
   variable: IndexCall,
-  expr: Expr
+  expr: Node,
 ): Assignment<IndexCall>;
-export function assignment(variable: LValue | string, expr: Expr): Assignment {
+export function assignment(variable: LValue | string, expr: Node): Assignment {
   return {
     kind: "Assignment",
     variable: typeof variable === "string" ? id(variable) : variable,
@@ -134,7 +133,7 @@ export function isAssignmentToIdentifier(x: Node): x is Assignment<Identifier> {
 
 export function manyToManyAssignment(
   variables: (LValue | string)[],
-  exprs: readonly Expr[]
+  exprs: readonly Node[],
 ): ManyToManyAssignment {
   return {
     kind: "ManyToManyAssignment",
@@ -145,7 +144,7 @@ export function manyToManyAssignment(
 
 export function oneToManyAssignment(
   variables: readonly (LValue | string)[],
-  expr: Expr
+  expr: Node,
 ): OneToManyAssignment {
   return {
     kind: "OneToManyAssignment",
@@ -155,7 +154,7 @@ export function oneToManyAssignment(
 }
 
 export function varDeclarationWithAssignment<T extends SomeAssignment>(
-  assignment: T
+  assignment: T,
 ): VarDeclarationWithAssignment<T> {
   if (
     (isAssignment(assignment) && !isIdent()(assignment.variable)) ||
@@ -164,7 +163,7 @@ export function varDeclarationWithAssignment<T extends SomeAssignment>(
   ) {
     throw new PolygolfError(
       "VarDeclarationWithAssignment needs assignments to variables.",
-      assignment.source
+      assignment.source,
     );
   }
   return {
@@ -174,7 +173,7 @@ export function varDeclarationWithAssignment<T extends SomeAssignment>(
 }
 
 export function varDeclarationBlock(
-  children: (VarDeclaration | VarDeclarationWithAssignment)[]
+  children: (VarDeclaration | VarDeclarationWithAssignment)[],
 ): VarDeclarationBlock {
   return {
     kind: "VarDeclarationBlock",

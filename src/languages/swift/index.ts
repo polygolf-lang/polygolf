@@ -12,8 +12,8 @@ import {
   int,
 } from "../../IR";
 import {
-  Language,
-  TokenTree,
+  type Language,
+  type TokenTree,
   flattenTree,
   required,
   search,
@@ -92,7 +92,7 @@ const swiftLanguage: Language = {
             polygolfOp(
               "list_get",
               builtin("CommandLine.arguments"),
-              add1(x[0])
+              add1(x[0]),
             ),
         ],
         [
@@ -108,12 +108,12 @@ const swiftLanguage: Language = {
           (x) =>
             polygolfOp(
               "int_to_text_byte",
-              polygolfOp("text_get_byte_to_int", ...x)
+              polygolfOp("text_get_byte_to_int", ...x),
             ),
-        ]
+        ],
       ),
       useIndexCalls(),
-      decomposeIntLiteral()
+      decomposeIntLiteral(),
     ),
     required(
       pickAnyInt,
@@ -128,7 +128,7 @@ const swiftLanguage: Language = {
             polygolfOp(
               "list_get",
               builtin("CommandLine.arguments"),
-              add1(x[0])
+              add1(x[0]),
             ),
         ],
         [
@@ -144,9 +144,9 @@ const swiftLanguage: Language = {
           (x) =>
             polygolfOp(
               "int_to_text_byte",
-              polygolfOp("text_get_byte_to_int", ...x)
+              polygolfOp("text_get_byte_to_int", ...x),
             ),
-        ]
+        ],
       ),
       useIndexCalls(),
       implicitlyConvertPrintArg,
@@ -157,7 +157,7 @@ const swiftLanguage: Language = {
             methodCall(
               x[0],
               "joined",
-              ...(isTextLiteral("")(x[1]) ? [] : [namedArg("separator", x[1])])
+              ...(isTextLiteral("")(x[1]) ? [] : [namedArg("separator", x[1])]),
             ),
         ],
         [
@@ -165,7 +165,10 @@ const swiftLanguage: Language = {
           (x) =>
             functionCall(
               "Int",
-              indexCall(functionCall("Array", propertyCall(x[0], "utf8")), x[1])
+              indexCall(
+                functionCall("Array", propertyCall(x[0], "utf8")),
+                x[1],
+              ),
             ),
         ],
         [
@@ -173,7 +176,7 @@ const swiftLanguage: Language = {
           (x) =>
             functionCall(
               "String",
-              indexCall(functionCall("Array", x[0]), x[1])
+              indexCall(functionCall("Array", x[0]), x[1]),
             ),
         ],
         [
@@ -182,9 +185,9 @@ const swiftLanguage: Language = {
             propertyCall(
               indexCall(
                 functionCall("Array", propertyCall(x[0], "unicodeScalars")),
-                x[1]
+                x[1],
               ),
-              "value"
+              "value",
             ),
         ],
         [
@@ -192,7 +195,7 @@ const swiftLanguage: Language = {
           (x) =>
             functionCall(
               "String",
-              functionCall("!", functionCall("UnicodeScalar", x))
+              functionCall("!", functionCall("UnicodeScalar", x)),
             ),
         ],
         [
@@ -200,7 +203,7 @@ const swiftLanguage: Language = {
           (x) =>
             functionCall(
               "String",
-              functionCall("!", functionCall("UnicodeScalar", x))
+              functionCall("!", functionCall("UnicodeScalar", x)),
             ),
         ],
         ["text_codepoint_length", (x) => propertyCall(x[0], "count")],
@@ -219,7 +222,7 @@ const swiftLanguage: Language = {
             functionCall(
               "String",
               namedArg("repeating", x[0]),
-              namedArg("count", x[1])
+              namedArg("count", x[1]),
             ),
         ],
         [
@@ -230,8 +233,8 @@ const swiftLanguage: Language = {
               functionCall(
                 "pow",
                 functionCall("Double", x[0]),
-                functionCall("Double", x[1])
-              )
+                functionCall("Double", x[1]),
+              ),
             ),
         ],
         ["println", (x) => functionCall("print", x)],
@@ -253,9 +256,9 @@ const swiftLanguage: Language = {
               x[0],
               "replacingOccurrences",
               namedArg("of", x[1]),
-              namedArg("with", x[2])
+              namedArg("with", x[2]),
             ),
-        ]
+        ],
       ),
       addMutatingBinaryOp(
         ["add", "+"],
@@ -267,7 +270,7 @@ const swiftLanguage: Language = {
         ["bit_or", "|"],
         ["bit_xor", "^"],
         ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"]
+        ["bit_shift_right", ">>"],
       ),
       mapToUnaryAndBinaryOps(
         ["not", "!"],
@@ -291,15 +294,15 @@ const swiftLanguage: Language = {
         ["geq", ">="],
         ["gt", ">"],
         ["and", "&&"],
-        ["or", "||"]
+        ["or", "||"],
       ),
       addImports(
         [
           ["pow", "Foundation"],
           ["replacingOccurrences", "Foundation"],
         ],
-        "import"
-      )
+        "import",
+      ),
     ),
     simplegolf(
       alias((expr) => {
@@ -309,7 +312,7 @@ const swiftLanguage: Language = {
           case "TextLiteral":
             return `"${expr.value}"`;
         }
-      })
+      }),
     ),
     required(
       renameIdents(),
@@ -317,7 +320,7 @@ const swiftLanguage: Language = {
       groupVarDeclarations(),
       noStandaloneVarDeclarations,
       assertInt64,
-      removeImplicitConversions
+      removeImplicitConversions,
     ),
   ],
   // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
@@ -332,7 +335,7 @@ const swiftLanguage: Language = {
     //   `&` followed by any of `*+-` (without space they are interpreted together as an overflow operator)
     function needsWhiteSpaceOnBothSides(
       token: string,
-      nextToken: string
+      nextToken: string,
     ): boolean {
       return (
         (/^[-+*/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||

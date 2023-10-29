@@ -10,7 +10,7 @@ export function replaceAtIndex<T>(
 
 export function groupby<Item, By>(
   data: Item[],
-  by: (x: Item) => By
+  by: (x: Item) => By,
 ): Map<By, Item[]> {
   const result = new Map<By, Item[]>();
   for (const x of data) {

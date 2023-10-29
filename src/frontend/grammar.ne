@@ -3,10 +3,7 @@
 @{%
 import lexer from "./lexer";
 import {
-  program,
   blockOrSingle,
-  ifStatement,
-  forRange,
   variants,
   text,
   id as identifier
@@ -23,7 +20,7 @@ import {
 
 @lexer lexer
 
-main -> variant {% ([variant]) => program(variant) %}
+main -> variant {% id %}
 
 variant_child -> expr ";" {% id %}
   | stmt {% id %}

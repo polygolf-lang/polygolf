@@ -1,12 +1,12 @@
-import { Plugin, OpTransformOutput } from "../common/Language";
+import { type Plugin, type OpTransformOutput } from "../common/Language";
 import {
   add1,
   assignment,
   binaryOp,
-  BinaryOpCode,
-  Expr,
+  type BinaryOpCode,
+  type Node,
   flipOpCode,
-  IndexCall,
+  type IndexCall,
   indexCall,
   isBinary,
   isCommutative,
@@ -14,18 +14,18 @@ import {
   isNegative,
   mutatingBinaryOp,
   isPolygolfOp,
-  OpCode,
-  PolygolfOp,
+  type OpCode,
+  type PolygolfOp,
   polygolfOp,
   unaryOp,
-  UnaryOpCode,
+  type UnaryOpCode,
   BinaryOpCodes,
   functionCall,
   propertyCall,
   isIdent,
 } from "../IR";
 import { getType } from "../common/getType";
-import { Spine } from "../common/Spine";
+import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 
 export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
@@ -47,9 +47,9 @@ export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
             replacement = {
               ...(replacement as any),
               op: node.op,
-            } as const as Expr;
+            };
           }
-          return { ...replacement, type: getType(node, spine) };
+          return { ...replacement!, type: getType(node, spine) };
         }
       }
     },
@@ -85,10 +85,10 @@ export function mapToUnaryAndBinaryOps(
           [
             op,
             isBinary(op)
-              ? (x: readonly Expr[]) => asBinaryChain(op, x, opMap)
-              : (x: readonly Expr[]) => unaryOp(name, x[0]),
-          ] satisfies [OpCode, OpTransformOutput]
-      )
+              ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
+              : (x: readonly Node[]) => unaryOp(name, x[0]),
+          ] satisfies [OpCode, OpTransformOutput],
+      ),
     ),
     name: `mapToUnaryAndBinaryOps(${JSON.stringify(opMap0)})`,
   };
@@ -96,9 +96,9 @@ export function mapToUnaryAndBinaryOps(
 
 function asBinaryChain(
   op: BinaryOpCode,
-  exprs: readonly Expr[],
-  names: Map<OpCode, string>
-): Expr {
+  exprs: readonly Node[],
+  names: Map<OpCode, string>,
+): Node {
   const negName = names.get("neg");
   if (op === "mul" && isIntLiteral(-1n)(exprs[0]) && negName !== undefined) {
     exprs = [unaryOp(negName, exprs[1]), ...exprs.slice(2)];
@@ -129,11 +129,11 @@ export function useIndexCalls(
     "array_set",
     "list_set",
     "table_set",
-  ]
+  ],
 ): Plugin {
   return {
     name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
-      ops
+      ops,
     )})`,
     visit(node) {
       if (
@@ -175,7 +175,7 @@ export function addMutatingBinaryOp(
         const name = opMap.get(op)!;
         const leftValueStringified = stringify(node.variable);
         const index = node.expr.args.findIndex(
-          (x) => stringify(x) === leftValueStringified
+          (x) => stringify(x) === leftValueStringified,
         );
         if (index === 0 || (index > 0 && isCommutative(op))) {
           const newArgs = args.filter((x, i) => i !== index);
@@ -183,13 +183,13 @@ export function addMutatingBinaryOp(
             return mutatingBinaryOp(
               opMap.get("sub")!,
               node.variable,
-              polygolfOp("neg", polygolfOp(op, ...newArgs))
+              polygolfOp("neg", polygolfOp(op, ...newArgs)),
             );
           }
           return mutatingBinaryOp(
             name,
             node.variable,
-            newArgs.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0]
+            newArgs.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0],
           );
         }
       }
@@ -234,7 +234,7 @@ export const printIntToPrint: Plugin = {
     [
       "println_int",
       (x) => polygolfOp("println", polygolfOp("int_to_text", ...x)),
-    ]
+    ],
   ),
   name: "printIntToPrint",
 };

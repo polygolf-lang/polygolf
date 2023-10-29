@@ -1,4 +1,4 @@
-import { TokenTree } from "@/common/Language";
+import { type TokenTree } from "@/common/Language";
 import {
   emitTextLiteral,
   joinTrees,
@@ -6,15 +6,15 @@ import {
   emitIntLiteral,
 } from "../../common/emit";
 import {
-  ArrayConstructor,
-  IR,
+  type ArrayConstructor,
+  type IR,
   isIdent,
   isIntLiteral,
   isTextLiteral,
 } from "../../IR";
-import { CompilationContext } from "@/common/compile";
+import { type CompilationContext } from "@/common/compile";
 
-function precedence(expr: IR.Expr): number {
+function precedence(expr: IR.Node): number {
   switch (expr.kind) {
     case "UnaryOp":
       return 11;
@@ -61,19 +61,19 @@ function binaryPrecedence(opname: string): number {
       return 3;
   }
   throw new Error(
-    `Programming error - unknown Nim binary operator '${opname}.'`
+    `Programming error - unknown Nim binary operator '${opname}.'`,
   );
 }
 
 export default function emitProgram(
-  program: IR.Program,
-  context: CompilationContext
+  program: IR.Node,
+  context: CompilationContext,
 ): TokenTree {
-  function emitMultiExpr(expr: IR.Expr, isRoot = false): TokenTree {
+  function emitMultiNode(expr: IR.Node, isRoot = false): TokenTree {
     const children = expr.kind === "Block" ? expr.children : [expr];
     // Prefer newlines over semicolons at top level for aesthetics
     if (isRoot) {
-      return joinExprs("\n", children);
+      return joinNodes("\n", children);
     }
     let inner = [];
     let needsBlock = false;
@@ -96,14 +96,14 @@ export default function emitProgram(
     return inner;
   }
 
-  function joinExprs(
+  function joinNodes(
     delim: TokenTree,
-    exprs: readonly IR.Expr[],
-    minPrec = -Infinity
+    exprs: readonly IR.Node[],
+    minPrec = -Infinity,
   ) {
     return joinTrees(
       delim,
-      exprs.map((x) => emit(x, minPrec))
+      exprs.map((x) => emit(x, minPrec)),
     );
   }
 
@@ -113,13 +113,13 @@ export default function emitProgram(
    * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
    * @returns Token tree corresponding to the expression.
    */
-  function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
+  function emit(expr: IR.Node, minimumPrec = -Infinity): TokenTree {
     let prec = precedence(expr);
     const e = expr;
     function emitNoParens(): TokenTree {
       switch (e.kind) {
         case "Block":
-          return emitMultiExpr(e);
+          return emitMultiNode(e);
         case "VarDeclarationWithAssignment":
           return emit(e.assignment);
         case "VarDeclarationBlock":
@@ -134,7 +134,7 @@ export default function emitProgram(
         case "ImportStatement":
           return [e.name, joinTrees(",", e.modules)];
         case "WhileLoop":
-          return [`while`, emit(e.condition), ":", emitMultiExpr(e.body)];
+          return [`while`, emit(e.condition), ":", emitMultiNode(e.body)];
         case "ForEach":
           return [
             `for`,
@@ -142,7 +142,7 @@ export default function emitProgram(
             "in",
             emit(e.collection),
             ":",
-            emitMultiExpr(e.body),
+            emitMultiNode(e.body),
           ];
         case "ForRange": {
           const start = isIntLiteral(0n)(e.start) ? [] : emit(e.start);
@@ -156,7 +156,7 @@ export default function emitProgram(
               e.inclusive ? ".." : "..<",
               emit(e.end),
               ":",
-              emitMultiExpr(e.body),
+              emitMultiNode(e.body),
             ];
           }
           if (!e.inclusive) {
@@ -176,7 +176,7 @@ export default function emitProgram(
             emit(e.increment),
             ")",
             ":",
-            emitMultiExpr(e.body),
+            emitMultiNode(e.body),
           ];
         }
         case "IfStatement":
@@ -184,9 +184,9 @@ export default function emitProgram(
             "if",
             emit(e.condition),
             ":",
-            emitMultiExpr(e.consequent),
+            emitMultiNode(e.consequent),
             e.alternate !== undefined
-              ? ["else", ":", emitMultiExpr(e.alternate)]
+              ? ["else", ":", emitMultiNode(e.alternate)]
               : [],
           ];
         case "Variants":
@@ -199,15 +199,15 @@ export default function emitProgram(
         case "ManyToManyAssignment":
           return [
             "(",
-            joinExprs(",", e.variables),
+            joinNodes(",", e.variables),
             ")",
             "=",
             "(",
-            joinExprs(",", e.exprs),
+            joinNodes(",", e.exprs),
             ")",
           ];
         case "OneToManyAssignment":
-          return [joinExprs(",", e.variables), "=", emit(e.expr)];
+          return [joinNodes(",", e.variables), "=", emit(e.expr)];
         case "MutatingBinaryOp":
           return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
         case "Identifier":
@@ -235,8 +235,8 @@ export default function emitProgram(
             prec = 11.5;
           }
           if (e.args.length > 1 || e.args.length === 0)
-            return [emit(e.func), "$GLUE$", "(", joinExprs(",", e.args), ")"];
-          return [emit(e.func), joinExprs(",", e.args)];
+            return [emit(e.func), "$GLUE$", "(", joinNodes(",", e.args), ")"];
+          return [emit(e.func), joinNodes(",", e.args)];
         case "MethodCall":
           if (e.args.length > 1)
             return [
@@ -244,7 +244,7 @@ export default function emitProgram(
               ".",
               e.ident.name,
               e.args.length > 0
-                ? ["$GLUE$", "(", joinExprs(",", e.args), ")"]
+                ? ["$GLUE$", "(", joinNodes(",", e.args), ")"]
                 : [],
             ];
           else {
@@ -266,7 +266,7 @@ export default function emitProgram(
               emit(e.object, precedence(e)),
               ".",
               e.ident.name,
-              e.args.length > 0 ? joinExprs(",", e.args) : [],
+              e.args.length > 0 ? joinNodes(",", e.args) : [],
             ];
           }
         case "BinaryOp": {
@@ -281,11 +281,11 @@ export default function emitProgram(
         case "UnaryOp":
           return [e.name, emit(e.arg, prec)];
         case "ListConstructor":
-          return ["@", "[", joinExprs(",", e.exprs), "]"];
+          return ["@", "[", joinNodes(",", e.exprs), "]"];
         case "ArrayConstructor":
           if (
             e.exprs.every(
-              (x) => x.kind === "ArrayConstructor" && x.exprs.length === 2
+              (x) => x.kind === "ArrayConstructor" && x.exprs.length === 2,
             )
           ) {
             const pairs = e.exprs as readonly ArrayConstructor[];
@@ -293,18 +293,18 @@ export default function emitProgram(
               "{",
               joinTrees(
                 ",",
-                pairs.map((x) => [emit(x.exprs[0]), ":", emit(x.exprs[1])])
+                pairs.map((x) => [emit(x.exprs[0]), ":", emit(x.exprs[1])]),
               ),
               "}",
             ];
           }
-          return ["[", joinExprs(",", e.exprs), "]"];
+          return ["[", joinNodes(",", e.exprs), "]"];
         case "TableConstructor":
           return [
             "{",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
+              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "}",
             ".",
@@ -333,12 +333,12 @@ export default function emitProgram(
     if (prec >= minimumPrec) return inner;
     return ["(", inner, ")"];
   }
-  return emitMultiExpr(program.body, true);
+  return emitMultiNode(program, true);
 }
 
 function emitAsRawTextLiteral(
   value: string,
-  prefix: string = "r"
+  prefix: string = "r",
 ): string | null {
   if (value.includes("\n") || value.includes("\r")) return null;
   return `${prefix}"${value.replaceAll(`"`, `""`)}"`;
@@ -346,7 +346,7 @@ function emitAsRawTextLiteral(
 
 function emitNimTextLiteral(
   x: string,
-  [low, high]: [number, number] = [1, Infinity]
+  [low, high]: [number, number] = [1, Infinity],
 ): string {
   function mapCodepoint(x: number, i: number, arr: number[]) {
     if (low <= x && x <= high) return String.fromCharCode(x);
@@ -378,6 +378,6 @@ function emitNimTextLiteral(
         ],
       ],
     ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined
+    low > 1 || high < Infinity ? mapCodepoint : undefined,
   );
 }

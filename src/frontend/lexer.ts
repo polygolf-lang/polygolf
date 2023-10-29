@@ -22,7 +22,7 @@ const tokenTable = {
   variant: "/",
   opalias:
     "<- + - * ^ & | ~ >> << == != <= < >= > => # mod rem div trunc_div".split(
-      " "
+      " ",
     ),
   builtin: /[a-z0-9_]+/,
   lparen: "(",

@@ -1,6 +1,12 @@
 import { replaceAtIndex } from "../common/arrays";
-import { Plugin } from "../common/Language";
-import { implicitConversion, isPolygolfOp, polygolfOp, text } from "../IR";
+import { type Plugin } from "../common/Language";
+import {
+  block,
+  implicitConversion,
+  isPolygolfOp,
+  polygolfOp,
+  text,
+} from "../IR";
 import { mapOps } from "./ops";
 
 export const printLnToPrint = mapOps([
@@ -15,23 +21,23 @@ export const printLnToPrint = mapOps([
 export function golfLastPrint(toPrintln = true): Plugin {
   return {
     name: "golfLastPrint",
-    visit(program) {
-      if (program.kind !== "Program") return;
+    visit(program, spine) {
+      if (!spine.isRoot) return;
       const newOp = toPrintln ? ("println" as const) : ("print" as const);
       const oldOp = toPrintln ? "print" : "println";
-      if (isPolygolfOp(oldOp)(program.body)) {
-        return { ...program, body: { ...program.body, op: newOp } };
-      } else if (program.body.kind === "Block") {
-        const oldChildren = program.body.children;
+      if (isPolygolfOp(oldOp)(program)) {
+        return { ...program, op: newOp };
+      } else if (program.kind === "Block") {
+        const oldChildren = program.children;
         const lastStatement = oldChildren[oldChildren.length - 1];
         if (isPolygolfOp(oldOp)(lastStatement)) {
           const newLastStatement = { ...lastStatement, op: newOp };
           const children = replaceAtIndex(
             oldChildren,
             oldChildren.length - 1,
-            newLastStatement
+            newLastStatement,
           );
-          return { ...program, body: { ...program.body, children } };
+          return block(children);
         }
       }
     },

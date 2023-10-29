@@ -1,4 +1,4 @@
-import { SourcePointer } from "../IR";
+import { type SourcePointer } from "../IR";
 
 export class PolygolfError extends Error {
   source?: SourcePointer;

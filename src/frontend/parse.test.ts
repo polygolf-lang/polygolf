@@ -1,7 +1,6 @@
 import { stringify } from "../common/stringify";
 import {
   assignment,
-  Expr,
   id,
   int,
   text,
@@ -17,20 +16,20 @@ import {
   annotate,
   listType,
   arrayType,
-  Node,
+  type Node,
   textType,
   booleanType,
-  Type,
+  type Type,
 } from "../IR";
 import parse from "./parse";
 
 function testStmtParse(desc: string, str: string, output: Node) {
   test(desc, () => {
-    expect(stringify(parse(str, false).body)).toEqual(stringify(output));
+    expect(stringify(parse(str, false))).toEqual(stringify(output));
   });
 }
 
-function expectExprParse(desc: string, str: string, output: Expr) {
+function expectExprParse(desc: string, str: string, output: Node) {
   testStmtParse(desc, `assign $x ${str};`, assignment("x", output));
 }
 
@@ -55,23 +54,23 @@ describe("Parse s-expressions", () => {
   expectExprParse(
     "user function",
     "($f 1 2)",
-    functionCall(id("f"), int(1n), int(2n))
+    functionCall(id("f"), int(1n), int(2n)),
   );
   expectExprParse(
     "user function on variables",
     "($f $x $y)",
-    functionCall(id("f"), id("x"), id("y"))
+    functionCall(id("f"), id("x"), id("y")),
   );
   expectExprParse("add", "(add $x $y)", polygolfOp("add", id("x"), id("y")));
   expectExprParse(
     "add infix",
     "($x + $y)",
-    polygolfOp("add", id("x"), id("y"))
+    polygolfOp("add", id("x"), id("y")),
   );
   expectExprParse(
     "mod infix",
     "($x mod $y)",
-    polygolfOp("mod", id("x"), id("y"))
+    polygolfOp("mod", id("x"), id("y")),
   );
   expectExprParse("or", "(or $x $y)", polygolfOp("or", id("x"), id("y")));
   expectExprParse("println", "(println $x)", print(id("x"), true));
@@ -81,7 +80,7 @@ describe("Parse s-expressions", () => {
   expectExprParse(
     "list",
     "(list 1 2 3)",
-    listConstructor([int(1n), int(2n), int(3n)])
+    listConstructor([int(1n), int(2n), int(3n)]),
   );
   expectExprParse(
     "+",
@@ -89,13 +88,13 @@ describe("Parse s-expressions", () => {
     polygolfOp(
       "add",
       polygolfOp("add", polygolfOp("add", id("x"), id("y")), id("z")),
-      id("w")
-    )
+      id("w"),
+    ),
   );
   expectExprParse(
     "..",
     "(.. $x $y $z)",
-    polygolfOp("concat", polygolfOp("concat", id("x"), id("y")), id("z"))
+    polygolfOp("concat", polygolfOp("concat", id("x"), id("y")), id("z")),
   );
   expectExprParse("- as neg", "(- $x)", polygolfOp("neg", id("x")));
   expectExprParse("- as sub", "(- $x $y)", polygolfOp("sub", id("x"), id("y")));
@@ -103,7 +102,7 @@ describe("Parse s-expressions", () => {
   expectExprParse(
     "~ as bitxor",
     "(~ $x $y)",
-    polygolfOp("bit_xor", id("x"), id("y"))
+    polygolfOp("bit_xor", id("x"), id("y")),
   );
 });
 
@@ -127,18 +126,18 @@ describe("Parse statements", () => {
   testStmtParse(
     "comment",
     `%one\nprintln 58;%two\n%println -3;`,
-    print(int(58n), true)
+    print(int(58n), true),
   );
   testStmtParse("infix assignment", "$x <- 5;", assignment(id("x"), int(5n)));
   testStmtParse(
     "if",
     "if $x (println $y);",
-    ifStatement(id("x"), print(id("y"), true))
+    ifStatement(id("x"), print(id("y"), true)),
   );
   testStmtParse(
     "forRange",
     "for $x 1 20 1 (println $x);",
-    forRange(id("x"), int(1n), int(20n), int(1n), print(id("x"), true))
+    forRange(id("x"), int(1n), int(20n), int(1n), print(id("x"), true)),
   );
 });
 
@@ -149,7 +148,7 @@ describe("Parse variants", () => {
     variants([
       print(id("x"), true),
       block([print(id("x"), false), print(text("\n"), false)]),
-    ])
+    ]),
   );
   testStmtParse(
     "Three variants",
@@ -158,12 +157,12 @@ describe("Parse variants", () => {
       print(id("x"), true),
       block([print(id("x"), false), print(text("\n"), false)]),
       block([print(id("x"), false), print(text("\n"), false)]),
-    ])
+    ]),
   );
   testStmtParse(
-    "Expression variants",
+    "Node variants",
     `println { 0 / 1 };`,
-    print(variants([int(0n), int(1n)]), true)
+    print(variants([int(0n), int(1n)]), true),
   );
 });
 
@@ -175,6 +174,6 @@ describe("Parse unambiguously", () => {
         $a <- 0;
       }
     }`,
-    variants([variants([assignment(id("a"), int(0n))])])
+    variants([variants([assignment(id("a"), int(0n))])]),
   );
 });

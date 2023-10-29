@@ -1,32 +1,32 @@
-import { TokenTree } from "../../common/Language";
+import { type TokenTree } from "../../common/Language";
 import { emitTextLiteral, joinTrees } from "../../common/emit";
 import {
   block,
-  Expr,
+  type Node,
   id,
-  IR,
+  type IR,
   isIntLiteral,
   text,
   toString,
   variants,
-  Variants,
+  type Variants,
 } from "../../IR";
 
 /*
 How Polygolf nodes should be emitted to strings.
 
 Boolean flags should be reflected in the callee name.
-All paramaters that are not `Expr`s should be listed first.
+All paramaters that are not `Node`s should be listed first.
 - strings as TextLiterals
 - numbers/bigints as IntegerLiterals
 - arrays as blocks
-Then, all Expr children should follow in order that is typical in languages.
-If the last child is an array of Exprs argument, it should be emitted as individual arguments,
+Then, all Node children should follow in order that is typical in languages.
+If the last child is an array of Nodes argument, it should be emitted as individual arguments,
 instead of as a block.
 */
 
-export default function emitProgram(program: IR.Program): TokenTree {
-  return emitExpr(program.body, true);
+export default function emitProgram(program: IR.Node): TokenTree {
+  return emitNode(program, true);
 }
 
 function emitVariants(expr: Variants, indent = false): TokenTree {
@@ -37,7 +37,7 @@ function emitVariants(expr: Variants, indent = false): TokenTree {
       "\n",
       joinTrees(
         ["$DEDENT$", "\n", "/", "$INDENT$", "\n"],
-        expr.variants.map((x) => emitExpr(x, true))
+        expr.variants.map((x) => emitNode(x, true)),
       ),
       "$DEDENT$",
       "\n",
@@ -48,29 +48,29 @@ function emitVariants(expr: Variants, indent = false): TokenTree {
     "{",
     joinTrees(
       "/",
-      expr.variants.map((x) => emitExpr(x, true))
+      expr.variants.map((x) => emitNode(x, true)),
     ),
     "}",
   ];
 }
 
-export function emitArrayOfExprs(exprs: readonly Expr[]) {
+export function emitArrayOfNodes(exprs: readonly Node[]) {
   return [
     "{",
     joinTrees(
       [],
-      exprs.map((x) => emitExpr(x, true))
+      exprs.map((x) => emitNode(x, true)),
     ),
     "}",
   ];
 }
 
-export function emitExpr(
-  expr: Expr,
+export function emitNode(
+  expr: Node,
   asStatement = false,
-  indent = false
+  indent = false,
 ): TokenTree {
-  let res = emitExprWithoutAnnotation(expr, asStatement, indent);
+  let res = emitNodeWithoutAnnotation(expr, asStatement, indent);
   if (asStatement) {
     if (expr.kind !== "Block") res = [res, ";"];
   } else if (expr.type !== undefined) {
@@ -79,12 +79,12 @@ export function emitExpr(
   return res;
 }
 
-function emitExprWithoutAnnotation(
-  expr: Expr,
+function emitNodeWithoutAnnotation(
+  expr: Node,
   asStatement = false,
-  indent = false
+  indent = false,
 ): TokenTree {
-  function emitSexpr(op: string, ...args: (TokenTree | Expr)[]): TokenTree {
+  function emitSexpr(op: string, ...args: (TokenTree | Node)[]): TokenTree {
     const isNullary = [
       "argv",
       "argc",
@@ -105,10 +105,10 @@ function emitExprWithoutAnnotation(
     if (indent) result.push("$INDENT$", "\n");
     if (opAliases[op] !== undefined && args.length === 2) {
       let a = args[0];
-      result.push(typeof a === "string" || !("kind" in a) ? a : emitExpr(a));
+      result.push(typeof a === "string" || !("kind" in a) ? a : emitNode(a));
       result.push(opAliases[op]);
       a = args[1];
-      result.push(typeof a === "string" || !("kind" in a) ? a : emitExpr(a));
+      result.push(typeof a === "string" || !("kind" in a) ? a : emitNode(a));
     } else {
       op = opAliases[op] ?? op;
       result.push(op);
@@ -116,9 +116,9 @@ function emitExprWithoutAnnotation(
         joinTrees(
           [],
           args.map((x) =>
-            typeof x === "string" || !("kind" in x) ? [x] : emitExpr(x)
-          )
-        )
+            typeof x === "string" || !("kind" in x) ? [x] : emitNode(x),
+          ),
+        ),
       );
     }
     if (!asStatement) {
@@ -131,7 +131,7 @@ function emitExprWithoutAnnotation(
     case "Block":
       return joinTrees(
         "\n",
-        expr.children.map((x) => emitExpr(x, true))
+        expr.children.map((x) => emitNode(x, true)),
       );
     case "Variants":
       return emitVariants(expr, indent);
@@ -144,7 +144,7 @@ function emitExprWithoutAnnotation(
     case "Assignment":
       return emitSexpr("assign", expr.variable, expr.expr);
     case "FunctionCall": {
-      const id = emitExpr(expr.func);
+      const id = emitNode(expr.func);
       if (typeof id === "string" && id.startsWith("$")) {
         return emitSexpr(id, ...expr.args);
       }
@@ -174,13 +174,13 @@ function emitExprWithoutAnnotation(
         expr.isSafe ? "conditional" : "unsafe_conditional",
         expr.condition,
         expr.consequent,
-        expr.alternate
+        expr.alternate,
       );
     case "WhileLoop":
       return emitSexpr(
         "while",
         expr.condition,
-        emitExpr(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForRange": {
       if (expr.inclusive) {
@@ -190,33 +190,33 @@ function emitExprWithoutAnnotation(
           expr.start,
           expr.end,
           expr.increment,
-          emitExpr(expr.body, false, true)
+          emitNode(expr.body, false, true),
         );
       }
-      let args: Expr[] = [];
+      let args: Node[] = [];
       if (!isIntLiteral(1n)(expr.increment)) args = [expr.increment, ...args];
       args = [expr.end, ...args];
       if (!isIntLiteral(0n)(expr.start) || args.length > 1)
         args = [expr.start, ...args];
       if (expr.variable !== undefined || args.length > 1)
         args = [expr.variable ?? id("_"), ...args];
-      return emitSexpr("for", ...args, emitExpr(expr.body, false, true));
+      return emitSexpr("for", ...args, emitNode(expr.body, false, true));
     }
     case "ForArgv":
       return emitSexpr(
         "for_argv",
         expr.variable,
         expr.argcUpperBound.toString(),
-        emitExpr(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "IfStatement":
       return emitSexpr(
         "if",
         expr.condition,
-        emitExpr(expr.consequent, false, true),
+        emitNode(expr.consequent, false, true),
         ...(expr.alternate === undefined
           ? []
-          : emitExpr(expr.alternate, false, true))
+          : emitNode(expr.alternate, false, true)),
       );
 
     case "ImplicitConversion":
@@ -226,12 +226,12 @@ function emitExprWithoutAnnotation(
     case "VarDeclarationWithAssignment":
       return emitSexpr("@", expr.assignment);
     case "VarDeclarationBlock":
-      return emitSexpr("@", ...expr.children.map((x) => emitExpr(x)));
+      return emitSexpr("@", ...expr.children.map((x) => emitNode(x)));
     case "ManyToManyAssignment":
       return emitSexpr(
         "@",
-        emitArrayOfExprs(expr.variables),
-        emitArrayOfExprs(expr.exprs)
+        emitArrayOfNodes(expr.variables),
+        emitArrayOfNodes(expr.exprs),
       );
     case "OneToManyAssignment":
       return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
@@ -241,7 +241,7 @@ function emitExprWithoutAnnotation(
       return emitSexpr(
         expr.oneIndexed ? "IndexCallOneIndexed" : "@",
         expr.collection,
-        expr.index
+        expr.index,
       );
     case "RangeIndexCall":
       return emitSexpr(
@@ -249,7 +249,7 @@ function emitExprWithoutAnnotation(
         expr.collection,
         expr.low,
         expr.high,
-        expr.step
+        expr.step,
       );
     case "MethodCall":
       return emitSexpr("@", expr.object, text(expr.ident.name), ...expr.args);
@@ -262,7 +262,7 @@ function emitExprWithoutAnnotation(
     case "ImportStatement":
       return emitSexpr(
         "@",
-        ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x))
+        ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x)),
       );
     case "ForDifferenceRange":
       return emitSexpr(
@@ -271,21 +271,21 @@ function emitExprWithoutAnnotation(
         expr.start,
         expr.difference,
         expr.increment,
-        emitExpr(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForEach":
       return emitSexpr(
         "@",
         expr.variable,
         expr.collection,
-        emitExpr(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForEachKey":
       return emitSexpr(
         "@",
         expr.variable,
         expr.table,
-        emitExpr(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForEachPair":
       return emitSexpr(
@@ -293,7 +293,7 @@ function emitExprWithoutAnnotation(
         expr.keyVariable,
         expr.valueVariable,
         expr.table,
-        emitExpr(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForCLike":
       return emitSexpr(
@@ -301,7 +301,7 @@ function emitExprWithoutAnnotation(
         expr.init,
         expr.condition,
         expr.append,
-        emitExpr(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "NamedArg":
       return emitSexpr("@", text(expr.name), expr.value);

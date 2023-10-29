@@ -1,8 +1,8 @@
 import { getType } from "../common/getType";
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import {
   defaultValue,
-  Expr,
+  type Node,
   functionCall,
   int,
   integerType,
@@ -11,7 +11,7 @@ import {
   isTextLiteral,
   listConstructor,
   polygolfOp,
-  TextLiteral,
+  type TextLiteral,
 } from "../IR";
 
 /**
@@ -24,12 +24,12 @@ import {
  */
 export function tableHashing(
   hashFunc: (x: string) => number,
-  hashNode: string | ((x: Expr) => Expr) = "hash",
-  maxMod = 9999
+  hashNode: string | ((x: Node) => Node) = "hash",
+  maxMod = 9999,
 ): Plugin {
-  let hash: (x: Expr) => Expr;
+  let hash: (x: Node) => Node;
   if (typeof hashNode === "string") {
-    hash = (x: Expr) => ({
+    hash = (x: Node) => ({
       ...functionCall(hashNode, x),
       type: integerType(0, 2 ** 32 - 1),
     });
@@ -54,7 +54,7 @@ export function tableHashing(
           const searchResult = findHash(
             hashFunc,
             table.kvPairs.map((x) => [(x.key as TextLiteral).value, x.value]),
-            maxMod
+            maxMod,
           );
           if (searchResult === null) return undefined;
           const [array, mod] = searchResult;
@@ -66,15 +66,15 @@ export function tableHashing(
             listConstructor(
               array
                 .slice(0, lastUsed + 1)
-                .map((x) => x ?? defaultValue(tableType.value))
+                .map((x) => x ?? defaultValue(tableType.value)),
             ),
             polygolfOp(
               "mod",
               mod === array.length
                 ? hash(getKey)
                 : polygolfOp("mod", hash(getKey), int(mod)),
-              int(array.length)
-            )
+              int(array.length),
+            ),
           );
         }
       }
@@ -84,14 +84,14 @@ export function tableHashing(
 
 function findHash( // TODO: Allow collisions in keys that map to the same value.
   hashFunc: (x: string) => number,
-  table: [string, Expr][],
-  maxMod: number
-): [(Expr | null)[], number] | null {
-  const hashedTable: [number, Expr][] = table.map((x) => [
+  table: [string, Node][],
+  maxMod: number,
+): [(Node | null)[], number] | null {
+  const hashedTable: [number, Node][] = table.map((x) => [
     hashFunc(x[0]),
     x[1],
   ]);
-  const result: (Expr | null)[] = Array(table.length);
+  const result: (Node | null)[] = Array(table.length);
   for (let width = table.length; width < table.length * 4; width++) {
     for (let mod = width; mod <= maxMod; mod++) {
       result.fill(null);
@@ -147,7 +147,7 @@ export const tableToListLookup: Plugin = {
         return polygolfOp(
           "list_get",
           listConstructor(values),
-          polygolfOp("list_find", listConstructor(keys), at)
+          polygolfOp("list_find", listConstructor(keys), at),
         );
       }
     }

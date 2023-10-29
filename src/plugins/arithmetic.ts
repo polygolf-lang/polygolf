@@ -1,24 +1,23 @@
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import { stringify } from "../common/stringify";
 import {
   int,
   polygolfOp,
-  IntegerType,
+  type IntegerType,
   isConstantType,
-  Expr,
-  PolygolfOp,
+  type PolygolfOp,
   isSubtype,
   isPolygolfOp,
   isIntLiteral,
   implicitConversion,
   integerType,
-  Node,
+  type Node,
   sub1,
   add1,
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
-import { Spine } from "@/common/Spine";
+import { type Spine } from "@/common/Spine";
 import { filterInplace } from "../common/arrays";
 
 export const modToRem: Plugin = {
@@ -30,7 +29,7 @@ export const modToRem: Plugin = {
         : polygolfOp(
             "rem",
             polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
-            node.args[1]
+            node.args[1],
           );
     }
   },
@@ -57,7 +56,7 @@ export const equalityToInequality: Plugin = {
       const [a, b] = [node.args[0], node.args[1]];
       const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
         IntegerType,
-        IntegerType
+        IntegerType,
       ];
       if (isConstantType(t1)) {
         if (t1.low === t2.low) {
@@ -131,7 +130,7 @@ export const applyDeMorgans: Plugin = {
           : node.op === "unsafe_and"
           ? "unsafe_or"
           : "unsafe_and",
-        ...node.args.map((x) => polygolfOp("not", x))
+        ...node.args.map((x) => polygolfOp("not", x)),
       );
       if (getType(node, spine).kind === "void") return negation; // If we are promised we won't read the result, we don't need to negate.
       return polygolfOp("not", negation);
@@ -141,8 +140,8 @@ export const applyDeMorgans: Plugin = {
         "bit_not",
         polygolfOp(
           node.op === "bit_and" ? "bit_or" : "bit_and",
-          ...node.args.map((x) => polygolfOp("bit_not", x))
-        )
+          ...node.args.map((x) => polygolfOp("bit_not", x)),
+        ),
       );
     }
   },
@@ -168,7 +167,7 @@ export const useIntegerTruthiness: Plugin = {
   },
 };
 
-function isConstantTypePowerOfTwo(n: Expr, s: Spine) {
+function isConstantTypePowerOfTwo(n: Node, s: Spine) {
   const type = getType(n, s);
   if (type.kind === "integer" && isConstantType(type)) {
     const v = type.low;
@@ -179,7 +178,7 @@ function isConstantTypePowerOfTwo(n: Expr, s: Spine) {
 
 function isPowerOfTwo(n: Node, s: Spine): boolean {
   return (
-    (n.kind !== "Program" && isConstantTypePowerOfTwo(n, s)) ||
+    isConstantTypePowerOfTwo(n, s) ||
     (isPolygolfOp("pow", "bit_shift_left")(n) && isPowerOfTwo(n.args[0], s))
   );
 }
@@ -230,7 +229,7 @@ export const mulToPow: Plugin = {
   name: "mulToPow",
   visit(node) {
     if (isPolygolfOp("mul")(node)) {
-      const factors = new Map<string, [Expr, number]>();
+      const factors = new Map<string, [Node, number]>();
       for (const e of node.args) {
         const stringified = stringify(e);
         factors.set(stringified, [
@@ -243,8 +242,8 @@ export const mulToPow: Plugin = {
         return polygolfOp(
           "mul",
           ...pairs.map(([expr, exp]) =>
-            exp > 1 ? polygolfOp("pow", expr, int(exp)) : expr
-          )
+            exp > 1 ? polygolfOp("pow", expr, int(exp)) : expr,
+          ),
         );
       }
     }
@@ -256,7 +255,7 @@ export const powPlugins = [powToMul(), mulToPow];
 export function bitShiftToMulOrDiv(
   literalOnly = true,
   toMul = true,
-  toDiv = true
+  toDiv = true,
 ): Plugin {
   return {
     name: `bitShiftToMulOrDiv(${[literalOnly, toMul, toDiv]
@@ -312,18 +311,18 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
             return polygolfOp(
               "bit_shift_left",
               polygolfOp("mul", int(n), ...node.args.slice(1)),
-              int(exp)
+              int(exp),
             );
           }
         }
         const powNode = node.args.find(
-          (x) => isPolygolfOp("pow")(x) && isIntLiteral(2n)(x.args[0])
+          (x) => isPolygolfOp("pow")(x) && isIntLiteral(2n)(x.args[0]),
         ) as PolygolfOp | undefined;
         if (powNode !== undefined) {
           return polygolfOp(
             "bit_shift_left",
             polygolfOp("mul", ...node.args.filter((x) => x !== powNode)),
-            powNode.args[1]
+            powNode.args[1],
           );
         }
       }
@@ -339,7 +338,7 @@ export type IntDecomposition = [
   bigint,
   bigint,
   bigint,
-  number
+  number,
 ];
 
 // assert (1000 ≤ |n|)
@@ -347,7 +346,7 @@ export function decomposeInt(
   n: bigint,
   hasScientific = false,
   hasPowers = true,
-  hasShifts = true
+  hasShifts = true,
 ): IntDecomposition[] {
   return decomposeAnyInt(n, n, hasScientific, hasPowers, hasShifts);
 }
@@ -358,12 +357,12 @@ export function decomposeAnyInt(
   y: bigint,
   hasScientific = false,
   hasPowers = true,
-  hasShifts = true
+  hasShifts = true,
 ): IntDecomposition[] {
   return x > 0
     ? _decomposeAnyInt(x, y, hasScientific, hasPowers, hasShifts)
     : _decomposeAnyInt(-y, -x, hasScientific, hasPowers, hasShifts).map(
-        ([k, b, e, d, c]) => [-k, b, e, -d, c]
+        ([k, b, e, d, c]) => [-k, b, e, -d, c],
       );
 }
 
@@ -389,11 +388,11 @@ function _decomposeAnyInt(
   y: bigint,
   hasScientific = false,
   hasPowers = true,
-  hasShifts = true
+  hasShifts = true,
 ): IntDecomposition[] {
   function betterOrEqual(
     [k1, b1, e1, d1, c1]: IntDecomposition,
-    [k2, b2, e2, d2, c2]: IntDecomposition
+    [k2, b2, e2, d2, c2]: IntDecomposition,
   ): boolean {
     return (
       (!hasShifts || b1 === 2n || b2 !== 2n) &&
@@ -432,13 +431,13 @@ function _decomposeAnyInt(
         ];
         if (
           decompositions.some((decomposition) =>
-            betterOrEqual(decomposition, newDecomposition)
+            betterOrEqual(decomposition, newDecomposition),
           )
         )
           continue;
         filterInplace(
           decompositions,
-          (decomposition) => !betterOrEqual(newDecomposition, decomposition)
+          (decomposition) => !betterOrEqual(newDecomposition, decomposition),
         );
         decompositions.push(newDecomposition);
       }
@@ -450,7 +449,7 @@ function _decomposeAnyInt(
 export function decomposeIntLiteral(
   hasScientific = false,
   hasPowers = true,
-  hasShifts = true
+  hasShifts = true,
 ): Plugin {
   return {
     name: `decomposeIntLiteral(${JSON.stringify([
@@ -465,7 +464,7 @@ export function decomposeIntLiteral(
           node.value,
           hasScientific,
           hasPowers,
-          hasShifts
+          hasShifts,
         );
       } else if (node.kind === "AnyIntegerLiteral") {
         decompositions = decomposeAnyInt(
@@ -473,7 +472,7 @@ export function decomposeIntLiteral(
           node.high,
           hasScientific,
           hasPowers,
-          hasShifts
+          hasShifts,
         );
       }
 
@@ -481,8 +480,8 @@ export function decomposeIntLiteral(
         polygolfOp(
           "add",
           polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
-          int(d)
-        )
+          int(d),
+        ),
       );
     },
   };
