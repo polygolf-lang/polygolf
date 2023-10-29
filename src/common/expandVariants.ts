@@ -1,10 +1,10 @@
-import { IR } from "../IR";
+import { type IR } from "../IR";
 import {
   fromChildRemapFunc,
   getChild,
   getChildFragments,
   getChildren,
-  PathFragment,
+  type PathFragment,
 } from "./fragments";
 
 /**
@@ -41,10 +41,10 @@ function allVariantOptions(node: IR.Node): IR.Node[] {
     const fragIndexMap = new Map(frags.map((f, i) => [fragToString(f), i]));
     if (frags.length === 0) return [node];
     const options = frags.map((frag) =>
-      allVariantOptions(getChild(node, frag))
+      allVariantOptions(getChild(node, frag)),
     );
     return cartesianProduct(options).map((opt) =>
-      fromChildRemapFunc(node, (f) => opt[fragIndexMap.get(fragToString(f))!])
+      fromChildRemapFunc(node, (f) => opt[fragIndexMap.get(fragToString(f))!]),
     );
   }
 }
@@ -56,6 +56,6 @@ function fragToString(f: PathFragment) {
 function cartesianProduct<T>(a: T[][]): T[][] {
   if (a.length === 0) return [[]];
   return cartesianProduct(a.slice(1)).flatMap((p) =>
-    a[0].map((e) => [e].concat(p))
+    a[0].map((e) => [e].concat(p)),
   );
 }

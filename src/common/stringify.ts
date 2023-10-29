@@ -1,4 +1,4 @@
-import { Node } from "@/IR";
+import { type Node } from "@/IR";
 
 const cachedStringification = new WeakMap<Node, string>();
 export function stringify(x: Node): string {
@@ -11,7 +11,7 @@ export function stringify(x: Node): string {
         : typeof value === "bigint"
         ? value.toString() + "n"
         : value,
-    2
+    2,
   );
   cachedStringification.set(x, result);
   return result;

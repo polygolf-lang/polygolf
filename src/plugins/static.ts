@@ -1,5 +1,5 @@
 import { isPolygolfOp, polygolfOp, text, isTextLiteral } from "../IR";
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import { byteLength, charLength } from "../common/objective";
 
 export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
@@ -22,7 +22,7 @@ export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
 
 function getDelim(
   strings: string[],
-  useTextSplitWhitespace = true
+  useTextSplitWhitespace = true,
 ): string | true {
   const string = strings.join("");
   if (!/\s/.test(string) && useTextSplitWhitespace) return true;

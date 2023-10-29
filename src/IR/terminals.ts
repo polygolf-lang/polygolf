@@ -1,4 +1,4 @@
-import { BaseNode } from "./IR";
+import { type BaseNode } from "./IR";
 /**
  * Program input (array of strings) as niladic variable.
  */
@@ -11,7 +11,7 @@ export interface Argv extends BaseNode {
  */
 export interface Identifier<
   Builtin extends boolean = boolean,
-  Name extends string = string
+  Name extends string = string,
 > extends BaseNode {
   readonly kind: "Identifier";
   readonly name: Name;

@@ -1,4 +1,4 @@
-import { BaseNode, Node, KeyValue } from "./IR";
+import { type BaseNode, type Node, type KeyValue } from "./IR";
 
 export interface ArrayConstructor extends BaseNode {
   readonly kind: "ArrayConstructor";
@@ -42,7 +42,7 @@ export function setConstructor(exprs: readonly Node[]): SetConstructor {
 }
 
 export function tableConstructor(
-  kvPairs: readonly KeyValue[]
+  kvPairs: readonly KeyValue[],
 ): TableConstructor {
   return {
     kind: "TableConstructor",

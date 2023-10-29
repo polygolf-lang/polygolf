@@ -16,7 +16,7 @@ import {
 } from "../../IR";
 import {
   defaultDetokenizer,
-  Language,
+  type Language,
   required,
   search,
   simplegolf,
@@ -73,7 +73,7 @@ const golfscriptLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       bitShiftToMulOrDiv(false, true, true),
-      decomposeIntLiteral(false, true, false)
+      decomposeIntLiteral(false, true, false),
     ),
     required(
       pickAnyInt,
@@ -83,10 +83,10 @@ const golfscriptLanguage: Language = {
       textGetToTextGetToIntToText,
       forRangeToForDifferenceRange(
         (node, spine) =>
-          !isSubtype(getType(node.start, spine.root.node), integerType(0))
+          !isSubtype(getType(node.start, spine.root.node), integerType(0)),
       ),
       implicitlyConvertPrintArg,
-      replaceToSplitAndJoin
+      replaceToSplitAndJoin,
     ),
     simplegolf(
       alias((expr) => {
@@ -96,7 +96,7 @@ const golfscriptLanguage: Language = {
           case "TextLiteral":
             return `"${expr.value}"`;
         }
-      })
+      }),
     ),
     required(
       mapOps([
@@ -119,7 +119,7 @@ const golfscriptLanguage: Language = {
             polygolfOp(
               "list_get",
               polygolfOp("sorted", listConstructor(x)),
-              int(1)
+              int(1),
             ),
         ],
         [
@@ -128,7 +128,7 @@ const golfscriptLanguage: Language = {
             polygolfOp(
               "list_get",
               polygolfOp("sorted", listConstructor(x)),
-              int(0)
+              int(0),
             ),
         ],
         [
@@ -138,7 +138,7 @@ const golfscriptLanguage: Language = {
               "lt",
               ...(isIntLiteral()(x[0])
                 ? [sub1(x[0]), x[1]]
-                : [x[0], add1(x[1])])
+                : [x[0], add1(x[1])]),
             ),
         ],
         [
@@ -148,9 +148,9 @@ const golfscriptLanguage: Language = {
               "gt",
               ...(isIntLiteral()(x[0])
                 ? [add1(x[0]), x[1]]
-                : [x[0], sub1(x[1])])
+                : [x[0], sub1(x[1])]),
             ),
-        ]
+        ],
       ),
       mapToUnaryAndBinaryOps(
         ["println", "n"],
@@ -184,15 +184,18 @@ const golfscriptLanguage: Language = {
         ["list_get", "="],
         ["list_length", ","],
         ["join", "*"],
-        ["sorted", "$"]
+        ["sorted", "$"],
       ),
       mapOps(
         ["neq", (x) => unaryOp("!", binaryOp("=", x[0], x[1]))],
         ["text_byte_reversed", (x) => binaryOp("%", x[0], int(-1))],
-        ["int_to_text_byte", (x) => binaryOp("+", listConstructor(x), text(""))]
+        [
+          "int_to_text_byte",
+          (x) => binaryOp("+", listConstructor(x), text("")),
+        ],
       ),
       addImports([["a", "a"]], (x) =>
-        x.length > 0 ? assignment(x[0], builtin("")) : undefined
+        x.length > 0 ? assignment(x[0], builtin("")) : undefined,
       ),
       renameIdents({
         // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
@@ -207,7 +210,7 @@ const golfscriptLanguage: Language = {
         short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
         general: (i: number) => "v" + i.toString(),
       }),
-      removeImplicitConversions
+      removeImplicitConversions,
     ),
   ],
   detokenizer: defaultDetokenizer(
@@ -215,7 +218,7 @@ const golfscriptLanguage: Language = {
       a !== "" &&
       b !== "" &&
       ((/[A-Za-z0-9_]/.test(a[a.length - 1]) && /[A-Za-z0-9_]/.test(b[0])) ||
-        (a[a.length - 1] === "-" && /[0-9]/.test(b[0])))
+        (a[a.length - 1] === "-" && /[0-9]/.test(b[0]))),
   ),
 };
 

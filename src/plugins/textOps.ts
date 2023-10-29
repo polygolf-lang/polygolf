@@ -4,11 +4,11 @@ import {
   isPolygolfOp,
   isSubtype,
   isTextLiteral,
-  OpCode,
+  type OpCode,
   polygolfOp,
   int,
 } from "../IR";
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";
 import { charLength } from "../common/objective";
 
@@ -33,11 +33,11 @@ const integerOpsEquivalenceAscii = toBidirectionalMap<OpCode>([
 /** Swaps an op to another one, provided they are equivalent for the subtype. */
 export function useEquivalentTextOp(
   useBytes = true,
-  useCodepoints = true
+  useCodepoints = true,
 ): Plugin {
   if (!useBytes && !useCodepoints)
     throw new Error(
-      "Programming error. Choose at least one of bytes and codepoints."
+      "Programming error. Choose at least one of bytes and codepoints.",
     );
   return {
     name: `useEquivalentTextOp(${useBytes.toString()}, ${useCodepoints.toString()})`,
@@ -72,7 +72,7 @@ export const textGetToIntToTextGet: Plugin = {
       "text_get_codepoint_to_int",
       (x) =>
         polygolfOp("codepoint_to_int", polygolfOp("text_get_codepoint", ...x)),
-    ]
+    ],
   ),
   name: "textGetToIntToTextGet",
 };
@@ -92,7 +92,7 @@ export const textToIntToTextGetToInt: Plugin = {
         isPolygolfOp("text_get_codepoint")(x[0])
           ? polygolfOp("text_get_codepoint_to_int", ...x[0].args)
           : undefined,
-    ]
+    ],
   ),
   name: "textToIntToTextGetToInt",
 };
@@ -104,7 +104,7 @@ export const textGetToTextGetToIntToText: Plugin = {
       (x) =>
         polygolfOp(
           "int_to_text_byte",
-          polygolfOp("text_get_byte_to_int", ...x)
+          polygolfOp("text_get_byte_to_int", ...x),
         ),
     ],
     [
@@ -112,9 +112,9 @@ export const textGetToTextGetToIntToText: Plugin = {
       (x) =>
         polygolfOp(
           "int_to_codepoint",
-          polygolfOp("text_get_codepoint_to_int", ...x)
+          polygolfOp("text_get_codepoint_to_int", ...x),
         ),
-    ]
+    ],
   ),
   name: "textGetToTextGetToIntToText",
 };
@@ -128,7 +128,7 @@ export const textToIntToFirstIndexTextGetToInt: Plugin = {
     [
       "codepoint_to_int",
       (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
-    ]
+    ],
   ),
   name: "textToIntToFirstIndexTextGetToInt",
 };

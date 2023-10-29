@@ -10,7 +10,12 @@ import {
   isTextLiteral,
   builtin,
 } from "../../IR";
-import { Language, required, search, simplegolf } from "../../common/Language";
+import {
+  type Language,
+  required,
+  search,
+  simplegolf,
+} from "../../common/Language";
 import {
   forArgvToForRange,
   forRangeToForRangeInclusive,
@@ -91,7 +96,7 @@ const luaLanguage: Language = {
             polygolfOp(
               "list_get",
               { ...builtin("arg"), type: textType() },
-              x[0]
+              x[0],
             ),
         ],
         ["text_get_byte_to_int", (x) => methodCall(x[0], "byte", add1(x[1]))],
@@ -102,10 +107,10 @@ const luaLanguage: Language = {
         [
           "text_get_byte_slice",
           (x) => methodCall(x[0], "sub", x[1], add1(x[2])),
-        ]
+        ],
       ),
       useIndexCalls(true),
-      decomposeIntLiteral(true, true, true)
+      decomposeIntLiteral(true, true, true),
     ),
     required(
       pickAnyInt,
@@ -126,7 +131,7 @@ const luaLanguage: Language = {
             polygolfOp(
               "list_get",
               { ...builtin("arg"), type: textType() },
-              x[0]
+              x[0],
             ),
         ],
         ["text_get_byte_to_int", (x) => methodCall(x[0], "byte", add1(x[1]))],
@@ -137,7 +142,7 @@ const luaLanguage: Language = {
         [
           "text_get_byte_slice",
           (x) => methodCall(x[0], "sub", x[1], add1(x[2])),
-        ]
+        ],
       ),
       useIndexCalls(true),
       mapOps([
@@ -146,7 +151,7 @@ const luaLanguage: Language = {
           polygolfOp(
             "concat",
             text(""),
-            implicitConversion("int_to_text", x[0])
+            implicitConversion("int_to_text", x[0]),
           ),
       ]),
       mapOps(
@@ -180,16 +185,16 @@ const luaLanguage: Language = {
                 ? text(
                     b.value.replace(
                       /(-|%|\^|\$|\(|\)|\.|\[|\]|\*|\+|\?)/g,
-                      "%$1"
-                    )
+                      "%$1",
+                    ),
                   )
                 : methodCall(b, "gsub", text("(%W)"), text("%%%1")),
               isTextLiteral()(c)
                 ? text(c.value.replace("%", "%%"))
-                : methodCall(c, "gsub", text("%%"), text("%%%%"))
+                : methodCall(c, "gsub", text("%%"), text("%%%%")),
             ),
-        ]
-      )
+        ],
+      ),
     ),
     simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
     required(
@@ -217,8 +222,8 @@ const luaLanguage: Language = {
         ["geq", ">="],
         ["gt", ">"],
         ["and", "and"],
-        ["or", "or"]
-      )
+        ["or", "or"],
+      ),
     ),
     simplegolf(
       alias((expr) => {
@@ -228,7 +233,7 @@ const luaLanguage: Language = {
           case "TextLiteral":
             return `"${expr.value}"`;
         }
-      })
+      }),
     ),
     required(renameIdents(), assertInt64, removeImplicitConversions),
   ],

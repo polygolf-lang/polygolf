@@ -1,5 +1,5 @@
 import { replaceAtIndex } from "../common/arrays";
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import {
   block,
   implicitConversion,
@@ -35,7 +35,7 @@ export function golfLastPrint(toPrintln = true): Plugin {
           const children = replaceAtIndex(
             oldChildren,
             oldChildren.length - 1,
-            newLastStatement
+            newLastStatement,
           );
           return block(children);
         }

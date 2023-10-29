@@ -59,7 +59,7 @@ Plugins are implemented in the `src/plugins` folder.
 
 **Planned plugins & idioms:**
 
-[Plugin issues](https://github.com/jared-hughes/polygolf/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement+label%3Aplugin)
+[Plugin issues](https://github.com/polygolf-lang/polygolf/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement+label%3Aplugin)
 
 ## Intermediate Representation (IR) Transformations
 

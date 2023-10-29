@@ -1,12 +1,12 @@
 import {
-  Node,
+  type Node,
   annotate,
   builtin,
   integerType,
   isIntLiteral,
   isPolygolfOp,
 } from "../../IR";
-import { Plugin } from "../../common/Language";
+import { type Plugin } from "../../common/Language";
 
 export const base10DecompositionToFloatLiteralAsBuiltin: Plugin = {
   name: "base10DecompositionToFloatLiteralAsBuiltin",

@@ -1,6 +1,12 @@
-import { Spine } from "../common/Spine";
-import { Plugin } from "../common/Language";
-import { block, Node, importStatement, isBuiltinIdent, isOfKind } from "../IR";
+import { type Spine } from "../common/Spine";
+import { type Plugin } from "../common/Language";
+import {
+  block,
+  type Node,
+  importStatement,
+  isBuiltinIdent,
+  isOfKind,
+} from "../IR";
 
 /**
  * @param rules Map from expr to a import it needs or array encoded map from symbol name to import.
@@ -9,7 +15,7 @@ import { block, Node, importStatement, isBuiltinIdent, isOfKind } from "../IR";
  */
 export function addImports( // TODO caching
   rules: [string, string][] | ((n: Node, s: Spine) => string | undefined),
-  output: string | ((modules: string[]) => Node | undefined)
+  output: string | ((modules: string[]) => Node | undefined),
 ): Plugin {
   let rulesFunc: (n: Node, s: Spine) => string | undefined;
   if (Array.isArray(rules)) {

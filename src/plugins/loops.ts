@@ -1,6 +1,6 @@
-import { Spine } from "../common/Spine";
+import { type Spine } from "../common/Spine";
 import { getType } from "../common/getType";
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import {
   forRange,
   int,
@@ -11,15 +11,15 @@ import {
   forEachPair,
   forEach,
   id,
-  IR,
+  type IR,
   polygolfOp,
-  Node,
-  Identifier,
+  type Node,
+  type Identifier,
   isIntLiteral,
-  OpCode,
-  TextLiteral,
-  ListConstructor,
-  ForRange,
+  type OpCode,
+  type TextLiteral,
+  type ListConstructor,
+  type ForRange,
   forDifferenceRange,
   isPolygolfOp,
   isSubtype,
@@ -48,7 +48,7 @@ export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
           sub1(node.end),
           node.increment,
           node.body,
-          true
+          true,
         );
     },
   };
@@ -65,13 +65,13 @@ export const forRangeToWhile: Plugin = {
       }
       const increment = assignment(
         node.variable,
-        polygolfOp("add", node.variable, node.increment)
+        polygolfOp("add", node.variable, node.increment),
       );
       return block([
         assignment(node.variable, node.start),
         whileLoop(
           polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
-          block([node.body, increment])
+          block([node.body, increment]),
         ),
       ]);
     }
@@ -92,9 +92,9 @@ export const forRangeToForCLike: Plugin = {
         polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
         assignment(
           node.variable,
-          polygolfOp("add", node.variable, node.increment)
+          polygolfOp("add", node.variable, node.increment),
         ),
-        node.body
+        node.body,
       );
     }
   },
@@ -155,7 +155,7 @@ type GetOp = OpCode &
 export function forRangeToForEach(...ops: GetOp[]): Plugin {
   if (ops.includes("text_get_byte") && ops.includes("text_get_codepoint"))
     throw new Error(
-      "Programming error. Choose only one of 'text_get_byte' && 'text_get_codepoint'."
+      "Programming error. Choose only one of 'text_get_byte' && 'text_get_codepoint'.",
     );
   const lengthOpToGetOp = new Map([
     ["array_length", "array_get"],
@@ -192,7 +192,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
           indexVar,
           allowedOps,
           knownLength,
-          collectionVar
+          collectionVar,
         );
         if (indexedCollection !== null) {
           const elementIdentifier = id(node.variable.name + "+each");
@@ -224,7 +224,7 @@ function getIndexedCollection(
   indexVar: Identifier,
   allowedOps: GetOp[],
   knownLength?: number,
-  collectionVar?: Identifier
+  collectionVar?: Identifier,
 ): Node | null {
   let result: Node | null = null;
   for (const x of spine.compactMap((n, s) => {
@@ -259,7 +259,7 @@ function getIndexedCollection(
 
 function literalLength(
   expr: TextLiteral | ListConstructor,
-  countTextBytes: boolean
+  countTextBytes: boolean,
 ): number {
   if (expr.kind === "ListConstructor") return expr.exprs.length;
   return (countTextBytes ? byteLength : charLength)(expr.value);
@@ -294,7 +294,7 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
             : polygolfOp("argc"),
           int(1),
           newBody,
-          inclusive
+          inclusive,
         );
       }
     },
@@ -311,7 +311,7 @@ export const assertForArgvTopLevel: Plugin = {
           if (forArgvSeen)
             throw new PolygolfError(
               "Only a single for_argv node allowed.",
-              node.source
+              node.source,
             );
           forArgvSeen = true;
         }
@@ -326,7 +326,7 @@ export const assertForArgvTopLevel: Plugin = {
       ) {
         throw new PolygolfError(
           "Node for_argv only allowed at the top level.",
-          node.source
+          node.source,
         );
       }
     }
@@ -345,7 +345,7 @@ export const shiftRangeOneUp: Plugin = {
         (x) =>
           isPolygolfOp("add")(x) &&
           isIntLiteral(1n)(x.args[0]) &&
-          isIdent(node.variable!)(x.args[1])
+          isIdent(node.variable!)(x.args[1]),
       )
     ) {
       const bodySpine = spine.getChild("body");
@@ -353,7 +353,7 @@ export const shiftRangeOneUp: Plugin = {
       const newBodySpine = bodySpine.withReplacer((x) =>
         newVar !== undefined && isIdent(node.variable!)(x)
           ? sub1(newVar)
-          : undefined
+          : undefined,
       );
       return forRange(
         newVar,
@@ -361,7 +361,7 @@ export const shiftRangeOneUp: Plugin = {
         add1(node.end),
         int(1n),
         newBodySpine.node,
-        node.inclusive
+        node.inclusive,
       );
     }
   },
@@ -370,8 +370,8 @@ export const shiftRangeOneUp: Plugin = {
 export function forRangeToForDifferenceRange(
   transformPredicate: (
     expr: ForRange,
-    spine: Spine<ForRange>
-  ) => boolean = () => true
+    spine: Spine<ForRange>,
+  ) => boolean = () => true,
 ): Plugin {
   return {
     name: "forRangeToForDifferenceRange",
@@ -387,7 +387,7 @@ export function forRangeToForDifferenceRange(
           polygolfOp("sub", node.end, node.start),
           node.increment,
           node.body,
-          node.inclusive
+          node.inclusive,
         );
       }
     },
@@ -410,14 +410,14 @@ export const forRangeToForRangeOneStep: Plugin = {
           ? polygolfOp(
               "div",
               polygolfOp("sub", node.end, node.start),
-              node.increment
+              node.increment,
             )
           : add1(
               polygolfOp(
                 "div",
                 polygolfOp("sub", sub1(node.end), node.start),
-                node.increment
-              )
+                node.increment,
+              ),
             ),
         int(1n),
         block([
@@ -426,12 +426,12 @@ export const forRangeToForRangeOneStep: Plugin = {
             polygolfOp(
               "add",
               polygolfOp("mul", newVar, node.increment),
-              node.start
-            )
+              node.start,
+            ),
           ),
           node.body,
         ]),
-        node.inclusive
+        node.inclusive,
       );
     }
   },
@@ -449,7 +449,7 @@ export const removeUnusedForVar: Plugin = {
           node.end,
           node.increment,
           node.body,
-          node.inclusive
+          node.inclusive,
         );
       }
     }

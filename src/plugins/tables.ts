@@ -1,8 +1,8 @@
 import { getType } from "../common/getType";
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import {
   defaultValue,
-  Node,
+  type Node,
   functionCall,
   int,
   integerType,
@@ -11,7 +11,7 @@ import {
   isTextLiteral,
   listConstructor,
   polygolfOp,
-  TextLiteral,
+  type TextLiteral,
 } from "../IR";
 
 /**
@@ -25,7 +25,7 @@ import {
 export function tableHashing(
   hashFunc: (x: string) => number,
   hashNode: string | ((x: Node) => Node) = "hash",
-  maxMod = 9999
+  maxMod = 9999,
 ): Plugin {
   let hash: (x: Node) => Node;
   if (typeof hashNode === "string") {
@@ -54,7 +54,7 @@ export function tableHashing(
           const searchResult = findHash(
             hashFunc,
             table.kvPairs.map((x) => [(x.key as TextLiteral).value, x.value]),
-            maxMod
+            maxMod,
           );
           if (searchResult === null) return undefined;
           const [array, mod] = searchResult;
@@ -66,15 +66,15 @@ export function tableHashing(
             listConstructor(
               array
                 .slice(0, lastUsed + 1)
-                .map((x) => x ?? defaultValue(tableType.value))
+                .map((x) => x ?? defaultValue(tableType.value)),
             ),
             polygolfOp(
               "mod",
               mod === array.length
                 ? hash(getKey)
                 : polygolfOp("mod", hash(getKey), int(mod)),
-              int(array.length)
-            )
+              int(array.length),
+            ),
           );
         }
       }
@@ -85,7 +85,7 @@ export function tableHashing(
 function findHash( // TODO: Allow collisions in keys that map to the same value.
   hashFunc: (x: string) => number,
   table: [string, Node][],
-  maxMod: number
+  maxMod: number,
 ): [(Node | null)[], number] | null {
   const hashedTable: [number, Node][] = table.map((x) => [
     hashFunc(x[0]),
@@ -147,7 +147,7 @@ export const tableToListLookup: Plugin = {
         return polygolfOp(
           "list_get",
           listConstructor(values),
-          polygolfOp("list_find", listConstructor(keys), at)
+          polygolfOp("list_find", listConstructor(keys), at),
         );
       }
     }

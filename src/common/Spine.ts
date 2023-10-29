@@ -1,6 +1,6 @@
-import { IR, isPolygolfOp, polygolfOp } from "../IR";
-import { CompilationContext } from "./compile";
-import { getChild, getChildFragments, PathFragment } from "./fragments";
+import { type IR, isPolygolfOp, polygolfOp } from "../IR";
+import { type CompilationContext } from "./compile";
+import { getChild, getChildFragments, type PathFragment } from "./fragments";
 import { replaceAtIndex } from "./arrays";
 
 /** A Spine points to one node and keeps track of all of its ancestors up to
@@ -11,7 +11,7 @@ export class Spine<N extends IR.Node = IR.Node> {
   constructor(
     public readonly node: N,
     public readonly parent: Spine | null,
-    public readonly pathFragment: PathFragment | null
+    public readonly pathFragment: PathFragment | null,
   ) {
     this.root = parent?.root ?? parent ?? this;
   }
@@ -27,7 +27,7 @@ export class Spine<N extends IR.Node = IR.Node> {
   /** Get a list of all child spines. */
   getChildSpines(): Spine[] {
     return Array.from(getChildFragments(this.node)).map((n) =>
-      this.getChild(n)
+      this.getChild(n),
     );
   }
 
@@ -49,7 +49,7 @@ export class Spine<N extends IR.Node = IR.Node> {
             [pathFragment.prop]: replaceAtIndex(
               (this.node as any)[pathFragment.prop],
               pathFragment.index,
-              newChild
+              newChild,
             ),
           };
     return new Spine(
@@ -57,7 +57,7 @@ export class Spine<N extends IR.Node = IR.Node> {
       this.parent === null || this.pathFragment === null
         ? null
         : this.parent.withChildReplaced(node, this.pathFragment),
-      this.pathFragment
+      this.pathFragment,
     );
   }
 
@@ -72,7 +72,7 @@ export class Spine<N extends IR.Node = IR.Node> {
     }
     if (newNode.kind === "Block" && this.parent.node.kind === "Block") {
       throw new Error(
-        `Programming error: attempt to insert a Block into a Block`
+        `Programming error: attempt to insert a Block into a Block`,
       );
     }
     const parentNode = this.parent.node;
@@ -86,10 +86,10 @@ export class Spine<N extends IR.Node = IR.Node> {
               ...replaceAtIndex(
                 parentNode.args,
                 this.pathFragment.index,
-                newNode
-              )
+                newNode,
+              ),
             ),
-            true
+            true,
           )
         : this.parent.withChildReplaced(newNode, this.pathFragment);
     return canonizeAndReturnRoot
@@ -134,7 +134,7 @@ export class Spine<N extends IR.Node = IR.Node> {
   withReplacer(
     replacer: Visitor<IR.Node | undefined>,
     skipThis = false,
-    skipReplaced = false
+    skipReplaced = false,
   ): Spine {
     const ret = skipThis ? undefined : replacer(this.node, this);
     if (ret === undefined) {
@@ -175,7 +175,7 @@ export class Spine<N extends IR.Node = IR.Node> {
 export type PluginVisitor<T> = <N extends IR.Node>(
   node: N,
   spine: Spine<N>,
-  context: CompilationContext
+  context: CompilationContext,
 ) => T;
 
 export type Visitor<T> = <N extends IR.Node>(node: N, spine: Spine<N>) => T;

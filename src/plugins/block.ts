@@ -1,24 +1,24 @@
 import { groupby } from "../common/arrays";
 import {
-  Assignment,
-  Block,
+  type Assignment,
+  type Block,
   block,
   blockOrSingle,
-  Node,
-  Identifier,
+  type Node,
+  type Identifier,
   isAssignment,
   isAssignmentToIdentifier,
   isIdent,
   isUserIdent,
   manyToManyAssignment,
   oneToManyAssignment,
-  VarDeclaration,
+  type VarDeclaration,
   varDeclarationBlock,
-  VarDeclarationWithAssignment,
+  type VarDeclarationWithAssignment,
   varDeclarationWithAssignment,
 } from "../IR";
-import { Plugin } from "../common/Language";
-import { Spine } from "../common/Spine";
+import { type Plugin } from "../common/Language";
+import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 import { getWrites, hasSideEffect } from "../common/symbols";
 
@@ -33,7 +33,8 @@ export function blockChildrenCollectAndReplace<T extends Node = Node>(
   collectPredicate: (expr: Node, spine: Spine<Node>, previous: T[]) => boolean,
   transform: (exprs: T[]) => Node[],
   blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true,
-  transformPredicate: (exprs: T[]) => boolean = (exprs: T[]) => exprs.length > 1
+  transformPredicate: (exprs: T[]) => boolean = (exprs: T[]) =>
+    exprs.length > 1,
 ): Plugin {
   return {
     name,
@@ -98,7 +99,7 @@ export const addVarDeclarations: Plugin = {
  * Replaces `v1 = c; v2 = c; ... ; vn = c` with `v1,v2,...vn=c`
  */
 export function addOneToManyAssignments(
-  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true,
 ): Plugin {
   return blockChildrenCollectAndReplace<Assignment<Identifier>>(
     "addOneToManyAssignments",
@@ -110,10 +111,10 @@ export function addOneToManyAssignments(
     (exprs) => [
       oneToManyAssignment(
         exprs.map((x) => x.variable),
-        exprs[0].expr
+        exprs[0].expr,
       ),
     ],
-    blockPredicate
+    blockPredicate,
   );
 }
 
@@ -121,7 +122,7 @@ export function addOneToManyAssignments(
  * Replaces `var v1 = c; var v2 = c; ... ; var vn = c` with `var v1,v2,...vn=c`
  */
 export function addVarDeclarationOneToManyAssignments(
-  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true,
 ): Plugin {
   return blockChildrenCollectAndReplace<
     VarDeclarationWithAssignment<Assignment<Identifier>>
@@ -137,11 +138,11 @@ export function addVarDeclarationOneToManyAssignments(
       varDeclarationWithAssignment(
         oneToManyAssignment(
           exprs.map((x) => x.assignment.variable),
-          exprs[0].assignment.expr
-        )
+          exprs[0].assignment.expr,
+        ),
       ),
     ],
-    blockPredicate
+    blockPredicate,
   );
 }
 
@@ -149,7 +150,7 @@ export function addVarDeclarationOneToManyAssignments(
  * Replaces `v1 = e1; v2 = e2; ... ; vn = en` with `(v1,v2,...vn)=(e1,e2,...,en)`
  */
 export function addManyToManyAssignments(
-  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true,
 ): Plugin {
   return blockChildrenCollectAndReplace<Assignment<Identifier>>(
     "addManyToManyAssignments",
@@ -159,10 +160,10 @@ export function addManyToManyAssignments(
     (exprs) => [
       manyToManyAssignment(
         exprs.map((x) => x.variable),
-        exprs.map((x) => x.expr)
+        exprs.map((x) => x.expr),
       ),
     ],
-    blockPredicate
+    blockPredicate,
   );
 }
 
@@ -170,7 +171,7 @@ export function addManyToManyAssignments(
  * Replaces `var v1 = e1; var v2 = e2; ... ; var vn = en` with `var (v1,v2,...vn)=(e1,e2,...,en)`
  */
 export function addVarDeclarationManyToManyAssignments(
-  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true
+  blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true,
 ): Plugin {
   return blockChildrenCollectAndReplace<
     VarDeclarationWithAssignment<Assignment<Identifier>>
@@ -180,24 +181,24 @@ export function addVarDeclarationManyToManyAssignments(
       expr.kind === "VarDeclarationWithAssignment" &&
       isAssignmentToIdentifier(expr.assignment) &&
       !previous.some((x) =>
-        spine.someNode(isUserIdent(x.assignment.variable.name))
+        spine.someNode(isUserIdent(x.assignment.variable.name)),
       ),
     (exprs) => [
       varDeclarationWithAssignment(
         manyToManyAssignment(
           exprs.map((x) => x.assignment.variable),
-          exprs.map((x) => x.assignment.expr)
-        )
+          exprs.map((x) => x.assignment.expr),
+        ),
       ),
     ],
-    blockPredicate
+    blockPredicate,
   );
 }
 
 export function groupVarDeclarations(
   blockPredicate: (block: Block, spine: Spine<Block>) => boolean = () => true,
   transformPredicate: (collected: Node[]) => boolean = (collected: Node[]) =>
-    collected.length > 1
+    collected.length > 1,
 ): Plugin {
   return blockChildrenCollectAndReplace<
     VarDeclaration | VarDeclarationWithAssignment
@@ -208,7 +209,7 @@ export function groupVarDeclarations(
       expr.kind === "VarDeclarationWithAssignment",
     (exprs) => [varDeclarationBlock(exprs)],
     blockPredicate,
-    transformPredicate
+    transformPredicate,
   );
 }
 
@@ -247,7 +248,7 @@ export const tempVarToMultipleAssignment: Plugin = {
           isIdent(a.variable)(c.expr)
         ) {
           newNodes.push(
-            manyToManyAssignment([b.variable, c.variable], [b.expr, a.expr])
+            manyToManyAssignment([b.variable, c.variable], [b.expr, a.expr]),
           );
           changed = true;
           i += 2;
@@ -274,7 +275,7 @@ export const inlineVariables: Plugin = {
             write.node.kind === "Assignment" &&
             write.parent?.node.kind === "Block" &&
             spine.someNode(
-              (n) => n !== variable && isUserIdent(variable)(n) // in tests variables are often never read from and we don't want to make those disappear
+              (n) => n !== variable && isUserIdent(variable)(n), // in tests variables are often never read from and we don't want to make those disappear
             ) &&
             !hasSideEffect(write.getChild("expr"))
           ) {
@@ -294,8 +295,8 @@ export const inlineVariables: Plugin = {
                       ...assignment.expr,
                       type: assignment.expr.type ?? assignment.variable.type,
                     }
-                  : undefined
-              ).node
+                  : undefined,
+              ).node,
             );
           }
         }

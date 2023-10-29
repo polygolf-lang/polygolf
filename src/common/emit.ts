@@ -1,11 +1,11 @@
-import { IR, IntegerLiteral, Node } from "IR";
+import { type IR, type IntegerLiteral, type Node } from "IR";
 import { PolygolfError } from "./errors";
-import { TokenTree } from "./Language";
+import { type TokenTree } from "./Language";
 import { codepoints } from "./objective";
 
 export function joinTrees(
   sep: TokenTree,
-  groups: readonly TokenTree[]
+  groups: readonly TokenTree[],
 ): TokenTree {
   return groups.flatMap((x, i) => (i > 0 ? [sep, x] : [x]));
 }
@@ -29,7 +29,7 @@ export function emitTextLiteral(
       ],
     ],
   ],
-  codepointMap?: (x: number, i: number, arr: number[]) => string
+  codepointMap?: (x: number, i: number, arr: number[]) => string,
 ): string {
   let result = "";
   for (const [delim, escapes] of options) {
@@ -74,15 +74,15 @@ export function shortest(x: string[]) {
 
 export function emitIntLiteral(
   n: IntegerLiteral,
-  bases: Record<number, [string, string]> = { 10: ["", ""] }
+  bases: Record<number, [string, string]> = { 10: ["", ""] },
 ) {
   if (-10000 < n.value && n.value < 10000) return n.value.toString();
   const isNegative = n.value < 0;
   const abs = isNegative ? -n.value : n.value;
   const absEmit = shortest(
     Object.entries(bases).map(
-      ([b, [pre, suf]]) => `${pre}${abs.toString(Number(b))}${suf}`
-    )
+      ([b, [pre, suf]]) => `${pre}${abs.toString(Number(b))}${suf}`,
+    ),
   );
   return isNegative ? `-${absEmit}` : absEmit;
 }

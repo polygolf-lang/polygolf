@@ -1,28 +1,28 @@
 import { getArithmeticType } from "../common/getType";
 import { stringify } from "../common/stringify";
 import {
-  Identifier,
-  BaseNode,
+  type Identifier,
+  type BaseNode,
   id,
-  UnaryOpCode,
-  BinaryOpCode,
-  OpCode,
-  Node,
-  IntegerLiteral,
-  MutatingBinaryOp,
+  type UnaryOpCode,
+  type BinaryOpCode,
+  type OpCode,
+  type Node,
+  type IntegerLiteral,
+  type MutatingBinaryOp,
   isCommutative,
   int,
   isAssociative,
   text,
   integerType,
-  AliasedOpCode,
-  FrontendOpCode,
-  AssociativeOpCode,
-  CommutativeOpCode,
+  type AliasedOpCode,
+  type FrontendOpCode,
+  type AssociativeOpCode,
+  type CommutativeOpCode,
   isConstantType,
   isBinary,
   booleanNotOpCode,
-  TextLiteral,
+  type TextLiteral,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseNode {
@@ -136,7 +136,7 @@ export interface NamedArg<T extends Node = Node> extends BaseNode {
 
 export function implicitConversion(
   behavesLike: UnaryOpCode & `${string}_to_${string}`,
-  expr: Node
+  expr: Node,
 ): ImplicitConversion {
   return {
     kind: "ImplicitConversion",
@@ -218,7 +218,7 @@ export function polygolfOp(op: OpCode, ...args: Node[]): Node {
       args = newArgs;
       if (op === "mul" && args.length > 1 && isNegativeLiteral(args[0])) {
         const toNegate = args.find(
-          (x) => isPolygolfOp("add")(x) && x.args.some(isNegative)
+          (x) => isPolygolfOp("add")(x) && x.args.some(isNegative),
         );
         if (toNegate !== undefined) {
           args = args.map((x) =>
@@ -227,9 +227,9 @@ export function polygolfOp(op: OpCode, ...args: Node[]): Node {
               : x === toNegate
               ? polygolfOp(
                   "add",
-                  ...(x as PolygolfOp).args.map((y) => polygolfOp("neg", y))
+                  ...(x as PolygolfOp).args.map((y) => polygolfOp("neg", y)),
                 )
-              : x
+              : x,
           );
         }
       }
@@ -268,7 +268,7 @@ function evalBinaryOp(op: BinaryOpCode, left: Node, right: Node): Node | null {
       const type = getArithmeticType(
         op,
         integerType(left.value, left.value),
-        integerType(right.value, right.value)
+        integerType(right.value, right.value),
       );
       if (isConstantType(type)) return int(type.low);
     } catch {
@@ -342,7 +342,7 @@ export function methodCall(
 
 export function propertyCall(
   object: Node | readonly Node[],
-  ident: string | Identifier
+  ident: string | Identifier,
 ): PropertyCall {
   return {
     kind: "PropertyCall",
@@ -354,7 +354,7 @@ export function propertyCall(
 export function indexCall(
   collection: string | Node,
   index: Node,
-  oneIndexed: boolean = false
+  oneIndexed: boolean = false,
 ): IndexCall {
   return {
     kind: "IndexCall",
@@ -369,7 +369,7 @@ export function rangeIndexCall(
   low: Node,
   high: Node,
   step: Node,
-  oneIndexed: boolean = false
+  oneIndexed: boolean = false,
 ): RangeIndexCall {
   return {
     kind: "RangeIndexCall",
@@ -402,7 +402,7 @@ export function conditional(
   condition: Node,
   consequent: Node,
   alternate: Node,
-  isSafe: boolean = true
+  isSafe: boolean = true,
 ): ConditionalOp {
   return {
     kind: "ConditionalOp",
@@ -442,7 +442,7 @@ export function getArgs(
     | FunctionCall
     | MethodCall
     | IndexCall
-    | RangeIndexCall
+    | RangeIndexCall,
 ): readonly Node[] {
   switch (node.kind) {
     case "BinaryOp":
@@ -485,7 +485,7 @@ export function isIdent<Name extends string>(
     x.kind === "Identifier" &&
     (names.length === 0 ||
       names.some(
-        (n) => (typeof n === "string" ? n : n.name) === x.name
+        (n) => (typeof n === "string" ? n : n.name) === x.name,
       ))) as any;
 }
 
@@ -497,7 +497,7 @@ export function isBuiltinIdent<Name extends string>(
     x.builtin &&
     (names.length === 0 ||
       names.some(
-        (n) => (typeof n === "string" ? n : n.name) === x.name
+        (n) => (typeof n === "string" ? n : n.name) === x.name,
       ))) as any;
 }
 
@@ -509,7 +509,7 @@ export function isUserIdent<Name extends string>(
     !x.builtin &&
     (names.length === 0 ||
       names.some(
-        (n) => (typeof n === "string" ? n : n.name) === x.name
+        (n) => (typeof n === "string" ? n : n.name) === x.name,
       ))) as any;
 }
 

@@ -1,4 +1,11 @@
-import { Node, Identifier, id, int, block, BaseNode } from "./IR";
+import {
+  type Node,
+  type Identifier,
+  id,
+  int,
+  block,
+  type BaseNode,
+} from "./IR";
 
 /**
  * A while loop. Raw OK
@@ -118,7 +125,7 @@ export function forRange(
   end: Node,
   increment: Node,
   body: Node,
-  inclusive: boolean = false
+  inclusive: boolean = false,
 ): ForRange {
   return {
     kind: "ForRange",
@@ -137,7 +144,7 @@ export function forDifferenceRange(
   difference: Node,
   increment: Node,
   body: Node,
-  inclusive: boolean = false
+  inclusive: boolean = false,
 ): ForDifferenceRange {
   return {
     kind: "ForDifferenceRange",
@@ -164,14 +171,14 @@ export function forRangeCommon(
       ? int(BigInt(bounds[3]))
       : bounds[3],
     body.length > 1 ? block(body) : body[0],
-    bounds[4]
+    bounds[4],
   );
 }
 
 export function forEach(
   variable: Identifier | string,
   collection: Node,
-  body: Node
+  body: Node,
 ): ForEach {
   return {
     kind: "ForEach",
@@ -184,7 +191,7 @@ export function forEach(
 export function forEachKey(
   variable: Identifier | string,
   table: Node,
-  body: Node
+  body: Node,
 ): ForEachKey {
   return {
     kind: "ForEachKey",
@@ -198,7 +205,7 @@ export function forCLike(
   init: Node,
   condition: Node,
   append: Node,
-  body: Node
+  body: Node,
 ): ForCLike {
   return {
     kind: "ForCLike",
@@ -213,7 +220,7 @@ export function forEachPair(
   keyVariable: Identifier | string,
   valueVariable: Identifier | string,
   table: Node,
-  body: Node
+  body: Node,
 ): ForEachPair {
   return {
     kind: "ForEachPair",
@@ -229,7 +236,7 @@ export function forEachPair(
 export function forArgv(
   variable: Identifier,
   argcUpperBound: number,
-  body: Node
+  body: Node,
 ): ForArgv {
   return {
     kind: "ForArgv",

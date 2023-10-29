@@ -49,7 +49,7 @@ const options = yargs()
 
 if (options.all === true && options.output !== undefined) {
   throw new Error(
-    "All variants options is only allowed when the output file is not specified."
+    "All variants options is only allowed when the output file is not specified.",
   );
 }
 
@@ -69,7 +69,7 @@ for (const result of compile(
     restrictFrontend: true,
     skipTypecheck: false,
   },
-  ...langs
+  ...langs,
 )) {
   if (printingMultipleLangs) console.log(result.language);
   if (typeof result.result === "string") {
@@ -80,7 +80,7 @@ for (const result of compile(
           (langs.length > 1 || !options.output.includes(".")
             ? "." + findLang(result.language)!.extension
             : ""),
-        result.result
+        result.result,
       );
     } else {
       console.log(result.result);
@@ -114,7 +114,7 @@ function handleError(e: unknown) {
           .join("\n") +
           "\n" +
           " ".repeat(e.source.column + 3) +
-          "^"
+          "^",
       );
     }
   } else {

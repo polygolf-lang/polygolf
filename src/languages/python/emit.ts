@@ -1,5 +1,5 @@
 import { charLength } from "../../common/objective";
-import { TokenTree } from "@/common/Language";
+import { type TokenTree } from "@/common/Language";
 import {
   containsMultiNode,
   EmitError,
@@ -7,8 +7,15 @@ import {
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral, text, isTextLiteral, id, binaryOp } from "../../IR";
-import { CompilationContext } from "@/common/compile";
+import {
+  type IR,
+  isIntLiteral,
+  text,
+  isTextLiteral,
+  id,
+  binaryOp,
+} from "../../IR";
+import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
@@ -53,7 +60,7 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   throw new Error(
-    `Programming error - unknown Python binary operator '${opname}'.`
+    `Programming error - unknown Python binary operator '${opname}'.`,
   );
 }
 
@@ -66,13 +73,13 @@ function unaryPrecedence(opname: string): number {
       return 3;
   }
   throw new Error(
-    `Programming error - unknown Python unary operator '${opname}.'`
+    `Programming error - unknown Python unary operator '${opname}.'`,
   );
 }
 
 export default function emitProgram(
   program: IR.Node,
-  context: CompilationContext
+  context: CompilationContext,
 ): TokenTree {
   function emitMultiNode(BaseNode: IR.Node, isRoot = false): TokenTree {
     const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
@@ -89,11 +96,11 @@ export default function emitProgram(
   function joinNodes(
     delim: TokenTree,
     exprs: readonly IR.Node[],
-    minPrec = -Infinity
+    minPrec = -Infinity,
   ) {
     return joinTrees(
       delim,
-      exprs.map((x) => emit(x, minPrec))
+      exprs.map((x) => emit(x, minPrec)),
     );
   }
 
@@ -218,7 +225,7 @@ export default function emitProgram(
             "{",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
+              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "}",
           ];
@@ -256,7 +263,7 @@ export default function emitProgram(
 
 export function emitPythonTextLiteral(
   x: string,
-  [low, high]: [number, number] = [1, Infinity]
+  [low, high]: [number, number] = [1, Infinity],
 ): string {
   function mapCodepoint(x: number) {
     if (low <= x && x <= high) return String.fromCharCode(x);
@@ -293,6 +300,6 @@ export function emitPythonTextLiteral(
         ],
       ],
     ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined
+    low > 1 || high < Infinity ? mapCodepoint : undefined,
   );
 }

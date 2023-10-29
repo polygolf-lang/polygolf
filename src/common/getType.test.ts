@@ -2,7 +2,7 @@ import {
   assignment,
   block,
   id,
-  Identifier,
+  type Identifier,
   integerType as int,
   textType as text,
   booleanType as bool,
@@ -10,9 +10,9 @@ import {
   arrayType as array,
   setType as set,
   tableType as table,
-  OpCode,
+  type OpCode,
   polygolfOp,
-  Type,
+  type Type,
   listConstructor,
   variants,
   toString,
@@ -26,11 +26,11 @@ import {
   tableConstructor,
   listType,
   functionCall,
-  IntegerType,
+  type IntegerType,
   isAssociative,
   forRangeCommon,
   forDifferenceRange,
-  Node,
+  type Node,
 } from "IR";
 import { PolygolfError } from "./errors";
 import { calcType } from "./getType";
@@ -46,7 +46,7 @@ function testNode(
   name: string,
   expr: Node,
   result: Type | "error",
-  prog: Node = block([])
+  prog: Node = block([]),
 ) {
   test(name, () => {
     if (result === "error") expect(() => calcType(expr, prog)).toThrow();
@@ -58,7 +58,7 @@ function testPolygolfOp(
   name: string,
   op: OpCode,
   args: Type[],
-  result: Type | "error"
+  result: Type | "error",
 ) {
   testNode(name, { kind: "PolygolfOp", op, args: args.map(e) }, result);
 }
@@ -73,7 +73,7 @@ function describePolygolfOp(op: OpCode, tests: [Type[], Type | "error"][]) {
           (result === "error" ? "error" : toString(result)),
         op,
         args,
-        result
+        result,
       );
     }
   });
@@ -97,25 +97,25 @@ describe("Bindings", () => {
     "for range positive step exclusive",
     id("i"),
     int(0, 9),
-    forRangeCommon(["i", 0, 10], empty)
+    forRangeCommon(["i", 0, 10], empty),
   );
   testNode(
     "for range positive step inclusive",
     id("i"),
     int(0, 10),
-    forRangeCommon(["i", 0, 10, 1, true], empty)
+    forRangeCommon(["i", 0, 10, 1, true], empty),
   );
   testNode(
     "for range negative step exclusive",
     id("i"),
     int(1, 10),
-    forRangeCommon(["i", 10, 0, -1], empty)
+    forRangeCommon(["i", 10, 0, -1], empty),
   );
   testNode(
     "for range negative step inclusive",
     id("i"),
     int(0, 10),
-    forRangeCommon(["i", 10, 0, -1, true], empty)
+    forRangeCommon(["i", 10, 0, -1, true], empty),
   );
   testNode(
     "for range general",
@@ -124,8 +124,8 @@ describe("Bindings", () => {
 
     forRangeCommon(
       ["i", e(int(-10, 10)), e(int(-12, 12)), e(int(-1, 1)), true],
-      empty
-    )
+      empty,
+    ),
   );
   testNode(
     "for difference range",
@@ -136,8 +136,8 @@ describe("Bindings", () => {
       integerLiteral(10),
       integerLiteral(5),
       integerLiteral(1),
-      empty
-    )
+      empty,
+    ),
   );
 });
 
@@ -155,7 +155,7 @@ describe("Assignment", () => {
   testNode(
     "assign empty list",
     assignment(e(list(text())), listConstructor([])),
-    list("void")
+    list("void"),
   );
   test("Self-referential assignment", () => {
     const aLHS = id("a");
@@ -169,7 +169,7 @@ describe("Functions", () => {
     "Function call wrong types",
     functionCall(id("f", false), [integerLiteral(1n)]),
     "error",
-    block([])
+    block([]),
   );
 });
 
@@ -179,22 +179,22 @@ describe("Index call", () => {
   testNode(
     "Index array",
     indexCall(e(array(int(), 10)), e(int(10, 10))),
-    "error"
+    "error",
   );
   testNode(
     "Index array",
     indexCall(e(array(int(), 10)), e(int(0, 0)), true),
-    "error"
+    "error",
   );
   testNode(
     "Index array",
     indexCall(e(array(text(), 10)), e(int(0, 9))),
-    text()
+    text(),
   );
   testNode(
     "Index list",
     indexCall(e(list(int())), e(int(0, 0)), true),
-    "error"
+    "error",
   );
   testNode("Index list", indexCall(e(list(int())), e(int())), "error");
   testNode("Index list", indexCall(e(list(text())), e(int(0))), text());
@@ -210,19 +210,19 @@ describe("Literals", () => {
   testNode(
     "array",
     arrayConstructor([e(int(10, 30)), e(int(20, 40))]),
-    array(int(10, 40), 2)
+    array(int(10, 40), 2),
   );
   testNode("list", listConstructor([e(int()), e(text())]), "error");
   testNode(
     "list",
     listConstructor([e(int(10, 30)), e(int(20, 40))]),
-    list(int(10, 40))
+    list(int(10, 40)),
   );
   testNode("set", setConstructor([e(int()), e(text())]), "error");
   testNode(
     "set",
     setConstructor([e(int(10, 30)), e(int(20, 40))]),
-    set(int(10, 40))
+    set(int(10, 40)),
   );
   testNode(
     "table",
@@ -230,7 +230,7 @@ describe("Literals", () => {
       keyValue(e(text()), e(int())),
       keyValue(e(text()), e(text())),
     ]),
-    "error"
+    "error",
   );
   testNode("table", tableConstructor([e(text()) as any, e(int())]), "error");
   testNode(
@@ -239,7 +239,7 @@ describe("Literals", () => {
       keyValue(e(text(10)), e(int(100, 200))),
       keyValue(e(text(20)), e(int(-100, -50))),
     ]),
-    table(text(20), int(-100, 200))
+    table(text(20), int(-100, 200)),
   );
 });
 

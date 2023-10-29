@@ -1,8 +1,8 @@
 import { variants } from "../../IR";
 import {
   defaultDetokenizer,
-  Plugin,
-  Language,
+  type Plugin,
+  type Language,
   required,
 } from "../../common/Language";
 import emitProgram from "./emit";
@@ -33,7 +33,7 @@ const polygolfLanguage: Language = {
       a !== ":" &&
       a !== "\n" &&
       b !== "\n",
-    2
+    2,
   ),
 };
 

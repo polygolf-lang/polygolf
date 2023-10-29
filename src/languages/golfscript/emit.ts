@@ -1,6 +1,6 @@
-import { TokenTree } from "../../common/Language";
+import { type TokenTree } from "../../common/Language";
 import { EmitError, emitTextLiteral } from "../../common/emit";
-import { int, integerType, IR, isIntLiteral, isSubtype } from "../../IR";
+import { int, integerType, type IR, isIntLiteral, isSubtype } from "../../IR";
 import { getType } from "../../common/getType";
 
 export default function emitProgram(program: IR.Node): TokenTree {

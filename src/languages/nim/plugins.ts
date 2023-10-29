@@ -10,7 +10,7 @@ import {
   polygolfOp,
 } from "../../IR";
 import { getType } from "../../common/getType";
-import { Plugin } from "../../common/Language";
+import { type Plugin } from "../../common/Language";
 import { addImports } from "../../plugins/imports";
 
 const includes: [string, string[]][] = [
@@ -57,7 +57,7 @@ export const addNimImports: Plugin = addImports(
       }
     }
     return importStatement("import", modules);
-  }
+  },
 );
 
 export const useUnsignedDivision: Plugin = {

@@ -1,4 +1,4 @@
-import { BaseNode, Node } from "./IR";
+import { type BaseNode, type Node } from "./IR";
 
 /**
  * Variants node. Variants are recursively expanded. All variants are then subject to the rest of the pipeline.
@@ -48,7 +48,7 @@ export function blockOrSingle(children: readonly Node[]): Node {
 export function ifStatement(
   condition: Node,
   consequent: Node,
-  alternate?: Node
+  alternate?: Node,
 ): IfStatement {
   return { kind: "IfStatement", condition, consequent, alternate };
 }
@@ -59,7 +59,7 @@ export function variants(variants: readonly Node[]): Variants {
 
 export function importStatement(
   name: string,
-  modules: readonly string[]
+  modules: readonly string[],
 ): ImportStatement {
   return { kind: "ImportStatement", name, modules };
 }

@@ -1,51 +1,56 @@
 import {
-  Assignment,
-  ManyToManyAssignment,
-  OneToManyAssignment,
-  VarDeclarationWithAssignment,
-  MutatingBinaryOp,
-  VarDeclaration,
-  VarDeclarationBlock,
+  type Assignment,
+  type ManyToManyAssignment,
+  type OneToManyAssignment,
+  type VarDeclarationWithAssignment,
+  type MutatingBinaryOp,
+  type VarDeclaration,
+  type VarDeclarationBlock,
 } from "./assignments";
 import {
-  ArrayConstructor,
-  ListConstructor,
-  TableConstructor,
-  SetConstructor,
+  type ArrayConstructor,
+  type ListConstructor,
+  type TableConstructor,
+  type SetConstructor,
 } from "./collections";
 import {
-  PolygolfOp,
-  BinaryOp,
-  ConditionalOp,
-  FunctionCall,
-  MethodCall,
-  UnaryOp,
-  IndexCall,
-  KeyValue,
-  RangeIndexCall,
-  Function,
-  NamedArg,
-  ImplicitConversion,
-  PropertyCall,
+  type PolygolfOp,
+  type BinaryOp,
+  type ConditionalOp,
+  type FunctionCall,
+  type MethodCall,
+  type UnaryOp,
+  type IndexCall,
+  type KeyValue,
+  type RangeIndexCall,
+  type Function,
+  type NamedArg,
+  type ImplicitConversion,
+  type PropertyCall,
 } from "./exprs";
 import {
-  ForRange,
-  ForEach,
-  ForEachKey,
-  ForEachPair,
-  ForCLike,
-  WhileLoop,
-  ForArgv,
-  ForDifferenceRange,
+  type ForRange,
+  type ForEach,
+  type ForEachKey,
+  type ForEachPair,
+  type ForCLike,
+  type WhileLoop,
+  type ForArgv,
+  type ForDifferenceRange,
 } from "./loops";
 import {
-  AnyIntegerLiteral,
-  Identifier,
-  IntegerLiteral,
-  TextLiteral,
+  type AnyIntegerLiteral,
+  type Identifier,
+  type IntegerLiteral,
+  type TextLiteral,
 } from "./terminals";
-import { Block, IfStatement, ImportStatement, Variants } from "./toplevel";
-import { Type } from "./types";
+import {
+  type Block,
+  type IfStatement,
+  type ImportStatement,
+  type Variants,
+} from "./toplevel";
+import { type Type } from "./types";
 
 export * from "./assignments";
 export * from "./opcodes";

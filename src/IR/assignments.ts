@@ -1,5 +1,13 @@
 import { PolygolfError } from "../common/errors";
-import { BaseNode, id, Identifier, Type, IndexCall, isIdent, Node } from "./IR";
+import {
+  type BaseNode,
+  id,
+  type Identifier,
+  type Type,
+  type IndexCall,
+  isIdent,
+  type Node,
+} from "./IR";
 
 export type LValue = Identifier | IndexCall;
 
@@ -79,7 +87,7 @@ export interface VarDeclarationBlock extends BaseNode {
 export function mutatingBinaryOp(
   name: string,
   variable: LValue,
-  right: Node
+  right: Node,
 ): MutatingBinaryOp {
   return {
     kind: "MutatingBinaryOp",
@@ -91,7 +99,7 @@ export function mutatingBinaryOp(
 
 export function varDeclaration(
   variable: Identifier | string,
-  variableType: Type
+  variableType: Type,
 ): VarDeclaration {
   return {
     kind: "VarDeclaration",
@@ -102,11 +110,11 @@ export function varDeclaration(
 
 export function assignment(
   variable: Identifier | string,
-  expr: Node
+  expr: Node,
 ): Assignment<Identifier>;
 export function assignment(
   variable: IndexCall,
-  expr: Node
+  expr: Node,
 ): Assignment<IndexCall>;
 export function assignment(variable: LValue | string, expr: Node): Assignment {
   return {
@@ -125,7 +133,7 @@ export function isAssignmentToIdentifier(x: Node): x is Assignment<Identifier> {
 
 export function manyToManyAssignment(
   variables: (LValue | string)[],
-  exprs: readonly Node[]
+  exprs: readonly Node[],
 ): ManyToManyAssignment {
   return {
     kind: "ManyToManyAssignment",
@@ -136,7 +144,7 @@ export function manyToManyAssignment(
 
 export function oneToManyAssignment(
   variables: readonly (LValue | string)[],
-  expr: Node
+  expr: Node,
 ): OneToManyAssignment {
   return {
     kind: "OneToManyAssignment",
@@ -146,7 +154,7 @@ export function oneToManyAssignment(
 }
 
 export function varDeclarationWithAssignment<T extends SomeAssignment>(
-  assignment: T
+  assignment: T,
 ): VarDeclarationWithAssignment<T> {
   if (
     (isAssignment(assignment) && !isIdent()(assignment.variable)) ||
@@ -155,7 +163,7 @@ export function varDeclarationWithAssignment<T extends SomeAssignment>(
   ) {
     throw new PolygolfError(
       "VarDeclarationWithAssignment needs assignments to variables.",
-      assignment.source
+      assignment.source,
     );
   }
   return {
@@ -165,7 +173,7 @@ export function varDeclarationWithAssignment<T extends SomeAssignment>(
 }
 
 export function varDeclarationBlock(
-  children: (VarDeclaration | VarDeclarationWithAssignment)[]
+  children: (VarDeclaration | VarDeclarationWithAssignment)[],
 ): VarDeclarationBlock {
   return {
     kind: "VarDeclarationBlock",

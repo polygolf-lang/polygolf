@@ -1,12 +1,12 @@
-import { CompilationContext } from "@/common/compile";
+import { type CompilationContext } from "@/common/compile";
 import {
   EmitError,
   emitIntLiteral,
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral } from "../../IR";
-import { TokenTree } from "@/common/Language";
+import { type IR, isIntLiteral } from "../../IR";
+import { type TokenTree } from "@/common/Language";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
@@ -57,22 +57,22 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   throw new Error(
-    `Programming error - unknown Lua binary operator '${opname}.'`
+    `Programming error - unknown Lua binary operator '${opname}.'`,
   );
 }
 
 export default function emitProgram(
   program: IR.Node,
-  context: CompilationContext
+  context: CompilationContext,
 ): TokenTree {
   function joinNodes(
     delim: TokenTree,
     exprs: readonly IR.Node[],
-    minPrec = -Infinity
+    minPrec = -Infinity,
   ) {
     return joinTrees(
       delim,
-      exprs.map((x) => emit(x, minPrec))
+      exprs.map((x) => emit(x, minPrec)),
     );
   }
 
@@ -174,7 +174,7 @@ export default function emitProgram(
 
 function emitLuaTextLiteral(
   x: string,
-  [low, high]: [number, number] = [1, Infinity]
+  [low, high]: [number, number] = [1, Infinity],
 ): string {
   function mapCodepoint(x: number, i: number, arr: number[]) {
     if (low <= x && x <= high) return String.fromCharCode(x);
@@ -213,6 +213,6 @@ function emitLuaTextLiteral(
         ],
       ],
     ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined
+    low > 1 || high < Infinity ? mapCodepoint : undefined,
   );
 }

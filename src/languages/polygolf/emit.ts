@@ -1,15 +1,15 @@
-import { TokenTree } from "../../common/Language";
+import { type TokenTree } from "../../common/Language";
 import { emitTextLiteral, joinTrees } from "../../common/emit";
 import {
   block,
-  Node,
+  type Node,
   id,
-  IR,
+  type IR,
   isIntLiteral,
   text,
   toString,
   variants,
-  Variants,
+  type Variants,
 } from "../../IR";
 
 /*
@@ -37,7 +37,7 @@ function emitVariants(expr: Variants, indent = false): TokenTree {
       "\n",
       joinTrees(
         ["$DEDENT$", "\n", "/", "$INDENT$", "\n"],
-        expr.variants.map((x) => emitNode(x, true))
+        expr.variants.map((x) => emitNode(x, true)),
       ),
       "$DEDENT$",
       "\n",
@@ -48,7 +48,7 @@ function emitVariants(expr: Variants, indent = false): TokenTree {
     "{",
     joinTrees(
       "/",
-      expr.variants.map((x) => emitNode(x, true))
+      expr.variants.map((x) => emitNode(x, true)),
     ),
     "}",
   ];
@@ -59,7 +59,7 @@ export function emitArrayOfNodes(exprs: readonly Node[]) {
     "{",
     joinTrees(
       [],
-      exprs.map((x) => emitNode(x, true))
+      exprs.map((x) => emitNode(x, true)),
     ),
     "}",
   ];
@@ -68,7 +68,7 @@ export function emitArrayOfNodes(exprs: readonly Node[]) {
 export function emitNode(
   expr: Node,
   asStatement = false,
-  indent = false
+  indent = false,
 ): TokenTree {
   let res = emitNodeWithoutAnnotation(expr, asStatement, indent);
   if (asStatement) {
@@ -82,7 +82,7 @@ export function emitNode(
 function emitNodeWithoutAnnotation(
   expr: Node,
   asStatement = false,
-  indent = false
+  indent = false,
 ): TokenTree {
   function emitSexpr(op: string, ...args: (TokenTree | Node)[]): TokenTree {
     const isNullary = [
@@ -116,9 +116,9 @@ function emitNodeWithoutAnnotation(
         joinTrees(
           [],
           args.map((x) =>
-            typeof x === "string" || !("kind" in x) ? [x] : emitNode(x)
-          )
-        )
+            typeof x === "string" || !("kind" in x) ? [x] : emitNode(x),
+          ),
+        ),
       );
     }
     if (!asStatement) {
@@ -131,7 +131,7 @@ function emitNodeWithoutAnnotation(
     case "Block":
       return joinTrees(
         "\n",
-        expr.children.map((x) => emitNode(x, true))
+        expr.children.map((x) => emitNode(x, true)),
       );
     case "Variants":
       return emitVariants(expr, indent);
@@ -174,13 +174,13 @@ function emitNodeWithoutAnnotation(
         expr.isSafe ? "conditional" : "unsafe_conditional",
         expr.condition,
         expr.consequent,
-        expr.alternate
+        expr.alternate,
       );
     case "WhileLoop":
       return emitSexpr(
         "while",
         expr.condition,
-        emitNode(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForRange": {
       if (expr.inclusive) {
@@ -190,7 +190,7 @@ function emitNodeWithoutAnnotation(
           expr.start,
           expr.end,
           expr.increment,
-          emitNode(expr.body, false, true)
+          emitNode(expr.body, false, true),
         );
       }
       let args: Node[] = [];
@@ -207,7 +207,7 @@ function emitNodeWithoutAnnotation(
         "for_argv",
         expr.variable,
         expr.argcUpperBound.toString(),
-        emitNode(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "IfStatement":
       return emitSexpr(
@@ -216,7 +216,7 @@ function emitNodeWithoutAnnotation(
         emitNode(expr.consequent, false, true),
         ...(expr.alternate === undefined
           ? []
-          : emitNode(expr.alternate, false, true))
+          : emitNode(expr.alternate, false, true)),
       );
 
     case "ImplicitConversion":
@@ -231,7 +231,7 @@ function emitNodeWithoutAnnotation(
       return emitSexpr(
         "@",
         emitArrayOfNodes(expr.variables),
-        emitArrayOfNodes(expr.exprs)
+        emitArrayOfNodes(expr.exprs),
       );
     case "OneToManyAssignment":
       return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
@@ -241,7 +241,7 @@ function emitNodeWithoutAnnotation(
       return emitSexpr(
         expr.oneIndexed ? "IndexCallOneIndexed" : "@",
         expr.collection,
-        expr.index
+        expr.index,
       );
     case "RangeIndexCall":
       return emitSexpr(
@@ -249,7 +249,7 @@ function emitNodeWithoutAnnotation(
         expr.collection,
         expr.low,
         expr.high,
-        expr.step
+        expr.step,
       );
     case "MethodCall":
       return emitSexpr("@", expr.object, text(expr.ident.name), ...expr.args);
@@ -262,7 +262,7 @@ function emitNodeWithoutAnnotation(
     case "ImportStatement":
       return emitSexpr(
         "@",
-        ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x))
+        ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x)),
       );
     case "ForDifferenceRange":
       return emitSexpr(
@@ -271,21 +271,21 @@ function emitNodeWithoutAnnotation(
         expr.start,
         expr.difference,
         expr.increment,
-        emitNode(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForEach":
       return emitSexpr(
         "@",
         expr.variable,
         expr.collection,
-        emitNode(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForEachKey":
       return emitSexpr(
         "@",
         expr.variable,
         expr.table,
-        emitNode(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForEachPair":
       return emitSexpr(
@@ -293,7 +293,7 @@ function emitNodeWithoutAnnotation(
         expr.keyVariable,
         expr.valueVariable,
         expr.table,
-        emitNode(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "ForCLike":
       return emitSexpr(
@@ -301,7 +301,7 @@ function emitNodeWithoutAnnotation(
         expr.init,
         expr.condition,
         expr.append,
-        emitNode(expr.body, false, true)
+        emitNode(expr.body, false, true),
       );
     case "NamedArg":
       return emitSexpr("@", text(expr.name), expr.value);

@@ -1,4 +1,4 @@
-import { TokenTree } from "@/common/Language";
+import { type TokenTree } from "@/common/Language";
 import {
   emitTextLiteral,
   joinTrees,
@@ -6,13 +6,13 @@ import {
   emitIntLiteral,
 } from "../../common/emit";
 import {
-  ArrayConstructor,
-  IR,
+  type ArrayConstructor,
+  type IR,
   isIdent,
   isIntLiteral,
   isTextLiteral,
 } from "../../IR";
-import { CompilationContext } from "@/common/compile";
+import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
@@ -61,13 +61,13 @@ function binaryPrecedence(opname: string): number {
       return 3;
   }
   throw new Error(
-    `Programming error - unknown Nim binary operator '${opname}.'`
+    `Programming error - unknown Nim binary operator '${opname}.'`,
   );
 }
 
 export default function emitProgram(
   program: IR.Node,
-  context: CompilationContext
+  context: CompilationContext,
 ): TokenTree {
   function emitMultiNode(expr: IR.Node, isRoot = false): TokenTree {
     const children = expr.kind === "Block" ? expr.children : [expr];
@@ -99,11 +99,11 @@ export default function emitProgram(
   function joinNodes(
     delim: TokenTree,
     exprs: readonly IR.Node[],
-    minPrec = -Infinity
+    minPrec = -Infinity,
   ) {
     return joinTrees(
       delim,
-      exprs.map((x) => emit(x, minPrec))
+      exprs.map((x) => emit(x, minPrec)),
     );
   }
 
@@ -285,7 +285,7 @@ export default function emitProgram(
         case "ArrayConstructor":
           if (
             e.exprs.every(
-              (x) => x.kind === "ArrayConstructor" && x.exprs.length === 2
+              (x) => x.kind === "ArrayConstructor" && x.exprs.length === 2,
             )
           ) {
             const pairs = e.exprs as readonly ArrayConstructor[];
@@ -293,7 +293,7 @@ export default function emitProgram(
               "{",
               joinTrees(
                 ",",
-                pairs.map((x) => [emit(x.exprs[0]), ":", emit(x.exprs[1])])
+                pairs.map((x) => [emit(x.exprs[0]), ":", emit(x.exprs[1])]),
               ),
               "}",
             ];
@@ -304,7 +304,7 @@ export default function emitProgram(
             "{",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
+              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "}",
             ".",
@@ -338,7 +338,7 @@ export default function emitProgram(
 
 function emitAsRawTextLiteral(
   value: string,
-  prefix: string = "r"
+  prefix: string = "r",
 ): string | null {
   if (value.includes("\n") || value.includes("\r")) return null;
   return `${prefix}"${value.replaceAll(`"`, `""`)}"`;
@@ -346,7 +346,7 @@ function emitAsRawTextLiteral(
 
 function emitNimTextLiteral(
   x: string,
-  [low, high]: [number, number] = [1, Infinity]
+  [low, high]: [number, number] = [1, Infinity],
 ): string {
   function mapCodepoint(x: number, i: number, arr: number[]) {
     if (low <= x && x <= high) return String.fromCharCode(x);
@@ -378,6 +378,6 @@ function emitNimTextLiteral(
         ],
       ],
     ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined
+    low > 1 || high < Infinity ? mapCodepoint : undefined,
   );
 }

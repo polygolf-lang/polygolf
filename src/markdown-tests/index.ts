@@ -1,12 +1,12 @@
 import parse from "../frontend/parse";
 import compile, {
-  CompilationOptions,
+  type CompilationOptions,
   applyAllToAllAndGetCounts,
   debugEmit,
   normalize,
 } from "../common/compile";
 import { findLang } from "../languages/languages";
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import { getOnlyVariant } from "../common/expandVariants";
 
 export const keywords = [
@@ -25,7 +25,7 @@ export const keywords = [
 
 export function compilationOptionsFromKeywords(
   args: string[],
-  isLangTest = true
+  isLangTest = true,
 ): CompilationOptions {
   const is = (x: (typeof keywords)[number]) => args.includes(x);
   return {
@@ -47,17 +47,17 @@ export function testLang(
   lang: string,
   args: string[],
   input: string,
-  output: string
+  output: string,
 ) {
-  test(name, () =>
+  test(name, () => {
     expect(
       compile(
         input,
         compilationOptionsFromKeywords(args, true),
-        findLang(lang)!
-      )[0].result
-    ).toEqual(output)
-  );
+        findLang(lang)!,
+      )[0].result,
+    ).toEqual(output);
+  });
 }
 
 export function testPlugin(
@@ -65,9 +65,9 @@ export function testPlugin(
   plugins: Plugin[],
   args: string[],
   input: string,
-  output: string
+  output: string,
 ) {
-  test(name, () =>
+  test(name, () => {
     expect(
       debugEmit(
         applyAllToAllAndGetCounts(
@@ -76,9 +76,9 @@ export function testPlugin(
             addWarning: () => {},
             options: compilationOptionsFromKeywords(args),
           },
-          ...plugins.map((x) => x.visit)
-        )[0]
-      )
-    ).toEqual(normalize(output))
-  );
+          ...plugins.map((x) => x.visit),
+        )[0],
+      ),
+    ).toEqual(normalize(output));
+  });
 }

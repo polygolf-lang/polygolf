@@ -1,12 +1,12 @@
-import { TokenTree } from "../../common/Language";
+import { type TokenTree } from "../../common/Language";
 import {
   EmitError,
   emitIntLiteral,
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral, isIdent } from "../../IR";
-import { CompilationContext } from "@/common/compile";
+import { type IR, isIntLiteral, isIdent } from "../../IR";
+import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
@@ -46,7 +46,7 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   throw new Error(
-    `Programming error - unknown Swift binary operator '${opname}.'`
+    `Programming error - unknown Swift binary operator '${opname}.'`,
   );
 }
 
@@ -56,16 +56,16 @@ function unaryPrecedence(opname: string): number {
 
 export default function emitProgram(
   program: IR.Node,
-  context: CompilationContext
+  context: CompilationContext,
 ): TokenTree {
   function joinNodes(
     delim: TokenTree,
     exprs: readonly IR.Node[],
-    minPrec = -Infinity
+    minPrec = -Infinity,
   ) {
     return joinTrees(
       delim,
-      exprs.map((x) => emit(x, minPrec))
+      exprs.map((x) => emit(x, minPrec)),
     );
   }
 
@@ -179,7 +179,7 @@ export default function emitProgram(
             "[",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
+              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "]",
           ];
@@ -249,7 +249,7 @@ const unicode0Bto1Frepls: [string, string][] = [
 
 function emitSwiftTextLiteral(
   x: string,
-  [low, high]: [number, number] = [1, Infinity]
+  [low, high]: [number, number] = [1, Infinity],
 ): string {
   function mapCodepoint(x: number) {
     if (low <= x && x <= high) return String.fromCharCode(x);
@@ -278,6 +278,6 @@ function emitSwiftTextLiteral(
         ],
       ],
     ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined
+    low > 1 || high < Infinity ? mapCodepoint : undefined,
   );
 }

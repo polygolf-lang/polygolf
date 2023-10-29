@@ -1,19 +1,19 @@
-import { Plugin, IdentifierGenerator } from "common/Language";
+import { type Plugin, type IdentifierGenerator } from "common/Language";
 import { getDeclaredIdentifiers } from "../common/symbols";
-import { Spine } from "../common/Spine";
+import { type Spine } from "../common/Spine";
 import {
   assignment,
   block,
   id,
-  Identifier,
-  IR,
+  type Identifier,
+  type IR,
   isUserIdent,
-  Node,
+  type Node,
 } from "../IR";
 
 function getIdentMap(
   spine: Spine<IR.Node>,
-  identGen: IdentifierGenerator
+  identGen: IdentifierGenerator,
 ): Map<string, string> {
   // First, try mapping as many idents as possible to their preferred versions
   const inputNames = [...getDeclaredIdentifiers(spine.node)];
@@ -59,7 +59,7 @@ function getIdentMap(
 }
 
 export function renameIdents(
-  identGen: IdentifierGenerator = defaultIdentGen
+  identGen: IdentifierGenerator = defaultIdentGen,
 ): Plugin {
   return {
     name: "renameIdents(...)",
@@ -72,8 +72,8 @@ export function renameIdents(
           if (outputName === undefined) {
             throw new Error(
               `Programming error. Incomplete identMap. Defined: ${JSON.stringify(
-                [...identMap.keys()]
-              )}, missing ${JSON.stringify(node.name)}`
+                [...identMap.keys()],
+              )}, missing ${JSON.stringify(node.name)}`,
             );
           }
           return id(outputName);
@@ -102,7 +102,7 @@ const defaultIdentGen = {
  */
 export function alias(
   getKey: (expr: Node, spine: Spine) => string | undefined,
-  save: ((key: string, freq: number) => number) | [number, number] = [1, 3]
+  save: ((key: string, freq: number) => number) | [number, number] = [1, 3],
 ): Plugin {
   const aliasingSave =
     typeof save === "function"
