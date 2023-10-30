@@ -145,7 +145,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
       return assignment(args[0], args[1]);
     case "function_call": {
       expectArity(1, Infinity);
-      assertIdentifier(args[0]);
+      if (restrictedFrontend) assertIdentifier(args[0]);
       return functionCall(args[0], args.slice(1));
     }
     case "array":

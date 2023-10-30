@@ -241,8 +241,8 @@ const nimLanguage: Language = {
       noStandaloneVarDeclarations,
       assertInt64,
       removeImplicitConversions,
-      useUFCS,
     ),
+    search(useUFCS),
   ],
   detokenizer: defaultDetokenizer((a, b) => {
     const left = a[a.length - 1];

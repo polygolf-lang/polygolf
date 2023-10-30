@@ -1,12 +1,11 @@
 import {
+  binaryOp,
+  functionCall,
   importStatement,
   integerType,
   isIdent,
-  isOfKind,
   isPolygolfOp,
   isSubtype,
-  isTextLiteral,
-  methodCall,
   polygolfOp,
 } from "../../IR";
 import { getType } from "../../common/getType";
@@ -75,14 +74,19 @@ export const useUnsignedDivision: Plugin = {
 export const useUFCS: Plugin = {
   name: "useUFCS",
   visit(node) {
-    if (node.kind === "FunctionCall" && node.args.length > 0) {
-      if (node.args.length === 1 && isTextLiteral()(node.args[0])) {
-        return;
+    if (node.kind === "FunctionCall") {
+      if (node.args.length === 1) {
+        return binaryOp(" ", node.func, node.args[0]);
       }
-      const [obj, ...args] = node.args;
-      if (!isOfKind("BinaryOp", "UnaryOp")(obj) && isIdent()(node.func)) {
-        return methodCall(obj, node.func, ...args);
+      if (node.args.length > 1 && isIdent()(node.func)) {
+        return functionCall(
+          binaryOp(".", node.args[0], node.func),
+          ...node.args.slice(1),
+        );
       }
+    }
+    if (node.kind === "BinaryOp" && node.name === " " && isIdent()(node.left)) {
+      return binaryOp(".", node.right, node.left);
     }
   },
 };

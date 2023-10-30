@@ -72,26 +72,26 @@ var
  b=1<2
 t[2]
 t[2..<6]
-"a"[0].ord
-"abc"[1].ord
-t.split"|"
-t.split
-t.len
-t.repeat 3
-1.max n
-1.min n
-n.abs
-t.parseInt
-stdout.write t
-t.echo
-b.int
-48.chr
+ord("a"[0])
+ord("abc"[1])
+split(t,"|")
+split(t)
+len(t)
+repeat(t,3)
+max(1,n)
+min(1,n)
+abs(n)
+parseInt(t)
+write(stdout,t)
+echo(t)
+int(b)
+chr(48)
 t&"x"
-"a+b+c".replace("+","*")
-"a*b*c".replace"*"
-"XYZXYZ".multireplace {"Y":"b","X":"a"}
-@["xy","abc"].join"/"
-@["12","345"].join
+replace("a+b+c","+","*")
+replace("a*b*c","*")
+multireplace("XYZXYZ",{"Y":"b","X":"a"})
+join(@["xy","abc"],"/")
+join(@["12","345"])
 not n
 not b
 -n
@@ -117,7 +117,7 @@ n>=3
 n>3
 b and b
 b or b
-@[""].find""
+find(@[""],"")
 ```
 
 ## Misc
@@ -128,16 +128,18 @@ print (list_get (text_split "abc" "b") 0);
 
 ```nim
 include re
-"abc".split"b"[0].echo
+echo "abc".split"b"[0]
 ```
 
 ```polygolf
 $a:0..1 <- 0;
+$a <- 1;
 println_int (($a + 1) * $a);
 ```
 
-```nim nogolf
+```nim
 var a=0
+a=1
 echo (1+a)*a
 ```
 
@@ -145,7 +147,7 @@ echo (1+a)*a
 println ((int_to_text 1) .. "x");
 ```
 
-```nim nogolf
+```nim
 echo $1&"x"
 ```
 
@@ -192,7 +194,7 @@ for_argv $x 100 {
 
 ```nim
 import os
-for x in..99:(paramStr 1+x).echo
+for x in..99:echo paramStr 1+x
 ```
 
 ```polygolf
@@ -204,7 +206,7 @@ for $i $b 16 {
 
 ```nim nogolf
 var b=0
-for i in b..<16:i.echo
+for i in b..<16:echo(i)
 ```
 
 ## Variables & Assignments
@@ -338,4 +340,18 @@ for()in..9:echo"Hi"
 "\5xx"
 "\u0161"
 "\u{1f48e}"
+```
+
+## Ufcs
+
+```polygolf
+function_call (binary_op "." (builtin "x") (builtin "f")) (builtin "y");
+binary_op " " (builtin "f") (builtin "x");
+index_call (binary_op " " (binary_op "." "x" (builtin "f")) " ") 1;
+```
+
+```nim skipTypecheck
+x.f y
+f x
+"x".f" "[1]
 ```
