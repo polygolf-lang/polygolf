@@ -1,4 +1,3 @@
-import { TextDecoder, TextEncoder } from "util";
 import { type Plugin } from "../common/Language";
 import {
   assignment,
