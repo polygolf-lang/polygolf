@@ -16,12 +16,12 @@ import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
+    case "FunctionCall":
+      return 12;
     case "UnaryOp":
       return 11;
     case "BinaryOp":
       return binaryPrecedence(expr.name);
-    case "FunctionCall":
-      return 2;
   }
   return Infinity;
 }

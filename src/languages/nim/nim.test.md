@@ -123,27 +123,6 @@ find(@[""],"")
 ## Misc
 
 ```polygolf
-print (list_get (text_split "abc" "b") 0);
-```
-
-```nim
-include re
-echo "abc".split"b"[0]
-```
-
-```polygolf
-$a:0..1 <- 0;
-$a <- 1;
-println_int (($a + 1) * $a);
-```
-
-```nim
-var a=0
-a=1
-echo (1+a)*a
-```
-
-```polygolf
 println ((int_to_text 1) .. "x");
 ```
 
@@ -276,6 +255,11 @@ list_get (text_split "a b" " ") 1;
 ```
 
 ```nim nogolf
+include re
+split("a b"," ")[1]
+```
+
+```nim
 include re
 "a b".split" "[1]
 ```

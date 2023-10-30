@@ -75,6 +75,7 @@ export const useUFCS: Plugin = {
   name: "useUFCS",
   visit(node) {
     if (node.kind === "FunctionCall") {
+      console.log(node);
       if (node.args.length === 1) {
         return binaryOp(" ", node.func, node.args[0]);
       }
