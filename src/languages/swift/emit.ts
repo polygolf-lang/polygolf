@@ -14,6 +14,8 @@ function precedence(expr: IR.Node): number {
       return unaryPrecedence(expr.name);
     case "BinaryOp":
       return binaryPrecedence(expr.name);
+    case "ConditionalOp":
+      return 0;
   }
   return Infinity;
 }
@@ -161,7 +163,7 @@ export default function emitProgram(
           ];
         case "ConditionalOp":
           return [
-            emit(e.condition),
+            emit(e.condition, 1),
             "?",
             emit(e.consequent),
             ":",

@@ -250,3 +250,17 @@ CommandLine.arguments[1]
 "\u{161}"
 "\u{1f48e}"
 ```
+
+## Conditional
+
+```polygolf
+$a:Int <- 1;
+$b:Int <- 1;
+$c:Int <- 1;
+println_int (conditional (conditional ($a > 0) ($b > 0) ($c > 0)) 8 7);
+```
+
+```swift nogolf
+var a=1,b=1,c=1
+print((a>0 ?b>0:c>0) ?8:7)
+```

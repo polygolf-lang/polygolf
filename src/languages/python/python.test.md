@@ -296,3 +296,17 @@ for _ in"X"*10:print("Hi")
 -int('7m93qx4grzs1ls98c9nh5rs313rz0u',36)
 7*10**22-1
 ```
+
+## Conditional ops
+
+```polygolf
+conditional true 3 4;
+```
+
+```python nogolf
+3 if 1 else 4
+```
+
+```python
+[4,3][1]
+```

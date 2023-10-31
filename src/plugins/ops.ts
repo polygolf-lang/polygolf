@@ -24,7 +24,6 @@ import {
   propertyCall,
   isIdent,
 } from "../IR";
-import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 
@@ -32,6 +31,7 @@ export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
   const opMap = toOpMap(opMap0);
   return {
     name: "mapOps(...)",
+    bakeType: true,
     visit(node, spine) {
       if (isPolygolfOp()(node)) {
         const op = node.op;
@@ -49,7 +49,7 @@ export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
               op: node.op,
             };
           }
-          return { ...replacement!, type: getType(node, spine) };
+          return replacement;
         }
       }
     },
@@ -212,6 +212,7 @@ export const flipBinaryOps: Plugin = {
 
 export const removeImplicitConversions: Plugin = {
   name: "removeImplicitConversions",
+  bakeType: true,
   visit(node) {
     if (node.kind === "ImplicitConversion") {
       return node.expr;
@@ -221,6 +222,7 @@ export const removeImplicitConversions: Plugin = {
 
 export const methodsAsFunctions: Plugin = {
   name: "methodsAsFunctions",
+  bakeType: true,
   visit(node) {
     if (node.kind === "MethodCall") {
       return functionCall(propertyCall(node.object, node.ident), node.args);

@@ -72,6 +72,7 @@ import {
   pickAnyInt,
   lowBitsPlugins,
 } from "../../plugins/arithmetic";
+import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -110,6 +111,7 @@ const nimLanguage: Language = {
         ["argv_get", (x) => functionCall("paramStr", add1(x[0]))],
       ),
       decomposeIntLiteral(),
+      safeConditionalOpToCollectionGet("array"),
     ),
     required(
       pickAnyInt,

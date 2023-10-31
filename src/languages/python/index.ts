@@ -67,10 +67,12 @@ import {
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
+  useImplicitBoolToInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
 import { charLength } from "../../common/objective";
+import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -100,6 +102,7 @@ const pythonLanguage: Language = {
       useEquivalentTextOp(false, true),
       useIndexCalls(),
       decomposeIntLiteral(),
+      safeConditionalOpToCollectionGet("list"),
     ),
     required(
       pickAnyInt,
@@ -118,6 +121,8 @@ const pythonLanguage: Language = {
             ),
         ],
       ),
+
+      useImplicitBoolToInt,
       useIndexCalls(),
 
       textGetToIntToTextGet,

@@ -118,22 +118,42 @@ export const addBitnot: Plugin = {
 
 export const bitnotPlugins = [removeBitnot, addBitnot];
 
+type BinaryBoolOp = "and" | "or" | "unsafe_and" | "unsafe_or";
+function complementaryBoolOp(op: BinaryBoolOp): BinaryBoolOp {
+  switch (op) {
+    case "and":
+      return "or";
+    case "or":
+      return "and";
+    case "unsafe_and":
+      return "unsafe_or";
+    case "unsafe_or":
+      return "unsafe_and";
+  }
+}
+
 export const applyDeMorgans: Plugin = {
   name: "applyDeMorgans",
   visit(node, spine) {
     if (isPolygolfOp("and", "or", "unsafe_and", "unsafe_or")(node)) {
-      const negation = polygolfOp(
-        node.op === "and"
-          ? "or"
-          : node.op === "or"
-          ? "and"
-          : node.op === "unsafe_and"
-          ? "unsafe_or"
-          : "unsafe_and",
-        ...node.args.map((x) => polygolfOp("not", x)),
+      if (
+        isPolygolfOp("unsafe_and", "unsafe_or")(node) &&
+        getType(node, spine).kind === "void"
+      ) {
+        // If we are promised we won't read the result, we don't need to negate.
+        return polygolfOp(
+          complementaryBoolOp(node.op),
+          polygolfOp("not", node.args[0]),
+          node.args[1],
+        );
+      }
+      return polygolfOp(
+        "not",
+        polygolfOp(
+          complementaryBoolOp(node.op),
+          ...node.args.map((x) => polygolfOp("not", x)),
+        ),
       );
-      if (getType(node, spine).kind === "void") return negation; // If we are promised we won't read the result, we don't need to negate.
-      return polygolfOp("not", negation);
     }
     if (isPolygolfOp("bit_and", "bit_or")(node)) {
       return polygolfOp(
@@ -494,6 +514,19 @@ export const pickAnyInt: Plugin = {
       return node.low.toString().length < node.high.toString().length
         ? int(node.low)
         : int(node.high);
+    }
+  },
+};
+
+export const useImplicitBoolToInt: Plugin = {
+  name: "useImplicitBoolToInt",
+  visit(node, spine) {
+    if (
+      isPolygolfOp("bool_to_int")(node) &&
+      !spine.isRoot &&
+      isPolygolfOp("array_get", "list_get")(spine.parent!.node) // This can be extend to other ops, like "mul".
+    ) {
+      return implicitConversion(node.op, node.args[0]);
     }
   },
 };

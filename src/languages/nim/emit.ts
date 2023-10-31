@@ -24,6 +24,8 @@ function precedence(expr: IR.Node): number {
       return 2;
     case "MethodCall":
       return 12;
+    case "ConditionalOp":
+      return -Infinity;
   }
   return Infinity;
 }
@@ -210,6 +212,16 @@ export default function emitProgram(
           return [joinNodes(",", e.variables), "=", emit(e.expr)];
         case "MutatingBinaryOp":
           return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
+        case "ConditionalOp":
+          return [
+            "if",
+            emit(e.condition),
+            ":",
+            emit(e.consequent),
+            "else",
+            ":",
+            emit(e.alternate),
+          ];
         case "Identifier":
           return e.name;
         case "TextLiteral":
