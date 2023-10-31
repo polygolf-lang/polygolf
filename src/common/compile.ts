@@ -58,13 +58,13 @@ function compilationResult(
 export function applyAllToAllAndGetCounts(
   program: Node,
   context: CompilationContext,
-  ...visitors: Plugin["visit"][]
+  ...plugins: Plugin[]
 ): [Node, number[]] {
   const counts: number[] = [];
   let result = program;
   let c: number;
-  for (const visitor of visitors) {
-    [result, c] = applyToAllAndGetCount(result, context, visitor);
+  for (const plugin of plugins) {
+    [result, c] = applyToAllAndGetCount(result, context, plugin);
     counts.push(c);
   }
   return [result, counts];
@@ -93,26 +93,25 @@ function getArray<T>(x: T | T[] | undefined): T[] {
 export function applyToAllAndGetCount(
   program: Node,
   context: CompilationContext,
-  visitor: Plugin["visit"],
+  plugin: Plugin,
 ): [Node, number] {
   const result = programToSpine(program).withReplacer((n, s) => {
-    const repl = getSingleOrUndefined(visitor(n, s, context));
-    return repl === undefined
-      ? undefined
-      : copySource(n, copyTypeAnnotation(n, repl));
+    const repl = getSingleOrUndefined(plugin.visit(n, s, context));
+    return annotate(repl, s, plugin.bakeType === true);
   }).node;
   return [result, program === result ? 0 : 1]; // TODO it might be a bit more informative to count the actual replacements, intead of returning 1
 }
 function* applyToOne(
   spine: Spine,
   context: CompilationContext,
-  visitor: Plugin["visit"],
+  plugin: Plugin,
 ) {
   for (const altPrograms of spine.compactMap((n, s) => {
-    const suggestions = getArray(visitor(n, s, context));
+    const suggestions = getArray(plugin.visit(n, s, context));
     return suggestions.map(
       (x) =>
-        s.replacedWith(copySource(n, copyTypeAnnotation(n, x)), true).root.node,
+        s.replacedWith(annotate(x, s, plugin.bakeType === true), true).root
+          .node,
     );
   })) {
     yield* altPrograms;
@@ -294,7 +293,7 @@ export function compileVariantNoPacking(
       const [res, counts] = applyAllToAllAndGetCounts(
         program,
         { addWarning, options },
-        ...plugins.map((x) => x.visit),
+        ...plugins,
       );
       return compilationResult(
         language.name,
@@ -322,7 +321,7 @@ export function compileVariantNoPacking(
     const [resProg, counts] = applyAllToAllAndGetCounts(
       prog,
       { addWarning, options },
-      ...finishingPlugins.map((x) => x.visit),
+      ...finishingPlugins,
     );
     return [
       emit(language, resProg, { addWarning, options }),
@@ -384,7 +383,7 @@ export function compileVariantNoPacking(
       const [res, counts] = applyAllToAllAndGetCounts(
         state.program,
         { addWarning, options },
-        ...phase.plugins.map((x) => x.visit),
+        ...phase.plugins,
       );
       enqueue(
         res,
@@ -404,7 +403,7 @@ export function compileVariantNoPacking(
         for (const altProgram of applyToOne(
           spine,
           { addWarning, options },
-          plugin.visit,
+          plugin,
         )) {
           enqueue(
             altProgram,
@@ -451,14 +450,19 @@ function mergeRepeatedPlugins(history: [number, string][]): [number, string][] {
   return result;
 }
 
-function copyTypeAnnotation(from: Node, to: Node): Node {
-  // copy type annotation if present
-  return from.type !== undefined ? { ...to, type: from.type } : to;
-}
-
-function copySource(from: Node, to: Node): Node {
-  // copy source reference if present
-  return { ...to, source: from.source };
+function annotate<T extends Node | undefined>(
+  node: T,
+  sourceSpine: Spine,
+  bakeType: boolean,
+): T {
+  if (node === undefined) return node;
+  return {
+    ...node,
+    source: sourceSpine.node.source,
+    type: bakeType
+      ? getType(sourceSpine.node, sourceSpine)
+      : sourceSpine.node.type ?? node.type,
+  };
 }
 
 /** Typecheck a program by asking all nodes about their types.

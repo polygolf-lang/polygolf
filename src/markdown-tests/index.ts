@@ -76,7 +76,7 @@ export function testPlugin(
             addWarning: () => {},
             options: compilationOptionsFromKeywords(args),
           },
-          ...plugins.map((x) => x.visit),
+          ...plugins,
         )[0],
       ),
     ).toEqual(normalize(output));
