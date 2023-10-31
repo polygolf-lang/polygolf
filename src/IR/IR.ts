@@ -1,3 +1,4 @@
+import type { Spine } from "../common/Spine";
 import {
   type Assignment,
   type ManyToManyAssignment,
@@ -116,3 +117,21 @@ export type Node =
   | ForEachPair
   | ForCLike
   | NamedArg;
+
+export type NodeFuncRecord<Tout, Tin extends Node = Node> = Tin extends Node
+  ? Record<Tin["kind"], (n: Tin, s: Spine<Tin>) => Tout>
+  : never;
+
+export function getNodeFunc<Tout>(
+  nodeMapRecord: NodeFuncRecord<Tout>,
+): (n: Node, s: Spine) => Tout | undefined {
+  function result(node: Node, spine: Spine): Tout | undefined {
+    if (node.kind in nodeMapRecord) {
+      return (nodeMapRecord[node.kind as keyof typeof nodeMapRecord] as any)(
+        node,
+        spine,
+      );
+    }
+  }
+  return result;
+}

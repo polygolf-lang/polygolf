@@ -305,13 +305,9 @@ const swiftLanguage: Language = {
       ),
     ),
     simplegolf(
-      alias((expr) => {
-        switch (expr.kind) {
-          case "IntegerLiteral":
-            return expr.value.toString();
-          case "TextLiteral":
-            return `"${expr.value}"`;
-        }
+      alias({
+        IntegerLiteral: (x) => x.value.toString(),
+        TextLiteral: (x) => `"${x.value}"`,
       }),
     ),
     required(
