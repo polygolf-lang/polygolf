@@ -130,7 +130,7 @@ export function alias(
             assignments.push(assignment(alias, node));
           return alias;
         }
-      }).node;
+      }, false).node;
       return block([...assignments, replacedDeep]);
     },
   };
