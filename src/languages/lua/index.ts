@@ -28,7 +28,7 @@ import {
   mapOps,
   mapToUnaryAndInfixs,
   useIndexCalls,
-  flipInfixs,
+  flipBinaryPolygolfOps,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -62,7 +62,7 @@ const luaLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipInfixs,
+      flipBinaryPolygolfOps,
       golfLastPrint(),
       listOpsToTextOps("text_byte_find", "text_get_byte"),
       tempVarToMultipleAssignment,

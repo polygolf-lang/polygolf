@@ -196,8 +196,8 @@ export function addMutatingInfix(...opMap0: [BinaryOpCode, string][]): Plugin {
 }
 
 // (a > b) --> (b < a)
-export const flipInfixs: Plugin = {
-  name: "flipInfixs",
+export const flipBinaryPolygolfOps: Plugin = {
+  name: "flipBinaryPolygolfOps",
   visit(node) {
     if (isPolygolfOp(...BinaryOpCodes)(node)) {
       const flippedOpCode = flipOpCode(node.op);

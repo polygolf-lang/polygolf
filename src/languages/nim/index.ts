@@ -23,7 +23,7 @@ import {
   mapToUnaryAndInfixs,
   useIndexCalls,
   addMutatingInfix,
-  flipInfixs,
+  flipBinaryPolygolfOps,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -80,7 +80,7 @@ const nimLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipInfixs,
+      flipBinaryPolygolfOps,
       golfStringListLiteral(),
       listOpsToTextOps("text_byte_find", "text_get_byte"),
       golfLastPrint(),

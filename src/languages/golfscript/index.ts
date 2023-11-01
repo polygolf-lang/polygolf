@@ -25,7 +25,7 @@ import emitProgram from "./emit";
 import {
   mapOps,
   mapToUnaryAndInfixs,
-  flipInfixs,
+  flipBinaryPolygolfOps,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -62,7 +62,7 @@ const golfscriptLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipInfixs,
+      flipBinaryPolygolfOps,
       golfLastPrint(),
       equalityToInequality,
       ...bitnotPlugins,

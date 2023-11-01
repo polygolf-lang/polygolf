@@ -27,7 +27,7 @@ import {
   mapToUnaryAndInfixs,
   useIndexCalls,
   addMutatingInfix,
-  flipInfixs,
+  flipBinaryPolygolfOps,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -69,7 +69,7 @@ const swiftLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipInfixs,
+      flipBinaryPolygolfOps,
       golfStringListLiteral(false),
       listOpsToTextOps(),
       golfLastPrint(),
