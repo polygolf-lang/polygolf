@@ -12,21 +12,21 @@ import {
   forEach,
   id,
   type IR,
-  polygolfOp,
+  op,
   type Node,
   type Identifier,
   isIntLiteral,
   type OpCode,
-  type TextLiteral,
-  type ListConstructor,
+  type Text,
+  type List,
   type ForRange,
   forDifferenceRange,
-  isPolygolfOp,
+  isOp,
   isSubtype,
   integerType,
   add1,
   sub1,
-  isTextLiteral,
+  isText,
   isIdent,
   isUserIdent,
 } from "../IR";
@@ -65,12 +65,12 @@ export const forRangeToWhile: Plugin = {
       }
       const increment = assignment(
         node.variable,
-        polygolfOp("add", node.variable, node.increment),
+        op("add", node.variable, node.increment),
       );
       return block([
         assignment(node.variable, node.start),
         whileLoop(
-          polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
+          op(node.inclusive ? "leq" : "lt", node.variable, node.end),
           block([node.body, increment]),
         ),
       ]);
@@ -89,11 +89,8 @@ export const forRangeToForCLike: Plugin = {
       }
       return forCLike(
         assignment(node.variable, node.start),
-        polygolfOp(node.inclusive ? "leq" : "lt", node.variable, node.end),
-        assignment(
-          node.variable,
-          polygolfOp("add", node.variable, node.increment),
-        ),
+        op(node.inclusive ? "leq" : "lt", node.variable, node.end),
+        assignment(node.variable, op("add", node.variable, node.increment)),
         node.body,
       );
     }
@@ -118,7 +115,7 @@ export const forRangeToForEachPair: Plugin = {
       node.variable !== undefined &&
       !node.inclusive &&
       isIntLiteral(0n)(node.start) &&
-      isPolygolfOp("list_length")(node.end) &&
+      isOp("list_length")(node.end) &&
       isIdent()(node.end.args[0])
     ) {
       const variable = node.variable;
@@ -135,7 +132,7 @@ export const forRangeToForEachPair: Plugin = {
 
 function isListGet(node: IR.Node, collection: string, index: string) {
   return (
-    isPolygolfOp("list_get")(node) &&
+    isOp("list_get")(node) &&
     isIdent(collection)(node.args[0]) &&
     isIdent(index)(node.args[1])
   );
@@ -171,7 +168,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
         node.variable !== undefined &&
         !node.inclusive &&
         isIntLiteral(0n)(node.start) &&
-        ((isPolygolfOp()(node.end) &&
+        ((isOp()(node.end) &&
           ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
           isIdent()(node.end.args[0])) ||
           isIntLiteral()(node.end))
@@ -198,7 +195,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
           const elementIdentifier = id(node.variable.name + "+each");
           const newBody = bodySpine.withReplacer((n) => {
             if (
-              isPolygolfOp()(n) &&
+              isOp()(n) &&
               n.args[0] === indexedCollection &&
               isUserIdent(indexVar.name)(n.args[1])
             )
@@ -230,10 +227,10 @@ function getIndexedCollection(
   for (const x of spine.compactMap((n, s) => {
     const parent = s.parent!.node;
     if (!isUserIdent(indexVar.name)(n)) return undefined;
-    if (!isPolygolfOp(...allowedOps)(parent)) return null;
+    if (!isOp(...allowedOps)(parent)) return null;
     const collection = parent.args[0];
     if (
-      (isTextLiteral()(collection) || collection.kind === "ListConstructor") &&
+      (isText()(collection) || collection.kind === "List") &&
       literalLength(collection, allowedOps.includes("text_get_byte")) ===
         knownLength
     )
@@ -257,11 +254,8 @@ function getIndexedCollection(
   return result;
 }
 
-function literalLength(
-  expr: TextLiteral | ListConstructor,
-  countTextBytes: boolean,
-): number {
-  if (expr.kind === "ListConstructor") return expr.exprs.length;
+function literalLength(expr: Text | List, countTextBytes: boolean): number {
+  if (expr.kind === "List") return expr.exprs.length;
   return (countTextBytes ? byteLength : charLength)(expr.value);
 }
 
@@ -269,7 +263,7 @@ export const forArgvToForEach: Plugin = {
   name: "forArgvToForEach",
   visit(node) {
     if (node.kind === "ForArgv") {
-      return forEach(node.variable, polygolfOp("argv"), node.body);
+      return forEach(node.variable, op("argv"), node.body);
     }
   },
 };
@@ -281,7 +275,7 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
       if (node.kind === "ForArgv") {
         const indexVar = id(node.variable.name + "+index");
         const newBody = block([
-          assignment(node.variable, polygolfOp("argv_get", indexVar)),
+          assignment(node.variable, op("argv_get", indexVar)),
           node.body,
         ]);
         return forRange(
@@ -291,7 +285,7 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
             ? inclusive
               ? sub1(int(node.argcUpperBound))
               : int(node.argcUpperBound)
-            : polygolfOp("argc"),
+            : op("argc"),
           int(1),
           newBody,
           inclusive,
@@ -343,7 +337,7 @@ export const shiftRangeOneUp: Plugin = {
       isIntLiteral(1n)(node.increment) &&
       spine.someNode(
         (x) =>
-          isPolygolfOp("add")(x) &&
+          isOp("add")(x) &&
           isIntLiteral(1n)(x.args[0]) &&
           isIdent(node.variable!)(x.args[1]),
       )
@@ -384,7 +378,7 @@ export function forRangeToForDifferenceRange(
         return forDifferenceRange(
           node.variable,
           node.start,
-          polygolfOp("sub", node.end, node.start),
+          op("sub", node.end, node.start),
           node.increment,
           node.body,
           node.inclusive,
@@ -407,27 +401,15 @@ export const forRangeToForRangeOneStep: Plugin = {
         newVar,
         int(0n),
         node.inclusive
-          ? polygolfOp(
-              "div",
-              polygolfOp("sub", node.end, node.start),
-              node.increment,
-            )
+          ? op("div", op("sub", node.end, node.start), node.increment)
           : add1(
-              polygolfOp(
-                "div",
-                polygolfOp("sub", sub1(node.end), node.start),
-                node.increment,
-              ),
+              op("div", op("sub", sub1(node.end), node.start), node.increment),
             ),
         int(1n),
         block([
           assignment(
             node.variable,
-            polygolfOp(
-              "add",
-              polygolfOp("mul", newVar, node.increment),
-              node.start,
-            ),
+            op("add", op("mul", newVar, node.increment), node.start),
           ),
           node.body,
         ]),

@@ -7,11 +7,11 @@ import {
   int,
   integerType,
   isOfKind,
-  isPolygolfOp,
-  isTextLiteral,
-  listConstructor,
-  polygolfOp,
-  type TextLiteral,
+  isOp,
+  isText,
+  list,
+  op,
+  type Text,
 } from "../IR";
 
 /**
@@ -39,21 +39,18 @@ export function tableHashing(
   return {
     name: "tableHashing(...)",
     visit(node, spine) {
-      if (
-        isPolygolfOp("table_get")(node) &&
-        node.args[0].kind === "TableConstructor"
-      ) {
+      if (isOp("table_get")(node) && node.args[0].kind === "Table") {
         const table = node.args[0];
         const getKey = node.args[1];
         const tableType = getType(table, spine);
         if (
           tableType.kind === "Table" &&
           tableType.key.kind === "text" &&
-          table.kvPairs.every((x) => isTextLiteral()(x.key))
+          table.kvPairs.every((x) => isText()(x.key))
         ) {
           const searchResult = findHash(
             hashFunc,
-            table.kvPairs.map((x) => [(x.key as TextLiteral).value, x.value]),
+            table.kvPairs.map((x) => [(x.key as Text).value, x.value]),
             maxMod,
           );
           if (searchResult === null) return undefined;
@@ -61,18 +58,18 @@ export function tableHashing(
           let lastUsed = array.length - 1;
           while (array[lastUsed] === null) lastUsed--;
 
-          return polygolfOp(
+          return op(
             "list_get",
-            listConstructor(
+            list(
               array
                 .slice(0, lastUsed + 1)
                 .map((x) => x ?? defaultValue(tableType.value)),
             ),
-            polygolfOp(
+            op(
               "mod",
               mod === array.length
                 ? hash(getKey)
-                : polygolfOp("mod", hash(getKey), int(mod)),
+                : op("mod", hash(getKey), int(mod)),
               int(array.length),
             ),
           );
@@ -133,22 +130,15 @@ export function testTableHashing(maxMod: number): Plugin {
 export const tableToListLookup: Plugin = {
   name: "tableToListLookup",
   visit(node) {
-    if (
-      isPolygolfOp("table_get")(node) &&
-      node.args[0].kind === "TableConstructor"
-    ) {
+    if (isOp("table_get")(node) && node.args[0].kind === "Table") {
       const keys = node.args[0].kvPairs.map((x) => x.key);
       if (
-        keys.every(isOfKind("IntegerLiteral", "TextLiteral")) &&
+        keys.every(isOfKind("Integer", "Text")) &&
         new Set(keys.map((x) => x.value)).size === keys.length
       ) {
         const values = node.args[0].kvPairs.map((x) => x.value);
         const at = node.args[1];
-        return polygolfOp(
-          "list_get",
-          listConstructor(values),
-          polygolfOp("list_find", listConstructor(keys), at),
-        );
+        return op("list_get", list(values), op("list_find", list(keys), at));
       }
     }
   },

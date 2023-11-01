@@ -277,6 +277,7 @@ export const inlineVariables: Plugin = {
             spine.someNode(
               (n) => n !== variable && isUserIdent(variable)(n), // in tests variables are often never read from and we don't want to make those disappear
             ) &&
+            !write.getChild("expr").someNode(isUserIdent(variable)) &&
             !hasSideEffect(write.getChild("expr"))
           ) {
             const assignmentToInlineSpine = write as Spine<

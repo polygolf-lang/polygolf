@@ -3,11 +3,11 @@ import {
   integerType,
   isIdent,
   isOfKind,
-  isPolygolfOp,
+  isOp,
   isSubtype,
-  isTextLiteral,
+  isText,
   methodCall,
-  polygolfOp,
+  op,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { type Plugin } from "../../common/Language";
@@ -36,18 +36,18 @@ const includes: [string, string[]][] = [
 ];
 
 export const addNimImports: Plugin = addImports(
-  [
-    ["^", "math"],
-    ["repeat", "strutils"],
-    ["replace", "strutils"],
-    ["multireplace", "strutils"],
-    ["join", "strutils"],
-    ["paramStr", "os"],
-    ["commandLineParams", "os"],
-    ["split", "strutils"],
-    ["hash", "hashes"],
-    ["TableConstructor", "tables"],
-  ],
+  {
+    "^": "math",
+    repeat: "strutils",
+    replace: "strutils",
+    multireplace: "strutils",
+    join: "strutils",
+    paramStr: "os",
+    commandLineParams: "os",
+    split: "strutils",
+    hash: "hashes",
+    Table: "tables",
+  },
   (modules: string[]) => {
     if (modules.length < 1) return;
     for (const include of includes) {
@@ -63,10 +63,10 @@ export const addNimImports: Plugin = addImports(
 export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
   visit(node, spine) {
-    if (isPolygolfOp("trunc_div", "rem")(node)) {
+    if (isOp("trunc_div", "rem")(node)) {
       return isSubtype(getType(node.args[0], spine), integerType(0)) &&
         isSubtype(getType(node.args[0], spine), integerType(0))
-        ? polygolfOp(`unsigned_${node.op}`, ...node.args)
+        ? op(`unsigned_${node.op}`, ...node.args)
         : undefined;
     }
   },
@@ -76,11 +76,11 @@ export const useUFCS: Plugin = {
   name: "useUFCS",
   visit(node) {
     if (node.kind === "FunctionCall" && node.args.length > 0) {
-      if (node.args.length === 1 && isTextLiteral()(node.args[0])) {
+      if (node.args.length === 1 && isText()(node.args[0])) {
         return;
       }
       const [obj, ...args] = node.args;
-      if (!isOfKind("BinaryOp", "UnaryOp")(obj) && isIdent()(node.func)) {
+      if (!isOfKind("Infix", "Prefix")(obj) && isIdent()(node.func)) {
         return methodCall(obj, node.func, ...args);
       }
     }

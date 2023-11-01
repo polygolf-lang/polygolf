@@ -14,7 +14,11 @@ Design goals
 
 Read on for usage, or see [docs/architecture.md](docs/architecture.md) for the architecture.
 
-## Usage
+## Playground
+
+You can try Polygolf in your browser using the [Playground](https://polygolf-lang.github.io).
+
+## Local usage
 
 Requires npm and node 17.0+ installed.
 

@@ -1,5 +1,5 @@
 import { type TokenTree } from "../../common/Language";
-import { emitTextLiteral, joinTrees } from "../../common/emit";
+import { emitText, joinTrees } from "../../common/emit";
 import {
   block,
   type Node,
@@ -17,8 +17,8 @@ How Polygolf nodes should be emitted to strings.
 
 Boolean flags should be reflected in the callee name.
 All paramaters that are not `Node`s should be listed first.
-- strings as TextLiterals
-- numbers/bigints as IntegerLiterals
+- strings as Texts
+- numbers/bigints as Integers
 - arrays as blocks
 Then, all Node children should follow in order that is typical in languages.
 If the last child is an array of Nodes argument, it should be emitted as individual arguments,
@@ -139,7 +139,7 @@ function emitNodeWithoutAnnotation(
       return emitSexpr("key_value", expr.key, expr.value);
     case "Function":
       return emitSexpr("func", ...expr.args, expr.expr);
-    case "PolygolfOp":
+    case "Op":
       return emitSexpr(expr.op, ...expr.args);
     case "Assignment":
       return emitSexpr("assign", expr.variable, expr.expr);
@@ -157,17 +157,17 @@ function emitNodeWithoutAnnotation(
         return "$" + expr.name;
       }
       return emitSexpr("id", text(expr.name));
-    case "TextLiteral":
-      return emitTextLiteral(expr.value);
-    case "IntegerLiteral":
+    case "Text":
+      return emitText(expr.value);
+    case "Integer":
       return expr.value.toString();
-    case "ArrayConstructor":
+    case "Array":
       return emitSexpr("array", ...expr.exprs);
-    case "ListConstructor":
+    case "List":
       return emitSexpr("list", ...expr.exprs);
-    case "SetConstructor":
+    case "Set":
       return emitSexpr("set", ...expr.exprs);
-    case "TableConstructor":
+    case "Table":
       return emitSexpr("table", ...expr.kvPairs);
     case "ConditionalOp":
       return emitSexpr(
@@ -176,7 +176,7 @@ function emitNodeWithoutAnnotation(
         expr.consequent,
         expr.alternate,
       );
-    case "WhileLoop":
+    case "While":
       return emitSexpr(
         "while",
         expr.condition,
@@ -209,7 +209,7 @@ function emitNodeWithoutAnnotation(
         expr.argcUpperBound.toString(),
         emitNode(expr.body, false, true),
       );
-    case "IfStatement":
+    case "If":
       return emitSexpr(
         "if",
         expr.condition,
@@ -235,7 +235,7 @@ function emitNodeWithoutAnnotation(
       );
     case "OneToManyAssignment":
       return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
-    case "MutatingBinaryOp":
+    case "MutatingInfix":
       return emitSexpr("@", text(expr.name), expr.variable, expr.right);
     case "IndexCall":
       return emitSexpr(
@@ -255,11 +255,12 @@ function emitNodeWithoutAnnotation(
       return emitSexpr("@", expr.object, text(expr.ident.name), ...expr.args);
     case "PropertyCall":
       return emitSexpr("@", expr.object, text(expr.ident.name));
-    case "BinaryOp":
+    case "Infix":
       return emitSexpr("@", text(expr.name), expr.left, expr.right);
-    case "UnaryOp":
+    case "Prefix":
+    case "Postfix":
       return emitSexpr("@", text(expr.name), expr.arg);
-    case "ImportStatement":
+    case "Import":
       return emitSexpr(
         "@",
         ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x)),
@@ -305,7 +306,7 @@ function emitNodeWithoutAnnotation(
       );
     case "NamedArg":
       return emitSexpr("@", text(expr.name), expr.value);
-    case "AnyIntegerLiteral":
+    case "AnyInteger":
       return emitSexpr("@", expr.low.toString(), expr.high.toString());
   }
 }

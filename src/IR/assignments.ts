@@ -16,8 +16,8 @@ export type LValue = Identifier | IndexCall;
  *
  * a += 5
  */
-export interface MutatingBinaryOp extends BaseNode {
-  readonly kind: "MutatingBinaryOp";
+export interface MutatingInfix extends BaseNode {
+  readonly kind: "MutatingInfix";
   readonly name: string;
   readonly variable: LValue;
   readonly right: Node;
@@ -84,13 +84,13 @@ export interface VarDeclarationBlock extends BaseNode {
   readonly children: (VarDeclaration | VarDeclarationWithAssignment)[];
 }
 
-export function mutatingBinaryOp(
+export function mutatingInfix(
   name: string,
   variable: LValue,
   right: Node,
-): MutatingBinaryOp {
+): MutatingInfix {
   return {
-    kind: "MutatingBinaryOp",
+    kind: "MutatingInfix",
     variable,
     right,
     name,

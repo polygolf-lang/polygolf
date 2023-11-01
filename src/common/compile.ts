@@ -154,7 +154,7 @@ export default function compile(
 
   const errorlessVariants = variants.filter((x) => !("result" in x)) as Node[];
   const errorVariants = variants.filter(
-    (x) => !("body" in x),
+    (x) => "result" in x,
   ) as CompilationResult[];
   if (errorlessVariants.length === 0) {
     if (options.getAllVariants) {

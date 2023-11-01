@@ -12,8 +12,8 @@ import {
  *
  * while (condition) { body }.
  */
-export interface WhileLoop extends BaseNode {
-  readonly kind: "WhileLoop";
+export interface While extends BaseNode {
+  readonly kind: "While";
   readonly condition: Node;
   readonly body: Node;
 }
@@ -115,8 +115,8 @@ export interface ForArgv extends BaseNode {
   readonly body: Node;
 }
 
-export function whileLoop(condition: Node, body: Node): WhileLoop {
-  return { kind: "WhileLoop", condition, body };
+export function whileLoop(condition: Node, body: Node): While {
+  return { kind: "While", condition, body };
 }
 
 export function forRange(

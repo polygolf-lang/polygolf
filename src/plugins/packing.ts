@@ -1,4 +1,3 @@
-import { TextDecoder, TextEncoder } from "util";
 import { type Plugin } from "../common/Language";
 import {
   assignment,
@@ -6,9 +5,9 @@ import {
   forRangeCommon,
   id,
   int,
-  isPolygolfOp,
-  isTextLiteral,
-  polygolfOp,
+  isOp,
+  isText,
+  op,
   print,
   text,
 } from "../IR";
@@ -18,8 +17,8 @@ export const useDecimalConstantPackedPrinter: Plugin = {
   name: "useDecimalConstantPackedPrinter",
   visit(node) {
     if (
-      isPolygolfOp("print", "println")(node) &&
-      isTextLiteral()(node.args[0]) &&
+      isOp("print", "println")(node) &&
+      isText()(node.args[0]) &&
       isLargeDecimalConstant(node.args[0].value)
     ) {
       const [prefix, main] = node.args[0].value.replace(".", ".,").split(",");
@@ -30,23 +29,19 @@ export const useDecimalConstantPackedPrinter: Plugin = {
           ["packindex", 0, packed.length],
           assignment(
             "result",
-            polygolfOp(
+            op(
               "concat",
               id("result"),
-              polygolfOp(
+              op(
                 "text_get_byte_slice",
-                polygolfOp(
+                op(
                   "int_to_text",
-                  polygolfOp(
+                  op(
                     "add",
                     int(72n),
-                    polygolfOp(
+                    op(
                       "text_byte_to_int",
-                      polygolfOp(
-                        "text_get_byte",
-                        text(packed),
-                        id("packindex"),
-                      ),
+                      op("text_get_byte", text(packed), id("packindex")),
                     ),
                   ),
                 ),
@@ -76,17 +71,12 @@ function packDecimal(decimal: string): string {
 export const useLowDecimalListPackedPrinter: Plugin = {
   name: "useLowDecimalListPackedPrinter",
   visit(node) {
-    if (
-      isPolygolfOp("print", "println")(node) &&
-      isTextLiteral()(node.args[0])
-    ) {
+    if (isOp("print", "println")(node) && isText()(node.args[0])) {
       const packed = packLowDecimalList(node.args[0].value);
       if (packed === null) return;
       return forRangeCommon(
         ["packindex", 0, packed.length],
-        print(
-          polygolfOp("text_get_byte_to_int", text(packed), id("packindex")),
-        ),
+        print(op("text_get_byte_to_int", text(packed), id("packindex"))),
       );
     }
   },

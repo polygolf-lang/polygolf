@@ -21,15 +21,15 @@ export interface Block extends BaseNode {
  *
  * if (condition) { consequent } else { alternate }
  */
-export interface IfStatement extends BaseNode {
-  readonly kind: "IfStatement";
+export interface If extends BaseNode {
+  readonly kind: "If";
   readonly condition: Node;
   readonly consequent: Node;
   readonly alternate?: Node;
 }
 
-export interface ImportStatement extends BaseNode {
-  readonly kind: "ImportStatement";
+export interface Import extends BaseNode {
+  readonly kind: "Import";
   readonly name: string;
   readonly modules: readonly string[];
 }
@@ -49,8 +49,8 @@ export function ifStatement(
   condition: Node,
   consequent: Node,
   alternate?: Node,
-): IfStatement {
-  return { kind: "IfStatement", condition, consequent, alternate };
+): If {
+  return { kind: "If", condition, consequent, alternate };
 }
 
 export function variants(variants: readonly Node[]): Variants {
@@ -60,6 +60,6 @@ export function variants(variants: readonly Node[]): Variants {
 export function importStatement(
   name: string,
   modules: readonly string[],
-): ImportStatement {
-  return { kind: "ImportStatement", name, modules };
+): Import {
+  return { kind: "Import", name, modules };
 }

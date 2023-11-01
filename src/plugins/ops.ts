@@ -2,7 +2,7 @@ import { type Plugin, type OpTransformOutput } from "../common/Language";
 import {
   add1,
   assignment,
-  binaryOp,
+  infix,
   type BinaryOpCode,
   type Node,
   flipOpCode,
@@ -12,12 +12,12 @@ import {
   isCommutative,
   isIntLiteral,
   isNegative,
-  mutatingBinaryOp,
-  isPolygolfOp,
+  mutatingInfix,
+  isOp,
   type OpCode,
-  type PolygolfOp,
-  polygolfOp,
-  unaryOp,
+  type Op,
+  op,
+  prefix,
   type UnaryOpCode,
   BinaryOpCodes,
   functionCall,
@@ -27,22 +27,23 @@ import {
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
+import { mapObjectValues } from "../common/arrays";
 
-export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
-  const opMap = toOpMap(opMap0);
+export function mapOps(
+  opMap: Partial<Record<OpCode, OpTransformOutput>>,
+  name = "mapOps(...)",
+): Plugin {
   return {
-    name: "mapOps(...)",
+    name,
     visit(node, spine) {
-      if (isPolygolfOp()(node)) {
+      if (isOp()(node)) {
         const op = node.op;
-        const f = opMap.get(op);
+        const f = opMap[op];
         if (f !== undefined) {
           let replacement =
-            typeof f === "function"
-              ? f(node.args, spine as Spine<PolygolfOp>)
-              : f;
+            typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
           if (replacement === undefined) return undefined;
-          if ("op" in replacement && !isPolygolfOp()(replacement)) {
+          if ("op" in replacement && !isOp()(replacement)) {
             // "as any" because TS doesn't do well with the "in" keyword
             replacement = {
               ...(replacement as any),
@@ -56,65 +57,77 @@ export function mapOps(...opMap0: [OpCode, OpTransformOutput][]): Plugin {
   };
 }
 
-function toOpMap<Op extends OpCode, T>(opMap0: [Op, T][]) {
-  const res = new Map(opMap0);
+function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
   for (const [a, b] of [
     ["unsafe_and", "and"],
     ["unsafe_or", "or"],
   ] as any) {
-    if (!res.has(a) && res.has(b)) {
-      res.set(a, res.get(b)!);
+    if (!(a in opMap) && b in opMap) {
+      (opMap as any)[a] = (opMap as any)[b];
     }
   }
-  return res;
+}
+
+export function mapTo<T>(
+  constructor: (x: T, args: readonly Node[]) => Node,
+): (opMap: Partial<Record<OpCode, T>>) => Plugin {
+  function result(opMap: Partial<Record<OpCode, T>>) {
+    enhanceOpMap(opMap);
+    return mapOps(
+      mapObjectValues(
+        opMap,
+        (name) => (x: readonly Node[]) => constructor(name, x),
+      ),
+      `mapTo(${constructor.name})(${JSON.stringify(opMap)})`,
+    );
+  }
+  return result;
 }
 
 /**
  * Plugin transforming binary and unary ops to the name and precedence in the target lang.
- * @param opMap0 OpCode - target op name pairs.
+ * @param opMap OpCode - target op name pairs.
  * @returns The plugin closure.
  */
-export function mapToUnaryAndBinaryOps(
-  ...opMap0: [UnaryOpCode | BinaryOpCode, string][]
+export function mapToPrefixAndInfix(
+  opMap: Partial<Record<UnaryOpCode | BinaryOpCode, string>>,
 ): Plugin {
-  const opMap = toOpMap(opMap0);
-  return {
-    ...mapOps(
-      ...opMap0.map(
-        ([op, name]) =>
-          [
-            op,
-            isBinary(op)
-              ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
-              : (x: readonly Node[]) => unaryOp(name, x[0]),
-          ] satisfies [OpCode, OpTransformOutput],
-      ),
+  enhanceOpMap(opMap);
+  return mapOps(
+    mapObjectValues(opMap, (name, op) =>
+      isBinary(op)
+        ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
+        : (x: readonly Node[]) => prefix(name, x[0]),
     ),
-    name: `mapToUnaryAndBinaryOps(${JSON.stringify(opMap0)})`,
-  };
+    `mapToPrefixAndInfix(${JSON.stringify(opMap)})`,
+  );
 }
 
 function asBinaryChain(
-  op: BinaryOpCode,
+  opCode: BinaryOpCode,
   exprs: readonly Node[],
-  names: Map<OpCode, string>,
+  names: Partial<Record<OpCode, string>>,
 ): Node {
-  const negName = names.get("neg");
-  if (op === "mul" && isIntLiteral(-1n)(exprs[0]) && negName !== undefined) {
-    exprs = [unaryOp(negName, exprs[1]), ...exprs.slice(2)];
+  const negName = names.neg;
+  if (
+    opCode === "mul" &&
+    isIntLiteral(-1n)(exprs[0]) &&
+    negName !== undefined
+  ) {
+    exprs = [prefix(negName, exprs[1]), ...exprs.slice(2)];
   }
-  if (op === "add") {
+  if (opCode === "add") {
     exprs = exprs
       .filter((x) => !isNegative(x))
       .concat(exprs.filter(isNegative));
   }
   let result = exprs[0];
   for (const expr of exprs.slice(1)) {
-    const subName = names.get("sub");
-    if (op === "add" && isNegative(expr) && subName !== undefined) {
-      result = binaryOp(subName, result, polygolfOp("neg", expr));
+    const subName = names.sub;
+    if (opCode === "add" && isNegative(expr) && subName !== undefined) {
+      result = infix(subName, result, op("neg", expr));
     } else {
-      result = binaryOp(names.get(op) ?? "?", result, expr);
+      result = infix(names[opCode] ?? "?", result, expr);
     }
   }
   return result;
@@ -137,7 +150,7 @@ export function useIndexCalls(
     )})`,
     visit(node) {
       if (
-        isPolygolfOp(...ops)(node) &&
+        isOp(...ops)(node) &&
         (isIdent()(node.args[0]) || node.op.endsWith("_get"))
       ) {
         let indexNode: IndexCall;
@@ -157,39 +170,38 @@ export function useIndexCalls(
 }
 
 // "a = a + b" --> "a += b"
-export function addMutatingBinaryOp(
-  ...opMap0: [BinaryOpCode, string][]
+export function addMutatingInfix(
+  opMap: Partial<Record<BinaryOpCode, string>>,
 ): Plugin {
-  const opMap = toOpMap(opMap0);
   return {
-    name: `addMutatingBinaryOp(${JSON.stringify(opMap0)})`,
+    name: `addMutatingInfix(${JSON.stringify(opMap)})`,
     visit(node) {
       if (
         node.kind === "Assignment" &&
-        isPolygolfOp(...BinaryOpCodes)(node.expr) &&
+        isOp(...BinaryOpCodes)(node.expr) &&
         node.expr.args.length > 1 &&
-        opMap.has(node.expr.op)
+        node.expr.op in opMap
       ) {
-        const op = node.expr.op;
+        const opCode = node.expr.op;
         const args = node.expr.args;
-        const name = opMap.get(op)!;
+        const name = opMap[opCode]!;
         const leftValueStringified = stringify(node.variable);
         const index = node.expr.args.findIndex(
           (x) => stringify(x) === leftValueStringified,
         );
-        if (index === 0 || (index > 0 && isCommutative(op))) {
+        if (index === 0 || (index > 0 && isCommutative(opCode))) {
           const newArgs = args.filter((x, i) => i !== index);
-          if (op === "add" && opMap.has("sub") && newArgs.every(isNegative)) {
-            return mutatingBinaryOp(
-              opMap.get("sub")!,
+          if (opCode === "add" && "sub" in opMap && newArgs.every(isNegative)) {
+            return mutatingInfix(
+              opMap.sub!,
               node.variable,
-              polygolfOp("neg", polygolfOp(op, ...newArgs)),
+              op("neg", op(opCode, ...newArgs)),
             );
           }
-          return mutatingBinaryOp(
+          return mutatingInfix(
             name,
             node.variable,
-            newArgs.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0],
+            newArgs.length > 1 ? op(opCode, ...newArgs) : newArgs[0],
           );
         }
       }
@@ -201,10 +213,10 @@ export function addMutatingBinaryOp(
 export const flipBinaryOps: Plugin = {
   name: "flipBinaryOps",
   visit(node) {
-    if (isPolygolfOp(...BinaryOpCodes)(node)) {
+    if (isOp(...BinaryOpCodes)(node)) {
       const flippedOpCode = flipOpCode(node.op);
       if (flippedOpCode !== null) {
-        return polygolfOp(flippedOpCode, node.args[1], node.args[0]);
+        return op(flippedOpCode, node.args[1], node.args[0]);
       }
     }
   },
@@ -228,13 +240,10 @@ export const methodsAsFunctions: Plugin = {
   },
 };
 
-export const printIntToPrint: Plugin = {
-  ...mapOps(
-    ["print_int", (x) => polygolfOp("print", polygolfOp("int_to_text", ...x))],
-    [
-      "println_int",
-      (x) => polygolfOp("println", polygolfOp("int_to_text", ...x)),
-    ],
-  ),
-  name: "printIntToPrint",
-};
+export const printIntToPrint: Plugin = mapOps(
+  {
+    print_int: (x) => op("print", op("int_to_text", ...x)),
+    println_int: (x) => op("println", op("int_to_text", ...x)),
+  },
+  "printIntToPrint",
+);

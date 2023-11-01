@@ -2,12 +2,12 @@ import { type Plugin } from "../common/Language";
 import { stringify } from "../common/stringify";
 import {
   int,
-  polygolfOp,
+  op,
   type IntegerType,
   isConstantType,
-  type PolygolfOp,
+  type Op,
   isSubtype,
-  isPolygolfOp,
+  isOp,
   isIntLiteral,
   implicitConversion,
   integerType,
@@ -23,12 +23,12 @@ import { filterInplace } from "../common/arrays";
 export const modToRem: Plugin = {
   name: "modToRem",
   visit(node, spine) {
-    if (isPolygolfOp("mod")(node)) {
+    if (isOp("mod")(node)) {
       return isSubtype(getType(node.args[1], spine), integerType(0))
-        ? polygolfOp("rem", ...node.args)
-        : polygolfOp(
+        ? op("rem", ...node.args)
+        : op(
             "rem",
-            polygolfOp("add", polygolfOp("rem", ...node.args), node.args[1]),
+            op("add", op("rem", ...node.args), node.args[1]),
             node.args[1],
           );
     }
@@ -38,9 +38,9 @@ export const modToRem: Plugin = {
 export const divToTruncdiv: Plugin = {
   name: "divToTruncdiv",
   visit(node, spine) {
-    if (isPolygolfOp("div")(node)) {
+    if (isOp("div")(node)) {
       return isSubtype(getType(node.args[1], spine), integerType(0))
-        ? polygolfOp("trunc_div", ...node.args)
+        ? op("trunc_div", ...node.args)
         : undefined; // TODO
     }
   },
@@ -51,7 +51,7 @@ export const truncatingOpsPlugins = [modToRem, divToTruncdiv];
 export const equalityToInequality: Plugin = {
   name: "equalityToInequality",
   visit(node, spine) {
-    if (isPolygolfOp("eq", "neq")(node)) {
+    if (isOp("eq", "neq")(node)) {
       const eq = node.op === "eq";
       const [a, b] = [node.args[0], node.args[1]];
       const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
@@ -62,16 +62,12 @@ export const equalityToInequality: Plugin = {
         if (t1.low === t2.low) {
           // (0 == $x:0..9) -> (1 > $x:0..9)
           // (0 != $x:0..9) -> (0 < $x:0..9)
-          return eq
-            ? polygolfOp("gt", int(t1.low + 1n), b)
-            : polygolfOp("lt", int(t1.low), b);
+          return eq ? op("gt", int(t1.low + 1n), b) : op("lt", int(t1.low), b);
         }
         if (t1.low === t2.high) {
           // (9 == $x:0..9) -> (8 < $x:0..9)
           // (9 != $x:0..9) -> (9 > $x:0..9)
-          return eq
-            ? polygolfOp("lt", int(t1.low - 1n), b)
-            : polygolfOp("gt", int(t1.low), b);
+          return eq ? op("lt", int(t1.low - 1n), b) : op("gt", int(t1.low), b);
         }
       }
 
@@ -79,39 +75,35 @@ export const equalityToInequality: Plugin = {
         if (t1.low === t2.low) {
           // ($x:0..9 == 0) -> ($x:0..9 < 1)
           // ($x:0..9 != 0) -> ($x:0..9 > 0)
-          return eq
-            ? polygolfOp("lt", a, int(t2.low + 1n))
-            : polygolfOp("gt", a, int(t2.low));
+          return eq ? op("lt", a, int(t2.low + 1n)) : op("gt", a, int(t2.low));
         }
         if (t1.high === t2.low) {
           // ($x:0..9 == 9) -> ($x:0..9 > 8)
           // ($x:0..9 != 9) -> ($x:0..9 < 9)
-          return eq
-            ? polygolfOp("gt", a, int(t2.low - 1n))
-            : polygolfOp("lt", a, int(t2.low));
+          return eq ? op("gt", a, int(t2.low - 1n)) : op("lt", a, int(t2.low));
         }
       }
     }
   },
 };
 
-export const removeBitnot: Plugin = {
-  ...mapOps(["bit_not", (x) => polygolfOp("sub", int(-1), x[0])]),
-  name: "removeBitnot",
-};
+export const removeBitnot: Plugin = mapOps(
+  { bit_not: (x) => op("sub", int(-1), x[0]) },
+  "removeBitnot",
+);
 
 export const addBitnot: Plugin = {
   name: "addBitnot",
   visit(node) {
     if (
-      isPolygolfOp("add")(node) &&
+      isOp("add")(node) &&
       node.args.length === 2 &&
       isIntLiteral()(node.args[0])
     ) {
       if (node.args[0].value === 1n)
-        return polygolfOp("neg", polygolfOp("bit_not", node.args[1]));
+        return op("neg", op("bit_not", node.args[1]));
       if (node.args[0].value === -1n)
-        return polygolfOp("bit_not", polygolfOp("neg", node.args[1]));
+        return op("bit_not", op("neg", node.args[1]));
     }
   },
 };
@@ -121,8 +113,8 @@ export const bitnotPlugins = [removeBitnot, addBitnot];
 export const applyDeMorgans: Plugin = {
   name: "applyDeMorgans",
   visit(node, spine) {
-    if (isPolygolfOp("and", "or", "unsafe_and", "unsafe_or")(node)) {
-      const negation = polygolfOp(
+    if (isOp("and", "or", "unsafe_and", "unsafe_or")(node)) {
+      const negation = op(
         node.op === "and"
           ? "or"
           : node.op === "or"
@@ -130,17 +122,17 @@ export const applyDeMorgans: Plugin = {
           : node.op === "unsafe_and"
           ? "unsafe_or"
           : "unsafe_and",
-        ...node.args.map((x) => polygolfOp("not", x)),
+        ...node.args.map((x) => op("not", x)),
       );
       if (getType(node, spine).kind === "void") return negation; // If we are promised we won't read the result, we don't need to negate.
-      return polygolfOp("not", negation);
+      return op("not", negation);
     }
-    if (isPolygolfOp("bit_and", "bit_or")(node)) {
-      return polygolfOp(
+    if (isOp("bit_and", "bit_or")(node)) {
+      return op(
         "bit_not",
-        polygolfOp(
+        op(
           node.op === "bit_and" ? "bit_or" : "bit_and",
-          ...node.args.map((x) => polygolfOp("bit_not", x)),
+          ...node.args.map((x) => op("bit_not", x)),
         ),
       );
     }
@@ -151,8 +143,8 @@ export const useIntegerTruthiness: Plugin = {
   name: "useIntegerTruthiness",
   visit(node, spine) {
     if (
-      isPolygolfOp("eq", "neq")(node) &&
-      spine.parent!.node.kind === "IfStatement" &&
+      isOp("eq", "neq")(node) &&
+      spine.parent!.node.kind === "If" &&
       spine.pathFragment === "condition"
     ) {
       const res = isIntLiteral(0n)(node.args[1])
@@ -160,9 +152,7 @@ export const useIntegerTruthiness: Plugin = {
         : isIntLiteral(0n)(node.args[0])
         ? implicitConversion("int_to_bool", node.args[1])
         : undefined;
-      return res !== undefined && node.op === "eq"
-        ? polygolfOp("not", res)
-        : res;
+      return res !== undefined && node.op === "eq" ? op("not", res) : res;
     }
   },
 };
@@ -179,17 +169,17 @@ function isConstantTypePowerOfTwo(n: Node, s: Spine) {
 function isPowerOfTwo(n: Node, s: Spine): boolean {
   return (
     isConstantTypePowerOfTwo(n, s) ||
-    (isPolygolfOp("pow", "bit_shift_left")(n) && isPowerOfTwo(n.args[0], s))
+    (isOp("pow", "bit_shift_left")(n) && isPowerOfTwo(n.args[0], s))
   );
 }
 
 export const modToBitand: Plugin = {
   name: "modToBitand",
   visit(node, spine) {
-    if (isPolygolfOp("mod")(node)) {
+    if (isOp("mod")(node)) {
       const n = node.args[1];
       if (isPowerOfTwo(n, spine)) {
-        return polygolfOp("bit_and", node.args[0], sub1(n));
+        return op("bit_and", node.args[0], sub1(n));
       }
     }
   },
@@ -198,11 +188,11 @@ export const modToBitand: Plugin = {
 export const bitandToMod: Plugin = {
   name: "bitandToMod",
   visit(node, spine) {
-    if (isPolygolfOp("bit_and")(node)) {
+    if (isOp("bit_and")(node)) {
       for (const i of [0, 1]) {
         const n = add1(node.args[i]);
         if (isPowerOfTwo(n, spine)) {
-          return polygolfOp("mod", node.args[1 - i], n);
+          return op("mod", node.args[1 - i], n);
         }
       }
     }
@@ -215,10 +205,10 @@ export function powToMul(limit: number = 2): Plugin {
   return {
     name: `powToMul(${limit})`,
     visit(node) {
-      if (isPolygolfOp("pow")(node)) {
+      if (isOp("pow")(node)) {
         const [a, b] = node.args;
         if (isIntLiteral()(b) && 1 < b.value && b.value <= limit) {
-          return polygolfOp("mul", ...Array(Number(b.value)).fill(a));
+          return op("mul", ...Array(Number(b.value)).fill(a));
         }
       }
     },
@@ -228,7 +218,7 @@ export function powToMul(limit: number = 2): Plugin {
 export const mulToPow: Plugin = {
   name: "mulToPow",
   visit(node) {
-    if (isPolygolfOp("mul")(node)) {
+    if (isOp("mul")(node)) {
       const factors = new Map<string, [Node, number]>();
       for (const e of node.args) {
         const stringified = stringify(e);
@@ -239,10 +229,10 @@ export const mulToPow: Plugin = {
       }
       const pairs = [...factors.values()];
       if (pairs.some((pair) => pair[1] > 1)) {
-        return polygolfOp(
+        return op(
           "mul",
           ...pairs.map(([expr, exp]) =>
-            exp > 1 ? polygolfOp("pow", expr, int(exp)) : expr,
+            exp > 1 ? op("pow", expr, int(exp)) : expr,
           ),
         );
       }
@@ -262,14 +252,14 @@ export function bitShiftToMulOrDiv(
       .map((x) => (x ? "true" : "false"))
       .toString()})`,
     visit(node) {
-      if (isPolygolfOp("bit_shift_left", "bit_shift_right")(node)) {
+      if (isOp("bit_shift_left", "bit_shift_right")(node)) {
         const [a, b] = node.args;
         if (!literalOnly || isIntLiteral()(b)) {
           if (node.op === "bit_shift_left" && toMul) {
-            return polygolfOp("mul", a, polygolfOp("pow", int(2), b));
+            return op("mul", a, op("pow", int(2), b));
           }
           if (node.op === "bit_shift_right" && toDiv) {
-            return polygolfOp("div", a, polygolfOp("pow", int(2), b));
+            return op("div", a, op("pow", int(2), b));
           }
         }
       }
@@ -292,36 +282,36 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
       .map((x) => (x ? "true" : "false"))
       .toString()})`,
     visit(node) {
-      if (isPolygolfOp("div")(node) && fromDiv) {
+      if (isOp("div")(node) && fromDiv) {
         const [a, b] = node.args;
         if (isIntLiteral()(b)) {
           const [n, exp] = getOddAnd2Exp(b.value);
           if (exp > 1 && n === 1n) {
-            return polygolfOp("bit_shift_right", a, int(exp));
+            return op("bit_shift_right", a, int(exp));
           }
         }
-        if (isPolygolfOp("pow")(b) && isIntLiteral(2n)(b.args[0])) {
-          return polygolfOp("bit_shift_right", a, b.args[1]);
+        if (isOp("pow")(b) && isIntLiteral(2n)(b.args[0])) {
+          return op("bit_shift_right", a, b.args[1]);
         }
       }
-      if (isPolygolfOp("mul")(node) && fromMul) {
+      if (isOp("mul")(node) && fromMul) {
         if (isIntLiteral()(node.args[0])) {
           const [n, exp] = getOddAnd2Exp(node.args[0].value);
           if (exp > 1) {
-            return polygolfOp(
+            return op(
               "bit_shift_left",
-              polygolfOp("mul", int(n), ...node.args.slice(1)),
+              op("mul", int(n), ...node.args.slice(1)),
               int(exp),
             );
           }
         }
         const powNode = node.args.find(
-          (x) => isPolygolfOp("pow")(x) && isIntLiteral(2n)(x.args[0]),
-        ) as PolygolfOp | undefined;
+          (x) => isOp("pow")(x) && isIntLiteral(2n)(x.args[0]),
+        ) as Op | undefined;
         if (powNode !== undefined) {
-          return polygolfOp(
+          return op(
             "bit_shift_left",
-            polygolfOp("mul", ...node.args.filter((x) => x !== powNode)),
+            op("mul", ...node.args.filter((x) => x !== powNode)),
             powNode.args[1],
           );
         }
@@ -466,7 +456,7 @@ export function decomposeIntLiteral(
           hasPowers,
           hasShifts,
         );
-      } else if (node.kind === "AnyIntegerLiteral") {
+      } else if (node.kind === "AnyInteger") {
         decompositions = decomposeAnyInt(
           node.low,
           node.high,
@@ -477,11 +467,7 @@ export function decomposeIntLiteral(
       }
 
       return decompositions.map(([k, b, e, d]) =>
-        polygolfOp(
-          "add",
-          polygolfOp("mul", int(k), polygolfOp("pow", int(b), int(e))),
-          int(d),
-        ),
+        op("add", op("mul", int(k), op("pow", int(b), int(e))), int(d)),
       );
     },
   };
@@ -490,7 +476,7 @@ export function decomposeIntLiteral(
 export const pickAnyInt: Plugin = {
   name: "pickAnyInt",
   visit(node) {
-    if (node.kind === "AnyIntegerLiteral") {
+    if (node.kind === "AnyInteger") {
       return node.low.toString().length < node.high.toString().length
         ? int(node.low)
         : int(node.high);

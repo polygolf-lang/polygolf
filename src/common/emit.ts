@@ -1,4 +1,4 @@
-import { type IR, type IntegerLiteral, type Node } from "IR";
+import { type IR, type Integer, type Node } from "IR";
 import { PolygolfError } from "./errors";
 import { type TokenTree } from "./Language";
 import { codepoints } from "./strings";
@@ -16,7 +16,7 @@ export function joinTrees(
  * Substitution of the form `[somechar, null]` indicates that `somechar` cannot be present in the string in this option.
  * Each resulting codepoint is mapped using `codepointMap`, if provided.
  */
-export function emitTextLiteral(
+export function emitText(
   value: string,
   options: [string | [string, string], [string, string | null][]][] = [
     [
@@ -73,7 +73,7 @@ export function shortest(x: string[]) {
 }
 
 export function emitIntLiteral(
-  n: IntegerLiteral,
+  n: Integer,
   bases: Record<number, [string, string]> = { 10: ["", ""] },
 ) {
   if (-10000 < n.value && n.value < 10000) return n.value.toString();

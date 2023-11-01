@@ -6,26 +6,12 @@ labels: bug
 assignees: ""
 ---
 
-**Language**
-Python
-
-**Polygolf source**
-
-```
-print "Hello world!";
-```
-
-**Current output**
-
-```
-print "Hello world!"
-```
+[Playground link](https://polygolf-lang.github.io/?source=print%20%22Hello%2C%20world%22%3B&language=Python&objective=bytes&getAllVariants=false)
 
 **Expected output**
 
 ```
-print("Hello world!")
+
 ```
 
 **Comment**
-Python 3 requires parens for printing.
