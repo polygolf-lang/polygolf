@@ -2,7 +2,7 @@ import { type Plugin, type OpTransformOutput } from "../common/Language";
 import {
   add1,
   assignment,
-  binaryOp,
+  infix,
   type BinaryOpCode,
   type Node,
   flipOpCode,
@@ -12,12 +12,12 @@ import {
   isCommutative,
   isIntLiteral,
   isNegative,
-  mutatingBinaryOp,
+  mutatingInfix,
   isPolygolfOp,
   type OpCode,
   type PolygolfOp,
   polygolfOp,
-  unaryOp,
+  prefix,
   type UnaryOpCode,
   BinaryOpCodes,
   functionCall,
@@ -74,7 +74,7 @@ function toOpMap<Op extends OpCode, T>(opMap0: [Op, T][]) {
  * @param opMap0 OpCode - target op name pairs.
  * @returns The plugin closure.
  */
-export function mapToUnaryAndBinaryOps(
+export function mapToUnaryAndInfixs(
   ...opMap0: [UnaryOpCode | BinaryOpCode, string][]
 ): Plugin {
   const opMap = toOpMap(opMap0);
@@ -86,11 +86,11 @@ export function mapToUnaryAndBinaryOps(
             op,
             isBinary(op)
               ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
-              : (x: readonly Node[]) => unaryOp(name, x[0]),
+              : (x: readonly Node[]) => prefix(name, x[0]),
           ] satisfies [OpCode, OpTransformOutput],
       ),
     ),
-    name: `mapToUnaryAndBinaryOps(${JSON.stringify(opMap0)})`,
+    name: `mapToUnaryAndInfixs(${JSON.stringify(opMap0)})`,
   };
 }
 
@@ -101,7 +101,7 @@ function asBinaryChain(
 ): Node {
   const negName = names.get("neg");
   if (op === "mul" && isIntLiteral(-1n)(exprs[0]) && negName !== undefined) {
-    exprs = [unaryOp(negName, exprs[1]), ...exprs.slice(2)];
+    exprs = [prefix(negName, exprs[1]), ...exprs.slice(2)];
   }
   if (op === "add") {
     exprs = exprs
@@ -112,9 +112,9 @@ function asBinaryChain(
   for (const expr of exprs.slice(1)) {
     const subName = names.get("sub");
     if (op === "add" && isNegative(expr) && subName !== undefined) {
-      result = binaryOp(subName, result, polygolfOp("neg", expr));
+      result = infix(subName, result, polygolfOp("neg", expr));
     } else {
-      result = binaryOp(names.get(op) ?? "?", result, expr);
+      result = infix(names.get(op) ?? "?", result, expr);
     }
   }
   return result;
@@ -157,12 +157,10 @@ export function useIndexCalls(
 }
 
 // "a = a + b" --> "a += b"
-export function addMutatingBinaryOp(
-  ...opMap0: [BinaryOpCode, string][]
-): Plugin {
+export function addMutatingInfix(...opMap0: [BinaryOpCode, string][]): Plugin {
   const opMap = toOpMap(opMap0);
   return {
-    name: `addMutatingBinaryOp(${JSON.stringify(opMap0)})`,
+    name: `addMutatingInfix(${JSON.stringify(opMap0)})`,
     visit(node) {
       if (
         node.kind === "Assignment" &&
@@ -180,13 +178,13 @@ export function addMutatingBinaryOp(
         if (index === 0 || (index > 0 && isCommutative(op))) {
           const newArgs = args.filter((x, i) => i !== index);
           if (op === "add" && opMap.has("sub") && newArgs.every(isNegative)) {
-            return mutatingBinaryOp(
+            return mutatingInfix(
               opMap.get("sub")!,
               node.variable,
               polygolfOp("neg", polygolfOp(op, ...newArgs)),
             );
           }
-          return mutatingBinaryOp(
+          return mutatingInfix(
             name,
             node.variable,
             newArgs.length > 1 ? polygolfOp(op, ...newArgs) : newArgs[0],
@@ -198,8 +196,8 @@ export function addMutatingBinaryOp(
 }
 
 // (a > b) --> (b < a)
-export const flipBinaryOps: Plugin = {
-  name: "flipBinaryOps",
+export const flipBinaryPolygolfOps: Plugin = {
+  name: "flipBinaryPolygolfOps",
   visit(node) {
     if (isPolygolfOp(...BinaryOpCodes)(node)) {
       const flippedOpCode = flipOpCode(node.op);

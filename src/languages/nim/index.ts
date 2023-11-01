@@ -20,10 +20,10 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToUnaryAndBinaryOps,
+  mapToUnaryAndInfixs,
   useIndexCalls,
-  addMutatingBinaryOp,
-  flipBinaryOps,
+  addMutatingInfix,
+  flipBinaryPolygolfOps,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -80,7 +80,7 @@ const nimLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipBinaryOps,
+      flipBinaryPolygolfOps,
       golfStringListLiteral(),
       listOpsToTextOps("text_byte_find", "text_get_byte"),
       golfLastPrint(),
@@ -103,12 +103,6 @@ const nimLanguage: Language = {
       forArgvToForEach,
       forArgvToForRange(true),
       ...truncatingOpsPlugins,
-      useIndexCalls(),
-      useEquivalentTextOp(true, false),
-      mapOps(
-        ["argv", functionCall("commandLineParams")],
-        ["argv_get", (x) => functionCall("paramStr", add1(x[0]))],
-      ),
       decomposeIntLiteral(),
     ),
     required(
@@ -152,9 +146,6 @@ const nimLanguage: Language = {
         ["text_to_int", (x) => functionCall("parseInt", x)],
         ["print", (x) => functionCall("write", builtin("stdout"), x)],
         ["println", (x) => functionCall("echo", x)],
-        ["min", (x) => functionCall("min", x)],
-        ["max", (x) => functionCall("max", x)],
-        ["abs", (x) => functionCall("abs", x)],
         ["bool_to_int", (x) => functionCall("int", x)],
         ["int_to_text_byte", (x) => functionCall("chr", x)],
         ["list_find", (x) => functionCall("find", x)],
@@ -178,7 +169,7 @@ const nimLanguage: Language = {
         ],
       ),
       useUnsignedDivision,
-      addMutatingBinaryOp(
+      addMutatingInfix(
         ["add", "+"],
         ["mul", "*"],
         ["unsigned_rem", "%%"],
@@ -187,7 +178,7 @@ const nimLanguage: Language = {
         ["sub", "-"],
         ["concat", "&"],
       ),
-      mapToUnaryAndBinaryOps(
+      mapToUnaryAndInfixs(
         ["bit_not", "not"],
         ["not", "not"],
         ["neg", "-"],

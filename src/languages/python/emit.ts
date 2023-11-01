@@ -13,15 +13,15 @@ import {
   text,
   isTextLiteral,
   id,
-  binaryOp,
+  infix,
 } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return unaryPrecedence(expr.name);
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
   }
   return Infinity;
@@ -140,7 +140,7 @@ export default function emitProgram(
                 "for",
                 "_",
                 "in",
-                emit(binaryOp("*", text("X"), e.end)),
+                emit(infix("*", text("X"), e.end)),
                 ":",
                 emitMultiNode(e.body),
               ]
@@ -181,7 +181,7 @@ export default function emitProgram(
           return [joinNodes(",", e.variables), "=", joinNodes(",", e.exprs)];
         case "OneToManyAssignment":
           return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
-        case "MutatingBinaryOp":
+        case "MutatingInfix":
           return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, "=", emit(e.value)];
@@ -208,7 +208,7 @@ export default function emitProgram(
           ];
         case "PropertyCall":
           return [emit(e.object), ".", emit(e.ident)];
-        case "BinaryOp": {
+        case "Infix": {
           const rightAssoc = e.name === "**";
           return [
             emit(e.left, prec + (rightAssoc ? 1 : 0)),
@@ -216,7 +216,7 @@ export default function emitProgram(
             emit(e.right, prec + (rightAssoc ? 0 : 1)),
           ];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "ListConstructor":
           return ["[", joinNodes(",", e.exprs), "]"];

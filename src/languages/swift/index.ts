@@ -10,6 +10,7 @@ import {
   isTextLiteral,
   builtin,
   int,
+  postfix,
 } from "../../IR";
 import {
   type Language,
@@ -23,10 +24,10 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToUnaryAndBinaryOps,
+  mapToUnaryAndInfixs,
   useIndexCalls,
-  addMutatingBinaryOp,
-  flipBinaryOps,
+  addMutatingInfix,
+  flipBinaryPolygolfOps,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -68,7 +69,7 @@ const swiftLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipBinaryOps,
+      flipBinaryPolygolfOps,
       golfStringListLiteral(false),
       listOpsToTextOps(),
       golfLastPrint(),
@@ -195,7 +196,7 @@ const swiftLanguage: Language = {
           (x) =>
             functionCall(
               "String",
-              functionCall("!", functionCall("UnicodeScalar", x)),
+              postfix("!", functionCall("UnicodeScalar", x)),
             ),
         ],
         [
@@ -203,7 +204,7 @@ const swiftLanguage: Language = {
           (x) =>
             functionCall(
               "String",
-              functionCall("!", functionCall("UnicodeScalar", x)),
+              postfix("!", functionCall("UnicodeScalar", x)),
             ),
         ],
         ["text_codepoint_length", (x) => propertyCall(x[0], "count")],
@@ -242,7 +243,7 @@ const swiftLanguage: Language = {
           "print",
           (x) => functionCall("print", x, namedArg("terminator", text(""))),
         ],
-        ["text_to_int", (x) => functionCall("!", functionCall("Int", x))],
+        ["text_to_int", (x) => postfix("!", functionCall("Int", x))],
 
         ["max", (x) => functionCall("max", x)],
         ["min", (x) => functionCall("min", x)],
@@ -260,7 +261,7 @@ const swiftLanguage: Language = {
             ),
         ],
       ),
-      addMutatingBinaryOp(
+      addMutatingInfix(
         ["add", "+"],
         ["sub", "-"],
         ["mul", "*"],
@@ -272,7 +273,7 @@ const swiftLanguage: Language = {
         ["bit_shift_left", "<<"],
         ["bit_shift_right", ">>"],
       ),
-      mapToUnaryAndBinaryOps(
+      mapToUnaryAndInfixs(
         ["not", "!"],
         ["neg", "-"],
         ["bit_not", "~"],

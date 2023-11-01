@@ -45,10 +45,10 @@ import {
   varDeclarationBlock,
   manyToManyAssignment,
   oneToManyAssignment,
-  mutatingBinaryOp,
+  mutatingInfix,
   indexCall,
   rangeIndexCall,
-  binaryOp,
+  infix,
   importStatement,
   forDifferenceRange,
   forEach,
@@ -57,12 +57,13 @@ import {
   forCLike,
   namedArg,
   methodCall,
-  unaryOp,
+  prefix,
   propertyCall,
   isTextLiteral,
   anyInt,
   isIntLiteral,
   isIdent,
+  postfix,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -240,10 +241,10 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
         assertIdentifiers(vars); // TODO too strict?
         return oneToManyAssignment(vars, expr);
       }
-      case "mutating_binary_op":
+      case "mutating_infix":
         expectArity(3);
         assertIdentifier(args[1]);
-        return mutatingBinaryOp(asString(args[0]), args[1], args[2]);
+        return mutatingInfix(asString(args[0]), args[1], args[2]);
       case "index_call":
       case "index_call_one_indexed":
         expectArity(2);
@@ -264,12 +265,15 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
       case "method_call":
         expectArity(2, Infinity);
         return methodCall(args[0], asString(args[1]), ...args.slice(2));
-      case "binary_op":
+      case "infix":
         expectArity(3);
-        return binaryOp(asString(args[0]), args[1], args[2]);
-      case "unary_op":
+        return infix(asString(args[0]), args[1], args[2]);
+      case "prefix":
         expectArity(2);
-        return unaryOp(asString(args[0]), args[1]);
+        return prefix(asString(args[0]), args[1]);
+      case "postfix":
+        expectArity(2);
+        return postfix(asString(args[0]), args[1]);
       case "builtin":
       case "id":
         expectArity(1);

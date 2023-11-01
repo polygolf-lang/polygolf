@@ -92,7 +92,7 @@ const defaultIdentGen = {
     const upper = firstLetter.toUpperCase();
     return [firstLetter, firstLetter === lower ? upper : lower];
   },
-  short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+  short: "abcdefghijklmnopqrstuvwxyzUnaryOpCIJKLMNOPQRSTUVWXYZ".split(""),
   general: (i: number) => "v" + i.toString(),
 };
 

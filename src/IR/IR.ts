@@ -4,7 +4,7 @@ import {
   type ManyToManyAssignment,
   type OneToManyAssignment,
   type VarDeclarationWithAssignment,
-  type MutatingBinaryOp,
+  type MutatingInfix,
   type VarDeclaration,
   type VarDeclarationBlock,
 } from "./assignments";
@@ -16,11 +16,11 @@ import {
 } from "./collections";
 import {
   type PolygolfOp,
-  type BinaryOp,
+  type Infix,
   type ConditionalOp,
   type FunctionCall,
   type MethodCall,
-  type UnaryOp,
+  type Prefix,
   type IndexCall,
   type KeyValue,
   type RangeIndexCall,
@@ -28,6 +28,7 @@ import {
   type NamedArg,
   type ImplicitConversion,
   type PropertyCall,
+  type Postfix,
 } from "./exprs";
 import {
   type ForRange,
@@ -103,13 +104,14 @@ export type Node =
   | VarDeclarationBlock
   | ManyToManyAssignment
   | OneToManyAssignment
-  | MutatingBinaryOp
+  | MutatingInfix
   | IndexCall
   | RangeIndexCall
   | MethodCall
   | PropertyCall
-  | BinaryOp
-  | UnaryOp
+  | Infix
+  | Prefix
+  | Postfix
   | ImportStatement
   | ForDifferenceRange
   | ForEach
