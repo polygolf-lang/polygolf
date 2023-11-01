@@ -1,17 +1,11 @@
 import { type TokenTree } from "@/common/Language";
 import {
-  emitTextLiteral,
+  emitText,
   joinTrees,
   EmitError,
   emitIntLiteral,
 } from "../../common/emit";
-import {
-  type ArrayConstructor,
-  type IR,
-  isIdent,
-  isIntLiteral,
-  isTextLiteral,
-} from "../../IR";
+import { type Array, type IR, isIdent, isIntLiteral, isText } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
@@ -133,9 +127,9 @@ export default function emitProgram(
               "$DEDENT$",
             ];
           return ["var", emit(e.children[0])];
-        case "ImportStatement":
+        case "Import":
           return [e.name, joinTrees(",", e.modules)];
-        case "WhileLoop":
+        case "While":
           return [`while`, emit(e.condition), ":", emitMultiNode(e.body)];
         case "ForEach":
           return [
@@ -181,7 +175,7 @@ export default function emitProgram(
             emitMultiNode(e.body),
           ];
         }
-        case "IfStatement":
+        case "If":
           return [
             "if",
             emit(e.condition),
@@ -214,9 +208,9 @@ export default function emitProgram(
           return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
         case "Identifier":
           return e.name;
-        case "TextLiteral":
-          return emitNimTextLiteral(e.value, context.options.codepointRange);
-        case "IntegerLiteral":
+        case "Text":
+          return emitNimText(e.value, context.options.codepointRange);
+        case "Integer":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
           return [emit(e.func), "$GLUE$", "(", joinNodes(",", e.args), ")"];
@@ -224,13 +218,13 @@ export default function emitProgram(
           const rightAssoc = e.name === "^" || e.name === " ";
           if (
             e.name === " " &&
-            isTextLiteral()(e.right) &&
+            isText()(e.right) &&
             (isIdent()(e.left) ||
               (e.left.kind === "Infix" && e.left.name === "."))
           ) {
             const [low, high] = context.options.codepointRange;
             if (low === 1 && high === Infinity) {
-              const raw = emitAsRawTextLiteral(e.right.value, "");
+              const raw = emitAsRawText(e.right.value, "");
               if (raw !== null) {
                 const res = [
                   emit(e.left, prec + (rightAssoc ? 1 : 0)),
@@ -251,15 +245,13 @@ export default function emitProgram(
         }
         case "Prefix":
           return [e.name, emit(e.arg, prec)];
-        case "ListConstructor":
+        case "List":
           return ["@", "[", joinNodes(",", e.exprs), "]"];
-        case "ArrayConstructor":
+        case "Array":
           if (
-            e.exprs.every(
-              (x) => x.kind === "ArrayConstructor" && x.exprs.length === 2,
-            )
+            e.exprs.every((x) => x.kind === "Array" && x.exprs.length === 2)
           ) {
-            const pairs = e.exprs as readonly ArrayConstructor[];
+            const pairs = e.exprs as readonly Array[];
             return [
               "{",
               joinTrees(
@@ -270,7 +262,7 @@ export default function emitProgram(
             ];
           }
           return ["[", joinNodes(",", e.exprs), "]"];
-        case "TableConstructor":
+        case "Table":
           return [
             "{",
             joinTrees(
@@ -307,15 +299,12 @@ export default function emitProgram(
   return emitMultiNode(program, true);
 }
 
-function emitAsRawTextLiteral(
-  value: string,
-  prefix: string = "r",
-): string | null {
+function emitAsRawText(value: string, prefix: string = "r"): string | null {
   if (value.includes("\n") || value.includes("\r")) return null;
   return `${prefix}"${value.replaceAll(`"`, `""`)}"`;
 }
 
-function emitNimTextLiteral(
+function emitNimText(
   x: string,
   [low, high]: [number, number] = [1, Infinity],
 ): string {
@@ -327,7 +316,7 @@ function emitNimTextLiteral(
     if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
     return `\\u{${x.toString(16)}}`;
   }
-  return emitTextLiteral(
+  return emitText(
     x,
     [
       [

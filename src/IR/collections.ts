@@ -1,51 +1,49 @@
 import { type BaseNode, type Node, type KeyValue } from "./IR";
 
-export interface ArrayConstructor extends BaseNode {
-  readonly kind: "ArrayConstructor";
+export interface Array extends BaseNode {
+  readonly kind: "Array";
   readonly exprs: readonly Node[];
 }
 
-export interface ListConstructor extends BaseNode {
-  readonly kind: "ListConstructor";
+export interface List extends BaseNode {
+  readonly kind: "List";
   readonly exprs: readonly Node[];
 }
 
-export interface SetConstructor extends BaseNode {
-  readonly kind: "SetConstructor";
+export interface Set extends BaseNode {
+  readonly kind: "Set";
   readonly exprs: readonly Node[];
 }
 
-export interface TableConstructor extends BaseNode {
-  readonly kind: "TableConstructor";
+export interface Table extends BaseNode {
+  readonly kind: "Table";
   readonly kvPairs: readonly KeyValue[];
 }
 
-export function arrayConstructor(exprs: readonly Node[]): ArrayConstructor {
+export function array(exprs: readonly Node[]): Array {
   return {
-    kind: "ArrayConstructor",
+    kind: "Array",
     exprs,
   };
 }
 
-export function listConstructor(exprs: readonly Node[]): ListConstructor {
+export function list(exprs: readonly Node[]): List {
   return {
-    kind: "ListConstructor",
+    kind: "List",
     exprs,
   };
 }
 
-export function setConstructor(exprs: readonly Node[]): SetConstructor {
+export function set(exprs: readonly Node[]): Set {
   return {
-    kind: "SetConstructor",
+    kind: "Set",
     exprs,
   };
 }
 
-export function tableConstructor(
-  kvPairs: readonly KeyValue[],
-): TableConstructor {
+export function table(kvPairs: readonly KeyValue[]): Table {
   return {
-    kind: "TableConstructor",
+    kind: "Table",
     kvPairs,
   };
 }

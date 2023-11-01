@@ -4,9 +4,9 @@ import {
   infix,
   integerType,
   isIdent,
-  isPolygolfOp,
+  isOp,
   isSubtype,
-  polygolfOp,
+  op,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { type Plugin } from "../../common/Language";
@@ -35,18 +35,18 @@ const includes: [string, string[]][] = [
 ];
 
 export const addNimImports: Plugin = addImports(
-  [
-    ["^", "math"],
-    ["repeat", "strutils"],
-    ["replace", "strutils"],
-    ["multireplace", "strutils"],
-    ["join", "strutils"],
-    ["paramStr", "os"],
-    ["commandLineParams", "os"],
-    ["split", "strutils"],
-    ["hash", "hashes"],
-    ["TableConstructor", "tables"],
-  ],
+  {
+    "^": "math",
+    repeat: "strutils",
+    replace: "strutils",
+    multireplace: "strutils",
+    join: "strutils",
+    paramStr: "os",
+    commandLineParams: "os",
+    split: "strutils",
+    hash: "hashes",
+    Table: "tables",
+  },
   (modules: string[]) => {
     if (modules.length < 1) return;
     for (const include of includes) {
@@ -62,10 +62,10 @@ export const addNimImports: Plugin = addImports(
 export const useUnsignedDivision: Plugin = {
   name: "useUnsignedDivision",
   visit(node, spine) {
-    if (isPolygolfOp("trunc_div", "rem")(node)) {
+    if (isOp("trunc_div", "rem")(node)) {
       return isSubtype(getType(node.args[0], spine), integerType(0)) &&
         isSubtype(getType(node.args[0], spine), integerType(0))
-        ? polygolfOp(`unsigned_${node.op}`, ...node.args)
+        ? op(`unsigned_${node.op}`, ...node.args)
         : undefined;
     }
   },

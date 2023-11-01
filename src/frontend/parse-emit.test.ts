@@ -19,7 +19,7 @@ describe("Restricted nodes: parse - emit match", () => {
     `prefix "name" $x;`,
     `builtin "name";`,
     `id "name!";`,
-    `import_statement "name" "x" "y";`,
+    `import "name" "x" "y";`,
     `for_range_inclusive $x $s $e 1 $body;`,
     `for_difference_range $x $s $d 1 $body;`,
     `for $_ 0 $e 2 $body;`,

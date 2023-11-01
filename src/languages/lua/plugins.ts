@@ -4,7 +4,7 @@ import {
   builtin,
   integerType,
   isIntLiteral,
-  isPolygolfOp,
+  isOp,
 } from "../../IR";
 import { type Plugin } from "../../common/Language";
 
@@ -13,13 +13,13 @@ export const base10DecompositionToFloatLiteralAsBuiltin: Plugin = {
   visit(node) {
     let k = 1n;
     let pow: Node = node;
-    if (isPolygolfOp("mul")(node) && isIntLiteral()(node.args[0])) {
+    if (isOp("mul")(node) && isIntLiteral()(node.args[0])) {
       k = node.args[0].value;
       pow = node.args[1];
     }
 
     if (
-      isPolygolfOp("pow")(pow) &&
+      isOp("pow")(pow) &&
       isIntLiteral(10n)(pow.args[0]) &&
       isIntLiteral()(pow.args[1])
     ) {

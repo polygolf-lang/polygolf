@@ -4,17 +4,10 @@ import {
   containsMultiNode,
   EmitError,
   emitIntLiteral,
-  emitTextLiteral,
+  emitText,
   joinTrees,
 } from "../../common/emit";
-import {
-  type IR,
-  isIntLiteral,
-  text,
-  isTextLiteral,
-  id,
-  infix,
-} from "../../IR";
+import { type IR, isIntLiteral, text, isText, id, infix } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
@@ -116,9 +109,9 @@ export default function emitProgram(
       switch (e.kind) {
         case "Block":
           return emitMultiNode(expr);
-        case "ImportStatement":
+        case "Import":
           return [e.name, joinTrees(",", e.modules)];
-        case "WhileLoop":
+        case "While":
           return [`while`, emit(e.condition), ":", emitMultiNode(e.body)];
         case "ForEach":
           return [
@@ -158,7 +151,7 @@ export default function emitProgram(
                 emitMultiNode(e.body),
               ];
         }
-        case "IfStatement":
+        case "If":
           return [
             "if",
             emit(e.condition),
@@ -166,7 +159,7 @@ export default function emitProgram(
             emitMultiNode(e.consequent),
             e.alternate === undefined
               ? []
-              : e.alternate.kind === "IfStatement"
+              : e.alternate.kind === "If"
               ? ["\n", "el", "$GLUE$", emit(e.alternate)]
               : ["\n", "else", ":", emitMultiNode(e.alternate)],
           ];
@@ -187,9 +180,9 @@ export default function emitProgram(
           return [e.name, "=", emit(e.value)];
         case "Identifier":
           return e.name;
-        case "TextLiteral":
-          return emitPythonTextLiteral(e.value, context.options.codepointRange);
-        case "IntegerLiteral":
+        case "Text":
+          return emitPythonText(e.value, context.options.codepointRange);
+        case "Integer":
           return emitIntLiteral(e, {
             10: ["", ""],
             16: ["0x", ""],
@@ -200,7 +193,7 @@ export default function emitProgram(
             emit(e.func),
             "(",
             e.args.length > 1 &&
-            e.args.every(isTextLiteral()) &&
+            e.args.every(isText()) &&
             e.args.every((x) => charLength(x.value) === 1)
               ? ["*", emit(text(e.args.map((x) => x.value).join("")))]
               : joinNodes(",", e.args),
@@ -218,9 +211,9 @@ export default function emitProgram(
         }
         case "Prefix":
           return [e.name, emit(e.arg, prec)];
-        case "ListConstructor":
+        case "List":
           return ["[", joinNodes(",", e.exprs), "]"];
-        case "TableConstructor":
+        case "Table":
           return [
             "{",
             joinTrees(
@@ -261,7 +254,7 @@ export default function emitProgram(
   return emitMultiNode(program, true);
 }
 
-export function emitPythonTextLiteral(
+export function emitPythonText(
   x: string,
   [low, high]: [number, number] = [1, Infinity],
 ): string {
@@ -271,7 +264,7 @@ export function emitPythonTextLiteral(
     if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
     return `\\U${x.toString(16).padStart(8, "0")}`;
   }
-  return emitTextLiteral(
+  return emitText(
     x,
     [
       [

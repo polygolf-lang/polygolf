@@ -1,4 +1,4 @@
-import { isPolygolfOp, isTextLiteral, text } from "@/IR";
+import { isOp, isText, text } from "@/IR";
 import {
   type Language,
   defaultDetokenizer,
@@ -17,7 +17,7 @@ const textLang: Language = {
   emitter(program, context) {
     return (program.kind === "Block" ? program.children : [program]).map(
       (x) => {
-        if (isPolygolfOp()(x) && isTextLiteral()(x.args[0])) {
+        if (isOp()(x) && isText()(x.args[0])) {
           if (x.args[0].value.endsWith("X")) {
             context.addWarning(new PolygolfError("global warning"), true);
             context.addWarning(
@@ -39,14 +39,14 @@ const textLang: Language = {
     search({
       name: "trimEnd",
       visit(node) {
-        return isTextLiteral()(node) ? text(node.value.trimEnd()) : undefined;
+        return isText()(node) ? text(node.value.trimEnd()) : undefined;
       },
     }),
     required(nopPlugin("noop")),
     search({
       name: "appendX",
       visit(node) {
-        return isTextLiteral()(node) ? text(node.value + "X") : undefined;
+        return isText()(node) ? text(node.value + "X") : undefined;
       },
     }),
   ],

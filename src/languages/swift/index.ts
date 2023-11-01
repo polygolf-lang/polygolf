@@ -1,13 +1,13 @@
 import {
-  functionCall,
+  functionCall as func,
   indexCall,
-  methodCall,
+  methodCall as method,
   namedArg,
-  polygolfOp,
+  op,
   text,
   add1,
-  propertyCall,
-  isTextLiteral,
+  propertyCall as prop,
+  isText,
   builtin,
   int,
   postfix,
@@ -24,10 +24,10 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToUnaryAndInfixs,
+  mapToPrefixAndInfix,
   useIndexCalls,
   addMutatingInfix,
-  flipBinaryPolygolfOps,
+  flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -69,7 +69,7 @@ const swiftLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipBinaryPolygolfOps,
+      flipBinaryOps,
       golfStringListLiteral(false),
       listOpsToTextOps(),
       golfLastPrint(),
@@ -85,34 +85,15 @@ const swiftLanguage: Language = {
       textToIntToTextGetToInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
-      mapOps(
-        ["argv", builtin("CommandLine.arguments[1...]")],
-        [
-          "argv_get",
-          (x) =>
-            polygolfOp(
-              "list_get",
-              builtin("CommandLine.arguments"),
-              add1(x[0]),
-            ),
-        ],
-        [
-          "codepoint_to_int",
-          (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
-        ],
-        [
-          "text_byte_to_int",
-          (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
-        ],
-        [
-          "text_get_byte",
-          (x) =>
-            polygolfOp(
-              "int_to_text_byte",
-              polygolfOp("text_get_byte_to_int", ...x),
-            ),
-        ],
-      ),
+      mapOps({
+        argv: builtin("CommandLine.arguments[1...]"),
+        argv_get: (x) =>
+          op("list_get", builtin("CommandLine.arguments"), add1(x[0])),
+        codepoint_to_int: (x) => op("text_get_codepoint_to_int", x[0], int(0n)),
+        text_byte_to_int: (x) => op("text_get_byte_to_int", x[0], int(0n)),
+        text_get_byte: (x) =>
+          op("int_to_text_byte", op("text_get_byte_to_int", ...x)),
+      }),
       useIndexCalls(),
       decomposeIntLiteral(),
     ),
@@ -120,195 +101,107 @@ const swiftLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
-      mapOps(
-        ["read_line", functionCall("readLine")],
-        ["argv", builtin("CommandLine.arguments[1...]")],
-        [
-          "argv_get",
-          (x) =>
-            polygolfOp(
-              "list_get",
-              builtin("CommandLine.arguments"),
-              add1(x[0]),
-            ),
-        ],
-        [
-          "codepoint_to_int",
-          (x) => polygolfOp("text_get_codepoint_to_int", x[0], int(0n)),
-        ],
-        [
-          "text_byte_to_int",
-          (x) => polygolfOp("text_get_byte_to_int", x[0], int(0n)),
-        ],
-        [
-          "text_get_byte",
-          (x) =>
-            polygolfOp(
-              "int_to_text_byte",
-              polygolfOp("text_get_byte_to_int", ...x),
-            ),
-        ],
-      ),
+      mapOps({
+        read_line: func("readLine"),
+        argv: builtin("CommandLine.arguments[1...]"),
+        argv_get: (x) =>
+          op("list_get", builtin("CommandLine.arguments"), add1(x[0])),
+        codepoint_to_int: (x) => op("text_get_codepoint_to_int", x[0], int(0n)),
+        text_byte_to_int: (x) => op("text_get_byte_to_int", x[0], int(0n)),
+        text_get_byte: (x) =>
+          op("int_to_text_byte", op("text_get_byte_to_int", ...x)),
+      }),
       useIndexCalls(),
       implicitlyConvertPrintArg,
-      mapOps(
-        [
-          "join",
-          (x) =>
-            methodCall(
-              x[0],
-              "joined",
-              ...(isTextLiteral("")(x[1]) ? [] : [namedArg("separator", x[1])]),
-            ),
-        ],
-        [
-          "text_get_byte_to_int",
-          (x) =>
-            functionCall(
-              "Int",
-              indexCall(
-                functionCall("Array", propertyCall(x[0], "utf8")),
-                x[1],
-              ),
-            ),
-        ],
-        [
-          "text_get_codepoint",
-          (x) =>
-            functionCall(
-              "String",
-              indexCall(functionCall("Array", x[0]), x[1]),
-            ),
-        ],
-        [
-          "text_get_codepoint_to_int",
-          (x) =>
-            propertyCall(
-              indexCall(
-                functionCall("Array", propertyCall(x[0], "unicodeScalars")),
-                x[1],
-              ),
-              "value",
-            ),
-        ],
-        [
-          "int_to_text_byte",
-          (x) =>
-            functionCall(
-              "String",
-              postfix("!", functionCall("UnicodeScalar", x)),
-            ),
-        ],
-        [
-          "int_to_codepoint",
-          (x) =>
-            functionCall(
-              "String",
-              postfix("!", functionCall("UnicodeScalar", x)),
-            ),
-        ],
-        ["text_codepoint_length", (x) => propertyCall(x[0], "count")],
-        [
-          "text_byte_length",
-          (x) => propertyCall(propertyCall(x[0], "utf8"), "count"),
-        ],
-        ["int_to_text", (x) => functionCall("String", x)],
-        [
-          "text_split",
-          (x) => methodCall(x[0], "split", namedArg("separator", x[1])),
-        ],
-        [
-          "repeat",
-          (x) =>
-            functionCall(
-              "String",
-              namedArg("repeating", x[0]),
-              namedArg("count", x[1]),
-            ),
-        ],
-        [
-          "pow",
-          (x) =>
-            functionCall(
-              "Int",
-              functionCall(
-                "pow",
-                functionCall("Double", x[0]),
-                functionCall("Double", x[1]),
-              ),
-            ),
-        ],
-        ["println", (x) => functionCall("print", x)],
-        [
-          "print",
-          (x) => functionCall("print", x, namedArg("terminator", text(""))),
-        ],
-        ["text_to_int", (x) => postfix("!", functionCall("Int", x))],
+      mapOps({
+        join: (x) =>
+          method(
+            x[0],
+            "joined",
+            ...(isText("")(x[1]) ? [] : [namedArg("separator", x[1])]),
+          ),
+        text_get_byte_to_int: (x) =>
+          func("Int", indexCall(func("Array", prop(x[0], "utf8")), x[1])),
+        text_get_codepoint: (x) =>
+          func("String", indexCall(func("Array", x[0]), x[1])),
+        text_get_codepoint_to_int: (x) =>
+          prop(
+            indexCall(func("Array", prop(x[0], "unicodeScalars")), x[1]),
+            "value",
+          ),
+        int_to_text_byte: (x) =>
+          func("String", postfix("!", func("UnicodeScalar", x))),
+        int_to_codepoint: (x) =>
+          func("String", postfix("!", func("UnicodeScalar", x))),
+        text_codepoint_length: (x) => prop(x[0], "count"),
+        text_byte_length: (x) => prop(prop(x[0], "utf8"), "count"),
+        int_to_text: (x) => func("String", x),
+        text_split: (x) => method(x[0], "split", namedArg("separator", x[1])),
+        repeat: (x) =>
+          func("String", namedArg("repeating", x[0]), namedArg("count", x[1])),
 
-        ["max", (x) => functionCall("max", x)],
-        ["min", (x) => functionCall("min", x)],
-        ["abs", (x) => functionCall("abs", x)],
-        ["true", builtin("true")],
-        ["false", builtin("false")],
-        [
-          "text_replace",
-          (x) =>
-            methodCall(
-              x[0],
-              "replacingOccurrences",
-              namedArg("of", x[1]),
-              namedArg("with", x[2]),
-            ),
-        ],
-      ),
-      addMutatingInfix(
-        ["add", "+"],
-        ["sub", "-"],
-        ["mul", "*"],
-        ["trunc_div", "/"],
-        ["rem", "%"],
-        ["bit_and", "&"],
-        ["bit_or", "|"],
-        ["bit_xor", "^"],
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-      ),
-      mapToUnaryAndInfixs(
-        ["not", "!"],
-        ["neg", "-"],
-        ["bit_not", "~"],
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-        ["mul", "*"],
-        ["trunc_div", "/"],
-        ["rem", "%"],
-        ["bit_and", "&"],
-        ["add", "+"],
-        ["sub", "-"],
-        ["bit_or", "|"],
-        ["bit_xor", "^"],
-        ["concat", "+"],
-        ["lt", "<"],
-        ["leq", "<="],
-        ["eq", "=="],
-        ["neq", "!="],
-        ["geq", ">="],
-        ["gt", ">"],
-        ["and", "&&"],
-        ["or", "||"],
-      ),
-      addImports(
-        [
-          ["pow", "Foundation"],
-          ["replacingOccurrences", "Foundation"],
-        ],
-        "import",
-      ),
+        pow: (x) =>
+          func("Int", func("pow", func("Double", x[0]), func("Double", x[1]))),
+        println: (x) => func("print", x),
+        print: (x) => func("print", x, namedArg("terminator", text(""))),
+        text_to_int: (x) => postfix("!", func("Int", x)),
+
+        max: (x) => func("max", x),
+        min: (x) => func("min", x),
+        abs: (x) => func("abs", x),
+        true: builtin("true"),
+        false: builtin("false"),
+
+        text_replace: (x) =>
+          method(
+            x[0],
+            "replacingOccurrences",
+            namedArg("of", x[1]),
+            namedArg("with", x[2]),
+          ),
+      }),
+      addMutatingInfix({
+        add: "+",
+        sub: "-",
+        mul: "*",
+        trunc_div: "/",
+        rem: "%",
+        bit_and: "&",
+        bit_or: "|",
+        bit_xor: "^",
+        bit_shift_left: "<<",
+        bit_shift_right: ">>",
+      }),
+      mapToPrefixAndInfix({
+        not: "!",
+        neg: "-",
+        bit_not: "~",
+        bit_shift_left: "<<",
+        bit_shift_right: ">>",
+        mul: "*",
+        trunc_div: "/",
+        rem: "%",
+        bit_and: "&",
+        add: "+",
+        sub: "-",
+        bit_or: "|",
+        bit_xor: "^",
+        concat: "+",
+        lt: "<",
+        leq: "<=",
+        eq: "==",
+        neq: "!=",
+        geq: ">=",
+        gt: ">",
+        and: "&&",
+        or: "||",
+      }),
+      addImports({ pow: "Foundation", replacingOccurrences: "Foundation" }),
     ),
     simplegolf(
       alias({
-        IntegerLiteral: (x) => x.value.toString(),
-        TextLiteral: (x) => `"${x.value}"`,
+        Integer: (x) => x.value.toString(),
+        Text: (x) => `"${x.value}"`,
       }),
     ),
     required(
