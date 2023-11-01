@@ -103,12 +103,6 @@ const nimLanguage: Language = {
       forArgvToForEach,
       forArgvToForRange(true),
       ...truncatingOpsPlugins,
-      useIndexCalls(),
-      useEquivalentTextOp(true, false),
-      mapOps(
-        ["argv", functionCall("commandLineParams")],
-        ["argv_get", (x) => functionCall("paramStr", add1(x[0]))],
-      ),
       decomposeIntLiteral(),
     ),
     required(
@@ -152,9 +146,6 @@ const nimLanguage: Language = {
         ["text_to_int", (x) => functionCall("parseInt", x)],
         ["print", (x) => functionCall("write", builtin("stdout"), x)],
         ["println", (x) => functionCall("echo", x)],
-        ["min", (x) => functionCall("min", x)],
-        ["max", (x) => functionCall("max", x)],
-        ["abs", (x) => functionCall("abs", x)],
         ["bool_to_int", (x) => functionCall("int", x)],
         ["int_to_text_byte", (x) => functionCall("chr", x)],
         ["list_find", (x) => functionCall("find", x)],
