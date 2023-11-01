@@ -20,10 +20,10 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToUnaryAndBinaryOps,
+  mapToUnaryAndInfixs,
   useIndexCalls,
-  addMutatingBinaryOp,
-  flipBinaryOps,
+  addMutatingInfix,
+  flipInfixs,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -80,7 +80,7 @@ const nimLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipBinaryOps,
+      flipInfixs,
       golfStringListLiteral(),
       listOpsToTextOps("text_byte_find", "text_get_byte"),
       golfLastPrint(),
@@ -178,7 +178,7 @@ const nimLanguage: Language = {
         ],
       ),
       useUnsignedDivision,
-      addMutatingBinaryOp(
+      addMutatingInfix(
         ["add", "+"],
         ["mul", "*"],
         ["unsigned_rem", "%%"],
@@ -187,7 +187,7 @@ const nimLanguage: Language = {
         ["sub", "-"],
         ["concat", "&"],
       ),
-      mapToUnaryAndBinaryOps(
+      mapToUnaryAndInfixs(
         ["bit_not", "not"],
         ["not", "not"],
         ["neg", "-"],

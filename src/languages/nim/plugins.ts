@@ -80,7 +80,7 @@ export const useUFCS: Plugin = {
         return;
       }
       const [obj, ...args] = node.args;
-      if (!isOfKind("BinaryOp", "UnaryOp")(obj) && isIdent()(node.func)) {
+      if (!isOfKind("Infix", "Prefix")(obj) && isIdent()(node.func)) {
         return methodCall(obj, node.func, ...args);
       }
     }

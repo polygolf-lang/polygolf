@@ -124,9 +124,9 @@ export default function emitProgram(program: IR.Node): TokenTree {
         ]);
       case "IntegerLiteral":
         return expr.value.toString();
-      case "BinaryOp":
+      case "Infix":
         return [emitNode(expr.left), emitNode(expr.right), expr.name];
-      case "UnaryOp":
+      case "Prefix":
         return [emitNode(expr.arg), expr.name];
       case "ListConstructor":
         return ["[", expr.exprs.map(emitNode), "]"];

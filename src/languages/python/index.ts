@@ -26,9 +26,9 @@ import {
 import emitProgram, { emitPythonTextLiteral } from "./emit";
 import {
   mapOps,
-  mapToUnaryAndBinaryOps,
+  mapToUnaryAndInfixs,
   useIndexCalls,
-  addMutatingBinaryOp,
+  addMutatingInfix,
   removeImplicitConversions,
   methodsAsFunctions,
   printIntToPrint,
@@ -187,7 +187,7 @@ const pythonLanguage: Language = {
             ),
         ],
       ),
-      addMutatingBinaryOp(
+      addMutatingInfix(
         ["add", "+"],
         ["concat", "+"],
         ["sub", "-"],
@@ -203,7 +203,7 @@ const pythonLanguage: Language = {
         ["bit_shift_left", "<<"],
         ["bit_shift_right", ">>"],
       ),
-      mapToUnaryAndBinaryOps(
+      mapToUnaryAndInfixs(
         ["pow", "**"],
         ["neg", "-"],
         ["bit_not", "~"],

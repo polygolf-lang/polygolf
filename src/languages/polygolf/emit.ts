@@ -235,7 +235,7 @@ function emitNodeWithoutAnnotation(
       );
     case "OneToManyAssignment":
       return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
-    case "MutatingBinaryOp":
+    case "MutatingInfix":
       return emitSexpr("@", text(expr.name), expr.variable, expr.right);
     case "IndexCall":
       return emitSexpr(
@@ -255,9 +255,10 @@ function emitNodeWithoutAnnotation(
       return emitSexpr("@", expr.object, text(expr.ident.name), ...expr.args);
     case "PropertyCall":
       return emitSexpr("@", expr.object, text(expr.ident.name));
-    case "BinaryOp":
+    case "Infix":
       return emitSexpr("@", text(expr.name), expr.left, expr.right);
-    case "UnaryOp":
+    case "Prefix":
+    case "Postfix":
       return emitSexpr("@", text(expr.name), expr.arg);
     case "ImportStatement":
       return emitSexpr(

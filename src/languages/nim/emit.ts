@@ -16,9 +16,9 @@ import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return 11;
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
     case "FunctionCall":
       return 2;
@@ -208,7 +208,7 @@ export default function emitProgram(
           ];
         case "OneToManyAssignment":
           return [joinNodes(",", e.variables), "=", emit(e.expr)];
-        case "MutatingBinaryOp":
+        case "MutatingInfix":
           return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
         case "Identifier":
           return e.name;
@@ -269,7 +269,7 @@ export default function emitProgram(
               e.args.length > 0 ? joinNodes(",", e.args) : [],
             ];
           }
-        case "BinaryOp": {
+        case "Infix": {
           const rightAssoc = e.name === "^";
           return [
             emit(e.left, prec + (rightAssoc ? 1 : 0)),
@@ -278,7 +278,7 @@ export default function emitProgram(
             emit(e.right, prec + (rightAssoc ? 0 : 1)),
           ];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "ListConstructor":
           return ["@", "[", joinNodes(",", e.exprs), "]"];

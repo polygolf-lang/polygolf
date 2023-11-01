@@ -5,14 +5,14 @@ import {
   emitTextLiteral,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isIntLiteral, isIdent } from "../../IR";
+import { type IR, isIntLiteral } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return unaryPrecedence(expr.name);
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
   }
   return Infinity;
@@ -135,7 +135,7 @@ export default function emitProgram(
           throw new EmitError(e);
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
-        case "MutatingBinaryOp":
+        case "MutatingInfix":
           return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, ":", emit(e.value)];
@@ -146,7 +146,6 @@ export default function emitProgram(
         case "IntegerLiteral":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
-          if (isIdent("!")(e.func)) return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node
           return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "PropertyCall":
           return [emit(e.object), ".", e.ident.name];
@@ -167,11 +166,13 @@ export default function emitProgram(
             ":",
             emit(e.alternate),
           ];
-        case "BinaryOp": {
+        case "Infix": {
           return [emit(e.left, prec), e.name, emit(e.right, prec + 1)];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
+        case "Postfix":
+          return [emit(e.arg, prec), e.name];
         case "ListConstructor":
           return ["[", joinNodes(",", e.exprs), "]"];
         case "TableConstructor":

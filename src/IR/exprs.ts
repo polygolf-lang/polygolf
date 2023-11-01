@@ -9,7 +9,7 @@ import {
   type OpCode,
   type Node,
   type IntegerLiteral,
-  type MutatingBinaryOp,
+  type MutatingInfix,
   isCommutative,
   int,
   isAssociative,
@@ -34,7 +34,7 @@ export interface ImplicitConversion extends BaseNode {
 /**
  * All expressions start as a `PolygolfOp` node.
  * This node is used to represent an abstract operation.
- * Plugins (mainly `mapOps, mapToUnaryAndBinaryOps` plugins) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
+ * Plugins (mainly `mapOps, mapToUnaryAndInfixs` plugins) then transform these to how they are represented in the target lang. (function, binary infix op, etc.)
  * This node should never enter the emit phase.
  
 * Polygolf ensures that in the IR, there will never be:
@@ -95,15 +95,21 @@ export interface RangeIndexCall extends BaseNode {
   readonly oneIndexed: boolean;
 }
 
-export interface BinaryOp extends BaseNode {
-  readonly kind: "BinaryOp";
+export interface Infix extends BaseNode {
+  readonly kind: "Infix";
   readonly name: string;
   readonly left: Node;
   readonly right: Node;
 }
 
-export interface UnaryOp extends BaseNode {
-  readonly kind: "UnaryOp";
+export interface Prefix extends BaseNode {
+  readonly kind: "Prefix";
+  readonly name: string;
+  readonly arg: Node;
+}
+
+export interface Postfix extends BaseNode {
+  readonly kind: "Postfix";
   readonly name: string;
   readonly arg: Node;
 }
@@ -207,7 +213,7 @@ export function polygolfOp(op: OpCode, ...args: Node[]): Node {
       const newArgs: Node[] = [];
       for (const arg of args) {
         if (newArgs.length > 0) {
-          const combined = evalBinaryOp(op, newArgs[newArgs.length - 1], arg);
+          const combined = evalInfix(op, newArgs[newArgs.length - 1], arg);
           if (combined !== null) {
             newArgs[newArgs.length - 1] = combined;
           } else {
@@ -246,7 +252,7 @@ export function polygolfOp(op: OpCode, ...args: Node[]): Node {
     if (args.length === 1) return args[0];
   }
   if (isBinary(op) && args.length === 2) {
-    const combined = evalBinaryOp(op, args[0], args[1]);
+    const combined = evalInfix(op, args[0], args[1]);
     if (
       combined !== null &&
       (!isIntLiteral()(combined) ||
@@ -259,7 +265,7 @@ export function polygolfOp(op: OpCode, ...args: Node[]): Node {
   return _polygolfOp(op, ...args);
 }
 
-function evalBinaryOp(op: BinaryOpCode, left: Node, right: Node): Node | null {
+function evalInfix(op: BinaryOpCode, left: Node, right: Node): Node | null {
   if (op === "concat" && isTextLiteral()(left) && isTextLiteral()(right)) {
     return text(left.value + right.value);
   }
@@ -381,18 +387,26 @@ export function rangeIndexCall(
   };
 }
 
-export function binaryOp(name: string, left: Node, right: Node): BinaryOp {
+export function infix(name: string, left: Node, right: Node): Infix {
   return {
-    kind: "BinaryOp",
+    kind: "Infix",
     left,
     right,
     name,
   };
 }
 
-export function unaryOp(name: string, arg: Node): UnaryOp {
+export function prefix(name: string, arg: Node): Prefix {
   return {
-    kind: "UnaryOp",
+    kind: "Prefix",
+    arg,
+    name,
+  };
+}
+
+export function postfix(name: string, arg: Node): Postfix {
+  return {
+    kind: "Postfix",
     arg,
     name,
   };
@@ -436,20 +450,20 @@ export function print(value: Node, newline: boolean = true): Node {
 export function getArgs(
   node:
     | PolygolfOp
-    | BinaryOp
-    | MutatingBinaryOp
-    | UnaryOp
+    | Infix
+    | MutatingInfix
+    | Prefix
     | FunctionCall
     | MethodCall
     | IndexCall
     | RangeIndexCall,
 ): readonly Node[] {
   switch (node.kind) {
-    case "BinaryOp":
+    case "Infix":
       return [node.left, node.right];
-    case "MutatingBinaryOp":
+    case "MutatingInfix":
       return [node.variable, node.right];
-    case "UnaryOp":
+    case "Prefix":
       return [node.arg];
     case "FunctionCall":
       return node.args;
