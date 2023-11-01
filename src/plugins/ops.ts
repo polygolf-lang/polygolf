@@ -71,12 +71,18 @@ function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
 export function mapTo<T>(
   constructor: (x: T, args: readonly Node[]) => Node,
 ): (opMap: Partial<Record<OpCode, T>>) => Plugin {
-  function result(opMap: Partial<Record<OpCode, T>>) {
+  function result(
+    opMap: Partial<Record<OpCode, T>>,
+    predicate?: (n: Node, s: Spine) => boolean,
+  ) {
     enhanceOpMap(opMap);
     return mapOps(
       mapObjectValues(
         opMap,
-        (name) => (x: readonly Node[]) => constructor(name, x),
+        (name) => (n: readonly Node[], s: Spine) =>
+          predicate === undefined || predicate(s.node, s)
+            ? constructor(name, n)
+            : undefined,
       ),
       `mapTo(${constructor.name})(${JSON.stringify(opMap)})`,
     );

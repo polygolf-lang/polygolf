@@ -58,6 +58,7 @@ export interface BaseNode {
   /** type: an uninferrable type, either annotated from the frontend or
    * inserted for language-specific op nodes */
   readonly type?: Type;
+  readonly targetType?: string;
 }
 
 export interface SourcePointer {
