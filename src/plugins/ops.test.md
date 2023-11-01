@@ -32,7 +32,7 @@ $a <- 3;
 2 >= $a;
 ```
 
-```polygolf ops.flipInfixs
+```polygolf ops.flipBinaryPolygolfOps
 $a <- 3;
 $a == 2;
 $a != 2;
