@@ -3,8 +3,8 @@ import {
   annotate,
   builtin,
   int,
-  isPolygolfOp,
-  isTextLiteral,
+  isOp,
+  isText,
   rangeIndexCall,
   text,
 } from "../../IR";
@@ -16,8 +16,8 @@ export const golfTextListLiteralIndex: Plugin = {
   visit(node, spine) {
     if (
       node.kind === "IndexCall" &&
-      node.collection.kind === "ListConstructor" &&
-      node.collection.exprs.every(isTextLiteral())
+      node.collection.kind === "List" &&
+      node.collection.exprs.every(isText())
     ) {
       const values = node.collection.exprs.map((x) => ({
         chars: chars(x.value),
@@ -31,7 +31,7 @@ export const golfTextListLiteralIndex: Plugin = {
       });
       if (
         values.every((x) => x.chars.length === x.targetLength) ||
-        isPolygolfOp("println")(spine.parent!.node)
+        isOp("println")(spine.parent!.node)
       ) {
         values.forEach((x) => {
           while (x.chars.length < x.targetLength) x.chars.push(" ");
