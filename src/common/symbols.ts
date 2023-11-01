@@ -5,11 +5,11 @@ import {
   integerTypeIncludingAll,
   type IR,
   isIdent,
-  isPolygolfOp,
+  isOp,
   isSubtype,
   lt,
   type Node,
-  type PolygolfOp,
+  type Op,
   sub,
   textType,
   type Type,
@@ -251,13 +251,13 @@ function getDirectReadFragments(node: Node): PathFragment[] {
       return ["table"];
     case "ForRange":
       return ["start", "end", "increment"];
-    case "IfStatement":
+    case "If":
       return ["condition"];
     case "ManyToManyAssignment":
       return node.exprs.map((x, index) => ({ prop: "exprs", index }));
     case "OneToManyAssignment":
       return ["expr"];
-    case "PolygolfOp":
+    case "Op":
       return getDirectPolygolfReadFragments(node).map((index) => ({
         prop: "args",
         index,
@@ -266,13 +266,13 @@ function getDirectReadFragments(node: Node): PathFragment[] {
       return [];
     case "VarDeclarationBlock":
       return [];
-    case "WhileLoop":
+    case "While":
       return ["condition"];
   }
   return [...getChildFragments(node)];
 }
 
-function getDirectPolygolfReadFragments(node: PolygolfOp): number[] {
+function getDirectPolygolfReadFragments(node: Op): number[] {
   // switch (node.op) {
   // }
   return node.args.map((x, i) => i);
@@ -285,7 +285,7 @@ function getDirectWriteFragments(node: Node): PathFragment[] {
     case "ManyToManyAssignment":
     case "OneToManyAssignment":
       return node.variables.map((x, index) => ({ prop: "variables", index }));
-    case "PolygolfOp":
+    case "Op":
       return getDirectPolygolfWriteFragments(node).map((index) => ({
         prop: "args",
         index,
@@ -294,7 +294,7 @@ function getDirectWriteFragments(node: Node): PathFragment[] {
   return [];
 }
 
-function getDirectPolygolfWriteFragments(node: PolygolfOp): number[] {
+function getDirectPolygolfWriteFragments(node: Op): number[] {
   switch (node.op) {
     case "array_set":
     case "list_set":
@@ -311,12 +311,8 @@ export function hasSideEffect(spine: Spine): boolean {
 export function hasDirectSideEffect(node: Node, spine: Spine) {
   try {
     return (
-      isPolygolfOp(
-        "read_byte",
-        "read_codepoint",
-        "read_line",
-        "read_int",
-      )(node) || getType(node, spine).kind === "void"
+      isOp("read_byte", "read_codepoint", "read_line", "read_int")(node) ||
+      getType(node, spine).kind === "void"
     );
   } catch {
     return false;
@@ -324,16 +320,11 @@ export function hasDirectSideEffect(node: Node, spine: Spine) {
 }
 
 export function readsFromStdin(node: Node): boolean {
-  return isPolygolfOp(
-    "read_byte",
-    "read_codepoint",
-    "read_line",
-    "read_int",
-  )(node);
+  return isOp("read_byte", "read_codepoint", "read_line", "read_int")(node);
 }
 
 export function readsFromArgv(node: Node): boolean {
-  return node.kind === "ForArgv" || isPolygolfOp("argv", "argv_get")(node);
+  return node.kind === "ForArgv" || isOp("argv", "argv_get")(node);
 }
 
 export function readsFromInput(node: Node): boolean {

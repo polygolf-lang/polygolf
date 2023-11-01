@@ -1,20 +1,20 @@
 import {
-  functionCall,
+  functionCall as func,
   indexCall,
-  methodCall,
+  methodCall as method,
   rangeIndexCall,
   text,
   int,
-  polygolfOp,
+  op,
   listType,
   textType,
   namedArg,
   add1,
-  tableConstructor,
+  table,
   keyValue,
-  type TextLiteral,
+  type Text,
   builtin,
-  isTextLiteral,
+  isText,
 } from "../../IR";
 import {
   type Language,
@@ -23,15 +23,16 @@ import {
   simplegolf,
 } from "../../common/Language";
 
-import emitProgram, { emitPythonTextLiteral } from "./emit";
+import emitProgram, { emitPythonText } from "./emit";
 import {
   mapOps,
-  mapToUnaryAndInfixs,
+  mapToPrefixAndInfix,
   useIndexCalls,
   addMutatingInfix,
   removeImplicitConversions,
   methodsAsFunctions,
   printIntToPrint,
+  mapTo,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -106,129 +107,120 @@ const pythonLanguage: Language = {
       forArgvToForEach,
       removeUnusedForVar,
       useEquivalentTextOp(false, true),
-      mapOps(
-        ["argv", (x) => builtin("sys.argv[1:]")],
-        [
-          "argv_get",
-          (x) =>
-            polygolfOp(
-              "list_get",
-              { ...builtin("sys.argv"), type: listType(textType()) },
-              add1(x[0]),
-            ),
-        ],
-      ),
+      mapOps({
+        argv: builtin("sys.argv[1:]"),
+
+        argv_get: (x) =>
+          op(
+            "list_get",
+            { ...builtin("sys.argv"), type: listType(textType()) },
+            add1(x[0]),
+          ),
+      }),
       useIndexCalls(),
 
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
-      mapOps(
-        ["read_line", functionCall("input")],
-        ["true", int(1)],
-        ["false", int(0)],
-        ["abs", (x) => functionCall("abs", x)],
-        ["list_length", (x) => functionCall("len", x)],
-        ["list_find", (x) => methodCall(x[0], "index", x[1])],
-        ["join", (x) => methodCall(x[1], "join", x[0])],
-        ["join", (x) => methodCall(text(""), "join", x[0])],
-        ["sorted", (x) => functionCall("sorted", x[0])],
-        [
-          "text_codepoint_reversed",
-          (x) => rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
-        ],
-        ["codepoint_to_int", (x) => functionCall("ord", x)],
-        ["text_get_codepoint", (x) => indexCall(x[0], x[1])],
-        ["int_to_codepoint", (x) => functionCall("chr", x)],
-        ["max", (x) => functionCall("max", x)],
-        ["min", (x) => functionCall("min", x)],
-        [
-          "text_get_codepoint_slice",
-          (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
-        ],
-        ["text_codepoint_length", (x) => functionCall("len", x)],
-        ["int_to_text", (x) => functionCall("str", x)],
-        ["text_split", (x) => methodCall(x[0], "split", x[1])],
-        ["text_split_whitespace", (x) => methodCall(x[0], "split")],
-        ["text_to_int", (x) => functionCall("int", x)],
-        ["println", (x) => functionCall("print", x)],
-        [
-          "print",
-          (x) => {
-            return functionCall(
-              "print",
-              x[0].kind !== "ImplicitConversion"
-                ? [namedArg("end", x[0])]
-                : [x[0], namedArg("end", text(""))],
-            );
-          },
-        ],
-        ["text_replace", (x) => methodCall(x[0], "replace", x[1], x[2])],
-        [
-          "text_multireplace",
-          (x) =>
-            methodCall(
-              x[0],
-              "translate",
-              tableConstructor(
-                (x as TextLiteral[]).flatMap((_, i, x) =>
-                  i % 2 > 0
-                    ? [
-                        keyValue(
-                          int(x[i].value.codePointAt(0)!),
-                          charLength(x[i + 1].value) === 1 &&
-                            x[i + 1].value.codePointAt(0)! < 100
-                            ? int(x[i + 1].value.codePointAt(0)!)
-                            : x[i + 1],
-                        ),
-                      ]
-                    : [],
-                ),
+      mapOps({
+        true: int(1),
+        false: int(0),
+        list_find: (x) => method(x[0], "index", x[1]),
+        join: (x) => method(x[1], "join", x[0]),
+
+        text_codepoint_reversed: (x) =>
+          rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
+        text_get_codepoint: (x) => indexCall(x[0], x[1]),
+
+        text_get_codepoint_slice: (x) =>
+          rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
+        text_split: (x) => method(x[0], "split", x[1]),
+        text_split_whitespace: (x) => method(x[0], "split"),
+
+        print: (x) =>
+          func(
+            "print",
+            x[0].kind !== "ImplicitConversion"
+              ? [namedArg("end", x[0])]
+              : [x[0], namedArg("end", text(""))],
+          ),
+        text_replace: (x) => method(x[0], "replace", x[1], x[2]),
+
+        text_multireplace: (x) =>
+          method(
+            x[0],
+            "translate",
+            table(
+              (x as Text[]).flatMap((_, i, x) =>
+                i % 2 > 0
+                  ? [
+                      keyValue(
+                        int(x[i].value.codePointAt(0)!),
+                        charLength(x[i + 1].value) === 1 &&
+                          x[i + 1].value.codePointAt(0)! < 100
+                          ? int(x[i + 1].value.codePointAt(0)!)
+                          : x[i + 1],
+                      ),
+                    ]
+                  : [],
               ),
             ),
-        ],
-      ),
-      addMutatingInfix(
-        ["add", "+"],
-        ["concat", "+"],
-        ["sub", "-"],
-        ["mul", "*"],
-        ["mul", "*"],
-        ["repeat", "*"],
-        ["div", "//"],
-        ["mod", "%"],
-        ["pow", "**"],
-        ["bit_and", "&"],
-        ["bit_xor", "^"],
-        ["bit_or", "|"],
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-      ),
-      mapToUnaryAndInfixs(
-        ["pow", "**"],
-        ["neg", "-"],
-        ["bit_not", "~"],
-        ["mul", "*"],
-        ["repeat", "*"],
-        ["div", "//"],
-        ["mod", "%"],
-        ["add", "+"],
-        ["concat", "+"],
-        ["sub", "-"],
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-        ["bit_and", "&"],
-        ["bit_xor", "^"],
-        ["bit_or", "|"],
-        ["lt", "<"],
-        ["leq", "<="],
-        ["eq", "=="],
-        ["neq", "!="],
-        ["geq", ">="],
-        ["gt", ">"],
-        ["not", "not"],
-        ["and", "and"],
-        ["or", "or"],
-      ),
+          ),
+      }),
+      mapTo(func)({
+        read_line: "input",
+        abs: "abs",
+        list_length: "len",
+        sorted: "sorted",
+        codepoint_to_int: "ord",
+        int_to_codepoint: "chr",
+        max: "max",
+        min: "min",
+        text_codepoint_length: "len",
+        int_to_text: "str",
+        text_to_int: "int",
+        println: "print",
+      }),
+      addMutatingInfix({
+        add: "+",
+        concat: "+",
+        sub: "-",
+        mul: "*",
+        repeat: "*",
+        div: "//",
+        mod: "%",
+        pow: "**",
+        bit_and: "&",
+        bit_xor: "^",
+        bit_or: "|",
+        bit_shift_left: "<<",
+        bit_shift_right: ">>",
+      }),
+      mapToPrefixAndInfix({
+        pow: "**",
+        neg: "-",
+        bit_not: "~",
+        mul: "*",
+        repeat: "*",
+        div: "//",
+        mod: "%",
+        add: "+",
+        concat: "+",
+        sub: "-",
+        bit_shift_left: "<<",
+        bit_shift_right: ">>",
+        bit_and: "&",
+        bit_xor: "^",
+        bit_or: "|",
+        lt: "<",
+        leq: "<=",
+        eq: "==",
+        neq: "!=",
+        geq: ">=",
+        gt: ">",
+        not: "not",
+        and: "and",
+        or: "or",
+      }),
       methodsAsFunctions,
       addOneToManyAssignments(),
     ),
@@ -241,22 +233,16 @@ const pythonLanguage: Language = {
             : undefined,
         // TODO: handle more general cases
         PropertyCall: (n) =>
-          isTextLiteral()(n.object) && n.ident.builtin
+          isText()(n.object) && n.ident.builtin
             ? `"${n.object.value}".${n.ident.name}`
             : undefined,
-        IntegerLiteral: (x) => x.value.toString(),
-        TextLiteral: (x) => `"${x.value}"`,
+        Integer: (x) => x.value.toString(),
+        Text: (x) => `"${x.value}"`,
       }),
     ),
     required(
       renameIdents(),
-      addImports(
-        [
-          ["sys.argv[1:]", "sys"],
-          ["sys.argv", "sys"],
-        ],
-        "import",
-      ),
+      addImports({ "sys.argv[1:]": "sys", "sys.argv": "sys" }),
       removeImplicitConversions,
     ),
   ],
@@ -264,15 +250,13 @@ const pythonLanguage: Language = {
     {
       codepointRange: [1, Infinity],
       pack(x) {
-        return `exec(bytes(${emitPythonTextLiteral(
-          packSource2to1(x),
-        )},'u16')[2:])`;
+        return `exec(bytes(${emitPythonText(packSource2to1(x))},'u16')[2:])`;
       },
     },
     {
       codepointRange: [32, 127],
       pack(x) {
-        return `exec(bytes(ord(c)%i+32for c in${emitPythonTextLiteral(
+        return `exec(bytes(ord(c)%i+32for c in${emitPythonText(
           packSource3to1(x),
         )}for i in b'abc'))`;
       },

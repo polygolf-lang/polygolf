@@ -8,14 +8,9 @@ import {
   type VarDeclaration,
   type VarDeclarationBlock,
 } from "./assignments";
+import { type Array, type List, type Table, type Set } from "./collections";
 import {
-  type ArrayConstructor,
-  type ListConstructor,
-  type TableConstructor,
-  type SetConstructor,
-} from "./collections";
-import {
-  type PolygolfOp,
+  type Op,
   type Infix,
   type ConditionalOp,
   type FunctionCall,
@@ -36,22 +31,17 @@ import {
   type ForEachKey,
   type ForEachPair,
   type ForCLike,
-  type WhileLoop,
+  type While,
   type ForArgv,
   type ForDifferenceRange,
 } from "./loops";
 import {
-  type AnyIntegerLiteral,
+  type AnyInteger,
   type Identifier,
-  type IntegerLiteral,
-  type TextLiteral,
+  type Integer,
+  type Text,
 } from "./terminals";
-import {
-  type Block,
-  type IfStatement,
-  type ImportStatement,
-  type Variants,
-} from "./toplevel";
+import { type Block, type If, type Import, type Variants } from "./toplevel";
 import { type Type } from "./types";
 
 export * from "./assignments";
@@ -81,22 +71,22 @@ export type Node =
   | Variants
   | KeyValue
   | Function
-  | PolygolfOp
+  | Op
   | Assignment
   | FunctionCall
   | Identifier
-  | TextLiteral
-  | IntegerLiteral
-  | AnyIntegerLiteral
-  | ArrayConstructor
-  | ListConstructor
-  | SetConstructor
-  | TableConstructor
+  | Text
+  | Integer
+  | AnyInteger
+  | Array
+  | List
+  | Set
+  | Table
   | ConditionalOp
-  | WhileLoop
+  | While
   | ForRange
   | ForArgv
-  | IfStatement
+  | If
   // Other nodes
   | ImplicitConversion
   | VarDeclaration
@@ -112,7 +102,7 @@ export type Node =
   | Infix
   | Prefix
   | Postfix
-  | ImportStatement
+  | Import
   | ForDifferenceRange
   | ForEach
   | ForEachKey

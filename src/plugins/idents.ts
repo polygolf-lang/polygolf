@@ -84,7 +84,7 @@ export function renameIdents(
   };
 }
 
-const defaultIdentGen = {
+const defaultIdentGen: IdentifierGenerator = {
   preferred(original: string) {
     const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
     if (firstLetter === undefined) return [];
@@ -92,8 +92,8 @@ const defaultIdentGen = {
     const upper = firstLetter.toUpperCase();
     return [firstLetter, firstLetter === lower ? upper : lower];
   },
-  short: "abcdefghijklmnopqrstuvwxyzUnaryOpCIJKLMNOPQRSTUVWXYZ".split(""),
-  general: (i: number) => "v" + i.toString(),
+  short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+  general: (i) => `v${i}`,
 };
 
 /**
