@@ -1,7 +1,7 @@
 import {
-  binaryOp,
   functionCall,
   importStatement,
+  infix,
   integerType,
   isIdent,
   isPolygolfOp,
@@ -75,19 +75,18 @@ export const useUFCS: Plugin = {
   name: "useUFCS",
   visit(node) {
     if (node.kind === "FunctionCall") {
-      console.log(node);
       if (node.args.length === 1) {
-        return binaryOp(" ", node.func, node.args[0]);
+        return infix(" ", node.func, node.args[0]);
       }
       if (node.args.length > 1 && isIdent()(node.func)) {
         return functionCall(
-          binaryOp(".", node.args[0], node.func),
+          infix(".", node.args[0], node.func),
           ...node.args.slice(1),
         );
       }
     }
-    if (node.kind === "BinaryOp" && node.name === " " && isIdent()(node.left)) {
-      return binaryOp(".", node.right, node.left);
+    if (node.kind === "Infix" && node.name === " " && isIdent()(node.left)) {
+      return infix(".", node.right, node.left);
     }
   },
 };

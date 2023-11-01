@@ -26,9 +26,9 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToUnaryAndBinaryOps,
+  mapToUnaryAndInfixs,
   useIndexCalls,
-  flipBinaryOps,
+  flipBinaryPolygolfOps,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -62,7 +62,7 @@ const luaLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipBinaryOps,
+      flipBinaryPolygolfOps,
       golfLastPrint(),
       listOpsToTextOps("text_byte_find", "text_get_byte"),
       tempVarToMultipleAssignment,
@@ -198,7 +198,7 @@ const luaLanguage: Language = {
     ),
     simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
     required(
-      mapToUnaryAndBinaryOps(
+      mapToUnaryAndInfixs(
         ["pow", "^"],
         ["not", "not"],
         ["neg", "-"],
@@ -226,13 +226,9 @@ const luaLanguage: Language = {
       ),
     ),
     simplegolf(
-      alias((expr) => {
-        switch (expr.kind) {
-          case "IntegerLiteral":
-            return expr.value.toString();
-          case "TextLiteral":
-            return `"${expr.value}"`;
-        }
+      alias({
+        IntegerLiteral: (x) => x.value.toString(),
+        TextLiteral: (x) => `"${x.value}"`,
       }),
     ),
     required(renameIdents(), assertInt64, removeImplicitConversions),

@@ -133,8 +133,8 @@ export class Spine<N extends IR.Node = IR.Node> {
    * */
   withReplacer(
     replacer: Visitor<IR.Node | undefined>,
-    skipThis = false,
     skipReplaced = false,
+    skipThis = false,
   ): Spine {
     const ret = skipThis ? undefined : replacer(this.node, this);
     if (ret === undefined) {
@@ -146,7 +146,7 @@ export class Spine<N extends IR.Node = IR.Node> {
         const newChildren: IR.Node[] = [];
         let someChildrenIsNew = false;
         for (const child of this.getChildSpines()) {
-          const newChild = child.withReplacer(replacer, false, skipReplaced);
+          const newChild = child.withReplacer(replacer, skipReplaced, false);
           newChildren.push(newChild.node);
           someChildrenIsNew ||= newChild !== child;
         }
@@ -154,7 +154,7 @@ export class Spine<N extends IR.Node = IR.Node> {
           curr = curr.replacedWith(polygolfOp(this.node.op, ...newChildren));
       } else {
         for (const child of this.getChildSpines()) {
-          const newChild = child.withReplacer(replacer, false, skipReplaced);
+          const newChild = child.withReplacer(replacer, skipReplaced, false);
           if (newChild !== child) {
             curr = curr.withChildReplaced(newChild.node, child.pathFragment!);
             // Following line should be equivalent but doesn't work: (Bug?)
@@ -167,7 +167,7 @@ export class Spine<N extends IR.Node = IR.Node> {
       return this.replacedWith(ret);
     } else {
       // replace this, then recurse on children but not this
-      return this.replacedWith(ret).withReplacer(replacer, true);
+      return this.replacedWith(ret).withReplacer(replacer, skipReplaced, true);
     }
   }
 }

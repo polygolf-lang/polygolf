@@ -8,7 +8,8 @@ import {
   type Identifier,
   type IR,
   isUserIdent,
-  type Node,
+  type NodeFuncRecord,
+  getNodeFunc,
 } from "../IR";
 
 function getIdentMap(
@@ -91,7 +92,7 @@ const defaultIdentGen = {
     const upper = firstLetter.toUpperCase();
     return [firstLetter, firstLetter === lower ? upper : lower];
   },
-  short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+  short: "abcdefghijklmnopqrstuvwxyzUnaryOpCIJKLMNOPQRSTUVWXYZ".split(""),
   general: (i: number) => "v" + i.toString(),
 };
 
@@ -101,9 +102,10 @@ const defaultIdentGen = {
  * @param save `[cost of referring to the alias, cost of storing the alias]` or a custom byte save function.
  */
 export function alias(
-  getKey: (expr: Node, spine: Spine) => string | undefined,
+  getKeyRecord: NodeFuncRecord<string | undefined>,
   save: ((key: string, freq: number) => number) | [number, number] = [1, 3],
 ): Plugin {
+  const getKey = getNodeFunc(getKeyRecord);
   const aliasingSave =
     typeof save === "function"
       ? save
@@ -128,7 +130,7 @@ export function alias(
             assignments.push(assignment(alias, node));
           return alias;
         }
-      }).node;
+      }, false).node;
       return block([...assignments, replacedDeep]);
     },
   };

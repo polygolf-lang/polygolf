@@ -10,9 +10,9 @@ import { type TokenTree } from "@/common/Language";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return 11;
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
     case "TextLiteral":
     case "ArrayConstructor":
@@ -143,7 +143,7 @@ export default function emitProgram(
             joinNodes(",", e.args),
             ")",
           ];
-        case "BinaryOp": {
+        case "Infix": {
           const rightAssoc = e.name === "^";
           return [
             emit(e.left, prec + (rightAssoc ? 1 : 0)),
@@ -151,7 +151,7 @@ export default function emitProgram(
             emit(e.right, prec + (rightAssoc ? 0 : 1)),
           ];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "IndexCall":
           if (!e.oneIndexed) throw new EmitError(e, "zero indexed");

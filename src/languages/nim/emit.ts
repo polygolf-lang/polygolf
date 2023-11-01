@@ -18,9 +18,9 @@ function precedence(expr: IR.Node): number {
   switch (expr.kind) {
     case "FunctionCall":
       return 12;
-    case "UnaryOp":
+    case "Prefix":
       return 11;
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
   }
   return Infinity;
@@ -210,7 +210,7 @@ export default function emitProgram(
           ];
         case "OneToManyAssignment":
           return [joinNodes(",", e.variables), "=", emit(e.expr)];
-        case "MutatingBinaryOp":
+        case "MutatingInfix":
           return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
         case "Identifier":
           return e.name;
@@ -220,13 +220,13 @@ export default function emitProgram(
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
           return [emit(e.func), "$GLUE$", "(", joinNodes(",", e.args), ")"];
-        case "BinaryOp": {
+        case "Infix": {
           const rightAssoc = e.name === "^" || e.name === " ";
           if (
             e.name === " " &&
             isTextLiteral()(e.right) &&
             (isIdent()(e.left) ||
-              (e.left.kind === "BinaryOp" && e.left.name === "."))
+              (e.left.kind === "Infix" && e.left.name === "."))
           ) {
             const [low, high] = context.options.codepointRange;
             if (low === 1 && high === Infinity) {
@@ -249,7 +249,7 @@ export default function emitProgram(
             emit(e.right, prec + (rightAssoc ? 0 : 1)),
           ];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "ListConstructor":
           return ["@", "[", joinNodes(",", e.exprs), "]"];

@@ -9,9 +9,9 @@ import {
   polygolfOp,
   int,
   text,
-  binaryOp,
+  infix,
   listConstructor,
-  unaryOp,
+  prefix,
   isIntLiteral,
 } from "../../IR";
 import {
@@ -24,8 +24,8 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToUnaryAndBinaryOps,
-  flipBinaryOps,
+  mapToUnaryAndInfixs,
+  flipBinaryPolygolfOps,
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
@@ -62,7 +62,7 @@ const golfscriptLanguage: Language = {
   phases: [
     required(printIntToPrint),
     search(
-      flipBinaryOps,
+      flipBinaryPolygolfOps,
       golfLastPrint(),
       equalityToInequality,
       ...bitnotPlugins,
@@ -89,13 +89,9 @@ const golfscriptLanguage: Language = {
       replaceToSplitAndJoin,
     ),
     simplegolf(
-      alias((expr) => {
-        switch (expr.kind) {
-          case "IntegerLiteral":
-            return expr.value.toString();
-          case "TextLiteral":
-            return `"${expr.value}"`;
-        }
+      alias({
+        IntegerLiteral: (x) => x.value.toString(),
+        TextLiteral: (x) => `"${x.value}"`,
       }),
     ),
     required(
@@ -152,7 +148,7 @@ const golfscriptLanguage: Language = {
             ),
         ],
       ),
-      mapToUnaryAndBinaryOps(
+      mapToUnaryAndInfixs(
         ["println", "n"],
         ["not", "!"],
         ["bit_not", "~"],
@@ -187,12 +183,9 @@ const golfscriptLanguage: Language = {
         ["sorted", "$"],
       ),
       mapOps(
-        ["neq", (x) => unaryOp("!", binaryOp("=", x[0], x[1]))],
-        ["text_byte_reversed", (x) => binaryOp("%", x[0], int(-1))],
-        [
-          "int_to_text_byte",
-          (x) => binaryOp("+", listConstructor(x), text("")),
-        ],
+        ["neq", (x) => prefix("!", infix("=", x[0], x[1]))],
+        ["text_byte_reversed", (x) => infix("%", x[0], int(-1))],
+        ["int_to_text_byte", (x) => infix("+", listConstructor(x), text(""))],
       ),
       addImports([["a", "a"]], (x) =>
         x.length > 0 ? assignment(x[0], builtin("")) : undefined,
@@ -207,7 +200,7 @@ const golfscriptLanguage: Language = {
           const upper = firstLetter.toUpperCase();
           return [firstLetter, firstLetter === lower ? upper : lower];
         },
-        short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+        short: "abcdefghijklmopqrstuvwxyzUnaryOpCIJKLMNOPQRSTUVWXYZ".split(""),
         general: (i: number) => "v" + i.toString(),
       }),
       removeImplicitConversions,

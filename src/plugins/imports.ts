@@ -23,7 +23,7 @@ export function addImports( // TODO caching
     rulesFunc = function (x: Node) {
       if (map.has(x.kind)) return map.get(x.kind)!;
       if (
-        (isBuiltinIdent()(x) || isOfKind("BinaryOp", "UnaryOp")(x)) &&
+        (isBuiltinIdent()(x) || isOfKind("Infix", "Prefix")(x)) &&
         map.has(x.name)
       ) {
         return map.get(x.name)!;

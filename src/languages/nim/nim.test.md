@@ -329,9 +329,9 @@ for()in..9:echo"Hi"
 ## Ufcs
 
 ```polygolf
-function_call (binary_op "." (builtin "x") (builtin "f")) (builtin "y");
-binary_op " " (builtin "f") (builtin "x");
-index_call (binary_op " " (binary_op "." "x" (builtin "f")) " ") 1;
+function_call (infix "." (builtin "x") (builtin "f")) (builtin "y");
+infix " " (builtin "f") (builtin "x");
+index_call (infix " " (infix "." "x" (builtin "f")) " ") 1;
 ```
 
 ```nim skipTypecheck

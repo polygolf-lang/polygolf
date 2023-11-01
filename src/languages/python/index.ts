@@ -26,9 +26,9 @@ import {
 import emitProgram, { emitPythonTextLiteral } from "./emit";
 import {
   mapOps,
-  mapToUnaryAndBinaryOps,
+  mapToUnaryAndInfixs,
   useIndexCalls,
-  addMutatingBinaryOp,
+  addMutatingInfix,
   removeImplicitConversions,
   methodsAsFunctions,
   printIntToPrint,
@@ -187,7 +187,7 @@ const pythonLanguage: Language = {
             ),
         ],
       ),
-      addMutatingBinaryOp(
+      addMutatingInfix(
         ["add", "+"],
         ["concat", "+"],
         ["sub", "-"],
@@ -203,7 +203,7 @@ const pythonLanguage: Language = {
         ["bit_shift_left", "<<"],
         ["bit_shift_right", ">>"],
       ),
-      mapToUnaryAndBinaryOps(
+      mapToUnaryAndInfixs(
         ["pow", "**"],
         ["neg", "-"],
         ["bit_not", "~"],
@@ -233,23 +233,19 @@ const pythonLanguage: Language = {
       addOneToManyAssignments(),
     ),
     simplegolf(
-      alias((expr, spine) => {
-        switch (expr.kind) {
-          case "Identifier":
-            return expr.builtin &&
-              (spine.parent?.node.kind !== "PropertyCall" ||
-                spine.pathFragment !== "ident")
-              ? expr.name
-              : undefined;
-          case "PropertyCall": // TODO: handle more general cases
-            return isTextLiteral()(expr.object) && expr.ident.builtin
-              ? `"${expr.object.value}".${expr.ident.name}`
-              : undefined;
-          case "IntegerLiteral":
-            return expr.value.toString();
-          case "TextLiteral":
-            return `"${expr.value}"`;
-        }
+      alias({
+        Identifier: (n, s) =>
+          n.builtin &&
+          (s.parent?.node.kind !== "PropertyCall" || s.pathFragment !== "ident")
+            ? n.name
+            : undefined,
+        // TODO: handle more general cases
+        PropertyCall: (n) =>
+          isTextLiteral()(n.object) && n.ident.builtin
+            ? `"${n.object.value}".${n.ident.name}`
+            : undefined,
+        IntegerLiteral: (x) => x.value.toString(),
+        TextLiteral: (x) => `"${x.value}"`,
       }),
     ),
     required(

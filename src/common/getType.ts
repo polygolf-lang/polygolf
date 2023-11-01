@@ -139,7 +139,7 @@ export function calcType(expr: Node, program: Node): Type {
     }
     case "PolygolfOp":
       return getOpCodeType(expr, program);
-    case "MutatingBinaryOp":
+    case "MutatingInfix":
       return voidType;
     case "FunctionCall": {
       const fType = type(expr.func);

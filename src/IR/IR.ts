@@ -1,9 +1,10 @@
+import type { Spine } from "../common/Spine";
 import {
   type Assignment,
   type ManyToManyAssignment,
   type OneToManyAssignment,
   type VarDeclarationWithAssignment,
-  type MutatingBinaryOp,
+  type MutatingInfix,
   type VarDeclaration,
   type VarDeclarationBlock,
 } from "./assignments";
@@ -15,11 +16,11 @@ import {
 } from "./collections";
 import {
   type PolygolfOp,
-  type BinaryOp,
+  type Infix,
   type ConditionalOp,
   type FunctionCall,
   type MethodCall,
-  type UnaryOp,
+  type Prefix,
   type IndexCall,
   type KeyValue,
   type RangeIndexCall,
@@ -27,6 +28,7 @@ import {
   type NamedArg,
   type ImplicitConversion,
   type PropertyCall,
+  type Postfix,
 } from "./exprs";
 import {
   type ForRange,
@@ -102,13 +104,14 @@ export type Node =
   | VarDeclarationBlock
   | ManyToManyAssignment
   | OneToManyAssignment
-  | MutatingBinaryOp
+  | MutatingInfix
   | IndexCall
   | RangeIndexCall
   | MethodCall
   | PropertyCall
-  | BinaryOp
-  | UnaryOp
+  | Infix
+  | Prefix
+  | Postfix
   | ImportStatement
   | ForDifferenceRange
   | ForEach
@@ -116,3 +119,21 @@ export type Node =
   | ForEachPair
   | ForCLike
   | NamedArg;
+
+export type NodeFuncRecord<Tout, Tin extends Node = Node> = Tin extends Node
+  ? Record<Tin["kind"], (n: Tin, s: Spine<Tin>) => Tout>
+  : never;
+
+export function getNodeFunc<Tout>(
+  nodeMapRecord: NodeFuncRecord<Tout>,
+): (n: Node, s: Spine) => Tout | undefined {
+  function result(node: Node, spine: Spine): Tout | undefined {
+    if (node.kind in nodeMapRecord) {
+      return (nodeMapRecord[node.kind as keyof typeof nodeMapRecord] as any)(
+        node,
+        spine,
+      );
+    }
+  }
+  return result;
+}
