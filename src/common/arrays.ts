@@ -28,3 +28,12 @@ export function filterInplace<T>(data: T[], predicate: (x: T) => boolean) {
   }
   data.length = length;
 }
+
+export function mapObjectValues<T1 extends string, T2, T3>(
+  obj: Partial<Record<T1, T2>>,
+  f: (v: T2, k: T1) => T3,
+) {
+  return Object.fromEntries(
+    Object.entries(obj).map(([k, v]) => [k as T1, f(v as T2, k as T1)]),
+  ) as Partial<Record<T1, T3>>;
+}

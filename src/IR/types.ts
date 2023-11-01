@@ -1,14 +1,6 @@
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
-import {
-  type Node,
-  arrayConstructor,
-  listConstructor,
-  setConstructor,
-  tableConstructor,
-  text,
-  int,
-} from "./IR";
+import { type Node, array, list, set, table, text, int } from "./IR";
 
 /** The type of the value of a node when evaluated */
 export interface IntegerType {
@@ -437,13 +429,13 @@ export function isConstantType(a: IntegerType): a is FiniteIntegerType {
 export function defaultValue(a: Type): Node {
   switch (a.kind) {
     case "Array":
-      return arrayConstructor([]);
+      return array([]);
     case "List":
-      return listConstructor([]);
+      return list([]);
     case "Set":
-      return setConstructor([]);
+      return set([]);
     case "Table":
-      return tableConstructor([]);
+      return table([]);
     case "text":
       if (
         isFiniteBound(a.codepointLength.low) &&

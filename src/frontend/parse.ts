@@ -6,15 +6,15 @@ import {
   type Identifier,
   forRange,
   ifStatement,
-  listConstructor,
-  polygolfOp,
+  list,
+  op,
   type Type,
   listType,
   arrayType,
   tableType,
   setType,
   integerType as intType,
-  type IntegerLiteral,
+  type Integer,
   int as integer,
   assignment,
   type OpCode,
@@ -24,8 +24,8 @@ import {
   booleanType,
   type Node,
   keyValue,
-  setConstructor,
-  tableConstructor,
+  set,
+  table,
   type KeyValue,
   isOpCode,
   isBinary,
@@ -34,7 +34,7 @@ import {
   func,
   conditional,
   id,
-  arrayConstructor,
+  array,
   toString,
   forArgv,
   isAssociative,
@@ -45,10 +45,10 @@ import {
   varDeclarationBlock,
   manyToManyAssignment,
   oneToManyAssignment,
-  mutatingBinaryOp,
+  mutatingInfix,
   indexCall,
   rangeIndexCall,
-  binaryOp,
+  infix,
   importStatement,
   forDifferenceRange,
   forEach,
@@ -57,12 +57,13 @@ import {
   forCLike,
   namedArg,
   methodCall,
-  unaryOp,
+  prefix,
   propertyCall,
-  isTextLiteral,
+  isText,
   anyInt,
   isIntLiteral,
   isIdent,
+  postfix,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -90,7 +91,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
         e.source,
       );
   }
-  function assertInteger(e: Node): asserts e is IntegerLiteral {
+  function assertInteger(e: Node): asserts e is Integer {
     if (!isIntLiteral()(e))
       throw new PolygolfError(
         `Syntax error. Expected integer literal, but got ${e.kind}`,
@@ -110,7 +111,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
     }
   }
   function asString(e: Node): string {
-    if (isTextLiteral()(e)) return e.value;
+    if (isText()(e)) return e.value;
     throw new PolygolfError(
       `Syntax error. Expected string literal, but got ${e.kind}`,
       e.source,
@@ -150,14 +151,14 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
     }
     case "array":
       expectArity(1, Infinity);
-      return arrayConstructor(args);
+      return array(args);
     case "list":
-      return listConstructor(args);
+      return list(args);
     case "set":
-      return setConstructor(args);
+      return set(args);
     case "table":
       assertKeyValues(args);
-      return tableConstructor(args);
+      return table(args);
     case "conditional":
     case "unsafe_conditional":
       expectArity(3);
@@ -240,10 +241,10 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
         assertIdentifiers(vars); // TODO too strict?
         return oneToManyAssignment(vars, expr);
       }
-      case "mutating_binary_op":
+      case "mutating_infix":
         expectArity(3);
         assertIdentifier(args[1]);
-        return mutatingBinaryOp(asString(args[0]), args[1], args[2]);
+        return mutatingInfix(asString(args[0]), args[1], args[2]);
       case "index_call":
       case "index_call_one_indexed":
         expectArity(2);
@@ -264,17 +265,20 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
       case "method_call":
         expectArity(2, Infinity);
         return methodCall(args[0], asString(args[1]), ...args.slice(2));
-      case "binary_op":
+      case "infix":
         expectArity(3);
-        return binaryOp(asString(args[0]), args[1], args[2]);
-      case "unary_op":
+        return infix(asString(args[0]), args[1], args[2]);
+      case "prefix":
         expectArity(2);
-        return unaryOp(asString(args[0]), args[1]);
+        return prefix(asString(args[0]), args[1]);
+      case "postfix":
+        expectArity(2);
+        return postfix(asString(args[0]), args[1]);
       case "builtin":
       case "id":
         expectArity(1);
         return id(asString(args[0]), opCode === "builtin");
-      case "import_statement":
+      case "import":
         expectArity(2, Infinity);
         return importStatement(asString(args[0]), args.slice(1).map(asString));
       case "for_range_inclusive": {
@@ -348,11 +352,11 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
     }
     if (isBinary(opCode)) {
       expectArity(2, isAssociative(opCode) ? Infinity : 2);
-      return polygolfOp(opCode, ...args);
+      return op(opCode, ...args);
     }
     const ar = arity(opCode);
     expectArity(ar, ar === -1 ? Infinity : ar);
-    return polygolfOp(opCode, ...args);
+    return op(opCode, ...args);
   }
   throw new PolygolfError(
     `Syntax error. Unrecognized builtin: ${opCode}`,
@@ -404,10 +408,7 @@ export function userIdentifier(token: Token): Identifier {
   return id(name, false);
 }
 
-export function typeSexpr(
-  callee: Token,
-  args: (Type | IntegerLiteral)[],
-): Type {
+export function typeSexpr(callee: Token, args: (Type | Integer)[]): Type {
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
       throw new PolygolfError(
@@ -419,18 +420,18 @@ export function typeSexpr(
       );
     }
   }
-  function assertNumber(e: Type | IntegerLiteral): asserts e is IntegerLiteral {
-    if (e.kind !== "IntegerLiteral")
+  function assertNumber(e: Type | Integer): asserts e is Integer {
+    if (e.kind !== "Integer")
       throw new PolygolfError(`Syntax error. Expected number, got type.`, {
         line: callee.line,
         column: callee.col,
       });
   }
-  function assertTypes(e: (Type | IntegerLiteral)[]): asserts e is Type[] {
+  function assertTypes(e: (Type | Integer)[]): asserts e is Type[] {
     e.forEach(assertType);
   }
-  function assertType(e: Type | IntegerLiteral): asserts e is Type {
-    if (e.kind === "IntegerLiteral")
+  function assertType(e: Type | Integer): asserts e is Type {
+    if (e.kind === "Integer")
       throw new PolygolfError(`Syntax error. Expected type, got number.`, {
         line: callee.line,
         column: callee.col,
@@ -448,7 +449,7 @@ export function typeSexpr(
       expectArity(0, 1);
       if (args.length === 0)
         return textType(intType(), callee.value === "Ascii");
-      if (args[0].kind === "IntegerLiteral")
+      if (args[0].kind === "Integer")
         return textType(Number(args[0].value), callee.value === "Ascii");
       if (args[0].kind === "integer")
         return textType(args[0], callee.value === "Ascii");
@@ -508,8 +509,8 @@ export function annotate(expr: Node, valueType: [any, Type] | null): Node {
 }
 
 export function integerType(
-  low: "-oo" | "-∞" | IntegerLiteral,
-  high: "oo" | "∞" | IntegerLiteral,
+  low: "-oo" | "-∞" | Integer,
+  high: "oo" | "∞" | Integer,
 ): Type {
   return intType(
     typeof low === "string" ? undefined : low.value,

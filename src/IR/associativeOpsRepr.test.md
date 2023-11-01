@@ -1,4 +1,4 @@
-# PolygolfOp with associative OpCode
+# Op with associative OpCode
 
 These are internally represented as variadic operations. If they are nested, they are automagically simplified.
 

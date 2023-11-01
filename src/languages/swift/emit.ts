@@ -2,17 +2,17 @@ import { type TokenTree } from "../../common/Language";
 import {
   EmitError,
   emitIntLiteral,
-  emitTextLiteral,
+  emitText,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isIntLiteral, isIdent } from "../../IR";
+import { type IR, isIntLiteral } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return unaryPrecedence(expr.name);
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
     case "ConditionalOp":
       return 0;
@@ -87,9 +87,9 @@ export default function emitProgram(
           return emit(e.assignment);
         case "Block":
           return emitMultiNode(e);
-        case "ImportStatement":
+        case "Import":
           return [e.name, joinTrees(",", e.modules)];
-        case "WhileLoop":
+        case "While":
           return [`while`, emit(e.condition), emitMultiNode(e.body)];
         case "ForEach":
           return [
@@ -121,7 +121,7 @@ export default function emitProgram(
             emitMultiNode(e.body),
           ];
         }
-        case "IfStatement":
+        case "If":
           return [
             "if",
             emit(e.condition),
@@ -137,18 +137,17 @@ export default function emitProgram(
           throw new EmitError(e);
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
-        case "MutatingBinaryOp":
+        case "MutatingInfix":
           return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, ":", emit(e.value)];
         case "Identifier":
           return e.name;
-        case "TextLiteral":
-          return emitSwiftTextLiteral(e.value, context.options.codepointRange);
-        case "IntegerLiteral":
+        case "Text":
+          return emitSwiftText(e.value, context.options.codepointRange);
+        case "Integer":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
-          if (isIdent("!")(e.func)) return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node
           return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "PropertyCall":
           return [emit(e.object), ".", e.ident.name];
@@ -169,14 +168,16 @@ export default function emitProgram(
             ":",
             emit(e.alternate),
           ];
-        case "BinaryOp": {
+        case "Infix": {
           return [emit(e.left, prec), e.name, emit(e.right, prec + 1)];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
-        case "ListConstructor":
+        case "Postfix":
+          return [emit(e.arg, prec), e.name];
+        case "List":
           return ["[", joinNodes(",", e.exprs), "]"];
-        case "TableConstructor":
+        case "Table":
           return [
             "[",
             joinTrees(
@@ -191,7 +192,7 @@ export default function emitProgram(
             "[",
             emit(e.index),
             "]",
-            e.collection.kind === "TableConstructor" ? "!" : "",
+            e.collection.kind === "Table" ? "!" : "",
           ];
 
         default:
@@ -249,7 +250,7 @@ const unicode0Bto1Frepls: [string, string][] = [
   [`\u{1f}`, `\\u{1f}`],
 ];
 
-function emitSwiftTextLiteral(
+function emitSwiftText(
   x: string,
   [low, high]: [number, number] = [1, Infinity],
 ): string {
@@ -257,7 +258,7 @@ function emitSwiftTextLiteral(
     if (low <= x && x <= high) return String.fromCharCode(x);
     return `\\u{${x.toString(16)}}`;
   }
-  return emitTextLiteral(
+  return emitText(
     x,
     [
       [

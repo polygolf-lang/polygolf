@@ -2,7 +2,7 @@ import { type CompilationContext } from "@/common/compile";
 import {
   EmitError,
   emitIntLiteral,
-  emitTextLiteral,
+  emitText,
   joinTrees,
 } from "../../common/emit";
 import { type IR, isIntLiteral } from "../../IR";
@@ -10,13 +10,13 @@ import { type TokenTree } from "@/common/Language";
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return 11;
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
-    case "TextLiteral":
-    case "ArrayConstructor":
-    case "TableConstructor":
+    case "Text":
+    case "Array":
+    case "Table":
       return 1000;
   }
   return Infinity;
@@ -88,7 +88,7 @@ export default function emitProgram(
       switch (e.kind) {
         case "Block":
           return joinNodes("\n", e.children);
-        case "WhileLoop":
+        case "While":
           return [`while`, emit(e.condition), "do", emit(e.body), "end"];
         case "OneToManyAssignment":
           return [joinNodes(",", e.variables), "=", emit(e.expr)];
@@ -109,7 +109,7 @@ export default function emitProgram(
             "end",
           ];
         }
-        case "IfStatement":
+        case "If":
           return [
             "if",
             emit(e.condition),
@@ -128,9 +128,9 @@ export default function emitProgram(
           return [emit(e.variable), "=", emit(e.expr)];
         case "Identifier":
           return [e.name];
-        case "TextLiteral":
-          return emitLuaTextLiteral(e.value, context.options.codepointRange);
-        case "IntegerLiteral":
+        case "Text":
+          return emitLuaText(e.value, context.options.codepointRange);
+        case "Integer":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
           return [emit(e.func), "(", joinNodes(",", e.args), ")"];
@@ -143,7 +143,7 @@ export default function emitProgram(
             joinNodes(",", e.args),
             ")",
           ];
-        case "BinaryOp": {
+        case "Infix": {
           const rightAssoc = e.name === "^";
           return [
             emit(e.left, prec + (rightAssoc ? 1 : 0)),
@@ -151,13 +151,13 @@ export default function emitProgram(
             emit(e.right, prec + (rightAssoc ? 0 : 1)),
           ];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "IndexCall":
           if (!e.oneIndexed) throw new EmitError(e, "zero indexed");
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
-        case "ListConstructor":
-        case "ArrayConstructor":
+        case "List":
+        case "Array":
           return ["{", joinNodes(",", e.exprs), "}"];
 
         default:
@@ -172,7 +172,7 @@ export default function emitProgram(
   return emit(program);
 }
 
-function emitLuaTextLiteral(
+function emitLuaText(
   x: string,
   [low, high]: [number, number] = [1, Infinity],
 ): string {
@@ -184,7 +184,7 @@ function emitLuaTextLiteral(
         : `\\${x.toString().padStart(3, "0")}`;
     return `\\u{${x.toString(16)}}`;
   }
-  return emitTextLiteral(
+  return emitText(
     x,
     [
       [

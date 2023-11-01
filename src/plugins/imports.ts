@@ -1,34 +1,20 @@
 import { type Spine } from "../common/Spine";
 import { type Plugin } from "../common/Language";
-import {
-  block,
-  type Node,
-  importStatement,
-  isBuiltinIdent,
-  isOfKind,
-} from "../IR";
+import { block, type Node, importStatement, isUserIdent } from "../IR";
 
 /**
  * @param rules Map from expr to a import it needs or array encoded map from symbol name to import.
- * @param output Mapping of collected import names to the Import Node to be added or a name to be used for ImportStatement.
+ * @param output Mapping of collected import names to the Import Node to be added or a name to be used for Import.
  * @returns The import adding plugin.
  */
 export function addImports( // TODO caching
-  rules: [string, string][] | ((n: Node, s: Spine) => string | undefined),
-  output: string | ((modules: string[]) => Node | undefined),
+  rules: Record<string, string> | ((n: Node, s: Spine) => string | undefined),
+  output: string | ((modules: string[]) => Node | undefined) = "import",
 ): Plugin {
   let rulesFunc: (n: Node, s: Spine) => string | undefined;
-  if (Array.isArray(rules)) {
-    const map = new Map(rules);
-    rulesFunc = function (x: Node) {
-      if (map.has(x.kind)) return map.get(x.kind)!;
-      if (
-        (isBuiltinIdent()(x) || isOfKind("BinaryOp", "UnaryOp")(x)) &&
-        map.has(x.name)
-      ) {
-        return map.get(x.name)!;
-      }
-    };
+  if (typeof rules === "object") {
+    rulesFunc = (x) =>
+      rules[x.kind] ?? (isUserIdent()(x) ? undefined : rules[(x as any).name]);
   } else rulesFunc = rules;
 
   const outputFunc =

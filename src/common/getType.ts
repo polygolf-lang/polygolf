@@ -6,7 +6,7 @@ import {
   integerType,
   integerTypeIncludingAll,
   type IntegerType,
-  type PolygolfOp,
+  type Op,
   isSubtype,
   union,
   toString,
@@ -39,7 +39,7 @@ import {
   constantIntegerType,
   type ListType,
   isAssociative,
-  polygolfOp,
+  op,
   leq,
   isIdent,
 } from "../IR";
@@ -137,9 +137,9 @@ export function calcType(expr: Node, program: Node): Type {
         `Type error. Cannot index ${toString(a)} with ${toString(b)}.`,
       );
     }
-    case "PolygolfOp":
+    case "Op":
       return getOpCodeType(expr, program);
-    case "MutatingBinaryOp":
+    case "MutatingInfix":
       return voidType;
     case "FunctionCall": {
       const fType = type(expr.func);
@@ -159,25 +159,25 @@ export function calcType(expr: Node, program: Node): Type {
     }
     case "Identifier":
       return getIdentifierType(expr, program);
-    case "TextLiteral": {
+    case "Text": {
       const codepoints = charLength(expr.value);
       return textType(
         integerType(codepoints, codepoints),
         codepoints === byteLength(expr.value),
       );
     }
-    case "IntegerLiteral":
+    case "Integer":
       return integerType(expr.value, expr.value);
-    case "ArrayConstructor":
+    case "Array":
       return arrayType(
         expr.exprs.map(type).reduce((a, b) => union(a, b)),
         expr.exprs.length,
       );
-    case "ListConstructor":
+    case "List":
       return expr.exprs.length > 0
         ? listType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
         : listType("void");
-    case "SetConstructor":
+    case "Set":
       return expr.exprs.length > 0
         ? setType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
         : setType("void");
@@ -191,7 +191,7 @@ export function calcType(expr: Node, program: Node): Type {
         )}, ${toString(v)}].`,
       );
     }
-    case "TableConstructor": {
+    case "Table": {
       const types = expr.kvPairs.map(type);
       if (types.every((x) => x.kind === "KeyValue")) {
         const kvTypes = types as KeyValueType[];
@@ -224,17 +224,17 @@ export function calcType(expr: Node, program: Node): Type {
     }
     case "ManyToManyAssignment":
       return voidType;
-    case "ImportStatement":
+    case "Import":
       return voidType;
     case "OneToManyAssignment":
       return type(expr.expr);
-    case "IfStatement":
+    case "If":
     case "ForRange":
-    case "WhileLoop":
+    case "While":
     case "ForArgv":
       return voidType;
     case "ImplicitConversion": {
-      return type(polygolfOp(expr.behavesLike, expr.expr));
+      return type(op(expr.behavesLike, expr.expr));
     }
   }
   throw new Error(`Type error. Unexpected node ${expr.kind}.`);
@@ -244,7 +244,7 @@ function getTypeBitNot(t: IntegerType): IntegerType {
   return integerType(sub(-1n, t.high), sub(-1n, t.low));
 }
 
-function getOpCodeType(expr: PolygolfOp, program: Node): Type {
+function getOpCodeType(expr: Op, program: Node): Type {
   const types = getArgs(expr).map((x) => getType(x, program));
   function expectVariadicType(
     expected: Type,
