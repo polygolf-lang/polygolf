@@ -17,7 +17,7 @@ export function joinTrees(
  * Each resulting codepoint is mapped using `codepointMap`, if provided.
  */
 export function emitTextFactory(
-  options: Record<string, Record<string, string | null>>,
+  options: Record<`${string}TEXT${string}`, Record<string, string | null>>,
   codepointMap?: (x: number, i: number, arr: number[]) => string,
 ) {
   return function (
