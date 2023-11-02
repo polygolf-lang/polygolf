@@ -35,7 +35,7 @@ import {
   forRangeToForCLike,
   forRangeToForEach,
 } from "../../plugins/loops";
-import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
+import { golfStringListLiteral } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
@@ -46,11 +46,7 @@ import {
   textToIntToTextGetToInt,
   useEquivalentTextOp,
 } from "../../plugins/textOps";
-import {
-  addOneToManyAssignments,
-  inlineVariables,
-  tempVarToMultipleAssignment,
-} from "../../plugins/block";
+import { addOneToManyAssignments, inlineVariables } from "../../plugins/block";
 import {
   applyDeMorgans,
   bitnotPlugins,
@@ -61,6 +57,7 @@ import {
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
+import { floodBigints, mapVarsThatNeedBigint } from "../../plugins/types";
 
 const javascriptLanguage: Language = {
   name: "Javascript",
@@ -70,8 +67,6 @@ const javascriptLanguage: Language = {
     required(printIntToPrint),
     search(
       golfStringListLiteral(),
-      listOpsToTextOps("text_codepoint_find", "text_get_codepoint"),
-      tempVarToMultipleAssignment,
       forRangeToForEach("array_get", "list_get", "text_get_codepoint"),
       golfLastPrint(),
       equalityToInequality,
@@ -91,6 +86,26 @@ const javascriptLanguage: Language = {
     ),
     required(
       pickAnyInt,
+      floodBigints("int53", {
+        Assignment: "bigint",
+        add: "bigint",
+        sub: "bigint",
+        mul: "bigint",
+        mod: "bigint",
+        pow: "bigint",
+        bit_and: "bigint",
+        bit_xor: "bigint",
+        bit_or: "bigint",
+        bit_shift_left: "bigint",
+        bit_shift_right: "bigint",
+        lt: "int",
+        leq: "int",
+        eq: "int",
+        neq: "int",
+        geq: "int",
+        gt: "int",
+      }),
+      mapVarsThatNeedBigint("int53", (x) => func("BigInt", x)),
       forArgvToForEach,
       forRangeToForCLike,
       useEquivalentTextOp(false, true),

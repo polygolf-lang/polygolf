@@ -1,3 +1,4 @@
+import { debugEmit } from "../common/compile";
 import { PolygolfError } from "../common/errors";
 import { getType } from "../common/getType";
 import { type Plugin } from "../common/Language";
@@ -10,6 +11,12 @@ import {
   type OpCode,
   type,
   type Type,
+  type Assignment,
+  isAssignment,
+  type Node,
+  type Identifier,
+  isUserIdent,
+  annotate,
 } from "../IR";
 
 export const assertInt64: Plugin = {
@@ -34,7 +41,7 @@ export const assertInt64: Plugin = {
 
 export function floodBigints(
   primitiveIntType0: "int64" | "int53" | IntegerType,
-  allowed: Partial<Record<OpCode, "bigint" | "int">>,
+  allowed: Partial<Record<OpCode | Assignment["kind"], "bigint" | "int">>,
 ): Plugin {
   const primitiveIntType = type(primitiveIntType0) as IntegerType;
   return {
@@ -42,7 +49,7 @@ export function floodBigints(
     visit(node, spine) {
       let nodeType: Type;
       try {
-        nodeType = getType(node, spine);
+        nodeType = getType(isAssignment(node) ? node.variable : node, spine);
       } catch {
         return;
       }
@@ -55,8 +62,13 @@ export function floodBigints(
       }
       if (!spine.isRoot) {
         const parent = spine.parent!.node;
-        if (isOp()(parent) && parent.targetType === "bigint") {
-          const res = (allowed as any)[parent.op];
+        if (
+          (isOp()(parent) || isAssignment(parent)) &&
+          parent.targetType === "bigint"
+        ) {
+          const res = (allowed as any)[
+            isOp()(parent) ? parent.op : "Assignment"
+          ];
           if (res === undefined) {
             throw new PolygolfError(
               "Operation that is not supported on bigints encountered.",
@@ -65,6 +77,24 @@ export function floodBigints(
           if (res === "bigint" && node.targetType !== "bigint") {
             return { ...node, targetType: "bigint" };
           }
+        }
+      }
+    },
+  };
+}
+
+export function mapVarsThatNeedBigint(
+  primitiveIntType0: "int64" | "int53" | IntegerType,
+  f: (x: Identifier) => Node,
+): Plugin {
+  const primitiveIntType = type(primitiveIntType0) as IntegerType;
+  return {
+    name: "mapVarsThatNeedBigint(...)",
+    visit(node, spine) {
+      if (isUserIdent()(node) && node.targetType === "bigint") {
+        const type = getType(node, spine);
+        if (!isSubtype(type, primitiveIntType)) {
+          return annotate(f({ ...node, targetType: "int" }), type);
         }
       }
     },

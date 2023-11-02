@@ -39,7 +39,7 @@ const symbolTableCache = new WeakMap<IR.Node, SymbolTable>();
  * symbols using a visitor, so performance can potentially be improved by
  * recursively merging symbol tables to avoid needing to re-traverse the whole
  * tree for every small change. */
-function symbolTableRoot(program: IR.Node): SymbolTable {
+export function symbolTableRoot(program: IR.Node): SymbolTable {
   if (symbolTableCache.has(program)) return symbolTableCache.get(program)!;
   const existing = new Set<string>();
   const defs = [

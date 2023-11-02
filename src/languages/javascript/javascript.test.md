@@ -7,7 +7,7 @@ $t:(Ascii 3) <- "";
 $n:0..1 <- 0;
 $m <- $n;
 $b <- true;
-$L:(List Int) <- (list 3 2);
+$L:(List 0..100) <- (list 3 2);
 
 $m + $n;
 $m - $n;
@@ -30,7 +30,7 @@ $m >= $n;
 or $b $b;
 and $b $b;
 
-list_length $L;
+(list_length $L):0..100;
 list_contains $L 3;
 list_get $L 0;
 list_push $L 58;
@@ -130,4 +130,26 @@ for(x of arguments)print(x)
 "\x05xx"
 "\u0161"
 "\u{1f48e}"
+```
+
+## Bigints
+
+```polygolf
+1e100;
+```
+
+```js
+10n**100n
+```
+
+```polygolf
+$x: Int <- 5;
+$y: 0..100 <- 2;
+((3 + $x) * $y);
+```
+
+```js nogolf
+x=5n
+y=2
+(3n+x)*BigInt(y)
 ```
