@@ -6,6 +6,9 @@ import {
   listType,
   textType,
   builtin,
+  infix,
+  int,
+  propertyCall,
 } from "../../IR";
 import {
   type Language,
@@ -108,12 +111,20 @@ const javascriptLanguage: Language = {
         true: builtin("true"),
         false: builtin("false"),
         text_get_codepoint: (x) => indexCall(x[0], x[1]),
+        div: (x) => func("Math.floor", infix("/", x[0], x[1])),
+        int_to_bin: (x) => method(x[0], "toString", int(2)),
+        int_to_hex: (x) => method(x[0], "toString", int(16)),
+        list_length: (x) => propertyCall(x[0], "length"),
       }),
-      mapTo((x: string, args) => method(args[0], x, ...args.slice(1)))({
+      mapTo((name: string, [obj, ...args]) => method(obj, name, ...args))({
+        list_contains: "includes",
+        list_push: "push",
         list_find: "indexOf",
         join: "join",
         text_split: "split",
-        text_replace: "replace",
+        text_replace: "replaceAll",
+        repeat: "repeat",
+        text_contains: "includes",
       }),
       mapTo(func)({
         abs: "abs",

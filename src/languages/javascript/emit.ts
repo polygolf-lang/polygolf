@@ -10,9 +10,9 @@ import { type CompilationContext } from "@/common/compile";
 
 export const emitJavascriptText = emitTextFactory(
   {
-    "`TEXT`": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "`": "\\`", $: "\\$" },
     '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
     "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\"` },
+    "`TEXT`": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "`": "\\`", $: "\\$" },
   },
   function (x: number) {
     if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
@@ -181,6 +181,8 @@ export default function emitProgram(
             joinNodes(",", e.args),
             ")",
           ];
+        case "PropertyCall":
+          return [emit(e.object, Infinity), ".", emit(e.ident)];
         case "Infix": {
           const rightAssoc = e.name === "**";
           return [
