@@ -9,6 +9,7 @@ import {
   infix,
   int,
   propertyCall,
+  isText,
 } from "../../IR";
 import {
   type Language,
@@ -115,12 +116,12 @@ const javascriptLanguage: Language = {
         int_to_bin: (x) => method(x[0], "toString", int(2)),
         int_to_hex: (x) => method(x[0], "toString", int(16)),
         list_length: (x) => propertyCall(x[0], "length"),
+        join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
       }),
       mapTo((name: string, [obj, ...args]) => method(obj, name, ...args))({
         list_contains: "includes",
         list_push: "push",
         list_find: "indexOf",
-        join: "join",
         text_split: "split",
         text_replace: "replaceAll",
         repeat: "repeat",
