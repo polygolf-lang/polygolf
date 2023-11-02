@@ -33,6 +33,7 @@ describe("Restricted nodes: parse - emit match", () => {
     `for_each_pair $k $v $col $body;`,
     `for_c_like $i $c $a $body;`,
     `named_arg "name" $x;`,
+    `1:1..1:"int";`,
   ]) {
     test(t.split(" ")[0], () => {
       const normalized = normalize(t);

@@ -34,7 +34,7 @@ variants -> "{" (variant "/"):* variant "}" {%
     ([start, vars, var2, ]) => refSource(variants([...vars.map(id), var2]), start)
   %}
 
-expr -> expr_inner (":" type_expr):? {% ([expr, type]) => annotate(expr, type) %}
+expr -> expr_inner (":" type_expr):? (":" string):? {% ([expr, type, targetType]) => annotate(expr, type, targetType) %}
   | variants {% id %}
 
 expr_inner ->
