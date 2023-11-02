@@ -59,3 +59,12 @@ print("Hello, World!")
 for i in 0...9{print(i)}
 for a in CommandLine.arguments[1...]{print(a)}
 ```
+
+_Javascript_
+
+```javascript
+p=print
+p(`Hello, World!`)
+for(i=0;i<10;i++)p(i)
+for(a of arguments)p(a)
+```

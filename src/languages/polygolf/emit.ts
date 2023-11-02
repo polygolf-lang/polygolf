@@ -78,7 +78,7 @@ export function emitNode(
       res = [res, ":", toString(expr.type)];
     }
     if (expr.targetType !== undefined) {
-      res = [res, ":", emitText(expr.targetType)];
+      res = [res, ":", JSON.stringify(expr.targetType)];
     }
   }
   return res;

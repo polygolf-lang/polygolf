@@ -23,6 +23,7 @@ import {
   functionCall,
   propertyCall,
   isIdent,
+  postfix,
 } from "../IR";
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
@@ -214,6 +215,19 @@ export function addMutatingInfix(
     },
   };
 }
+
+export const addPostfixIncAndDec: Plugin = {
+  name: "addPostfixIncAndDec",
+  visit(node) {
+    if (
+      node.kind === "MutatingInfix" &&
+      ["+", "-"].includes(node.name) &&
+      isIntLiteral(1n)(node.right)
+    ) {
+      return postfix(node.name.repeat(2), node.variable);
+    }
+  },
+};
 
 // (a > b) --> (b < a)
 export const flipBinaryOps: Plugin = {
