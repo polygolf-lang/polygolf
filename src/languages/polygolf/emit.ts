@@ -1,5 +1,5 @@
 import { type TokenTree } from "../../common/Language";
-import { emitText, joinTrees } from "../../common/emit";
+import { joinTrees } from "../../common/emit";
 import {
   block,
   type Node,
@@ -163,7 +163,7 @@ function emitNodeWithoutAnnotation(
       }
       return emitSexpr("id", text(expr.name));
     case "Text":
-      return emitText(expr.value);
+      return JSON.stringify(expr.value);
     case "Integer":
       return expr.value.toString();
     case "Array":

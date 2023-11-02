@@ -2,11 +2,26 @@ import { type CompilationContext } from "@/common/compile";
 import {
   EmitError,
   emitIntLiteral,
-  emitText,
+  emitTextFactory,
   joinTrees,
 } from "../../common/emit";
 import { type IR, isIntLiteral } from "../../IR";
 import { type TokenTree } from "@/common/Language";
+
+const emitLuaText = emitTextFactory(
+  {
+    '"TEXT"': { "\\": "\\\\", "\n": "\\n", "\r": "\\r", '"': `\\"` },
+    "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\'` },
+    "[[TEXT]]": { "[[": null, "]]": null },
+  },
+  function (x: number, i: number, arr: number[]) {
+    if (x < 100)
+      return i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57
+        ? `\\${x.toString()}`
+        : `\\${x.toString().padStart(3, "0")}`;
+    return `\\u{${x.toString(16)}}`;
+  },
+);
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
@@ -170,49 +185,4 @@ export default function emitProgram(
     return ["(", inner, ")"];
   }
   return emit(program);
-}
-
-function emitLuaText(
-  x: string,
-  [low, high]: [number, number] = [1, Infinity],
-): string {
-  function mapCodepoint(x: number, i: number, arr: number[]) {
-    if (low <= x && x <= high) return String.fromCharCode(x);
-    if (x < 100)
-      return i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57
-        ? `\\${x.toString()}`
-        : `\\${x.toString().padStart(3, "0")}`;
-    return `\\u{${x.toString(16)}}`;
-  }
-  return emitText(
-    x,
-    [
-      [
-        `"`,
-        [
-          [`\\`, `\\\\`],
-          [`\n`, `\\n`],
-          [`\r`, `\\r`],
-          [`"`, `\\"`],
-        ],
-      ],
-      [
-        `'`,
-        [
-          [`\\`, `\\\\`],
-          [`\n`, `\\n`],
-          [`\r`, `\\r`],
-          [`'`, `\\'`],
-        ],
-      ],
-      [
-        [`[[`, `]]`],
-        [
-          [`[[`, null],
-          [`]]`, null],
-        ],
-      ],
-    ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined,
-  );
 }

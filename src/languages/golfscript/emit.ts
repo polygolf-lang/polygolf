@@ -1,7 +1,12 @@
 import { type TokenTree } from "../../common/Language";
-import { EmitError, emitText } from "../../common/emit";
+import { EmitError, emitTextFactory } from "../../common/emit";
 import { int, integerType, type IR, isIntLiteral, isSubtype } from "../../IR";
 import { getType } from "../../common/getType";
+
+const emitGolfscriptText = emitTextFactory({
+  '"TEXT"': { "\\": "\\\\", '"': `\\"` },
+  "'TEXT'": { "\\": `\\\\`, "'": `\\'` },
+});
 
 export default function emitProgram(program: IR.Node): TokenTree {
   function emitMultiNode(BaseNode: IR.Node, parent: IR.Node | null): TokenTree {
@@ -104,22 +109,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
       case "Identifier":
         return expr.name;
       case "Text":
-        return emitText(expr.value, [
-          [
-            `"`,
-            [
-              [`\\`, `\\\\`],
-              [`"`, `\\"`],
-            ],
-          ],
-          [
-            `"`,
-            [
-              [`\\`, `\\\\`],
-              [`'`, `\\'`],
-            ],
-          ],
-        ]);
+        return emitGolfscriptText(expr.value);
       case "Integer":
         return expr.value.toString();
       case "Infix":
