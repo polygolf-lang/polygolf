@@ -13,6 +13,7 @@ $m + $n;
 $m - $n;
 $m * $n;
 $m div $n;
+$m:Int div $n:Int;
 $m mod $n;
 $m ^ $n;
 $m & $n;
@@ -65,6 +66,7 @@ m+n
 m-n
 m*n
 Math.floor(m/n)
+m/n
 m%n
 m**n
 m&n
@@ -146,10 +148,12 @@ for(x of arguments)print(x)
 $x: Int <- 5;
 $y: 0..100 <- 2;
 println_int ((3 + $x) * $y);
+$t <- (int_to_text $x);
 ```
 
 ```js nogolf
 x=5n
 y=2
 print((3n+x)*BigInt(y))
+t=String(x)
 ```
