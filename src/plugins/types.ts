@@ -1,4 +1,3 @@
-import { debugEmit } from "../common/compile";
 import { PolygolfError } from "../common/errors";
 import { getType } from "../common/getType";
 import { type Plugin } from "../common/Language";
@@ -93,7 +92,7 @@ export function mapVarsThatNeedBigint(
     visit(node, spine) {
       if (isUserIdent()(node) && node.targetType === "bigint") {
         const type = getType(node, spine);
-        if (!isSubtype(type, primitiveIntType)) {
+        if (isSubtype(type, primitiveIntType)) {
           return annotate(f({ ...node, targetType: "int" }), type);
         }
       }

@@ -145,11 +145,11 @@ for(x of arguments)print(x)
 ```polygolf
 $x: Int <- 5;
 $y: 0..100 <- 2;
-((3 + $x) * $y);
+println_int ((3 + $x) * $y);
 ```
 
 ```js nogolf
 x=5n
 y=2
-(3n+x)*BigInt(y)
+print((3n+x)*BigInt(y))
 ```
