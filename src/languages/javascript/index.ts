@@ -27,6 +27,7 @@ import {
   printIntToPrint,
   mapTo,
   addPostfixIncAndDec,
+  methodsAsFunctions,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -41,6 +42,7 @@ import {
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import {
+  replaceToSplitAndJoin,
   textGetToIntToTextGet,
   textToIntToTextGetToInt,
   useEquivalentTextOp,
@@ -57,6 +59,7 @@ import {
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
 import { floodBigints, mapVarsThatNeedBigint } from "../../plugins/types";
+import { forRangeToForEachKey, propertyCallToIndexCall } from "./plugins";
 
 const javascriptLanguage: Language = {
   name: "Javascript",
@@ -79,6 +82,7 @@ const javascriptLanguage: Language = {
       tableToListLookup,
       inlineVariables,
       forArgvToForEach,
+      replaceToSplitAndJoin,
       useEquivalentTextOp(false, true),
       useIndexCalls(),
       decomposeIntLiteral(),
@@ -106,6 +110,9 @@ const javascriptLanguage: Language = {
       }),
       mapVarsThatNeedBigint("int53", (x) => func("BigInt", x)),
       forArgvToForEach,
+    ),
+    simplegolf(forRangeToForEachKey),
+    required(
       forRangeToForCLike,
       useEquivalentTextOp(false, true),
       mapOps({
@@ -182,15 +189,15 @@ const javascriptLanguage: Language = {
         ["**", "*", "/", "%", "+", "-", "<<", ">>", "&", "^", "|", "&&", "||"],
       ),
       addPostfixIncAndDec,
+      methodsAsFunctions,
       addOneToManyAssignments(),
     ),
+    search(propertyCallToIndexCall),
     simplegolf(
       alias({
         Identifier: (n, s) =>
           n.builtin &&
-          ((s.parent?.node.kind !== "PropertyCall" &&
-            s.parent?.node.kind !== "MethodCall") ||
-            s.pathFragment !== "ident")
+          (s.parent?.node.kind !== "PropertyCall" || s.pathFragment !== "ident")
             ? n.name
             : undefined,
         Integer: (x) => x.value.toString(),
