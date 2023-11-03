@@ -87,20 +87,47 @@ export function mapTo<T>(
 /**
  * Plugin transforming binary and unary ops to the name and precedence in the target lang.
  * @param opMap OpCode - target op name pairs.
+ * @param asMutatingInfix - array of target op names that should be mapped to mutating infix or true for to signify all.
  * @returns The plugin closure.
  */
-export function mapToPrefixAndInfix(
-  opMap: Partial<Record<UnaryOpCode | BinaryOpCode, string>>,
+export function mapToPrefixAndInfix<
+  TNames extends string,
+  TNamesMutating extends TNames,
+>(
+  opMap: Partial<Record<UnaryOpCode, string> & Record<BinaryOpCode, TNames>>,
+  asMutatingInfix: true | TNamesMutating[] = [],
 ): Plugin {
   enhanceOpMap(opMap);
-  return mapOps(
+  const justPrefixInfix = mapOps(
     mapObjectValues(opMap, (name, op) =>
       isBinary(op)
         ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
         : (x: readonly Node[]) => prefix(name, x[0]),
     ),
-    `mapToPrefixAndInfix(${JSON.stringify(opMap)})`,
+    `mapToPrefixAndInfix(${JSON.stringify(opMap)}, ${JSON.stringify(
+      asMutatingInfix,
+    )})`,
   );
+  if (asMutatingInfix !== true && asMutatingInfix.length < 1)
+    return justPrefixInfix;
+  const mutatingInfix = addMutatingInfix(
+    Object.fromEntries(
+      Object.entries(opMap).filter(
+        ([k, v]) =>
+          isBinary(k as OpCode) &&
+          (asMutatingInfix === true || asMutatingInfix.includes(v as any)),
+      ),
+    ),
+  );
+  return {
+    ...justPrefixInfix,
+    visit(node, spine, context) {
+      return (
+        mutatingInfix.visit(node, spine, context) ??
+        justPrefixInfix.visit(node, spine, context)
+      );
+    },
+  };
 }
 
 function asBinaryChain(
