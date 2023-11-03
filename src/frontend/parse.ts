@@ -544,14 +544,22 @@ export default function parse(code: string, restrictFrontend = true) {
           ),
         ),
       ];
-      let message = `Unexpected token ${JSON.stringify(token.text)}.`;
+      let message =
+        token === undefined
+          ? "Unexpected character."
+          : `Unexpected token ${JSON.stringify(token.text)}.`;
       if (expected.length > 0) {
         message += ` Expected one of ${expected.join(", ")}.`;
       }
-      throw new PolygolfError(message, {
-        line: token.line,
-        column: token.col,
-      });
+      throw new PolygolfError(
+        message,
+        token === undefined
+          ? undefined
+          : {
+              line: token.line,
+              column: token.col,
+            },
+      );
     } else {
       throw e;
     }
