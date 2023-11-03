@@ -134,6 +134,32 @@ for(x of arguments)print(x)
 "\u{1f48e}"
 ```
 
+## Control flow
+
+```polygolf
+$b <- true;
+if $b {
+  print "true";
+} {
+  if $b {
+    print "still true";
+  } {
+    print "impossible";
+    print "!";
+    if $b {
+      print "?";
+    };
+  };
+};
+```
+
+```js nogolf
+b=true
+if(b)write("true")else if(b)write("still true")else{write("impossible")
+write("!")
+if(b)write("?")}
+```
+
 ## Bigints
 
 ```polygolf
