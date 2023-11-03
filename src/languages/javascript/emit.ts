@@ -8,17 +8,25 @@ import {
 import { type IR, isText, isOfKind } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
+function codepointMap(x: number) {
+  if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
+  if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
+  return `\\u{${x.toString(16)}}`;
+}
+
 export const emitJavascriptText = emitTextFactory(
   {
     '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
     "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\"` },
-    "`TEXT`": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "`": "\\`", $: "\\$" },
+    "`TEXT`": { "\\": `\\\\`, "`": "\\`", "${": "\\${" },
   },
-  function (x: number) {
-    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
-    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
-    return `\\u{${x.toString(16)}}`;
+  codepointMap,
+);
+export const emitJavascriptTextBackticks = emitTextFactory(
+  {
+    "`TEXT`": { "\\": `\\\\`, "`": "\\`", "${": "\\${" },
   },
+  codepointMap,
 );
 
 function precedence(expr: IR.Node): number {
@@ -118,13 +126,8 @@ export default function emitProgram(
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
         case "FunctionCall":
-          if (
-            e.args.length === 1 &&
-            isText()(e.args[0]) &&
-            !e.args[0].value.includes("`") &&
-            !e.args[0].value.includes("$")
-          )
-            return [emit(e.func), "`" + e.args[0].value + "`"];
+          if (e.args.length === 1 && isText()(e.args[0]))
+            return [emit(e.func), emitJavascriptTextBackticks(e.args[0].value)];
           return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "Identifier":
           return [e.name];

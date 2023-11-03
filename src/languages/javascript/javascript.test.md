@@ -143,6 +143,15 @@ for(x of arguments)print(x)
 "\u{1f48e}"
 ```
 
+```polygolf
+"\n";
+```
+
+```js nogolf
+`
+`
+```
+
 ## Aliasing properties
 
 ```polygolf

@@ -34,17 +34,17 @@ export function emitTextFactory(
         current = current.replaceAll(c, d);
       }
       current = template.replaceAll("TEXT", current);
+      if (!(codepointMap === undefined || (low === 1 && high === Infinity)))
+        current = codepoints(current)
+          .map((x, i, arr) =>
+            low <= x && x <= high
+              ? String.fromCharCode(x)
+              : codepointMap(x, i, arr),
+          )
+          .join("");
       if (result === "" || current.length < result.length) result = current;
     }
-    if (codepointMap === undefined || (low === 1 && high === Infinity))
-      return result;
-    return codepoints(result)
-      .map((x, i, arr) =>
-        low <= x && x <= high
-          ? String.fromCharCode(x)
-          : codepointMap(x, i, arr),
-      )
-      .join("");
+    return result;
   };
 }
 
