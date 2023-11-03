@@ -25,7 +25,7 @@ export function emitTextFactory(
     [low, high]: [number, number] = [1, Infinity],
   ) {
     let result = "";
-    for (const [delim, escapes0] of Object.entries(options)) {
+    for (const [template, escapes0] of Object.entries(options)) {
       const escapes = Object.entries(escapes0);
       if (escapes.some((x) => x[1] === null && value.includes(x[0]))) continue;
       let current = value;
@@ -33,8 +33,7 @@ export function emitTextFactory(
         if (d === null) continue;
         current = current.replaceAll(c, d);
       }
-      const delims = delim.split("TEXT");
-      current = delims[0] + current + delims[1];
+      current = template.replaceAll("TEXT", current);
       if (result === "" || current.length < result.length) result = current;
     }
     if (codepointMap === undefined || (low === 1 && high === Infinity))
