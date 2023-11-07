@@ -242,8 +242,10 @@ function getIndexedCollection(
       return collection;
     const collectionType = getType(collection, s.root.node);
     if (
+      knownLength !== undefined &&
       collectionType.kind === "Array" &&
-      collectionType.length === knownLength
+      collectionType.length.kind === "integer" &&
+      collectionType.length.high + 1n === BigInt(knownLength)
     )
       return collection;
     return null;

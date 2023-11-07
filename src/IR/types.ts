@@ -1,4 +1,3 @@
-import emitProgram from "@/languages/polygolf/emit";
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
 import {
@@ -9,9 +8,6 @@ import {
   table,
   text,
   int,
-  Integer,
-  Text,
-  isIntLiteral,
   op,
   keyValue,
 } from "./IR";
@@ -255,7 +251,11 @@ export function toString(a: Type): string {
     case "List":
       return `(List ${toString(a.member)})`;
     case "Array":
-      return `(Array ${toString(a.member)} ${a.length})`;
+      return `(Array ${toString(a.member)} ${
+        a.length.kind === "TypeArg"
+          ? toString(a.length)
+          : (a.length.high - 1n).toString()
+      })`;
     case "Set":
       return `(Set ${toString(a.member)})`;
     case "Table":
