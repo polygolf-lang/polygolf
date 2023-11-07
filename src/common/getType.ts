@@ -1,9 +1,9 @@
 import {
   type Node,
   type Type,
-  listType,
-  arrayType,
-  integerType,
+  listType as list,
+  arrayType as array,
+  integerType as int,
   integerTypeIncludingAll,
   type IntegerType,
   type Op,
@@ -11,12 +11,12 @@ import {
   union,
   toString,
   voidType,
-  textType,
+  textType as text,
   type TextType,
   booleanType,
   type OpCode,
-  setType,
-  tableType,
+  setType as set,
+  tableType as table,
   type KeyValueType,
   keyValueType,
   getArgs,
@@ -42,6 +42,8 @@ import {
   op,
   leq,
   isIdent,
+  typeArg,
+  instantiateGenerics,
 } from "../IR";
 import { byteLength, charLength } from "./objective";
 import { PolygolfError } from "./errors";
@@ -111,12 +113,12 @@ export function calcType(expr: Node, program: Node): Type {
       switch (a.kind) {
         case "Array":
           expectedIndex = expr.oneIndexed
-            ? integerType(1, a.length)
-            : integerType(0, a.length - 1);
+            ? int(1, a.length)
+            : int(0, a.length - 1);
           result = a.member;
           break;
         case "List": {
-          expectedIndex = integerType(expr.oneIndexed ? 1 : 0, "oo");
+          expectedIndex = int(expr.oneIndexed ? 1 : 0, "oo");
           result = a.member;
           break;
         }
@@ -161,26 +163,26 @@ export function calcType(expr: Node, program: Node): Type {
       return getIdentifierType(expr, program);
     case "Text": {
       const codepoints = charLength(expr.value);
-      return textType(
-        integerType(codepoints, codepoints),
+      return text(
+        int(codepoints, codepoints),
         codepoints === byteLength(expr.value),
       );
     }
     case "Integer":
-      return integerType(expr.value, expr.value);
+      return int(expr.value, expr.value);
     case "Array":
-      return arrayType(
+      return array(
         expr.exprs.map(type).reduce((a, b) => union(a, b)),
         expr.exprs.length,
       );
     case "List":
       return expr.exprs.length > 0
-        ? listType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
-        : listType("void");
+        ? list(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+        : list("void");
     case "Set":
       return expr.exprs.length > 0
-        ? setType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
-        : setType("void");
+        ? set(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+        : set("void");
     case "KeyValue": {
       const k = type(expr.key);
       const v = type(expr.value);
@@ -198,11 +200,11 @@ export function calcType(expr: Node, program: Node): Type {
         const kTypes = kvTypes.map((x) => x.key);
         const vTypes = kvTypes.map((x) => x.value);
         return expr.kvPairs.length > 0
-          ? tableType(
+          ? table(
               kTypes.reduce((a, b) => union(a, b) as any),
               vTypes.reduce((a, b) => union(a, b)),
             )
-          : tableType(integerType(), "void");
+          : table(int(), "void");
       }
       throw new Error(
         "Programming error. Type of KeyValue nodes should always be KeyValue.",
@@ -241,7 +243,182 @@ export function calcType(expr: Node, program: Node): Type {
 }
 
 function getTypeBitNot(t: IntegerType): IntegerType {
-  return integerType(sub(-1n, t.high), sub(-1n, t.low));
+  return int(sub(-1n, t.high), sub(-1n, t.low));
+}
+
+type ExpectedTypes = { variadic: Type; min: number } | Type[];
+function variadic(type: Type, min = 2): ExpectedTypes {
+  return {
+    variadic: type,
+    min,
+  };
+}
+
+function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
+  const T1 = typeArg("T1");
+  const T2 = typeArg("T2");
+  switch (op) {
+    case "gcd":
+      return [int(), int(1)];
+    case "add":
+    case "sub":
+    case "mul":
+    case "div":
+    case "trunc_div":
+    case "unsigned_trunc_div":
+    case "pow":
+    case "mod":
+    case "rem":
+    case "unsigned_rem":
+    case "bit_and":
+    case "bit_or":
+    case "bit_xor":
+    case "bit_shift_left":
+    case "bit_shift_right":
+    case "min":
+    case "max":
+      return isAssociative(op) ? variadic(int()) : [int(), int()];
+    // (num, num) => bool
+    case "lt":
+    case "leq":
+    case "eq":
+    case "neq":
+    case "geq":
+    case "gt":
+      return [int(), int()];
+    // (bool, bool) => bool
+    case "unsafe_or":
+    case "unsafe_and":
+    case "or":
+    case "and":
+      return variadic(booleanType);
+    // membership
+    case "array_contains":
+      return [array(T1, T2), T1];
+    case "list_contains":
+      return [list(T1), T1];
+    case "table_contains_key":
+      return [table(T1, T2), T2];
+    case "set_contains":
+      return [set(T1), T1];
+    // collection get
+    case "array_get":
+      return [array(T1, T2), T2];
+    case "list_get":
+      return [list(T1), int(0)];
+    case "table_get":
+      return [table(T1, T2), T1];
+    case "argv_get":
+      return [int(0)];
+    // other
+    case "list_push":
+      return [list(T1), T1];
+    case "list_find":
+      return [list(T1), T1];
+    case "concat":
+      return variadic(text());
+    case "repeat":
+      return [text(), int(0)];
+    case "text_contains":
+    case "text_split":
+      return [text(), text()];
+    case "text_codepoint_find":
+    case "text_byte_find":
+      return [text(), text(int(1))];
+    case "text_get_byte":
+    case "text_get_codepoint":
+    case "right_align":
+      return [text(), int(0)];
+    case "join":
+      return [list(text()), text()];
+    case "int_to_bin_aligned":
+    case "int_to_hex_aligned":
+      return [int(0), int(0)];
+    case "simplify_fraction":
+      return [int(0), int(0)];
+    // unary
+    case "abs":
+    case "bit_not":
+    case "neg":
+      return [int()];
+    case "not":
+      return [booleanType];
+    case "int_to_bool":
+      return [int()];
+    case "int_to_text":
+      return [int()];
+    case "int_to_bin":
+    case "int_to_hex":
+      return [int(0)];
+    case "text_to_int":
+      return [text(int(), true)];
+    case "bool_to_int":
+      return [booleanType];
+    case "int_to_text_byte":
+      return [int(0, 255)];
+    case "int_to_codepoint":
+      return [int(0, 0x10ffff)];
+    case "list_length":
+      return [list(T1)];
+    case "text_byte_length":
+    case "text_codepoint_length":
+    case "text_split_whitespace":
+    case "sorted":
+      return [list(T1)];
+    case "text_byte_reversed":
+    case "text_codepoint_reversed":
+      return [text()];
+    // other
+    case "true":
+    case "false":
+    case "read_codepoint":
+    case "read_byte":
+    case "read_int":
+    case "read_line":
+    case "argc":
+    case "argv":
+      return [];
+    case "putc":
+      return [int(0, 255)];
+    case "print":
+    case "println":
+      return [text()];
+    case "print_int":
+    case "println_int":
+      return [int()];
+    case "println_list_joined":
+      return [list(text()), text()];
+    case "println_many_joined":
+      return variadic(text(), 1);
+    case "text_replace":
+      return [text(), text(int(1, "oo")), text()];
+    case "text_multireplace":
+      variadic(text(), 2);
+    case "text_get_byte_slice":
+    case "text_get_codepoint_slice":
+      return [text(), int(0), int(0)];
+    case "text_get_codepoint_to_int":
+      return [text(), int(0)];
+    case "text_get_byte_to_int":
+      return [text(), int(0)];
+    case "codepoint_to_int":
+    case "text_byte_to_int":
+      return [text(int(1, 1))];
+    case "array_set":
+      return [array(T1, T2), T1, T2];
+    case "list_set":
+      return [list(T1), int(0), T1];
+    case "table_set":
+      return [table(T1, T2), T1, T2];
+  }
+}
+
+export function getExampleOpCodeArgTypes(op: OpCode): Type[] {
+  const type = getOpCodeArgTypes(op);
+  if (Array.isArray(type)) {
+    return type.map(instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) }));
+  }
+  return Array(type.min).fill(type.variadic);
 }
 
 function getOpCodeType(expr: Op, program: Node): Type {
@@ -321,7 +498,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
           typeArgs.push(got.member);
         } else if (exp === "Array" && got.kind === "Array") {
           typeArgs.push(got.member);
-          typeArgs.push(integerType(0, got.length - 1));
+          typeArgs.push(int(0, got.length - 1));
         } else if (exp === "Set" && got.kind === "Set") {
           typeArgs.push(got.member);
         } else if (exp === "Table" && got.kind === "Table") {
@@ -347,9 +524,9 @@ function getOpCodeType(expr: Op, program: Node): Type {
     // binary
     // (num, num) => num
     case "gcd": {
-      expectType(integerType(), integerType(1));
+      expectType(int(), int(1));
       const [a, b] = types as [IntegerType, IntegerType];
-      return integerType(
+      return int(
         1n,
         min(max(abs(a.low), abs(a.high)), max(abs(b.low), abs(b.high))),
       );
@@ -373,9 +550,9 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "max": {
       const op = expr.op;
       if (isAssociative(op)) {
-        expectVariadicType(integerType());
+        expectVariadicType(int());
       } else {
-        expectType(integerType(), integerType());
+        expectType(int(), int());
       }
       return types.reduce((a, b) =>
         getArithmeticType(op, a as IntegerType, b as IntegerType),
@@ -388,7 +565,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "neq":
     case "geq":
     case "gt":
-      expectType(integerType(), integerType());
+      expectType(int(), int());
       return booleanType;
     // (bool, bool) => bool
     case "unsafe_or":
@@ -415,22 +592,22 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "array_get":
       return expectGenericType("Array", ["T2", (x) => x[1]])[0];
     case "list_get":
-      return expectGenericType("List", ["0..oo", () => integerType(0)])[0];
+      return expectGenericType("List", ["0..oo", () => int(0)])[0];
     case "table_get":
       return expectGenericType("Table", ["T1", (x) => x[0]])[1];
     case "argv_get":
-      expectType(integerType(0));
-      return textType();
+      expectType(int(0));
+      return text();
     // other
     case "list_push":
       return expectGenericType("List", ["T1", (x) => x[0]])[0];
     case "list_find":
       expectGenericType("List", ["T1", (x) => x[0]]);
-      return integerType(-1, (1n << 31n) - 1n);
+      return int(-1, (1n << 31n) - 1n);
     case "concat": {
-      expectVariadicType(textType());
+      expectVariadicType(text());
       const textTypes = types as TextType[];
-      return textType(
+      return text(
         textTypes
           .map((x) => x.codepointLength)
           .reduce((a, b) => getArithmeticType("add", a, b)),
@@ -438,20 +615,17 @@ function getOpCodeType(expr: Op, program: Node): Type {
       );
     }
     case "repeat": {
-      expectType(textType(), integerType(0));
+      expectType(text(), int(0));
       const [t, i] = types as [TextType, IntegerType];
-      return textType(
-        getArithmeticType("mul", t.codepointLength, i),
-        t.isAscii,
-      );
+      return text(getArithmeticType("mul", t.codepointLength, i), t.isAscii);
     }
     case "text_contains":
-      expectType(textType(), textType());
+      expectType(text(), text());
       return booleanType;
     case "text_codepoint_find":
     case "text_byte_find":
-      expectType(textType(), textType(integerType(1, "oo")));
-      return integerType(
+      expectType(text(), text(int(1, "oo")));
+      return int(
         -1,
         sub(
           mul(
@@ -464,29 +638,29 @@ function getOpCodeType(expr: Op, program: Node): Type {
         ),
       );
     case "text_split":
-      expectType(textType(), textType());
-      return listType(types[0]);
+      expectType(text(), text());
+      return list(types[0]);
     case "text_get_byte":
     case "text_get_codepoint":
-      expectType(textType(), integerType(0));
-      return textType(integerType(1, 1), (types[0] as TextType).isAscii);
+      expectType(text(), int(0));
+      return text(int(1, 1), (types[0] as TextType).isAscii);
     case "join":
-      expectType(listType(textType()), textType());
-      return textType(
-        integerType(0, "oo"),
+      expectType(list(text()), text());
+      return text(
+        int(0, "oo"),
         ((types[0] as ListType).member as TextType).isAscii &&
           (types[1] as TextType).isAscii,
       );
     case "right_align":
-      expectType(textType(), integerType(0));
-      return textType(integerType(0, "oo"), (types[0] as TextType).isAscii);
+      expectType(text(), int(0));
+      return text(int(0, "oo"), (types[0] as TextType).isAscii);
     case "int_to_bin_aligned":
     case "int_to_hex_aligned": {
-      expectType(integerType(0), integerType(0));
+      expectType(int(0), int(0));
       const t1 = types[0] as IntegerType;
       const t2 = types[0] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2)) {
-        return textType(
+        return text(
           integerTypeIncludingAll(
             BigInt(
               t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16)
@@ -497,15 +671,15 @@ function getOpCodeType(expr: Op, program: Node): Type {
           true,
         );
       }
-      return textType(integerType(), true);
+      return text(int(), true);
     }
     case "simplify_fraction": {
-      expectType(integerType(), integerType());
+      expectType(int(), int());
       const t1 = types[0] as IntegerType;
       const t2 = types[1] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2))
-        return textType(
-          integerType(
+        return text(
+          int(
             0,
             1 +
               Math.max(t1.low.toString().length, t1.high.toString().length) +
@@ -513,42 +687,39 @@ function getOpCodeType(expr: Op, program: Node): Type {
           ),
           true,
         );
-      return textType();
+      return text();
     }
     // unary
     case "abs": {
-      expectType(integerType());
+      expectType(int());
       const t = types[0] as IntegerType;
       if (lt(t.low, 0n) && lt(0n, t.high))
-        return integerType(0, max(neg(t.low), t.high));
-      return integerType(
-        min(abs(t.low), abs(t.high)),
-        max(abs(t.low), abs(t.high)),
-      );
+        return int(0, max(neg(t.low), t.high));
+      return int(min(abs(t.low), abs(t.high)), max(abs(t.low), abs(t.high)));
     }
     case "bit_not": {
-      expectType(integerType());
+      expectType(int());
       const t = types[0] as IntegerType;
       return getTypeBitNot(t);
     }
     case "neg": {
-      expectType(integerType());
+      expectType(int());
       const t = types[0] as IntegerType;
-      return integerType(neg(t.high), neg(t.low));
+      return int(neg(t.high), neg(t.low));
     }
     case "not":
       expectType(booleanType);
       return booleanType;
     case "int_to_bool":
-      expectType(integerType());
+      expectType(int());
       return booleanType;
     case "int_to_text":
     case "int_to_bin":
     case "int_to_hex": {
-      expectType(integerType(expr.op === "int_to_text" ? "-oo" : 0));
+      expectType(int(expr.op === "int_to_text" ? "-oo" : 0));
       const t = types[0] as IntegerType;
       if (isFiniteType(t))
-        return textType(
+        return text(
           integerTypeIncludingAll(
             ...[t.low, t.high, ...(typeContains(t, 0n) ? [0n] : [])].map((x) =>
               BigInt(
@@ -564,39 +735,33 @@ function getOpCodeType(expr: Op, program: Node): Type {
           ),
           true,
         );
-      return textType(integerType(1), true);
+      return text(int(1), true);
     }
     case "text_to_int": {
-      expectType(textType(integerType(), true));
+      expectType(text(int(), true));
       const t = types[0] as TextType;
-      if (!isFiniteType(t.codepointLength)) return integerType();
-      return integerType(
+      if (!isFiniteType(t.codepointLength)) return int();
+      return int(
         1n - 10n ** (t.codepointLength.high - 1n),
         10n ** t.codepointLength.high - 1n,
       );
     }
     case "bool_to_int":
       expectType(booleanType);
-      return integerType(0, 1);
+      return int(0, 1);
     case "int_to_text_byte":
-      expectType(integerType(0, 255));
-      return textType(
-        integerType(1n, 1n),
-        lt((types[0] as IntegerType).high, 128n),
-      );
+      expectType(int(0, 255));
+      return text(int(1n, 1n), lt((types[0] as IntegerType).high, 128n));
     case "int_to_codepoint":
-      expectType(integerType(0, 0x10ffff));
-      return textType(
-        integerType(1n, 1n),
-        lt((types[0] as IntegerType).high, 128n),
-      );
+      expectType(int(0, 0x10ffff));
+      return text(int(1n, 1n), lt((types[0] as IntegerType).high, 128n));
     case "list_length":
       expectGenericType("List");
-      return integerType(0);
+      return int(0);
     case "text_byte_length": {
-      expectType(textType());
+      expectType(text());
       const codepointLength = (types[0] as TextType).codepointLength;
-      return integerType(
+      return int(
         codepointLength.low,
         min(
           1n << 31n,
@@ -605,16 +770,16 @@ function getOpCodeType(expr: Op, program: Node): Type {
       );
     }
     case "text_codepoint_length":
-      expectType(textType());
+      expectType(text());
       return (types[0] as TextType).codepointLength;
     case "text_split_whitespace":
-      expectType(textType());
-      return listType(types[0]);
+      expectType(text());
+      return list(types[0]);
     case "sorted":
-      return listType(expectGenericType("List")[0]);
+      return list(expectGenericType("List")[0]);
     case "text_byte_reversed":
     case "text_codepoint_reversed":
-      expectType(textType());
+      expectType(text());
       return types[0];
     // other
     case "true":
@@ -622,69 +787,69 @@ function getOpCodeType(expr: Op, program: Node): Type {
       expectType();
       return booleanType;
     case "read_codepoint":
-      return textType(integerType(1, 1));
+      return text(int(1, 1));
     case "read_byte":
-      return textType(integerType(1, 1));
+      return text(int(1, 1));
     case "read_int":
-      return integerType();
+      return int();
     case "read_line":
-      return textType();
+      return text();
     case "argc":
       expectType();
-      return integerType(0, 2 ** 31 - 1);
+      return int(0, 2 ** 31 - 1);
     case "argv":
       expectType();
-      return listType(textType());
+      return list(text());
     case "putc":
-      expectType(integerType(0, 255));
+      expectType(int(0, 255));
       return voidType;
     case "print":
     case "println":
-      expectType(textType());
+      expectType(text());
       return voidType;
     case "print_int":
     case "println_int":
-      expectType(integerType());
+      expectType(int());
       return voidType;
     case "println_list_joined":
-      expectType(listType(textType()), textType());
+      expectType(list(text()), text());
       return voidType;
     case "println_many_joined":
-      expectVariadicType(textType(), 1);
+      expectVariadicType(text(), 1);
       return voidType;
     case "text_replace": {
-      expectType(textType(), textType(integerType(1, "oo")), textType());
+      expectType(text(), text(int(1, "oo")), text());
       const [a, c] = [types[0], types[2]] as TextType[];
-      return textType(
+      return text(
         getArithmeticType("mul", a.codepointLength, c.codepointLength),
         a.isAscii && c.isAscii,
       );
     }
     case "text_multireplace":
-      expectVariadicType(textType(), (x) => x > 2 && x % 2 > 0);
-      return textType();
+      expectVariadicType(text(), (x) => x > 2 && x % 2 > 0);
+      return text();
     case "text_get_byte_slice":
     case "text_get_codepoint_slice": {
-      expectType(textType(), integerType(0), integerType(0));
+      expectType(text(), int(0), int(0));
       const [t, i1, i2] = types as [TextType, IntegerType, IntegerType];
       const maximum = min(
         t.codepointLength.high,
         max(0n, sub(i2.high, i1.low)),
       );
-      return textType(integerType(0n, maximum), t.isAscii);
+      return text(int(0n, maximum), t.isAscii);
     }
     case "text_get_codepoint_to_int":
-      expectType(textType(), integerType(0));
-      return integerType(0, (types[0] as TextType).isAscii ? 127 : 0x10ffff);
+      expectType(text(), int(0));
+      return int(0, (types[0] as TextType).isAscii ? 127 : 0x10ffff);
     case "text_get_byte_to_int":
-      expectType(textType(), integerType(0));
-      return integerType(0, (types[0] as TextType).isAscii ? 127 : 255);
+      expectType(text(), int(0));
+      return int(0, (types[0] as TextType).isAscii ? 127 : 255);
     case "codepoint_to_int":
-      expectType(textType(integerType(1, 1)));
-      return integerType(0, (types[0] as TextType).isAscii ? 127 : 0x10ffff);
+      expectType(text(int(1, 1)));
+      return int(0, (types[0] as TextType).isAscii ? 127 : 0x10ffff);
     case "text_byte_to_int":
-      expectType(textType(integerType(1, 1)));
-      return integerType(0, (types[0] as TextType).isAscii ? 127 : 255);
+      expectType(text(int(1, 1)));
+      return int(0, (types[0] as TextType).isAscii ? 127 : 255);
     case "array_set":
       return expectGenericType(
         "Array",
@@ -694,7 +859,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "list_set":
       return expectGenericType(
         "List",
-        ["0..oo", () => integerType(0)],
+        ["0..oo", () => int(0)],
         ["T1", (x) => x[0]],
       )[0];
     case "table_set":
@@ -717,13 +882,13 @@ export function getArithmeticType(
 ): IntegerType {
   switch (op) {
     case "min":
-      return integerType(min(a.low, b.low), min(a.high, b.high));
+      return int(min(a.low, b.low), min(a.high, b.high));
     case "max":
-      return integerType(max(a.low, b.low), max(a.high, b.high));
+      return int(max(a.low, b.low), max(a.high, b.high));
     case "add":
-      return integerType(add(a.low, b.low), add(a.high, b.high));
+      return int(add(a.low, b.low), add(a.high, b.high));
     case "sub":
-      return integerType(sub(a.low, b.high), sub(a.high, b.low));
+      return int(sub(a.low, b.high), sub(a.high, b.low));
     case "mul": {
       // Extreme values of a product arise from multiplying the extremes of the inputs.
       // The single case were simple multiplication of the bounds is not defined, corresponds to multiplying
@@ -809,7 +974,7 @@ export function getArithmeticType(
           b,
         );
       }
-      return integerType();
+      return int();
     case "pow": {
       if (lt(b.low, 0n))
         throw new Error(
@@ -874,13 +1039,13 @@ export function getArithmeticType(
       return getArithmeticType(
         "mul",
         a,
-        getArithmeticType("pow", integerType(2, 2), b),
+        getArithmeticType("pow", int(2, 2), b),
       );
     case "bit_shift_right":
       return getArithmeticType(
         "div",
         a,
-        getArithmeticType("pow", integerType(2, 2), b),
+        getArithmeticType("pow", int(2, 2), b),
       );
     case "bit_or":
     case "bit_xor": {
@@ -889,10 +1054,10 @@ export function getArithmeticType(
       if (isFiniteBound(left) && isFiniteBound(right)) {
         const larger = lt(left, right) ? left : right;
         const lim = 2n ** BigInt(larger.toString(2).length);
-        if (lt(-1n, a.low) && lt(-1n, b.low)) return integerType(0n, lim);
-        return integerType(neg(lim), lim);
+        if (lt(-1n, a.low) && lt(-1n, b.low)) return int(0n, lim);
+        return int(neg(lim), lim);
       }
-      return integerType();
+      return int();
     }
   }
   throw new Error(`Type error. Unknown opcode. ${op ?? "null"}`);
@@ -908,7 +1073,7 @@ export function getCollectionTypes(expr: Node, program: Node): Type[] {
     case "Table":
       return [exprType.key, exprType.value];
     case "text":
-      return [textType(integerType(1, 1), exprType.isAscii)];
+      return [text(int(1, 1), exprType.isAscii)];
   }
   throw new Error("Type error. Node is not a collection.");
 }
@@ -931,5 +1096,5 @@ function getIntegerTypeRem(a: IntegerType, b: IntegerType): IntegerType {
     return constantIntegerType(a.low % b.low);
   }
   const m = max(abs(b.low), abs(b.high));
-  return integerType(lt(a.low, 0n) ? neg(m) : 0n, m);
+  return int(lt(a.low, 0n) ? neg(m) : 0n, m);
 }
