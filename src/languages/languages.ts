@@ -7,12 +7,12 @@ import swiftLanguage from "./swift";
 import golfscriptLanguage from "./golfscript";
 
 const languages = [
+  polygolfLanguage,
   golfscriptLanguage,
   luaLanguage,
   nimLanguage,
   pythonLanguage,
   swiftLanguage,
-  polygolfLanguage,
 ];
 
 export default languages;
