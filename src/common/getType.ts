@@ -116,8 +116,8 @@ export function calcType(expr: Node, program: Node): Type {
         case "Array":
           expectedIndex =
             expr.oneIndexed && a.length.kind === "integer"
-              ? int(1, a.length.high)
-              : a;
+              ? int(1, a.length.high + 1n)
+              : a.length;
           result = a.member;
           break;
         case "List": {
@@ -301,7 +301,7 @@ function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
     case "list_contains":
       return [list(T1), T1];
     case "table_contains_key":
-      return [table(T1, T2), T2];
+      return [table(T1, T2), T1];
     case "set_contains":
       return [set(T1), T1];
     // collection get
@@ -366,6 +366,7 @@ function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
     case "text_byte_length":
     case "text_codepoint_length":
     case "text_split_whitespace":
+      return [text()];
     case "sorted":
       return [list(T1)];
     case "text_byte_reversed":
@@ -408,7 +409,7 @@ function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
     case "text_byte_to_int":
       return [text(int(1, 1))];
     case "array_set":
-      return [array(T1, T2), T1, T2];
+      return [array(T1, T2), T2, T1];
     case "list_set":
       return [list(T1), int(0), T1];
     case "table_set":
@@ -430,13 +431,22 @@ function expectedTypesToString(expectedTypes: ExpectedTypes): string {
     : `[...${toString(expectedTypes.variadic)}]`;
 }
 
+/**
+ * Simple algorithm for validating types of arguments of ops. Type vars are only bound by being used as an arg to a List, Array, Set or Table at a top level.
+ * TODO: More general unifying algo.
+ * @param gotTypes List of actual types provided.
+ * @param expectedTypes Expected types (array of types or variadic object).
+ * @returns True iff it is a match.
+ */
 function isTypeMatch(gotTypes: Type[], expectedTypes: ExpectedTypes) {
   if (Array.isArray(expectedTypes)) {
+    if (expectedTypes.length !== gotTypes.length) return false;
     const params: Record<string, Type> = {};
     const instantiate = instantiateGenerics(params);
     let i = 0;
     for (let exp of expectedTypes) {
       const got = instantiate(gotTypes[i]);
+      exp = instantiate(exp);
       if (exp.kind === "List" && got.kind === "List") {
         if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
           params[exp.member.name] = got.member;
@@ -448,7 +458,7 @@ function isTypeMatch(gotTypes: Type[], expectedTypes: ExpectedTypes) {
           exp = { ...exp, member: got.member };
         }
         if (exp.length.kind === "TypeArg" && !(exp.length.name in params)) {
-          params[exp.length.name] = got.member;
+          params[exp.length.name] = got.length;
           exp = { ...exp, length: got.length };
         }
       } else if (exp.kind === "Set" && got.kind === "Set") {
@@ -547,7 +557,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "list_get":
       return (got[0] as ListType).member;
     case "table_get":
-      return (got[1] as TableType).value;
+      return (got[0] as TableType).value;
     case "argv_get":
       return text();
     // other

@@ -448,7 +448,7 @@ describeOp("argv_get", [
 describeOp("list_push", [
   [[int(), list(int())], "error"],
   [[list(int(0, 1000)), int()], "error"],
-  [[list(int(0, 1000)), int(100, 200)], int(0, 1000)],
+  [[list(int(0, 1000)), int(100, 200)], voidType],
 ]);
 
 describeOp("concat", [
@@ -725,14 +725,14 @@ describeOp("array_set", [
   [[array(int(), 4), int(), int()], "error"],
   [[array(int(), 4), int(1, 4), int()], "error"],
   [[array(int(-300, 300), 4), int(0, 3), text()], "error"],
-  [[array(int(-300, 300), 4), int(0, 3), int(10, 20)], int(-300, 300)],
+  [[array(int(-300, 300), 4), int(0, 3), int(10, 20)], voidType],
 ]);
 
 describeOp("list_set", [
   [[list(int()), text(), int()], "error"],
   [[list(int()), int(), int()], "error"],
   [[list(int(-300, 300)), int(0), text()], "error"],
-  [[list(int(-300, 300)), int(0), int(10, 20)], int(-300, 300)],
+  [[list(int(-300, 300)), int(0), int(10, 20)], voidType],
 ]);
 
 describeOp("table_set", [
@@ -740,5 +740,5 @@ describeOp("table_set", [
   [[table(text(5), int()), text(), int()], "error"],
   [[table(text(5), int(0)), text(5), int()], "error"],
   [[table(text(5), int(0)), text(), int(0)], "error"],
-  [[table(text(5), int(0)), text(4), int(100)], int(0)],
+  [[table(text(5), int(0)), text(4), int(100)], voidType],
 ]);

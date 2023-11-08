@@ -158,7 +158,7 @@ export function arrayType(
     member: type(member),
     length:
       typeof length === "number"
-        ? { kind: "integer", low: 0n, high: BigInt(length) }
+        ? { kind: "integer", low: 0n, high: BigInt(length - 1) }
         : length,
   };
 }
@@ -254,7 +254,7 @@ export function toString(a: Type): string {
       return `(Array ${toString(a.member)} ${
         a.length.kind === "TypeArg"
           ? toString(a.length)
-          : (a.length.high - 1n).toString()
+          : (a.length.high + 1n).toString()
       })`;
     case "Set":
       return `(Set ${toString(a.member)})`;
@@ -523,7 +523,11 @@ export function instantiateGenerics(
       }
       case "Table": {
         const keyType = instantiate(type.key);
-        if (keyType.kind !== "integer" && keyType.kind !== "text")
+        if (
+          keyType.kind !== "integer" &&
+          keyType.kind !== "text" &&
+          keyType.kind !== "TypeArg"
+        )
           throw new Error(
             "Table type's first argument must be an integer or text type.",
           );
@@ -537,8 +541,9 @@ export function instantiateGenerics(
       case "integer":
       case "text":
       case "void":
-      case "TypeArg":
         return type;
+      case "TypeArg":
+        return typeParams[type.name] ?? type;
     }
   }
   return instantiate;
