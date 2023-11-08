@@ -1,8 +1,8 @@
 import { getExampleOpCodeArgTypes } from "../common/getType";
-import { Language } from "../common/Language";
+import type { Language } from "../common/Language";
 import {
   FrontendOpCodes,
-  OpCode,
+  type OpCode,
   annotate,
   assignment,
   builtin,
@@ -25,7 +25,7 @@ import {
   anyInt,
 } from "../IR";
 import languages from "../languages/languages";
-import { compileVariant, debugEmit } from "../common/compile";
+import { compileVariant } from "../common/compile";
 import asTable from "as-table";
 
 const langs = languages.filter((x) => x.name !== "Polygolf");
