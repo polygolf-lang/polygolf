@@ -8,23 +8,30 @@ import {
   builtin,
   integerType,
   op,
+  type Node,
+  int,
+  id,
+  func,
+  ifStatement,
+  forRange,
+  whileLoop,
+  forArgv,
+  conditional,
+  list,
+  array,
+  set,
+  table,
+  keyValue,
+  anyInt,
 } from "../IR";
 import languages from "../languages/languages";
 import { compileVariant, debugEmit } from "../common/compile";
 import asTable from "as-table";
 
-interface LanguageCoverSurveyConfig {
-  inputs: "literal" | "builtin";
-  outputs: "discard" | "assign"; // | "print" ?
-}
+const langs = languages.filter((x) => x.name !== "Polygolf");
 
-const languageConfigs: Record<
-  (typeof languages)[number]["name"],
-  LanguageCoverSurveyConfig
-> = {};
-
-function isCompilable(opCode: OpCode, lang: Language) {
-  const program = assignment(
+function getProgramFromOpCode(opCode: OpCode): Node {
+  return assignment(
     "x",
     op(
       opCode,
@@ -36,6 +43,9 @@ function isCompilable(opCode: OpCode, lang: Language) {
       ),
     ),
   );
+}
+
+function isCompilable(program: Node, lang: Language) {
   const result = compileVariant(
     program,
     {
@@ -51,18 +61,53 @@ function isCompilable(opCode: OpCode, lang: Language) {
   return typeof result.result === "string";
 }
 
-console.log(
-  asTable(
-    FrontendOpCodes.map((opCode) => ({
-      opCode,
-      ...Object.fromEntries(
-        languages
-          .filter((x) => x.name !== "Polygolf")
-          .map((lang) => [
-            lang.extension,
-            isCompilable(opCode, lang) ? "✔️  " : "❌ ",
-          ]),
-      ),
-    })),
-  ).replaceAll("❌ ", "❌"),
+const anyStmt = int(0);
+const conditionExpr = op("true");
+
+const features = {
+  assignment: assignment(id("x"), int(0)),
+  discard: int(0),
+  bigint: int(10n ** 40n),
+  if: ifStatement(conditionExpr, anyStmt, anyStmt),
+  for: forRange(id("i"), int(4), int(10), int(1), anyStmt),
+  "for with step": forRange(id("i"), int(4), int(10), int(1), anyStmt),
+  while: whileLoop(conditionExpr, anyStmt),
+  for_argv: forArgv(id("x"), 100, anyStmt),
+  conditional: conditional(conditionExpr, int(0), int(0)),
+  unsafe_conditional: conditional(conditionExpr, int(0), int(0), false),
+  any_int: anyInt(10n, 20n),
+  list: list([int(0)]),
+  array: array([int(0)]),
+  set: set([int(0)]),
+  table: table([keyValue(int(0), int(0))]),
+  function: func(["x", "y"], id("x")),
+};
+
+function printTable(x: Record<string, unknown>[]) {
+  console.log(asTable(x).replaceAll("❌ ", "❌"));
+}
+
+printTable(
+  Object.entries(features).map(([k, v]) => ({
+    feature: k,
+    ...Object.fromEntries(
+      langs.map((lang) => [
+        lang.extension,
+        isCompilable(v, lang) ? "✔️  " : "❌ ",
+      ]),
+    ),
+  })),
+);
+console.log("");
+
+printTable(
+  FrontendOpCodes.map((opCode) => ({
+    opCode,
+    ...Object.fromEntries(
+      langs.map((lang) => [
+        lang.extension,
+        isCompilable(getProgramFromOpCode(opCode), lang) ? "✔️  " : "❌ ",
+      ]),
+    ),
+  })),
 );
