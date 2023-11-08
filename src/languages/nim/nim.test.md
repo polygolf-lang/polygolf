@@ -339,3 +339,13 @@ for()in..9:echo"Hi"
 "\u0161"
 "\u{1f48e}"
 ```
+
+## Temp
+
+```polygolf
+(builtin "a"):0..100 + (builtin "b"):0..100;
+```
+
+```nim
+a+b
+```

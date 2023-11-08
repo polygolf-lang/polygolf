@@ -6,10 +6,11 @@ import {
   annotate,
   assignment,
   builtin,
+  integerType,
   op,
 } from "../IR";
 import languages from "../languages/languages";
-import { compileVariant } from "../common/compile";
+import { compileVariant, debugEmit } from "../common/compile";
 import asTable from "as-table";
 
 interface LanguageCoverSurveyConfig {
@@ -28,7 +29,10 @@ function isCompilable(opCode: OpCode, lang: Language) {
     op(
       opCode,
       ...getExampleOpCodeArgTypes(opCode).map((x, i) =>
-        annotate(builtin("abcdefgh"[i]), x),
+        annotate(
+          builtin("abcdefgh"[i]),
+          x.kind === "integer" ? integerType(0, 5) : x,
+        ),
       ),
     ),
   );
