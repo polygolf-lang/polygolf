@@ -10,7 +10,7 @@ import {
 } from "../IR";
 import languages from "../languages/languages";
 import { compileVariant } from "../common/compile";
-import { printTable } from "console-table-printer";
+import asTable from "as-table";
 
 interface LanguageCoverSurveyConfig {
   inputs: "literal" | "builtin";
@@ -47,14 +47,18 @@ function isCompilable(opCode: OpCode, lang: Language) {
   return typeof result.result === "string";
 }
 
-printTable(
-  FrontendOpCodes.map((opCode) => ({
-    opCode,
-    ...Object.fromEntries(
-      languages.map((lang) => [
-        lang.extension,
-        isCompilable(opCode, lang) ? "✔️ " : "🔴",
-      ]),
-    ),
-  })),
+console.log(
+  asTable(
+    FrontendOpCodes.map((opCode) => ({
+      opCode,
+      ...Object.fromEntries(
+        languages
+          .filter((x) => x.name !== "Polygolf")
+          .map((lang) => [
+            lang.extension,
+            isCompilable(opCode, lang) ? "✔️  " : "❌ ",
+          ]),
+      ),
+    })),
+  ).replaceAll("❌ ", "❌"),
 );
