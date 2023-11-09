@@ -26,6 +26,7 @@ import {
   booleanType,
   text,
   getLiteralOfType,
+  OpCodes,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
@@ -172,3 +173,25 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
 
 printTable("Features", runCoverTableRecipe(features));
 printTable("OpCodes", runCoverTableRecipe(opCodes));
+
+if (options.all === true) {
+  printTable(
+    "Backend OpCodes",
+    runCoverTableRecipe(
+      Object.fromEntries(
+        OpCodes.filter((x) => !FrontendOpCodes.includes(x as any)).map(
+          (opCode) => [
+            opCode,
+            (lang) =>
+              lang.stmt(
+                op(
+                  opCode,
+                  ...getExampleOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
