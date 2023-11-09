@@ -555,8 +555,8 @@ export function getLiteralOfType(type: Type, nonEmpty = false): Node {
       return text(nonEmpty ? "x" : "");
     case "integer":
       return int(
-        leq(type.low, 0n) && leq(0n, type.high)
-          ? 0n
+        leq(type.low, 1n) && leq(1n, type.high)
+          ? 1n
           : type.low === "-oo"
           ? (type.high as bigint)
           : (type.low as bigint),
@@ -564,18 +564,28 @@ export function getLiteralOfType(type: Type, nonEmpty = false): Node {
     case "boolean":
       return op("true");
     case "Array":
-      return array(nonEmpty ? [getLiteralOfType(type.member)] : []);
+      if (isArrayIndexType(type.length))
+        return array(
+          Array(Number(type.length.high) - 1).fill(
+            getLiteralOfType(type.member, nonEmpty),
+          ),
+        );
+      break;
     case "List":
-      return list(nonEmpty ? [getLiteralOfType(type.member)] : []);
+      return list(nonEmpty ? [getLiteralOfType(type.member, nonEmpty)] : []);
     case "Set":
-      return set(nonEmpty ? [getLiteralOfType(type.member)] : []);
+      return set(nonEmpty ? [getLiteralOfType(type.member, nonEmpty)] : []);
     case "Table":
       return table(
         nonEmpty
-          ? [keyValue(getLiteralOfType(type.key), getLiteralOfType(type.value))]
+          ? [
+              keyValue(
+                getLiteralOfType(type.key, nonEmpty),
+                getLiteralOfType(type.value, nonEmpty),
+              ),
+            ]
           : [],
       );
-    default:
-      throw new Error(`There's no literal of type '${type.kind}'.`);
   }
+  throw new Error(`There's no literal of type '${type.kind}'.`);
 }

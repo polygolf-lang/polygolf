@@ -1,8 +1,7 @@
-import { getExampleOpCodeArgTypes } from "../common/getType";
+import { getExampleOpCodeArgTypes, getType } from "../common/getType";
 import type { Language } from "../common/Language";
 import {
   FrontendOpCodes,
-  type OpCode,
   annotate,
   assignment,
   builtin,
@@ -23,91 +22,153 @@ import {
   table,
   keyValue,
   anyInt,
+  type Type,
+  booleanType,
+  text,
+  getLiteralOfType,
 } from "../IR";
 import languages from "../languages/languages";
-import { compileVariant } from "../common/compile";
+import { isCompilable } from "../common/compile";
 import asTable from "as-table";
+import { mapObjectValues } from "../common/arrays";
+import yargs from "yargs";
 
-const langs = languages.filter((x) => x.name !== "Polygolf");
+const options = yargs()
+  .options({
+    all: {
+      alias: "a",
+      description: "Print rows that are all true",
+      type: "boolean",
+    },
+  })
+  .parseSync(process.argv.slice(2));
 
-function getProgramFromOpCode(opCode: OpCode): Node {
-  return assignment(
-    "x",
-    op(
-      opCode,
-      ...getExampleOpCodeArgTypes(opCode).map((x, i) =>
-        annotate(
-          builtin("abcdefgh"[i]),
-          x.kind === "integer" ? integerType(0, 5) : x,
-        ),
-      ),
+/**
+ * To find out whether certain node is compilable in a given language, we must be sure that all its children are compilable.
+ * This aims at providing basic compilable building blocks.
+ */
+interface LangCoverConfig {
+  expr: (x?: Type) => Node; // returns any node of given type (or 0..0)
+  stmt: (x?: Node) => Node; // returns any node of type void containing given Node (or any)
+}
+
+const langs = languages.filter((x) => x.name !== "Polygolf") as (Language &
+  LangCoverConfig)[];
+
+let nextBuiltinState = -1;
+function nextBuiltin(x: Type) {
+  if (x.kind === "integer") x = integerType(0, 64);
+  nextBuiltinState = (nextBuiltinState + 1) % 26;
+  return annotate(builtin(String.fromCharCode(65 + nextBuiltinState)), x);
+}
+
+for (const lang of langs) {
+  const compilesAssignment = isCompilable(assignment(id("x"), int(0)), lang);
+  const compilesPrintInt = isCompilable(op("print_int", int(0)), lang);
+  const compilesPrint = isCompilable(op("print", text("x")), lang);
+
+  lang.stmt = function (x: Node | undefined) {
+    x ??= compilesPrintInt ? int(0) : text("x");
+    const type = getType(x, x);
+    if (compilesPrint && type.kind === "text") return op("print", x);
+    if (compilesPrintInt && type.kind === "integer") return op("print_int", x);
+    if (compilesAssignment) return assignment(id("x"), x);
+    return x;
+  };
+
+  lang.expr = function (x: Type = integerType(1, 1)) {
+    const literal = getLiteralOfType(x, true);
+    return isCompilable(literal, lang) ? literal : nextBuiltin(x);
+  };
+}
+
+type Table = Record<string, Record<string, unknown>>;
+type CoverTableRecipe = Record<string, (x: LangCoverConfig) => Node>;
+
+function printTable(name: string, x: Table) {
+  console.log(
+    "\n" +
+      asTable(
+        Object.entries(x)
+          .filter(
+            ([k, v]) =>
+              options.all === true || Object.values(v).some((x) => x !== true),
+          )
+          .map(([k, v]) => ({
+            [name]: k.padEnd(25),
+            ...mapObjectValues(v, (v2) =>
+              v2 === true
+                ? "✔️"
+                : v2 === false
+                ? "❌"
+                : v2 === undefined
+                ? ""
+                : v2,
+            ),
+          })),
+      ).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly
+  );
+}
+
+function runCoverTableRecipe(recipe: CoverTableRecipe): Table {
+  return mapObjectValues(recipe, (f) =>
+    Object.fromEntries(
+      langs.map((lang) => [
+        lang.extension.padEnd(3),
+        isCompilable(f(lang), lang),
+      ]),
     ),
   );
 }
 
-function isCompilable(program: Node, lang: Language) {
-  const result = compileVariant(
-    program,
-    {
-      codepointRange: [1, Infinity],
-      getAllVariants: true,
-      level: "nogolf",
-      objective: "bytes",
-      restrictFrontend: false,
-      skipTypecheck: true,
-    },
-    lang,
-  );
-  return typeof result.result === "string";
-}
-
-const anyStmt = int(0);
-const conditionExpr = op("true");
-
-const features = {
-  assignment: assignment(id("x"), int(0)),
-  discard: int(0),
-  bigint: int(10n ** 40n),
-  if: ifStatement(conditionExpr, anyStmt, anyStmt),
-  for: forRange(id("i"), int(4), int(10), int(1), anyStmt),
-  "for with step": forRange(id("i"), int(4), int(10), int(1), anyStmt),
-  while: whileLoop(conditionExpr, anyStmt),
-  for_argv: forArgv(id("x"), 100, anyStmt),
-  conditional: conditional(conditionExpr, int(0), int(0)),
-  unsafe_conditional: conditional(conditionExpr, int(0), int(0), false),
-  any_int: anyInt(10n, 20n),
-  list: list([int(0)]),
-  array: array([int(0)]),
-  set: set([int(0)]),
-  table: table([keyValue(int(0), int(0))]),
-  function: func(["x", "y"], id("x")),
+const features: CoverTableRecipe = {
+  assignment: (lang) => assignment(id("x"), lang.expr()),
+  builtin: (lang) => lang.stmt(nextBuiltin(integerType(0, 0))),
+  discard: (lang) => lang.expr(),
+  bigint: (lang) => lang.stmt(int(10n ** 40n)),
+  if: (lang) => ifStatement(lang.expr(booleanType), lang.stmt(), lang.stmt()),
+  for: (lang) =>
+    forRange(
+      id("x"),
+      lang.expr(integerType(4, 4)),
+      lang.expr(integerType(10, 10)),
+      int(1),
+      lang.stmt(),
+    ),
+  "for with step": (lang) =>
+    forRange(
+      id("x"),
+      lang.expr(integerType(4, 4)),
+      lang.expr(integerType(10, 10)),
+      lang.expr(integerType(3, 3)),
+      lang.stmt(),
+    ),
+  while: (lang) => whileLoop(lang.expr(booleanType), lang.stmt()),
+  for_argv: (lang) => forArgv(id("x"), 100, lang.stmt()),
+  conditional: (lang) =>
+    conditional(lang.expr(booleanType), lang.expr(), lang.expr()),
+  unsafe_conditional: (lang) =>
+    conditional(lang.expr(booleanType), lang.expr(), lang.expr()),
+  any_int: () => anyInt(10n, 20n),
+  list: (lang) => list([lang.expr()]),
+  array: (lang) => array([lang.expr()]),
+  set: (lang) => set([lang.expr()]),
+  table: (lang) => table([keyValue(lang.expr(), lang.expr())]),
+  function: () => func(["x", "y"], id("x")),
 };
 
-function printTable(x: Record<string, unknown>[]) {
-  console.log(asTable(x).replaceAll("❌ ", "❌"));
-}
-
-printTable(
-  Object.entries(features).map(([k, v]) => ({
-    feature: k,
-    ...Object.fromEntries(
-      langs.map((lang) => [
-        lang.extension,
-        isCompilable(v, lang) ? "✔️  " : "❌ ",
-      ]),
-    ),
-  })),
-);
-console.log("");
-
-printTable(
-  FrontendOpCodes.map((opCode) => ({
+const opCodes: CoverTableRecipe = Object.fromEntries(
+  FrontendOpCodes.map((opCode) => [
     opCode,
-    ...Object.fromEntries(
-      langs.map((lang) => [
-        lang.extension,
-        isCompilable(getProgramFromOpCode(opCode), lang) ? "✔️  " : "❌ ",
-      ]),
-    ),
-  })),
+    (lang) =>
+      lang.stmt(
+        op(
+          opCode,
+          ...getExampleOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
+        ),
+      ),
+  ]),
 );
+
+printTable("Features", runCoverTableRecipe(features));
+printTable("OpCodes", runCoverTableRecipe(opCodes));

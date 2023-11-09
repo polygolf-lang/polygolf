@@ -493,3 +493,19 @@ export function debugEmit(program: Node): string {
 export function normalize(source: string): string {
   return debugEmit(parse(source, false));
 }
+
+export function isCompilable(program: Node, lang: Language) {
+  const result = compileVariant(
+    program,
+    {
+      codepointRange: [1, Infinity],
+      getAllVariants: true,
+      level: "nogolf",
+      objective: "bytes",
+      restrictFrontend: false,
+      skipTypecheck: true,
+    },
+    lang,
+  );
+  return typeof result.result === "string";
+}
