@@ -592,7 +592,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
       );
     case "list_length":
       expectGenericType("List");
-      return integerType(0);
+      return integerType(0, (1n << 31n) - 1n);
     case "text_byte_length": {
       expectType(textType());
       const codepointLength = (types[0] as TextType).codepointLength;

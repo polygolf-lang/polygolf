@@ -23,6 +23,7 @@ import {
   functionCall,
   propertyCall,
   isIdent,
+  postfix,
 } from "../IR";
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
@@ -71,12 +72,18 @@ function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
 export function mapTo<T>(
   constructor: (x: T, args: readonly Node[]) => Node,
 ): (opMap: Partial<Record<OpCode, T>>) => Plugin {
-  function result(opMap: Partial<Record<OpCode, T>>) {
+  function result(
+    opMap: Partial<Record<OpCode, T>>,
+    predicate?: (n: Node, s: Spine) => boolean,
+  ) {
     enhanceOpMap(opMap);
     return mapOps(
       mapObjectValues(
         opMap,
-        (name) => (x: readonly Node[]) => constructor(name, x),
+        (name) => (n: readonly Node[], s: Spine) =>
+          predicate === undefined || predicate(s.node, s)
+            ? constructor(name, n)
+            : undefined,
       ),
       `mapTo(${constructor.name})(${JSON.stringify(opMap)})`,
     );
@@ -235,6 +242,19 @@ export function addMutatingInfix(
     },
   };
 }
+
+export const addPostfixIncAndDec: Plugin = {
+  name: "addPostfixIncAndDec",
+  visit(node) {
+    if (
+      node.kind === "MutatingInfix" &&
+      ["+", "-"].includes(node.name) &&
+      isIntLiteral(1n)(node.right)
+    ) {
+      return postfix(node.name.repeat(2), node.variable);
+    }
+  },
+};
 
 // (a > b) --> (b < a)
 export const flipBinaryOps: Plugin = {

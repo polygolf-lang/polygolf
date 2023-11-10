@@ -7,12 +7,12 @@
     "polygolf": "./dist/cli.js"
   },
   "scripts": {
-    "prettier": "prettier --write .",
+    "prettier": "prettier --embedded-language-formatting=off --write .",
     "eslint-fix": "eslint --fix \"src/**\"",
     "build": "npm run build-nearley && etsc",
     "build-nearley": "nearleyc src/frontend/grammar.ne -o src/frontend/grammar.ts",
     "test:typecheck": "npm run build-nearley && tsc --noEmit",
-    "test:formatting": "prettier-check .",
+    "test:formatting": "prettier-check --embedded-language-formatting=off .",
     "test:lint": "eslint \"src/**\"",
     "test:jest": "jest --config jest.config.js",
     "test": "npm run test:formatting && npm run test:typecheck && npm run test:lint && npm run test:build && npm run test:jest",
