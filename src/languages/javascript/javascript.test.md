@@ -57,51 +57,48 @@ text_to_int $t;
 ```
 
 ```js nogolf
-t=""
-n=0
-m=n
-b=true
-L=[3,2]
-m+n
-m-n
-m*n
-Math.floor(m/n)
-m/n
-m%n
-m**n
-m&n
-m|n
-m^n
-Math.min(m,n)
-Math.max(m,n)
-m<n
-m<=n
-m==n
-m!=n
-m>n
-m>=n
-b||b
-b&&b
-L.length
-L.includes(3)
-L[0]
-L.push(58)
-L.indexOf(3)
-t+"bc"
-"x".repeat(10)
-t.includes`sub`
-t.replaceAll(" ","-")
-t.split` `
-[t,"www"].join()
-[t,"www"].join` `
-abs(m)
-~m
--m
-!b
-""+m
-m.toString(2)
-m.toString(16)
-0+t
+t = "";
+n = 0;
+m = n;
+b = true;
+L = [3, 2];
+m + n;
+m - n;
+m * n;
+Math.floor(m / n);
+m / n;
+m % n;
+m ** n;
+m & n;
+m | n;
+m ^ n;
+Math.min(m, n);
+Math.max(m, n);
+m < n;
+m <= n;
+m == n;
+m != n;
+m > n;
+m >= n;
+b || b;
+b && b;
+L.length;
+L.includes(3);
+L[0];
+L.push(58);
+L.indexOf(3);
+t + "bc";
+"x".repeat(10);
+t.includes`sub`;
+t.replaceAll(" ", "-");
+t.split` `[(t, "www")].join()[(t, "www")].join` `;
+abs(m);
+~m - m;
+!b;
+"" + m;
+m.toString(2);
+m.toString(16);
+0 + t;
 ```
 
 ```polygolf
@@ -110,7 +107,7 @@ text_replace "" " " "-";
 ```
 
 ```js
-"".split` `.join`-`
+"".split` `.join`-`;
 ```
 
 ## Argv
@@ -122,7 +119,7 @@ for_argv $x 100 {
 ```
 
 ```js
-for(x of arguments)print(x)
+for (x of arguments) print(x);
 ```
 
 ## Text literals
@@ -136,11 +133,11 @@ for(x of arguments)print(x)
 ```
 
 ```js nogolf 32..127
-"\n"
-"\x0565"
-"\x05xx"
-"\u0161"
-"\u{1f48e}"
+"\n";
+"\x0565";
+"\x05xx";
+"\u0161";
+"\u{1f48e}";
 ```
 
 ```polygolf
@@ -149,7 +146,7 @@ for(x of arguments)print(x)
 
 ```js nogolf
 `
-`
+`;
 ```
 
 ## Aliasing properties
@@ -161,10 +158,10 @@ text_contains "C" "subC";
 ```
 
 ```js
-i="includes"
-"A"[i]`subA`
-"B"[i]`subB`
-"C"[i]`subC`
+i = "includes";
+"A"[i]`subA`;
+"B"[i]`subB`;
+"C"[i]`subC`;
 ```
 
 ## Control flow
@@ -201,7 +198,7 @@ if(b)write`?`,write`!`}
 ```
 
 ```js
-10n**100n
+10n ** 100n;
 ```
 
 ```polygolf
@@ -212,10 +209,10 @@ $t <- (4 + $y);
 ```
 
 ```js nogolf
-x=5n
-y=2
-print((3n+x)*BigInt(y))
-t=4+y
+x = 5n;
+y = 2;
+print((3n + x) * BigInt(y));
+t = 4 + y;
 ```
 
 ## Fixed length for loop
@@ -227,5 +224,5 @@ for $i 25 {
 ```
 
 ```js
-for(i in{}+1e9)print(i)
+for (i in {} + 1e9) print(i);
 ```

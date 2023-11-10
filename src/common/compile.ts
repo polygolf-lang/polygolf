@@ -280,7 +280,11 @@ export function compileVariantNoPacking(
   language: Language,
 ): CompilationResult {
   const phases = language.phases;
-  if (options.level === "nogolf" || options.level === "simple") {
+  if (
+    phases.length < 1 ||
+    options.level === "nogolf" ||
+    options.level === "simple"
+  ) {
     try {
       const warnings: Error[] = [];
       const addWarning = (x: Error) => warnings.push(x);
