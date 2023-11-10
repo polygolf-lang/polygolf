@@ -98,10 +98,10 @@ abs(m)
 ~m
 -m
 !b
-String(m)
+""+m
 m.toString(2)
 m.toString(16)
-Number(t)
+0+t
 ```
 
 ```polygolf
@@ -208,14 +208,14 @@ if(b)write`?`,write`!`}
 $x: Int <- 5;
 $y: 0..100 <- 2;
 println_int ((3 + $x) * $y);
-$t <- (int_to_text $x);
+$t <- (4 + $y);
 ```
 
 ```js nogolf
 x=5n
 y=2
 print((3n+x)*BigInt(y))
-t=String(x)
+t=4+y
 ```
 
 ## Fixed length for loop

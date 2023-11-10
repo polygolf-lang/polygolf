@@ -10,6 +10,8 @@ import {
   int,
   propertyCall,
   isText,
+  text,
+  implicitConversion,
 } from "../../IR";
 import {
   type Language,
@@ -116,6 +118,8 @@ const javascriptLanguage: Language = {
       forRangeToForCLike,
       useEquivalentTextOp(false, true),
       mapOps({
+        text_to_int: (x) =>
+          op("add", int(0n), implicitConversion("text_to_int", x[0])),
         argv: builtin("arguments"),
 
         argv_get: (x) =>
@@ -141,6 +145,10 @@ const javascriptLanguage: Language = {
         int_to_hex: (x) => method(x[0], "toString", int(16)),
         list_length: (x) => propertyCall(x[0], "length"),
         join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
+        int_to_text: (x) =>
+          op("concat", text(""), implicitConversion("int_to_text", x[0])),
+        text_to_int: (x) =>
+          op("mul", int(1n), implicitConversion("text_to_int", x[0])),
       }),
       mapTo((name: string, [obj, ...args]) => method(obj, name, ...args))({
         list_contains: "includes",
@@ -155,8 +163,6 @@ const javascriptLanguage: Language = {
         abs: "abs",
         max: "Math.max",
         min: "Math.min",
-        int_to_text: "String",
-        text_to_int: "Number",
         println: "print",
         print: "write",
       }),

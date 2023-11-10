@@ -46,12 +46,10 @@ export function floodBigints(
   return {
     name: "floodBigints",
     visit(node, spine) {
-      let nodeType: Type;
-      try {
-        nodeType = getType(isAssignment(node) ? node.variable : node, spine);
-      } catch {
-        return;
-      }
+      const nodeType = getType(
+        isAssignment(node) ? node.variable : node,
+        spine,
+      );
       if (
         isSubtype(nodeType, integerType()) &&
         !isSubtype(nodeType, primitiveIntType) &&
