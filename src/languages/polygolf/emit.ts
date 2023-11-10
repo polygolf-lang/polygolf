@@ -73,8 +73,13 @@ export function emitNode(
   let res = emitNodeWithoutAnnotation(expr, asStatement, indent);
   if (asStatement) {
     if (expr.kind !== "Block") res = [res, ";"];
-  } else if (expr.type !== undefined) {
-    res = [res, ":", toString(expr.type)];
+  } else {
+    if (expr.type !== undefined) {
+      res = [res, ":", toString(expr.type)];
+    }
+    if (expr.targetType !== undefined) {
+      res = [res, ":", JSON.stringify(expr.targetType)];
+    }
   }
   return res;
 }

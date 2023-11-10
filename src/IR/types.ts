@@ -82,8 +82,14 @@ export const int64Type: Type = integerType(
   -9223372036854775808n,
   9223372036854775807n,
 );
+export const int53Type: Type = integerType(
+  -9007199254740992n,
+  9007199254740991n,
+);
 
-export function type(type: Type | "void" | "boolean" | "int64"): Type {
+export function type(
+  type: Type | "void" | "boolean" | "int64" | "int53",
+): Type {
   switch (type) {
     case "void":
       return voidType;
@@ -91,6 +97,8 @@ export function type(type: Type | "void" | "boolean" | "int64"): Type {
       return booleanType;
     case "int64":
       return int64Type;
+    case "int53":
+      return int53Type;
     default:
       return type;
   }

@@ -64,6 +64,7 @@ import {
   isIntLiteral,
   isIdent,
   postfix,
+  type Text,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -503,9 +504,15 @@ export function typeSexpr(callee: Token, args: (Type | Integer)[]): Type {
   }
 }
 
-export function annotate(expr: Node, valueType: [any, Type] | null): Node {
-  if (valueType === null) return expr;
-  return { ...expr, type: valueType[1] };
+export function annotate(
+  expr: Node,
+  valueType: [any, Type] | null,
+  targetType: [any, Text] | null,
+): Node {
+  if (valueType !== null) (expr as any).type = valueType[1];
+  if (targetType !== null && !restrictedFrontend)
+    (expr as any).targetType = targetType[1].value;
+  return expr;
 }
 
 export function integerType(

@@ -81,14 +81,17 @@ export class Spine<N extends IR.Node = IR.Node> {
       isOp()(parentNode) &&
       typeof this.pathFragment === "object"
         ? this.parent.replacedWith(
-            op(
-              parentNode.op,
-              ...replaceAtIndex(
-                parentNode.args,
-                this.pathFragment.index,
-                newNode,
+            {
+              ...op(
+                parentNode.op,
+                ...replaceAtIndex(
+                  parentNode.args,
+                  this.pathFragment.index,
+                  newNode,
+                ),
               ),
-            ),
+              targetType: parentNode.targetType,
+            },
             true,
           )
         : this.parent.withChildReplaced(newNode, this.pathFragment);
@@ -151,7 +154,10 @@ export class Spine<N extends IR.Node = IR.Node> {
           someChildrenIsNew ||= newChild !== child;
         }
         if (someChildrenIsNew)
-          curr = curr.replacedWith(op(this.node.op, ...newChildren));
+          curr = curr.replacedWith({
+            ...op(this.node.op, ...newChildren),
+            targetType: this.node.targetType,
+          });
       } else {
         for (const child of this.getChildSpines()) {
           const newChild = child.withReplacer(replacer, skipReplaced, false);

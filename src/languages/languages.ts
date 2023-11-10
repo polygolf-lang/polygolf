@@ -5,6 +5,7 @@ import polygolfLanguage from "./polygolf";
 import pythonLanguage from "./python";
 import swiftLanguage from "./swift";
 import golfscriptLanguage from "./golfscript";
+import javascriptLanguage from "./javascript";
 
 const languages = [
   polygolfLanguage,
@@ -13,6 +14,7 @@ const languages = [
   nimLanguage,
   pythonLanguage,
   swiftLanguage,
+  javascriptLanguage,
 ];
 
 export default languages;

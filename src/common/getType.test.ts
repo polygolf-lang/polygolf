@@ -644,7 +644,7 @@ describeOp("int_to_codepoint", [
 describeOp("list_length", [
   [[list(int()), int()], "error"],
   [[array(int(), 10)], "error"],
-  [[list(int())], int(0)],
+  [[list(int())], int(0, (1n << 31n) - 1n)],
 ]);
 
 describeOp("text_codepoint_length", [

@@ -286,7 +286,7 @@ function simplifyPolynomial(terms: Node[]): Node[] {
   const coeffMap = new Map<string, [bigint, Node]>();
   let constant = 0n;
   function add(coeff: bigint, rest: readonly Node[]) {
-    const stringified = rest.map(stringify).join("");
+    const stringified = rest.map((x) => stringify(x)).join("");
     if (coeffMap.has(stringified)) {
       const [oldCoeff, expr] = coeffMap.get(stringified)!;
       coeffMap.set(stringified, [oldCoeff + coeff, expr]);
@@ -313,6 +313,11 @@ function simplifyPolynomial(terms: Node[]): Node[] {
     (result.length === 1 && result[0].kind === "ImplicitConversion")
   )
     result = [int(constant), ...result];
+  if (
+    terms.length === result.length &&
+    result.every((x, i) => stringify(x, true) === stringify(terms[i], true))
+  )
+    return terms;
   return result;
 }
 

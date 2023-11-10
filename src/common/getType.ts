@@ -697,7 +697,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "int_to_codepoint":
       return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
     case "list_length":
-      return int(0);
+      return int(0, (1n << 31n) - 1n);
     case "text_byte_length": {
       const codepointLength = (got[0] as TextType).codepointLength;
       return int(
