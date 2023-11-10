@@ -1,15 +1,4 @@
-import { addVarDeclarations } from "../../plugins/block";
-import {
-  block,
-  builtin,
-  forEachKey,
-  functionCall,
-  indexCall,
-  isBuiltinIdent,
-  isIntLiteral,
-  isOfKind,
-  text,
-} from "../../IR";
+import { builtin, forEachKey, indexCall, isIntLiteral, text } from "../../IR";
 import type { Plugin } from "../../common/Language";
 
 export const propertyCallToIndexCall: Plugin = {

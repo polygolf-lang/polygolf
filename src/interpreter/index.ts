@@ -1,5 +1,11 @@
 import { programToSpine } from "../common/Spine";
-import { Node, block, functionCall, isBuiltinIdent, isOfKind } from "../IR";
+import {
+  type Node,
+  block,
+  functionCall,
+  isBuiltinIdent,
+  isOfKind,
+} from "../IR";
 import { readsFromInput } from "../common/symbols";
 import { PolygolfError } from "../common/errors";
 import { compileVariant } from "../common/compile";
@@ -52,6 +58,7 @@ export function getOutput(program: Node): string {
     throw jsCode.result;
   }
   let output = "";
+  /* eslint-disable */
   function print(x: string) {
     output += x + "\n";
   }
@@ -64,5 +71,6 @@ export function getOutput(program: Node): string {
       throw new PolygolfError("Program took too long to interpret.");
   }
   eval(jsCode.result);
+  /* eslint-enable */
   return output;
 }

@@ -1,5 +1,5 @@
 import { getOutput } from "../../interpreter";
-import { Language } from "../../common/Language";
+import type { Language } from "../../common/Language";
 
 const textLanguage: Language = {
   name: "Text",
