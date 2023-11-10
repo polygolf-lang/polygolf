@@ -5,26 +5,33 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isText } from "../../IR";
+import { type IR, isText, isOfKind } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
+
+function codepointMap(x: number) {
+  if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
+  if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
+  return `\\u{${x.toString(16)}}`;
+}
 
 export const emitJavascriptText = emitTextFactory(
   {
     '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
     "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\"` },
-    "`TEXT`": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "`": "\\`", $: "\\$" },
+    "`TEXT`": { "\\": `\\\\`, "`": "\\`", "${": "\\${" },
   },
-  function (x: number) {
-    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
-    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
-    return `\\u{${x.toString(16)}}`;
+  codepointMap,
+);
+export const emitJavascriptTextBackticks = emitTextFactory(
+  {
+    "`TEXT`": { "\\": `\\\\`, "`": "\\`", "${": "\\${" },
   },
+  codepointMap,
 );
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
     case "PropertyCall":
-    case "MethodCall":
     case "FunctionCall":
       return 17;
     case "Postfix":
@@ -111,12 +118,16 @@ export default function emitProgram(
         case "Block":
           return expr === program
             ? joinNodes("\n", e.children)
-            : ["{", joinNodes("\n", e.children), "}"];
+            : e.children.some(isOfKind("If", "While", "ForEach", "ForCLike"))
+            ? ["{", joinNodes("\n", e.children), "}"]
+            : joinNodes(",", e.children);
         case "Function":
           return ["(", joinNodes(",", e.args), ")", "=>", emit(e.expr)];
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
         case "FunctionCall":
+          if (e.args.length === 1 && isText()(e.args[0]))
+            return [emit(e.func), emitJavascriptTextBackticks(e.args[0].value)];
           return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "Identifier":
           return [e.name];
@@ -171,18 +182,8 @@ export default function emitProgram(
         case "IndexCall":
           if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
-
-        case "MethodCall":
-          return [
-            emit(e.object, Infinity),
-            ".",
-            emit(e.ident),
-            "(",
-            joinNodes(",", e.args),
-            ")",
-          ];
         case "PropertyCall":
-          return [emit(e.object, Infinity), ".", emit(e.ident)];
+          return [emit(e.object, prec), ".", emit(e.ident)];
         case "Infix": {
           const rightAssoc = e.name === "**";
           return [
@@ -202,6 +203,16 @@ export default function emitProgram(
             emit(e.variable),
             "of",
             emit(e.collection),
+            ")",
+            emit(e.body),
+          ];
+        case "ForEachKey":
+          return [
+            `for`,
+            "(",
+            emit(e.variable),
+            "in",
+            emit(e.table),
             ")",
             emit(e.body),
           ];

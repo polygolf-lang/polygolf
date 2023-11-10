@@ -89,11 +89,11 @@ L.push(58)
 L.indexOf(3)
 t+"bc"
 "x".repeat(10)
-t.includes("sub")
+t.includes`sub`
 t.replaceAll(" ","-")
-t.split(" ")
+t.split` `
 [t,"www"].join()
-[t,"www"].join(" ")
+[t,"www"].join` `
 abs(m)
 ~m
 -m
@@ -102,6 +102,15 @@ String(m)
 m.toString(2)
 m.toString(16)
 Number(t)
+```
+
+```polygolf
+text_replace "" " " "-";
+
+```
+
+```js
+"".split` `.join`-`
 ```
 
 ## Argv
@@ -134,6 +143,30 @@ for(x of arguments)print(x)
 "\u{1f48e}"
 ```
 
+```polygolf
+"\n";
+```
+
+```js nogolf
+`
+`
+```
+
+## Aliasing properties
+
+```polygolf
+text_contains "A" "subA";
+text_contains "B" "subB";
+text_contains "C" "subC";
+```
+
+```js
+i="includes"
+"A"[i]`subA`
+"B"[i]`subB`
+"C"[i]`subC`
+```
+
 ## Control flow
 
 ```polygolf
@@ -148,6 +181,7 @@ if $b {
     print "!";
     if $b {
       print "?";
+      print "!";
     };
   };
 };
@@ -155,9 +189,9 @@ if $b {
 
 ```js nogolf
 b=true
-if(b)write("true")else if(b)write("still true")else{write("impossible")
-write("!")
-if(b)write("?")}
+if(b)write`true`else if(b)write`still true`else{write`impossible`
+write`!`
+if(b)write`?`,write`!`}
 ```
 
 ## Bigints
@@ -182,4 +216,16 @@ x=5n
 y=2
 print((3n+x)*BigInt(y))
 t=String(x)
+```
+
+## Fixed length for loop
+
+```polygolf
+for $i 25 {
+  println_int $i;
+};
+```
+
+```js
+for(i in{}+1e9)print(i)
 ```

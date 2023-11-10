@@ -64,7 +64,7 @@ _Javascript_
 
 ```javascript
 p=print
-p("Hello, World!")
-for(i=0;i<10;i++)p(i)
+p`Hello, World!`
+for(i in''+1e9)p(i)
 for(a of arguments)p(a)
 ```
