@@ -43,7 +43,7 @@ import {
   type Integer,
   type Text,
 } from "./terminals";
-import type { CapturingBlock, Block, If, Import, Variants } from "./toplevel";
+import type { Block, If, Import, Variants } from "./toplevel";
 import { type Type } from "./types";
 
 export * from "./assignments";
@@ -94,7 +94,6 @@ export type Node =
   | If
   // Other nodes
   | FunctionDefinition
-  | CapturingBlock
   | ImplicitConversion
   | VarDeclaration
   | VarDeclarationWithAssignment

@@ -65,6 +65,8 @@ import {
   isIdent,
   postfix,
   type Text,
+  functionDefinition,
+  scanningMacroCall,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -136,7 +138,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
       return keyValue(args[0], args[1]);
     case "func": {
       expectArity(1, Infinity);
-      const idents = args.slice(0, args.length);
+      const idents = args.slice(0, -1);
       const expr = args[args.length - 1];
       assertIdentifiers(idents);
       return func(idents, expr);
@@ -346,6 +348,27 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
       case "named_arg":
         expectArity(2);
         return namedArg(asString(args[0]), args[1]);
+      case "def_fn":
+      case "def_fn_global":
+      case "def_fn_expanded":
+      case "def_fn_expanded_global": {
+        expectArity(2, Infinity);
+        const name = args[0];
+        assertIdentifier(name);
+        const idents = args.slice(1, -1);
+        const body = args[args.length - 1];
+        assertIdentifiers(idents);
+        const opts = {
+          isGlobal: opCode.includes("global"),
+          isExpanded: opCode.includes("expanded"),
+        };
+        return functionDefinition(name, idents, body, opts);
+      }
+      case "scanning_macro_call": {
+        expectArity(1, Infinity);
+        assertIdentifier(args[0]);
+        return scanningMacroCall(args[0], ...args.slice(1));
+      }
     }
   if (isOpCode(opCode) && (!restrictedFrontend || isFrontend(opCode))) {
     if (opCode === "argv_get" && restrictedFrontend) {

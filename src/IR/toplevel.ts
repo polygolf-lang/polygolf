@@ -17,22 +17,6 @@ export interface Block extends BaseNode {
 }
 
 /**
- * A block of several statements, capturing all global variables.
- * Any globals get reset when exiting the block. This is for TeX.
- *
- * In TeX, curly braces can be used for several purposes:
- *  - `\def\f#1#2{#1#2#1#2}`: definining a macro is not a capturing block.
- *  - `\f{abc}{def}`: grouping arguments does not create capturing blocks.
- *  - `{\advance\x\1\the\x}: isolated curly braces creates a capturing block.
- *  - `\def\f#1{{\advance\x\1#1}}`: more curly braces makes a capturing block.
- */
-// TODO: remove CapturingBlock. It's currently unused.
-export interface CapturingBlock extends BaseNode {
-  readonly kind: "CapturingBlock";
-  readonly child: Node;
-}
-
-/**
  * A C-like if statement (not ternary expression). Raw OK
  *
  * if (condition) { consequent } else { alternate }

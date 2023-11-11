@@ -1,5 +1,5 @@
 import { type Plugin, type IdentifierGenerator } from "common/Language";
-import { getDeclaredIdentifiers, symbolTableRoot } from "../common/symbols";
+import { getDeclaredIdentifiers } from "../common/symbols";
 import { type Spine } from "../common/Spine";
 import {
   assignment,

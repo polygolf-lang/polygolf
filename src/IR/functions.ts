@@ -43,12 +43,16 @@ export function functionDefinition(
   body: Node,
   opts: { isGlobal?: boolean; isExpanded?: boolean } = {},
 ): FunctionDefinition {
+  const isExpanded = opts.isExpanded ?? false;
+  if (isExpanded && args.length > 0) {
+    throw new Error("Expanded definition cannot have any args.");
+  }
   return {
     kind: "FunctionDefinition",
     name: castID(name),
     args: args.map(castID),
     body,
     isGlobal: opts.isGlobal ?? false,
-    isExpanded: opts.isExpanded ?? false,
+    isExpanded,
   };
 }

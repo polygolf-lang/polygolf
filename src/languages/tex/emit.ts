@@ -82,8 +82,6 @@ class TexEmitter {
     switch (e.kind) {
       case "Block":
         return e.children.map(emit);
-      case "CapturingBlock":
-        return this.emitInsideCurlies(e);
       case "FunctionDefinition":
         return this.emitDef(e);
       case "ScanningMacroCall":
