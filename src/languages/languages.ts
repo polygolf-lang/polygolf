@@ -6,6 +6,7 @@ import pythonLanguage from "./python";
 import swiftLanguage from "./swift";
 import golfscriptLanguage from "./golfscript";
 import javascriptLanguage from "./javascript";
+import texLanguage from "./tex";
 
 const languages = [
   golfscriptLanguage,
@@ -15,6 +16,7 @@ const languages = [
   swiftLanguage,
   polygolfLanguage,
   javascriptLanguage,
+  texLanguage,
 ];
 
 export default languages;

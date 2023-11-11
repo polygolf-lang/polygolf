@@ -1,4 +1,4 @@
-import { type IR, isOp, op } from "../IR";
+import { type IR, isOp, op, block } from "../IR";
 import { type CompilationContext } from "./compile";
 import { getChild, getChildFragments, type PathFragment } from "./fragments";
 import { replaceAtIndex } from "./arrays";
@@ -175,6 +175,27 @@ export class Spine<N extends IR.Node = IR.Node> {
       // replace this, then recurse on children but not this
       return this.replacedWith(ret).withReplacer(replacer, skipReplaced, true);
     }
+  }
+
+  flatMapWithChildrenReplacer(
+    replacer: Visitor<IR.Node[] | undefined>,
+  ): IR.Node | undefined {
+    if (this.node.kind !== "Block") return;
+    const children = this.node.children;
+    let newChildren: IR.Node[] | undefined;
+    for (let i = 0; i < children.length; i++) {
+      const child = this.getChild({ prop: "children", index: i });
+      const replacement = replacer(child.node, child);
+      if (replacement !== undefined) {
+        if (newChildren === undefined) {
+          newChildren = children.slice(0, i);
+        }
+        newChildren.push(...replacement);
+      } else if (newChildren !== undefined) {
+        newChildren.push(child.node);
+      }
+    }
+    if (newChildren !== undefined) return block(newChildren);
   }
 }
 

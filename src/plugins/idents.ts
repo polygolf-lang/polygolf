@@ -1,5 +1,5 @@
 import { type Plugin, type IdentifierGenerator } from "common/Language";
-import { getDeclaredIdentifiers } from "../common/symbols";
+import { getDeclaredIdentifiers, symbolTableRoot } from "../common/symbols";
 import { type Spine } from "../common/Spine";
 import {
   assignment,
@@ -84,6 +84,8 @@ export function renameIdents(
   };
 }
 
+const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 const defaultIdentGen: IdentifierGenerator = {
   preferred(original: string) {
     const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
@@ -92,8 +94,29 @@ const defaultIdentGen: IdentifierGenerator = {
     const upper = firstLetter.toUpperCase();
     return [firstLetter, firstLetter === lower ? upper : lower];
   },
-  short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+  short: letters.split(""),
   general: (i) => `v${i}`,
+};
+
+export const lettersOnlyIdentGen: IdentifierGenerator = {
+  ...defaultIdentGen,
+  general: (i) => {
+    let s = "";
+    // 0 is the first general id. Skip over the shorts, so map it to 53.
+    i += 53;
+    while (i > 0) {
+      // Base 52, but with digits 1 to 52 instead of 0 to 51
+      const r = i % 52;
+      if (r === 0) {
+        s += "z";
+        i = Math.floor(i / 52) - 1;
+      } else {
+        s += letters[r - 1];
+        i = Math.floor(i / 52);
+      }
+    }
+    return s;
+  },
 };
 
 /**

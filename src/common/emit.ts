@@ -59,10 +59,10 @@ export function containsMultiNode(exprs: readonly IR.Node[]): boolean {
 
 export class EmitError extends PolygolfError {
   constructor(expr: Node, detail?: string) {
-    if (detail === undefined && "op" in expr && expr.op !== null)
-      detail = expr.op;
+    const kind =
+      expr.kind + ("op" in expr && expr.op !== null ? `[${expr.op}]` : "");
     detail = detail === undefined ? "" : ` (${detail})`;
-    const message = `emit error - ${expr.kind}${detail} not supported.`;
+    const message = `emit error - ${kind}${detail} not supported.`;
     super(message, expr.source);
     this.name = "EmitError";
     Object.setPrototypeOf(this, EmitError.prototype);

@@ -9,22 +9,24 @@ import {
   type VarDeclarationBlock,
 } from "./assignments";
 import { type Array, type List, type Table, type Set } from "./collections";
-import {
-  type Op,
-  type Infix,
-  type ConditionalOp,
-  type FunctionCall,
-  type MethodCall,
-  type Prefix,
-  type IndexCall,
-  type KeyValue,
-  type RangeIndexCall,
-  type Function,
-  type NamedArg,
-  type ImplicitConversion,
-  type PropertyCall,
-  type Postfix,
+import type {
+  Op,
+  Infix,
+  ConditionalOp,
+  FunctionCall,
+  MethodCall,
+  Prefix,
+  IndexCall,
+  KeyValue,
+  RangeIndexCall,
+  Function,
+  NamedArg,
+  ImplicitConversion,
+  PropertyCall,
+  Postfix,
+  ScanningMacroCall,
 } from "./exprs";
+import type { FunctionDefinition } from "./functions";
 import {
   type ForRange,
   type ForEach,
@@ -41,7 +43,7 @@ import {
   type Integer,
   type Text,
 } from "./terminals";
-import { type Block, type If, type Import, type Variants } from "./toplevel";
+import type { CapturingBlock, Block, If, Import, Variants } from "./toplevel";
 import { type Type } from "./types";
 
 export * from "./assignments";
@@ -52,6 +54,7 @@ export * from "./loops";
 export * from "./terminals";
 export * from "./toplevel";
 export * from "./types";
+export * from "./functions";
 
 export interface BaseNode {
   readonly source?: SourcePointer;
@@ -90,6 +93,8 @@ export type Node =
   | ForArgv
   | If
   // Other nodes
+  | FunctionDefinition
+  | CapturingBlock
   | ImplicitConversion
   | VarDeclaration
   | VarDeclarationWithAssignment
@@ -99,6 +104,7 @@ export type Node =
   | MutatingInfix
   | IndexCall
   | RangeIndexCall
+  | ScanningMacroCall
   | MethodCall
   | PropertyCall
   | Infix

@@ -116,6 +116,11 @@ function introducedSymbols(
         .filter(isIdent())
         .filter((x) => !existing.has(x.name))
         .map((x) => x.name);
+    // TODO: I may have broken some other languages with VarDeclaration change.
+    case "VarDeclaration":
+      return [node.variable.name];
+    case "FunctionDefinition":
+      return [node.name.name];
   }
 }
 

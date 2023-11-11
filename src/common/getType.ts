@@ -79,6 +79,8 @@ export function calcType(expr: Node, program: Node): Type {
   switch (expr.kind) {
     case "Function":
       return functionType(expr.args.map(type), type(expr.expr));
+    case "FunctionDefinition":
+      return functionType(expr.args.map(type), type(expr.body));
     case "Block":
     case "VarDeclaration":
       return voidType;
