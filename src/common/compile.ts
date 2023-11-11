@@ -507,14 +507,11 @@ export function normalize(source: string): string {
 export function isCompilable(program: Node, lang: Language) {
   const result = compileVariant(
     program,
-    {
-      codepointRange: [1, Infinity],
-      getAllVariants: true,
+    compilationOptions({
       level: "nogolf",
-      objective: "bytes",
       restrictFrontend: false,
       skipTypecheck: true,
-    },
+    }),
     lang,
   );
   return typeof result.result === "string";
