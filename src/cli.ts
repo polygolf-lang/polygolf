@@ -3,7 +3,7 @@
 import yargs from "yargs";
 import fs from "fs";
 import path from "path";
-import compile from "./common/compile";
+import compile, { compilationOptions } from "./common/compile";
 import { PolygolfError } from "./common/errors";
 import languages, { findLang } from "./languages/languages";
 
@@ -61,14 +61,10 @@ const code = fs.readFileSync(input, { encoding: "utf-8" });
 const printingMultipleLangs = langs.length > 1 && options.output === undefined;
 for (const result of compile(
   code,
-  {
-    level: "full",
+  compilationOptions({
     objective: options.chars === true ? "chars" : "bytes",
     getAllVariants: options.all === true,
-    codepointRange: [1, Infinity],
-    restrictFrontend: true,
-    skipTypecheck: false,
-  },
+  }),
   ...langs,
 )) {
   if (printingMultipleLangs) console.log(result.language);
