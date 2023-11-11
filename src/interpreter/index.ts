@@ -8,7 +8,7 @@ import {
 } from "../IR";
 import { readsFromInput } from "../common/symbols";
 import { PolygolfError } from "../common/errors";
-import { compileVariant } from "../common/compile";
+import { compilationOptions, compileVariant } from "../common/compile";
 import javascriptLanguage from "../languages/javascript";
 import { required } from "../common/Language";
 import { addVarDeclarations } from "../plugins/block";
@@ -59,14 +59,7 @@ function _getOutput(program: Node): string {
     throw new PolygolfError("Program reads from input.");
   const jsCode = compileVariant(
     program,
-    {
-      codepointRange: [1, Infinity],
-      getAllVariants: false,
-      level: "nogolf",
-      objective: "chars",
-      restrictFrontend: false,
-      skipTypecheck: false,
-    },
+    compilationOptions({ level: "nogolf" }),
     javascriptForInterpreting,
   );
   if (typeof jsCode.result !== "string") {
