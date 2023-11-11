@@ -23,11 +23,14 @@ println_int 12345;
 println_int 12345;
 println_int 12345;
 println "text";
+println (argv_get 0);
+
 ```
 
 <!-- alias plugin cannot be tested directly yet, so we test it on Python -->
 
 ```py
+import sys
 p=print
 t="text"
 a=12345
@@ -37,4 +40,5 @@ p(a)
 p(a)
 p(a)
 p(t)
+p(sys.argv[1])
 ```

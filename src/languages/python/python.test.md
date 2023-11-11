@@ -161,14 +161,14 @@ a-=a*a
 ```polygolf
 $a:0..oo <- 1;
 if ($a != 0) {
-    println_int $a;
+    $a <- 2;
 };
 $a <- 1;
 ```
 
 ```python
 a=1
-if a:print(a)
+if a:a=2
 a=1
 ```
 

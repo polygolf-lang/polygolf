@@ -38,7 +38,22 @@ const javascriptForInterpreting = {
   ],
 };
 
-export function getOutput(program: Node): string {
+const outputCache = new Map<Node, unknown>();
+
+export function getOutput(program: Node) {
+  if (!outputCache.has(program)) {
+    try {
+      outputCache.set(program, _getOutput(program));
+    } catch (e) {
+      outputCache.set(program, e);
+    }
+  }
+  const res = outputCache.get(program);
+  if (typeof res === "string") return res;
+  throw res;
+}
+
+function _getOutput(program: Node): string {
   const spine = programToSpine(program);
   if (spine.someNode(readsFromInput))
     throw new PolygolfError("Program reads from input.");

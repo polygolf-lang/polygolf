@@ -16,6 +16,7 @@ import {
 } from "./objective";
 import { readsFromArgv, readsFromStdin } from "./symbols";
 import { PolygolfError } from "./errors";
+import { getOutput } from "../interpreter";
 
 export type OptimisationLevel = "nogolf" | "simple" | "full";
 export interface CompilationOptions {
@@ -229,6 +230,10 @@ export function compileVariant(
   options: CompilationOptions,
   language: Language,
 ): CompilationResult {
+  if (options.level !== "nogolf")
+    try {
+      getOutput(program); // precompute output
+    } catch {}
   const obj = getObjectiveFunc(options);
   let best = compileVariantNoPacking(program, options, language);
   const packers = language.packers ?? [];

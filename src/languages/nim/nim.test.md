@@ -123,10 +123,10 @@ b or b
 ## Misc
 
 ```polygolf
-print (list_get (text_split "abc" "b") 0);
+println (list_get (text_split "abc" "b") 0);
 ```
 
-```nim
+```nim nogolf
 include re
 "abc".split"b"[0].echo
 ```

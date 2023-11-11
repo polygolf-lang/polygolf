@@ -37,7 +37,7 @@ import {
   forRangeToForCLike,
   forRangeToForEach,
 } from "../../plugins/loops";
-import { golfStringListLiteral } from "../../plugins/static";
+import { golfStringListLiteral, hardcode } from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
@@ -68,6 +68,7 @@ const javascriptLanguage: Language = {
   extension: "js",
   emitter: emitProgram,
   phases: [
+    search(hardcode()),
     required(printIntToPrint),
     search(
       golfStringListLiteral(),
