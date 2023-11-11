@@ -6,7 +6,7 @@ export function stringify(x: Node, skipTargetType = false): string {
   const result = JSON.stringify(
     x,
     (key, value) =>
-      key === "source" || key === "type"
+      key === "source"
         ? undefined
         : key === "targetType" && skipTargetType
         ? undefined

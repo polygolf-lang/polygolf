@@ -120,6 +120,6 @@ class TexEmitter {
       ? "\\edef"
       : "\\def";
     const body = this.emitInsideCurlies(e.body);
-    return [slashDef, e.name.name, ids, "{", body, "}"];
+    return [slashDef, e.name.name, ids, body];
   }
 }

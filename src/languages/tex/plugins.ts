@@ -17,6 +17,7 @@ import {
   type MutatingInfix,
   assignment,
   op,
+  isOfKind,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { EmitError } from "../../common/emit";
@@ -105,8 +106,8 @@ function assignmentToMacros(
   spine: Spine,
 ): IR.Node | undefined {
   const { variable, expr } = node;
-  const varType = getType(variable, spine.root);
-  const exprType = getType(expr, spine.root);
+  const varType = getType(variable, spine);
+  const exprType = getType(expr, spine);
 
   if (isSubtype(varType, int32Type) && isSubtype(exprType, int32Type)) {
     // variable is a counter
@@ -133,8 +134,8 @@ function assignmentToMacros(
 
 function mutatingInfixToMacros(node: MutatingInfix, spine: Spine) {
   const { variable, right } = node;
-  const varType = getType(variable, spine.root);
-  const rightType = getType(right, spine.root);
+  const varType = getType(variable, spine);
+  const rightType = getType(right, spine);
 
   if (isSubtype(varType, int32Type) && isSubtype(rightType, int32Type)) {
     // variable is a counter
@@ -162,8 +163,8 @@ function ifToMacros(node: IR.Node, spine: Spine) {
   if (cond.kind !== "Op" || cond.args.length !== 2)
     throw new EmitError(cond, "inside if");
   const [left, right] = cond.args;
-  const leftType = getType(left, spine.root);
-  const rightType = getType(right, spine.root);
+  const leftType = getType(left, spine);
+  const rightType = getType(right, spine);
   if (isSubtype(leftType, int32Type) && isSubtype(rightType, int32Type)) {
     const op = { gt: ">", lt: "<", eq: "=" }[cond.op as string];
     if (op === undefined) throw new EmitError(cond);
@@ -216,7 +217,7 @@ function assertIdentifier(
   if (n.kind !== "Identifier") throw new EmitError(n, detail);
 }
 
+const isImmediate = isOfKind("Identifier", "Integer");
 function assertImmediate(n: IR.Node, detail: string): asserts n is Immediate {
-  if (n.kind !== "Identifier" && n.kind !== "Integer")
-    throw new EmitError(n, detail);
+  if (!isImmediate(n)) throw new EmitError(n, detail);
 }
