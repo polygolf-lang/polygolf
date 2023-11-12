@@ -7,6 +7,8 @@ import {
   stuffToMacros,
   insertAccumulatedCounters,
   exprTreeToFlat2AC,
+  addTeXHelpers,
+  macroParamsToHash,
 } from "./plugins";
 import { texDetokenizer } from "./detokenizer";
 
@@ -22,14 +24,17 @@ const texLanguage: Language = {
       mapToPrefixAndInfix(
         {
           mul: "\\multiply",
+          /** helper_mod is defined in addTeXImports */
+          mod: "helper_mod",
           // TODO: check if TeX is trunc div or floor div.
           div: "\\divide",
           add: "\\advance",
-          // TODO: sub works with \\advance-
+          sub: "helper_sub",
         },
         true,
       ),
       exprTreeToFlat2AC,
+      addTeXHelpers,
       stuffToMacros,
       insertAccumulatedCounters,
       renameIdents({
@@ -37,6 +42,7 @@ const texLanguage: Language = {
         short: ["~"].concat(lettersOnlyIdentGen.short.map((c) => "\\" + c)),
         general: (i) => "\\" + lettersOnlyIdentGen.general(i),
       }),
+      macroParamsToHash,
     ),
   ],
 };

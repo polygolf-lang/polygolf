@@ -34,3 +34,13 @@ export function addImports( // TODO caching
     },
   };
 }
+
+export function addDefinitions(rules: Record<string, () => Node>): Plugin {
+  return addImports(
+    Object.fromEntries([...Object.keys(rules)].map((k) => [k, k])),
+    (ks: string[]) => {
+      if (ks.length === 0) return undefined;
+      return block(ks.map((k) => rules[k]()));
+    },
+  );
+}

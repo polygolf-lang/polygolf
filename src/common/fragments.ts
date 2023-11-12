@@ -17,6 +17,11 @@ export type PathFragment =
       readonly index: number;
     };
 
+export function getPathProp(frag: PathFragment) {
+  if (typeof frag === "string") return frag;
+  else return frag.prop;
+}
+
 export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
   if (typeof pathFragment === "string") {
     return (node as any)[pathFragment];

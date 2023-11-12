@@ -5,7 +5,7 @@ import {
   type IR,
   type Node,
   mutatingInfix,
-  type Identifier,
+  ifStatement,
 } from "../../IR";
 import { EmitError } from "../../common/emit";
 import { type Immediate, assertIdentifier } from "./common";
@@ -45,8 +45,8 @@ class FlatIRChunk {
    * Otherwise (`right` is true), the returned value can be an Integer node,
    * or a variable that has meaning in outer scope.
    */
-  addNode(node: Node, right: true): Immediate | null;
-  addNode(node: Node, right: false): Identifier | null;
+  // TODO: rename `!right` to `mustReturnScratchCounter`.
+  // TODO: Instead of that, handling inside the one case of mustReturnScratchCounter=true?
   addNode(node: Node, right: boolean): Immediate | null {
     switch (node.kind) {
       case "Assignment": {
@@ -64,7 +64,8 @@ class FlatIRChunk {
         // We can't just return `node`, since we expect it to be mutable safely.
         return this.addAssignment(node);
       case "Infix": {
-        const { left, right } = this.prepBinary(node.left, node.right);
+        const left = this.addNodeRequired(node.left, false) as any;
+        const right = this.addNodeRequired(node.right, true);
         // Since `left` is only used in this expression,
         // and `left` is a variable, we can mutate it.
         this.pushInstruction(mutatingInfix(node.name, left, right));
@@ -72,7 +73,7 @@ class FlatIRChunk {
       }
       case "Op": {
         if (node.args.length === 1) {
-          const arg = this.addNode(node.args[0], false);
+          const arg = this.addNode(node.args[0], true);
           if (arg === null)
             throw new EmitError(node.args[0], "Unary Op arg is void");
           const opres = op(node.op, arg);
@@ -83,17 +84,26 @@ class FlatIRChunk {
           throw new EmitError(node, "flattening op");
         }
       }
+      case "If": {
+        const cond = node.condition;
+        if (cond.kind !== "Op" || cond.args.length !== 2)
+          throw new EmitError(cond, "flattening if condition");
+        const left = this.addNodeRequired(cond.args[0], true);
+        const right = this.addNodeRequired(cond.args[1], true);
+        const newCond = op(cond.op, left, right);
+        const stmt = ifStatement(newCond, node.consequent, node.alternate);
+        this.pushInstruction(stmt);
+        return null;
+      }
       default:
         throw new EmitError(node, "flattening general");
     }
   }
 
-  prepBinary(leftNode: Node, rightNode: Node) {
-    const left = this.addNode(leftNode, false);
-    const right = this.addNode(rightNode, true);
-    if (left === null) throw new EmitError(leftNode, "LHS op is void");
-    if (right === null) throw new EmitError(rightNode, "RHS op is void");
-    return { left, right };
+  addNodeRequired(node: Node, right: boolean) {
+    const added = this.addNode(node, right);
+    if (added === null) throw new EmitError(node, "operand is void");
+    return added;
   }
 }
 

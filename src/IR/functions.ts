@@ -1,3 +1,4 @@
+import type { Spine } from "../common/Spine";
 import {
   type Identifier,
   type BaseNode,
@@ -55,4 +56,10 @@ export function functionDefinition(
     isGlobal: opts.isGlobal ?? false,
     isExpanded,
   };
+}
+
+export function functionDefinitionNestingDepth(s: Spine, d: number = 0) {
+  if (s.node.kind === "FunctionDefinition") ++d;
+  if (s.parent === null) return d;
+  return functionDefinitionNestingDepth(s.parent, d);
 }

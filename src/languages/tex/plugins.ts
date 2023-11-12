@@ -14,12 +14,18 @@ import {
   voidType,
   type MutatingInfix,
   isOfKind,
+  functionCall,
+  functionDefinitionNestingDepth,
+  type Type,
+  type Identifier,
+  builtin,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { EmitError } from "../../common/emit";
 import { type Spine } from "../../common/Spine";
 import { convertNodeToListOfStatements } from "./FlatIR";
 import { assertIdentifier, assertImmediate, texStringType } from "./common";
+import { addDefinitions } from "../../plugins/imports";
 
 // TODO: I don't know what's the actual term. 3 argument code?
 export const exprTreeToFlat2AC: Plugin = {
@@ -27,13 +33,17 @@ export const exprTreeToFlat2AC: Plugin = {
   visit(_node, spine) {
     return spine.flatMapWithChildrenReplacer((node, spine) => {
       if (spine.parent?.node.kind !== "Block") return;
-      if (isOfKind("Assignment", "Op")(node))
+      if (isOfKind("Assignment", "Op", "If")(node))
         return convertNodeToListOfStatements(node);
     });
   },
 };
 
-/** Bad global state. Insert strings that will need to be counter names. */
+/**
+ * Bad global state. Insert strings that will need to be counter names.
+ * This should really be replaced with a `compactMap`, but I didn't have an
+ * easy way to detect what variables are counters. Seems should be easy though.
+ */
 const accumulatedCounters = new Set<string>();
 
 export const stuffToMacros: Plugin = {
@@ -116,8 +126,23 @@ function mutatingInfixToMacros(node: MutatingInfix, spine: Spine) {
     //     }
     //     return ["\\advance", variable.name, "-", this.emit(right)];
     accumulatedCounters.add(variable.name);
-    const macroName = id(node.name, true);
-    return voidIt(scanningMacroCall(macroName, variable, right));
+    const { name } = node;
+    if (name === "helper_sub") {
+      // TODO: handle negative `right`.
+      return voidIt(
+        scanningMacroCall(builtin("\\advance"), variable, text("-"), right),
+      );
+    }
+    // \advance, \multiply, \divide gobble up numbers on second argument,
+    // so they don't need curly braces.
+    const isScan =
+      name === "\\advance" || name === "\\multiply" || name === "\\divide";
+    const macroName = id(name, isScan);
+    if (isScan) {
+      return voidIt(scanningMacroCall(macroName, variable, right));
+    } else {
+      return voidIt(functionCall(macroName, variable, right));
+    }
   } else {
     throw new EmitError(node, "not integer");
   }
@@ -169,6 +194,52 @@ export const insertAccumulatedCounters: Plugin = {
       return block(children);
     }
     return undefined;
+  },
+};
+
+function idWithType(name: string, type: Type): Identifier {
+  return { ...id(name), type };
+}
+
+const modX = idWithType("helper_mod_x", int32Type);
+const modY = idWithType("helper_mod_y", int32Type);
+const modTmp = idWithType("helper_mod_tmp", int32Type);
+const modImpl = functionDefinition(
+  "helper_mod",
+  [modX, modY],
+  block([
+    scanningMacroCall(modTmp, modX),
+    scanningMacroCall(builtin("\\divide"), modTmp, modY),
+    scanningMacroCall(builtin("\\multiply"), modTmp, modY),
+    scanningMacroCall(builtin("\\advance"), modX, text("-"), modTmp),
+  ]),
+);
+export const addTeXHelpers: Plugin = addDefinitions({
+  /**
+   * helper_mod is a macro that behaves like \divide except returning the modulo,
+   * and the second argument must be a proper argument (can't scan for number).
+   */
+  helper_mod: () => {
+    accumulatedCounters.add(modTmp.name);
+    return modImpl;
+  },
+});
+
+export const macroParamsToHash: Plugin = {
+  name: "macroParamsToHash",
+  visit(node, spine) {
+    if (node.kind !== "FunctionDefinition" || node.args.length === 0) return;
+    const depth = functionDefinitionNestingDepth(spine) - 1;
+    const hash = "#".repeat(2 ** depth);
+    const identMap = new Map(
+      node.args.map((ident, i) => [ident.name, id(`${hash}${i + 1}`)]),
+    );
+    return spine.withReplacer((n) => {
+      if (n.kind !== "Identifier") return;
+      const g = identMap.get(n.name);
+      if (g === undefined) return;
+      return g;
+    }).node;
   },
 };
 

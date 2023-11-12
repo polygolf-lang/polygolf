@@ -14,11 +14,24 @@ $m <- (- $n);
 $m <- ($n * 3);
 $m <- ($n div 4);
 $m <- ($n + 5);
-% $m <- ($n - 6); % TODO-tex
+$m <- ($n - 6);
+$m <- ($m - $n):-50..50;
 ```
 
 ```tex nogolf
-\newcount\n\newcount\m\newcount\t\newcount\T\newcount~\newcount\a\newcount\b\n1 \m\n\t\m\the\t\endgraf\m\n\T-1 \multiply\T\n\m\T~3 \multiply~\n\m~\a\n\divide\a4 \m\a\b5 \advance\b\n\m\b
+\newcount\n\newcount\m\newcount\t\newcount\T\newcount~\newcount\a\newcount\b\n1 \m\n\the\m\endgraf\m\n\t-1 \multiply\t\n\m\t\T3 \multiply\T\n\m\T~\n\divide~4 \m~\a5 \advance\a\n\m\a\b\n\advance\b-6 \m\b\advance\m-\n
+```
+
+## Op mod
+
+```polygolf
+$n <- 0;
+$m <- 1;
+$n <- ($n mod $m);
+```
+
+```tex nogolf
+\newcount\h\newcount\n\newcount\m\def\H#1#2{\h#1\divide\h#2\multiply\h#2\advance#1-\h}\n0 \m1 \H{\n}{\m}
 ```
 
 ## If statement emit
@@ -53,4 +66,21 @@ for $i 0 31 {
 
 ```tex nogolf
 \newcount\i\newcount\t\newcount\T\i0 \def~{\ifnum\i<31 \t1 \advance\t\i\T\i\multiply\T\i\advance\t\T\the\t\endgraf\advance\i1 ~\fi}~
+```
+
+## Mod inside if statement
+
+```polygolf
+$i <- 10;
+$sum:0..9999 <- 0;
+for $d 1 $i {
+  if (($i mod $d) < 1) {
+    $sum <- ($sum + $d):0..9999;
+  };
+};
+println_int $sum;
+```
+
+```tex nogolf
+\newcount\h\newcount\i\newcount\s\newcount\d\newcount\t\def\H#1#2{\h#1\divide\h#2\multiply\h#2\advance#1-\h}\i10 \s0 \d1 \def\T{\ifnum\d<\i\t\i\H{\t}{\d}\ifnum\t<1 \advance\s\d\fi\advance\d1 \T\fi}\T\the\s\endgraf
 ```

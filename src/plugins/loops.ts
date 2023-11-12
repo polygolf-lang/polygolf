@@ -35,6 +35,7 @@ import {
 } from "../IR";
 import { byteLength, charLength } from "../common/objective";
 import { PolygolfError } from "../common/errors";
+import { tempId } from "../common/symbols";
 
 export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
   return {
@@ -444,12 +445,6 @@ export const removeUnusedForVar: Plugin = {
     }
   },
 };
-
-// TODO: global counter here silly;
-let globalID = 0;
-function tempId() {
-  return `__tmp_id_${globalID++}`;
-}
 
 export const whileToRecursion: Plugin = {
   name: "whileToRecursion",

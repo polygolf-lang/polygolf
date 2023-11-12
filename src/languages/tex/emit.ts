@@ -15,8 +15,6 @@ export default function emitProgram(
   return new TexEmitter(program, context).emitProgram();
 }
 
-const macroParamRegex = /^#[1-9]$/;
-
 interface EmitContext {
   /**
    * `scanningFor` is currently not used. I introduced it because I forgot you're
@@ -43,12 +41,6 @@ class TexEmitter {
   };
 
   private readonly emitContextStack: EmitContext[] = [];
-
-  private pushScanningFor(s: string) {
-    this.pushContext({
-      scanningFor: [...this.emitContext.scanningFor, s],
-    });
-  }
 
   private pushContext(c: Partial<EmitContext>) {
     this.emitContextStack.push(this.emitContext);
@@ -103,13 +95,6 @@ class TexEmitter {
   }
 
   private emitDef(e: IR.FunctionDefinition): TokenTree {
-    const ids = e.args.map((id) => {
-      if (!macroParamRegex.test(id.name))
-        throw new EmitError(id, "Invalid macro parameter.");
-      const depth = this.emitContext.macroDepth;
-      if (depth >= 3) throw new Error("Macro definitions nested too far");
-      return "#".repeat(2 ** depth) + id.name[1];
-    });
     const slashDef = e.isGlobal
       ? e.isExpanded
         ? "\\xdef"
@@ -118,6 +103,6 @@ class TexEmitter {
       ? "\\edef"
       : "\\def";
     const body = this.emitInsideCurlies(e.body);
-    return [slashDef, e.name.name, ids, body];
+    return [slashDef, e.name.name, e.args.map((id) => id.name), body];
   }
 }
