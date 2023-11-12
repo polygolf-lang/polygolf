@@ -69,6 +69,9 @@ export function search(...plugins: (Plugin | PluginVisitor)[]): LanguagePhase {
 
 export interface Plugin {
   name: string;
+  /** visit should return one or more viable replacement nodes, or undefined to represent
+   * no replacement. The replacement nodes should be different in value than
+   * the initial node if it compares different under reference equality */
   visit: PluginVisitor;
 }
 

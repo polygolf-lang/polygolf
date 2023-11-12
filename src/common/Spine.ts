@@ -105,7 +105,7 @@ export class Spine<N extends IR.Node = IR.Node> {
    * if the values are not used. Name inspired by Swift's `compactMap`. */
   *compactMap<T>(func: Visitor<T | undefined>): Generator<T, void, undefined> {
     let skipChildren = false;
-    function skip(kind: "replacement" | "children" | "replacementChildren") {
+    function skip(kind: "replacement" | "children") {
       skipChildren = kind === "children";
     }
     const ret = func(this.node, this, skip);
@@ -146,7 +146,7 @@ export class Spine<N extends IR.Node = IR.Node> {
   ): Spine {
     let skipReplacement = skipReplaced;
     let skipChildren = false;
-    function skip(kind: "replacement" | "children" | "replacementChildren") {
+    function skip(kind: "replacement" | "children") {
       skipReplacement ||= kind === "replacement";
       skipChildren ||= kind === "children";
     }
