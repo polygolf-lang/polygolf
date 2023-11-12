@@ -178,7 +178,7 @@ export class Spine<N extends IR.Node = IR.Node> {
   }
 
   flatMapWithChildrenReplacer(
-    replacer: Visitor<IR.Node[] | undefined>,
+    replacer: Visitor<readonly IR.Node[] | undefined>,
   ): IR.Node | undefined {
     if (this.node.kind !== "Block") return;
     const children = this.node.children;

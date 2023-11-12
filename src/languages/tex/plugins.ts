@@ -5,8 +5,6 @@ import {
   isSubtype,
   type IR,
   scanningMacroCall,
-  textType,
-  integerType,
   text,
   id,
   varDeclaration,
@@ -15,57 +13,38 @@ import {
   type Node,
   voidType,
   type MutatingInfix,
-  assignment,
-  op,
   isOfKind,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { EmitError } from "../../common/emit";
 import { type Spine } from "../../common/Spine";
+import { convertNodeToListOfStatements } from "./FlatIR";
+import { assertIdentifier, assertImmediate, texStringType } from "./common";
 
-type Immediate = IR.Identifier | IR.Integer;
-
-// true = isAscii
-const texStringType = textType(integerType(0, "oo"), true);
+/** Convert all (while, for, etc.) bodies to be blocks.
+ * Block behaves as a "sequence"/"group" node that's just for allowing
+ * multiple statements to go into one expression. */
+export const bodyToBlock: Plugin = {
+  name: "bodyToBlock",
+  visit(node, spine) {
+    if (spine.isRoot || spine.pathFragment === "body") {
+      return block([node]);
+      // return node;
+    }
+  },
+};
 
 // TODO: I don't know what's the actual term. 3 argument code?
 export const exprTreeToFlat2AC: Plugin = {
   name: "exprTreeToFlat2AC",
   visit(_node, spine) {
-    return spine.flatMapWithChildrenReplacer(exprTreeToFlat2ACVisitor);
+    return spine.flatMapWithChildrenReplacer((node, spine) => {
+      if (spine.parent?.node.kind !== "Block") return;
+      if (isOfKind("Assignment", "Op")(node))
+        return convertNodeToListOfStatements(node);
+    });
   },
 };
-
-let globalID = 0;
-function exprTreeToFlat2ACVisitor(node: IR.Node, spine: Spine) {
-  if (node.kind !== "Assignment") return;
-  if (node.variable.kind !== "Identifier") return;
-  // if (!isSubtype(getType(node, spine), int32Type)) return;
-  const treeID = ++globalID;
-  function ipID(ip: number) {
-    return id(`__tmp_ip_${treeID}_${ip}`);
-  }
-  const flat: IR.Assignment[] = [];
-  function rec(n: IR.Node): Immediate {
-    if (n.kind === "Integer") return n;
-    if (n.kind === "Identifier") return n;
-    if (n.kind !== "Op") throw new EmitError(n, "tree has a not-Op");
-    if (n.args.length !== 2) throw new EmitError(n, "not two args");
-    // left
-    const left = rec(n.args[0]);
-    const newVar = ipID(flat.length);
-    const node = assignment(newVar, left);
-    flat.push(node);
-    // right, and compute.
-    const right = rec(n.args[1]);
-    const opres = op(n.op, newVar, right);
-    flat.push(assignment(newVar, opres));
-    return newVar;
-  }
-  const res = rec(node.expr);
-  flat.push(assignment(node.variable, res));
-  return flat;
-}
 
 /** Bad global state. Insert strings that will need to be counter names. */
 const accumulatedCounters = new Set<string>();
@@ -208,16 +187,4 @@ export const insertAccumulatedCounters: Plugin = {
 
 function voidIt(n: Node) {
   return { ...n, type: voidType };
-}
-
-function assertIdentifier(
-  n: IR.Node,
-  detail: string,
-): asserts n is IR.Identifier {
-  if (n.kind !== "Identifier") throw new EmitError(n, detail);
-}
-
-const isImmediate = isOfKind("Identifier", "Integer");
-function assertImmediate(n: IR.Node, detail: string): asserts n is Immediate {
-  if (!isImmediate(n)) throw new EmitError(n, detail);
 }

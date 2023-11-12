@@ -7,6 +7,7 @@ import {
   stuffToMacros,
   insertAccumulatedCounters,
   exprTreeToFlat2AC,
+  bodyToBlock,
 } from "./plugins";
 import { texDetokenizer } from "./detokenizer";
 
@@ -17,13 +18,11 @@ const texLanguage: Language = {
   detokenizer: texDetokenizer,
   phases: [
     required(
+      bodyToBlock,
       forRangeToWhile,
       whileToRecursion,
-      exprTreeToFlat2AC,
       mapToPrefixAndInfix(
         {
-          // TODO: I don't think neg works currently
-          neg: "-",
           mul: "\\multiply",
           // TODO: check if TeX is trunc div or floor div.
           div: "\\divide",
@@ -32,6 +31,7 @@ const texLanguage: Language = {
         },
         true,
       ),
+      exprTreeToFlat2AC,
       stuffToMacros,
       insertAccumulatedCounters,
       renameIdents({
