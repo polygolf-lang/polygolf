@@ -8,6 +8,7 @@ import compile, {
 import { findLang } from "../languages/languages";
 import { type Plugin } from "../common/Language";
 import { getOnlyVariant } from "../common/expandVariants";
+import type { PluginVisitor } from "../common/Spine";
 
 export const keywords = [
   "nogolf",
@@ -62,7 +63,7 @@ export function testLang(
 
 export function testPlugin(
   name: string,
-  plugins: Plugin[],
+  plugins: (Plugin | PluginVisitor)[],
   args: string[],
   input: string,
   output: string,
@@ -76,7 +77,7 @@ export function testPlugin(
             addWarning: () => {},
             options: compilationOptionsFromKeywords(args),
           },
-          ...plugins.map((x) => x.visit),
+          ...plugins.map((x) => (typeof x === "function" ? x : x.visit)),
         )[0],
       ),
     ).toEqual(normalize(output));

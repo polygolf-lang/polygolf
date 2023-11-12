@@ -1,6 +1,7 @@
+import type { Spine } from "../common/Spine";
 import { replaceAtIndex } from "../common/arrays";
 import { type Plugin } from "../common/Language";
-import { block, implicitConversion, isOp, op, text } from "../IR";
+import { block, implicitConversion, isOp, type Node, op, text } from "../IR";
 import { mapOps } from "./ops";
 
 export const printLnToPrint = mapOps(
@@ -40,14 +41,11 @@ export function golfLastPrint(toPrintln = true): Plugin {
   };
 }
 
-export const implicitlyConvertPrintArg: Plugin = {
-  name: "implicitlyConvertPrintArg",
-  visit(node, spine) {
-    if (
-      isOp("int_to_text")(node) &&
-      isOp("print", "println")(spine.parent!.node)
-    ) {
-      return implicitConversion(node.op, node.args[0]);
-    }
-  },
-};
+export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
+  if (
+    isOp("int_to_text")(node) &&
+    isOp("print", "println")(spine.parent!.node)
+  ) {
+    return implicitConversion(node.op, node.args[0]);
+  }
+}

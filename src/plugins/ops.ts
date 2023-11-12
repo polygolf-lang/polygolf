@@ -243,49 +243,37 @@ export function addMutatingInfix(
   };
 }
 
-export const addPostfixIncAndDec: Plugin = {
-  name: "addPostfixIncAndDec",
-  visit(node) {
-    if (
-      node.kind === "MutatingInfix" &&
-      ["+", "-"].includes(node.name) &&
-      isIntLiteral(1n)(node.right)
-    ) {
-      return postfix(node.name.repeat(2), node.variable);
-    }
-  },
-};
+export function addPostfixIncAndDec(node: Node) {
+  if (
+    node.kind === "MutatingInfix" &&
+    ["+", "-"].includes(node.name) &&
+    isIntLiteral(1n)(node.right)
+  ) {
+    return postfix(node.name.repeat(2), node.variable);
+  }
+}
 
 // (a > b) --> (b < a)
-export const flipBinaryOps: Plugin = {
-  name: "flipBinaryOps",
-  visit(node) {
-    if (isOp(...BinaryOpCodes)(node)) {
-      const flippedOpCode = flipOpCode(node.op);
-      if (flippedOpCode !== null) {
-        return op(flippedOpCode, node.args[1], node.args[0]);
-      }
+export function flipBinaryOps(node: Node) {
+  if (isOp(...BinaryOpCodes)(node)) {
+    const flippedOpCode = flipOpCode(node.op);
+    if (flippedOpCode !== null) {
+      return op(flippedOpCode, node.args[1], node.args[0]);
     }
-  },
-};
+  }
+}
 
-export const removeImplicitConversions: Plugin = {
-  name: "removeImplicitConversions",
-  visit(node) {
-    if (node.kind === "ImplicitConversion") {
-      return node.expr;
-    }
-  },
-};
+export function removeImplicitConversions(node: Node) {
+  if (node.kind === "ImplicitConversion") {
+    return node.expr;
+  }
+}
 
-export const methodsAsFunctions: Plugin = {
-  name: "methodsAsFunctions",
-  visit(node) {
-    if (node.kind === "MethodCall") {
-      return functionCall(propertyCall(node.object, node.ident), node.args);
-    }
-  },
-};
+export function methodsAsFunctions(node: Node) {
+  if (node.kind === "MethodCall") {
+    return functionCall(propertyCall(node.object, node.ident), node.args);
+  }
+}
 
 export const printIntToPrint: Plugin = mapOps(
   {

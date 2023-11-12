@@ -178,7 +178,9 @@ export class Spine<N extends IR.Node = IR.Node> {
   }
 }
 
-export type PluginVisitor<T> = <N extends IR.Node>(
+export type PluginVisitor<T = IR.Node[] | IR.Node | undefined> = <
+  N extends IR.Node,
+>(
   node: N,
   spine: Spine<N>,
   context: CompilationContext,
