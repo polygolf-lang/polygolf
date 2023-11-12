@@ -7,7 +7,6 @@ import {
   stuffToMacros,
   insertAccumulatedCounters,
   exprTreeToFlat2AC,
-  bodyToBlock,
 } from "./plugins";
 import { texDetokenizer } from "./detokenizer";
 
@@ -18,7 +17,6 @@ const texLanguage: Language = {
   detokenizer: texDetokenizer,
   phases: [
     required(
-      bodyToBlock,
       forRangeToWhile,
       whileToRecursion,
       mapToPrefixAndInfix(

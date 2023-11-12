@@ -21,19 +21,6 @@ import { type Spine } from "../../common/Spine";
 import { convertNodeToListOfStatements } from "./FlatIR";
 import { assertIdentifier, assertImmediate, texStringType } from "./common";
 
-/** Convert all (while, for, etc.) bodies to be blocks.
- * Block behaves as a "sequence"/"group" node that's just for allowing
- * multiple statements to go into one expression. */
-export const bodyToBlock: Plugin = {
-  name: "bodyToBlock",
-  visit(node, spine) {
-    if (spine.isRoot || spine.pathFragment === "body") {
-      return block([node]);
-      // return node;
-    }
-  },
-};
-
 // TODO: I don't know what's the actual term. 3 argument code?
 export const exprTreeToFlat2AC: Plugin = {
   name: "exprTreeToFlat2AC",
