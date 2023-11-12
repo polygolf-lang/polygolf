@@ -180,6 +180,10 @@ export class Spine<N extends IR.Node = IR.Node> {
   flatMapWithChildrenReplacer(
     replacer: Visitor<readonly IR.Node[] | undefined>,
   ): IR.Node | undefined {
+    if (this.isRoot) {
+      const repl = replacer(this.node, this);
+      if (repl !== undefined) return block(repl);
+    }
     if (this.node.kind !== "Block") return;
     const children = this.node.children;
     let newChildren: IR.Node[] | undefined;

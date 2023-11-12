@@ -59,27 +59,31 @@ export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
 
 export const forRangeToWhile: Plugin = {
   name: "forRangeToWhile",
-  visit(node, spine) {
-    if (node.kind === "ForRange" && node.variable !== undefined) {
-      const low = getType(node.start, spine);
-      const high = getType(node.end, spine);
-      if (low.kind !== "integer" || high.kind !== "integer") {
-        throw new Error(`Unexpected type (${low.kind},${high.kind})`);
-      }
-      const increment = assignment(
-        node.variable,
-        op("add", node.variable, node.increment),
-      );
-      return block([
-        assignment(node.variable, node.start),
-        whileLoop(
-          op(node.inclusive ? "leq" : "lt", node.variable, node.end),
-          block([node.body, increment]),
-        ),
-      ]);
-    }
+  visit(_node, spine) {
+    return spine.flatMapWithChildrenReplacer(forRangeToWhileVisitor);
   },
 };
+
+function forRangeToWhileVisitor(node: IR.Node, spine: Spine) {
+  if (node.kind === "ForRange" && node.variable !== undefined) {
+    const low = getType(node.start, spine);
+    const high = getType(node.end, spine);
+    if (low.kind !== "integer" || high.kind !== "integer") {
+      throw new Error(`Unexpected type (${low.kind},${high.kind})`);
+    }
+    const increment = assignment(
+      node.variable,
+      op("add", node.variable, node.increment),
+    );
+    return [
+      assignment(node.variable, node.start),
+      whileLoop(
+        op(node.inclusive ? "leq" : "lt", node.variable, node.end),
+        block([node.body, increment]),
+      ),
+    ];
+  }
+}
 
 export const forRangeToForCLike: Plugin = {
   name: "forRangeToForCLike",
