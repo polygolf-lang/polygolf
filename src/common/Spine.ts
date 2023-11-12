@@ -1,4 +1,4 @@
-import { type IR, isOp, op } from "../IR";
+import { type IR, isOp, op, isOfKind, block } from "../IR";
 import type { SkipOverride, CompilationContext } from "./compile";
 import { getChild, getChildFragments, type PathFragment } from "./fragments";
 import { replaceAtIndex } from "./arrays";
@@ -70,26 +70,29 @@ export class Spine<N extends IR.Node = IR.Node> {
     if (this.parent === null || this.pathFragment === null) {
       return new Spine(newNode, null, null);
     }
-    if (newNode.kind === "Block" && this.parent.node.kind === "Block") {
-      throw new Error(
-        `Programming error: attempt to insert a Block into a Block`,
-      );
-    }
     const parentNode = this.parent.node;
     const parent =
       canonizeAndReturnRoot &&
-      isOp()(parentNode) &&
+      isOfKind("Op", "Block")(parentNode) &&
       typeof this.pathFragment === "object"
         ? this.parent.replacedWith(
             {
-              ...op(
-                parentNode.op,
-                ...replaceAtIndex(
-                  parentNode.args,
-                  this.pathFragment.index,
-                  newNode,
-                ),
-              ),
+              ...(isOp()(parentNode)
+                ? op(
+                    parentNode.op,
+                    ...replaceAtIndex(
+                      parentNode.args,
+                      this.pathFragment.index,
+                      newNode,
+                    ),
+                  )
+                : block(
+                    replaceAtIndex(
+                      parentNode.children,
+                      this.pathFragment.index,
+                      newNode,
+                    ),
+                  )),
               targetType: parentNode.targetType,
             },
             true,
@@ -156,8 +159,8 @@ export class Spine<N extends IR.Node = IR.Node> {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let curr = this as Spine;
       // recurse on children
-      if (isOp()(this.node)) {
-        // Create canonical Op instead of just replacing the chidren
+      if (isOfKind("Op", "Block")(this.node)) {
+        // Create canonical Op / block instead of just replacing the chidren
         const newChildren: IR.Node[] = [];
         let someChildrenIsNew = false;
         for (const child of this.getChildSpines()) {
@@ -167,7 +170,9 @@ export class Spine<N extends IR.Node = IR.Node> {
         }
         if (someChildrenIsNew)
           curr = curr.replacedWith({
-            ...op(this.node.op, ...newChildren),
+            ...(isOp()(this.node)
+              ? op(this.node.op, ...newChildren)
+              : block(newChildren)),
             targetType: this.node.targetType,
           });
       } else {
