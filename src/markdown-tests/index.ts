@@ -73,10 +73,8 @@ export function testPlugin(
       debugEmit(
         applyAllToAllAndGetCounts(
           getOnlyVariant(parse(input, false)),
-          {
-            addWarning: () => {},
-            options: compilationOptionsFromKeywords(args),
-          },
+          compilationOptionsFromKeywords(args),
+          () => {},
           ...plugins.map((x) => (typeof x === "function" ? x : x.visit)),
         )[0],
       ),

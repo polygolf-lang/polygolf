@@ -70,7 +70,6 @@ export function search(...plugins: (Plugin | PluginVisitor)[]): LanguagePhase {
 export interface Plugin {
   name: string;
   visit: PluginVisitor;
-  visitRoot?: PluginVisitor;
 }
 
 type TokenTreeArray = Array<string | TokenTreeArray>;

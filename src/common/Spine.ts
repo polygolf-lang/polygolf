@@ -1,5 +1,5 @@
 import { type IR, isOp, op } from "../IR";
-import { type CompilationContext } from "./compile";
+import type { SkipOverride, CompilationContext } from "./compile";
 import { getChild, getChildFragments, type PathFragment } from "./fragments";
 import { replaceAtIndex } from "./arrays";
 
@@ -104,9 +104,14 @@ export class Spine<N extends IR.Node = IR.Node> {
    * by removal of `undefined` return values. Returns a generator, so is a no-op
    * if the values are not used. Name inspired by Swift's `compactMap`. */
   *compactMap<T>(func: Visitor<T | undefined>): Generator<T, void, undefined> {
-    const ret = func(this.node, this);
+    let skipChildren = false;
+    function skip(kind: "replacement" | "children" | "replacementChildren") {
+      skipChildren = kind === "children";
+    }
+    const ret = func(this.node, this, skip);
     if (ret !== undefined) yield ret;
-    for (const child of this.getChildSpines()) yield* child.compactMap(func);
+    if (!skipChildren)
+      for (const child of this.getChildSpines()) yield* child.compactMap(func);
   }
 
   /** Test whether this node and all children meet the provided condition. */
@@ -123,7 +128,7 @@ export class Spine<N extends IR.Node = IR.Node> {
 
   /** Returns all descendants metting the provided condition. */
   filterNodes(cond: Visitor<boolean>) {
-    return this.compactMap((n, s) => (cond(n, s) ? n : undefined));
+    return this.compactMap((n, s, skip) => (cond(n, s, skip) ? n : undefined));
   }
 
   /** Return the spine (pointing to this node) determined from replacing this
@@ -139,8 +144,15 @@ export class Spine<N extends IR.Node = IR.Node> {
     skipReplaced = false,
     skipThis = false,
   ): Spine {
-    const ret = skipThis ? undefined : replacer(this.node, this);
-    if (ret === undefined) {
+    let skipReplacement = skipReplaced;
+    let skipChildren = false;
+    function skip(kind: "replacement" | "children" | "replacementChildren") {
+      skipReplacement ||= kind === "replacement";
+      skipChildren ||= kind === "children";
+    }
+    const ret = skipThis ? undefined : replacer(this.node, this, skip);
+    if (ret === undefined && skipChildren) return this;
+    else if (ret === undefined) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let curr = this as Spine;
       // recurse on children
@@ -169,7 +181,7 @@ export class Spine<N extends IR.Node = IR.Node> {
         }
       }
       return curr;
-    } else if (skipReplaced) {
+    } else if (skipReplacement || skipChildren) {
       return this.replacedWith(ret);
     } else {
       // replace this, then recurse on children but not this
@@ -186,7 +198,11 @@ export type PluginVisitor<T = IR.Node[] | IR.Node | undefined> = <
   context: CompilationContext,
 ) => T;
 
-export type Visitor<T> = <N extends IR.Node>(node: N, spine: Spine<N>) => T;
+export type Visitor<T> = <N extends IR.Node>(
+  node: N,
+  spine: Spine<N>,
+  skip: SkipOverride,
+) => T;
 
 export function programToSpine(node: IR.Node) {
   return new Spine(node, null, null);
