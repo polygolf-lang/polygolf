@@ -50,6 +50,7 @@ export interface CompilationContext {
 export interface CompilationResult {
   language: string;
   result: string | Error;
+  errors: Error[];
   history: [number, string][];
   warnings: Error[];
 }
@@ -57,12 +58,14 @@ export interface CompilationResult {
 function compilationResult(
   language: string,
   result: string | Error,
+  errors: Error[],
   history: [number, string][] = [],
   warnings: Error[] = [],
 ): CompilationResult {
   return {
     language,
     result,
+    errors,
     history,
     warnings,
   };
@@ -152,7 +155,7 @@ export default function compile(
   try {
     program = parse(source, options.restrictFrontend);
   } catch (e) {
-    if (isError(e)) return [compilationResult("Polygolf", e)];
+    if (isError(e)) return [compilationResult("Polygolf", e, [e])];
   }
   program = program!;
   let variants = expandVariants(program).map((x) => {
@@ -160,7 +163,7 @@ export default function compile(
       if (!options.skipTypecheck) typecheck(x);
       return x;
     } catch (e) {
-      if (isError(e)) return compilationResult("Polygolf", e);
+      if (isError(e)) return compilationResult("Polygolf", e, [e]);
       throw e;
     }
   });
@@ -312,12 +315,13 @@ export function compileVariantNoPacking(
       return compilationResult(
         language.name,
         emit(language, res, { addWarning, options }),
+        [],
         plugins.map((y, i) => [counts[i], y.name]),
         warnings,
       );
     } catch (e) {
       if (isError(e)) {
-        return compilationResult(language.name, e);
+        return compilationResult(language.name, e, [e]);
       }
       throw e;
     }
@@ -343,7 +347,7 @@ export function compileVariantNoPacking(
     ];
   }
   let shortestSoFar: SearchState | undefined;
-  let lastError: Error;
+  const errors: Error[] = [];
   let shortestSoFarLength: number = Infinity;
   const latestPhaseWeSawTheProg = new Map<string, number>();
   const queue = new MinPriorityQueue<SearchState>((x) => x.length);
@@ -376,7 +380,7 @@ export function compileVariantNoPacking(
         queue.enqueue(state);
       } catch (e) {
         if (isError(e)) {
-          lastError = e;
+          errors.push(e);
         }
       }
     }
@@ -431,7 +435,7 @@ export function compileVariantNoPacking(
   }
 
   if (shortestSoFar === undefined) {
-    return compilationResult(language.name, lastError!);
+    return compilationResult(language.name, errors.at(-1)!, errors);
   }
 
   globalWarnings.push(...shortestSoFar.warnings);
@@ -447,6 +451,7 @@ export function compileVariantNoPacking(
   return compilationResult(
     language.name,
     result,
+    errors,
     mergeRepeatedPlugins([...shortestSoFar.history, ...finishingHist]),
     globalWarnings,
   );
