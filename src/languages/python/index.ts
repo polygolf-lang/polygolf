@@ -85,9 +85,9 @@ const pythonLanguage: Language = {
     required(printIntToPrint),
     search(
       golfStringListLiteral(),
-      listOpsToTextOps("text_codepoint_find", "text_get_codepoint"),
+      listOpsToTextOps("find[codepoint]", "at[codepoint]"),
       tempVarToMultipleAssignment,
-      forRangeToForEach("array_get", "list_get", "text_get_codepoint"),
+      forRangeToForEach("at[Array]", "at[List]", "at[codepoint]"),
       golfLastPrint(),
       equalityToInequality,
       useDecimalConstantPackedPrinter,
@@ -114,9 +114,9 @@ const pythonLanguage: Language = {
       mapOps({
         argv: builtin("sys.argv[1:]"),
 
-        argv_get: (x) =>
+        "at[argv]": (x) =>
           op(
-            "list_get",
+            "at[List]",
             { ...builtin("sys.argv"), type: listType(textType()) },
             add1(x[0]),
           ),
@@ -131,23 +131,23 @@ const pythonLanguage: Language = {
         list_find: (x) => method(x[0], "index", x[1]),
         join: (x) => method(x[1], "join", x[0]),
 
-        text_codepoint_reversed: (x) =>
+        "reversed[codepoint]": (x) =>
           rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
-        text_get_codepoint: (x) => indexCall(x[0], x[1]),
+        "at[codepoint]": (x) => indexCall(x[0], x[1]),
 
-        text_get_codepoint_slice: (x) =>
+        "slice[codepoint]": (x) =>
           rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
         text_split: (x) => method(x[0], "split", x[1]),
         text_split_whitespace: (x) => method(x[0], "split"),
 
-        print: (x) =>
+        "print[Text]": (x) =>
           func(
-            "print",
+            "print[Text]",
             x[0].kind !== "ImplicitConversion"
               ? [namedArg("end", x[0])]
               : [x[0], namedArg("end", text(""))],
           ),
-        text_replace: (x) => method(x[0], "replace", x[1], x[2]),
+        replace: (x) => method(x[0], "replace", x[1], x[2]),
 
         text_multireplace: (x) =>
           method(
@@ -171,18 +171,18 @@ const pythonLanguage: Language = {
           ),
       }),
       mapTo(func)({
-        read_line: "input",
+        "read[line]": "input",
         abs: "abs",
-        list_length: "len",
+        "length[List]": "len",
         sorted: "sorted",
-        codepoint_to_int: "ord",
-        int_to_codepoint: "chr",
+        "ord[codepoint]": "ord",
+        "char[codepoint]": "chr",
         max: "max",
         min: "min",
-        text_codepoint_length: "len",
+        "length[codepoint]": "len",
         int_to_text: "str",
         text_to_int: "int",
-        println: "print",
+        "println[Text]": "print[Text]",
       }),
       mapToPrefixAndInfix(
         {
@@ -194,7 +194,7 @@ const pythonLanguage: Language = {
           div: "//",
           mod: "%",
           add: "+",
-          concat: "+",
+          "concat[Text]": "+",
           sub: "-",
           bit_shift_left: "<<",
           bit_shift_right: ">>",
@@ -203,8 +203,8 @@ const pythonLanguage: Language = {
           bit_or: "|",
           lt: "<",
           leq: "<=",
-          eq: "==",
-          neq: "!=",
+          "eq[Int]": "==",
+          "neq[Int]": "!=",
           geq: ">=",
           gt: ">",
           not: "not",

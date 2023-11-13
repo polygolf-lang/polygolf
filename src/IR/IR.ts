@@ -113,7 +113,7 @@ export type Node =
   | NamedArg;
 
 export type NodeFuncRecord<Tout, Tin extends Node = Node> = Tin extends Node
-  ? Record<Tin["kind"], (n: Tin, s: Spine<Tin>) => Tout>
+  ? Record<Tcontains["kind"], (n: Tin, s: Spine<Tin>) => Tout>
   : never;
 
 export function getNodeFunc<Tout>(

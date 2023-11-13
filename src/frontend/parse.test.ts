@@ -65,8 +65,8 @@ describe("Parse s-expressions", () => {
   expectExprParse("add infix", "($x + $y)", op("add", id("x"), id("y")));
   expectExprParse("mod infix", "($x mod $y)", op("mod", id("x"), id("y")));
   expectExprParse("or", "(or $x $y)", op("or", id("x"), id("y")));
-  expectExprParse("println", "(println $x)", print(id("x"), true));
-  expectExprParse("print", "(print $x)", print(id("x"), false));
+  expectExprParse("println[Text]", "(println $x)", print(id("x"), true));
+  expectExprParse("print[Text]", "(print $x)", print(id("x"), false));
   expectExprParse("assign", "(assign $x 5)", assignment(id("x"), int(5n)));
   expectExprParse("assign infix", "($x <- 5)", assignment(id("x"), int(5n)));
   expectExprParse("list", "(list 1 2 3)", list([int(1n), int(2n), int(3n)]));
@@ -78,7 +78,7 @@ describe("Parse s-expressions", () => {
   expectExprParse(
     "..",
     "(.. $x $y $z)",
-    op("concat", op("concat", id("x"), id("y")), id("z")),
+    op("concat[Text]", op("concat[Text]", id("x"), id("y")), id("z")),
   );
   expectExprParse("- as neg", "(- $x)", op("neg", id("x")));
   expectExprParse("- as sub", "(- $x $y)", op("sub", id("x"), id("y")));

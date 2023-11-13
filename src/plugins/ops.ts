@@ -170,12 +170,12 @@ function asBinaryChain(
 export function useIndexCalls(
   oneIndexed: boolean = false,
   ops: OpCode[] = [
-    "array_get",
-    "list_get",
-    "table_get",
-    "array_set",
-    "list_set",
-    "table_set",
+    "at[Array]",
+    "at[List]",
+    "at[Table]",
+    "set_at[Array]",
+    "set_at[List]",
+    "set_at[Table]",
   ],
 ): Plugin {
   return {
@@ -277,8 +277,8 @@ export function methodsAsFunctions(node: Node) {
 
 export const printIntToPrint: Plugin = mapOps(
   {
-    print_int: (x) => op("print", op("int_to_text", ...x)),
-    println_int: (x) => op("println", op("int_to_text", ...x)),
+    "print[Int]": (x) => op("print[Text]", op("to_dec", ...x)),
+    "println[Int]": (x) => op("println[Text]", op("to_dec", ...x)),
   },
   "printIntToPrint",
 );

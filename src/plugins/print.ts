@@ -6,7 +6,8 @@ import { mapOps } from "./ops";
 
 export const printLnToPrint = mapOps(
   {
-    println: (x) => op("print", op("concat", x[0], text("\n"))),
+    "println[Text]": (x) =>
+      op("print[Text]", op("concat[Text]", x[0], text("\n"))),
   },
   "printLnToPrint",
 );
@@ -20,8 +21,10 @@ export function golfLastPrint(toPrintln = true): Plugin {
     name: "golfLastPrint",
     visit(program, spine, context) {
       context.skipChildren();
-      const newOp = toPrintln ? ("println" as const) : ("print" as const);
-      const oldOp = toPrintln ? "print" : "println";
+      const newOp = toPrintln
+        ? ("println[Text]" as const)
+        : ("print[Text]" as const);
+      const oldOp = toPrintln ? "print[Text]" : "println[Text]";
       if (isOp(oldOp)(program)) {
         return { ...program, op: newOp };
       } else if (program.kind === "Block") {
@@ -43,8 +46,8 @@ export function golfLastPrint(toPrintln = true): Plugin {
 
 export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
   if (
-    isOp("int_to_text")(node) &&
-    isOp("print", "println")(spine.parent!.node)
+    isOp("to_dec")(node) &&
+    isOp("print[Text]", "println[Text]")(spine.parent!.node)
   ) {
     return implicitConversion(node.op, node.args[0]);
   }

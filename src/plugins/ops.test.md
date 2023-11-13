@@ -12,7 +12,7 @@ $x <- ($x .. " world");
 $x <- ("prepend" .. $x);
 ```
 
-```polygolf ops.addMutatingInfix({add:"+","concat":"+"})
+```polygolf ops.addMutatingInfix({add:"+","concat[Text]":"+"})
 $n:-oo..oo <- 0;
 $a:-oo..oo <- 0;
 mutating_infix "+" $n 3;

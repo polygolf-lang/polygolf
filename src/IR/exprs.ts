@@ -263,7 +263,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
 }
 
 function evalInfix(op: BinaryOpCode, left: Node, right: Node): Node | null {
-  if (op === "concat" && isText()(left) && isText()(right)) {
+  if (op === "concat[Text]" && isText()(left) && isText()(right)) {
     return text(left.value + right.value);
   }
   if (isIntLiteral()(left) && isIntLiteral()(right)) {
@@ -446,7 +446,7 @@ export function namedArg<T extends Node>(name: string, value: T): NamedArg<T> {
 }
 
 export function print(value: Node, newline: boolean = true): Node {
-  return op(newline ? "println" : "print", value);
+  return op(newline ? "println[Text]" : "print[Text]", value);
 }
 
 export function getArgs(

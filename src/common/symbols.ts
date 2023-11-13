@@ -296,9 +296,9 @@ function getDirectWriteFragments(node: Node): PathFragment[] {
 
 function getDirectPolygolfWriteFragments(node: Op): number[] {
   switch (node.op) {
-    case "array_set":
-    case "list_set":
-    case "table_set":
+    case "set_at[Array]":
+    case "set_at[List]":
+    case "set_at[Table]":
       return [0];
   }
   return [];
@@ -311,7 +311,7 @@ export function hasSideEffect(spine: Spine): boolean {
 export function hasDirectSideEffect(node: Node, spine: Spine) {
   try {
     return (
-      isOp("read_byte", "read_codepoint", "read_line", "read_int")(node) ||
+      isOp("read[byte]", "read[codepoint]", "read[line]", "read[Int]")(node) ||
       getType(node, spine).kind === "void"
     );
   } catch {
@@ -320,11 +320,11 @@ export function hasDirectSideEffect(node: Node, spine: Spine) {
 }
 
 export function readsFromStdin(node: Node): boolean {
-  return isOp("read_byte", "read_codepoint", "read_line", "read_int")(node);
+  return isOp("read[byte]", "read[codepoint]", "read[line]", "read[Int]")(node);
 }
 
 export function readsFromArgv(node: Node): boolean {
-  return node.kind === "ForArgv" || isOp("argv", "argv_get")(node);
+  return node.kind === "ForArgv" || isOp("argv", "at[argv]")(node);
 }
 
 export function readsFromInput(node: Node): boolean {

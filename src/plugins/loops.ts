@@ -107,7 +107,7 @@ export function forRangeToForEachPair(node: Node, spine: Spine) {
     node.variable !== undefined &&
     !node.inclusive &&
     isIntLiteral(0n)(node.start) &&
-    isOp("list_length")(node.end) &&
+    isOp("length[List]")(node.end) &&
     isIdent()(node.end.args[0])
   ) {
     const variable = node.variable;
@@ -123,7 +123,7 @@ export function forRangeToForEachPair(node: Node, spine: Spine) {
 
 function isListGet(node: IR.Node, collection: string, index: string) {
   return (
-    isOp("list_get")(node) &&
+    isOp("at[List]")(node) &&
     isIdent(collection)(node.args[0]) &&
     isIdent(index)(node.args[1])
   );
@@ -138,18 +138,17 @@ function isListGet(node: IR.Node, collection: string, index: string) {
  * for x in collection:
  *     commands(x)
  */
-type GetOp = OpCode &
-  ("array_get" | "list_get" | "text_get_byte" | "text_get_codepoint");
+type GetOp = OpCode & ("at[Array]" | "at[List]" | "at[byte]" | "at[codepoint]");
 export function forRangeToForEach(...ops: GetOp[]): Plugin {
-  if (ops.includes("text_get_byte") && ops.includes("text_get_codepoint"))
+  if (ops.includes("at[byte]") && ops.includes("at[codepoint]"))
     throw new Error(
       "Programming error. Choose only one of 'text_get_byte' && 'text_get_codepoint'.",
     );
   const lengthOpToGetOp = new Map([
-    ["array_length", "array_get"],
-    ["list_length", "list_get"],
-    ["text_byte_length", "text_get_byte"],
-    ["array_length", "text_get_codepoint"],
+    ["array_length", "at[Array]"],
+    ["length[List]", "at[List]"],
+    ["length[byte]", "at[byte]"],
+    ["array_length", "at[codepoint]"],
   ]);
   return {
     name: "forRangeToForEach",
@@ -222,8 +221,7 @@ function getIndexedCollection(
     const collection = parent.args[0];
     if (
       (isText()(collection) || collection.kind === "List") &&
-      literalLength(collection, allowedOps.includes("text_get_byte")) ===
-        knownLength
+      literalLength(collection, allowedOps.includes("at[byte]")) === knownLength
     )
       return collection;
     if (
@@ -265,7 +263,7 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
       if (node.kind === "ForArgv") {
         const indexVar = id(node.variable.name + "+index");
         const newBody = block([
-          assignment(node.variable, op("argv_get", indexVar)),
+          assignment(node.variable, op("at[argv]", indexVar)),
           node.body,
         ]);
         return forRange(

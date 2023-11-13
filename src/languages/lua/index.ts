@@ -66,7 +66,7 @@ const luaLanguage: Language = {
     search(
       flipBinaryOps,
       golfLastPrint(),
-      listOpsToTextOps("text_byte_find", "text_get_byte"),
+      listOpsToTextOps("find[byte]", "at[byte]"),
       tempVarToMultipleAssignment,
       equalityToInequality,
       shiftRangeOneUp,
@@ -83,13 +83,13 @@ const luaLanguage: Language = {
       textToIntToFirstIndexTextGetToInt,
       mapOps({
         text_to_int: (x) =>
-          op("add", int(0n), implicitConversion("text_to_int", x[0])),
-        argv_get: (x) =>
-          op("list_get", { ...builtin("arg"), type: textType() }, x[0]),
+          op("add", int(0n), implicitConversion("dec_to_int", x[0])),
+        "at[argv]": (x) =>
+          op("at[List]", { ...builtin("arg"), type: textType() }, x[0]),
 
-        text_get_byte_to_int: (x) => method(x[0], "byte", add1(x[1])),
-        text_get_byte: (x) => method(x[0], "sub", add1(x[1]), add1(x[1])),
-        text_get_byte_slice: (x) => method(x[0], "sub", x[1], add1(x[2])),
+        "ord_at[byte]": (x) => method(x[0], "byte", add1(x[1])),
+        "at[byte]": (x) => method(x[0], "sub", add1(x[1]), add1(x[1])),
+        "slice[byte]": (x) => method(x[0], "sub", x[1], add1(x[2])),
       }),
       useIndexCalls(true),
       decomposeIntLiteral(true, true, true),
@@ -103,26 +103,26 @@ const luaLanguage: Language = {
       textToIntToFirstIndexTextGetToInt,
       mapOps({
         text_to_int: (x) =>
-          op("mul", int(1n), implicitConversion("text_to_int", x[0])),
-        argv_get: (x) =>
-          op("list_get", { ...builtin("arg"), type: textType() }, x[0]),
-        text_get_byte_to_int: (x) => method(x[0], "byte", add1(x[1])),
-        text_get_byte: (x) => method(x[0], "sub", add1(x[1]), add1(x[1])),
-        text_get_byte_slice: (x) => method(x[0], "sub", x[1], add1(x[2])),
+          op("mul", int(1n), implicitConversion("dec_to_int", x[0])),
+        "at[argv]": (x) =>
+          op("at[List]", { ...builtin("arg"), type: textType() }, x[0]),
+        "ord_at[byte]": (x) => method(x[0], "byte", add1(x[1])),
+        "at[byte]": (x) => method(x[0], "sub", add1(x[1]), add1(x[1])),
+        "slice[byte]": (x) => method(x[0], "sub", x[1], add1(x[2])),
       }),
       useIndexCalls(true),
       mapOps({
         int_to_text: (x) =>
-          op("concat", text(""), implicitConversion("int_to_text", x[0])),
+          op("concat[Text]", text(""), implicitConversion("to_dec", x[0])),
         join: (x) => func("table.concat", isText("")(x[1]) ? [x[0]] : x),
-        text_byte_length: (x) => method(x[0], "len"),
+        "length[byte]": (x) => method(x[0], "len"),
         true: builtin("true"),
         false: builtin("false"),
         repeat: (x) => method(x[0], "rep", x[1]),
         argv: builtin("arg"),
-        int_to_text_byte: (x) => func("string.char", x),
+        "char[byte]": (x) => func("string.char", x),
 
-        text_replace: ([a, b, c]) =>
+        replace: ([a, b, c]) =>
           method(
             a,
             "gsub",
@@ -140,9 +140,9 @@ const luaLanguage: Language = {
           ),
       }),
       mapTo(func)({
-        read_line: "io.read",
-        print: "io.write",
-        println: "print",
+        "read[line]": "io.read",
+        "print[Text]": "io.write",
+        "println[Text]": "print",
         min: "math.min",
         max: "math.max",
         abs: "math.abs",
@@ -155,14 +155,14 @@ const luaLanguage: Language = {
         pow: "^",
         not: "not",
         neg: "-",
-        list_length: "#",
+        "length[List]": "#",
         bit_not: "~",
         mul: "*",
         div: "//",
         mod: "%",
         add: "+",
         sub: "-",
-        concat: "..",
+        "concat[Text]": "..",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         bit_and: "&",
@@ -170,8 +170,8 @@ const luaLanguage: Language = {
         bit_or: "|",
         lt: "<",
         leq: "<=",
-        eq: "==",
-        neq: "~=",
+        "eq[Int]": "==",
+        "neq[Int]": "~=",
         geq: ">=",
         gt: ">",
         and: "and",

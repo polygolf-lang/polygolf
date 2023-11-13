@@ -95,10 +95,10 @@ function emitNodeWithoutAnnotation(
       "argc",
       "true",
       "false",
-      "read_codepoint",
-      "read_byte",
-      "read_int",
-      "read_line",
+      "read[codepoint]",
+      "read[byte]",
+      "read[Int]",
+      "read[line]",
     ].includes(op);
     if (op === "@") op = expr.kind;
     op = op
@@ -334,10 +334,12 @@ const opAliases: Record<string, string> = {
   lt: "<",
   geq: ">=",
   gt: ">",
-  list_length: "#",
+  length: "#",
   concat: "..",
   assign: "<-",
   key_value: "=>",
   mod: "mod",
   div: "div",
+  at: "@",
+  contains: "in",
 };

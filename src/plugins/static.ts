@@ -11,8 +11,8 @@ export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
         const strings = node.exprs.map((x) => x.value);
         const delim = getDelim(strings, useTextSplitWhitespace);
         return delim === true
-          ? op("text_split_whitespace", text(strings.join(" ")))
-          : op("text_split", text(strings.join(delim)), text(delim));
+          ? op("split_whitespace", text(strings.join(" ")))
+          : op("split", text(strings.join(delim)), text(delim));
       }
     },
   };
@@ -38,27 +38,17 @@ function getDelim(
 }
 
 export function listOpsToTextOps(
-  ...ops: (
-    | "text_get_byte"
-    | "text_get_codepoint"
-    | "text_byte_find"
-    | "text_codepoint_find"
-  )[]
+  ...ops: ("at[byte]" | "at[codepoint]" | "find[byte]" | "find[codepoint]")[]
 ): Plugin {
   ops =
     ops.length > 0
       ? ops
-      : [
-          "text_get_byte",
-          "text_get_codepoint",
-          "text_byte_find",
-          "text_codepoint_find",
-        ];
+      : ["at[byte]", "at[codepoint]", "find[byte]", "find[codepoint]"];
   return {
     name: `listOpsToTextOps(${JSON.stringify(ops)})`,
     visit(node) {
       if (
-        isOp("list_get", "list_find")(node) &&
+        isOp("at[List]", "list_find")(node) &&
         node.args[0].kind === "List" &&
         node.args[0].exprs.every(isText())
       ) {
@@ -66,15 +56,15 @@ export function listOpsToTextOps(
         if (texts.every((x) => charLength(x) === 1)) {
           const joined = text(texts.join(""));
           if (texts.every((x) => byteLength(x) === 1)) {
-            if (node.op === "list_get" && ops.includes("text_get_byte"))
-              return op("text_get_byte", joined, node.args[1]);
-            if (node.op === "list_find" && ops.includes("text_byte_find"))
-              return op("text_byte_find", joined, node.args[1]);
+            if (node.op === "at[List]" && ops.includes("at[byte]"))
+              return op("at[byte]", joined, node.args[1]);
+            if (node.op === "list_find" && ops.includes("find[byte]"))
+              return op("find[byte]", joined, node.args[1]);
           }
-          if (node.op === "list_get" && ops.includes("text_get_codepoint"))
-            return op("text_get_codepoint", joined, node.args[1]);
-          if (node.op === "list_find" && ops.includes("text_codepoint_find"))
-            return op("text_codepoint_find", joined, node.args[1]);
+          if (node.op === "at[List]" && ops.includes("at[codepoint]"))
+            return op("at[codepoint]", joined, node.args[1]);
+          if (node.op === "list_find" && ops.includes("find[codepoint]"))
+            return op("find[codepoint]", joined, node.args[1]);
         }
       }
     },
@@ -88,7 +78,7 @@ export function hardcode(): Plugin {
       if (spine.isRoot) {
         try {
           const output = getOutput(node);
-          if (output !== "") return op("print", text(output));
+          if (output !== "") return op("print[Text]", text(output));
         } catch {}
       }
     },

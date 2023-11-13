@@ -43,8 +43,8 @@ export function divToTruncdiv(node: Node, spine: Spine) {
 export const truncatingOpsPlugins = [modToRem, divToTruncdiv];
 
 export function equalityToInequality(node: Node, spine: Spine) {
-  if (isOp("eq", "neq")(node)) {
-    const eq = node.op === "eq";
+  if (isOp("eq[Int]", "neq[Int]")(node)) {
+    const eq = node.op === "eq[Int]";
     const [a, b] = [node.args[0], node.args[1]];
     const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
       IntegerType,
@@ -126,16 +126,16 @@ export function applyDeMorgans(node: Node, spine: Spine) {
 
 export function useIntegerTruthiness(node: Node, spine: Spine) {
   if (
-    isOp("eq", "neq")(node) &&
+    isOp("eq[Int]", "neq[Int]")(node) &&
     spine.parent!.node.kind === "If" &&
     spine.pathFragment === "condition"
   ) {
     const res = isIntLiteral(0n)(node.args[1])
-      ? implicitConversion("int_to_bool", node.args[0])
+      ? implicitConversion("to_bool", node.args[0])
       : isIntLiteral(0n)(node.args[0])
-      ? implicitConversion("int_to_bool", node.args[1])
+      ? implicitConversion("to_bool", node.args[1])
       : undefined;
-    return res !== undefined && node.op === "eq" ? op("not", res) : res;
+    return res !== undefined && node.op === "eq[Int]" ? op("not", res) : res;
   }
 }
 

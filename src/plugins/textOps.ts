@@ -17,17 +17,17 @@ function toBidirectionalMap<T>(pairs: [T, T][]): Map<T, T> {
 }
 
 const textOpsEquivalenceAscii = toBidirectionalMap<OpCode>([
-  ["text_codepoint_find", "text_byte_find"],
-  ["text_get_codepoint", "text_get_byte"],
-  ["text_get_codepoint_to_int", "text_get_byte_to_int"],
-  ["text_codepoint_length", "text_byte_length"],
-  ["text_codepoint_reversed", "text_byte_reversed"],
-  ["text_get_codepoint_slice", "text_get_byte_slice"],
-  ["codepoint_to_int", "text_byte_to_int"],
+  ["find[codepoint]", "find[byte]"],
+  ["at[codepoint]", "at[byte]"],
+  ["ord_at[codepoint]", "ord_at[byte]"],
+  ["length[codepoint]", "length[byte]"],
+  ["reversed[codepoint]", "reversed[byte]"],
+  ["slice[codepoint]", "slice[byte]"],
+  ["ord[codepoint]", "ord[byte]"],
 ]);
 
 const integerOpsEquivalenceAscii = toBidirectionalMap<OpCode>([
-  ["int_to_text_byte", "int_to_codepoint"],
+  ["char[byte]", "char[codepoint]"],
 ]);
 
 /** Swaps an op to another one, provided they are equivalent for the subtype. */
@@ -64,23 +64,19 @@ export function useEquivalentTextOp(
 
 export const textGetToIntToTextGet: Plugin = mapOps(
   {
-    text_get_byte_to_int: (x) =>
-      op("text_byte_to_int", op("text_get_byte", ...x)),
-    text_get_codepoint_to_int: (x) =>
-      op("codepoint_to_int", op("text_get_codepoint", ...x)),
+    "ord_at[byte]": (x) => op("ord[byte]", op("at[byte]", ...x)),
+    "ord_at[codepoint]": (x) => op("ord[codepoint]", op("at[codepoint]", ...x)),
   },
   "textGetToIntToTextGet",
 );
 
 export const textToIntToTextGetToInt: Plugin = mapOps(
   {
-    text_byte_to_int: (x) =>
-      isOp("text_get_byte")(x[0])
-        ? op("text_get_byte_to_int", ...x[0].args)
-        : undefined,
-    codepoint_to_int: (x) =>
-      isOp("text_get_codepoint")(x[0])
-        ? op("text_get_codepoint_to_int", ...x[0].args)
+    "ord[byte]": (x) =>
+      isOp("at[byte]")(x[0]) ? op("ord_at[byte]", ...x[0].args) : undefined,
+    "ord[codepoint]": (x) =>
+      isOp("at[codepoint]")(x[0])
+        ? op("ord_at[codepoint]", ...x[0].args)
         : undefined,
   },
   "textToIntToTextGetToInt",
@@ -88,18 +84,17 @@ export const textToIntToTextGetToInt: Plugin = mapOps(
 
 export const textGetToTextGetToIntToText: Plugin = mapOps(
   {
-    text_get_byte: (x) =>
-      op("int_to_text_byte", op("text_get_byte_to_int", ...x)),
-    text_get_codepoint: (x) =>
-      op("int_to_codepoint", op("text_get_codepoint_to_int", ...x)),
+    "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", ...x)),
+    "at[codepoint]": (x) =>
+      op("char[codepoint]", op("ord_at[codepoint]", ...x)),
   },
   "textGetToTextGetToIntToText",
 );
 
 export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps(
   {
-    text_byte_to_int: (x) => op("text_get_byte_to_int", x[0], int(0n)),
-    codepoint_to_int: (x) => op("text_get_codepoint_to_int", x[0], int(0n)),
+    "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
+    "ord[codepoint]": (x) => op("ord_at[codepoint]", x[0], int(0n)),
   },
   "textToIntToFirstIndexTextGetToInt",
 );
@@ -115,7 +110,7 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
   return {
     name: "useMultireplace",
     visit(node) {
-      const isReplace = isOp("text_replace", "text_multireplace");
+      const isReplace = isOp("replace", "text_multireplace");
       if (isReplace(node) && isReplace(node.args[0])) {
         const a = node.args[0].args.slice(1);
         const b = node.args.slice(1);
@@ -147,7 +142,7 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
 
 export const replaceToSplitAndJoin: Plugin = mapOps(
   {
-    text_replace: ([x, y, z]) => op("join", op("text_split", x, y), z),
+    replace: ([x, y, z]) => op("join", op("split", x, y), z),
   },
   "replaceToSplitAndJoin",
 );

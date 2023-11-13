@@ -1,22 +1,22 @@
 import {
   type Node,
   type Type,
+  voidType,
+  textType as text,
   listType as list,
   arrayType as array,
   integerType as int,
+  setType as set,
+  tableType as table,
   integerTypeIncludingAll,
   type IntegerType,
   type Op,
   isSubtype,
   union,
   toString,
-  voidType,
-  textType as text,
   type TextType,
   booleanType,
   type OpCode,
-  setType as set,
-  tableType as table,
   type KeyValueType,
   keyValueType,
   getArgs,
@@ -284,8 +284,8 @@ function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
     // (num, num) => bool
     case "lt":
     case "leq":
-    case "eq":
-    case "neq":
+    case "eq[Int]":
+    case "neq[Int]":
     case "geq":
     case "gt":
       return [int(), int()];
@@ -296,46 +296,46 @@ function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
     case "and":
       return variadic(booleanType);
     // membership
-    case "array_contains":
+    case "contains[Array]":
       return [array(T1, T2), T1];
-    case "list_contains":
+    case "contains[List]":
       return [list(T1), T1];
-    case "table_contains_key":
+    case "contains[Table]":
       return [table(T1, T2), T1];
-    case "set_contains":
+    case "contains[Set]":
       return [set(T1), T1];
     // collection get
-    case "array_get":
+    case "at[Array]":
       return [array(T1, T2), T2];
-    case "list_get":
+    case "at[List]":
       return [list(T1), int(0)];
-    case "table_get":
+    case "at[Table]":
       return [table(T1, T2), T1];
-    case "argv_get":
+    case "at[argv]":
       return [int(0)];
     // other
-    case "list_push":
+    case "push":
       return [list(T1), T1];
     case "list_find":
       return [list(T1), T1];
-    case "concat":
+    case "concat[Text]":
       return variadic(text());
     case "repeat":
       return [text(), int(0)];
-    case "text_contains":
-    case "text_split":
+    case "contains[Text]":
+    case "split":
       return [text(), text()];
-    case "text_codepoint_find":
-    case "text_byte_find":
+    case "find[codepoint]":
+    case "find[byte]":
       return [text(), text(int(1))];
-    case "text_get_byte":
-    case "text_get_codepoint":
+    case "at[byte]":
+    case "at[codepoint]":
     case "right_align":
       return [text(), int(0)];
     case "join":
       return [list(text()), text()];
-    case "int_to_bin_aligned":
-    case "int_to_hex_aligned":
+    case "to_bin_aligned":
+    case "to_hex_aligned":
       return [int(0), int(0)];
     case "simplify_fraction":
       return [int(0), int(0)];
@@ -346,73 +346,73 @@ function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
       return [int()];
     case "not":
       return [booleanType];
-    case "int_to_bool":
+    case "to_bool":
       return [int()];
-    case "int_to_text":
+    case "to_dec":
       return [int()];
-    case "int_to_bin":
-    case "int_to_hex":
+    case "to_bin":
+    case "to_hex":
       return [int(0)];
-    case "text_to_int":
+    case "dec_to_int":
       return [text(int(), true)];
     case "bool_to_int":
       return [booleanType];
-    case "int_to_text_byte":
+    case "char[byte]":
       return [int(0, 255)];
-    case "int_to_codepoint":
+    case "char[codepoint]":
       return [int(0, 0x10ffff)];
-    case "list_length":
+    case "length[List]":
       return [list(T1)];
-    case "text_byte_length":
-    case "text_codepoint_length":
-    case "text_split_whitespace":
+    case "length[byte]":
+    case "length[codepoint]":
+    case "split_whitespace":
       return [text()];
     case "sorted":
       return [list(T1)];
-    case "text_byte_reversed":
-    case "text_codepoint_reversed":
+    case "reversed[byte]":
+    case "reversed[codepoint]":
       return [text()];
     // other
     case "true":
     case "false":
-    case "read_codepoint":
-    case "read_byte":
-    case "read_int":
-    case "read_line":
+    case "read[codepoint]":
+    case "read[byte]":
+    case "read[Int]":
+    case "read[line]":
     case "argc":
     case "argv":
       return [];
     case "putc":
       return [int(0, 255)];
-    case "print":
-    case "println":
+    case "print[Text]":
+    case "println[Text]":
       return [text()];
-    case "print_int":
-    case "println_int":
+    case "print[Int]":
+    case "println[Int]":
       return [int()];
     case "println_list_joined":
       return [list(text()), text()];
     case "println_many_joined":
       return variadic(text(), 2);
-    case "text_replace":
+    case "replace":
       return [text(), text(int(1, "oo")), text()];
     case "text_multireplace":
       return variadic(text(), 2);
-    case "text_get_byte_slice":
-    case "text_get_codepoint_slice":
+    case "slice[byte]":
+    case "slice[codepoint]":
       return [text(), int(0), int(0)];
-    case "text_get_codepoint_to_int":
+    case "ord_at[codepoint]":
       return [text(), int(0)];
-    case "text_get_byte_to_int":
+    case "ord_at[byte]":
       return [text(), int(0)];
-    case "codepoint_to_int":
-    case "text_byte_to_int":
+    case "ord[codepoint]":
+    case "ord[byte]":
       return [text(int(1, 1))];
-    case "array_set":
+    case "set_at[Array]":
       return [array(T1, T2), T2, T1];
-    case "list_set":
+    case "set_at[List]":
       return [list(T1), int(0), T1];
-    case "table_set":
+    case "set_at[Table]":
       return [table(T1, T2), T1, T2];
   }
 }
@@ -534,8 +534,8 @@ function getOpCodeType(expr: Op, program: Node): Type {
     // (num, num) => bool
     case "lt":
     case "leq":
-    case "eq":
-    case "neq":
+    case "eq[Int]":
+    case "neq[Int]":
     case "geq":
     case "gt":
       return booleanType;
@@ -546,26 +546,26 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "and":
       return booleanType;
     // membership
-    case "array_contains":
-    case "list_contains":
-    case "table_contains_key":
-    case "set_contains":
+    case "contains[Array]":
+    case "contains[List]":
+    case "contains[Table]":
+    case "contains[Set]":
       return booleanType;
     // collection get
-    case "array_get":
+    case "at[Array]":
       return (got[0] as ArrayType).member;
-    case "list_get":
+    case "at[List]":
       return (got[0] as ListType).member;
-    case "table_get":
+    case "at[Table]":
       return (got[0] as TableType).value;
-    case "argv_get":
+    case "at[argv]":
       return text();
     // other
-    case "list_push":
+    case "push":
       return voidType;
     case "list_find":
       return int(-1, (1n << 31n) - 1n);
-    case "concat": {
+    case "concat[Text]": {
       const textTypes = got as TextType[];
       return text(
         textTypes
@@ -578,26 +578,24 @@ function getOpCodeType(expr: Op, program: Node): Type {
       const [t, i] = got as [TextType, IntegerType];
       return text(getArithmeticType("mul", t.codepointLength, i), t.isAscii);
     }
-    case "text_contains":
+    case "contains[Text]":
       return booleanType;
-    case "text_codepoint_find":
-    case "text_byte_find":
+    case "find[codepoint]":
+    case "find[byte]":
       return int(
         -1,
         sub(
           mul(
             (got[0] as TextType).codepointLength.high,
-            expr.op === "text_byte_find" && !(got[0] as TextType).isAscii
-              ? 4n
-              : 1n,
+            expr.op === "find[byte]" && !(got[0] as TextType).isAscii ? 4n : 1n,
           ),
           (got[1] as TextType).codepointLength.low,
         ),
       );
-    case "text_split":
+    case "split":
       return list(got[0]);
-    case "text_get_byte":
-    case "text_get_codepoint":
+    case "at[byte]":
+    case "at[codepoint]":
       return text(int(1, 1), (got[0] as TextType).isAscii);
     case "join":
       return text(
@@ -607,16 +605,15 @@ function getOpCodeType(expr: Op, program: Node): Type {
       );
     case "right_align":
       return text(int(0, "oo"), (got[0] as TextType).isAscii);
-    case "int_to_bin_aligned":
-    case "int_to_hex_aligned": {
+    case "to_bin_aligned":
+    case "to_hex_aligned": {
       const t1 = got[0] as IntegerType;
       const t2 = got[1] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2)) {
         return text(
           integerTypeIncludingAll(
             BigInt(
-              t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16)
-                .length,
+              t1.high.toString(expr.op === "to_bin_aligned" ? 2 : 16).length,
             ),
             t2.high,
           ),
@@ -657,11 +654,11 @@ function getOpCodeType(expr: Op, program: Node): Type {
     }
     case "not":
       return booleanType;
-    case "int_to_bool":
+    case "to_bool":
       return booleanType;
-    case "int_to_text":
-    case "int_to_bin":
-    case "int_to_hex": {
+    case "to_dec":
+    case "to_bin":
+    case "to_hex": {
       const t = got[0] as IntegerType;
       if (isFiniteType(t))
         return text(
@@ -669,11 +666,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
             ...[t.low, t.high, ...(typeContains(t, 0n) ? [0n] : [])].map((x) =>
               BigInt(
                 x.toString(
-                  expr.op === "int_to_bin"
-                    ? 2
-                    : expr.op === "int_to_hex"
-                    ? 16
-                    : 10,
+                  expr.op === "to_bin" ? 2 : expr.op === "to_hex" ? 16 : 10,
                 ).length,
               ),
             ),
@@ -682,7 +675,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
         );
       return text(int(1), true);
     }
-    case "text_to_int": {
+    case "dec_to_int": {
       const t = got[0] as TextType;
       if (!isFiniteType(t.codepointLength)) return int();
       return int(
@@ -692,13 +685,13 @@ function getOpCodeType(expr: Op, program: Node): Type {
     }
     case "bool_to_int":
       return int(0, 1);
-    case "int_to_text_byte":
+    case "char[byte]":
       return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
-    case "int_to_codepoint":
+    case "char[codepoint]":
       return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
-    case "list_length":
+    case "length[List]":
       return int(0, (1n << 31n) - 1n);
-    case "text_byte_length": {
+    case "length[byte]": {
       const codepointLength = (got[0] as TextType).codepointLength;
       return int(
         codepointLength.low,
@@ -708,26 +701,26 @@ function getOpCodeType(expr: Op, program: Node): Type {
         ),
       );
     }
-    case "text_codepoint_length":
+    case "length[codepoint]":
       return (got[0] as TextType).codepointLength;
-    case "text_split_whitespace":
+    case "split_whitespace":
       return list(got[0]);
     case "sorted":
       return got[0];
-    case "text_byte_reversed":
-    case "text_codepoint_reversed":
+    case "reversed[byte]":
+    case "reversed[codepoint]":
       return got[0];
     // other
     case "true":
     case "false":
       return booleanType;
-    case "read_codepoint":
+    case "read[codepoint]":
       return text(int(1, 1));
-    case "read_byte":
+    case "read[byte]":
       return text(int(1, 1));
-    case "read_int":
+    case "read[Int]":
       return int();
-    case "read_line":
+    case "read[line]":
       return text();
     case "argc":
       return int(0, 2 ** 31 - 1);
@@ -735,17 +728,17 @@ function getOpCodeType(expr: Op, program: Node): Type {
       return list(text());
     case "putc":
       return voidType;
-    case "print":
-    case "println":
+    case "print[Text]":
+    case "println[Text]":
       return voidType;
-    case "print_int":
-    case "println_int":
+    case "print[Int]":
+    case "println[Int]":
       return voidType;
     case "println_list_joined":
       return voidType;
     case "println_many_joined":
       return voidType;
-    case "text_replace": {
+    case "replace": {
       const [a, c] = [got[0], got[2]] as TextType[];
       return text(
         getArithmeticType("mul", a.codepointLength, c.codepointLength),
@@ -754,8 +747,8 @@ function getOpCodeType(expr: Op, program: Node): Type {
     }
     case "text_multireplace":
       return text();
-    case "text_get_byte_slice":
-    case "text_get_codepoint_slice": {
+    case "slice[byte]":
+    case "slice[codepoint]": {
       const [t, i1, i2] = got as [TextType, IntegerType, IntegerType];
       const maximum = min(
         t.codepointLength.high,
@@ -763,17 +756,17 @@ function getOpCodeType(expr: Op, program: Node): Type {
       );
       return text(int(0n, maximum), t.isAscii);
     }
-    case "text_get_codepoint_to_int":
+    case "ord_at[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "text_get_byte_to_int":
+    case "ord_at[byte]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 255);
-    case "codepoint_to_int":
+    case "ord[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "text_byte_to_int":
+    case "ord[byte]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 255);
-    case "array_set":
-    case "list_set":
-    case "table_set":
+    case "set_at[Array]":
+    case "set_at[List]":
+    case "set_at[Table]":
       return voidType;
   }
 }

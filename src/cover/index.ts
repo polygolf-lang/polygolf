@@ -66,14 +66,14 @@ function nextBuiltin(x: Type) {
 
 for (const lang of langs) {
   const compilesAssignment = isCompilable(assignment(id("x"), int(0)), lang);
-  const compilesPrintInt = isCompilable(op("print_int", int(0)), lang);
-  const compilesPrint = isCompilable(op("print", text("x")), lang);
+  const compilesPrintInt = isCompilable(op("print[Int]", int(0)), lang);
+  const compilesPrint = isCompilable(op("print[Text]", text("x")), lang);
 
   lang.stmt = function (x: Node | undefined) {
     x ??= compilesPrintInt ? int(0) : text("x");
     const type = getType(x, x);
-    if (compilesPrint && type.kind === "text") return op("print", x);
-    if (compilesPrintInt && type.kind === "integer") return op("print_int", x);
+    if (compilesPrint && type.kind === "text") return op("print[Text]", x);
+    if (compilesPrintInt && type.kind === "integer") return op("print[Int]", x);
     if (compilesAssignment) return assignment(id("x"), x);
     return x;
   };

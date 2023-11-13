@@ -1,3 +1,140 @@
+import {
+  type Type,
+  typeArg,
+  textType as text,
+  listType as list,
+  arrayType as array,
+  booleanType as bool,
+  integerType as int,
+  setType as set,
+  tableType as table,
+  asciiType as ascii,
+} from ".";
+
+interface OpCodeDefinition {
+  args: Readonly<ArgTypes>;
+  front?: true | string;
+  assoc?: true;
+  commutes?: true;
+}
+
+interface Variadic {
+  variadic: Type;
+  min: number;
+}
+type ArgTypes = Variadic | Type[];
+function variadic(type: Type, min = 2): ArgTypes {
+  return {
+    variadic: type,
+    min,
+  };
+}
+
+const T1 = typeArg("T1");
+const T2 = typeArg("T2");
+
+const OpCodeDefinitions = {
+  // Arithmetic
+  add: { args: variadic(int()), front: true, assoc: true },
+  sub: { args: [int(), int()], front: true },
+  mul: { args: variadic(int()), front: true, assoc: true },
+  div: { args: [int(), int()], front: true },
+  trunc_div: { args: [int(), int()] },
+  unsigned_trunc_div: { args: [int(), int()] },
+  pow: { args: [int(), int()], front: true },
+  mod: { args: [int(), int()], front: true },
+  rem: { args: [int(), int()] },
+  unsigned_rem: { args: [int(), int()] },
+  bit_and: { args: variadic(int()), front: true, assoc: true },
+  bit_or: { args: variadic(int()), front: true, assoc: true },
+  bit_xor: { args: variadic(int()), front: true, assoc: true },
+  bit_shift_left: { args: [int(), int()], front: true },
+  bit_shift_right: { args: [int(), int()], front: true },
+  gcd: { args: variadic(int()), front: true, assoc: true },
+  min: { args: variadic(int()), front: true, assoc: true },
+  max: { args: variadic(int()), front: true, assoc: true },
+  neg: { args: [int()], front: true },
+  abs: { args: [int()], front: true },
+  bit_not: { args: [int()], front: true },
+
+  // Input
+  "read[codepoint]": { args: [] },
+  "read[byte]": { args: [] },
+  "read[Int]": { args: [] },
+  "read[line]": { args: [], front: true },
+  "at[argv]": { args: [int(0)], front: true },
+  argv: { args: [] },
+  argc: { args: [] },
+
+  // Output
+  "print[Text]": { args: [text()], front: "print" },
+  "print[Int]": { args: [text()], front: "print" },
+  "println[Text]": { args: [int()], front: "println" },
+  "println[Int]": { args: [int()], front: "println" },
+  println_list_joined: { args: [list(text()), text()] },
+  println_many_joined: { args: variadic(text(), 2) },
+  "putc[byte]": { args: [int(0, 255)], front: true },
+  "putc[codepoint]": { args: [int(0, 0x10ffff)], front: true },
+  "putc[Ascii]": { args: [int(0, 127)], front: "putc" },
+
+  // Bool arithmetic
+  or: { args: variadic(bool), front: true, assoc: true },
+  and: { args: variadic(bool), front: true, assoc: true },
+  unsafe_or: { args: variadic(bool), front: true, assoc: true },
+  unsafe_and: { args: variadic(bool), front: true },
+  not: { args: [bool], front: true },
+  true: { args: [], front: true },
+  false: { args: [], front: true },
+
+  // Comparison
+  lt: { args: [int(), int()], front: true },
+  leq: { args: [int(), int()], front: true },
+  geq: { args: [int(), int()], front: true },
+  gt: { args: [int(), int()], front: true },
+  "eq[Int]": { args: [int(), int()], front: true },
+  "eq[Text]": { args: [text(), text()], front: true },
+  "neq[Int]": { args: [int(), int()], front: true },
+  "neq[Text]": { args: [text(), text()], front: true },
+
+  // Access members
+  "at[Array]": { args: [array(T1, T2), T2], front: "at" },
+  "at[List]": { args: [list(T1), int(0)], front: "at" },
+  "at[Table]": { args: [table(T1, T2), T1], front: "at" },
+  "at[Ascii]": { args: [ascii, int(0)], front: "at" },
+  "at[byte]": { args: [text(), int(0)], front: true },
+  "at[codepoint]": { args: [text(), int(0)], front: true },
+  "set_at[Array]": { args: [array(T1, T2), T2, T1], front: "set_at" },
+  "set_at[List]": { args: [list(T1), int(0), T1], front: "set_at" },
+  "set_at[Table]": { args: [table(T1, T2), T1, T2], front: "set_at" },
+
+  // Slice
+  "slice[codepoint]": { args: [text(), int(0), int(0)], front: true },
+  "slice[byte]": { args: [text(), int(0), int(0)], front: true },
+  "slice[Ascii]": { args: [ascii, int(0), int(0)], front: "slice" },
+  "slice[List]": { args: [list(T1), int(0), int(0)], front: "slice" },
+
+  // Chars
+  "ord_at[byte]": { args: [text(), int(0)], front: true },
+  "ord_at[codepoint]": { args: [text(), int(0)], front: true },
+  "ord_at[Ascii]": { args: [ascii, int(0)], front: "ord_at" },
+  "ord[byte]": { args: [text(int(1, 1))], front: true },
+  "ord[codepoint]": { args: [text(int(1, 1))], front: true },
+  "ord[Ascii]": { args: [text(int(1, 1), true)], front: "ord" },
+  "char[byte]": { args: [int(0, 255)], front: true },
+  "char[codepoint]": { args: [int(0, 0x10ffff)], front: true },
+  "char[Ascii]": { args: [int(0, 127)], front: "char" },
+} as const satisfies Record<string, OpCodeDefinition>;
+
+type AnyOpCode = keyof typeof OpCodeDefinitions;
+export type OpCode<T extends Partial<OpCodeDefinition> = {}> = {
+  [K in AnyOpCode]: (typeof OpCodeDefinitions)[K] extends T ? K : never;
+}[AnyOpCode];
+export type NullaryOpCode = OpCode<{ args: Readonly<[]> }>;
+export type UnaryOpCode = OpCode<{ args: Readonly<[Type]> }>;
+export type BinaryOpCode = OpCode<{ args: Readonly<[Type, Type]> }>;
+export type TernaryOpCode = OpCode<{ args: Readonly<[Type, Type, Type]> }>;
+export type VariadicOpCode = OpCode<{ args: Readonly<Variadic> }>;
+
 export const FrontendOpCodes = [
   "add",
   "sub",
@@ -16,103 +153,78 @@ export const FrontendOpCodes = [
   "neq",
   "gt",
   "geq",
+
   "or",
   "and",
-  "array_contains",
-  "list_contains",
-  "table_contains_key",
-  "set_contains",
-  "array_get",
-  "list_get",
-  "table_get",
-  "list_push",
+
+  "contains",
+  "at",
+  "at[byte]",
+  "at[codepoint]",
+  "push",
   "concat",
   "repeat",
-  "text_contains",
-  "text_byte_find",
-  "text_codepoint_find",
-  "text_split",
-  "text_get_byte",
-  "text_get_byte_slice",
-  "text_get_codepoint",
-  "text_get_codepoint_slice",
+  "find",
+  "find[byte]",
+  "find[codepoint]",
+  "split",
+  "slice",
+  "slice[byte]",
+  "slice[codepoint]",
   "join",
   "right_align",
-  "int_to_bin_aligned",
-  "int_to_hex_aligned",
-  "simplify_fraction",
+  "to_bin_aligned",
+  "to_hex_aligned",
 
   "abs",
   "bit_not",
   "neg",
   "not",
-  "int_to_text",
-  "int_to_bin",
-  "int_to_hex",
-  "text_to_int",
+  "to_dec",
+  "to_bin",
+  "to_hex",
+  "dec_to_int",
   "bool_to_int",
-  "int_to_text_byte", // Returns a single byte text using the specified byte.
-  "int_to_codepoint", // Returns a single codepoint text using the specified integer.
-  "list_length",
-  "text_byte_length", // Returns the text length in bytes.
-  "text_codepoint_length", // Returns the text length in codepoints.
-  "text_split_whitespace",
-  "text_byte_reversed", // Returns a text containing the reversed order of bytes.
-  "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
-  "text_byte_to_int",
-  "codepoint_to_int",
-  "read_line",
+  "char",
+  "char[byte]", // Returns a single byte text using the specified byte.
+  "char[codepoint]", // Returns a single codepoint text using the specified integer.
+  "length",
+  "length[byte]", // Returns the text length in bytes.
+  "length[codepoint]", // Returns the text length in codepoints.
+  "split_whitespace",
+  "reversed[byte]", // Returns a text containing the reversed order of bytes.
+  "reversed[codepoint]", // Returns a text containing the reversed order of codepoints.
+  "reversed",
+  "ord[byte]",
+  "ord[codepoint]",
+  "ord[Ascii]",
+  "read[line]",
   "true",
   "false",
-  "print",
-  "println",
-  "print_int",
-  "println_int",
-  "text_replace",
-  "array_set",
-  "list_set",
-  "table_set",
+  "replace",
+  "set_at[Array]",
+  "set_at[List]",
+  "set_at[Table]",
   "sorted",
-  "argv_get",
+  "at[argv]",
 ] as const;
-
-// It may seem that the `string &` is redundant, but the `isPolygolf` typeguard doesn't work without it.
-export type FrontendOpCode = string & (typeof FrontendOpCodes)[number];
-
-export function isFrontend(op: OpCode): op is FrontendOpCode {
-  return FrontendOpCodes.includes(op as any);
-}
 
 export const UnaryOpCodes = [
-  "print",
-  "println",
-  "print_int",
-  "println_int",
-  "putc",
-  "argv_get",
-  "abs",
-  "bit_not",
-  "neg",
-  "not",
-  "int_to_text",
-  "int_to_bin",
-  "int_to_hex",
-  "int_to_bool",
-  "text_to_int",
+  "to_dec",
+  "to_bin",
+  "to_hex",
+  "to_bool",
+  "dec_to_int",
   "bool_to_int",
-  "int_to_text_byte",
-  "int_to_codepoint",
-  "list_length",
-  "text_codepoint_length",
-  "text_byte_length",
-  "text_split_whitespace",
+  "length[List]",
+  "length[codepoint]",
+  "length[byte]",
+  "split_whitespace",
   "sorted",
-  "text_byte_reversed",
-  "text_codepoint_reversed",
-  "text_byte_to_int", // (text_byte_to_int (text_get_byte $x $i)) is equivalent to (text_get_byte_to_int $x $i), "text_byte_to_int" is the inverse of "int_to_text_byte"
-  "codepoint_to_int", // (codepoint_to_int (text_get_codepoint $x $i)) is equivalent to (text_get_codepoint_to_int $x $i), "codepoint_to_int" is the inverse of "int_to_codepoint"
+  "reversed[byte]",
+  "reversed[codepoint]",
 ] as const;
-export type UnaryOpCode = string & (typeof UnaryOpCodes)[number];
+export type UnaryOpCodeOld = string & (typeof UnaryOpCodes)[number];
 
 export function isUnary(op: OpCode): op is UnaryOpCode {
   return UnaryOpCodes.includes(op as any);
@@ -137,7 +249,10 @@ export function isCommutative(op: OpCode): op is CommutativeOpCode {
   return CommutativeOpCodes.includes(op as any);
 }
 
-export const AssociativeOpCodes = [...CommutativeOpCodes, "concat"] as const;
+export const AssociativeOpCodes = [
+  ...CommutativeOpCodes,
+  "concat[Text]",
+] as const;
 
 export type AssociativeOpCode = string & (typeof AssociativeOpCodes)[number];
 
@@ -146,68 +261,39 @@ export function isAssociative(op: OpCode): op is AssociativeOpCode {
 }
 
 export const BinaryOpCodes = [
+  ,
   // (num, num) => num
-  "add",
-  "sub",
-  "mul",
-  "div",
-  "trunc_div",
-  "unsigned_trunc_div",
-  "pow",
-  "mod",
-  "rem",
-  "unsigned_rem",
-  "bit_and",
-  "bit_or",
-  "bit_xor",
-  "bit_shift_left",
-  "bit_shift_right",
-  "gcd",
-  "min",
-  "max",
+
   // (num, num) => bool
-  "lt",
-  "leq",
-  "eq",
-  "neq",
-  "geq",
-  "gt",
+
   // (bool, bool) => bool
-  "or",
-  "and",
-  "unsafe_or",
-  "unsafe_and",
   // membership
-  "array_contains",
-  "list_contains",
-  "table_contains_key",
-  "set_contains",
+  "contains[Array]",
+  "contains[List]",
+  "contains[Table]",
+  "contains[Set]",
+  ,
   // collection get
-  "array_get",
-  "list_get",
-  "table_get",
+
   // other
-  "println_list_joined",
-  "list_push",
+  "push",
+  "append",
   "list_find", // returns the 0-index of the first occurence of or -1 if it is not found
-  "concat",
+  "concat[Text]",
+  "concat[List]",
   "repeat",
-  "text_contains",
-  "text_codepoint_find", // (text_codepoint_find a b) returns the codepoint-0-index of the start of the first occurence of b in a or -1 if it is not found
-  "text_byte_find", // (text_byte_find a b) returns the byte-0-index of the start of the first occurence of b in a or -1 if it is not found
-  "text_split",
-  "text_get_byte", // returns a single byte text at the specified byte-0-index
-  "text_get_codepoint", // returns a single codepoint text at the specified codepoint-0-index
-  "text_get_codepoint_to_int", // gets the codepoint at the specified codepoint-0-index as an integer
-  "text_get_byte_to_int", // gets the byte at the specified byte-0-index as an integer
+  "contains[Text]",
+  "find[codepoint]", // (text_codepoint_find a b) returns the codepoint-0-index of the start of the first occurence of b in a or -1 if it is not found
+  "find[byte]", // (text_byte_find a b) returns the byte-0-index of the start of the first occurence of b in a or -1 if it is not found
+  "split",
   "join",
   "right_align",
-  "int_to_bin_aligned", // Converts the given integer to text representing the value in binary. The result is aligned with 0s to the specified number of places.
-  "int_to_hex_aligned", // Converts the given integer to text representing the value in hexadecimal. The result is aligned with 0s to the specified number of places.
+  "to_bin_aligned", // Converts the given integer to text representing the value in binary. The result is aligned with 0s to the specified number of places.
+  "to_hex_aligned", // Converts the given integer to text representing the value in hexadecimal. The result is aligned with 0s to the specified number of places.
   "simplify_fraction", // Given two integers, p,q, returns a text representation of the reduced version of the fraction p/q.
 ] as const;
 
-export type BinaryOpCode = string & (typeof BinaryOpCodes)[number];
+export type BinaryOpCodeOld = string & (typeof BinaryOpCodes)[number];
 
 export function isBinary(op: OpCode): op is BinaryOpCode {
   return BinaryOpCodes.includes(op as any);
@@ -216,26 +302,14 @@ export function isBinary(op: OpCode): op is BinaryOpCode {
 export const OpCodes = [
   ...BinaryOpCodes,
   ...UnaryOpCodes,
-  "read_codepoint",
-  "read_byte",
-  "read_int",
-  "read_line",
-  "true",
-  "false",
-  "argv",
-  "argc",
-  "text_replace",
+
+  "replace",
   "text_multireplace", // simultaneous replacement. Equivalent to chained text_replace if the inputs and outputs have no overlap
-  "text_get_codepoint_slice", // Returns a slice of the input text. Indeces are codepoint-0-based, start is inclusive, end is exclusive.
-  "text_get_byte_slice", // Returns a slice of the input text. Indeces are byte-0-based, start is inclusive, end is exclusive.
+
   // collection set
-  "array_set",
-  "list_set",
-  "table_set",
-  "println_many_joined", // Expects one text argument denoting the delimiter and then any number of texts to be joined and printed.
 ] as const;
 
-export type OpCode = string & (typeof OpCodes)[number];
+export type OpCodeOld = string & (typeof OpCodes)[number];
 
 export function isOpCode(op: string): op is OpCode {
   return OpCodes.includes(op as any);
@@ -252,17 +326,17 @@ export function arity(op: OpCode): number {
     case "false":
     case "argv":
     case "argc":
-    case "read_byte":
-    case "read_codepoint":
-    case "read_int":
-    case "read_line":
+    case "read[byte]":
+    case "read[codepoint]":
+    case "read[Int]":
+    case "read[line]":
       return 0;
-    case "text_replace":
-    case "text_get_byte_slice":
-    case "text_get_codepoint_slice":
-    case "array_set":
-    case "list_set":
-    case "table_set":
+    case "replace":
+    case "slice[byte]":
+    case "slice[codepoint]":
+    case "set_at[Array]":
+    case "set_at[List]":
+    case "set_at[Table]":
       return 3;
     case "println_many_joined":
     case "text_multireplace":
@@ -276,8 +350,8 @@ export function arity(op: OpCode): number {
  */
 export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
-    case "eq":
-    case "neq":
+    case "eq[Int]":
+    case "neq[Int]":
       return op;
     case "lt":
       return "gt";
@@ -293,10 +367,14 @@ export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
 
 export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   switch (op) {
-    case "eq":
-      return "neq";
-    case "neq":
-      return "eq";
+    case "eq[Int]":
+      return "neq[Int]";
+    case "neq[Int]":
+      return "eq[Int]";
+    case "eq[Text]":
+      return "neq[Text]";
+    case "neq[Text]":
+      return "eq[Text]";
     case "lt":
       return "geq";
     case "gt":

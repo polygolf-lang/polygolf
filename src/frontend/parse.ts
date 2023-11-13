@@ -348,7 +348,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
         return namedArg(asString(args[0]), args[1]);
     }
   if (isOpCode(opCode) && (!restrictedFrontend || isFrontend(opCode))) {
-    if (opCode === "argv_get" && restrictedFrontend) {
+    if (opCode === "at[argv]" && restrictedFrontend) {
       assertInteger(args[0]);
     }
     if (isBinary(opCode)) {
@@ -386,14 +386,14 @@ export const canonicalOpTable: Record<string, OpCode> = {
   "<<": "bit_shift_left",
   ">>": "bit_shift_right",
   // bitxor, bitnot handled as special case in canonicalOp
-  "==": "eq",
-  "!=": "neq",
+  "==": "eq[Int]",
+  "!=": "neq[Int]",
   "<=": "leq",
   "<": "lt",
   ">=": "geq",
   ">": "gt",
-  "#": "list_length",
-  "..": "concat",
+  "#": "length[List]",
+  "..": "concat[Text]",
 };
 
 function canonicalOp(op: string, arity: number): string {
