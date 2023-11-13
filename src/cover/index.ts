@@ -38,7 +38,7 @@ const options = yargs()
   .options({
     all: {
       alias: "a",
-      description: "Print rows that are all true",
+      description: "Print rows that are all true & backend only opcodes",
       type: "boolean",
     },
   })
@@ -53,8 +53,9 @@ interface LangCoverConfig {
   stmt: (x?: Node) => Node; // returns any node of type void containing given Node (or any)
 }
 
-const langs = languages.filter((x) => x.name !== "Polygolf") as (Language &
-  LangCoverConfig)[];
+const langs = languages.filter(
+  (x) => x.name !== "Polygolf" && x.name !== "Text",
+) as (Language & LangCoverConfig)[];
 
 let nextBuiltinState = -1;
 function nextBuiltin(x: Type) {
