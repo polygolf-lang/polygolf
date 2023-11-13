@@ -1,7 +1,12 @@
 import { type TokenTree } from "../../common/Language";
-import { EmitError, emitTextLiteral } from "../../common/emit";
+import { EmitError, emitTextFactory } from "../../common/emit";
 import { int, integerType, type IR, isIntLiteral, isSubtype } from "../../IR";
 import { getType } from "../../common/getType";
+
+const emitGolfscriptText = emitTextFactory({
+  '"TEXT"': { "\\": "\\\\", '"': `\\"` },
+  "'TEXT'": { "\\": `\\\\`, "'": `\\'` },
+});
 
 export default function emitProgram(program: IR.Node): TokenTree {
   function emitMultiNode(BaseNode: IR.Node, parent: IR.Node | null): TokenTree {
@@ -20,9 +25,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
     switch (stmt.kind) {
       case "Block":
         return emitMultiNode(stmt, parent);
-      case "ImportStatement":
-        return [stmt.name, ...stmt.modules]; // TODO the ... could be avoided if TokenTree was made readonly??
-      case "WhileLoop":
+      case "While":
         return [
           emitMultiNode(stmt.condition, stmt),
           emitMultiNode(stmt.body, stmt),
@@ -80,7 +83,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
           "}",
           "%",
         ];
-      case "IfStatement":
+      case "If":
         return [
           emitNode(stmt.condition),
           emitMultiNode(stmt.consequent, stmt),
@@ -105,30 +108,15 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return [emitNode(expr.expr), ":", emitNode(expr.variable), ";"];
       case "Identifier":
         return expr.name;
-      case "TextLiteral":
-        return emitTextLiteral(expr.value, [
-          [
-            `"`,
-            [
-              [`\\`, `\\\\`],
-              [`"`, `\\"`],
-            ],
-          ],
-          [
-            `"`,
-            [
-              [`\\`, `\\\\`],
-              [`'`, `\\'`],
-            ],
-          ],
-        ]);
-      case "IntegerLiteral":
+      case "Text":
+        return emitGolfscriptText(expr.value);
+      case "Integer":
         return expr.value.toString();
-      case "BinaryOp":
+      case "Infix":
         return [emitNode(expr.left), emitNode(expr.right), expr.name];
-      case "UnaryOp":
+      case "Prefix":
         return [emitNode(expr.arg), expr.name];
-      case "ListConstructor":
+      case "List":
         return ["[", expr.exprs.map(emitNode), "]"];
       case "ConditionalOp":
         return [

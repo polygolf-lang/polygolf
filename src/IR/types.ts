@@ -1,14 +1,6 @@
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
-import {
-  type Node,
-  arrayConstructor,
-  listConstructor,
-  setConstructor,
-  tableConstructor,
-  text,
-  int,
-} from "./IR";
+import { type Node, array, list, set, table, text, int } from "./IR";
 
 /** The type of the value of a node when evaluated */
 export interface IntegerType {
@@ -69,8 +61,14 @@ export const int64Type: Type = integerType(
   -9223372036854775808n,
   9223372036854775807n,
 );
+export const int53Type: Type = integerType(
+  -9007199254740992n,
+  9007199254740991n,
+);
 
-export function type(type: Type | "void" | "boolean" | "int64"): Type {
+export function type(
+  type: Type | "void" | "boolean" | "int64" | "int53",
+): Type {
   switch (type) {
     case "void":
       return voidType;
@@ -78,6 +76,8 @@ export function type(type: Type | "void" | "boolean" | "int64"): Type {
       return booleanType;
     case "int64":
       return int64Type;
+    case "int53":
+      return int53Type;
     default:
       return type;
   }
@@ -437,13 +437,13 @@ export function isConstantType(a: IntegerType): a is FiniteIntegerType {
 export function defaultValue(a: Type): Node {
   switch (a.kind) {
     case "Array":
-      return arrayConstructor([]);
+      return array([]);
     case "List":
-      return listConstructor([]);
+      return list([]);
     case "Set":
-      return setConstructor([]);
+      return set([]);
     case "Table":
-      return tableConstructor([]);
+      return table([]);
     case "text":
       if (
         isFiniteBound(a.codepointLength.low) &&

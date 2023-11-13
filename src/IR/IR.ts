@@ -1,25 +1,21 @@
+import type { Spine } from "../common/Spine";
 import {
   type Assignment,
   type ManyToManyAssignment,
   type OneToManyAssignment,
   type VarDeclarationWithAssignment,
-  type MutatingBinaryOp,
+  type MutatingInfix,
   type VarDeclaration,
   type VarDeclarationBlock,
 } from "./assignments";
+import { type Array, type List, type Table, type Set } from "./collections";
 import {
-  type ArrayConstructor,
-  type ListConstructor,
-  type TableConstructor,
-  type SetConstructor,
-} from "./collections";
-import {
-  type PolygolfOp,
-  type BinaryOp,
+  type Op,
+  type Infix,
   type ConditionalOp,
   type FunctionCall,
   type MethodCall,
-  type UnaryOp,
+  type Prefix,
   type IndexCall,
   type KeyValue,
   type RangeIndexCall,
@@ -27,6 +23,7 @@ import {
   type NamedArg,
   type ImplicitConversion,
   type PropertyCall,
+  type Postfix,
 } from "./exprs";
 import {
   type ForRange,
@@ -34,22 +31,17 @@ import {
   type ForEachKey,
   type ForEachPair,
   type ForCLike,
-  type WhileLoop,
+  type While,
   type ForArgv,
   type ForDifferenceRange,
 } from "./loops";
 import {
-  type AnyIntegerLiteral,
+  type AnyInteger,
   type Identifier,
-  type IntegerLiteral,
-  type TextLiteral,
+  type Integer,
+  type Text,
 } from "./terminals";
-import {
-  type Block,
-  type IfStatement,
-  type ImportStatement,
-  type Variants,
-} from "./toplevel";
+import { type Block, type If, type Import, type Variants } from "./toplevel";
 import { type Type } from "./types";
 
 export * from "./assignments";
@@ -66,6 +58,8 @@ export interface BaseNode {
   /** type: an uninferrable type, either annotated from the frontend or
    * inserted for language-specific op nodes */
   readonly type?: Type;
+  // & {} preserves the unioned literals, enabling autocomplete & lowering risk of typo
+  readonly targetType?: "bigint" | "int" | "string" | "char" | (string & {});
 }
 
 export interface SourcePointer {
@@ -79,22 +73,22 @@ export type Node =
   | Variants
   | KeyValue
   | Function
-  | PolygolfOp
+  | Op
   | Assignment
   | FunctionCall
   | Identifier
-  | TextLiteral
-  | IntegerLiteral
-  | AnyIntegerLiteral
-  | ArrayConstructor
-  | ListConstructor
-  | SetConstructor
-  | TableConstructor
+  | Text
+  | Integer
+  | AnyInteger
+  | Array
+  | List
+  | Set
+  | Table
   | ConditionalOp
-  | WhileLoop
+  | While
   | ForRange
   | ForArgv
-  | IfStatement
+  | If
   // Other nodes
   | ImplicitConversion
   | VarDeclaration
@@ -102,17 +96,36 @@ export type Node =
   | VarDeclarationBlock
   | ManyToManyAssignment
   | OneToManyAssignment
-  | MutatingBinaryOp
+  | MutatingInfix
   | IndexCall
   | RangeIndexCall
   | MethodCall
   | PropertyCall
-  | BinaryOp
-  | UnaryOp
-  | ImportStatement
+  | Infix
+  | Prefix
+  | Postfix
+  | Import
   | ForDifferenceRange
   | ForEach
   | ForEachKey
   | ForEachPair
   | ForCLike
   | NamedArg;
+
+export type NodeFuncRecord<Tout, Tin extends Node = Node> = Tin extends Node
+  ? Record<Tin["kind"], (n: Tin, s: Spine<Tin>) => Tout>
+  : never;
+
+export function getNodeFunc<Tout>(
+  nodeMapRecord: NodeFuncRecord<Tout>,
+): (n: Node, s: Spine) => Tout | undefined {
+  function result(node: Node, spine: Spine): Tout | undefined {
+    if (node.kind in nodeMapRecord) {
+      return (nodeMapRecord[node.kind as keyof typeof nodeMapRecord] as any)(
+        node,
+        spine,
+      );
+    }
+  }
+  return result;
+}

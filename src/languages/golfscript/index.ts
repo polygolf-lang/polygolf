@@ -6,12 +6,12 @@ import {
   add1,
   sub1,
   builtin,
-  polygolfOp,
+  op,
   int,
   text,
-  binaryOp,
-  listConstructor,
-  unaryOp,
+  infix,
+  list,
+  prefix,
   isIntLiteral,
 } from "../../IR";
 import {
@@ -24,7 +24,7 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToUnaryAndBinaryOps,
+  mapToPrefixAndInfix,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
@@ -89,113 +89,78 @@ const golfscriptLanguage: Language = {
       replaceToSplitAndJoin,
     ),
     simplegolf(
-      alias((expr) => {
-        switch (expr.kind) {
-          case "IntegerLiteral":
-            return expr.value.toString();
-          case "TextLiteral":
-            return `"${expr.value}"`;
-        }
+      alias({
+        Integer: (x) => x.value.toString(),
+        Text: (x) => `"${x.value}"`,
       }),
     ),
     required(
-      mapOps([
-        "argv_get",
-        (x) => polygolfOp("list_get", polygolfOp("argv"), x[0]),
-      ]),
-      mapOps(
-        ["argv", builtin("a")],
-        ["true", int(1)],
-        ["false", int(0)],
-        ["print", (x) => x[0]],
-        [
-          "text_get_byte_slice",
-          (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
-        ],
-        ["neg", (x) => polygolfOp("mul", x[0], int(-1))],
-        [
-          "max",
-          (x) =>
-            polygolfOp(
-              "list_get",
-              polygolfOp("sorted", listConstructor(x)),
-              int(1),
-            ),
-        ],
-        [
-          "min",
-          (x) =>
-            polygolfOp(
-              "list_get",
-              polygolfOp("sorted", listConstructor(x)),
-              int(0),
-            ),
-        ],
-        [
-          "leq",
-          (x) =>
-            polygolfOp(
-              "lt",
-              ...(isIntLiteral()(x[0])
-                ? [sub1(x[0]), x[1]]
-                : [x[0], add1(x[1])]),
-            ),
-        ],
-        [
-          "geq",
-          (x) =>
-            polygolfOp(
-              "gt",
-              ...(isIntLiteral()(x[0])
-                ? [add1(x[0]), x[1]]
-                : [x[0], sub1(x[1])]),
-            ),
-        ],
-      ),
-      mapToUnaryAndBinaryOps(
-        ["println", "n"],
-        ["not", "!"],
-        ["bit_not", "~"],
-        ["mul", "*"],
-        ["div", "/"],
-        ["trunc_div", "/"],
-        ["mod", "%"],
-        ["bit_and", "&"],
-        ["add", "+"],
-        ["sub", "-"],
-        ["bit_or", "|"],
-        ["bit_xor", "^"],
-        ["concat", "+"],
-        ["lt", "<"],
-        ["eq", "="],
-        ["gt", ">"],
-        ["and", "and"],
-        ["or", "or"],
-        ["text_get_byte_to_int", "="],
-        ["text_byte_length", ","],
-        ["text_byte_to_int", ")"],
-        ["int_to_text", "`"],
-        ["text_split", "/"],
-        ["repeat", "*"],
-        ["pow", "?"],
-        ["text_to_int", "~"],
-        ["abs", "abs"],
-        ["list_push", "+"],
-        ["list_get", "="],
-        ["list_length", ","],
-        ["join", "*"],
-        ["sorted", "$"],
-      ),
-      mapOps(
-        ["neq", (x) => unaryOp("!", binaryOp("=", x[0], x[1]))],
-        ["text_byte_reversed", (x) => binaryOp("%", x[0], int(-1))],
-        [
-          "int_to_text_byte",
-          (x) => binaryOp("+", listConstructor(x), text("")),
-        ],
-      ),
-      addImports([["a", "a"]], (x) =>
-        x.length > 0 ? assignment(x[0], builtin("")) : undefined,
+      mapOps({
+        argv_get: (x) => op("list_get", op("argv"), x[0]),
+        argv: builtin("a"),
+        true: int(1),
+        false: int(0),
+        print: (x) => x[0],
+
+        text_get_byte_slice: (x) =>
+          rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
+        neg: (x) => op("mul", x[0], int(-1)),
+        max: (x) => op("list_get", op("sorted", list(x)), int(1)),
+        min: (x) => op("list_get", op("sorted", list(x)), int(0)),
+
+        leq: (x) =>
+          op(
+            "lt",
+            ...(isIntLiteral()(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])]),
+          ),
+
+        geq: (x) =>
+          op(
+            "gt",
+            ...(isIntLiteral()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
+          ),
+      }),
+      mapToPrefixAndInfix({
+        println: "n",
+        not: "!",
+        bit_not: "~",
+        mul: "*",
+        div: "/",
+        trunc_div: "/",
+        mod: "%",
+        bit_and: "&",
+        add: "+",
+        sub: "-",
+        bit_or: "|",
+        bit_xor: "^",
+        concat: "+",
+        lt: "<",
+        eq: "=",
+        gt: ">",
+        and: "and",
+        or: "or",
+        text_get_byte_to_int: "=",
+        text_byte_length: ",",
+        text_byte_to_int: ")",
+        int_to_text: "`",
+        text_split: "/",
+        repeat: "*",
+        pow: "?",
+        text_to_int: "~",
+        abs: "abs",
+        list_push: "+",
+        list_get: "=",
+        list_length: ",",
+        join: "*",
+        sorted: "$",
+      }),
+      mapOps({
+        neq: (x) => prefix("!", infix("=", x[0], x[1])),
+        text_byte_reversed: (x) => infix("%", x[0], int(-1)),
+        int_to_text_byte: (x) => infix("+", list(x), text("")),
+      }),
+      addImports({ a: "a" }, (x) =>
+        x.length > 0 ? assignment("a", builtin("")) : undefined,
       ),
       renameIdents({
         // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
@@ -208,7 +173,7 @@ const golfscriptLanguage: Language = {
           return [firstLetter, firstLetter === lower ? upper : lower];
         },
         short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
-        general: (i: number) => "v" + i.toString(),
+        general: (i) => `v${i}`,
       }),
       removeImplicitConversions,
     ),

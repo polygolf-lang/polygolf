@@ -11,19 +11,19 @@ import {
   setType as set,
   tableType as table,
   type OpCode,
-  polygolfOp,
+  op,
   type Type,
-  listConstructor,
+  list as listNode,
   variants,
   toString,
   voidType,
   indexCall,
-  text as textLiteral,
-  int as integerLiteral,
-  arrayConstructor,
-  setConstructor,
+  text as textNode,
+  int as intNode,
+  array as arrayNode,
+  set as setNode,
   keyValue,
-  tableConstructor,
+  table as tableNode,
   listType,
   functionCall,
   type IntegerType,
@@ -54,19 +54,19 @@ function testNode(
   });
 }
 
-function testPolygolfOp(
+function testOp(
   name: string,
   op: OpCode,
   args: Type[],
   result: Type | "error",
 ) {
-  testNode(name, { kind: "PolygolfOp", op, args: args.map(e) }, result);
+  testNode(name, { kind: "Op", op, args: args.map(e) }, result);
 }
 
-function describePolygolfOp(op: OpCode, tests: [Type[], Type | "error"][]) {
+function describeOp(op: OpCode, tests: [Type[], Type | "error"][]) {
   describe("OpCode " + op, () => {
     for (const [args, result] of tests) {
-      testPolygolfOp(
+      testOp(
         "(" +
           args.map(toString).join(", ") +
           ") -> " +
@@ -80,7 +80,7 @@ function describePolygolfOp(op: OpCode, tests: [Type[], Type | "error"][]) {
 }
 
 function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
-  describePolygolfOp(op, [
+  describeOp(op, [
     [[text(), text()], "error"],
     [[int(), bool], "error"],
     [[int(), text()], "error"],
@@ -131,13 +131,7 @@ describe("Bindings", () => {
     "for difference range",
     id("i"),
     int(10, 14),
-    forDifferenceRange(
-      "i",
-      integerLiteral(10),
-      integerLiteral(5),
-      integerLiteral(1),
-      empty,
-    ),
+    forDifferenceRange("i", intNode(10), intNode(5), intNode(1), empty),
   );
 });
 
@@ -154,12 +148,12 @@ describe("Assignment", () => {
   testNode("assign bool to int", assignment(e(int()), e(bool)), "error");
   testNode(
     "assign empty list",
-    assignment(e(list(text())), listConstructor([])),
+    assignment(e(list(text())), listNode([])),
     list("void"),
   );
   test("Self-referential assignment", () => {
     const aLHS = id("a");
-    const expr = assignment(aLHS, polygolfOp("add", id("a"), e(int(1))));
+    const expr = assignment(aLHS, op("add", id("a"), e(int(1))));
     expect(() => calcType(aLHS, block([expr]))).toThrow(PolygolfError);
   });
 });
@@ -167,7 +161,7 @@ describe("Assignment", () => {
 describe("Functions", () => {
   testNode(
     "Function call wrong types",
-    functionCall(id("f", false), [integerLiteral(1n)]),
+    functionCall(id("f", false), [intNode(1n)]),
     "error",
     block([]),
   );
@@ -201,41 +195,34 @@ describe("Index call", () => {
 });
 
 describe("Literals", () => {
-  testNode("int", integerLiteral(4n), int(4, 4));
-  testNode("text", textLiteral("ahoj"), ascii(int(4, 4)));
-  testNode("text", textLiteral("dobrý den"), text(int(9, 9)));
-  testNode("bool", polygolfOp("true"), bool);
-  testNode("bool", polygolfOp("false"), bool);
-  testNode("array", arrayConstructor([e(int()), e(text())]), "error");
+  testNode("int", intNode(4n), int(4, 4));
+  testNode("text", textNode("ahoj"), ascii(int(4, 4)));
+  testNode("text", textNode("dobrý den"), text(int(9, 9)));
+  testNode("bool", op("true"), bool);
+  testNode("bool", op("false"), bool);
+  testNode("array", arrayNode([e(int()), e(text())]), "error");
   testNode(
     "array",
-    arrayConstructor([e(int(10, 30)), e(int(20, 40))]),
+    arrayNode([e(int(10, 30)), e(int(20, 40))]),
     array(int(10, 40), 2),
   );
-  testNode("list", listConstructor([e(int()), e(text())]), "error");
+  testNode("list", listNode([e(int()), e(text())]), "error");
   testNode(
     "list",
-    listConstructor([e(int(10, 30)), e(int(20, 40))]),
+    listNode([e(int(10, 30)), e(int(20, 40))]),
     list(int(10, 40)),
   );
-  testNode("set", setConstructor([e(int()), e(text())]), "error");
-  testNode(
-    "set",
-    setConstructor([e(int(10, 30)), e(int(20, 40))]),
-    set(int(10, 40)),
-  );
+  testNode("set", setNode([e(int()), e(text())]), "error");
+  testNode("set", setNode([e(int(10, 30)), e(int(20, 40))]), set(int(10, 40)));
   testNode(
     "table",
-    tableConstructor([
-      keyValue(e(text()), e(int())),
-      keyValue(e(text()), e(text())),
-    ]),
+    tableNode([keyValue(e(text()), e(int())), keyValue(e(text()), e(text()))]),
     "error",
   );
-  testNode("table", tableConstructor([e(text()) as any, e(int())]), "error");
+  testNode("table", tableNode([e(text()) as any, e(int())]), "error");
   testNode(
     "table",
-    tableConstructor([
+    tableNode([
       keyValue(e(text(10)), e(int(100, 200))),
       keyValue(e(text(20)), e(int(-100, -50))),
     ]),
@@ -365,73 +352,73 @@ describeArithmeticOp("bit_shift_right", [
   [[int(10, 50), int(2, 3)], int(1, 12)],
 ]);
 
-describePolygolfOp("print", [
+describeOp("print", [
   [[int()], "error"],
   [[bool], "error"],
   [[text(), text()], "error"],
   [[text()], voidType],
 ]);
 
-describePolygolfOp("println", [
+describeOp("println", [
   [[int()], "error"],
   [[bool], "error"],
   [[text(), text()], "error"],
   [[text()], voidType],
 ]);
 
-describePolygolfOp("print_int", [
+describeOp("print_int", [
   [[text()], "error"],
   [[bool], "error"],
   [[int(), int()], "error"],
   [[int()], voidType],
 ]);
 
-describePolygolfOp("println_int", [
+describeOp("println_int", [
   [[text()], "error"],
   [[bool], "error"],
   [[int(), int()], "error"],
   [[int()], voidType],
 ]);
 
-describePolygolfOp("or", [
+describeOp("or", [
   [[bool, int()], "error"],
   [[bool], "error"],
   [[bool, bool], bool],
 ]);
 
-describePolygolfOp("and", [
+describeOp("and", [
   [[bool, int()], "error"],
   [[bool], "error"],
   [[bool, bool], bool],
 ]);
 
-describePolygolfOp("array_contains", [
+describeOp("array_contains", [
   [[int(), array(int(), 10)], "error"],
   [[list(int()), int()], "error"],
   [[array(int(), 10), text()], "error"],
   [[array(int(), 10), int()], bool],
 ]);
 
-describePolygolfOp("list_contains", [
+describeOp("list_contains", [
   [[int(), list(int())], "error"],
   [[array(int(), 10), int()], "error"],
   [[list(int()), text()], "error"],
   [[list(int()), int()], bool],
 ]);
 
-describePolygolfOp("table_contains_key", [
+describeOp("table_contains_key", [
   [[text(), table(text(), int())], "error"],
   [[table(text(), int()), int()], "error"],
   [[table(text(), int()), text()], bool],
 ]);
 
-describePolygolfOp("set_contains", [
+describeOp("set_contains", [
   [[int(), set(int())], "error"],
   [[set(int()), text()], "error"],
   [[set(int()), int()], bool],
 ]);
 
-describePolygolfOp("array_get", [
+describeOp("array_get", [
   [[int(0, 3), array(int(), 4)], "error"],
   [[array(int(), 4), text()], "error"],
   [[array(int(), 4), int()], "error"],
@@ -439,32 +426,32 @@ describePolygolfOp("array_get", [
   [[array(int(-300, 300), 4), int(0, 3)], int(-300, 300)],
 ]);
 
-describePolygolfOp("list_get", [
+describeOp("list_get", [
   [[int(0), list(int())], "error"],
   [[list(int()), text()], "error"],
   [[list(int()), int()], "error"],
   [[list(int(-300, 300)), int(0)], int(-300, 300)],
 ]);
 
-describePolygolfOp("table_get", [
+describeOp("table_get", [
   [[text(), table(text(), int())], "error"],
   [[table(text(), int()), int()], "error"],
   [[table(text(5), int()), text()], "error"],
   [[table(text(), int()), text()], int()],
 ]);
 
-describePolygolfOp("argv_get", [
+describeOp("argv_get", [
   [[int()], "error"],
   [[int(0)], text()],
 ]);
 
-describePolygolfOp("list_push", [
+describeOp("list_push", [
   [[int(), list(int())], "error"],
   [[list(int(0, 1000)), int()], "error"],
   [[list(int(0, 1000)), int(100, 200)], int(0, 1000)],
 ]);
 
-describePolygolfOp("concat", [
+describeOp("concat", [
   [[text(), int()], "error"],
   [[text(), text()], text()],
   [[ascii(), text(100, true)], ascii()],
@@ -475,7 +462,7 @@ describePolygolfOp("concat", [
   ],
 ]);
 
-describePolygolfOp("repeat", [
+describeOp("repeat", [
   [[text(), text()], "error"],
   [[int(), text()], "error"],
   [[text(), int()], "error"],
@@ -484,19 +471,19 @@ describePolygolfOp("repeat", [
   [[text(int(10, 20), true), int(3, 5)], text(int(30, 100), true)],
 ]);
 
-describePolygolfOp("text_contains", [
+describeOp("text_contains", [
   [[text(), int()], "error"],
   [[text(), text()], bool],
 ]);
 
-describePolygolfOp("text_codepoint_find", [
+describeOp("text_codepoint_find", [
   [[text(), int()], "error"],
   [[text(), text()], "error"],
   [[text(), text(int(1, 1))], int(-1)],
   [[text(100), text(int(10))], int(-1, 90)],
 ]);
 
-describePolygolfOp("text_byte_find", [
+describeOp("text_byte_find", [
   [[text(), int()], "error"],
   [[text(), text()], "error"],
   [[text(), text(int(1, 1))], int(-1)],
@@ -504,53 +491,53 @@ describePolygolfOp("text_byte_find", [
   [[ascii(100), text(int(10))], int(-1, 90)],
 ]);
 
-describePolygolfOp("text_split", [
+describeOp("text_split", [
   [[text(), int()], "error"],
   [[text(), text()], listType(text())],
   [[text(500), text()], listType(text(500))],
 ]);
 
-describePolygolfOp("text_get_byte", [
+describeOp("text_get_byte", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], text(int(1, 1))],
   [[ascii(), int(0)], ascii(int(1, 1))],
 ]);
 
-describePolygolfOp("text_get_codepoint", [
+describeOp("text_get_codepoint", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], text(int(1, 1))],
   [[ascii(), int(0)], ascii(int(1, 1))],
 ]);
 
-describePolygolfOp("text_get_codepoint_to_int", [
+describeOp("text_get_codepoint_to_int", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], int(0, 0x10ffff)],
   [[ascii(), int(0)], int(0, 127)],
 ]);
 
-describePolygolfOp("codepoint_to_int", [
+describeOp("codepoint_to_int", [
   [[text(), text()], "error"],
   [[text()], "error"],
   [[text(int(1, 1))], int(0, 0x10ffff)],
 ]);
 
-describePolygolfOp("text_get_byte_to_int", [
+describeOp("text_get_byte_to_int", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], int(0, 255)],
   [[ascii(), int(0)], int(0, 127)],
 ]);
 
-describePolygolfOp("text_byte_to_int", [
+describeOp("text_byte_to_int", [
   [[text(), text()], "error"],
   [[text()], "error"],
   [[ascii(int(1, 1))], int(0, 127)],
 ]);
 
-describePolygolfOp("join", [
+describeOp("join", [
   [[text(), text()], "error"],
   [[text(), list(text())], "error"],
   [[list(text()), int()], "error"],
@@ -560,7 +547,7 @@ describePolygolfOp("join", [
   [[list(ascii()), ascii()], ascii()],
 ]);
 
-describePolygolfOp("right_align", [
+describeOp("right_align", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], text()],
@@ -592,14 +579,14 @@ describeArithmeticOp("neg", [
   [[int(-20, "oo")], int("-oo", 20)],
 ]);
 
-describePolygolfOp("not", [
+describeOp("not", [
   [[bool, bool], "error"],
   [[int()], "error"],
   [[int(0, 1)], "error"],
   [[bool], bool],
 ]);
 
-describePolygolfOp("int_to_text", [
+describeOp("int_to_text", [
   [[bool], "error"],
   [[text()], "error"],
   [[int()], ascii(int(1))],
@@ -608,7 +595,7 @@ describePolygolfOp("int_to_text", [
   [[int(-5, 5)], ascii(int(1, 2))],
 ]);
 
-describePolygolfOp("int_to_bin", [
+describeOp("int_to_bin", [
   [[bool], "error"],
   [[text()], "error"],
   [[int()], "error"],
@@ -617,7 +604,7 @@ describePolygolfOp("int_to_bin", [
   [[int(0, 0b10000)], ascii(int(1, 5))],
 ]);
 
-describePolygolfOp("int_to_hex", [
+describeOp("int_to_hex", [
   [[bool], "error"],
   [[text()], "error"],
   [[int()], "error"],
@@ -626,7 +613,7 @@ describePolygolfOp("int_to_hex", [
   [[int(0, 0x10000)], ascii(int(1, 5))],
 ]);
 
-describePolygolfOp("text_to_int", [
+describeOp("text_to_int", [
   [[bool], "error"],
   [[int()], "error"],
   [[text()], "error"],
@@ -635,49 +622,49 @@ describePolygolfOp("text_to_int", [
   [[ascii(5)], int(-9999, 99999)],
 ]);
 
-describePolygolfOp("bool_to_int", [
+describeOp("bool_to_int", [
   [[int()], "error"],
   [[bool], int(0, 1)],
 ]);
 
-describePolygolfOp("int_to_text_byte", [
+describeOp("int_to_text_byte", [
   [[text()], "error"],
   [[int(0)], "error"],
   [[int(0, 255)], text(int(1, 1))],
   [[int(0, 127)], ascii(int(1, 1))],
 ]);
 
-describePolygolfOp("int_to_codepoint", [
+describeOp("int_to_codepoint", [
   [[text()], "error"],
   [[int(0)], "error"],
   [[int(0, 0x10ffff)], text(int(1, 1))],
   [[int(0, 127)], ascii(int(1, 1))],
 ]);
 
-describePolygolfOp("list_length", [
+describeOp("list_length", [
   [[list(int()), int()], "error"],
   [[array(int(), 10)], "error"],
-  [[list(int())], int(0)],
+  [[list(int())], int(0, (1n << 31n) - 1n)],
 ]);
 
-describePolygolfOp("text_codepoint_length", [
+describeOp("text_codepoint_length", [
   [[list(int())], "error"],
   [[text(int(20, 58))], int(20, 58)],
   [[ascii(int(20, 58))], int(20, 58)],
 ]);
 
-describePolygolfOp("text_byte_length", [
+describeOp("text_byte_length", [
   [[list(int())], "error"],
   [[text(int(20, 58))], int(20, 4 * 58)],
   [[ascii(int(20, 58))], int(20, 58)],
 ]);
 
-describePolygolfOp("text_split_whitespace", [
+describeOp("text_split_whitespace", [
   [[list(text())], "error"],
   [[text(58)], list(text(58))],
 ]);
 
-describePolygolfOp("sorted", [
+describeOp("sorted", [
   [[array(text(), 5)], "error"],
   [[set(text())], "error"],
   [[table(text(), text())], "error"],
@@ -686,27 +673,27 @@ describePolygolfOp("sorted", [
   [[list(text())], list(text())],
 ]);
 
-describePolygolfOp("text_byte_reversed", [
+describeOp("text_byte_reversed", [
   [[list(text())], "error"],
   [[text()], text()],
 ]);
 
-describePolygolfOp("text_codepoint_reversed", [
+describeOp("text_codepoint_reversed", [
   [[list(text())], "error"],
   [[text()], text()],
 ]);
 
-describePolygolfOp("argv", [
+describeOp("argv", [
   [[int(0)], "error"],
   [[], list(text())],
 ]);
 
-describePolygolfOp("argc", [
+describeOp("argc", [
   [[int(0)], "error"],
   [[], int(0, 2 ** 31 - 1)],
 ]);
 
-describePolygolfOp("text_replace", [
+describeOp("text_replace", [
   [[text(), text()], "error"],
   [[text(), text(), text()], "error"],
   [[text(), text(int(1)), text()], text()],
@@ -715,7 +702,7 @@ describePolygolfOp("text_replace", [
   [[text(58), text(int(1)), text(58)], text(58 * 58)],
 ]);
 
-describePolygolfOp("text_get_codepoint_slice", [
+describeOp("text_get_codepoint_slice", [
   [[text(), int(0)], "error"],
   [[text(), int(), int()], "error"],
   [[text(), int(0), int(0)], text()],
@@ -724,7 +711,7 @@ describePolygolfOp("text_get_codepoint_slice", [
   [[text(), int(30, 200), int(0, 58)], text(28)],
 ]);
 
-describePolygolfOp("text_get_byte_slice", [
+describeOp("text_get_byte_slice", [
   [[text(), int(0)], "error"],
   [[text(), int(), int()], "error"],
   [[text(), int(0), int(0)], text()],
@@ -733,7 +720,7 @@ describePolygolfOp("text_get_byte_slice", [
   [[text(), int(30, 200), int(0, 58)], text(28)],
 ]);
 
-describePolygolfOp("array_set", [
+describeOp("array_set", [
   [[array(int(), 4), text(), int()], "error"],
   [[array(int(), 4), int(), int()], "error"],
   [[array(int(), 4), int(1, 4), int()], "error"],
@@ -741,14 +728,14 @@ describePolygolfOp("array_set", [
   [[array(int(-300, 300), 4), int(0, 3), int(10, 20)], int(-300, 300)],
 ]);
 
-describePolygolfOp("list_set", [
+describeOp("list_set", [
   [[list(int()), text(), int()], "error"],
   [[list(int()), int(), int()], "error"],
   [[list(int(-300, 300)), int(0), text()], "error"],
   [[list(int(-300, 300)), int(0), int(10, 20)], int(-300, 300)],
 ]);
 
-describePolygolfOp("table_set", [
+describeOp("table_set", [
   [[table(text(), int()), int(), text()], "error"],
   [[table(text(5), int()), text(), int()], "error"],
   [[table(text(5), int(0)), text(5), int()], "error"],

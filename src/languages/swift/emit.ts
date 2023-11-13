@@ -2,17 +2,71 @@ import { type TokenTree } from "../../common/Language";
 import {
   EmitError,
   emitIntLiteral,
-  emitTextLiteral,
+  emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isIntLiteral, isIdent } from "../../IR";
+import { type IR, isIntLiteral } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
+
+const unicode01to09repls = {
+  "\u{1}": `\\u{1}`,
+  "\u{2}": `\\u{2}`,
+  "\u{3}": `\\u{3}`,
+  "\u{4}": `\\u{4}`,
+  "\u{5}": `\\u{5}`,
+  "\u{6}": `\\u{6}`,
+  "\u{7}": `\\u{7}`,
+  "\u{8}": `\\u{8}`,
+  "\u{9}": `\\u{9}`,
+} as const;
+const unicode0Bto1Frepls = {
+  "\u{b}": `\\u{b}`,
+  "\u{c}": `\\u{c}`,
+  "\u{d}": `\\u{d}`,
+  "\u{e}": `\\u{e}`,
+  "\u{f}": `\\u{f}`,
+  "\u{10}": `\\u{10}`,
+  "\u{11}": `\\u{11}`,
+  "\u{12}": `\\u{12}`,
+  "\u{13}": `\\u{13}`,
+  "\u{14}": `\\u{14}`,
+  "\u{15}": `\\u{15}`,
+  "\u{16}": `\\u{16}`,
+  "\u{17}": `\\u{17}`,
+  "\u{18}": `\\u{18}`,
+  "\u{19}": `\\u{19}`,
+  "\u{1a}": `\\u{1a}`,
+  "\u{1b}": `\\u{1b}`,
+  "\u{1c}": `\\u{1c}`,
+  "\u{1d}": `\\u{1d}`,
+  "\u{1e}": `\\u{1e}`,
+  "\u{1f}": `\\u{1f}`,
+} as const;
+
+const emitSwiftText = emitTextFactory(
+  {
+    '"TEXT"': {
+      "\\": `\\\\`,
+      ...unicode01to09repls,
+      "\u{a}": `\\n`,
+      ...unicode0Bto1Frepls,
+      '"': `\\"`,
+    },
+    '"""\nTEXT\n"""': {
+      "\\": `\\\\`,
+      ...unicode01to09repls,
+      ...unicode0Bto1Frepls,
+      '"""': `\\"""`,
+    },
+  },
+  (x) => `\\u{${x.toString(16)}}`,
+);
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return unaryPrecedence(expr.name);
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
   }
   return Infinity;
@@ -85,9 +139,9 @@ export default function emitProgram(
           return emit(e.assignment);
         case "Block":
           return emitMultiNode(e);
-        case "ImportStatement":
+        case "Import":
           return [e.name, joinTrees(",", e.modules)];
-        case "WhileLoop":
+        case "While":
           return [`while`, emit(e.condition), emitMultiNode(e.body)];
         case "ForEach":
           return [
@@ -119,7 +173,7 @@ export default function emitProgram(
             emitMultiNode(e.body),
           ];
         }
-        case "IfStatement":
+        case "If":
           return [
             "if",
             emit(e.condition),
@@ -135,18 +189,17 @@ export default function emitProgram(
           throw new EmitError(e);
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
-        case "MutatingBinaryOp":
+        case "MutatingInfix":
           return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, ":", emit(e.value)];
         case "Identifier":
           return e.name;
-        case "TextLiteral":
-          return emitSwiftTextLiteral(e.value, context.options.codepointRange);
-        case "IntegerLiteral":
+        case "Text":
+          return emitSwiftText(e.value, context.options.codepointRange);
+        case "Integer":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
-          if (isIdent("!")(e.func)) return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node
           return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "PropertyCall":
           return [emit(e.object), ".", e.ident.name];
@@ -167,14 +220,16 @@ export default function emitProgram(
             ":",
             emit(e.alternate),
           ];
-        case "BinaryOp": {
+        case "Infix": {
           return [emit(e.left, prec), e.name, emit(e.right, prec + 1)];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
-        case "ListConstructor":
+        case "Postfix":
+          return [emit(e.arg, prec), e.name];
+        case "List":
           return ["[", joinNodes(",", e.exprs), "]"];
-        case "TableConstructor":
+        case "Table":
           return [
             "[",
             joinTrees(
@@ -189,7 +244,7 @@ export default function emitProgram(
             "[",
             emit(e.index),
             "]",
-            e.collection.kind === "TableConstructor" ? "!" : "",
+            e.collection.kind === "Table" ? "!" : "",
           ];
 
         default:
@@ -210,74 +265,4 @@ export default function emitProgram(
     return ["{", joinNodes("\n", children), "}"];
   }
   return emitMultiNode(program, true);
-}
-
-const unicode01to09repls: [string, string][] = [
-  [`\u{1}`, `\\u{1}`],
-  [`\u{2}`, `\\u{2}`],
-  [`\u{3}`, `\\u{3}`],
-  [`\u{4}`, `\\u{4}`],
-  [`\u{5}`, `\\u{5}`],
-  [`\u{6}`, `\\u{6}`],
-  [`\u{7}`, `\\u{7}`],
-  [`\u{8}`, `\\u{8}`],
-  [`\u{9}`, `\\u{9}`],
-];
-const unicode0Bto1Frepls: [string, string][] = [
-  [`\u{b}`, `\\u{b}`],
-  [`\u{c}`, `\\u{c}`],
-  [`\u{d}`, `\\u{d}`],
-  [`\u{e}`, `\\u{e}`],
-  [`\u{f}`, `\\u{f}`],
-  [`\u{10}`, `\\u{10}`],
-  [`\u{11}`, `\\u{11}`],
-  [`\u{12}`, `\\u{12}`],
-  [`\u{13}`, `\\u{13}`],
-  [`\u{14}`, `\\u{14}`],
-  [`\u{15}`, `\\u{15}`],
-  [`\u{16}`, `\\u{16}`],
-  [`\u{17}`, `\\u{17}`],
-  [`\u{18}`, `\\u{18}`],
-  [`\u{19}`, `\\u{19}`],
-  [`\u{1a}`, `\\u{1a}`],
-  [`\u{1b}`, `\\u{1b}`],
-  [`\u{1c}`, `\\u{1c}`],
-  [`\u{1d}`, `\\u{1d}`],
-  [`\u{1e}`, `\\u{1e}`],
-  [`\u{1f}`, `\\u{1f}`],
-];
-
-function emitSwiftTextLiteral(
-  x: string,
-  [low, high]: [number, number] = [1, Infinity],
-): string {
-  function mapCodepoint(x: number) {
-    if (low <= x && x <= high) return String.fromCharCode(x);
-    return `\\u{${x.toString(16)}}`;
-  }
-  return emitTextLiteral(
-    x,
-    [
-      [
-        `"`,
-        [
-          [`\\`, `\\\\`],
-          ...unicode01to09repls,
-          [`\u{a}`, `\\n`],
-          ...unicode0Bto1Frepls,
-          [`"`, `\\"`],
-        ],
-      ],
-      [
-        [`"""\n`, `\n"""`],
-        [
-          [`\\`, `\\\\`],
-          ...unicode01to09repls,
-          ...unicode0Bto1Frepls,
-          [`"""`, `\\"""`],
-        ],
-      ],
-    ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined,
-  );
 }

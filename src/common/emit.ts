@@ -1,4 +1,4 @@
-import { type IR, type IntegerLiteral, type Node } from "IR";
+import { type IR, type Integer, type Node } from "IR";
 import { PolygolfError } from "./errors";
 import { type TokenTree } from "./Language";
 import { codepoints } from "./objective";
@@ -11,40 +11,41 @@ export function joinTrees(
 }
 
 /**
- * Chooses the shortest option to represent the given string as a string literal.
- * Each option is described by the string delimiters (string or two strings) and an array of substitutions.
- * Substitution of the form `[somechar, null]` indicates that `somechar` cannot be present in the string in this option.
+ * Constructs a function that chooses the shortest option to represent the given string as a string literal.
+ * Each option's key is how the string "TEXT" should look after emit, value is an object representing a collection of substitution.
+ * Substitution of the form `somechar: null` indicates that `somechar` cannot be present in the string in this option.
  * Each resulting codepoint is mapped using `codepointMap`, if provided.
  */
-export function emitTextLiteral(
-  value: string,
-  options: [string | [string, string], [string, string | null][]][] = [
-    [
-      `"`,
-      [
-        [`\\`, `\\\\`],
-        [`\n`, `\\n`],
-        [`\r`, `\\r`],
-        [`"`, `\\"`],
-      ],
-    ],
-  ],
+export function emitTextFactory(
+  options: Record<`${string}TEXT${string}`, Record<string, string | null>>,
   codepointMap?: (x: number, i: number, arr: number[]) => string,
-): string {
-  let result = "";
-  for (const [delim, escapes] of options) {
-    if (escapes.some((x) => x[1] === null && value.includes(x[0]))) continue;
-    let current = value;
-    for (const [c, d] of escapes) {
-      if (d === null) continue;
-      current = current.replaceAll(c, d);
+) {
+  return function (
+    value: string,
+    [low, high]: [number, number] = [1, Infinity],
+  ) {
+    let result = "";
+    for (const [template, escapes0] of Object.entries(options)) {
+      const escapes = Object.entries(escapes0);
+      if (escapes.some((x) => x[1] === null && value.includes(x[0]))) continue;
+      let current = value;
+      for (const [c, d] of escapes) {
+        if (d === null) continue;
+        current = current.replaceAll(c, d);
+      }
+      current = template.replaceAll("TEXT", current);
+      if (!(codepointMap === undefined || (low === 1 && high === Infinity)))
+        current = codepoints(current)
+          .map((x, i, arr) =>
+            low <= x && x <= high
+              ? String.fromCharCode(x)
+              : codepointMap(x, i, arr),
+          )
+          .join("");
+      if (result === "" || current.length < result.length) result = current;
     }
-    if (typeof delim === "string") current = delim + current + delim;
-    else current = delim[0] + current + delim[1];
-    if (result === "" || current.length < result.length) result = current;
-  }
-  if (codepointMap === undefined) return result;
-  return codepoints(result).map(codepointMap).join("");
+    return result;
+  };
 }
 
 export function containsMultiNode(exprs: readonly IR.Node[]): boolean {
@@ -75,7 +76,7 @@ export function shortest(x: string[]) {
 }
 
 export function emitIntLiteral(
-  n: IntegerLiteral,
+  n: Integer,
   bases: Record<number, [string, string]> = { 10: ["", ""] },
 ) {
   if (-10000 < n.value && n.value < 10000) return n.value.toString();

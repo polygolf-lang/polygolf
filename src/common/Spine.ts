@@ -1,4 +1,4 @@
-import { type IR, isPolygolfOp, polygolfOp } from "../IR";
+import { type IR, isOp, op, isOfKind, block } from "../IR";
 import { type CompilationContext } from "./compile";
 import { getChild, getChildFragments, type PathFragment } from "./fragments";
 import { replaceAtIndex } from "./arrays";
@@ -64,31 +64,37 @@ export class Spine<N extends IR.Node = IR.Node> {
   /** Return the spine (pointing to this node) determined from replacing this
    * node with `newNode`. Replaces all of the ancestors of this node, up to the
    * root program, to get a fresh spine up to the program node.
-   * If `canonizeAndReturnRoot`, all `PolygolfOp`s up to the root are canonized
+   * If `canonizeAndReturnRoot`, all `Op`s up to the root are canonized
    * and the root spine is returned. */
   replacedWith(newNode: IR.Node, canonizeAndReturnRoot = false): Spine {
     if (this.parent === null || this.pathFragment === null) {
       return new Spine(newNode, null, null);
     }
-    if (newNode.kind === "Block" && this.parent.node.kind === "Block") {
-      throw new Error(
-        `Programming error: attempt to insert a Block into a Block`,
-      );
-    }
     const parentNode = this.parent.node;
     const parent =
       canonizeAndReturnRoot &&
-      isPolygolfOp()(parentNode) &&
+      isOfKind("Op", "Block")(parentNode) &&
       typeof this.pathFragment === "object"
         ? this.parent.replacedWith(
-            polygolfOp(
-              parentNode.op,
-              ...replaceAtIndex(
-                parentNode.args,
-                this.pathFragment.index,
-                newNode,
-              ),
-            ),
+            {
+              ...(isOp()(parentNode)
+                ? op(
+                    parentNode.op,
+                    ...replaceAtIndex(
+                      parentNode.args,
+                      this.pathFragment.index,
+                      newNode,
+                    ),
+                  )
+                : block(
+                    replaceAtIndex(
+                      parentNode.children,
+                      this.pathFragment.index,
+                      newNode,
+                    ),
+                  )),
+              targetType: parentNode.targetType,
+            },
             true,
           )
         : this.parent.withChildReplaced(newNode, this.pathFragment);
@@ -133,28 +139,33 @@ export class Spine<N extends IR.Node = IR.Node> {
    * */
   withReplacer(
     replacer: Visitor<IR.Node | undefined>,
-    skipThis = false,
     skipReplaced = false,
+    skipThis = false,
   ): Spine {
     const ret = skipThis ? undefined : replacer(this.node, this);
     if (ret === undefined) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let curr = this as Spine;
       // recurse on children
-      if (isPolygolfOp()(this.node)) {
-        // Create canonical PolygolfOp instead of just replacing the chidren
+      if (isOfKind("Op", "Block")(this.node)) {
+        // Create canonical Op / block instead of just replacing the chidren
         const newChildren: IR.Node[] = [];
         let someChildrenIsNew = false;
         for (const child of this.getChildSpines()) {
-          const newChild = child.withReplacer(replacer, false, skipReplaced);
+          const newChild = child.withReplacer(replacer, skipReplaced, false);
           newChildren.push(newChild.node);
           someChildrenIsNew ||= newChild !== child;
         }
         if (someChildrenIsNew)
-          curr = curr.replacedWith(polygolfOp(this.node.op, ...newChildren));
+          curr = curr.replacedWith({
+            ...(isOp()(this.node)
+              ? op(this.node.op, ...newChildren)
+              : block(newChildren)),
+            targetType: this.node.targetType,
+          });
       } else {
         for (const child of this.getChildSpines()) {
-          const newChild = child.withReplacer(replacer, false, skipReplaced);
+          const newChild = child.withReplacer(replacer, skipReplaced, false);
           if (newChild !== child) {
             curr = curr.withChildReplaced(newChild.node, child.pathFragment!);
             // Following line should be equivalent but doesn't work: (Bug?)
@@ -167,7 +178,7 @@ export class Spine<N extends IR.Node = IR.Node> {
       return this.replacedWith(ret);
     } else {
       // replace this, then recurse on children but not this
-      return this.replacedWith(ret).withReplacer(replacer, true);
+      return this.replacedWith(ret).withReplacer(replacer, skipReplaced, true);
     }
   }
 }

@@ -21,17 +21,16 @@ export interface Identifier<
 /**
  * An unbounded integer constant. Raw OK
  */
-export interface IntegerLiteral<Value extends bigint = bigint>
-  extends BaseNode {
-  readonly kind: "IntegerLiteral";
+export interface Integer<Value extends bigint = bigint> extends BaseNode {
+  readonly kind: "Integer";
   readonly value: Value;
 }
 
 /**
  * An unbounded integer constant. Raw OK
  */
-export interface AnyIntegerLiteral extends BaseNode {
-  readonly kind: "AnyIntegerLiteral";
+export interface AnyInteger extends BaseNode {
+  readonly kind: "AnyInteger";
   readonly low: bigint;
   readonly high: bigint;
 }
@@ -41,8 +40,8 @@ export interface AnyIntegerLiteral extends BaseNode {
  *
  * There is no distinction for byte vs unicode strings
  */
-export interface TextLiteral<Value extends string = string> extends BaseNode {
-  readonly kind: "TextLiteral";
+export interface Text<Value extends string = string> extends BaseNode {
+  readonly kind: "Text";
   readonly value: Value;
 }
 
@@ -54,16 +53,16 @@ export function builtin(name: string): Identifier {
   return id(name, true);
 }
 
-export function int(value: bigint | number): IntegerLiteral {
-  return { kind: "IntegerLiteral", value: BigInt(value) };
+export function int(value: bigint | number): Integer {
+  return { kind: "Integer", value: BigInt(value) };
 }
 
-export function anyInt(low: bigint, high: bigint): AnyIntegerLiteral {
-  return { kind: "AnyIntegerLiteral", low, high };
+export function anyInt(low: bigint, high: bigint): AnyInteger {
+  return { kind: "AnyInteger", low, high };
 }
 
-export function text(value: string): TextLiteral {
-  return { kind: "TextLiteral", value };
+export function text(value: string): Text {
+  return { kind: "Text", value };
 }
 
 export function argv(): Argv {

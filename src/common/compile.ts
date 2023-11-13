@@ -27,6 +27,19 @@ export interface CompilationOptions {
   codepointRange: [number, number];
 }
 
+export function compilationOptions(
+  partial: Partial<CompilationOptions> = {},
+): CompilationOptions {
+  return {
+    level: partial.level ?? "full",
+    objective: partial.objective ?? "bytes",
+    getAllVariants: partial.getAllVariants ?? false,
+    skipTypecheck: partial.skipTypecheck ?? false,
+    restrictFrontend: partial.restrictFrontend ?? true,
+    codepointRange: partial.codepointRange ?? [1, Infinity],
+  };
+}
+
 export type AddWarning = (x: Error, isGlobal: boolean) => void;
 
 export interface CompilationContext {
@@ -479,14 +492,11 @@ function typecheck(program: Node) {
 export function debugEmit(program: Node): string {
   const result = compileVariantNoPacking(
     program,
-    {
+    compilationOptions({
       level: "nogolf",
-      objective: "bytes",
       skipTypecheck: true,
-      getAllVariants: false,
-      codepointRange: [1, Infinity],
       restrictFrontend: false,
-    },
+    }),
     polygolfLanguage,
   ).result;
   if (typeof result === "string") {

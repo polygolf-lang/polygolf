@@ -3,8 +3,8 @@ export const FrontendOpCodes = [
   "sub",
   "mul",
   "div",
-  "pow",
   "mod",
+  "pow",
   "bit_and",
   "bit_or",
   "bit_xor",
@@ -57,7 +57,6 @@ export const FrontendOpCodes = [
   "text_byte_length", // Returns the text length in bytes.
   "text_codepoint_length", // Returns the text length in codepoints.
   "text_split_whitespace",
-  "join",
   "text_byte_reversed", // Returns a text containing the reversed order of bytes.
   "text_codepoint_reversed", // Returns a text containing the reversed order of codepoints.
   "text_byte_to_int",

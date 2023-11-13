@@ -2,21 +2,36 @@ import { type CompilationContext } from "@/common/compile";
 import {
   EmitError,
   emitIntLiteral,
-  emitTextLiteral,
+  emitTextFactory,
   joinTrees,
 } from "../../common/emit";
 import { type IR, isIntLiteral } from "../../IR";
 import { type TokenTree } from "@/common/Language";
 
+const emitLuaText = emitTextFactory(
+  {
+    '"TEXT"': { "\\": "\\\\", "\n": "\\n", "\r": "\\r", '"': `\\"` },
+    "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\'` },
+    "[[TEXT]]": { "[[": null, "]]": null },
+  },
+  function (x: number, i: number, arr: number[]) {
+    if (x < 100)
+      return i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57
+        ? `\\${x.toString()}`
+        : `\\${x.toString().padStart(3, "0")}`;
+    return `\\u{${x.toString(16)}}`;
+  },
+);
+
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return 11;
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
-    case "TextLiteral":
-    case "ArrayConstructor":
-    case "TableConstructor":
+    case "Text":
+    case "Array":
+    case "Table":
       return 1000;
   }
   return Infinity;
@@ -88,7 +103,7 @@ export default function emitProgram(
       switch (e.kind) {
         case "Block":
           return joinNodes("\n", e.children);
-        case "WhileLoop":
+        case "While":
           return [`while`, emit(e.condition), "do", emit(e.body), "end"];
         case "OneToManyAssignment":
           return [joinNodes(",", e.variables), "=", emit(e.expr)];
@@ -109,7 +124,7 @@ export default function emitProgram(
             "end",
           ];
         }
-        case "IfStatement":
+        case "If":
           return [
             "if",
             emit(e.condition),
@@ -128,9 +143,9 @@ export default function emitProgram(
           return [emit(e.variable), "=", emit(e.expr)];
         case "Identifier":
           return [e.name];
-        case "TextLiteral":
-          return emitLuaTextLiteral(e.value, context.options.codepointRange);
-        case "IntegerLiteral":
+        case "Text":
+          return emitLuaText(e.value, context.options.codepointRange);
+        case "Integer":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
           return [emit(e.func), "(", joinNodes(",", e.args), ")"];
@@ -143,7 +158,7 @@ export default function emitProgram(
             joinNodes(",", e.args),
             ")",
           ];
-        case "BinaryOp": {
+        case "Infix": {
           const rightAssoc = e.name === "^";
           return [
             emit(e.left, prec + (rightAssoc ? 1 : 0)),
@@ -151,13 +166,13 @@ export default function emitProgram(
             emit(e.right, prec + (rightAssoc ? 0 : 1)),
           ];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "IndexCall":
           if (!e.oneIndexed) throw new EmitError(e, "zero indexed");
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
-        case "ListConstructor":
-        case "ArrayConstructor":
+        case "List":
+        case "Array":
           return ["{", joinNodes(",", e.exprs), "}"];
 
         default:
@@ -170,49 +185,4 @@ export default function emitProgram(
     return ["(", inner, ")"];
   }
   return emit(program);
-}
-
-function emitLuaTextLiteral(
-  x: string,
-  [low, high]: [number, number] = [1, Infinity],
-): string {
-  function mapCodepoint(x: number, i: number, arr: number[]) {
-    if (low <= x && x <= high) return String.fromCharCode(x);
-    if (x < 100)
-      return i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57
-        ? `\\${x.toString()}`
-        : `\\${x.toString().padStart(3, "0")}`;
-    return `\\u{${x.toString(16)}}`;
-  }
-  return emitTextLiteral(
-    x,
-    [
-      [
-        `"`,
-        [
-          [`\\`, `\\\\`],
-          [`\n`, `\\n`],
-          [`\r`, `\\r`],
-          [`"`, `\\"`],
-        ],
-      ],
-      [
-        `'`,
-        [
-          [`\\`, `\\\\`],
-          [`\n`, `\\n`],
-          [`\r`, `\\r`],
-          [`'`, `\\'`],
-        ],
-      ],
-      [
-        [`[[`, `]]`],
-        [
-          [`[[`, null],
-          [`]]`, null],
-        ],
-      ],
-    ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined,
-  );
 }

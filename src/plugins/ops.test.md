@@ -12,13 +12,13 @@ $x <- ($x .. " world");
 $x <- ("prepend" .. $x);
 ```
 
-```polygolf ops.addMutatingBinaryOp(["add","+"],["concat","+"])
+```polygolf ops.addMutatingInfix({add:"+","concat":"+"})
 $n:-oo..oo <- 0;
 $a:-oo..oo <- 0;
-mutating_binary_op "+" $n 3;
-mutating_binary_op "+" $n (3 + $a);
+mutating_infix "+" $n 3;
+mutating_infix "+" $n (3 + $a);
 $x:Text <- "hello";
-mutating_binary_op "+" $x " world";
+mutating_infix "+" $x " world";
 $x <- ("prepend" .. $x);
 ```
 
