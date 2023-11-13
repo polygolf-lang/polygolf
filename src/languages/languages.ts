@@ -9,12 +9,12 @@ import javascriptLanguage from "./javascript";
 import textLanguage from "./text";
 
 const languages = [
+  polygolfLanguage,
   golfscriptLanguage,
   luaLanguage,
   nimLanguage,
   pythonLanguage,
   swiftLanguage,
-  polygolfLanguage,
   javascriptLanguage,
   textLanguage,
 ];

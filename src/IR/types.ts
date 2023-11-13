@@ -1,12 +1,27 @@
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
-import { type Node, array, list, set, table, text, int } from "./IR";
+import {
+  type Node,
+  array,
+  list,
+  set,
+  table,
+  text,
+  int,
+  op,
+  keyValue,
+} from "./IR";
 
 /** The type of the value of a node when evaluated */
 export interface IntegerType {
   readonly kind: "integer";
   readonly low: IntegerBound;
   readonly high: IntegerBound;
+}
+export interface ArrayIndexType {
+  readonly kind: "integer";
+  readonly low: 0n;
+  readonly high: bigint;
 }
 export type IntegerBound = bigint | "-oo" | "oo";
 
@@ -27,13 +42,13 @@ export interface FunctionType {
 }
 export interface TableType {
   kind: "Table";
-  key: IntegerType | TextType;
+  key: IntegerType | TextType | TypeArg;
   value: Type;
 }
 export interface ArrayType {
   kind: "Array";
   member: Type;
-  length: number;
+  length: ArrayIndexType | TypeArg;
 }
 export interface ListType {
   kind: "List";
@@ -43,6 +58,11 @@ export interface SetType {
   kind: "Set";
   member: Type;
 }
+export interface TypeArg {
+  kind: "TypeArg";
+  name: string;
+}
+
 export type Type =
   | FunctionType
   | IntegerType
@@ -53,7 +73,8 @@ export type Type =
   | TableType
   | KeyValueType
   | ArrayType
-  | SetType;
+  | SetType
+  | TypeArg;
 
 export const booleanType: Type = { kind: "boolean" };
 export const voidType: Type = { kind: "void" };
@@ -83,6 +104,15 @@ export function type(
   }
 }
 
+export function isArrayIndexType(type: Type): type is ArrayIndexType {
+  return (
+    type.kind === "integer" &&
+    type.low === 0n &&
+    typeof type.high === "bigint" &&
+    type.high >= 0n
+  );
+}
+
 export function functionType(args: Type[], result: Type): FunctionType {
   return {
     kind: "Function",
@@ -103,7 +133,7 @@ export function keyValueType(
 }
 
 export function tableType(
-  key: IntegerType | TextType,
+  key: IntegerType | TextType | TypeArg,
   value: Type | "void" | "boolean",
 ): TableType {
   return {
@@ -129,12 +159,15 @@ export function listType(member: Type | "void" | "boolean"): ListType {
 
 export function arrayType(
   member: Type | "void" | "boolean",
-  length: number,
+  length: number | ArrayIndexType | TypeArg,
 ): ArrayType {
   return {
     kind: "Array",
     member: type(member),
-    length,
+    length:
+      typeof length === "number"
+        ? { kind: "integer", low: 0n, high: BigInt(length - 1) }
+        : length,
   };
 }
 
@@ -184,6 +217,10 @@ export function textType(
   };
 }
 
+export function typeArg(name: string): TypeArg {
+  return { kind: "TypeArg", name };
+}
+
 export const asciiType = textType(integerType(0), true);
 
 export function integerTypeIncludingAll(
@@ -222,7 +259,11 @@ export function toString(a: Type): string {
     case "List":
       return `(List ${toString(a.member)})`;
     case "Array":
-      return `(Array ${toString(a.member)} ${a.length})`;
+      return `(Array ${toString(a.member)} ${
+        a.length.kind === "TypeArg"
+          ? toString(a.length)
+          : (a.length.high + 1n).toString()
+      })`;
     case "Set":
       return `(Set ${toString(a.member)})`;
     case "Table":
@@ -240,6 +281,8 @@ export function toString(a: Type): string {
       return "Bool";
     case "integer":
       return `${a.low.toString()}..${a.high.toString()}`;
+    case "TypeArg":
+      return a.name;
   }
 }
 
@@ -458,4 +501,99 @@ export function defaultValue(a: Type): Node {
       return int(0);
   }
   throw new Error(`Unsupported default value for type ${toString(a)}`);
+}
+
+export function instantiateGenerics(
+  typeParams: Record<string, Type>,
+): (type: Type) => Type {
+  function instantiate(type: Type): Type {
+    switch (type.kind) {
+      case "Array": {
+        const lengthType = instantiate(type.length);
+        if (lengthType.kind !== "TypeArg" && !isArrayIndexType(lengthType))
+          throw new Error(
+            "Array type's second argument must be a constant integer type.",
+          );
+        return arrayType(instantiate(type.member), lengthType);
+      }
+      case "Function":
+        return functionType(
+          type.arguments.map(instantiate),
+          instantiate(type.result),
+        );
+      case "KeyValue": {
+        const keyType = instantiate(type.key);
+        if (keyType.kind !== "integer" && keyType.kind !== "text")
+          throw new Error(
+            "KeyValue type's first argument must be an integer or text type.",
+          );
+        return keyValueType(keyType, instantiate(type.value));
+      }
+      case "Table": {
+        const keyType = instantiate(type.key);
+        if (
+          keyType.kind !== "integer" &&
+          keyType.kind !== "text" &&
+          keyType.kind !== "TypeArg"
+        )
+          throw new Error(
+            "Table type's first argument must be an integer or text type.",
+          );
+        return tableType(keyType, instantiate(type.value));
+      }
+      case "List":
+        return listType(instantiate(type.member));
+      case "Set":
+        return setType(instantiate(type.member));
+      case "boolean":
+      case "integer":
+      case "text":
+      case "void":
+        return type;
+      case "TypeArg":
+        return typeParams[type.name] ?? type;
+    }
+  }
+  return instantiate;
+}
+
+export function getLiteralOfType(type: Type, nonEmpty = false): Node {
+  switch (type.kind) {
+    case "text":
+      return text(nonEmpty ? "x" : "");
+    case "integer":
+      return int(
+        leq(type.low, 1n) && leq(1n, type.high)
+          ? 1n
+          : type.low === "-oo"
+          ? (type.high as bigint)
+          : (type.low as bigint),
+      );
+    case "boolean":
+      return op("true");
+    case "Array":
+      if (isArrayIndexType(type.length))
+        return array(
+          Array(Number(type.length.high) - 1).fill(
+            getLiteralOfType(type.member, nonEmpty),
+          ),
+        );
+      break;
+    case "List":
+      return list(nonEmpty ? [getLiteralOfType(type.member, nonEmpty)] : []);
+    case "Set":
+      return set(nonEmpty ? [getLiteralOfType(type.member, nonEmpty)] : []);
+    case "Table":
+      return table(
+        nonEmpty
+          ? [
+              keyValue(
+                getLiteralOfType(type.key, nonEmpty),
+                getLiteralOfType(type.value, nonEmpty),
+              ),
+            ]
+          : [],
+      );
+  }
+  throw new Error(`There's no literal of type '${type.kind}'.`);
 }

@@ -20,7 +20,6 @@ import {
 } from "../IR";
 
 export function assertInt64(node: Node, spine: Spine) {
-  if (spine.isRoot) return;
   let type: Type;
   try {
     type = getType(node, spine);

@@ -548,3 +548,16 @@ export function debugEmit(program: Node): string {
 export function normalize(source: string): string {
   return debugEmit(parse(source, false));
 }
+
+export function isCompilable(program: Node, lang: Language) {
+  const result = compileVariant(
+    program,
+    compilationOptions({
+      level: "nogolf",
+      restrictFrontend: false,
+      skipTypecheck: true,
+    }),
+    lang,
+  );
+  return typeof result.result === "string";
+}
