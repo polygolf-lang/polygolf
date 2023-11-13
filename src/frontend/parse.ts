@@ -38,7 +38,6 @@ import {
   toString,
   forArgv,
   isAssociative,
-  isFrontend,
   implicitConversion,
   varDeclaration,
   varDeclarationWithAssignment,
@@ -65,6 +64,7 @@ import {
   isIdent,
   postfix,
   type Text,
+  OpCodeGroup,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -375,26 +375,6 @@ function intValue(x: string): bigint {
 export function int(x: Token) {
   return integer(intValue(x.text));
 }
-
-export const canonicalOpTable: Record<string, OpCode> = {
-  "+": "add",
-  // neg, sub handled as special case in canonicalOp
-  "*": "mul",
-  "^": "pow",
-  "&": "bit_and",
-  "|": "bit_or",
-  "<<": "bit_shift_left",
-  ">>": "bit_shift_right",
-  // bitxor, bitnot handled as special case in canonicalOp
-  "==": "eq[Int]",
-  "!=": "neq[Int]",
-  "<=": "leq",
-  "<": "lt",
-  ">=": "geq",
-  ">": "gt",
-  "#": "size[List]",
-  "..": "concat[Text]",
-};
 
 function canonicalOp(op: string, arity: number): string {
   if (op === "<-") return "assign";

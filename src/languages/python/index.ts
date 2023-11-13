@@ -128,7 +128,7 @@ const pythonLanguage: Language = {
       mapOps({
         true: int(1),
         false: int(0),
-        list_find: (x) => method(x[0], "index", x[1]),
+        "find[List]": (x) => method(x[0], "index", x[1]),
         join: (x) => method(x[1], "join", x[0]),
 
         "reversed[codepoint]": (x) =>
@@ -137,8 +137,8 @@ const pythonLanguage: Language = {
 
         "slice[codepoint]": (x) =>
           rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
-        text_split: (x) => method(x[0], "split", x[1]),
-        text_split_whitespace: (x) => method(x[0], "split"),
+        split: (x) => method(x[0], "split", x[1]),
+        split_whitespace: (x) => method(x[0], "split"),
 
         "print[Text]": (x) =>
           func(

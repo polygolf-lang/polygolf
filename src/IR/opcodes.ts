@@ -91,10 +91,10 @@ export const opCodeDefinitions = {
   leq: { args: [int(), int()], front: true },
   geq: { args: [int(), int()], front: true },
   gt: { args: [int(), int()], front: true },
-  "eq[Int]": { args: [int(), int()], front: true },
-  "eq[Text]": { args: [text(), text()], front: true },
-  "neq[Int]": { args: [int(), int()], front: true },
-  "neq[Text]": { args: [text(), text()], front: true },
+  "eq[Int]": { args: [int(), int()], front: "eq" },
+  "eq[Text]": { args: [text(), text()], front: "eq" },
+  "neq[Int]": { args: [int(), int()], front: "neq" },
+  "neq[Text]": { args: [text(), text()], front: "neq" },
 
   // Access members
   "at[Array]": { args: [array(T1, T2), T2], front: "at" },
@@ -179,9 +179,16 @@ export const opCodeDefinitions = {
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
+export type OpCodeGroup = {
+  [K in AnyOpCode]: (typeof opCodeDefinitions)[K] extends { front: string }
+    ? (typeof opCodeDefinitions)[K]["front"]
+    : K;
+}[AnyOpCode];
+
 export type OpCode<T extends Partial<OpCodeDefinition> = {}> = {
   [K in AnyOpCode]: (typeof opCodeDefinitions)[K] extends T ? K : never;
-}[AnyOpCode];
+}[AnyOpCode] &
+  string;
 export type NullaryOpCode = OpCode<{ args: Readonly<[]> }>;
 export type UnaryOpCode = OpCode<{ args: Readonly<[Type]> }>;
 export type BinaryOpCode = OpCode<{ args: Readonly<[Type, Type]> }>;
@@ -201,9 +208,20 @@ export function isBinary(op: OpCode): op is BinaryOpCode {
 export function isTernary(op: OpCode): op is TernaryOpCode {
   return arity(op) === 3;
 }
+export function isVariadic(op: OpCode): op is VariadicOpCode {
+  return arity(op) === -1;
+}
 export function isAssociative(op: OpCode): op is AssociativeOpCode {
   return (opCodeDefinitions[op] as any)?.assoc === true;
 }
+
+export const OpCodes = Object.keys(opCodeDefinitions) as OpCode[];
+export const NullaryOpCodes = OpCodes.filter(isNullary);
+export const UnaryOpCodes = OpCodes.filter(isUnary);
+export const BinaryOpCodes = OpCodes.filter(isBinary);
+export const TernaryOpCodes = OpCodes.filter(isTernary);
+export const VariadicOpCodes = OpCodes.filter(isVariadic);
+export const AssociativeOpCodes = OpCodes.filter(isAssociative);
 
 export const CommutativeOpCodes = [
   "add",
@@ -280,8 +298,65 @@ export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
   return null;
 }
 
-export type AliasedOpCode<X, Alias, Otherwise = X> = [Alias] extends [X]
-  ? [X] extends [Alias | infer Additional extends OpCode]
-    ? Alias | Additional
-    : Otherwise
-  : Otherwise;
+// TODO add more
+const compatibilityAliases: Record<string, OpCode> = {
+  text_contains: "contains[Text]",
+  array_contains: "contains[Array]",
+  list_contains: "contains[List]",
+  table_contains_key: "contains[Table]",
+  set_contains: "contains[Set]",
+  argv_get: "at[argv]",
+  array_get: "at[Array]",
+  list_get: "at[List]",
+  table_get: "at[Table]",
+  text_get_byte: "at[byte]",
+  text_get_codepoint: "at[codepoint]",
+  array_set: "set_at[Array]",
+  list_set: "set_at[List]",
+  table_set: "set_at[Table]",
+  text_byte_find: "find[byte]",
+  text_codepoint_find: "find[codepoint]",
+  text_get_byte_to_int: "ord_at[byte]",
+  text_get_codepoint_to_int: "ord_at[codepoint]",
+  text_byte_to_int: "ord[byte]",
+  codepoint_to_int: "ord[codepoint]",
+  int_to_text_byte: "char[byte]",
+  int_to_codepoint: "char[codepoint]",
+  text_replace: "replace",
+  println_int: "println[Int]",
+  print_int: "print[Int]",
+  concat: "concat[Text]",
+  list_push: "push",
+  list_length: "size[List]",
+  text_byte_reversed: "reversed[byte]",
+  text_codepoint_reversed: "reversed[codepoint]",
+  text_get_byte_slice: "slice[byte]",
+  text_get_codepoint_slice: "slice[codepoint]",
+};
+
+const opCodeGroupAliases = {
+  add: "+",
+  neg: "-",
+  sub: "-",
+  mul: "*",
+  pow: "^",
+  bit_and: "&",
+  bit_or: "|",
+  bit_xor: "~",
+  bit_not: "~",
+  bit_shift_left: "<<",
+  bit_shift_right: ">>",
+  eq: "==",
+  neq: "!=",
+  leq: "<=",
+  lt: "<",
+  geq: ">=",
+  gt: ">",
+  size: "#",
+  concat: "..",
+  mod: "mod",
+  rem: "rem",
+  div: "div",
+  trunc_div: "trunc_div",
+  at: "@",
+} as const satisfies Partial<Record<OpCodeGroup, string>>;

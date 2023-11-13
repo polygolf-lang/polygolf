@@ -119,7 +119,7 @@ const javascriptLanguage: Language = {
       forRangeToForCLike,
       useEquivalentTextOp(false, true),
       mapOps({
-        text_to_int: (x) =>
+        dec_to_int: (x) =>
           op("add", int(0n), implicitConversion("dec_to_int", x[0])),
         argv: builtin("arguments"),
 
@@ -146,16 +146,16 @@ const javascriptLanguage: Language = {
         int_to_hex: (x) => method(x[0], "toString", int(16)),
         "size[List]": (x) => propertyCall(x[0], "length"),
         join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
-        int_to_text: (x) =>
+        int_to_dec: (x) =>
           op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
-        text_to_int: (x) =>
+        dec_to_int: (x) =>
           op("mul", int(1n), implicitConversion("dec_to_int", x[0])),
       }),
       mapTo((name: string, [obj, ...args]) => method(obj, name, ...args))({
         "contains[List]": "includes",
         push: "push",
-        list_find: "indexOf",
-        text_split: "split",
+        "find[List]": "indexOf",
+        split: "split",
         replace: "replaceAll",
         repeat: "repeat",
         "contains[Text]": "includes",

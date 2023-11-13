@@ -106,8 +106,8 @@ const golfscriptLanguage: Language = {
 
         "slice[byte]": (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
         neg: (x) => op("mul", x[0], int(-1)),
-        max: (x) => op("at[List]", op("sorted", list(x)), int(1)),
-        min: (x) => op("at[List]", op("sorted", list(x)), int(0)),
+        max: (x) => op("at[List]", op("sorted[Int]", list(x)), int(1)),
+        min: (x) => op("at[List]", op("sorted[Int]", list(x)), int(0)),
 
         leq: (x) =>
           op(
@@ -143,17 +143,17 @@ const golfscriptLanguage: Language = {
         "ord_at[byte]": "=",
         "size[byte]": ",",
         "ord[byte]": ")",
-        int_to_text: "`",
-        text_split: "/",
+        int_to_dec: "`",
+        split: "/",
         repeat: "*",
         pow: "?",
-        text_to_int: "~",
+        dec_to_int: "~",
         abs: "abs",
         push: "+",
         "at[List]": "=",
         "size[List]": ",",
         join: "*",
-        sorted: "$",
+        "sorted[Int]": "$",
       }),
       mapOps({
         "neq[Int]": (x) => prefix("!", infix("=", x[0], x[1])),

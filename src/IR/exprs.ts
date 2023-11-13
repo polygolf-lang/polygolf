@@ -15,14 +15,11 @@ import {
   isAssociative,
   text,
   integerType,
-  type AliasedOpCode,
-  type FrontendOpCode,
-  type AssociativeOpCode,
-  type CommutativeOpCode,
   isConstantType,
   isBinary,
   booleanNotOpCode,
   type Text,
+  VariadicOpCode,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseNode {
@@ -262,7 +259,11 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
   return _op(opCode, ...args);
 }
 
-function evalInfix(op: BinaryOpCode, left: Node, right: Node): Node | null {
+function evalInfix(
+  op: BinaryOpCode | VariadicOpCode,
+  left: Node,
+  right: Node,
+): Node | null {
   if (op === "concat[Text]" && isText()(left) && isText()(right)) {
     return text(left.value + right.value);
   }
@@ -551,9 +552,8 @@ export function isNegative(expr: Node) {
   );
 }
 
-export function isOp<O extends OpCode>(
-  ...ops: O[]
-): (x: Node) => x is Op<
+export function isOp<O extends OpCode>(...ops: O[]): (x: Node) => x is Op<O> {
+  /*
   // Typesafe-wise, this is the same as `x is Op<O>`.
   // However, this allows `O` to be written using the type aliases.
   // Alias using the first type that is a match (that is a subtype) and union the rest.
@@ -578,8 +578,7 @@ export function isOp<O extends OpCode>(
         >
       >
     >
-  >
-> {
+  >*/
   return ((x: Node) =>
     x.kind === "Op" && (ops.length === 0 || ops?.includes(x.op as any))) as any;
 }

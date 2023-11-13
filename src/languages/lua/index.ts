@@ -82,7 +82,7 @@ const luaLanguage: Language = {
       useEquivalentTextOp(true, false),
       textToIntToFirstIndexTextGetToInt,
       mapOps({
-        text_to_int: (x) =>
+        dec_to_int: (x) =>
           op("add", int(0n), implicitConversion("dec_to_int", x[0])),
         "at[argv]": (x) =>
           op("at[List]", { ...builtin("arg"), type: textType() }, x[0]),
@@ -102,7 +102,7 @@ const luaLanguage: Language = {
       useEquivalentTextOp(true, false),
       textToIntToFirstIndexTextGetToInt,
       mapOps({
-        text_to_int: (x) =>
+        dec_to_int: (x) =>
           op("mul", int(1n), implicitConversion("dec_to_int", x[0])),
         "at[argv]": (x) =>
           op("at[List]", { ...builtin("arg"), type: textType() }, x[0]),
@@ -112,7 +112,7 @@ const luaLanguage: Language = {
       }),
       useIndexCalls(true),
       mapOps({
-        int_to_text: (x) =>
+        int_to_dec: (x) =>
           op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
         join: (x) => func("table.concat", isText("")(x[1]) ? [x[0]] : x),
         "size[byte]": (x) => method(x[0], "len"),

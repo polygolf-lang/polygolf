@@ -20,7 +20,7 @@ const tokenTable = {
   pinf: ["oo", "∞"],
   variant: "/",
   opalias:
-    "<- + - * ^ & | ~ >> << == != <= < >= > => # @ mod rem div trunc_div in".split(
+    "<- + - * ^ & | ~ >> << == != <= < >= > => # @ mod rem div trunc_div".split(
       " ",
     ),
   builtin: /[a-z0-9_]+([A-Za-z][a-z]*)?/,

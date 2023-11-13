@@ -137,8 +137,8 @@ const swiftLanguage: Language = {
           func("String", postfix("!", func("UnicodeScalar", x))),
         "size[codepoint]": (x) => prop(x[0], "count"),
         "size[byte]": (x) => prop(prop(x[0], "utf8"), "count"),
-        int_to_text: (x) => func("String", x),
-        text_split: (x) => method(x[0], "split", namedArg("separator", x[1])),
+        int_to_dec: (x) => func("String", x),
+        split: (x) => method(x[0], "split", namedArg("separator", x[1])),
         repeat: (x) =>
           func("String", namedArg("repeating", x[0]), namedArg("count", x[1])),
 
@@ -147,7 +147,7 @@ const swiftLanguage: Language = {
         "println[Text]": (x) => func("print[Text]", x),
         "print[Text]": (x) =>
           func("print[Text]", x, namedArg("terminator", text(""))),
-        text_to_int: (x) => postfix("!", func("Int", x)),
+        dec_to_int: (x) => postfix("!", func("Int", x)),
 
         max: (x) => func("max", x),
         min: (x) => func("min", x),

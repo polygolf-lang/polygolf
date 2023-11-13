@@ -24,6 +24,9 @@ import {
   isIdent,
   postfix,
   VariadicOpCode,
+  BinaryOpCodes,
+  VariadicOpCodes,
+  isUnary,
 } from "../IR";
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
@@ -101,15 +104,17 @@ export function mapToPrefixAndInfix<
   TNames extends string,
   TNamesMutating extends TNames,
 >(
-  opMap: Partial<Record<UnaryOpCode, string> & Record<BinaryOpCode, TNames>>,
+  opMap: Partial<
+    Record<UnaryOpCode, string> & Record<BinaryOpCode | VariadicOpCode, TNames>
+  >,
   asMutatingInfix: true | TNamesMutating[] = [],
 ): Plugin {
   enhanceOpMap(opMap);
   const justPrefixInfix = mapOps(
     mapObjectValues(opMap, (name, op) =>
-      isBinary(op)
-        ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
-        : (x: readonly Node[]) => prefix(name, x[0]),
+      isUnary(op)
+        ? (x: readonly Node[]) => prefix(name, x[0])
+        : (x: readonly Node[]) => asBinaryChain(op, x, opMap),
     ),
     `mapToPrefixAndInfix(${JSON.stringify(opMap)}, ${JSON.stringify(
       asMutatingInfix,
@@ -205,14 +210,14 @@ export function useIndexCalls(
 
 // "a = a + b" --> "a += b"
 export function addMutatingInfix(
-  opMap: Partial<Record<BinaryOpCode, string>>,
+  opMap: Partial<Record<BinaryOpCode | VariadicOpCode, string>>,
 ): Plugin {
   return {
     name: `addMutatingInfix(${JSON.stringify(opMap)})`,
     visit(node) {
       if (
         node.kind === "Assignment" &&
-        isOp(...BinaryOpCodes)(node.expr) &&
+        isOp(...BinaryOpCodes, ...VariadicOpCodes)(node.expr) &&
         node.expr.args.length > 1 &&
         node.expr.op in opMap
       ) {
@@ -255,7 +260,7 @@ export function addPostfixIncAndDec(node: Node) {
 
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {
-  if (isOp()(node) && isBinary(node.op)) {
+  if (isOp(...BinaryOpCodes)(node)) {
     const flippedOpCode = flipOpCode(node.op);
     if (flippedOpCode !== null) {
       return op(flippedOpCode, node.args[1], node.args[0]);

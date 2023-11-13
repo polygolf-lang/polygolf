@@ -439,15 +439,16 @@ function getOpCodeType(expr: Op, program: Node): Type {
       );
     case "right_align":
       return text(int(0, "oo"), (got[0] as TextType).isAscii);
-    case "to_bin_aligned":
-    case "to_hex_aligned": {
+    case "int_to_bin_aligned":
+    case "int_to_hex_aligned": {
       const t1 = got[0] as IntegerType;
       const t2 = got[1] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2)) {
         return text(
           integerTypeIncludingAll(
             BigInt(
-              t1.high.toString(expr.op === "to_bin_aligned" ? 2 : 16).length,
+              t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16)
+                .length,
             ),
             t2.high,
           ),
@@ -455,21 +456,6 @@ function getOpCodeType(expr: Op, program: Node): Type {
         );
       }
       return text(int(), true);
-    }
-    case "simplify_fraction": {
-      const t1 = got[0] as IntegerType;
-      const t2 = got[1] as IntegerType;
-      if (isFiniteType(t1) && isFiniteType(t2))
-        return text(
-          int(
-            0,
-            1 +
-              Math.max(t1.low.toString().length, t1.high.toString().length) +
-              Math.max(t2.low.toString().length, t2.high.toString().length),
-          ),
-          true,
-        );
-      return text();
     }
     // unary
     case "abs": {
@@ -491,8 +477,8 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "int_to_bool":
       return booleanType;
     case "int_to_dec":
-    case "to_bin":
-    case "to_hex": {
+    case "int_to_bin":
+    case "int_to_hex": {
       const t = got[0] as IntegerType;
       if (isFiniteType(t))
         return text(
@@ -500,7 +486,11 @@ function getOpCodeType(expr: Op, program: Node): Type {
             ...[t.low, t.high, ...(typeContains(t, 0n) ? [0n] : [])].map((x) =>
               BigInt(
                 x.toString(
-                  expr.op === "to_bin" ? 2 : expr.op === "to_hex" ? 16 : 10,
+                  expr.op === "int_to_bin"
+                    ? 2
+                    : expr.op === "int_to_hex"
+                    ? 16
+                    : 10,
                 ).length,
               ),
             ),
@@ -539,7 +529,8 @@ function getOpCodeType(expr: Op, program: Node): Type {
       return (got[0] as TextType).codepointLength;
     case "split_whitespace":
       return list(got[0]);
-    case "sorted":
+    case "sorted[Int]":
+    case "sorted[Ascii]":
       return got[0];
     case "reversed[byte]":
     case "reversed[codepoint]":
@@ -560,7 +551,9 @@ function getOpCodeType(expr: Op, program: Node): Type {
       return int(0, 2 ** 31 - 1);
     case "argv":
       return list(text());
-    case "putc":
+    case "putc[byte]":
+    case "putc[codepoint]":
+    case "putc[Ascii]":
       return voidType;
     case "print[Text]":
     case "println[Text]":
