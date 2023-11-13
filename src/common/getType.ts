@@ -46,6 +46,8 @@ import {
   instantiateGenerics,
   type ArrayType,
   type TableType,
+  opCodeDefinitions,
+  type ArgTypes,
 } from "../IR";
 import { byteLength, charLength } from "./objective";
 import { PolygolfError } from "./errors";
@@ -249,183 +251,15 @@ function getTypeBitNot(t: IntegerType): IntegerType {
   return int(sub(-1n, t.high), sub(-1n, t.low));
 }
 
-type ExpectedTypes = { variadic: Type; min: number } | Type[];
-function variadic(type: Type, min = 2): ExpectedTypes {
-  return {
-    variadic: type,
-    min,
-  };
-}
-
-function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
-  const T1 = typeArg("T1");
-  const T2 = typeArg("T2");
-  switch (op) {
-    case "gcd":
-      return [int(), int(1)];
-    case "add":
-    case "sub":
-    case "mul":
-    case "div":
-    case "trunc_div":
-    case "unsigned_trunc_div":
-    case "pow":
-    case "mod":
-    case "rem":
-    case "unsigned_rem":
-    case "bit_and":
-    case "bit_or":
-    case "bit_xor":
-    case "bit_shift_left":
-    case "bit_shift_right":
-    case "min":
-    case "max":
-      return isAssociative(op) ? variadic(int()) : [int(), int()];
-    // (num, num) => bool
-    case "lt":
-    case "leq":
-    case "eq[Int]":
-    case "neq[Int]":
-    case "geq":
-    case "gt":
-      return [int(), int()];
-    // (bool, bool) => bool
-    case "unsafe_or":
-    case "unsafe_and":
-    case "or":
-    case "and":
-      return variadic(booleanType);
-    // membership
-    case "contains[Array]":
-      return [array(T1, T2), T1];
-    case "contains[List]":
-      return [list(T1), T1];
-    case "contains[Table]":
-      return [table(T1, T2), T1];
-    case "contains[Set]":
-      return [set(T1), T1];
-    // collection get
-    case "at[Array]":
-      return [array(T1, T2), T2];
-    case "at[List]":
-      return [list(T1), int(0)];
-    case "at[Table]":
-      return [table(T1, T2), T1];
-    case "at[argv]":
-      return [int(0)];
-    // other
-    case "push":
-      return [list(T1), T1];
-    case "list_find":
-      return [list(T1), T1];
-    case "concat[Text]":
-      return variadic(text());
-    case "repeat":
-      return [text(), int(0)];
-    case "contains[Text]":
-    case "split":
-      return [text(), text()];
-    case "find[codepoint]":
-    case "find[byte]":
-      return [text(), text(int(1))];
-    case "at[byte]":
-    case "at[codepoint]":
-    case "right_align":
-      return [text(), int(0)];
-    case "join":
-      return [list(text()), text()];
-    case "to_bin_aligned":
-    case "to_hex_aligned":
-      return [int(0), int(0)];
-    case "simplify_fraction":
-      return [int(0), int(0)];
-    // unary
-    case "abs":
-    case "bit_not":
-    case "neg":
-      return [int()];
-    case "not":
-      return [booleanType];
-    case "to_bool":
-      return [int()];
-    case "to_dec":
-      return [int()];
-    case "to_bin":
-    case "to_hex":
-      return [int(0)];
-    case "dec_to_int":
-      return [text(int(), true)];
-    case "bool_to_int":
-      return [booleanType];
-    case "char[byte]":
-      return [int(0, 255)];
-    case "char[codepoint]":
-      return [int(0, 0x10ffff)];
-    case "length[List]":
-      return [list(T1)];
-    case "length[byte]":
-    case "length[codepoint]":
-    case "split_whitespace":
-      return [text()];
-    case "sorted":
-      return [list(T1)];
-    case "reversed[byte]":
-    case "reversed[codepoint]":
-      return [text()];
-    // other
-    case "true":
-    case "false":
-    case "read[codepoint]":
-    case "read[byte]":
-    case "read[Int]":
-    case "read[line]":
-    case "argc":
-    case "argv":
-      return [];
-    case "putc":
-      return [int(0, 255)];
-    case "print[Text]":
-    case "println[Text]":
-      return [text()];
-    case "print[Int]":
-    case "println[Int]":
-      return [int()];
-    case "println_list_joined":
-      return [list(text()), text()];
-    case "println_many_joined":
-      return variadic(text(), 2);
-    case "replace":
-      return [text(), text(int(1, "oo")), text()];
-    case "text_multireplace":
-      return variadic(text(), 2);
-    case "slice[byte]":
-    case "slice[codepoint]":
-      return [text(), int(0), int(0)];
-    case "ord_at[codepoint]":
-      return [text(), int(0)];
-    case "ord_at[byte]":
-      return [text(), int(0)];
-    case "ord[codepoint]":
-    case "ord[byte]":
-      return [text(int(1, 1))];
-    case "set_at[Array]":
-      return [array(T1, T2), T2, T1];
-    case "set_at[List]":
-      return [list(T1), int(0), T1];
-    case "set_at[Table]":
-      return [table(T1, T2), T1, T2];
-  }
-}
-
 export function getExampleOpCodeArgTypes(op: OpCode): Type[] {
-  const type = getOpCodeArgTypes(op);
-  if (Array.isArray(type)) {
+  const type = opCodeDefinitions[op].args;
+  if (!("variadic" in type)) {
     return type.map(instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) }));
   }
   return Array(type.min).fill(type.variadic);
 }
 
-function expectedTypesToString(expectedTypes: ExpectedTypes): string {
+function expectedTypesToString(expectedTypes: ArgTypes): string {
   return Array.isArray(expectedTypes)
     ? `[${expectedTypes.map(toString).join(", ")}]`
     : `[...${toString(expectedTypes.variadic)}]`;
@@ -438,8 +272,8 @@ function expectedTypesToString(expectedTypes: ExpectedTypes): string {
  * @param expectedTypes Expected types (array of types or variadic object).
  * @returns True iff it is a match.
  */
-function isTypeMatch(gotTypes: Type[], expectedTypes: ExpectedTypes) {
-  if (Array.isArray(expectedTypes)) {
+function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
+  if (!("variadic" in expectedTypes)) {
     if (expectedTypes.length !== gotTypes.length) return false;
     const params: Record<string, Type> = {};
     const instantiate = instantiateGenerics(params);
@@ -489,7 +323,7 @@ function isTypeMatch(gotTypes: Type[], expectedTypes: ExpectedTypes) {
 
 function getOpCodeType(expr: Op, program: Node): Type {
   const got = getArgs(expr).map((x) => getType(x, program));
-  const expected = getOpCodeArgTypes(expr.op);
+  const expected = opCodeDefinitions[expr.op].args;
 
   if (!isTypeMatch(got, expected)) {
     throw new Error(

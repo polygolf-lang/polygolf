@@ -22,7 +22,7 @@ interface Variadic {
   variadic: Type;
   min: number;
 }
-type ArgTypes = Variadic | Type[];
+export type ArgTypes = Variadic | Type[];
 function variadic(type: Type, min = 2): ArgTypes {
   return {
     variadic: type,
@@ -33,7 +33,7 @@ function variadic(type: Type, min = 2): ArgTypes {
 const T1 = typeArg("T1");
 const T2 = typeArg("T2");
 
-const OpCodeDefinitions = {
+export const opCodeDefinitions = {
   // Arithmetic
   add: { args: variadic(int()), front: true, assoc: true },
   sub: { args: [int(), int()], front: true },
@@ -123,111 +123,86 @@ const OpCodeDefinitions = {
   "char[byte]": { args: [int(0, 255)], front: true },
   "char[codepoint]": { args: [int(0, 0x10ffff)], front: true },
   "char[Ascii]": { args: [int(0, 127)], front: "char" },
+
+  // Order
+  "sorted[Int]": { args: [list(int(0))], front: "sorted" },
+  "sorted[Ascii]": { args: [list(ascii)], front: "sorted" },
+  "reversed[byte]": { args: [text()], front: true },
+  "reversed[codepoint]": { args: [text()], front: true },
+  "reversed[Ascii]": { args: [ascii], front: "reversed" },
+  "reversed[List]": { args: [list(T1)], front: "reversed" },
+  "find[codepoint]": { args: [text()], front: true },
+  "find[byte]": { args: [text()], front: true },
+  "find[Ascii]": { args: [ascii], front: "find" },
+  "find[List]": { args: [list(T1)], front: "find" },
+
+  // Membership
+  "contains[Array]": { args: [array(T1, T2), T1], front: "contains" },
+  "contains[List]": { args: [list(T1), T1], front: "contains" },
+  "contains[Table]": { args: [table(T1, T2), T1], front: "contains" },
+  "contains[Set]": { args: [set(T1), T1], front: "contains" },
+  "contains[Text]": { args: [text(), text()], front: "contains" },
+
+  // Size
+  "size[List]": { args: [list(T1)], front: "size" },
+  "size[Set]": { args: [set(T1)], front: "size" },
+  "size[Table]": { args: [table(T1, T2)], front: "size" },
+  "size[Ascii]": { args: [ascii], front: "size" },
+  "size[codepoint]": { args: [text()], front: true },
+  "size[byte]": { args: [text()], front: true },
+
+  // Adding items
+  include: { args: [set(T1), T1], front: true },
+  push: { args: [list(T1), T1], front: true },
+  append: { args: [list(T1), T1], front: true },
+  "concat[List]": { args: variadic(list(T1)), front: "concat", assoc: true },
+  "concat[Text]": { args: variadic(text()), front: "concat", assoc: true },
+
+  // Text ops
+  repeat: { args: [text(), int(0)], front: true },
+  split: { args: [text(), text()], front: true },
+  split_whitespace: { args: [text()], front: true },
+  join: { args: [list(text()), text()], front: true },
+  right_align: { args: [text(), int(0)], front: true },
+  replace: { args: [text(), text(), text()], front: true },
+  text_multireplace: { args: variadic(text(), 2) },
+
+  // Text / Bool <-> Int
+  int_to_bin_aligned: { args: [int(0), int(0)], front: true },
+  int_to_hex_aligned: { args: [int(0), int(0)], front: true },
+  int_to_dec: { args: [int()], front: true },
+  int_to_bin: { args: [int(0)], front: true },
+  int_to_hex: { args: [int(0)], front: true },
+  int_to_bool: { args: [int(0, 1)], front: true },
+  dec_to_int: { args: [ascii], front: true },
+  bool_to_int: { args: [bool], front: true },
 } as const satisfies Record<string, OpCodeDefinition>;
 
-type AnyOpCode = keyof typeof OpCodeDefinitions;
+type AnyOpCode = keyof typeof opCodeDefinitions;
 export type OpCode<T extends Partial<OpCodeDefinition> = {}> = {
-  [K in AnyOpCode]: (typeof OpCodeDefinitions)[K] extends T ? K : never;
+  [K in AnyOpCode]: (typeof opCodeDefinitions)[K] extends T ? K : never;
 }[AnyOpCode];
 export type NullaryOpCode = OpCode<{ args: Readonly<[]> }>;
 export type UnaryOpCode = OpCode<{ args: Readonly<[Type]> }>;
 export type BinaryOpCode = OpCode<{ args: Readonly<[Type, Type]> }>;
 export type TernaryOpCode = OpCode<{ args: Readonly<[Type, Type, Type]> }>;
 export type VariadicOpCode = OpCode<{ args: Readonly<Variadic> }>;
+export type AssociativeOpCode = OpCode<{ assoc: true }>;
 
-export const FrontendOpCodes = [
-  "add",
-  "sub",
-  "mul",
-  "div",
-  "mod",
-  "pow",
-  "bit_and",
-  "bit_or",
-  "bit_xor",
-  "min",
-  "max",
-  "lt",
-  "leq",
-  "eq",
-  "neq",
-  "gt",
-  "geq",
-
-  "or",
-  "and",
-
-  "contains",
-  "at",
-  "at[byte]",
-  "at[codepoint]",
-  "push",
-  "concat",
-  "repeat",
-  "find",
-  "find[byte]",
-  "find[codepoint]",
-  "split",
-  "slice",
-  "slice[byte]",
-  "slice[codepoint]",
-  "join",
-  "right_align",
-  "to_bin_aligned",
-  "to_hex_aligned",
-
-  "abs",
-  "bit_not",
-  "neg",
-  "not",
-  "to_dec",
-  "to_bin",
-  "to_hex",
-  "dec_to_int",
-  "bool_to_int",
-  "char",
-  "char[byte]", // Returns a single byte text using the specified byte.
-  "char[codepoint]", // Returns a single codepoint text using the specified integer.
-  "length",
-  "length[byte]", // Returns the text length in bytes.
-  "length[codepoint]", // Returns the text length in codepoints.
-  "split_whitespace",
-  "reversed[byte]", // Returns a text containing the reversed order of bytes.
-  "reversed[codepoint]", // Returns a text containing the reversed order of codepoints.
-  "reversed",
-  "ord[byte]",
-  "ord[codepoint]",
-  "ord[Ascii]",
-  "read[line]",
-  "true",
-  "false",
-  "replace",
-  "set_at[Array]",
-  "set_at[List]",
-  "set_at[Table]",
-  "sorted",
-  "at[argv]",
-] as const;
-
-export const UnaryOpCodes = [
-  "to_dec",
-  "to_bin",
-  "to_hex",
-  "to_bool",
-  "dec_to_int",
-  "bool_to_int",
-  "length[List]",
-  "length[codepoint]",
-  "length[byte]",
-  "split_whitespace",
-  "sorted",
-  "reversed[byte]",
-  "reversed[codepoint]",
-] as const;
-export type UnaryOpCodeOld = string & (typeof UnaryOpCodes)[number];
-
+export function isNullary(op: OpCode): op is NullaryOpCode {
+  return arity(op) === 0;
+}
 export function isUnary(op: OpCode): op is UnaryOpCode {
-  return UnaryOpCodes.includes(op as any);
+  return arity(op) === 1;
+}
+export function isBinary(op: OpCode): op is BinaryOpCode {
+  return arity(op) === 2;
+}
+export function isTernary(op: OpCode): op is TernaryOpCode {
+  return arity(op) === 3;
+}
+export function isAssociative(op: OpCode): op is AssociativeOpCode {
+  return (opCodeDefinitions[op] as any)?.assoc === true;
 }
 
 export const CommutativeOpCodes = [
@@ -249,99 +224,17 @@ export function isCommutative(op: OpCode): op is CommutativeOpCode {
   return CommutativeOpCodes.includes(op as any);
 }
 
-export const AssociativeOpCodes = [
-  ...CommutativeOpCodes,
-  "concat[Text]",
-] as const;
-
-export type AssociativeOpCode = string & (typeof AssociativeOpCodes)[number];
-
-export function isAssociative(op: OpCode): op is AssociativeOpCode {
-  return AssociativeOpCodes.includes(op as any);
-}
-
-export const BinaryOpCodes = [
-  ,
-  // (num, num) => num
-
-  // (num, num) => bool
-
-  // (bool, bool) => bool
-  // membership
-  "contains[Array]",
-  "contains[List]",
-  "contains[Table]",
-  "contains[Set]",
-  ,
-  // collection get
-
-  // other
-  "push",
-  "append",
-  "list_find", // returns the 0-index of the first occurence of or -1 if it is not found
-  "concat[Text]",
-  "concat[List]",
-  "repeat",
-  "contains[Text]",
-  "find[codepoint]", // (text_codepoint_find a b) returns the codepoint-0-index of the start of the first occurence of b in a or -1 if it is not found
-  "find[byte]", // (text_byte_find a b) returns the byte-0-index of the start of the first occurence of b in a or -1 if it is not found
-  "split",
-  "join",
-  "right_align",
-  "to_bin_aligned", // Converts the given integer to text representing the value in binary. The result is aligned with 0s to the specified number of places.
-  "to_hex_aligned", // Converts the given integer to text representing the value in hexadecimal. The result is aligned with 0s to the specified number of places.
-  "simplify_fraction", // Given two integers, p,q, returns a text representation of the reduced version of the fraction p/q.
-] as const;
-
-export type BinaryOpCodeOld = string & (typeof BinaryOpCodes)[number];
-
-export function isBinary(op: OpCode): op is BinaryOpCode {
-  return BinaryOpCodes.includes(op as any);
-}
-
-export const OpCodes = [
-  ...BinaryOpCodes,
-  ...UnaryOpCodes,
-
-  "replace",
-  "text_multireplace", // simultaneous replacement. Equivalent to chained text_replace if the inputs and outputs have no overlap
-
-  // collection set
-] as const;
-
-export type OpCodeOld = string & (typeof OpCodes)[number];
-
 export function isOpCode(op: string): op is OpCode {
-  return OpCodes.includes(op as any);
+  return op in opCodeDefinitions;
 }
 
 /**
- * Returns parite of an op, -1 denotes variadic.
+ * Returns parity of an op, -1 denotes variadic.
  */
 export function arity(op: OpCode): number {
-  if (isUnary(op)) return 1;
-  if (isBinary(op)) return 2;
-  switch (op) {
-    case "true":
-    case "false":
-    case "argv":
-    case "argc":
-    case "read[byte]":
-    case "read[codepoint]":
-    case "read[Int]":
-    case "read[line]":
-      return 0;
-    case "replace":
-    case "slice[byte]":
-    case "slice[codepoint]":
-    case "set_at[Array]":
-    case "set_at[List]":
-    case "set_at[Table]":
-      return 3;
-    case "println_many_joined":
-    case "text_multireplace":
-      return -1;
-  }
+  const args = opCodeDefinitions[op].args;
+  if ("variadic" in args) return -1;
+  return args.length;
 }
 
 /**
