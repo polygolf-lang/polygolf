@@ -115,6 +115,8 @@ export default function emitProgram(
     const prec = precedence(expr);
     function emitNoParens(e: IR.Node): TokenTree {
       switch (e.kind) {
+        case "VarDeclarationWithAssignment":
+          return ["let", emit(e.assignment)];
         case "Block":
           return expr === program
             ? joinNodes("\n", e.children)

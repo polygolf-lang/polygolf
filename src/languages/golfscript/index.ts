@@ -54,12 +54,14 @@ import {
   replaceToSplitAndJoin,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
+import { hardcode } from "../../plugins/static";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
   emitter: emitProgram,
   phases: [
+    search(hardcode()),
     required(printIntToPrint),
     search(
       flipBinaryOps,

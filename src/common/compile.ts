@@ -16,6 +16,7 @@ import {
 } from "./objective";
 import { readsFromArgv, readsFromStdin } from "./symbols";
 import { PolygolfError } from "./errors";
+import { getOutput } from "../interpreter";
 
 export type OptimisationLevel = "nogolf" | "simple" | "full";
 export interface CompilationOptions {
@@ -25,6 +26,7 @@ export interface CompilationOptions {
   skipTypecheck: boolean;
   restrictFrontend: boolean;
   codepointRange: [number, number];
+  skipPlugins: string[];
 }
 
 export function compilationOptions(
@@ -37,6 +39,7 @@ export function compilationOptions(
     skipTypecheck: partial.skipTypecheck ?? false,
     restrictFrontend: partial.restrictFrontend ?? true,
     codepointRange: partial.codepointRange ?? [1, Infinity],
+    skipPlugins: [],
   };
 }
 
@@ -257,6 +260,10 @@ export function compileVariant(
   options: CompilationOptions,
   language: Language,
 ): CompilationResult {
+  if (options.level !== "nogolf")
+    try {
+      getOutput(program); // precompute output
+    } catch {}
   const obj = getObjectiveFunc(options);
   let best = compileVariantNoPacking(program, options, language);
   const packers = language.packers ?? [];
@@ -307,8 +314,15 @@ export function compileVariantNoPacking(
   options: CompilationOptions,
   language: Language,
 ): CompilationResult {
-  const phases = language.phases;
-  if (options.level === "nogolf" || options.level === "simple") {
+  const phases = language.phases.map((x) => ({
+    mode: x.mode,
+    plugins: x.plugins.filter((x) => !options.skipPlugins.includes(x.name)),
+  }));
+  if (
+    phases.length < 1 ||
+    options.level === "nogolf" ||
+    options.level === "simple"
+  ) {
     try {
       const warnings: Error[] = [];
       const addWarning = (x: Error) => warnings.push(x);
@@ -383,7 +397,7 @@ export function compileVariantNoPacking(
     history: [number, string][],
     warnings: Error[],
   ) {
-    if (startPhase >= language.phases.length) return;
+    if (startPhase >= phases.length) return;
     if (latestPhaseWeSawTheProg.size > 200) return;
     const stringified = stringify(program);
     const latestSeen = latestPhaseWeSawTheProg.get(stringified);
@@ -414,7 +428,7 @@ export function compileVariantNoPacking(
 
   while (!queue.isEmpty()) {
     const state = queue.dequeue();
-    const phase = language.phases[state.startPhase];
+    const phase = phases[state.startPhase];
     const warnings = [...state.warnings];
 
     function addWarning(x: Error, isGlobal: boolean) {
