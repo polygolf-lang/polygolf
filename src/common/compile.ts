@@ -42,7 +42,12 @@ export function compilationOptions(
 
 export type AddWarning = (x: Error, isGlobal: boolean) => void;
 
-export interface CompilationContext {
+export interface VisitorContext {
+  skipReplacement: () => void; // Prevents recursion into a new node.
+  skipChildren: () => void; // Prevents any recursion = into a new node or into children of old node.
+}
+
+export interface CompilationContext extends VisitorContext {
   options: CompilationOptions;
   addWarning: AddWarning;
 }
@@ -73,14 +78,15 @@ function compilationResult(
 
 export function applyAllToAllAndGetCounts(
   program: Node,
-  context: CompilationContext,
+  options: CompilationOptions,
+  addWarning: AddWarning,
   ...visitors: Plugin["visit"][]
 ): [Node, number[]] {
   const counts: number[] = [];
   let result = program;
   let c: number;
   for (const visitor of visitors) {
-    [result, c] = applyToAllAndGetCount(result, context, visitor);
+    [result, c] = applyToAllAndGetCount(result, options, addWarning, visitor);
     counts.push(c);
   }
   return [result, counts];
@@ -108,11 +114,14 @@ function getArray<T>(x: T | T[] | undefined): T[] {
 
 export function applyToAllAndGetCount(
   program: Node,
-  context: CompilationContext,
+  options: CompilationOptions,
+  addWarning: AddWarning,
   visitor: Plugin["visit"],
 ): [Node, number] {
-  const result = programToSpine(program).withReplacer((n, s) => {
-    const repl = getSingleOrUndefined(visitor(n, s, context));
+  const result = programToSpine(program).withReplacer((n, s, ctx) => {
+    const repl = getSingleOrUndefined(
+      visitor(n, s, { options, addWarning, ...ctx }),
+    );
     return repl === undefined
       ? undefined
       : copySource(n, copyTypeAnnotation(n, repl));
@@ -121,11 +130,14 @@ export function applyToAllAndGetCount(
 }
 function* applyToOne(
   spine: Spine,
-  context: CompilationContext,
+  options: CompilationOptions,
+  addWarning: AddWarning,
   visitor: Plugin["visit"],
 ) {
-  for (const altPrograms of spine.compactMap((n, s) => {
-    const suggestions = getArray(visitor(n, s, context));
+  for (const altPrograms of spine.compactMap((n, s, ctx) => {
+    const suggestions = getArray(
+      visitor(n, s, { options, addWarning, ...ctx }),
+    );
     return suggestions.map(
       (x) =>
         s.replacedWith(copySource(n, copyTypeAnnotation(n, x)), true).root.node,
@@ -309,12 +321,18 @@ export function compileVariantNoPacking(
         .flatMap((x) => x.plugins);
       const [res, counts] = applyAllToAllAndGetCounts(
         program,
-        { addWarning, options },
+        options,
+        addWarning,
         ...plugins.map((x) => x.visit),
       );
       return compilationResult(
         language.name,
-        emit(language, res, { addWarning, options }),
+        emit(language, res, {
+          addWarning,
+          options,
+          skipChildren() {},
+          skipReplacement() {},
+        }),
         [],
         plugins.map((y, i) => [counts[i], y.name]),
         warnings,
@@ -338,11 +356,17 @@ export function compileVariantNoPacking(
       .flatMap((x) => x.plugins);
     const [resProg, counts] = applyAllToAllAndGetCounts(
       prog,
-      { addWarning, options },
+      options,
+      addWarning,
       ...finishingPlugins.map((x) => x.visit),
     );
     return [
-      emit(language, resProg, { addWarning, options }),
+      emit(language, resProg, {
+        addWarning,
+        options,
+        skipChildren() {},
+        skipReplacement() {},
+      }),
       finishingPlugins.map((x, i) => [counts[i], x.name]),
     ];
   }
@@ -400,7 +424,8 @@ export function compileVariantNoPacking(
     if (phase.mode !== "search") {
       const [res, counts] = applyAllToAllAndGetCounts(
         state.program,
-        { addWarning, options },
+        options,
+        addWarning,
         ...phase.plugins.map((x) => x.visit),
       );
       enqueue(
@@ -420,7 +445,8 @@ export function compileVariantNoPacking(
       for (const plugin of phase.plugins) {
         for (const altProgram of applyToOne(
           spine,
-          { addWarning, options },
+          options,
+          addWarning,
           plugin.visit,
         )) {
           enqueue(

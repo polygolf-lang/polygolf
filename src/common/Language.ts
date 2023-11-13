@@ -39,25 +39,32 @@ export interface LanguagePhase {
   plugins: Plugin[];
 }
 
-export function required(...plugins: Plugin[]): LanguagePhase {
+function languagePhase(
+  mode: LanguagePhaseMode,
+  plugins: (Plugin | PluginVisitor)[],
+): LanguagePhase {
   return {
-    mode: "required",
-    plugins,
+    mode,
+    plugins: plugins.map((x) =>
+      typeof x === "function" ? { name: x.name, visit: x } : x,
+    ),
   };
 }
 
-export function simplegolf(...plugins: Plugin[]): LanguagePhase {
-  return {
-    mode: "simplegolf",
-    plugins,
-  };
+export function required(
+  ...plugins: (Plugin | PluginVisitor)[]
+): LanguagePhase {
+  return languagePhase("required", plugins);
 }
 
-export function search(...plugins: Plugin[]): LanguagePhase {
-  return {
-    mode: "search",
-    plugins,
-  };
+export function simplegolf(
+  ...plugins: (Plugin | PluginVisitor)[]
+): LanguagePhase {
+  return languagePhase("simplegolf", plugins);
+}
+
+export function search(...plugins: (Plugin | PluginVisitor)[]): LanguagePhase {
+  return languagePhase("search", plugins);
 }
 
 export interface Plugin {
@@ -65,7 +72,7 @@ export interface Plugin {
   /** visit should return one or more viable replacement nodes, or undefined to represent
    * no replacement. The replacement nodes should be different in value than
    * the initial node if it compares different under reference equality */
-  visit: PluginVisitor<IR.Node[] | IR.Node | undefined>;
+  visit: PluginVisitor;
 }
 
 type TokenTreeArray = Array<string | TokenTreeArray>;
