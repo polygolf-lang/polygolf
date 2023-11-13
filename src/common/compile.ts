@@ -26,6 +26,7 @@ export interface CompilationOptions {
   skipTypecheck: boolean;
   restrictFrontend: boolean;
   codepointRange: [number, number];
+  skipPlugins: string[];
 }
 
 export function compilationOptions(
@@ -38,6 +39,7 @@ export function compilationOptions(
     skipTypecheck: partial.skipTypecheck ?? false,
     restrictFrontend: partial.restrictFrontend ?? true,
     codepointRange: partial.codepointRange ?? [1, Infinity],
+    skipPlugins: [],
   };
 }
 
@@ -297,7 +299,10 @@ export function compileVariantNoPacking(
   options: CompilationOptions,
   language: Language,
 ): CompilationResult {
-  const phases = language.phases;
+  const phases = language.phases.map((x) => ({
+    mode: x.mode,
+    plugins: x.plugins.filter((x) => !options.skipPlugins.includes(x.name)),
+  }));
   if (
     phases.length < 1 ||
     options.level === "nogolf" ||
@@ -364,7 +369,7 @@ export function compileVariantNoPacking(
     history: [number, string][],
     warnings: Error[],
   ) {
-    if (startPhase >= language.phases.length) return;
+    if (startPhase >= phases.length) return;
     if (latestPhaseWeSawTheProg.size > 200) return;
     const stringified = stringify(program);
     const latestSeen = latestPhaseWeSawTheProg.get(stringified);
@@ -395,7 +400,7 @@ export function compileVariantNoPacking(
 
   while (!queue.isEmpty()) {
     const state = queue.dequeue();
-    const phase = language.phases[state.startPhase];
+    const phase = phases[state.startPhase];
     const warnings = [...state.warnings];
 
     function addWarning(x: Error, isGlobal: boolean) {
