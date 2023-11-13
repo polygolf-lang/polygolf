@@ -113,9 +113,9 @@ const luaLanguage: Language = {
       useIndexCalls(true),
       mapOps({
         int_to_text: (x) =>
-          op("concat[Text]", text(""), implicitConversion("to_dec", x[0])),
+          op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
         join: (x) => func("table.concat", isText("")(x[1]) ? [x[0]] : x),
-        "length[byte]": (x) => method(x[0], "len"),
+        "size[byte]": (x) => method(x[0], "len"),
         true: builtin("true"),
         false: builtin("false"),
         repeat: (x) => method(x[0], "rep", x[1]),
@@ -155,7 +155,7 @@ const luaLanguage: Language = {
         pow: "^",
         not: "not",
         neg: "-",
-        "length[List]": "#",
+        "size[List]": "#",
         bit_not: "~",
         mul: "*",
         div: "//",

@@ -131,9 +131,9 @@ export function useIntegerTruthiness(node: Node, spine: Spine) {
     spine.pathFragment === "condition"
   ) {
     const res = isIntLiteral(0n)(node.args[1])
-      ? implicitConversion("to_bool", node.args[0])
+      ? implicitConversion("int_to_bool", node.args[0])
       : isIntLiteral(0n)(node.args[0])
-      ? implicitConversion("to_bool", node.args[1])
+      ? implicitConversion("int_to_bool", node.args[1])
       : undefined;
     return res !== undefined && node.op === "eq[Int]" ? op("not", res) : res;
   }

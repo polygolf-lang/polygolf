@@ -392,7 +392,7 @@ export const canonicalOpTable: Record<string, OpCode> = {
   "<": "lt",
   ">=": "geq",
   ">": "gt",
-  "#": "length[List]",
+  "#": "size[List]",
   "..": "concat[Text]",
 };
 

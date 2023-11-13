@@ -23,7 +23,7 @@ interface Variadic {
   min: number;
 }
 export type ArgTypes = Variadic | Type[];
-function variadic(type: Type, min = 2): ArgTypes {
+function variadic(type: Type, min = 2): Variadic {
   return {
     variadic: type,
     min,
@@ -186,7 +186,7 @@ export type NullaryOpCode = OpCode<{ args: Readonly<[]> }>;
 export type UnaryOpCode = OpCode<{ args: Readonly<[Type]> }>;
 export type BinaryOpCode = OpCode<{ args: Readonly<[Type, Type]> }>;
 export type TernaryOpCode = OpCode<{ args: Readonly<[Type, Type, Type]> }>;
-export type VariadicOpCode = OpCode<{ args: Readonly<Variadic> }>;
+export type VariadicOpCode = OpCode<{ args: Variadic }>;
 export type AssociativeOpCode = OpCode<{ assoc: true }>;
 
 export function isNullary(op: OpCode): op is NullaryOpCode {

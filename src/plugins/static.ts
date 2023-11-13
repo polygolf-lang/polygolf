@@ -48,7 +48,7 @@ export function listOpsToTextOps(
     name: `listOpsToTextOps(${JSON.stringify(ops)})`,
     visit(node) {
       if (
-        isOp("at[List]", "list_find")(node) &&
+        isOp("at[List]", "find[List]")(node) &&
         node.args[0].kind === "List" &&
         node.args[0].exprs.every(isText())
       ) {
@@ -58,12 +58,12 @@ export function listOpsToTextOps(
           if (texts.every((x) => byteLength(x) === 1)) {
             if (node.op === "at[List]" && ops.includes("at[byte]"))
               return op("at[byte]", joined, node.args[1]);
-            if (node.op === "list_find" && ops.includes("find[byte]"))
+            if (node.op === "find[List]" && ops.includes("find[byte]"))
               return op("find[byte]", joined, node.args[1]);
           }
           if (node.op === "at[List]" && ops.includes("at[codepoint]"))
             return op("at[codepoint]", joined, node.args[1]);
-          if (node.op === "list_find" && ops.includes("find[codepoint]"))
+          if (node.op === "find[List]" && ops.includes("find[codepoint]"))
             return op("find[codepoint]", joined, node.args[1]);
         }
       }

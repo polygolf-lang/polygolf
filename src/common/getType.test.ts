@@ -586,7 +586,7 @@ describeOp("not", [
   [[bool], bool],
 ]);
 
-describeOp("to_dec", [
+describeOp("int_to_dec", [
   [[bool], "error"],
   [[text()], "error"],
   [[int()], ascii(int(1))],
@@ -641,19 +641,19 @@ describeOp("char[codepoint]", [
   [[int(0, 127)], ascii(int(1, 1))],
 ]);
 
-describeOp("length[List]", [
+describeOp("size[List]", [
   [[list(int()), int()], "error"],
   [[array(int(), 10)], "error"],
   [[list(int())], int(0, (1n << 31n) - 1n)],
 ]);
 
-describeOp("length[codepoint]", [
+describeOp("size[codepoint]", [
   [[list(int())], "error"],
   [[text(int(20, 58))], int(20, 58)],
   [[ascii(int(20, 58))], int(20, 58)],
 ]);
 
-describeOp("length[byte]", [
+describeOp("size[byte]", [
   [[list(int())], "error"],
   [[text(int(20, 58))], int(20, 4 * 58)],
   [[ascii(int(20, 58))], int(20, 58)],

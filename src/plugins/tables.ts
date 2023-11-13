@@ -136,7 +136,7 @@ export function tableToListLookup(node: Node) {
     ) {
       const values = node.args[0].kvPairs.map((x) => x.value);
       const at = node.args[1];
-      return op("at[List]", list(values), op("list_find", list(keys), at));
+      return op("at[List]", list(values), op("find[List]", list(keys), at));
     }
   }
 }

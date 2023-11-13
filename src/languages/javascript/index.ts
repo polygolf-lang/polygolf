@@ -144,10 +144,10 @@ const javascriptLanguage: Language = {
             : undefined,
         int_to_bin: (x) => method(x[0], "toString", int(2)),
         int_to_hex: (x) => method(x[0], "toString", int(16)),
-        "length[List]": (x) => propertyCall(x[0], "length"),
+        "size[List]": (x) => propertyCall(x[0], "length"),
         join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
         int_to_text: (x) =>
-          op("concat[Text]", text(""), implicitConversion("to_dec", x[0])),
+          op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
         text_to_int: (x) =>
           op("mul", int(1n), implicitConversion("dec_to_int", x[0])),
       }),

@@ -148,7 +148,7 @@ const nimLanguage: Language = {
       mapTo(func)({
         text_split: "split",
         text_split_whitespace: "split",
-        "length[byte]": "len",
+        "size[byte]": "len",
         repeat: "repeat",
         max: "max",
         min: "min",

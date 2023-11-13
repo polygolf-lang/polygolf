@@ -20,7 +20,7 @@ const textOpsEquivalenceAscii = toBidirectionalMap<OpCode>([
   ["find[codepoint]", "find[byte]"],
   ["at[codepoint]", "at[byte]"],
   ["ord_at[codepoint]", "ord_at[byte]"],
-  ["length[codepoint]", "length[byte]"],
+  ["size[codepoint]", "size[byte]"],
   ["reversed[codepoint]", "reversed[byte]"],
   ["slice[codepoint]", "slice[byte]"],
   ["ord[codepoint]", "ord[byte]"],

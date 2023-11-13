@@ -397,7 +397,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
     // other
     case "push":
       return voidType;
-    case "list_find":
+    case "find[List]":
       return int(-1, (1n << 31n) - 1n);
     case "concat[Text]": {
       const textTypes = got as TextType[];
@@ -488,9 +488,9 @@ function getOpCodeType(expr: Op, program: Node): Type {
     }
     case "not":
       return booleanType;
-    case "to_bool":
+    case "int_to_bool":
       return booleanType;
-    case "to_dec":
+    case "int_to_dec":
     case "to_bin":
     case "to_hex": {
       const t = got[0] as IntegerType;
@@ -523,9 +523,9 @@ function getOpCodeType(expr: Op, program: Node): Type {
       return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
     case "char[codepoint]":
       return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
-    case "length[List]":
+    case "size[List]":
       return int(0, (1n << 31n) - 1n);
-    case "length[byte]": {
+    case "size[byte]": {
       const codepointLength = (got[0] as TextType).codepointLength;
       return int(
         codepointLength.low,
@@ -535,7 +535,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
         ),
       );
     }
-    case "length[codepoint]":
+    case "size[codepoint]":
       return (got[0] as TextType).codepointLength;
     case "split_whitespace":
       return list(got[0]);

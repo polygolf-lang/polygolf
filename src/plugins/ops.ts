@@ -19,11 +19,11 @@ import {
   op,
   prefix,
   type UnaryOpCode,
-  BinaryOpCodes,
   functionCall,
   propertyCall,
   isIdent,
   postfix,
+  VariadicOpCode,
 } from "../IR";
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
@@ -138,7 +138,7 @@ export function mapToPrefixAndInfix<
 }
 
 function asBinaryChain(
-  opCode: BinaryOpCode,
+  opCode: BinaryOpCode | VariadicOpCode,
   exprs: readonly Node[],
   names: Partial<Record<OpCode, string>>,
 ): Node {
@@ -255,7 +255,7 @@ export function addPostfixIncAndDec(node: Node) {
 
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {
-  if (isOp(...BinaryOpCodes)(node)) {
+  if (isOp()(node) && isBinary(node.op)) {
     const flippedOpCode = flipOpCode(node.op);
     if (flippedOpCode !== null) {
       return op(flippedOpCode, node.args[1], node.args[0]);
@@ -277,8 +277,8 @@ export function methodsAsFunctions(node: Node) {
 
 export const printIntToPrint: Plugin = mapOps(
   {
-    "print[Int]": (x) => op("print[Text]", op("to_dec", ...x)),
-    "println[Int]": (x) => op("println[Text]", op("to_dec", ...x)),
+    "print[Int]": (x) => op("print[Text]", op("int_to_dec", ...x)),
+    "println[Int]": (x) => op("println[Text]", op("int_to_dec", ...x)),
   },
   "printIntToPrint",
 );

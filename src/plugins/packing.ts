@@ -34,7 +34,7 @@ export function useDecimalConstantPackedPrinter(node: Node, spine: Spine) {
             op(
               "slice[byte]",
               op(
-                "to_dec",
+                "int_to_dec",
                 op(
                   "add",
                   int(72n),

@@ -135,8 +135,8 @@ const swiftLanguage: Language = {
           func("String", postfix("!", func("UnicodeScalar", x))),
         "char[codepoint]": (x) =>
           func("String", postfix("!", func("UnicodeScalar", x))),
-        "length[codepoint]": (x) => prop(x[0], "count"),
-        "length[byte]": (x) => prop(prop(x[0], "utf8"), "count"),
+        "size[codepoint]": (x) => prop(x[0], "count"),
+        "size[byte]": (x) => prop(prop(x[0], "utf8"), "count"),
         int_to_text: (x) => func("String", x),
         text_split: (x) => method(x[0], "split", namedArg("separator", x[1])),
         repeat: (x) =>

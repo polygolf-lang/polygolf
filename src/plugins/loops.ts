@@ -107,7 +107,7 @@ export function forRangeToForEachPair(node: Node, spine: Spine) {
     node.variable !== undefined &&
     !node.inclusive &&
     isIntLiteral(0n)(node.start) &&
-    isOp("length[List]")(node.end) &&
+    isOp("size[List]")(node.end) &&
     isIdent()(node.end.args[0])
   ) {
     const variable = node.variable;
@@ -146,8 +146,8 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
     );
   const lengthOpToGetOp = new Map([
     ["array_length", "at[Array]"],
-    ["length[List]", "at[List]"],
-    ["length[byte]", "at[byte]"],
+    ["size[List]", "at[List]"],
+    ["size[byte]", "at[byte]"],
     ["array_length", "at[codepoint]"],
   ]);
   return {
