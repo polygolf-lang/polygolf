@@ -40,7 +40,11 @@ import {
   forRangeToForRangeOneStep,
   removeUnusedForVar,
 } from "../../plugins/loops";
-import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
+import {
+  golfStringListLiteral,
+  hardcode,
+  listOpsToTextOps,
+} from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   packSource2to1,
@@ -77,6 +81,7 @@ const pythonLanguage: Language = {
   extension: "py",
   emitter: emitProgram,
   phases: [
+    search(hardcode()),
     required(printIntToPrint),
     search(
       golfStringListLiteral(),
