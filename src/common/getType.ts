@@ -393,7 +393,7 @@ function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
     case "println_list_joined":
       return [list(text()), text()];
     case "println_many_joined":
-      return variadic(text(), 1);
+      return variadic(text(), 2);
     case "text_replace":
       return [text(), text(int(1, "oo")), text()];
     case "text_multireplace":
