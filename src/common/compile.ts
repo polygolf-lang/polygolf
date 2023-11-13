@@ -41,12 +41,15 @@ export function compilationOptions(
 }
 
 export type AddWarning = (x: Error, isGlobal: boolean) => void;
-export type SkipOverride = (kind: "replacement" | "children") => void;
 
-export interface CompilationContext {
+export interface VisitorContext {
+  skipReplacement: () => void; // Prevents recursion into a new node.
+  skipChildren: () => void; // Prevents any recursion = into a new node or into children of old node.
+}
+
+export interface CompilationContext extends VisitorContext {
   options: CompilationOptions;
   addWarning: AddWarning;
-  skip: SkipOverride;
 }
 
 export interface CompilationResult {
@@ -112,9 +115,9 @@ export function applyToAllAndGetCount(
   addWarning: AddWarning,
   visitor: Plugin["visit"],
 ): [Node, number] {
-  const result = programToSpine(program).withReplacer((n, s, skip) => {
+  const result = programToSpine(program).withReplacer((n, s, ctx) => {
     const repl = getSingleOrUndefined(
-      visitor(n, s, { options, addWarning, skip }),
+      visitor(n, s, { options, addWarning, ...ctx }),
     );
     return repl === undefined
       ? undefined
@@ -128,8 +131,10 @@ function* applyToOne(
   addWarning: AddWarning,
   visitor: Plugin["visit"],
 ) {
-  for (const altPrograms of spine.compactMap((n, s, skip) => {
-    const suggestions = getArray(visitor(n, s, { options, addWarning, skip }));
+  for (const altPrograms of spine.compactMap((n, s, ctx) => {
+    const suggestions = getArray(
+      visitor(n, s, { options, addWarning, ...ctx }),
+    );
     return suggestions.map(
       (x) =>
         s.replacedWith(copySource(n, copyTypeAnnotation(n, x)), true).root.node,
@@ -319,7 +324,12 @@ export function compileVariantNoPacking(
       );
       return compilationResult(
         language.name,
-        emit(language, res, { addWarning, options, skip() {} }),
+        emit(language, res, {
+          addWarning,
+          options,
+          skipChildren() {},
+          skipReplacement() {},
+        }),
         plugins.map((y, i) => [counts[i], y.name]),
         warnings,
       );
@@ -347,7 +357,12 @@ export function compileVariantNoPacking(
       ...finishingPlugins.map((x) => x.visit),
     );
     return [
-      emit(language, resProg, { addWarning, options, skip() {} }),
+      emit(language, resProg, {
+        addWarning,
+        options,
+        skipChildren() {},
+        skipReplacement() {},
+      }),
       finishingPlugins.map((x, i) => [counts[i], x.name]),
     ];
   }

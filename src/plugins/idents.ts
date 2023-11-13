@@ -65,7 +65,7 @@ export function renameIdents(
   return {
     name: "renameIdents(...)",
     visit(program, spine, context) {
-      context.skip("children");
+      context.skipChildren();
       const identMap = getIdentMap(spine.root, identGen);
       return spine.withReplacer((node) => {
         if (isUserIdent()(node)) {
@@ -114,7 +114,7 @@ export function alias(
   return {
     name: "alias(...)",
     visit(prog, spine, context) {
-      context.skip("children");
+      context.skipChildren();
       // get frequency of expr
       const timesUsed = new Map<string, number>();
       for (const key of spine.compactMap(getKey)) {

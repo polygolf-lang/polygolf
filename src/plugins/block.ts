@@ -258,7 +258,7 @@ export function inlineVariables(
   spine: Spine,
   context: CompilationContext,
 ) {
-  context.skip("children");
+  context.skipChildren();
   const writes = groupby(getWrites(spine), (x) => x.node.name);
   const suggestions = [];
   for (const a of writes.values()) {

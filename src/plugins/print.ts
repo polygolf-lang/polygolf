@@ -19,7 +19,7 @@ export function golfLastPrint(toPrintln = true): Plugin {
   return {
     name: "golfLastPrint",
     visit(program, spine, context) {
-      context.skip("children");
+      context.skipChildren();
       const newOp = toPrintln ? ("println" as const) : ("print" as const);
       const oldOp = toPrintln ? "print" : "println";
       if (isOp(oldOp)(program)) {

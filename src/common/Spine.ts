@@ -1,5 +1,5 @@
-import { type IR, isOp, op, isOfKind, block } from "../IR";
-import type { SkipOverride, CompilationContext } from "./compile";
+import { type IR, isOp, op, isOfKind, block, type Node } from "../IR";
+import type { VisitorContext, CompilationContext } from "./compile";
 import { getChild, getChildFragments, type PathFragment } from "./fragments";
 import { replaceAtIndex } from "./arrays";
 
@@ -108,10 +108,12 @@ export class Spine<N extends IR.Node = IR.Node> {
    * if the values are not used. Name inspired by Swift's `compactMap`. */
   *compactMap<T>(func: Visitor<T | undefined>): Generator<T, void, undefined> {
     let skipChildren = false;
-    function skip(kind: "replacement" | "children") {
-      skipChildren = kind === "children";
-    }
-    const ret = func(this.node, this, skip);
+    const ret = func(this.node, this, {
+      skipChildren() {
+        skipChildren ||= true;
+      },
+      skipReplacement() {},
+    });
     if (ret !== undefined) yield ret;
     if (!skipChildren)
       for (const child of this.getChildSpines()) yield* child.compactMap(func);
@@ -149,11 +151,16 @@ export class Spine<N extends IR.Node = IR.Node> {
   ): Spine {
     let skipReplacement = skipReplaced;
     let skipChildren = false;
-    function skip(kind: "replacement" | "children") {
-      skipReplacement ||= kind === "replacement";
-      skipChildren ||= kind === "children";
-    }
-    const ret = skipThis ? undefined : replacer(this.node, this, skip);
+    const ret = skipThis
+      ? undefined
+      : replacer(this.node, this, {
+          skipChildren() {
+            skipChildren ||= true;
+          },
+          skipReplacement() {
+            skipReplacement ||= true;
+          },
+        });
     if (ret === undefined && skipChildren) return this;
     else if (ret === undefined) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -195,18 +202,16 @@ export class Spine<N extends IR.Node = IR.Node> {
   }
 }
 
-export type PluginVisitor<T = IR.Node[] | IR.Node | undefined> = <
-  N extends IR.Node,
->(
-  node: N,
-  spine: Spine<N>,
+export type PluginVisitor<T = IR.Node[] | IR.Node | undefined> = (
+  node: Node,
+  spine: Spine,
   context: CompilationContext,
 ) => T;
 
-export type Visitor<T> = <N extends IR.Node>(
-  node: N,
-  spine: Spine<N>,
-  skip: SkipOverride,
+export type Visitor<T> = (
+  node: Node,
+  spine: Spine,
+  context: VisitorContext,
 ) => T;
 
 export function programToSpine(node: IR.Node) {

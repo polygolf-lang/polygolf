@@ -25,7 +25,7 @@ export function addImports( // TODO caching
   return {
     name: "addImports(...)",
     visit(node, spine, context) {
-      context.skip("children");
+      context.skipChildren();
       const modules = spine.compactMap(rulesFunc);
       const outputNode = outputFunc([...new Set(modules)]);
       if (outputNode !== undefined) {
