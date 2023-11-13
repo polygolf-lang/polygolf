@@ -18,20 +18,18 @@ const javascriptForInterpreting = {
   phases: [
     ...javascriptLanguage.phases,
     required(addVarDeclarations, {
-      name: "instrumentInNogolf",
-      visit(node, spine, context) {
-        if (context.options.level === "nogolf") {
-          const parent = spine.parent?.node;
-          if (
-            parent !== undefined &&
-            spine.pathFragment === "body" &&
-            isOfKind("While", "ForEach", "ForEachKey", "ForCLike")(parent) &&
-            (node.kind !== "Block" ||
-              node.children[0].kind !== "FunctionCall" ||
-              !isBuiltinIdent("instrument")(node.children[0].func))
-          ) {
-            return block([functionCall("instrument"), node]);
-          }
+      name: "instrument",
+      visit(node, spine) {
+        const parent = spine.parent?.node;
+        if (
+          parent !== undefined &&
+          spine.pathFragment === "body" &&
+          isOfKind("While", "ForEach", "ForEachKey", "ForCLike")(parent) &&
+          (node.kind !== "Block" ||
+            node.children[0].kind !== "FunctionCall" ||
+            !isBuiltinIdent("instrument")(node.children[0].func))
+        ) {
+          return block([functionCall("instrument"), node]);
         }
       },
     }),
