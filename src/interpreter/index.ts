@@ -66,7 +66,6 @@ function _getOutput(program: Node): string {
     throw jsCode.result;
   }
   let output = "";
-  /* eslint-disable */
   function print(x: string) {
     output += x + "\n";
   }
@@ -78,7 +77,12 @@ function _getOutput(program: Node): string {
     if (Date.now() - start > 500)
       throw new PolygolfError("Program took too long to interpret.");
   }
-  eval(jsCode.result);
+  /* eslint-disable */
+  new Function("print", "write", "instrument", jsCode.result)(
+    print,
+    write,
+    instrument,
+  );
   /* eslint-enable */
   return output;
 }
