@@ -49,13 +49,14 @@ PolyGolf is designed to be decent at golfing, so there's concern about making it
 
 ## Syntax
 
-Program is a sequence of expressions.
-Expression is either
+Program is a tree of nodes.
+Node is either
 
 - integer literal `58`,
 - text literal `"text literal\n another line"`,
 - variable `$very_important_var`,
-- a block, potentially with multiple variants `{ variant1 / variant2 / variant3 }` or
+- root block `op1; op2; op3;`
+- a block `{op1; op2; op3}`, potentially with multiple variants `{ variant1 / variant2 / variant3 }` or
 - s-expression
 
 S-expression takes one of the following forms:
