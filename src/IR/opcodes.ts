@@ -232,6 +232,25 @@ export function isOpCode(op: string): op is OpCode {
   return op in opCodeDefinitions;
 }
 
+export const OpCodeFrontNames = [
+  ...new Set(
+    Object.entries(opCodeDefinitions).map(([k, v]) =>
+      "front" in v && typeof v.front === "string" ? v.front : k,
+    ),
+  ),
+];
+
+export const OpCodeFrontNamesToOpCodes = OpCodeFrontNames.map((frontName) =>
+  OpCodes.filter(
+    (op) =>
+      op === frontName || (opCodeDefinitions[op] as any).front === frontName,
+  ),
+);
+
+export const OpCodesUser = OpCodes.filter(
+  (op) => "front" in opCodeDefinitions[op],
+);
+
 /**
  * Returns parity of an op, -1 denotes variadic.
  */
@@ -239,6 +258,14 @@ export function arity(op: OpCode): number {
   const args = opCodeDefinitions[op].args;
   if ("variadic" in args) return -1;
   return args.length;
+}
+
+export function matchesOpCodeArity(op: OpCode, arity: number) {
+  const expectedTypes = opCodeDefinitions[op].args;
+  if ("variadic" in expectedTypes) {
+    return arity >= expectedTypes.min;
+  }
+  return expectedTypes.length === arity;
 }
 
 /**

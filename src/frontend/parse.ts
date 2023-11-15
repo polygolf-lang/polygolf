@@ -65,15 +65,24 @@ import {
   postfix,
   type Text,
   OpCodeFrontName,
+  OpCodesUser,
 } from "../IR";
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
+let deprecatedAliasesUsed: string[] = [];
+
 export function sexpr(callee: Identifier, args: readonly Node[]): Node {
   if (!callee.builtin) {
     return functionCall(callee, args);
   }
-  const opCode = canonicalOp(callee.name, args.length);
+  let opCode = callee.name;
+  if (opCode === "<-") opCode = "assign";
+  if (opCode === "=>") opCode = "key_value";
+  if (opCode in deprecatedAliases) {
+    deprecatedAliasesUsed.push(opCode);
+    opCode = deprecatedAliases[opCode];
+  }
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
       throw new PolygolfError(
@@ -347,7 +356,10 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
         expectArity(2);
         return namedArg(asString(args[0]), args[1]);
     }
-  if (isOpCode(opCode) && (!restrictedFrontend || isFrontend(opCode))) {
+  if (
+    isOpCode(opCode) &&
+    (!restrictedFrontend || OpCodesUser.includes(opCode))
+  ) {
     if (opCode === "at[argv]" && restrictedFrontend) {
       assertInteger(args[0]);
     }
@@ -374,14 +386,6 @@ function intValue(x: string): bigint {
 
 export function int(x: Token) {
   return integer(intValue(x.text));
-}
-
-function canonicalOp(op: string, arity: number): string {
-  if (op === "<-") return "assign";
-  if (op === "=>") return "key_value";
-  if (op === "-") return arity < 2 ? "neg" : "sub";
-  if (op === "~") return arity < 2 ? "bit_not" : "bit_xor";
-  return canonicalOpTable[op] ?? op;
 }
 
 export function userIdentifier(token: Token): Identifier {
@@ -515,7 +519,13 @@ export function refSource(node: Node, ref?: Token | Node): Node {
   };
 }
 
-export default function parse(code: string, restrictFrontend = true) {
+export type ParseResult = { node: Node; warnings: Error[] };
+
+export default function parse(
+  code: string,
+  restrictFrontend = true,
+): ParseResult {
+  deprecatedAliasesUsed = [];
   restrictedFrontend = restrictFrontend;
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
   try {
@@ -562,11 +572,19 @@ export default function parse(code: string, restrictFrontend = true) {
       column: (lines.at(-1)?.length ?? 0) + 1,
     });
   }
-  return results[0] as Node;
+  return {
+    node: results[0] as Node,
+    warnings: deprecatedAliasesUsed.map(
+      (x) =>
+        new Error(
+          `Deprecated alias used: ${x}. Use ${deprecatedAliases[x]} instead.`,
+        ),
+    ),
+  };
 }
 
 // TODO add more
-const compatibilityAliases: Record<string, OpCode> = {
+const deprecatedAliases: Record<string, OpCode> = {
   text_contains: "contains[Text]",
   array_contains: "contains[Array]",
   list_contains: "contains[List]",

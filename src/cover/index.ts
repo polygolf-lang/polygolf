@@ -1,7 +1,6 @@
 import { getExampleOpCodeArgTypes, getType } from "../common/getType";
 import type { Language } from "../common/Language";
 import {
-  FrontendOpCodes,
   annotate,
   assignment,
   builtin,
@@ -27,6 +26,7 @@ import {
   text,
   getLiteralOfType,
   OpCodes,
+  OpCodesUser,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
@@ -160,7 +160,7 @@ const features: CoverTableRecipe = {
 };
 
 const opCodes: CoverTableRecipe = Object.fromEntries(
-  FrontendOpCodes.map((opCode) => [
+  OpCodesUser.map((opCode) => [
     opCode,
     (lang) =>
       lang.stmt(
@@ -180,18 +180,16 @@ if (options.all === true) {
     "Backend OpCodes",
     runCoverTableRecipe(
       Object.fromEntries(
-        OpCodes.filter((x) => !FrontendOpCodes.includes(x as any)).map(
-          (opCode) => [
-            opCode,
-            (lang) =>
-              lang.stmt(
-                op(
-                  opCode,
-                  ...getExampleOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
-                ),
+        OpCodes.filter((x) => !OpCodesUser.includes(x as any)).map((opCode) => [
+          opCode,
+          (lang) =>
+            lang.stmt(
+              op(
+                opCode,
+                ...getExampleOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
               ),
-          ],
-        ),
+            ),
+        ]),
       ),
     ),
   );
