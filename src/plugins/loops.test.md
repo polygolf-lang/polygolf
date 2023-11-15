@@ -169,14 +169,14 @@ for_each $x argv (
 
 ```polygolf loops.forArgvToForRange()
 for (id "x+index") 0 100 {
-  $x <- (argv_get (id "x+index"));
+  $x <- (at[argv] (id "x+index"));
   println $x;
 };
 ```
 
 ```polygolf loops.forArgvToForRange(false)
 for (id "x+index") 0 argc {
-  $x <- (argv_get (id "x+index"));
+  $x <- (at[argv] (id "x+index"));
   println $x;
 };
 ```

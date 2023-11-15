@@ -634,6 +634,8 @@ const deprecatedAliases: Record<string, OpCode> = {
   int_to_text_byte: "char[byte]",
   int_to_codepoint: "char[codepoint]",
   text_replace: "replace",
+  text_split: "split",
+  text_split_whitespace: "split_whitespace",
   println_int: "println[Int]",
   print_int: "print[Int]",
   concat: "concat[Text]",
@@ -645,4 +647,6 @@ const deprecatedAliases: Record<string, OpCode> = {
   text_get_codepoint_slice: "slice[codepoint]",
   text_byte_length: "size[byte]",
   text_codepoint_length: "size[codepoint]",
+  list_find: "find[List]",
+  text_to_int: "dec_to_int",
 };

@@ -23,7 +23,7 @@ println_int 12345;
 println_int 12345;
 println_int 12345;
 println "text";
-println (argv_get 0);
+println (at[argv] 0);
 
 ```
 

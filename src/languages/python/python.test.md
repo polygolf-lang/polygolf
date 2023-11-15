@@ -132,7 +132,7 @@ for x in sys.argv[1:]:print(x)
 ```
 
 ```polygolf
-print (argv_get 0);
+print (at[argv] 0);
 ```
 
 ```python

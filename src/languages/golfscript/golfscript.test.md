@@ -141,7 +141,7 @@ for $i $a ($a+6) {
 ## Argv
 
 ```polygolf
-println (argv_get 5);
+println (at[argv] 5);
 ```
 
 ```golfscript nogolf

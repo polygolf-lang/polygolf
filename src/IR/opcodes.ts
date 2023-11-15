@@ -69,8 +69,8 @@ export const opCodeDefinitions = {
   // Output
   "print[Text]": { args: [text()], front: "print" },
   "print[Int]": { args: [int()], front: "print" },
-  "println[Text]": { args: [int()], front: "println" },
-  "println[Int]": { args: [text()], front: "println" },
+  "println[Text]": { args: [text()], front: "println" },
+  "println[Int]": { args: [int()], front: "println" },
   println_list_joined: { args: [list(text()), text()] },
   println_many_joined: { args: variadic(text(), 2) },
   "putc[byte]": { args: [int(0, 255)], front: true },
@@ -131,10 +131,10 @@ export const opCodeDefinitions = {
   "reversed[codepoint]": { args: [text()], front: true },
   "reversed[Ascii]": { args: [ascii], front: "reversed" },
   "reversed[List]": { args: [list(T1)], front: "reversed" },
-  "find[codepoint]": { args: [text()], front: true },
-  "find[byte]": { args: [text()], front: true },
-  "find[Ascii]": { args: [ascii], front: "find" },
-  "find[List]": { args: [list(T1)], front: "find" },
+  "find[codepoint]": { args: [text(), text()], front: true },
+  "find[byte]": { args: [text(), text()], front: true },
+  "find[Ascii]": { args: [ascii, ascii], front: "find" },
+  "find[List]": { args: [list(T1), T1], front: "find" },
 
   // Membership
   "contains[Array]": { args: [array(T1, T2), T1], front: "contains" },
@@ -261,9 +261,14 @@ export const OpCodesUser = OpCodes.filter(
  * Returns parity of an op, -1 denotes variadic.
  */
 export function arity(op: OpCode): number {
-  const args = opCodeDefinitions[op].args;
-  if ("variadic" in args) return -1;
-  return args.length;
+  try {
+    const args = opCodeDefinitions[op].args;
+    if ("variadic" in args) return -1;
+    return args.length;
+  } catch (e) {
+    console.log("arity of", op);
+    throw e;
+  }
 }
 
 export function matchesOpCodeArity(op: OpCode, arity: number) {

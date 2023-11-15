@@ -4,6 +4,7 @@ import compile, {
   applyAllToAllAndGetCounts,
   debugEmit,
   normalize,
+  typecheck,
 } from "../common/compile";
 import { findLang } from "../languages/languages";
 import { type Plugin } from "../common/Language";
@@ -18,7 +19,6 @@ export const keywords = [
   "chars",
   "allVariants",
   "skipTypecheck",
-  "typecheck",
   "restrictFrontend",
   "1..127",
   "32..127",
@@ -40,7 +40,7 @@ export function compilationOptionsFromKeywords(
       : [1, Infinity],
     getAllVariants: is("allVariants"),
     restrictFrontend: is("restrictFrontend"),
-    skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
+    skipTypecheck: is("skipTypecheck"),
     skipPlugins: is("no:hardcode") ? ["hardcode"] : [],
   };
 }
@@ -72,14 +72,19 @@ export function testPlugin(
 ) {
   test(name, () => {
     expect(
-      debugEmit(
-        applyAllToAllAndGetCounts(
-          getOnlyVariant(parse(input, false).node),
-          compilationOptionsFromKeywords(args),
-          () => {},
-          ...plugins.map((x) => (typeof x === "function" ? x : x.visit)),
-        )[0],
-      ),
+      (() => {
+        const options = compilationOptionsFromKeywords(args);
+        let program = getOnlyVariant(parse(input, false).node);
+        if (!options.skipTypecheck) program = typecheck(program);
+        return debugEmit(
+          applyAllToAllAndGetCounts(
+            program,
+            options,
+            () => {},
+            ...plugins.map((x) => (typeof x === "function" ? x : x.visit)),
+          )[0],
+        );
+      })(),
     ).toEqual(normalize(output));
   });
 }

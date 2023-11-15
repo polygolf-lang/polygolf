@@ -528,7 +528,7 @@ function copySource(from: Node, to: Node): Node {
 
 /** Typecheck a program.
  * Throws an error on a type error; otherwise returns a program with resolved opcodes. */
-function typecheck(program: Node): Node {
+export function typecheck(program: Node): Node {
   const spine = programToSpine(program);
   return spine.withReplacer(function (node, spine) {
     const t = getTypeAndResolveOpCode(node, spine);
