@@ -17,14 +17,14 @@ for_range_inclusive $i 0 9 1 (
 ```polygolf loops.forRangeToWhile
 $i <- 0;
 while ($i < 10) {
-  print_int $x;
+  print_int $i;
   $i <- (1 + $i);
 };
 ```
 
 ```polygolf loops.forRangeToForCLike
 for_c_like ($i <- 0) ($i < 10) ($i <- (1 + $i)) (
-  print_int $x
+  print_int $xi
 );
 ```
 
@@ -55,7 +55,7 @@ while ($j < 11) {
 ## For each
 
 ```polygolf
-for $i 0 (# $collection) {
+for $i 0 (size[List] $collection) {
   print (list_get $collection $i);
 };
 ```

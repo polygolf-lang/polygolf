@@ -58,7 +58,7 @@ callee -> builtin {% id %}
 
 integer -> %integer {% d => refSource(int(d[0]), d[0]) %}
 variable -> %variable {% d => refSource(userIdentifier(d[0]), d[0]) %}
-builtin -> (%builtin | "at[argv]") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
+builtin -> (%builtin | "for_argv") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
 opalias -> (%opalias | "..") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
 nullary -> %nullary {% d => refSource(sexpr(identifier(d[0].value, true), []), d[0]) %}
 string -> %string {% d => refSource(text(JSON.parse(d[0])), d[0]) %}

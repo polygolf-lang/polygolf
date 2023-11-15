@@ -26,6 +26,7 @@ import {
   BinaryOpCodes,
   VariadicOpCodes,
   isUnary,
+  flippedOpCode,
 } from "../IR";
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
@@ -189,17 +190,17 @@ export function useIndexCalls(
     visit(node) {
       if (
         isOp(...ops)(node) &&
-        (isIdent()(node.args[0]) || node.op.endsWith("_get"))
+        (isIdent()(node.args[0]) || !node.op.startsWith("set_"))
       ) {
         let indexNode: IndexCall;
-        if (oneIndexed && !node.op.startsWith("table_")) {
+        if (oneIndexed && !node.op.endsWith("[Table]")) {
           indexNode = indexCall(node.args[0], add1(node.args[1]), true);
         } else {
           indexNode = indexCall(node.args[0], node.args[1]);
         }
-        if (node.op.endsWith("_get")) {
+        if (!node.op.startsWith("set_")) {
           return indexNode;
-        } else if (node.op.endsWith("_set")) {
+        } else if (!node.op.startsWith("set_")) {
           return assignment(indexNode, node.args[2]);
         }
       }
@@ -260,9 +261,9 @@ export function addPostfixIncAndDec(node: Node) {
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {
   if (isOp(...BinaryOpCodes)(node)) {
-    if (node.op in flipBinaryOps) {
+    if (node.op in flippedOpCode) {
       return op(
-        flipBinaryOps[node.op as keyof typeof flipBinaryOps],
+        flippedOpCode[node.op as keyof typeof flippedOpCode],
         node.args[1],
         node.args[0],
       );

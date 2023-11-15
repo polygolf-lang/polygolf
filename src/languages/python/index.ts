@@ -142,7 +142,7 @@ const pythonLanguage: Language = {
 
         "print[Text]": (x) =>
           func(
-            "print[Text]",
+            "print",
             x[0].kind !== "ImplicitConversion"
               ? [namedArg("end", x[0])]
               : [x[0], namedArg("end", text(""))],
@@ -183,7 +183,7 @@ const pythonLanguage: Language = {
         "size[codepoint]": "len",
         int_to_dec: "str",
         dec_to_int: "int",
-        "println[Text]": "print[Text]",
+        "println[Text]": "print",
       }),
       mapToPrefixAndInfix(
         {

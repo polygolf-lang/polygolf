@@ -74,7 +74,7 @@ export function testPlugin(
   test(name, () => {
     expect(
       (() => {
-        const options = compilationOptionsFromKeywords(args);
+        const options = compilationOptionsFromKeywords(args, false);
         let program = getOnlyVariant(parse(input, false).node);
         program = typecheck(program, !options.skipTypecheck);
         return debugEmit(

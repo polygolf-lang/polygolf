@@ -76,7 +76,7 @@ function _getOutput(program: Node): string {
       throw new PolygolfError("Program took too long to interpret.");
   }
   /* eslint-disable */
-  new Function("print[Text]", "write", "instrument", jsCode.result)(
+  new Function("print", "write", "instrument", jsCode.result)(
     print,
     write,
     instrument,
