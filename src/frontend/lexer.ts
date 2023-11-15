@@ -1,3 +1,4 @@
+import { NullaryOpCodes, infixableOpCodeNames } from "@/IR";
 import moo from "moo";
 
 const tokenTable = {
@@ -6,23 +7,11 @@ const tokenTable = {
   string: /"(?:\\.|[^"])*"/,
   variable: /\$\w+/,
   "at[argv]": "at[argv]",
-  nullary: [
-    "argv",
-    "argc",
-    "true",
-    "false",
-    "read[codepoint]",
-    "read[byte]",
-    "read[Int]",
-    "read[line]",
-  ],
+  nullary: NullaryOpCodes,
   ninf: ["-oo", "-∞"],
   pinf: ["oo", "∞"],
   variant: "/",
-  opalias:
-    "<- + - * ^ & | ~ >> << == != <= < >= > => # @ mod rem div trunc_div".split(
-      " ",
-    ),
+  opalias: [...infixableOpCodeNames, "<-", "=>"],
   builtin: /[a-z0-9_]+([A-Za-z][a-z]*)?/,
   type: /[A-Z][a-z]*/,
   lparen: "(",

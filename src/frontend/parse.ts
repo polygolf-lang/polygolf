@@ -64,7 +64,7 @@ import {
   isIdent,
   postfix,
   type Text,
-  OpCodeGroup,
+  OpCodeFrontName,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -564,3 +564,39 @@ export default function parse(code: string, restrictFrontend = true) {
   }
   return results[0] as Node;
 }
+
+// TODO add more
+const compatibilityAliases: Record<string, OpCode> = {
+  text_contains: "contains[Text]",
+  array_contains: "contains[Array]",
+  list_contains: "contains[List]",
+  table_contains_key: "contains[Table]",
+  set_contains: "contains[Set]",
+  argv_get: "at[argv]",
+  array_get: "at[Array]",
+  list_get: "at[List]",
+  table_get: "at[Table]",
+  text_get_byte: "at[byte]",
+  text_get_codepoint: "at[codepoint]",
+  array_set: "set_at[Array]",
+  list_set: "set_at[List]",
+  table_set: "set_at[Table]",
+  text_byte_find: "find[byte]",
+  text_codepoint_find: "find[codepoint]",
+  text_get_byte_to_int: "ord_at[byte]",
+  text_get_codepoint_to_int: "ord_at[codepoint]",
+  text_byte_to_int: "ord[byte]",
+  codepoint_to_int: "ord[codepoint]",
+  int_to_text_byte: "char[byte]",
+  int_to_codepoint: "char[codepoint]",
+  text_replace: "replace",
+  println_int: "println[Int]",
+  print_int: "print[Int]",
+  concat: "concat[Text]",
+  list_push: "push",
+  list_length: "size[List]",
+  text_byte_reversed: "reversed[byte]",
+  text_codepoint_reversed: "reversed[codepoint]",
+  text_get_byte_slice: "slice[byte]",
+  text_get_codepoint_slice: "slice[codepoint]",
+};

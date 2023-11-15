@@ -35,9 +35,9 @@ const T2 = typeArg("T2");
 
 export const opCodeDefinitions = {
   // Arithmetic
-  add: { args: variadic(int()), front: "+", assoc: true },
+  add: { args: variadic(int()), front: "+", assoc: true, commutes: true },
   sub: { args: [int(), int()], front: "-" },
-  mul: { args: variadic(int()), front: "*", assoc: true },
+  mul: { args: variadic(int()), front: "*", assoc: true, commutes: true },
   div: { args: [int(), int()], front: "div" },
   trunc_div: { args: [int(), int()] },
   unsigned_trunc_div: { args: [int(), int()] },
@@ -45,14 +45,14 @@ export const opCodeDefinitions = {
   mod: { args: [int(), int()], front: "mod" },
   rem: { args: [int(), int()] },
   unsigned_rem: { args: [int(), int()] },
-  bit_and: { args: variadic(int()), front: "&", assoc: true },
-  bit_or: { args: variadic(int()), front: "|", assoc: true },
-  bit_xor: { args: variadic(int()), front: "~", assoc: true },
+  bit_and: { args: variadic(int()), front: "&", assoc: true, commutes: true },
+  bit_or: { args: variadic(int()), front: "|", assoc: true, commutes: true },
+  bit_xor: { args: variadic(int()), front: "~", assoc: true, commutes: true },
   bit_shift_left: { args: [int(), int()], front: "<<" },
   bit_shift_right: { args: [int(), int()], front: ">>" },
-  gcd: { args: variadic(int()), front: true, assoc: true },
-  min: { args: variadic(int()), front: true, assoc: true },
-  max: { args: variadic(int()), front: true, assoc: true },
+  gcd: { args: variadic(int()), front: true, assoc: true, commutes: true },
+  min: { args: variadic(int()), front: true, assoc: true, commutes: true },
+  max: { args: variadic(int()), front: true, assoc: true, commutes: true },
   neg: { args: [int()], front: "-" },
   abs: { args: [int()], front: true },
   bit_not: { args: [int()], front: "~" },
@@ -78,23 +78,23 @@ export const opCodeDefinitions = {
   "putc[Ascii]": { args: [int(0, 127)], front: "putc" },
 
   // Bool arithmetic
-  or: { args: variadic(bool), front: true, assoc: true },
-  and: { args: variadic(bool), front: true, assoc: true },
-  unsafe_or: { args: variadic(bool), front: true, assoc: true },
-  unsafe_and: { args: variadic(bool), front: true },
+  or: { args: variadic(bool), front: true, assoc: true, commutes: true },
+  and: { args: variadic(bool), front: true, assoc: true, commutes: true },
+  unsafe_or: { args: variadic(bool), front: true, assoc: true, commutes: true },
+  unsafe_and: { args: variadic(bool), front: true, commutes: true },
   not: { args: [bool], front: true },
   true: { args: [], front: true },
   false: { args: [], front: true },
 
   // Comparison
-  lt: { args: [int(), int()], front: true },
-  leq: { args: [int(), int()], front: true },
-  geq: { args: [int(), int()], front: true },
-  gt: { args: [int(), int()], front: true },
-  "eq[Int]": { args: [int(), int()], front: "==" },
-  "eq[Text]": { args: [text(), text()], front: "==" },
-  "neq[Int]": { args: [int(), int()], front: "!=" },
-  "neq[Text]": { args: [text(), text()], front: "!=" },
+  lt: { args: [int(), int()], front: "<" },
+  leq: { args: [int(), int()], front: "<=" },
+  geq: { args: [int(), int()], front: ">=" },
+  gt: { args: [int(), int()], front: ">" },
+  "eq[Int]": { args: [int(), int()], front: "==", commutes: true },
+  "eq[Text]": { args: [text(), text()], front: "==", commutes: true },
+  "neq[Int]": { args: [int(), int()], front: "!=", commutes: true },
+  "neq[Text]": { args: [text(), text()], front: "!=", commutes: true },
 
   // Access members
   "at[Array]": { args: [array(T1, T2), T2], front: "@" },
@@ -179,7 +179,7 @@ export const opCodeDefinitions = {
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
-export type OpCodeGroup = {
+export type OpCodeFrontName = {
   [K in AnyOpCode]: (typeof opCodeDefinitions)[K] extends { front: string }
     ? (typeof opCodeDefinitions)[K]["front"]
     : K;
@@ -195,6 +195,7 @@ export type BinaryOpCode = OpCode<{ args: Readonly<[Type, Type]> }>;
 export type TernaryOpCode = OpCode<{ args: Readonly<[Type, Type, Type]> }>;
 export type VariadicOpCode = OpCode<{ args: Variadic }>;
 export type AssociativeOpCode = OpCode<{ assoc: true }>;
+export type CommutativeOpCode = OpCode<{ commutes: true }>;
 
 export function isNullary(op: OpCode): op is NullaryOpCode {
   return arity(op) === 0;
@@ -214,6 +215,9 @@ export function isVariadic(op: OpCode): op is VariadicOpCode {
 export function isAssociative(op: OpCode): op is AssociativeOpCode {
   return (opCodeDefinitions[op] as any)?.assoc === true;
 }
+export function isComutative(op: OpCode): op is CommutativeOpCode {
+  return (opCodeDefinitions[op] as any)?.commutes === true;
+}
 
 export const OpCodes = Object.keys(opCodeDefinitions) as OpCode[];
 export const NullaryOpCodes = OpCodes.filter(isNullary);
@@ -222,25 +226,7 @@ export const BinaryOpCodes = OpCodes.filter(isBinary);
 export const TernaryOpCodes = OpCodes.filter(isTernary);
 export const VariadicOpCodes = OpCodes.filter(isVariadic);
 export const AssociativeOpCodes = OpCodes.filter(isAssociative);
-
-export const CommutativeOpCodes = [
-  "add",
-  "mul",
-  "bit_and",
-  "bit_or",
-  "bit_xor",
-  "and",
-  "or",
-  "gcd",
-  "min",
-  "max",
-] as const satisfies readonly OpCode[];
-
-export type CommutativeOpCode = string & (typeof CommutativeOpCodes)[number];
-
-export function isCommutative(op: OpCode): op is CommutativeOpCode {
-  return CommutativeOpCodes.includes(op as any);
-}
+export const CommutativeOpCodes = OpCodes.filter(isComutative);
 
 export function isOpCode(op: string): op is OpCode {
   return op in opCodeDefinitions;
@@ -257,79 +243,46 @@ export function arity(op: OpCode): number {
 
 /**
  * Maps a binary op to another one with the same meaning, except the order of the arguments is swapped.
- * This should only be used for ops that are *not* associative.
+ * This should only be used for ops that are *not* associative or commutative.
  */
-export function flipOpCode(op: BinaryOpCode): BinaryOpCode | null {
-  switch (op) {
-    case "eq[Int]":
-    case "neq[Int]":
-      return op;
-    case "lt":
-      return "gt";
-    case "gt":
-      return "lt";
-    case "leq":
-      return "geq";
-    case "geq":
-      return "leq";
-  }
-  return null;
-}
+export const flippedOpCode = {
+  lt: "gt",
+  gt: "lt",
+  leq: "geq",
+  geq: "leq",
+} as const satisfies Partial<Record<BinaryOpCode, BinaryOpCode>>;
 
-export function booleanNotOpCode(op: BinaryOpCode): BinaryOpCode | null {
-  switch (op) {
-    case "eq[Int]":
-      return "neq[Int]";
-    case "neq[Int]":
-      return "eq[Int]";
-    case "eq[Text]":
-      return "neq[Text]";
-    case "neq[Text]":
-      return "eq[Text]";
-    case "lt":
-      return "geq";
-    case "gt":
-      return "leq";
-    case "leq":
-      return "gt";
-    case "geq":
-      return "lt";
-  }
-  return null;
-}
-
-// TODO add more
-const compatibilityAliases: Record<string, OpCode> = {
-  text_contains: "contains[Text]",
-  array_contains: "contains[Array]",
-  list_contains: "contains[List]",
-  table_contains_key: "contains[Table]",
-  set_contains: "contains[Set]",
-  argv_get: "at[argv]",
-  array_get: "at[Array]",
-  list_get: "at[List]",
-  table_get: "at[Table]",
-  text_get_byte: "at[byte]",
-  text_get_codepoint: "at[codepoint]",
-  array_set: "set_at[Array]",
-  list_set: "set_at[List]",
-  table_set: "set_at[Table]",
-  text_byte_find: "find[byte]",
-  text_codepoint_find: "find[codepoint]",
-  text_get_byte_to_int: "ord_at[byte]",
-  text_get_codepoint_to_int: "ord_at[codepoint]",
-  text_byte_to_int: "ord[byte]",
-  codepoint_to_int: "ord[codepoint]",
-  int_to_text_byte: "char[byte]",
-  int_to_codepoint: "char[codepoint]",
-  text_replace: "replace",
-  println_int: "println[Int]",
-  print_int: "print[Int]",
-  concat: "concat[Text]",
-  list_push: "push",
-  list_length: "size[List]",
-  text_byte_reversed: "reversed[byte]",
-  text_codepoint_reversed: "reversed[codepoint]",
-  text_get_byte_slice: "slice[byte]",
-  text_get_codepoint_slice: "slice[codepoint]",
+export const booleanNotOpCode = {
+  "eq[Int]": "neq[Int]",
+  "eq[Text]": "neq[Text]",
+  "neq[Int]": "eq[Int]",
+  "neq[Text]": "eq[Text]",
+  lt: "geq",
+  gt: "leq",
+  leq: "gt",
+  geq: "lt",
 };
+
+export const infixableOpCodeNames = [
+  "+",
+  "-",
+  "*",
+  "^",
+  "&",
+  "|",
+  "~",
+  ">>",
+  "<<",
+  "==",
+  "!=",
+  "<=",
+  "<",
+  ">=",
+  ">",
+  "#",
+  "@",
+  "mod",
+  "rem",
+  "div",
+  "trunc_div",
+] as const satisfies readonly OpCodeFrontName[];
