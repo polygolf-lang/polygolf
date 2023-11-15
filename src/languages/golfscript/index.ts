@@ -136,7 +136,7 @@ const golfscriptLanguage: Language = {
         bit_xor: "^",
         "concat[Text]": "+",
         lt: "<",
-        "eq[Text]": "=",
+        "eq[Int]": "=",
         gt: ">",
         and: "and",
         or: "or",
@@ -154,6 +154,7 @@ const golfscriptLanguage: Language = {
         "size[List]": ",",
         join: "*",
         "sorted[Int]": "$",
+        "sorted[Ascii]": "$",
       }),
       mapOps({
         "neq[Int]": (x) => prefix("!", infix("=", x[0], x[1])),

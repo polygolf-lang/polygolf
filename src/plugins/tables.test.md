@@ -3,7 +3,7 @@
 ## Hashing
 
 ```polygolf
-print (table_get
+print[Text] (table_get
     (table
         ("▄ ▄▄▄" => "A")
         ("▄▄▄ ▄ ▄ ▄" => "B")

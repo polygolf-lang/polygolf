@@ -24,7 +24,7 @@ while ($i < 10) {
 
 ```polygolf loops.forRangeToForCLike
 for_c_like ($i <- 0) ($i < 10) ($i <- (1 + $i)) (
-  print_int $xi
+  print_int $i
 );
 ```
 
@@ -56,7 +56,7 @@ while ($j < 11) {
 
 ```polygolf
 for $i 0 (size[List] $collection) {
-  print (list_get $collection $i);
+  print[Text] (list_get $collection $i);
 };
 ```
 
@@ -69,7 +69,7 @@ for_each (id "i+each") $collection (
 ```polygolf
 $collection <- (array "a" "b" "c");
 for $i 0 3 {
-  print (array_get $collection $i);
+  print[Text] (array_get $collection $i);
 };
 ```
 
@@ -83,7 +83,7 @@ for_each (id "i+each") $collection (
 ```polygolf
 $collection <- (array "a" "b" "c" "d");
 for $i 0 3 {
-  print (array_get $collection $i);
+  print[Text] (array_get $collection $i);
 };
 ```
 
@@ -133,7 +133,7 @@ for_each (id "i+each") (list 5 4 3 2 1) (
 ## For each pair
 
 ```polygolf
-for $i 0 (# $collection) {
+for $i 0 (size[List] $collection) {
   print_int $i;
   print_int (list_get $collection $i);
 };

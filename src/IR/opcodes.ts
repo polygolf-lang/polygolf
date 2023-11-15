@@ -131,8 +131,8 @@ export const opCodeDefinitions = {
   "reversed[codepoint]": { args: [text()], front: true },
   "reversed[Ascii]": { args: [ascii], front: "reversed" },
   "reversed[List]": { args: [list(T1)], front: "reversed" },
-  "find[codepoint]": { args: [text(), text()], front: true },
-  "find[byte]": { args: [text(), text()], front: true },
+  "find[codepoint]": { args: [text(), text(int(1))], front: true },
+  "find[byte]": { args: [text(), text(int(1))], front: true },
   "find[Ascii]": { args: [ascii, ascii], front: "find" },
   "find[List]": { args: [list(T1), T1], front: "find" },
 
@@ -164,7 +164,7 @@ export const opCodeDefinitions = {
   split_whitespace: { args: [text()], front: true },
   join: { args: [list(text()), text()], front: true },
   right_align: { args: [text(), int(0)], front: true },
-  replace: { args: [text(), text(), text()], front: true },
+  replace: { args: [text(), text(int(1)), text()], front: true },
   text_multireplace: { args: variadic(text(), 2) },
 
   // Text / Bool <-> Int

@@ -27,6 +27,7 @@ import {
   VariadicOpCodes,
   isUnary,
   flippedOpCode,
+  isVariadic,
 } from "../IR";
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
@@ -126,7 +127,7 @@ export function mapToPrefixAndInfix<
     Object.fromEntries(
       Object.entries(opMap).filter(
         ([k, v]) =>
-          isBinary(k as OpCode) &&
+          (isBinary(k as OpCode) || isVariadic(k as OpCode)) &&
           (asMutatingInfix === true || asMutatingInfix.includes(v as any)),
       ),
     ),
@@ -267,6 +268,9 @@ export function flipBinaryOps(node: Node) {
         node.args[1],
         node.args[0],
       );
+    }
+    if (isCommutative(node.op)) {
+      return op(node.op, node.args[1], node.args[0]);
     }
   }
 }
