@@ -684,7 +684,7 @@ describeOp("sorted[Ascii]", [
   [[text()], "error"],
   [[list(int())], "error"],
   [[list(asciiType)], list(asciiType)],
-  [[list(text())], list(text())],
+  [[list(text())], "error"],
 ]);
 
 describeOp("reversed[byte]", [

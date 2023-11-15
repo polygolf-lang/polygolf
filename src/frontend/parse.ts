@@ -649,4 +649,5 @@ const deprecatedAliases: Record<string, OpCode> = {
   text_codepoint_length: "size[codepoint]",
   list_find: "find[List]",
   text_to_int: "dec_to_int",
+  int_to_text: "int_to_dec",
 };

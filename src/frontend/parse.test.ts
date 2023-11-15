@@ -65,8 +65,8 @@ describe("Parse s-expressions", () => {
   expectExprParse("add infix", "($x + $y)", op("add", id("x"), id("y")));
   expectExprParse("mod infix", "($x mod $y)", op("mod", id("x"), id("y")));
   expectExprParse("or", "(or $x $y)", op("or", id("x"), id("y")));
-  expectExprParse("println[Text]", "(println $x)", print(id("x"), true));
-  expectExprParse("print[Text]", "(print $x)", print(id("x"), false));
+  expectExprParse("println[Text]", "(println[Text] $x)", print(id("x"), true));
+  expectExprParse("print[Text]", "(print[Text] $x)", print(id("x"), false));
   expectExprParse("assign", "(assign $x 5)", assignment(id("x"), int(5n)));
   expectExprParse("assign infix", "($x <- 5)", assignment(id("x"), int(5n)));
   expectExprParse("list", "(list 1 2 3)", list([int(1n), int(2n), int(3n)]));
@@ -77,7 +77,7 @@ describe("Parse s-expressions", () => {
   );
   expectExprParse(
     "..",
-    "(.. $x $y $z)",
+    "(concat[Text] $x $y $z)",
     op("concat[Text]", op("concat[Text]", id("x"), id("y")), id("z")),
   );
   expectExprParse("- as neg", "(- $x)", op("neg", id("x")));
@@ -105,18 +105,18 @@ describe("Parse annotations", () => {
 describe("Parse statements", () => {
   testStmtParse(
     "comment",
-    `%one\nprintln 58;%two\n%println -3;`,
+    `%one\nprintln[Text] 58;%two\n%println[Text] -3;`,
     print(int(58n), true),
   );
   testStmtParse("infix assignment", "$x <- 5;", assignment(id("x"), int(5n)));
   testStmtParse(
     "if",
-    "if $x (println $y);",
+    "if $x (println[Text] $y);",
     ifStatement(id("x"), print(id("y"), true)),
   );
   testStmtParse(
     "forRange",
-    "for $x 1 20 1 (println $x);",
+    "for $x 1 20 1 (println[Text] $x);",
     forRange(id("x"), int(1n), int(20n), int(1n), print(id("x"), true)),
   );
 });
@@ -124,7 +124,7 @@ describe("Parse statements", () => {
 describe("Parse variants", () => {
   testStmtParse(
     "Two variants",
-    `{ println $x; / print $x; print "\\n"; }`,
+    `{ println[Text] $x; / print[Text] $x; print[Text] "\\n"; }`,
     variants([
       print(id("x"), true),
       block([print(id("x"), false), print(text("\n"), false)]),
@@ -132,7 +132,7 @@ describe("Parse variants", () => {
   );
   testStmtParse(
     "Three variants",
-    `{ println $x; / print $x; print "\\n"; / print $x; print "\\n"; }`,
+    `{ println[Text] $x; / print[Text] $x; print[Text] "\\n"; / print[Text] $x; print[Text] "\\n"; }`,
     variants([
       print(id("x"), true),
       block([print(id("x"), false), print(text("\n"), false)]),
@@ -141,7 +141,7 @@ describe("Parse variants", () => {
   );
   testStmtParse(
     "Node variants",
-    `println { 0 / 1 };`,
+    `println[Text] { 0 / 1 };`,
     print(variants([int(0n), int(1n)]), true),
   );
 });

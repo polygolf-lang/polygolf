@@ -19,6 +19,7 @@ export const keywords = [
   "chars",
   "allVariants",
   "skipTypecheck",
+  "typecheck",
   "restrictFrontend",
   "1..127",
   "32..127",
@@ -40,7 +41,7 @@ export function compilationOptionsFromKeywords(
       : [1, Infinity],
     getAllVariants: is("allVariants"),
     restrictFrontend: is("restrictFrontend"),
-    skipTypecheck: is("skipTypecheck"),
+    skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
     skipPlugins: is("no:hardcode") ? ["hardcode"] : [],
   };
 }
@@ -75,7 +76,7 @@ export function testPlugin(
       (() => {
         const options = compilationOptionsFromKeywords(args);
         let program = getOnlyVariant(parse(input, false).node);
-        if (!options.skipTypecheck) program = typecheck(program);
+        program = typecheck(program, !options.skipTypecheck);
         return debugEmit(
           applyAllToAllAndGetCounts(
             program,

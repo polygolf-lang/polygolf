@@ -169,7 +169,7 @@ function emitNodeWithoutAnnotation(
     }
     case "Identifier":
       if (expr.builtin) {
-        return emitSexpr("Builtin", text(expr.name));
+        return emitSexpr("builtin", text(expr.name));
       } else if (/^\w+$/.test(expr.name)) {
         return "$" + expr.name;
       }
@@ -256,13 +256,13 @@ function emitNodeWithoutAnnotation(
       return emitSexpr("@", text(expr.name), expr.variable, expr.right);
     case "IndexCall":
       return emitSexpr(
-        expr.oneIndexed ? "IndexCallOneIndexed" : "@",
+        expr.oneIndexed ? "index_call_one_indexed" : "@",
         expr.collection,
         expr.index,
       );
     case "RangeIndexCall":
       return emitSexpr(
-        expr.oneIndexed ? "RangeIndexCallOneIndexed" : "@",
+        expr.oneIndexed ? "range_index_call_one_indexed" : "@",
         expr.collection,
         expr.low,
         expr.high,

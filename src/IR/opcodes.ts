@@ -125,7 +125,7 @@ export const opCodeDefinitions = {
   "char[Ascii]": { args: [int(0, 127)], front: "char" },
 
   // Order
-  "sorted[Int]": { args: [list(int(0))], front: "sorted" },
+  "sorted[Int]": { args: [list(int())], front: "sorted" },
   "sorted[Ascii]": { args: [list(ascii)], front: "sorted" },
   "reversed[byte]": { args: [text()], front: true },
   "reversed[codepoint]": { args: [text()], front: true },

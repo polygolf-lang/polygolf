@@ -1,4 +1,4 @@
-import { isOp, op, type Node } from "../IR";
+import { isOp, op, type Node, isOpCode } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { defaultDetokenizer, type Plugin, type Language } from "./Language";
 import { programToSpine, type Spine } from "./Spine";
@@ -175,7 +175,7 @@ export default function compile(
   const program = parsed!.node;
   let variants = expandVariants(program).map((x) => {
     try {
-      if (!options.skipTypecheck) x = typecheck(x);
+      x = typecheck(x, !options.skipTypecheck);
       return x;
     } catch (e) {
       if (isError(e)) return compilationResult("Polygolf", e, [e]);
@@ -526,14 +526,16 @@ function copySource(from: Node, to: Node): Node {
   return { ...to, source: from.source };
 }
 
-/** Typecheck a program.
- * Throws an error on a type error; otherwise returns a program with resolved opcodes. */
-export function typecheck(program: Node): Node {
+/** Typecheck a program and return a program with resolved opcodes.
+ * If everyNode is false, typechecks only nodes neccesary to resolve opcodes, otherwise, typechecks every node. */
+export function typecheck(program: Node, everyNode = true): Node {
   const spine = programToSpine(program);
   return spine.withReplacer(function (node, spine) {
-    const t = getTypeAndResolveOpCode(node, spine);
-    if (isOp()(node) && t.opCode !== undefined) {
-      return op(t.opCode, ...node.args);
+    if (everyNode || (node.kind === "Op" && !isOpCode(node.op))) {
+      const t = getTypeAndResolveOpCode(node, spine);
+      if (isOp()(node) && t.opCode !== undefined) {
+        return op(t.opCode, ...node.args);
+      }
     }
   }).node;
 }

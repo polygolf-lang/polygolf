@@ -4,13 +4,13 @@
 
 ```polygolf
 for $i 0 10 {
-  print_int $x;
+  print_int $i;
 };
 ```
 
 ```polygolf loops.forRangeToForRangeInclusive()
 for_range_inclusive $i 0 9 1 (
-  print_int $x
+  print_int $i
 );
 ```
 

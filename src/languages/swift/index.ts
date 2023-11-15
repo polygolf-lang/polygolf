@@ -144,9 +144,9 @@ const swiftLanguage: Language = {
 
         pow: (x) =>
           func("Int", func("pow", func("Double", x[0]), func("Double", x[1]))),
-        "println[Text]": (x) => func("print[Text]", x),
+        "println[Text]": (x) => func("print", x),
         "print[Text]": (x) =>
-          func("print[Text]", x, namedArg("terminator", text(""))),
+          func("print", x, namedArg("terminator", text(""))),
         dec_to_int: (x) => postfix("!", func("Int", x)),
 
         max: (x) => func("max", x),
