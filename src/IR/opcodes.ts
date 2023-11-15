@@ -9,7 +9,7 @@ import {
   setType as set,
   tableType as table,
   asciiType as ascii,
-} from ".";
+} from "./types";
 
 interface OpCodeDefinition {
   args: Readonly<ArgTypes>;
@@ -68,9 +68,9 @@ export const opCodeDefinitions = {
 
   // Output
   "print[Text]": { args: [text()], front: "print" },
-  "print[Int]": { args: [text()], front: "print" },
+  "print[Int]": { args: [int()], front: "print" },
   "println[Text]": { args: [int()], front: "println" },
-  "println[Int]": { args: [int()], front: "println" },
+  "println[Int]": { args: [text()], front: "println" },
   println_list_joined: { args: [list(text()), text()] },
   println_many_joined: { args: variadic(text(), 2) },
   "putc[byte]": { args: [int(0, 255)], front: true },

@@ -18,7 +18,7 @@ import {
   isBinary,
   booleanNotOpCode,
   type Text,
-  VariadicOpCode,
+  type VariadicOpCode,
   isCommutative,
 } from "./IR";
 
@@ -556,32 +556,6 @@ export function isNegative(expr: Node) {
 }
 
 export function isOp<O extends OpCode>(...ops: O[]): (x: Node) => x is Op<O> {
-  /*
-  // Typesafe-wise, this is the same as `x is Op<O>`.
-  // However, this allows `O` to be written using the type aliases.
-  // Alias using the first type that is a match (that is a subtype) and union the rest.
-  // For some reason, when I alias this type, it no longer works.
-  AliasedOpCode<
-    O,
-    OpCode,
-    AliasedOpCode<
-      O,
-      FrontendOpCode,
-      AliasedOpCode<
-        O,
-        BinaryOpCode,
-        AliasedOpCode<
-          O,
-          UnaryOpCode,
-          AliasedOpCode<
-            O,
-            AssociativeOpCode,
-            AliasedOpCode<O, CommutativeOpCode>
-          >
-        >
-      >
-    >
-  >*/
   return ((x: Node) =>
     x.kind === "Op" && (ops.length === 0 || ops?.includes(x.op as any))) as any;
 }

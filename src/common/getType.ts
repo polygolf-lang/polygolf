@@ -38,11 +38,9 @@ import {
   isConstantType,
   constantIntegerType,
   type ListType,
-  isAssociative,
   op,
   leq,
   isIdent,
-  typeArg,
   instantiateGenerics,
   type ArrayType,
   type TableType,
@@ -416,6 +414,10 @@ function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
       // other
       case "push":
         return voidType;
+      case "include":
+      case "append":
+      case "concat[List]":
+        return got[0];
       case "find[List]":
         return int(-1, (1n << 31n) - 1n);
       case "concat[Text]": {
@@ -431,10 +433,13 @@ function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
         const [t, i] = got as [TextType, IntegerType];
         return text(getArithmeticType("mul", t.codepointLength, i), t.isAscii);
       }
+      case "eq[Text]":
+      case "neq[Text]":
       case "contains[Text]":
         return booleanType;
       case "find[codepoint]":
       case "find[byte]":
+      case "find[Ascii]":
         return int(
           -1,
           sub(
@@ -451,6 +456,7 @@ function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
         return list(got[0]);
       case "at[byte]":
       case "at[codepoint]":
+      case "at[Ascii]":
         return text(int(1, 1), (got[0] as TextType).isAscii);
       case "join":
         return text(
@@ -532,10 +538,12 @@ function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
       case "bool_to_int":
         return int(0, 1);
       case "char[byte]":
-        return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
       case "char[codepoint]":
+      case "char[Ascii]":
         return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
       case "size[List]":
+      case "size[Set]":
+      case "size[Table]":
         return int(0, (1n << 31n) - 1n);
       case "size[byte]": {
         const codepointLength = (got[0] as TextType).codepointLength;
@@ -548,14 +556,16 @@ function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
         );
       }
       case "size[codepoint]":
+      case "size[Ascii]":
         return (got[0] as TextType).codepointLength;
       case "split_whitespace":
         return list(got[0]);
       case "sorted[Int]":
       case "sorted[Ascii]":
-        return got[0];
       case "reversed[byte]":
       case "reversed[codepoint]":
+      case "reversed[Ascii]":
+      case "reversed[List]":
         return got[0];
       // other
       case "true":
@@ -597,7 +607,8 @@ function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
       case "text_multireplace":
         return text();
       case "slice[byte]":
-      case "slice[codepoint]": {
+      case "slice[codepoint]":
+      case "slice[Ascii]": {
         const [t, i1, i2] = got as [TextType, IntegerType, IntegerType];
         const maximum = min(
           t.codepointLength.high,
@@ -605,13 +616,17 @@ function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
         );
         return text(int(0n, maximum), t.isAscii);
       }
+      case "slice[List]":
+        return got[0];
       case "ord_at[codepoint]":
         return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
       case "ord_at[byte]":
+      case "ord_at[Ascii]":
         return int(0, (got[0] as TextType).isAscii ? 127 : 255);
       case "ord[codepoint]":
         return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
       case "ord[byte]":
+      case "ord[Ascii]":
         return int(0, (got[0] as TextType).isAscii ? 127 : 255);
       case "set_at[Array]":
       case "set_at[List]":

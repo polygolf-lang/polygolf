@@ -11,7 +11,7 @@ import {
   variants,
   type Variants,
   opCodeDefinitions,
-  OpCode,
+  type OpCode,
   isOpCode,
   isNullary,
   infixableOpCodeNames,

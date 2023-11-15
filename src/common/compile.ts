@@ -1,10 +1,10 @@
-import { type Node } from "../IR";
+import { isOp, op, type Node } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { defaultDetokenizer, type Plugin, type Language } from "./Language";
 import { programToSpine, type Spine } from "./Spine";
-import { getType, getTypeAndResolveOpCode } from "./getType";
+import { getTypeAndResolveOpCode } from "./getType";
 import { stringify } from "./stringify";
-import parse, { ParseResult } from "../frontend/parse";
+import parse, { type ParseResult } from "../frontend/parse";
 import { MinPriorityQueue } from "@datastructures-js/priority-queue";
 import polygolfLanguage from "../languages/polygolf";
 import {
@@ -532,8 +532,8 @@ function typecheck(program: Node): Node {
   const spine = programToSpine(program);
   return spine.withReplacer(function (node, spine) {
     const t = getTypeAndResolveOpCode(node, spine);
-    if (t.opCode !== undefined) {
-      return { ...node, op: t.opCode };
+    if (isOp()(node) && t.opCode !== undefined) {
+      return op(t.opCode, ...node.args);
     }
   }).node;
 }

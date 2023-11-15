@@ -1,4 +1,4 @@
-import { NullaryOpCodes, infixableOpCodeNames } from "@/IR";
+import { NullaryOpCodes, infixableOpCodeNames } from "../IR";
 import moo from "moo";
 
 const tokenTable = {
@@ -12,7 +12,7 @@ const tokenTable = {
   pinf: ["oo", "∞"],
   variant: "/",
   opalias: [...infixableOpCodeNames, "<-", "=>"],
-  builtin: /[a-z0-9_]+([A-Za-z][a-z]*)?/,
+  builtin: /[a-z0-9_]+(?:[A-Za-z][a-z]*)?/,
   type: /[A-Z][a-z]*/,
   lparen: "(",
   rparen: ")",

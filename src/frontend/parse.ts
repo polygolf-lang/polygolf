@@ -27,9 +27,6 @@ import {
   set,
   table,
   type KeyValue,
-  isOpCode,
-  isBinary,
-  arity,
   functionType,
   func,
   conditional,
@@ -37,7 +34,6 @@ import {
   array,
   toString,
   forArgv,
-  isAssociative,
   implicitConversion,
   varDeclaration,
   varDeclarationWithAssignment,
@@ -64,7 +60,7 @@ import {
   isIdent,
   postfix,
   type Text,
-  OpCodeFrontName,
+  type OpCodeFrontName,
   OpCodesUser,
   OpCodeFrontNamesToOpCodes,
   OpCodeFrontNames,
@@ -74,7 +70,6 @@ import {
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
-let requiresTypecheck = false;
 let warnings: Error[] = [];
 
 export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
@@ -398,10 +393,13 @@ export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
   }
 
   if (arityMatchingOpCodes.length > 1) {
-    requiresTypecheck = true;
     // Hack! We temporarily assign the front name to the opCode field.
     // It will be resolved during typecheck.
-    return op(callee as OpCode, ...args);
+    return {
+      kind: "Op",
+      op: callee as OpCode,
+      args,
+    };
   }
 
   return op(arityMatchingOpCodes[0], ...args);
@@ -549,10 +547,10 @@ export function refSource(node: Node, ref?: Token | Node): Node {
   };
 }
 
-export type ParseResult = {
+export interface ParseResult {
   node: Node;
   warnings: Error[];
-};
+}
 
 export default function parse(
   code: string,
@@ -645,4 +643,6 @@ const deprecatedAliases: Record<string, OpCode> = {
   text_codepoint_reversed: "reversed[codepoint]",
   text_get_byte_slice: "slice[byte]",
   text_get_codepoint_slice: "slice[codepoint]",
+  text_byte_length: "size[byte]",
+  text_codepoint_length: "size[codepoint]",
 };
