@@ -5,7 +5,7 @@ import {
   infix,
   type BinaryOpCode,
   type Node,
-  flipOpCode,
+  flippedOpCode,
   type IndexCall,
   indexCall,
   isBinary,
@@ -261,9 +261,12 @@ export function addPostfixIncAndDec(node: Node) {
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {
   if (isOp(...BinaryOpCodes)(node)) {
-    const flippedOpCode = flipOpCode(node.op);
-    if (flippedOpCode !== null) {
-      return op(flippedOpCode, node.args[1], node.args[0]);
+    if (node.op in flipBinaryOps) {
+      return op(
+        flipBinaryOps[node.op as keyof typeof flipBinaryOps],
+        node.args[1],
+        node.args[0],
+      );
     }
   }
 }

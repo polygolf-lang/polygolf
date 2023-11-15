@@ -66,31 +66,41 @@ import {
   type Text,
   OpCodeFrontName,
   OpCodesUser,
+  OpCodeFrontNamesToOpCodes,
+  OpCodeFrontNames,
+  opCodeDefinitions,
+  matchesOpCodeArity,
 } from "../IR";
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
-let deprecatedAliasesUsed: string[] = [];
+let requiresTypecheck = false;
+let warnings: Error[] = [];
 
-export function sexpr(callee: Identifier, args: readonly Node[]): Node {
-  if (!callee.builtin) {
-    return functionCall(callee, args);
+export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
+  if (!calleeIdent.builtin) {
+    return functionCall(calleeIdent, args);
   }
-  let opCode = callee.name;
-  if (opCode === "<-") opCode = "assign";
-  if (opCode === "=>") opCode = "key_value";
-  if (opCode in deprecatedAliases) {
-    deprecatedAliasesUsed.push(opCode);
-    opCode = deprecatedAliases[opCode];
+  let callee = calleeIdent.name;
+  if (callee === "<-") callee = "assign";
+  if (callee === "=>") callee = "key_value";
+  if (callee in deprecatedAliases) {
+    warnings.push(
+      new PolygolfError(
+        `Deprecated alias used: ${callee}. Use ${deprecatedAliases[callee]} instead.`,
+        calleeIdent.source,
+      ),
+    );
+    callee = deprecatedAliases[callee];
   }
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
       throw new PolygolfError(
-        `Syntax error. Invalid argument count in application of ${opCode}: ` +
+        `Syntax error. Invalid argument count in application of ${callee}: ` +
           `Expected ${low}${low === high ? "" : ".." + String(high)} but got ${
             args.length
           }.`,
-        callee.source,
+        calleeIdent.source,
       );
     }
   }
@@ -115,7 +125,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
     for (const x of e) {
       if (x.kind !== "KeyValue")
         throw new PolygolfError(
-          `Syntax error. Application ${opCode} requires list of key-value pairs as argument`,
+          `Syntax error. Application ${callee} requires list of key-value pairs as argument`,
           x.source,
         );
     }
@@ -139,7 +149,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
     );
   }
 
-  switch (opCode) {
+  switch (callee) {
     case "key_value":
       expectArity(2);
       return keyValue(args[0], args[1]);
@@ -172,7 +182,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
     case "conditional":
     case "unsafe_conditional":
       expectArity(3);
-      return conditional(args[0], args[1], args[2], opCode === "conditional");
+      return conditional(args[0], args[1], args[2], callee === "conditional");
     case "while":
       expectArity(2);
       return whileLoop(args[0], args[1]);
@@ -224,7 +234,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
     }
   }
   if (!restrictedFrontend)
-    switch (opCode) {
+    switch (callee) {
       case "implicit_conversion":
         expectArity(2);
         return implicitConversion(asString(args[0]) as any, args[1]);
@@ -258,7 +268,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
       case "index_call":
       case "index_call_one_indexed":
         expectArity(2);
-        return indexCall(args[0], args[1], opCode === "index_call_one_indexed");
+        return indexCall(args[0], args[1], callee === "index_call_one_indexed");
       case "range_index_call":
       case "range_index_call_one_indexed":
         expectArity(4);
@@ -267,7 +277,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
           args[1],
           args[2],
           args[3],
-          opCode === "range_index_call_one_indexed",
+          callee === "range_index_call_one_indexed",
         );
       case "property_call":
         expectArity(2);
@@ -287,7 +297,7 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
       case "builtin":
       case "id":
         expectArity(1);
-        return id(asString(args[0]), opCode === "builtin");
+        return id(asString(args[0]), callee === "builtin");
       case "import":
         expectArity(2, Infinity);
         return importStatement(asString(args[0]), args.slice(1).map(asString));
@@ -356,25 +366,45 @@ export function sexpr(callee: Identifier, args: readonly Node[]): Node {
         expectArity(2);
         return namedArg(asString(args[0]), args[1]);
     }
-  if (
-    isOpCode(opCode) &&
-    (!restrictedFrontend || OpCodesUser.includes(opCode))
-  ) {
-    if (opCode === "at[argv]" && restrictedFrontend) {
-      assertInteger(args[0]);
-    }
-    if (isBinary(opCode)) {
-      expectArity(2, isAssociative(opCode) ? Infinity : 2);
-      return op(opCode, ...args);
-    }
-    const ar = arity(opCode);
-    expectArity(ar, ar === -1 ? Infinity : ar);
-    return op(opCode, ...args);
+  let matchingOpCodes = OpCodeFrontNames.includes(callee)
+    ? OpCodeFrontNamesToOpCodes[callee as OpCodeFrontName]
+    : [];
+  if (restrictedFrontend) {
+    matchingOpCodes = matchingOpCodes.filter((opCode) =>
+      OpCodesUser.includes(opCode),
+    );
   }
-  throw new PolygolfError(
-    `Syntax error. Unrecognized builtin: ${opCode}`,
-    callee.source,
+  if (matchingOpCodes.length < 1) {
+    throw new PolygolfError(
+      `Syntax error. Unrecognized builtin: ${callee}`,
+      calleeIdent.source,
+    );
+  }
+
+  const arityMatchingOpCodes = matchingOpCodes.filter((opCode) =>
+    matchesOpCodeArity(opCode, args.length),
   );
+  if (arityMatchingOpCodes.length < 1) {
+    throw new PolygolfError(
+      `Syntax error. Invalid argument count in application of ${callee}: ` +
+        `Expected ${matchingOpCodes
+          .map((opCode) => opCodeDefinitions[opCode].args)
+          .map((args) =>
+            "variadic" in args ? `${args.min}..oo` : `${args.length}`,
+          )
+          .join(", ")} but got ${args.length}.`,
+      calleeIdent.source,
+    );
+  }
+
+  if (arityMatchingOpCodes.length > 1) {
+    requiresTypecheck = true;
+    // Hack! We temporarily assign the front name to the opCode field.
+    // It will be resolved during typecheck.
+    return op(callee as OpCode, ...args);
+  }
+
+  return op(arityMatchingOpCodes[0], ...args);
 }
 
 function intValue(x: string): bigint {
@@ -519,13 +549,16 @@ export function refSource(node: Node, ref?: Token | Node): Node {
   };
 }
 
-export type ParseResult = { node: Node; warnings: Error[] };
+export type ParseResult = {
+  node: Node;
+  warnings: Error[];
+};
 
 export default function parse(
   code: string,
   restrictFrontend = true,
 ): ParseResult {
-  deprecatedAliasesUsed = [];
+  warnings = [];
   restrictedFrontend = restrictFrontend;
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
   try {
@@ -574,12 +607,7 @@ export default function parse(
   }
   return {
     node: results[0] as Node,
-    warnings: deprecatedAliasesUsed.map(
-      (x) =>
-        new Error(
-          `Deprecated alias used: ${x}. Use ${deprecatedAliases[x]} instead.`,
-        ),
-    ),
+    warnings,
   };
 }
 

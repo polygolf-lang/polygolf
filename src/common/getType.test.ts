@@ -31,9 +31,10 @@ import {
   forRangeCommon,
   forDifferenceRange,
   type Node,
+  asciiType,
 } from "IR";
 import { PolygolfError } from "./errors";
-import { calcType } from "./getType";
+import { calcTypeAndResolveOpCode, getType } from "./getType";
 
 const ascii = (x: number | IntegerType = int(0)) => text(x, true);
 
@@ -49,8 +50,9 @@ function testNode(
   prog: Node = block([]),
 ) {
   test(name, () => {
-    if (result === "error") expect(() => calcType(expr, prog)).toThrow();
-    else expect(toString(calcType(expr, prog))).toEqual(toString(result));
+    if (result === "error")
+      expect(() => calcTypeAndResolveOpCode(expr, prog)).toThrow();
+    else expect(toString(getType(expr, prog))).toEqual(toString(result));
   });
 }
 
@@ -154,7 +156,9 @@ describe("Assignment", () => {
   test("Self-referential assignment", () => {
     const aLHS = id("a");
     const expr = assignment(aLHS, op("add", id("a"), e(int(1))));
-    expect(() => calcType(aLHS, block([expr]))).toThrow(PolygolfError);
+    expect(() => calcTypeAndResolveOpCode(aLHS, block([expr]))).toThrow(
+      PolygolfError,
+    );
   });
 });
 
@@ -595,7 +599,7 @@ describeOp("int_to_dec", [
   [[int(-5, 5)], ascii(int(1, 2))],
 ]);
 
-describeOp("to_bin", [
+describeOp("int_to_bin", [
   [[bool], "error"],
   [[text()], "error"],
   [[int()], "error"],
@@ -604,7 +608,7 @@ describeOp("to_bin", [
   [[int(0, 0b10000)], ascii(int(1, 5))],
 ]);
 
-describeOp("to_hex", [
+describeOp("int_to_hex", [
   [[bool], "error"],
   [[text()], "error"],
   [[int()], "error"],
@@ -664,12 +668,22 @@ describeOp("split_whitespace", [
   [[text(58)], list(text(58))],
 ]);
 
-describeOp("sorted", [
+describeOp("sorted[Int]", [
   [[array(text(), 5)], "error"],
   [[set(text())], "error"],
   [[table(text(), text())], "error"],
   [[text()], "error"],
   [[list(int())], list(int())],
+  [[list(asciiType)], "error"],
+]);
+
+describeOp("sorted[Ascii]", [
+  [[array(text(), 5)], "error"],
+  [[set(text())], "error"],
+  [[table(text(), text())], "error"],
+  [[text()], "error"],
+  [[list(int())], "error"],
+  [[list(asciiType)], list(asciiType)],
   [[list(text())], list(text())],
 ]);
 

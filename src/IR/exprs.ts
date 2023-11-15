@@ -10,7 +10,6 @@ import {
   type Node,
   type Integer,
   type MutatingInfix,
-  isCommutative,
   int,
   isAssociative,
   text,
@@ -20,6 +19,7 @@ import {
   booleanNotOpCode,
   type Text,
   VariadicOpCode,
+  isCommutative,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseNode {
@@ -174,9 +174,12 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     if (isOp()(arg)) {
       if (arg.op === opCode) return arg.args[0];
       if (opCode === "not") {
-        const negated = booleanNotOpCode(arg.op as BinaryOpCode);
-        if (negated != null) {
-          return op(negated, arg.args[0], arg.args[1]);
+        if (arg.op in booleanNotOpCode) {
+          return op(
+            booleanNotOpCode[arg.op as keyof typeof booleanNotOpCode],
+            arg.args[0],
+            arg.args[1],
+          );
         }
       }
     }

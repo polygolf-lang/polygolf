@@ -10,6 +10,11 @@ import {
   toString,
   variants,
   type Variants,
+  opCodeDefinitions,
+  OpCode,
+  isOpCode,
+  isNullary,
+  infixableOpCodeNames,
 } from "../../IR";
 
 /*
@@ -90,32 +95,39 @@ function emitNodeWithoutAnnotation(
   indent = false,
 ): TokenTree {
   function emitSexpr(op: string, ...args: (TokenTree | Node)[]): TokenTree {
-    const isNullary = [
-      "argv",
-      "argc",
-      "true",
-      "false",
-      "read[codepoint]",
-      "read[byte]",
-      "read[Int]",
-      "read[line]",
-    ].includes(op);
-    if (op === "@") op = expr.kind;
-    op = op
-      .split(/\.?(?=[A-Z])/)
-      .join("_")
-      .toLowerCase();
+    let nullary = false;
+    if (op === "@") {
+      op = expr.kind;
+      op = op
+        .split(/\.?(?=[A-Z])/)
+        .join("_")
+        .toLowerCase();
+    } else {
+      if (isOpCode(op)) {
+        nullary = isNullary(op);
+        if (
+          "front" in opCodeDefinitions[op as OpCode] &&
+          typeof (opCodeDefinitions[op as OpCode] as any).front === "string"
+        )
+          op = (opCodeDefinitions[op as OpCode] as any).front;
+      }
+    }
     const result: TokenTree = [];
-    if (!asStatement && !isNullary) result.push("(");
+    if (!asStatement && !nullary) result.push("(");
     if (indent) result.push("$INDENT$", "\n");
-    if (opAliases[op] !== undefined && args.length === 2) {
+
+    if (
+      (op === "<-" ||
+        op === "=>" ||
+        infixableOpCodeNames.includes(op as any)) &&
+      args.length === 2
+    ) {
       let a = args[0];
       result.push(typeof a === "string" || !("kind" in a) ? a : emitNode(a));
-      result.push(opAliases[op]);
+      result.push(op);
       a = args[1];
       result.push(typeof a === "string" || !("kind" in a) ? a : emitNode(a));
     } else {
-      op = opAliases[op] ?? op;
       result.push(op);
       result.push(
         joinTrees(
@@ -128,7 +140,7 @@ function emitNodeWithoutAnnotation(
     }
     if (!asStatement) {
       if (indent) result.push("$DEDENT$", "\n");
-      if (!isNullary) result.push(")");
+      if (!nullary) result.push(")");
     }
     return result;
   }
@@ -141,13 +153,13 @@ function emitNodeWithoutAnnotation(
     case "Variants":
       return emitVariants(expr, indent);
     case "KeyValue":
-      return emitSexpr("key_value", expr.key, expr.value);
+      return emitSexpr("=>", expr.key, expr.value);
     case "Function":
       return emitSexpr("func", ...expr.args, expr.expr);
     case "Op":
       return emitSexpr(expr.op, ...expr.args);
     case "Assignment":
-      return emitSexpr("assign", expr.variable, expr.expr);
+      return emitSexpr("<-", expr.variable, expr.expr);
     case "FunctionCall": {
       const id = emitNode(expr.func);
       if (typeof id === "string" && id.startsWith("$")) {
@@ -315,31 +327,3 @@ function emitNodeWithoutAnnotation(
       return emitSexpr("@", expr.low.toString(), expr.high.toString());
   }
 }
-
-const opAliases: Record<string, string> = {
-  add: "+",
-  neg: "-",
-  sub: "-",
-  mul: "*",
-  pow: "^",
-  bit_and: "&",
-  bit_or: "|",
-  bit_xor: "~",
-  bit_not: "~",
-  bit_shift_left: "<<",
-  bit_shift_right: ">>",
-  eq: "==",
-  neq: "!=",
-  leq: "<=",
-  lt: "<",
-  geq: ">=",
-  gt: ">",
-  length: "#",
-  concat: "..",
-  assign: "<-",
-  key_value: "=>",
-  mod: "mod",
-  div: "div",
-  at: "@",
-  contains: "in",
-};

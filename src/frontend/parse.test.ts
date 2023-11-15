@@ -25,7 +25,7 @@ import parse from "./parse";
 
 function testStmtParse(desc: string, str: string, output: Node) {
   test(desc, () => {
-    expect(stringify(parse(str, false))).toEqual(stringify(output));
+    expect(stringify(parse(str, false).node)).toEqual(stringify(output));
   });
 }
 

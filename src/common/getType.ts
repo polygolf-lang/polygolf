@@ -48,15 +48,24 @@ import {
   type TableType,
   opCodeDefinitions,
   type ArgTypes,
+  OpCodeFrontNamesToOpCodes,
 } from "../IR";
 import { byteLength, charLength } from "./objective";
 import { PolygolfError } from "./errors";
 import { type Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
 
-const cachedType = new WeakMap<Node, Type>();
+interface TypeAndOpCode {
+  type: Type;
+  opCode?: OpCode;
+}
+
+const cachedType = new WeakMap<Node, TypeAndOpCode>();
 const currentlyFinding = new WeakSet<Node>();
-export function getType(expr: Node, context: Node | Spine): Type {
+export function getTypeAndResolveOpCode(
+  expr: Node,
+  context: Node | Spine,
+): TypeAndOpCode {
   const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
   if (currentlyFinding.has(expr))
@@ -64,7 +73,8 @@ export function getType(expr: Node, context: Node | Spine): Type {
 
   currentlyFinding.add(expr);
   try {
-    const t = calcType(expr, program);
+    let t = calcTypeAndResolveOpCode(expr, program);
+    if ("kind" in t) t = { type: t };
     currentlyFinding.delete(expr);
     cachedType.set(expr, t);
     return t;
@@ -76,8 +86,14 @@ export function getType(expr: Node, context: Node | Spine): Type {
     throw e;
   }
 }
+export function getType(expr: Node, context: Node | Spine) {
+  return getTypeAndResolveOpCode(expr, context).type;
+}
 
-export function calcType(expr: Node, program: Node): Type {
+export function calcTypeAndResolveOpCode(
+  expr: Node,
+  program: Node,
+): Type | TypeAndOpCode {
   // user-annotated node
   if (expr.type !== undefined) return expr.type;
   // type inference
@@ -260,9 +276,9 @@ export function getExampleOpCodeArgTypes(op: OpCode): Type[] {
 }
 
 function expectedTypesToString(expectedTypes: ArgTypes): string {
-  return Array.isArray(expectedTypes)
-    ? `[${expectedTypes.map(toString).join(", ")}]`
-    : `[...${toString(expectedTypes.variadic)}]`;
+  return "variadic" in expectedTypes
+    ? `[...${toString(expectedTypes.variadic)}]`
+    : `[${expectedTypes.map(toString).join(", ")}]`;
 }
 
 /**
@@ -321,281 +337,289 @@ function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
   );
 }
 
-function getOpCodeType(expr: Op, program: Node): Type {
+function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
   const got = getArgs(expr).map((x) => getType(x, program));
-  const expected = opCodeDefinitions[expr.op].args;
+  const opCodes = OpCodeFrontNamesToOpCodes[expr.op];
 
-  if (!isTypeMatch(got, expected)) {
-    throw new Error(
-      `Type error. Operator '${
-        expr.op
-      }' type error. Expected ${expectedTypesToString(expected)} but got [${got
-        .map(toString)
-        .join(", ")}].`,
-    );
-  }
+  const opCode = opCodes.find((opCode) =>
+    isTypeMatch(got, opCodeDefinitions[opCode].args),
+  );
 
-  switch (expr.op) {
-    // binary
-    // (num, num) => num
-    case "gcd": {
-      const [a, b] = got as [IntegerType, IntegerType];
-      return int(
-        1n,
-        min(max(abs(a.low), abs(a.high)), max(abs(b.low), abs(b.high))),
+  function getTypeInner(): Type {
+    if (opCode === undefined) {
+      throw new Error(
+        `Type error. Operator '${expr.op}' type error. Expected ${opCodes
+          .map((x) => expectedTypesToString(opCodeDefinitions[x].args))
+          .join(" or ")} but got [${got.map(toString).join(", ")}].`,
       );
     }
-    case "add":
-    case "sub":
-    case "mul":
-    case "div":
-    case "trunc_div":
-    case "unsigned_trunc_div":
-    case "pow":
-    case "mod":
-    case "rem":
-    case "unsigned_rem":
-    case "bit_and":
-    case "bit_or":
-    case "bit_xor":
-    case "bit_shift_left":
-    case "bit_shift_right":
-    case "min":
-    case "max":
-      return got.reduce((a, b) =>
-        getArithmeticType(expr.op, a as IntegerType, b as IntegerType),
-      );
-    // (num, num) => bool
-    case "lt":
-    case "leq":
-    case "eq[Int]":
-    case "neq[Int]":
-    case "geq":
-    case "gt":
-      return booleanType;
-    // (bool, bool) => bool
-    case "unsafe_or":
-    case "unsafe_and":
-    case "or":
-    case "and":
-      return booleanType;
-    // membership
-    case "contains[Array]":
-    case "contains[List]":
-    case "contains[Table]":
-    case "contains[Set]":
-      return booleanType;
-    // collection get
-    case "at[Array]":
-      return (got[0] as ArrayType).member;
-    case "at[List]":
-      return (got[0] as ListType).member;
-    case "at[Table]":
-      return (got[0] as TableType).value;
-    case "at[argv]":
-      return text();
-    // other
-    case "push":
-      return voidType;
-    case "find[List]":
-      return int(-1, (1n << 31n) - 1n);
-    case "concat[Text]": {
-      const textTypes = got as TextType[];
-      return text(
-        textTypes
-          .map((x) => x.codepointLength)
-          .reduce((a, b) => getArithmeticType("add", a, b)),
-        textTypes.every((x) => x.isAscii),
-      );
-    }
-    case "repeat": {
-      const [t, i] = got as [TextType, IntegerType];
-      return text(getArithmeticType("mul", t.codepointLength, i), t.isAscii);
-    }
-    case "contains[Text]":
-      return booleanType;
-    case "find[codepoint]":
-    case "find[byte]":
-      return int(
-        -1,
-        sub(
-          mul(
-            (got[0] as TextType).codepointLength.high,
-            expr.op === "find[byte]" && !(got[0] as TextType).isAscii ? 4n : 1n,
-          ),
-          (got[1] as TextType).codepointLength.low,
-        ),
-      );
-    case "split":
-      return list(got[0]);
-    case "at[byte]":
-    case "at[codepoint]":
-      return text(int(1, 1), (got[0] as TextType).isAscii);
-    case "join":
-      return text(
-        int(0, "oo"),
-        ((got[0] as ListType).member as TextType).isAscii &&
-          (got[1] as TextType).isAscii,
-      );
-    case "right_align":
-      return text(int(0, "oo"), (got[0] as TextType).isAscii);
-    case "int_to_bin_aligned":
-    case "int_to_hex_aligned": {
-      const t1 = got[0] as IntegerType;
-      const t2 = got[1] as IntegerType;
-      if (isFiniteType(t1) && isFiniteType(t2)) {
-        return text(
-          integerTypeIncludingAll(
-            BigInt(
-              t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16)
-                .length,
-            ),
-            t2.high,
-          ),
-          true,
+
+    switch (opCode) {
+      // binary
+      // (num, num) => num
+      case "gcd": {
+        const [a, b] = got as [IntegerType, IntegerType];
+        return int(
+          1n,
+          min(max(abs(a.low), abs(a.high)), max(abs(b.low), abs(b.high))),
         );
       }
-      return text(int(), true);
-    }
-    // unary
-    case "abs": {
-      const t = got[0] as IntegerType;
-      if (lt(t.low, 0n) && lt(0n, t.high))
-        return int(0, max(neg(t.low), t.high));
-      return int(min(abs(t.low), abs(t.high)), max(abs(t.low), abs(t.high)));
-    }
-    case "bit_not": {
-      const t = got[0] as IntegerType;
-      return getTypeBitNot(t);
-    }
-    case "neg": {
-      const t = got[0] as IntegerType;
-      return int(neg(t.high), neg(t.low));
-    }
-    case "not":
-      return booleanType;
-    case "int_to_bool":
-      return booleanType;
-    case "int_to_dec":
-    case "int_to_bin":
-    case "int_to_hex": {
-      const t = got[0] as IntegerType;
-      if (isFiniteType(t))
+      case "add":
+      case "sub":
+      case "mul":
+      case "div":
+      case "trunc_div":
+      case "unsigned_trunc_div":
+      case "pow":
+      case "mod":
+      case "rem":
+      case "unsigned_rem":
+      case "bit_and":
+      case "bit_or":
+      case "bit_xor":
+      case "bit_shift_left":
+      case "bit_shift_right":
+      case "min":
+      case "max":
+        return got.reduce((a, b) =>
+          getArithmeticType(expr.op, a as IntegerType, b as IntegerType),
+        );
+      // (num, num) => bool
+      case "lt":
+      case "leq":
+      case "eq[Int]":
+      case "neq[Int]":
+      case "geq":
+      case "gt":
+        return booleanType;
+      // (bool, bool) => bool
+      case "unsafe_or":
+      case "unsafe_and":
+      case "or":
+      case "and":
+        return booleanType;
+      // membership
+      case "contains[Array]":
+      case "contains[List]":
+      case "contains[Table]":
+      case "contains[Set]":
+        return booleanType;
+      // collection get
+      case "at[Array]":
+        return (got[0] as ArrayType).member;
+      case "at[List]":
+        return (got[0] as ListType).member;
+      case "at[Table]":
+        return (got[0] as TableType).value;
+      case "at[argv]":
+        return text();
+      // other
+      case "push":
+        return voidType;
+      case "find[List]":
+        return int(-1, (1n << 31n) - 1n);
+      case "concat[Text]": {
+        const textTypes = got as TextType[];
         return text(
-          integerTypeIncludingAll(
-            ...[t.low, t.high, ...(typeContains(t, 0n) ? [0n] : [])].map((x) =>
+          textTypes
+            .map((x) => x.codepointLength)
+            .reduce((a, b) => getArithmeticType("add", a, b)),
+          textTypes.every((x) => x.isAscii),
+        );
+      }
+      case "repeat": {
+        const [t, i] = got as [TextType, IntegerType];
+        return text(getArithmeticType("mul", t.codepointLength, i), t.isAscii);
+      }
+      case "contains[Text]":
+        return booleanType;
+      case "find[codepoint]":
+      case "find[byte]":
+        return int(
+          -1,
+          sub(
+            mul(
+              (got[0] as TextType).codepointLength.high,
+              expr.op === "find[byte]" && !(got[0] as TextType).isAscii
+                ? 4n
+                : 1n,
+            ),
+            (got[1] as TextType).codepointLength.low,
+          ),
+        );
+      case "split":
+        return list(got[0]);
+      case "at[byte]":
+      case "at[codepoint]":
+        return text(int(1, 1), (got[0] as TextType).isAscii);
+      case "join":
+        return text(
+          int(0, "oo"),
+          ((got[0] as ListType).member as TextType).isAscii &&
+            (got[1] as TextType).isAscii,
+        );
+      case "right_align":
+        return text(int(0, "oo"), (got[0] as TextType).isAscii);
+      case "int_to_bin_aligned":
+      case "int_to_hex_aligned": {
+        const t1 = got[0] as IntegerType;
+        const t2 = got[1] as IntegerType;
+        if (isFiniteType(t1) && isFiniteType(t2)) {
+          return text(
+            integerTypeIncludingAll(
               BigInt(
-                x.toString(
-                  expr.op === "int_to_bin"
-                    ? 2
-                    : expr.op === "int_to_hex"
-                    ? 16
-                    : 10,
-                ).length,
+                t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16)
+                  .length,
+              ),
+              t2.high,
+            ),
+            true,
+          );
+        }
+        return text(int(), true);
+      }
+      // unary
+      case "abs": {
+        const t = got[0] as IntegerType;
+        if (lt(t.low, 0n) && lt(0n, t.high))
+          return int(0, max(neg(t.low), t.high));
+        return int(min(abs(t.low), abs(t.high)), max(abs(t.low), abs(t.high)));
+      }
+      case "bit_not": {
+        const t = got[0] as IntegerType;
+        return getTypeBitNot(t);
+      }
+      case "neg": {
+        const t = got[0] as IntegerType;
+        return int(neg(t.high), neg(t.low));
+      }
+      case "not":
+        return booleanType;
+      case "int_to_bool":
+        return booleanType;
+      case "int_to_dec":
+      case "int_to_bin":
+      case "int_to_hex": {
+        const t = got[0] as IntegerType;
+        if (isFiniteType(t))
+          return text(
+            integerTypeIncludingAll(
+              ...[t.low, t.high, ...(typeContains(t, 0n) ? [0n] : [])].map(
+                (x) =>
+                  BigInt(
+                    x.toString(
+                      expr.op === "int_to_bin"
+                        ? 2
+                        : expr.op === "int_to_hex"
+                        ? 16
+                        : 10,
+                    ).length,
+                  ),
               ),
             ),
-          ),
-          true,
+            true,
+          );
+        return text(int(1), true);
+      }
+      case "dec_to_int": {
+        const t = got[0] as TextType;
+        if (!isFiniteType(t.codepointLength)) return int();
+        return int(
+          1n - 10n ** (t.codepointLength.high - 1n),
+          10n ** t.codepointLength.high - 1n,
         );
-      return text(int(1), true);
+      }
+      case "bool_to_int":
+        return int(0, 1);
+      case "char[byte]":
+        return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
+      case "char[codepoint]":
+        return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
+      case "size[List]":
+        return int(0, (1n << 31n) - 1n);
+      case "size[byte]": {
+        const codepointLength = (got[0] as TextType).codepointLength;
+        return int(
+          codepointLength.low,
+          min(
+            1n << 31n,
+            mul(codepointLength.high, (got[0] as TextType).isAscii ? 1n : 4n),
+          ),
+        );
+      }
+      case "size[codepoint]":
+        return (got[0] as TextType).codepointLength;
+      case "split_whitespace":
+        return list(got[0]);
+      case "sorted[Int]":
+      case "sorted[Ascii]":
+        return got[0];
+      case "reversed[byte]":
+      case "reversed[codepoint]":
+        return got[0];
+      // other
+      case "true":
+      case "false":
+        return booleanType;
+      case "read[codepoint]":
+        return text(int(1, 1));
+      case "read[byte]":
+        return text(int(1, 1));
+      case "read[Int]":
+        return int();
+      case "read[line]":
+        return text();
+      case "argc":
+        return int(0, 2 ** 31 - 1);
+      case "argv":
+        return list(text());
+      case "putc[byte]":
+      case "putc[codepoint]":
+      case "putc[Ascii]":
+        return voidType;
+      case "print[Text]":
+      case "println[Text]":
+        return voidType;
+      case "print[Int]":
+      case "println[Int]":
+        return voidType;
+      case "println_list_joined":
+        return voidType;
+      case "println_many_joined":
+        return voidType;
+      case "replace": {
+        const [a, c] = [got[0], got[2]] as TextType[];
+        return text(
+          getArithmeticType("mul", a.codepointLength, c.codepointLength),
+          a.isAscii && c.isAscii,
+        );
+      }
+      case "text_multireplace":
+        return text();
+      case "slice[byte]":
+      case "slice[codepoint]": {
+        const [t, i1, i2] = got as [TextType, IntegerType, IntegerType];
+        const maximum = min(
+          t.codepointLength.high,
+          max(0n, sub(i2.high, i1.low)),
+        );
+        return text(int(0n, maximum), t.isAscii);
+      }
+      case "ord_at[codepoint]":
+        return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
+      case "ord_at[byte]":
+        return int(0, (got[0] as TextType).isAscii ? 127 : 255);
+      case "ord[codepoint]":
+        return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
+      case "ord[byte]":
+        return int(0, (got[0] as TextType).isAscii ? 127 : 255);
+      case "set_at[Array]":
+      case "set_at[List]":
+      case "set_at[Table]":
+        return voidType;
     }
-    case "dec_to_int": {
-      const t = got[0] as TextType;
-      if (!isFiniteType(t.codepointLength)) return int();
-      return int(
-        1n - 10n ** (t.codepointLength.high - 1n),
-        10n ** t.codepointLength.high - 1n,
-      );
-    }
-    case "bool_to_int":
-      return int(0, 1);
-    case "char[byte]":
-      return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
-    case "char[codepoint]":
-      return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
-    case "size[List]":
-      return int(0, (1n << 31n) - 1n);
-    case "size[byte]": {
-      const codepointLength = (got[0] as TextType).codepointLength;
-      return int(
-        codepointLength.low,
-        min(
-          1n << 31n,
-          mul(codepointLength.high, (got[0] as TextType).isAscii ? 1n : 4n),
-        ),
-      );
-    }
-    case "size[codepoint]":
-      return (got[0] as TextType).codepointLength;
-    case "split_whitespace":
-      return list(got[0]);
-    case "sorted[Int]":
-    case "sorted[Ascii]":
-      return got[0];
-    case "reversed[byte]":
-    case "reversed[codepoint]":
-      return got[0];
-    // other
-    case "true":
-    case "false":
-      return booleanType;
-    case "read[codepoint]":
-      return text(int(1, 1));
-    case "read[byte]":
-      return text(int(1, 1));
-    case "read[Int]":
-      return int();
-    case "read[line]":
-      return text();
-    case "argc":
-      return int(0, 2 ** 31 - 1);
-    case "argv":
-      return list(text());
-    case "putc[byte]":
-    case "putc[codepoint]":
-    case "putc[Ascii]":
-      return voidType;
-    case "print[Text]":
-    case "println[Text]":
-      return voidType;
-    case "print[Int]":
-    case "println[Int]":
-      return voidType;
-    case "println_list_joined":
-      return voidType;
-    case "println_many_joined":
-      return voidType;
-    case "replace": {
-      const [a, c] = [got[0], got[2]] as TextType[];
-      return text(
-        getArithmeticType("mul", a.codepointLength, c.codepointLength),
-        a.isAscii && c.isAscii,
-      );
-    }
-    case "text_multireplace":
-      return text();
-    case "slice[byte]":
-    case "slice[codepoint]": {
-      const [t, i1, i2] = got as [TextType, IntegerType, IntegerType];
-      const maximum = min(
-        t.codepointLength.high,
-        max(0n, sub(i2.high, i1.low)),
-      );
-      return text(int(0n, maximum), t.isAscii);
-    }
-    case "ord_at[codepoint]":
-      return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "ord_at[byte]":
-      return int(0, (got[0] as TextType).isAscii ? 127 : 255);
-    case "ord[codepoint]":
-      return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "ord[byte]":
-      return int(0, (got[0] as TextType).isAscii ? 127 : 255);
-    case "set_at[Array]":
-    case "set_at[List]":
-    case "set_at[Table]":
-      return voidType;
   }
+  return { type: getTypeInner(), opCode };
 }
 
 export function getArithmeticType(

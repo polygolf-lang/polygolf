@@ -22,7 +22,7 @@ interface Variadic {
   variadic: Type;
   min: number;
 }
-export type ArgTypes = Variadic | Type[];
+export type ArgTypes = Variadic | readonly Type[];
 function variadic(type: Type, min = 2): Variadic {
   return {
     variadic: type,
@@ -179,11 +179,13 @@ export const opCodeDefinitions = {
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
-export type OpCodeFrontName = {
-  [K in AnyOpCode]: (typeof opCodeDefinitions)[K] extends { front: string }
-    ? (typeof opCodeDefinitions)[K]["front"]
-    : K;
-}[AnyOpCode];
+export type OpCodeFrontName =
+  | {
+      [K in AnyOpCode]: (typeof opCodeDefinitions)[K] extends { front: string }
+        ? (typeof opCodeDefinitions)[K]["front"]
+        : K;
+    }[AnyOpCode]
+  | AnyOpCode;
 
 export type OpCode<T extends Partial<OpCodeDefinition> = {}> = {
   [K in AnyOpCode]: (typeof opCodeDefinitions)[K] extends T ? K : never;
@@ -215,7 +217,7 @@ export function isVariadic(op: OpCode): op is VariadicOpCode {
 export function isAssociative(op: OpCode): op is AssociativeOpCode {
   return (opCodeDefinitions[op] as any)?.assoc === true;
 }
-export function isComutative(op: OpCode): op is CommutativeOpCode {
+export function isCommutative(op: OpCode): op is CommutativeOpCode {
   return (opCodeDefinitions[op] as any)?.commutes === true;
 }
 
@@ -226,26 +228,30 @@ export const BinaryOpCodes = OpCodes.filter(isBinary);
 export const TernaryOpCodes = OpCodes.filter(isTernary);
 export const VariadicOpCodes = OpCodes.filter(isVariadic);
 export const AssociativeOpCodes = OpCodes.filter(isAssociative);
-export const CommutativeOpCodes = OpCodes.filter(isComutative);
+export const CommutativeOpCodes = OpCodes.filter(isCommutative);
 
 export function isOpCode(op: string): op is OpCode {
   return op in opCodeDefinitions;
 }
 
 export const OpCodeFrontNames = [
-  ...new Set(
-    Object.entries(opCodeDefinitions).map(([k, v]) =>
+  ...new Set([
+    ...Object.entries(opCodeDefinitions).map(([k, v]) =>
       "front" in v && typeof v.front === "string" ? v.front : k,
     ),
-  ),
+    ...OpCodes,
+  ]),
 ];
 
-export const OpCodeFrontNamesToOpCodes = OpCodeFrontNames.map((frontName) =>
-  OpCodes.filter(
-    (op) =>
-      op === frontName || (opCodeDefinitions[op] as any).front === frontName,
-  ),
-);
+export const OpCodeFrontNamesToOpCodes = Object.fromEntries(
+  OpCodeFrontNames.map((frontName) => [
+    frontName,
+    OpCodes.filter(
+      (op) =>
+        op === frontName || (opCodeDefinitions[op] as any).front === frontName,
+    ),
+  ]),
+) as Record<OpCodeFrontName, OpCode[]>;
 
 export const OpCodesUser = OpCodes.filter(
   (op) => "front" in opCodeDefinitions[op],
@@ -288,7 +294,7 @@ export const booleanNotOpCode = {
   gt: "leq",
   leq: "gt",
   geq: "lt",
-};
+} as const satisfies Partial<Record<BinaryOpCode, BinaryOpCode>>;
 
 export const infixableOpCodeNames = [
   "+",

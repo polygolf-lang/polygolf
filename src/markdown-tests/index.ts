@@ -74,7 +74,7 @@ export function testPlugin(
     expect(
       debugEmit(
         applyAllToAllAndGetCounts(
-          getOnlyVariant(parse(input, false)),
+          getOnlyVariant(parse(input, false).node),
           compilationOptionsFromKeywords(args),
           () => {},
           ...plugins.map((x) => (typeof x === "function" ? x : x.visit)),
