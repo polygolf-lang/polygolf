@@ -35,34 +35,34 @@ const T2 = typeArg("T2");
 
 export const opCodeDefinitions = {
   // Arithmetic
-  add: { args: variadic(int()), front: true, assoc: true },
-  sub: { args: [int(), int()], front: true },
-  mul: { args: variadic(int()), front: true, assoc: true },
-  div: { args: [int(), int()], front: true },
+  add: { args: variadic(int()), front: "+", assoc: true },
+  sub: { args: [int(), int()], front: "-" },
+  mul: { args: variadic(int()), front: "*", assoc: true },
+  div: { args: [int(), int()], front: "div" },
   trunc_div: { args: [int(), int()] },
   unsigned_trunc_div: { args: [int(), int()] },
-  pow: { args: [int(), int()], front: true },
-  mod: { args: [int(), int()], front: true },
+  pow: { args: [int(), int()], front: "^" },
+  mod: { args: [int(), int()], front: "mod" },
   rem: { args: [int(), int()] },
   unsigned_rem: { args: [int(), int()] },
-  bit_and: { args: variadic(int()), front: true, assoc: true },
-  bit_or: { args: variadic(int()), front: true, assoc: true },
-  bit_xor: { args: variadic(int()), front: true, assoc: true },
-  bit_shift_left: { args: [int(), int()], front: true },
-  bit_shift_right: { args: [int(), int()], front: true },
+  bit_and: { args: variadic(int()), front: "&", assoc: true },
+  bit_or: { args: variadic(int()), front: "|", assoc: true },
+  bit_xor: { args: variadic(int()), front: "~", assoc: true },
+  bit_shift_left: { args: [int(), int()], front: "<<" },
+  bit_shift_right: { args: [int(), int()], front: ">>" },
   gcd: { args: variadic(int()), front: true, assoc: true },
   min: { args: variadic(int()), front: true, assoc: true },
   max: { args: variadic(int()), front: true, assoc: true },
-  neg: { args: [int()], front: true },
+  neg: { args: [int()], front: "-" },
   abs: { args: [int()], front: true },
-  bit_not: { args: [int()], front: true },
+  bit_not: { args: [int()], front: "~" },
 
   // Input
   "read[codepoint]": { args: [] },
   "read[byte]": { args: [] },
   "read[Int]": { args: [] },
   "read[line]": { args: [], front: true },
-  "at[argv]": { args: [int(0)], front: true },
+  "at[argv]": { args: [int(0)], front: "@" },
   argv: { args: [] },
   argc: { args: [] },
 
@@ -91,16 +91,16 @@ export const opCodeDefinitions = {
   leq: { args: [int(), int()], front: true },
   geq: { args: [int(), int()], front: true },
   gt: { args: [int(), int()], front: true },
-  "eq[Int]": { args: [int(), int()], front: "eq" },
-  "eq[Text]": { args: [text(), text()], front: "eq" },
-  "neq[Int]": { args: [int(), int()], front: "neq" },
-  "neq[Text]": { args: [text(), text()], front: "neq" },
+  "eq[Int]": { args: [int(), int()], front: "==" },
+  "eq[Text]": { args: [text(), text()], front: "==" },
+  "neq[Int]": { args: [int(), int()], front: "!=" },
+  "neq[Text]": { args: [text(), text()], front: "!=" },
 
   // Access members
-  "at[Array]": { args: [array(T1, T2), T2], front: "at" },
-  "at[List]": { args: [list(T1), int(0)], front: "at" },
-  "at[Table]": { args: [table(T1, T2), T1], front: "at" },
-  "at[Ascii]": { args: [ascii, int(0)], front: "at" },
+  "at[Array]": { args: [array(T1, T2), T2], front: "@" },
+  "at[List]": { args: [list(T1), int(0)], front: "@" },
+  "at[Table]": { args: [table(T1, T2), T1], front: "@" },
+  "at[Ascii]": { args: [ascii, int(0)], front: "@" },
   "at[byte]": { args: [text(), int(0)], front: true },
   "at[codepoint]": { args: [text(), int(0)], front: true },
   "set_at[Array]": { args: [array(T1, T2), T2, T1], front: "set_at" },
@@ -144,19 +144,19 @@ export const opCodeDefinitions = {
   "contains[Text]": { args: [text(), text()], front: "contains" },
 
   // Size
-  "size[List]": { args: [list(T1)], front: "size" },
-  "size[Set]": { args: [set(T1)], front: "size" },
-  "size[Table]": { args: [table(T1, T2)], front: "size" },
-  "size[Ascii]": { args: [ascii], front: "size" },
+  "size[List]": { args: [list(T1)], front: "#" },
+  "size[Set]": { args: [set(T1)], front: "#" },
+  "size[Table]": { args: [table(T1, T2)], front: "#" },
+  "size[Ascii]": { args: [ascii], front: "#" },
   "size[codepoint]": { args: [text()], front: true },
   "size[byte]": { args: [text()], front: true },
 
   // Adding items
   include: { args: [set(T1), T1], front: true },
   push: { args: [list(T1), T1], front: true },
-  append: { args: [list(T1), T1], front: true },
-  "concat[List]": { args: variadic(list(T1)), front: "concat", assoc: true },
-  "concat[Text]": { args: variadic(text()), front: "concat", assoc: true },
+  append: { args: [list(T1), T1], front: ".." },
+  "concat[List]": { args: variadic(list(T1)), front: "..", assoc: true },
+  "concat[Text]": { args: variadic(text()), front: "..", assoc: true },
 
   // Text ops
   repeat: { args: [text(), int(0)], front: true },
@@ -234,7 +234,7 @@ export const CommutativeOpCodes = [
   "gcd",
   "min",
   "max",
-] as const;
+] as const satisfies readonly OpCode[];
 
 export type CommutativeOpCode = string & (typeof CommutativeOpCodes)[number];
 
@@ -333,30 +333,3 @@ const compatibilityAliases: Record<string, OpCode> = {
   text_get_byte_slice: "slice[byte]",
   text_get_codepoint_slice: "slice[codepoint]",
 };
-
-const opCodeGroupAliases = {
-  add: "+",
-  neg: "-",
-  sub: "-",
-  mul: "*",
-  pow: "^",
-  bit_and: "&",
-  bit_or: "|",
-  bit_xor: "~",
-  bit_not: "~",
-  bit_shift_left: "<<",
-  bit_shift_right: ">>",
-  eq: "==",
-  neq: "!=",
-  leq: "<=",
-  lt: "<",
-  geq: ">=",
-  gt: ">",
-  size: "#",
-  concat: "..",
-  mod: "mod",
-  rem: "rem",
-  div: "div",
-  trunc_div: "trunc_div",
-  at: "@",
-} as const satisfies Partial<Record<OpCodeGroup, string>>;
