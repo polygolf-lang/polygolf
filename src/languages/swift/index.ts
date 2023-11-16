@@ -50,7 +50,7 @@ import {
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
 import {
-  useEquivalentTextOp,
+  usePrimaryTextOps,
   textToIntToTextGetToInt,
   replaceToSplitAndJoin,
 } from "../../plugins/textOps";
@@ -83,7 +83,6 @@ const swiftLanguage: Language = {
       ...lowBitsPlugins,
       applyDeMorgans,
       forRangeToForRangeOneStep,
-      useEquivalentTextOp(true, true),
       inlineVariables,
       replaceToSplitAndJoin,
       textToIntToTextGetToInt,
@@ -101,6 +100,7 @@ const swiftLanguage: Language = {
       decomposeIntLiteral(),
     ),
     required(
+      usePrimaryTextOps("codepoint"),
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,

@@ -41,7 +41,7 @@ import {
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   textToIntToFirstIndexTextGetToInt,
-  useEquivalentTextOp,
+  usePrimaryTextOps,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -79,7 +79,6 @@ const luaLanguage: Language = {
       forArgvToForRange(),
       forRangeToForRangeInclusive(),
       implicitlyConvertPrintArg,
-      useEquivalentTextOp(true, false),
       textToIntToFirstIndexTextGetToInt,
       mapOps({
         dec_to_int: (x) =>
@@ -99,7 +98,7 @@ const luaLanguage: Language = {
       forArgvToForRange(),
       forRangeToForRangeInclusive(),
       implicitlyConvertPrintArg,
-      useEquivalentTextOp(true, false),
+      usePrimaryTextOps("byte"),
       textToIntToFirstIndexTextGetToInt,
       mapOps({
         dec_to_int: (x) =>

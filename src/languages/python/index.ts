@@ -55,7 +55,7 @@ import {
 import {
   textGetToIntToTextGet,
   textToIntToTextGetToInt,
-  useEquivalentTextOp,
+  usePrimaryTextOps,
   useMultireplace,
 } from "../../plugins/textOps";
 import {
@@ -102,7 +102,6 @@ const pythonLanguage: Language = {
       useMultireplace(true),
       inlineVariables,
       forArgvToForEach,
-      useEquivalentTextOp(false, true),
       useIndexCalls(),
       decomposeIntLiteral(),
     ),
@@ -110,7 +109,7 @@ const pythonLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       removeUnusedForVar,
-      useEquivalentTextOp(false, true),
+      usePrimaryTextOps("codepoint"),
       mapOps({
         argv: builtin("sys.argv[1:]"),
 

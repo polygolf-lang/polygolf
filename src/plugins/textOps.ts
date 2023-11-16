@@ -1,62 +1,17 @@
-import { getType } from "../common/getType";
-import {
-  integerType,
-  isOp,
-  isSubtype,
-  isText,
-  type OpCode,
-  op,
-  int,
-} from "../IR";
+import { isOp, isText, op, int, isOpCode } from "../IR";
 import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";
 import { charLength } from "../common/objective";
 
-function toBidirectionalMap<T>(pairs: [T, T][]): Map<T, T> {
-  return new Map<T, T>([...pairs, ...pairs.map<[T, T]>(([k, v]) => [v, k])]);
-}
-
-const textOpsEquivalenceAscii = toBidirectionalMap<OpCode>([
-  ["find[codepoint]", "find[byte]"],
-  ["at[codepoint]", "at[byte]"],
-  ["ord_at[codepoint]", "ord_at[byte]"],
-  ["size[codepoint]", "size[byte]"],
-  ["reversed[codepoint]", "reversed[byte]"],
-  ["slice[codepoint]", "slice[byte]"],
-  ["ord[codepoint]", "ord[byte]"],
-]);
-
-const integerOpsEquivalenceAscii = toBidirectionalMap<OpCode>([
-  ["char[byte]", "char[codepoint]"],
-]);
-
-/** Swaps an op to another one, provided they are equivalent for the subtype. */
-export function useEquivalentTextOp(
-  useBytes = true,
-  useCodepoints = true,
-): Plugin {
-  if (!useBytes && !useCodepoints)
-    throw new Error(
-      "Programming error. Choose at least one of bytes and codepoints.",
-    );
+/** Implements ascii text op by either byte / codepoint text ops. */
+export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
   return {
-    name: `useEquivalentTextOp(${useBytes.toString()}, ${useCodepoints.toString()})`,
-    visit(node, spine) {
-      if (!isOp()(node)) return;
-      if (node.args.length < 1) return;
-      const typeArg0 = getType(node.args[0], spine);
-      if (
-        (!useBytes && node.op.includes("codepoint")) ||
-        (!useCodepoints && node.op.includes("byte"))
-      )
-        return;
-      if (typeArg0.kind === "text" && typeArg0.isAscii) {
-        const alternative = textOpsEquivalenceAscii.get(node.op);
-        if (alternative !== undefined) return { ...node, op: alternative };
-      }
-      if (isSubtype(typeArg0, integerType(0, 127))) {
-        const alternative = integerOpsEquivalenceAscii.get(node.op);
-        if (alternative !== undefined) return { ...node, op: alternative };
+    name: `usePrimaryTextOps(${JSON.stringify(char)})`,
+    visit(node) {
+      if (!isOp()(node) || !node.op.includes("[Ascii]")) return;
+      const replacement = node.op.replace("[Ascii]", `[${char}]`);
+      if (isOpCode(replacement)) {
+        return op(replacement, ...node.args);
       }
     },
   };

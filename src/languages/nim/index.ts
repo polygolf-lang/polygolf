@@ -53,7 +53,7 @@ import hash from "./hash";
 import {
   textToIntToTextGetToInt,
   textToIntToFirstIndexTextGetToInt,
-  useEquivalentTextOp,
+  usePrimaryTextOps,
   useMultireplace,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
@@ -115,7 +115,7 @@ const nimLanguage: Language = {
       forArgvToForEach,
       ...truncatingOpsPlugins,
       useIndexCalls(),
-      useEquivalentTextOp(true, false),
+      usePrimaryTextOps("byte"),
       mapOps({
         argv: func("commandLineParams"),
         "at[argv]": (x) => func("paramStr", add1(x[0])),

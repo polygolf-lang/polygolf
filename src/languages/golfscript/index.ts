@@ -49,7 +49,7 @@ import {
   pickAnyInt,
 } from "../../plugins/arithmetic";
 import {
-  useEquivalentTextOp,
+  usePrimaryTextOps,
   textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
 } from "../../plugins/textOps";
@@ -81,7 +81,7 @@ const golfscriptLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       bitShiftToMulOrDiv(false, true, true),
-      useEquivalentTextOp(true, false),
+      usePrimaryTextOps("byte"),
       textGetToTextGetToIntToText,
       forRangeToForDifferenceRange(
         (node, spine) =>

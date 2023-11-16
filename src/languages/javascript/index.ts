@@ -47,7 +47,7 @@ import {
   replaceToSplitAndJoin,
   textGetToIntToTextGet,
   textToIntToTextGetToInt,
-  useEquivalentTextOp,
+  usePrimaryTextOps,
 } from "../../plugins/textOps";
 import { addOneToManyAssignments, inlineVariables } from "../../plugins/block";
 import {
@@ -86,7 +86,6 @@ const javascriptLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       replaceToSplitAndJoin,
-      useEquivalentTextOp(false, true),
       useIndexCalls(),
       decomposeIntLiteral(),
     ),
@@ -117,7 +116,7 @@ const javascriptLanguage: Language = {
     simplegolf(forRangeToForEachKey),
     required(
       forRangeToForCLike,
-      useEquivalentTextOp(false, true),
+      usePrimaryTextOps("codepoint"), // TODO should be "codeunit"
       mapOps({
         dec_to_int: (x) =>
           op("add", int(0n), implicitConversion("dec_to_int", x[0])),
