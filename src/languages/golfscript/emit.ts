@@ -1,32 +1,34 @@
-import { TokenTree } from "../../common/Language";
-import { EmitError, emitTextLiteral } from "../../common/emit";
-import { int, integerType, IR, isIntLiteral, isSubtype } from "../../IR";
+import { type TokenTree } from "../../common/Language";
+import { EmitError, emitTextFactory } from "../../common/emit";
+import { int, integerType, type IR, isIntLiteral, isSubtype } from "../../IR";
 import { getType } from "../../common/getType";
 
-export default function emitProgram(program: IR.Program): TokenTree {
-  function emitMultiExpr(baseExpr: IR.Expr, parent: IR.Node): TokenTree {
-    const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
+const emitGolfscriptText = emitTextFactory({
+  '"TEXT"': { "\\": "\\\\", '"': `\\"` },
+  "'TEXT'": { "\\": `\\\\`, "'": `\\'` },
+});
+
+export default function emitProgram(program: IR.Node): TokenTree {
+  function emitMultiNode(BaseNode: IR.Node, parent: IR.Node | null): TokenTree {
+    const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
     if (
-      ["Program", "ForRange", "ForDifferenceRange", "ForEach"].includes(
-        parent.kind
-      )
+      parent === null ||
+      ["ForRange", "ForDifferenceRange", "ForEach"].includes(parent.kind)
     ) {
-      return children.map((stmt) => emitStatement(stmt, baseExpr));
+      return children.map((stmt) => emitStatement(stmt, BaseNode));
     }
 
-    return ["{", children.map((stmt) => emitStatement(stmt, baseExpr)), "}"];
+    return ["{", children.map((stmt) => emitStatement(stmt, BaseNode)), "}"];
   }
 
-  function emitStatement(stmt: IR.Expr, parent: IR.Node): TokenTree {
+  function emitStatement(stmt: IR.Node, parent: IR.Node | null): TokenTree {
     switch (stmt.kind) {
       case "Block":
-        return emitMultiExpr(stmt, parent);
-      case "ImportStatement":
-        return [stmt.name, ...stmt.modules]; // TODO the ... could be avoided if TokenTree was made readonly??
-      case "WhileLoop":
+        return emitMultiNode(stmt, parent);
+      case "While":
         return [
-          emitMultiExpr(stmt.condition, stmt),
-          emitMultiExpr(stmt.body, stmt),
+          emitMultiNode(stmt.condition, stmt),
+          emitMultiNode(stmt.body, stmt),
           "while",
         ];
       case "ForRange": {
@@ -35,17 +37,17 @@ export default function emitProgram(program: IR.Program): TokenTree {
           throw new EmitError(stmt, "potentially negative low");
         if (stmt.variable === undefined) throw new EmitError(stmt, "indexless");
         return [
-          emitExpr(stmt.end),
+          emitNode(stmt.end),
           ",",
-          isIntLiteral(stmt.start, 0n) ? [] : [emitExpr(stmt.start), ">"],
-          isIntLiteral(stmt.increment, 1n)
+          isIntLiteral(0n)(stmt.start) ? [] : [emitNode(stmt.start), ">"],
+          isIntLiteral(1n)(stmt.increment)
             ? []
-            : [emitExpr(stmt.increment), "%"],
+            : [emitNode(stmt.increment), "%"],
           "{",
           ":",
-          emitExpr(stmt.variable),
+          emitNode(stmt.variable),
           ";",
-          emitMultiExpr(stmt.body, stmt),
+          emitMultiNode(stmt.body, stmt),
           "}",
           "%",
         ];
@@ -53,40 +55,40 @@ export default function emitProgram(program: IR.Program): TokenTree {
       case "ForDifferenceRange": {
         if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
         return [
-          emitExpr(stmt.difference),
+          emitNode(stmt.difference),
           ",",
-          isIntLiteral(stmt.increment, 1n)
+          isIntLiteral(1n)(stmt.increment)
             ? []
-            : [emitExpr(stmt.increment), "%"],
+            : [emitNode(stmt.increment), "%"],
           "{",
-          isIntLiteral(stmt.start) && stmt.start.value < 0n
-            ? [emitExpr(int(-stmt.start.value)), "-"]
-            : [emitExpr(stmt.start), "+"],
+          isIntLiteral()(stmt.start) && stmt.start.value < 0n
+            ? [emitNode(int(-stmt.start.value)), "-"]
+            : [emitNode(stmt.start), "+"],
           ":",
-          emitExpr(stmt.variable),
+          emitNode(stmt.variable),
           ";",
-          emitMultiExpr(stmt.body, stmt),
+          emitMultiNode(stmt.body, stmt),
           "}",
           "%",
         ];
       }
       case "ForEach":
         return [
-          emitExpr(stmt.collection),
+          emitNode(stmt.collection),
           "{",
           ":",
-          emitExpr(stmt.variable),
+          emitNode(stmt.variable),
           ";",
-          emitMultiExpr(stmt.body, stmt),
+          emitMultiNode(stmt.body, stmt),
           "}",
           "%",
         ];
-      case "IfStatement":
+      case "If":
         return [
-          emitExpr(stmt.condition),
-          emitMultiExpr(stmt.consequent, stmt),
+          emitNode(stmt.condition),
+          emitMultiNode(stmt.consequent, stmt),
           stmt.alternate !== undefined
-            ? emitMultiExpr(stmt.alternate, stmt)
+            ? emitMultiNode(stmt.alternate, stmt)
             : "{}",
           "if",
         ];
@@ -96,58 +98,43 @@ export default function emitProgram(program: IR.Program): TokenTree {
       case "ForCLike":
         throw new EmitError(stmt);
       default:
-        return emitExpr(stmt);
+        return emitNode(stmt);
     }
   }
 
-  function emitExpr(expr: IR.Expr): TokenTree {
+  function emitNode(expr: IR.Node): TokenTree {
     switch (expr.kind) {
       case "Assignment":
-        return [emitExpr(expr.expr), ":", emitExpr(expr.variable), ";"];
+        return [emitNode(expr.expr), ":", emitNode(expr.variable), ";"];
       case "Identifier":
         return expr.name;
-      case "TextLiteral":
-        return emitTextLiteral(expr.value, [
-          [
-            `"`,
-            [
-              [`\\`, `\\\\`],
-              [`"`, `\\"`],
-            ],
-          ],
-          [
-            `"`,
-            [
-              [`\\`, `\\\\`],
-              [`'`, `\\'`],
-            ],
-          ],
-        ]);
-      case "IntegerLiteral":
+      case "Text":
+        return emitGolfscriptText(expr.value);
+      case "Integer":
         return expr.value.toString();
-      case "BinaryOp":
-        return [emitExpr(expr.left), emitExpr(expr.right), expr.name];
-      case "UnaryOp":
-        return [emitExpr(expr.arg), expr.name];
-      case "ListConstructor":
-        return ["[", expr.exprs.map(emitExpr), "]"];
+      case "Infix":
+        return [emitNode(expr.left), emitNode(expr.right), expr.name];
+      case "Prefix":
+        return [emitNode(expr.arg), expr.name];
+      case "List":
+        return ["[", expr.exprs.map(emitNode), "]"];
       case "ConditionalOp":
         return [
-          emitExpr(expr.condition),
-          emitExpr(expr.consequent),
-          emitExpr(expr.alternate),
+          emitNode(expr.condition),
+          emitNode(expr.consequent),
+          emitNode(expr.alternate),
           "if",
         ];
       case "RangeIndexCall": {
         if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
 
         return [
-          emitExpr(expr.collection),
-          emitExpr(expr.high),
+          emitNode(expr.collection),
+          emitNode(expr.high),
           "<",
-          emitExpr(expr.low),
+          emitNode(expr.low),
           ">",
-          isIntLiteral(expr.step, 1n) ? [] : [emitExpr(expr.step), "%"],
+          isIntLiteral(1n)(expr.step) ? [] : [emitNode(expr.step), "%"],
         ];
       }
       default:
@@ -155,5 +142,5 @@ export default function emitProgram(program: IR.Program): TokenTree {
     }
   }
 
-  return emitStatement(program.body, program);
+  return emitStatement(program, null);
 }

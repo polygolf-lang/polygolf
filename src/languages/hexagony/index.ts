@@ -1,7 +1,7 @@
-import { mapToUnaryAndBinaryOps } from "../../plugins/ops";
+import { mapToPrefixAndInfix } from "../../plugins/ops";
 import { printLnToPrint } from "../../plugins/print";
 import {
-  Language,
+  type Language,
   defaultDetokenizer,
   required,
   search,
@@ -56,18 +56,18 @@ const hexagonyLanguage: Language = {
       extractConditions,
       decomposeExpressions,
       powerToForRange,
-      mapToUnaryAndBinaryOps(
-        ["add", "+"],
-        ["sub", "-"],
-        ["neg", "~"],
-        ["mul", "*"],
-        ["div", ":"],
-        ["mod", "%"]
-      ),
+      mapToPrefixAndInfix({
+        add: "+",
+        sub: "-",
+        neg: "~",
+        mul: "*",
+        div: ":",
+        mod: "%",
+      }),
       printLnToPrint,
       printTextLiteral,
       limitSetOp(99999),
-      mapToUnaryAndBinaryOps(["putc", ";"], ["print_int", "!"])
+      mapToPrefixAndInfix({ putc: ";", print_int: "!" }),
     ),
   ],
 };

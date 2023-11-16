@@ -1,13 +1,14 @@
 import parse from "../frontend/parse";
 import compile, {
-  CompilationOptions,
+  type CompilationOptions,
   applyAllToAllAndGetCounts,
   debugEmit,
   normalize,
 } from "../common/compile";
 import { findLang } from "../languages/languages";
-import { Plugin } from "../common/Language";
+import { type Plugin } from "../common/Language";
 import { getOnlyVariant } from "../common/expandVariants";
+import type { PluginVisitor } from "../common/Spine";
 
 export const keywords = [
   "nogolf",
@@ -22,11 +23,12 @@ export const keywords = [
   "restrictFrontend",
   "1..127",
   "32..127",
+  "no:hardcode",
 ] as const;
 
 export function compilationOptionsFromKeywords(
   args: string[],
-  isLangTest = true
+  isLangTest = true,
 ): CompilationOptions {
   const is = (x: (typeof keywords)[number]) => args.includes(x);
   return {
@@ -41,6 +43,7 @@ export function compilationOptionsFromKeywords(
     restrictFrontend: is("restrictFrontend"),
     skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
     noEmit: is("noEmit"),
+    skipPlugins: is("no:hardcode") ? ["hardcode"] : [],
   };
 }
 
@@ -49,38 +52,36 @@ export function testLang(
   lang: string,
   args: string[],
   input: string,
-  output: string
+  output: string,
 ) {
-  test(name, () =>
+  test(name, () => {
     expect(
       compile(
         input,
         compilationOptionsFromKeywords(args, true),
-        findLang(lang)!
-      )[0].result
-    ).toEqual(output)
-  );
+        findLang(lang)!,
+      )[0].result,
+    ).toEqual(output);
+  });
 }
 
 export function testPlugin(
   name: string,
-  plugins: Plugin[],
+  plugins: (Plugin | PluginVisitor)[],
   args: string[],
   input: string,
-  output: string
+  output: string,
 ) {
-  test(name, () =>
+  test(name, () => {
     expect(
       debugEmit(
         applyAllToAllAndGetCounts(
           getOnlyVariant(parse(input, false)),
-          {
-            addWarning: () => {},
-            options: compilationOptionsFromKeywords(args),
-          },
-          ...plugins.map((x) => x.visit)
-        )[0]
-      )
-    ).toEqual(normalize(output))
-  );
+          compilationOptionsFromKeywords(args),
+          () => {},
+          ...plugins.map((x) => (typeof x === "function" ? x : x.visit)),
+        )[0],
+      ),
+    ).toEqual(normalize(output));
+  });
 }

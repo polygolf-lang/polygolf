@@ -13,6 +13,6 @@ describe("Nim hash", () => {
   testString("💎✂", 2632446085);
   testString(
     "Lorem ipsum dolor sit amet, consectetuer adipiscing elit.",
-    1622063614
+    1622063614,
   );
 });

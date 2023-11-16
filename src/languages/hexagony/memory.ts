@@ -1,4 +1,4 @@
-import { Program } from "@/IR";
+import type { Node } from "@/IR";
 
 type EdgeSymbol = 0 | 1 | 2;
 
@@ -58,7 +58,7 @@ export type ProgramEdgeData = Map<Expr, NodeEdgeData>;
  *
  * Then, traverse again and bind variables that are still unbound.
  */
-export function resolveEdges(program: Program): ProgramEdgeData {
+export function resolveEdges(program: Node): ProgramEdgeData {
   const result = new Map<Expr, NodeEdgeData>(); // TODO
   return result;
 }

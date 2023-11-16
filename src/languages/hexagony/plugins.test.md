@@ -7,12 +7,12 @@ $b <- 93;
 
 ```polygolf plugins.limitSetOp(999)
 $a <- 121;
-unary_op "4" $a;
-unary_op "5" $a;
-unary_op "~" $a;
+prefix "4" $a;
+prefix "5" $a;
+prefix "~" $a;
 $b <- 8;
-unary_op ")" $b;
-unary_op "3" $b;
+prefix ")" $b;
+prefix "3" $b;
 ```
 
 ```polygolf

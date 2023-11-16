@@ -30,8 +30,7 @@ _Lua_
 ```lua
 print("Hello, World!")
 for i=0,9 do print(i)end
-for a=1,1e3 do A=arg[a]
-print(A)end
+for a=1,1e3 do print(arg[a])end
 ```
 
 _Nim_
@@ -40,7 +39,7 @@ _Nim_
 import os
 echo"Hello, World!"
 for i in..9:i.echo
-for a in commandLineParams():a.echo
+for a in..999:(paramStr 1+a).echo
 ```
 
 _Python_
@@ -59,4 +58,13 @@ _Swift_
 print("Hello, World!")
 for i in 0...9{print(i)}
 for a in CommandLine.arguments[1...]{print(a)}
+```
+
+_Javascript_
+
+```javascript
+p=print
+p`Hello, World!`
+for(i in''+1e9)p(i)
+for(a of arguments)p(a)
 ```

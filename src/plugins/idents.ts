@@ -1,20 +1,20 @@
-import { Plugin, IdentifierGenerator } from "common/Language";
+import { type Plugin, type IdentifierGenerator } from "common/Language";
 import { getDeclaredIdentifiers } from "../common/symbols";
-import { Spine } from "../common/Spine";
+import { type Spine } from "../common/Spine";
 import {
   assignment,
   block,
-  Expr,
   id,
-  Identifier,
-  IR,
-  Node,
-  program,
+  type Identifier,
+  type IR,
+  isUserIdent,
+  type NodeFuncRecord,
+  getNodeFunc,
 } from "../IR";
 
 function getIdentMap(
-  spine: Spine<IR.Program>,
-  identGen: IdentifierGenerator
+  spine: Spine<IR.Node>,
+  identGen: IdentifierGenerator,
 ): Map<string, string> {
   // First, try mapping as many idents as possible to their preferred versions
   const inputNames = [...getDeclaredIdentifiers(spine.node)];
@@ -60,18 +60,23 @@ function getIdentMap(
 }
 
 export function renameIdents(
-  identGen: IdentifierGenerator = defaultIdentGen
+  identGen: IdentifierGenerator = defaultIdentGen,
 ): Plugin {
   return {
     name: "renameIdents(...)",
-    visit(program, spine) {
-      if (program.kind !== "Program") return;
+    visit(program, spine, context) {
+      context.skipChildren();
       const identMap = getIdentMap(spine.root, identGen);
       return spine.withReplacer((node) => {
-        if (node.kind === "Identifier" && !node.builtin) {
+        if (isUserIdent()(node)) {
           const outputName = identMap.get(node.name);
-          if (outputName === undefined)
-            throw new Error("Programming error. Incomplete identMap.");
+          if (outputName === undefined) {
+            throw new Error(
+              `Programming error. Incomplete identMap. Defined: ${JSON.stringify(
+                [...identMap.keys()],
+              )}, missing ${JSON.stringify(node.name)}`,
+            );
+          }
           return id(outputName);
         }
       }).node;
@@ -79,7 +84,7 @@ export function renameIdents(
   };
 }
 
-const defaultIdentGen = {
+const defaultIdentGen: IdentifierGenerator = {
   preferred(original: string) {
     const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
     if (firstLetter === undefined) return [];
@@ -88,29 +93,28 @@ const defaultIdentGen = {
     return [firstLetter, firstLetter === lower ? upper : lower];
   },
   short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
-  general: (i: number) => "v" + i.toString(),
+  general: (i) => `v${i}`,
 };
 
 /**
  * Aliases repeated expressions by mapping them to new variables.
- * @param getExprKey Calculates a key to compare expressions, `undefined` marks aliasing should not happen.
+ * @param getKey Calculates a key to compare expressions, `undefined` marks aliasing should not happen.
  * @param save `[cost of referring to the alias, cost of storing the alias]` or a custom byte save function.
  */
 export function alias(
-  getExprKey: (expr: Expr, spine: Spine) => string | undefined,
-  save: ((key: string, freq: number) => number) | [number, number] = [1, 3]
+  getKeyRecord: NodeFuncRecord<string | undefined>,
+  save: ((key: string, freq: number) => number) | [number, number] = [1, 3],
 ): Plugin {
+  const getKey = getNodeFunc(getKeyRecord);
   const aliasingSave =
     typeof save === "function"
       ? save
       : (key: string, freq: number) =>
           (key.length - save[0]) * (freq - 1) - save[0] - save[1];
-  const getKey = (node: Node, spine: Spine) =>
-    node.kind === "Program" ? undefined : getExprKey(node, spine);
   return {
     name: "alias(...)",
-    visit(prog, spine) {
-      if (prog.kind !== "Program") return;
+    visit(prog, spine, context) {
+      context.skipChildren();
       // get frequency of expr
       const timesUsed = new Map<string, number>();
       for (const key of spine.compactMap(getKey)) {
@@ -123,11 +127,11 @@ export function alias(
         if (key !== undefined && aliasingSave(key, timesUsed.get(key)!) > 0) {
           const alias = id(key + "+alias");
           if (assignments.every((x) => x.variable.name !== alias.name))
-            assignments.push(assignment(alias, node as Expr));
+            assignments.push(assignment(alias, node));
           return alias;
         }
-      }).node as IR.Program;
-      return program(block([...assignments, replacedDeep.body]));
+      }, false).node;
+      return block([...assignments, replacedDeep]);
     },
   };
 }

@@ -7,13 +7,22 @@ const tokenTable = {
   variable: /\$\w+/,
   type: /[A-Z][a-z]*/,
   argv_get: "argv_get",
-  nullary: ["argv", "argc", "true", "false"],
+  nullary: [
+    "argv",
+    "argc",
+    "true",
+    "false",
+    "read_codepoint",
+    "read_byte",
+    "read_int",
+    "read_line",
+  ],
   ninf: ["-oo", "-∞"],
   pinf: ["oo", "∞"],
   variant: "/",
   opalias:
     "<- + - * ^ & | ~ >> << == != <= < >= > => # mod rem div trunc_div".split(
-      " "
+      " ",
     ),
   builtin: /[a-z0-9_]+/,
   lparen: "(",

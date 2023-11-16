@@ -1,32 +1,37 @@
 import {
-  functionCall,
+  functionCall as func,
   indexCall,
-  methodCall,
+  methodCall as method,
   rangeIndexCall,
   text,
   int,
-  polygolfOp,
+  op,
   listType,
   textType,
   namedArg,
   add1,
-  tableConstructor,
+  table,
   keyValue,
-  TextLiteral,
+  type Text,
   builtin,
-  isTextLiteral,
+  isText,
 } from "../../IR";
-import { Language, required, search, simplegolf } from "../../common/Language";
+import {
+  type Language,
+  required,
+  search,
+  simplegolf,
+} from "../../common/Language";
 
-import emitProgram, { emitPythonTextLiteral } from "./emit";
+import emitProgram, { emitPythonText } from "./emit";
 import {
   mapOps,
-  mapToUnaryAndBinaryOps,
+  mapToPrefixAndInfix,
   useIndexCalls,
-  addMutatingBinaryOp,
   removeImplicitConversions,
   methodsAsFunctions,
   printIntToPrint,
+  mapTo,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -35,7 +40,11 @@ import {
   forRangeToForRangeOneStep,
   removeUnusedForVar,
 } from "../../plugins/loops";
-import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
+import {
+  golfStringListLiteral,
+  hardcode,
+  listOpsToTextOps,
+} from "../../plugins/static";
 import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   packSource2to1,
@@ -51,6 +60,7 @@ import {
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
+  inlineVariables,
   tempVarToMultipleAssignment,
 } from "../../plugins/block";
 import { addImports } from "../../plugins/imports";
@@ -71,6 +81,7 @@ const pythonLanguage: Language = {
   extension: "py",
   emitter: emitProgram,
   phases: [
+    search(hardcode()),
     required(printIntToPrint),
     search(
       golfStringListLiteral(),
@@ -89,187 +100,156 @@ const pythonLanguage: Language = {
       forRangeToForRangeOneStep,
       tableToListLookup,
       useMultireplace(true),
+      inlineVariables,
       forArgvToForEach,
       useEquivalentTextOp(false, true),
       useIndexCalls(),
-      decomposeIntLiteral()
+      decomposeIntLiteral(),
     ),
     required(
       pickAnyInt,
       forArgvToForEach,
       removeUnusedForVar,
       useEquivalentTextOp(false, true),
-      mapOps(
-        ["argv", (x) => builtin("sys.argv[1:]")],
-        [
-          "argv_get",
-          (x) =>
-            polygolfOp(
-              "list_get",
-              { ...builtin("sys.argv"), type: listType(textType()) },
-              add1(x[0])
-            ),
-        ]
-      ),
+      mapOps({
+        argv: builtin("sys.argv[1:]"),
+
+        argv_get: (x) =>
+          op(
+            "list_get",
+            { ...builtin("sys.argv"), type: listType(textType()) },
+            add1(x[0]),
+          ),
+      }),
       useIndexCalls(),
 
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
-      mapOps(
-        ["true", int(1)],
-        ["false", int(0)],
-        ["abs", (x) => functionCall("abs", x)],
-        ["list_length", (x) => functionCall("len", x)],
-        ["list_find", (x) => methodCall(x[0], "index", x[1])],
-        ["join", (x) => methodCall(x[1], "join", x[0])],
-        ["join", (x) => methodCall(text(""), "join", x[0])],
-        ["sorted", (x) => functionCall("sorted", x[0])],
-        [
-          "text_codepoint_reversed",
-          (x) => rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
-        ],
-        ["codepoint_to_int", (x) => functionCall("ord", x)],
-        ["text_get_codepoint", (x) => indexCall(x[0], x[1])],
-        ["int_to_codepoint", (x) => functionCall("chr", x)],
-        ["max", (x) => functionCall("max", x)],
-        ["min", (x) => functionCall("min", x)],
-        [
-          "text_get_codepoint_slice",
-          (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
-        ],
-        ["text_codepoint_length", (x) => functionCall("len", x)],
-        ["int_to_text", (x) => functionCall("str", x)],
-        ["text_split", (x) => methodCall(x[0], "split", x[1])],
-        ["text_split_whitespace", (x) => methodCall(x[0], "split")],
-        ["text_to_int", (x) => functionCall("int", x)],
-        ["println", (x) => functionCall("print", x)],
-        [
-          "print",
-          (x) => {
-            return functionCall(
-              "print",
-              x[0].kind !== "ImplicitConversion"
-                ? [namedArg("end", x[0])]
-                : [x[0], namedArg("end", text(""))]
-            );
-          },
-        ],
-        ["text_replace", (x) => methodCall(x[0], "replace", x[1], x[2])],
-        [
-          "text_multireplace",
-          (x) =>
-            methodCall(
-              x[0],
-              "translate",
-              tableConstructor(
-                (x as TextLiteral[]).flatMap((_, i, x) =>
-                  i % 2 > 0
-                    ? [
-                        keyValue(
-                          int(x[i].value.codePointAt(0)!),
-                          charLength(x[i + 1].value) === 1 &&
-                            x[i + 1].value.codePointAt(0)! < 100
-                            ? int(x[i + 1].value.codePointAt(0)!)
-                            : x[i + 1]
-                        ),
-                      ]
-                    : []
-                )
-              )
+      mapOps({
+        true: int(1),
+        false: int(0),
+        list_find: (x) => method(x[0], "index", x[1]),
+        join: (x) => method(x[1], "join", x[0]),
+
+        text_codepoint_reversed: (x) =>
+          rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
+        text_get_codepoint: (x) => indexCall(x[0], x[1]),
+
+        text_get_codepoint_slice: (x) =>
+          rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
+        text_split: (x) => method(x[0], "split", x[1]),
+        text_split_whitespace: (x) => method(x[0], "split"),
+
+        print: (x) =>
+          func(
+            "print",
+            x[0].kind !== "ImplicitConversion"
+              ? [namedArg("end", x[0])]
+              : [x[0], namedArg("end", text(""))],
+          ),
+        text_replace: (x) => method(x[0], "replace", x[1], x[2]),
+
+        text_multireplace: (x) =>
+          method(
+            x[0],
+            "translate",
+            table(
+              (x as Text[]).flatMap((_, i, x) =>
+                i % 2 > 0
+                  ? [
+                      keyValue(
+                        int(x[i].value.codePointAt(0)!),
+                        charLength(x[i + 1].value) === 1 &&
+                          x[i + 1].value.codePointAt(0)! < 100
+                          ? int(x[i + 1].value.codePointAt(0)!)
+                          : x[i + 1],
+                      ),
+                    ]
+                  : [],
+              ),
             ),
-        ]
-      ),
-      addMutatingBinaryOp(
-        ["add", "+"],
-        ["concat", "+"],
-        ["sub", "-"],
-        ["mul", "*"],
-        ["mul", "*"],
-        ["repeat", "*"],
-        ["div", "//"],
-        ["mod", "%"],
-        ["pow", "**"],
-        ["bit_and", "&"],
-        ["bit_xor", "^"],
-        ["bit_or", "|"],
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"]
-      ),
-      mapToUnaryAndBinaryOps(
-        ["pow", "**"],
-        ["neg", "-"],
-        ["bit_not", "~"],
-        ["mul", "*"],
-        ["repeat", "*"],
-        ["div", "//"],
-        ["mod", "%"],
-        ["add", "+"],
-        ["concat", "+"],
-        ["sub", "-"],
-        ["bit_shift_left", "<<"],
-        ["bit_shift_right", ">>"],
-        ["bit_and", "&"],
-        ["bit_xor", "^"],
-        ["bit_or", "|"],
-        ["lt", "<"],
-        ["leq", "<="],
-        ["eq", "=="],
-        ["neq", "!="],
-        ["geq", ">="],
-        ["gt", ">"],
-        ["not", "not"],
-        ["and", "and"],
-        ["or", "or"]
+          ),
+      }),
+      mapTo(func)({
+        read_line: "input",
+        abs: "abs",
+        list_length: "len",
+        sorted: "sorted",
+        codepoint_to_int: "ord",
+        int_to_codepoint: "chr",
+        max: "max",
+        min: "min",
+        text_codepoint_length: "len",
+        int_to_text: "str",
+        text_to_int: "int",
+        println: "print",
+      }),
+      mapToPrefixAndInfix(
+        {
+          pow: "**",
+          neg: "-",
+          bit_not: "~",
+          mul: "*",
+          repeat: "*",
+          div: "//",
+          mod: "%",
+          add: "+",
+          concat: "+",
+          sub: "-",
+          bit_shift_left: "<<",
+          bit_shift_right: ">>",
+          bit_and: "&",
+          bit_xor: "^",
+          bit_or: "|",
+          lt: "<",
+          leq: "<=",
+          eq: "==",
+          neq: "!=",
+          geq: ">=",
+          gt: ">",
+          not: "not",
+          and: "and",
+          or: "or",
+        },
+        ["+", "-", "*", "//", "%", "**", "&", "^", "|", "<<", ">>"],
       ),
       methodsAsFunctions,
-      addOneToManyAssignments()
+      addOneToManyAssignments(),
     ),
     simplegolf(
-      alias((expr, spine) => {
-        switch (expr.kind) {
-          case "Identifier":
-            return expr.builtin &&
-              (spine.parent?.node.kind !== "PropertyCall" ||
-                spine.pathFragment !== "ident")
-              ? expr.name
-              : undefined;
-          case "PropertyCall": // TODO: handle more general cases
-            return isTextLiteral(expr.object) && expr.ident.builtin
-              ? `"${expr.object.value}".${expr.ident.name}`
-              : undefined;
-          case "IntegerLiteral":
-            return expr.value.toString();
-          case "TextLiteral":
-            return `"${expr.value}"`;
-        }
-      })
+      alias({
+        Identifier: (n, s) =>
+          n.builtin &&
+          (s.parent?.node.kind !== "PropertyCall" || s.pathFragment !== "ident")
+            ? n.name
+            : undefined,
+        // TODO: handle more general cases
+        PropertyCall: (n) =>
+          isText()(n.object) && n.ident.builtin
+            ? `"${n.object.value}".${n.ident.name}`
+            : undefined,
+        Integer: (x) => x.value.toString(),
+        Text: (x) => `"${x.value}"`,
+      }),
     ),
     required(
       renameIdents(),
-      addImports(
-        [
-          ["sys.argv[1:]", "sys"],
-          ["sys.argv", "sys"],
-        ],
-        "import"
-      ),
-      removeImplicitConversions
+      addImports({ "sys.argv[1:]": "sys", "sys.argv": "sys" }),
+      removeImplicitConversions,
     ),
   ],
   packers: [
     {
       codepointRange: [1, Infinity],
       pack(x) {
-        return `exec(bytes(${emitPythonTextLiteral(
-          packSource2to1(x)
-        )},'u16')[2:])`;
+        return `exec(bytes(${emitPythonText(packSource2to1(x))},'u16')[2:])`;
       },
     },
     {
       codepointRange: [32, 127],
       pack(x) {
-        return `exec(bytes(ord(c)%i+32for c in${emitPythonTextLiteral(
-          packSource3to1(x)
+        return `exec(bytes(ord(c)%i+32for c in${emitPythonText(
+          packSource3to1(x),
         )}for i in b'abc'))`;
       },
     },

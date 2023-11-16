@@ -14,7 +14,11 @@ Design goals
 
 Read on for usage, or see [docs/architecture.md](docs/architecture.md) for the architecture.
 
-## Usage
+## Playground
+
+You can try Polygolf in your browser using the [Playground](https://polygolf-lang.github.io).
+
+## Local usage
 
 Requires npm and node 17.0+ installed.
 
@@ -137,7 +141,7 @@ Each variable must be first used in an assignment. Variable type is determined b
 ### Polygolf operators
 
 All other expressions are Polygolf operators. Most of them return values, but some are used for I/O and some are used for setting values in collections.  
-[Complete list of builtins](https://github.com/jared-hughes/polygolf/blob/main/src/IR/opcodes.ts).  
+[Complete list of builtins](https://github.com/polygolf-lang/polygolf/blob/main/src/IR/opcodes.ts).  
 All of the Polygolf operators can be called using their name. In addition, several common ops are given symbolic aliases:
 
 | Op name         | alias |
@@ -239,7 +243,7 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
 - [x] `x=1,y=1` ⟶ `x=y=1`
 - [x] `x=t;x=y;y=t` ⟶ `x,y=y,x`
 - [x] `x=x*3` ⟶ `x*=3`
-- [ ] `x=z;y=x*5` ⟶ `y=z*5`
+- [x] `x=z;y=x*5` ⟶ `y=z*5`
 
 ### Loops
 
@@ -275,10 +279,10 @@ Overview of Polygolf's language unspecific golfing knowledge, demonstrated on Py
   - Use whitespace to format the source.
   - Use comments if appropriate.
   - Use descriptive variable names - Polygolf will shorten them for you.
-  - Store intermediate results of complex expressions in auxilary variables - Polygolf will inline them for you. (To come)
+  - Store intermediate results of complex expressions in auxilary variables - Polygolf will inline them for you.
 - Help Polygolf understand the problem. This includes:
   - Explicitly annotate types of values. The type inference algorithm isn't perfect or in some cases can't even possible narrow the type down as much as you can. This is especially relevant for
     - Values coming from argv - perhaps you know they will be ascii or that they will be representing an integer in a certain range.
     - Complex arithmetic expressions.
   - Prefer higher level opcodes if they exist. While Polygolf aims to generally be able to convert between lower level implementation and a higher level one, the conversion from low level to high level is harder and might not always work out for you.
-- Use variants. Polygolf is WIP and the set of golfing rules it knowns is limited. If there are two different equivalent implementations that both are sometimes shorter, include them both using the variant syntax. If you believe the case is general enough and that Polygolf should be able to generate one based on the other, [open an issue](https://github.com/jared-hughes/polygolf/issues/new/choose).
+- Use variants. Polygolf is WIP and the set of golfing rules it knowns is limited. If there are two different equivalent implementations that both are sometimes shorter, include them both using the variant syntax. If you believe the case is general enough and that Polygolf should be able to generate one based on the other, [open an issue](https://github.com/polygolf-lang/polygolf/issues/new/choose).

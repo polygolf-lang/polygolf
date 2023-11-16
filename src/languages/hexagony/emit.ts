@@ -1,6 +1,6 @@
 import { EmitError, joinTrees } from "../../common/emit";
-import { Expr, Program } from "../../IR";
-import { TokenTree } from "../../common/Language";
+import type { Node } from "../../IR";
+import type { TokenTree } from "../../common/Language";
 
 type HexagonyTree =
   | {
@@ -17,7 +17,7 @@ type HexagonyTree =
       body: HexagonyTree[];
     };
 
-function getHexagonyTree(node: Expr): HexagonyTree[] {
+function getHexagonyTree(node: Node): HexagonyTree[] {
   if (node.kind === "Block") {
     return node.children.flatMap(getHexagonyTree);
   }
@@ -49,12 +49,12 @@ function getHexagonyTree(node: Expr): HexagonyTree[] {
   throw new EmitError(node);
 }
 
-export default function emitProgram(program: Program): TokenTree {
-  const tree = getHexagonyTree(program.body);
+export default function emitProgram(program: Node): TokenTree {
+  const tree = getHexagonyTree(program);
   return tree[0].kind;
 }
 
-export function emitProgramLinearly(program: Program): TokenTree {
+export function emitProgramLinearly(program: Node): TokenTree {
   function emitTree(x: HexagonyTree | HexagonyTree[]): TokenTree {
     if (Array.isArray(x)) return joinTrees("\n", x.map(emitTree));
     switch (x.kind) {
@@ -77,5 +77,5 @@ export function emitProgramLinearly(program: Program): TokenTree {
         return x.name;
     }
   }
-  return emitTree(getHexagonyTree(program.body));
+  return emitTree(getHexagonyTree(program));
 }

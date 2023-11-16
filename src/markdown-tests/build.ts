@@ -1,7 +1,7 @@
 import { findLang } from "../languages/languages";
 import fs from "fs";
 import path from "path";
-import { emitTextLiteral } from "../common/emit";
+import { emitTextFactory } from "../common/emit";
 import { keywords } from ".";
 
 interface Test {
@@ -83,7 +83,7 @@ function parseSuite(markdown: string): Describe {
       }
     }
     describe.children = describe.children.filter(
-      (x) => "input" in x || x.children.length > 0
+      (x) => "input" in x || x.children.length > 0,
     );
   }
   removeEmptyDescribes(result);
@@ -109,7 +109,7 @@ function extractTags(markdown: string): (Header | CodeBlock)[] {
       const title = m[3].trim().split(" ");
       if (m[3].trim().length === 0) {
         throw new Error(
-          "Codeblocks are required to have language annotation. If a codeblock should not be included in testing, use `skip` command: `python skip`."
+          "Codeblocks are required to have language annotation. If a codeblock should not be included in testing, use `skip` command: `python skip`.",
         );
       }
       result.push({
@@ -139,7 +139,7 @@ function emitSuite(describe: Describe): string {
         `import * as ${x
           .split("/")
           .at(-1)!
-          .replace("static", "static_")} from "./${x}";`
+          .replace("static", "static_")} from "./${x}";`,
     )
     .join("\n")}
 
@@ -153,38 +153,11 @@ function emitNode(node: Describe | Test, imports: string[]): string {
   return emitTest(node, imports);
 }
 
-function stringify(x: string): string {
-  return emitTextLiteral(x, [
-    [
-      "`",
-      [
-        [`\\`, `\\\\`],
-        [`\n`, `\\n`],
-        [`\r`, `\\r`],
-        ["`", "\\`"],
-        ["$", "\\$"],
-      ],
-    ],
-    [
-      `"`,
-      [
-        [`\\`, `\\\\`],
-        [`\n`, `\\n`],
-        [`\r`, `\\r`],
-        [`"`, `\\"`],
-      ],
-    ],
-    [
-      `'`,
-      [
-        [`\\`, `\\\\`],
-        [`\n`, `\\n`],
-        [`\r`, `\\r`],
-        [`'`, `\\"`],
-      ],
-    ],
-  ]);
-}
+const stringify = emitTextFactory({
+  "`TEXT`": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "`": "\\`", $: "\\$" },
+  '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
+  "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\"` },
+});
 
 function emitDescribe(describe: Describe, imports: string[]): string {
   return (
@@ -206,22 +179,22 @@ function emitTest(test: Test, imports: string[]): string {
         const plugin = m[2];
         imports.push(path);
         pluginSymbols.push(
-          `${path.split("/").at(-1)!.replace("static", "static_")}.${plugin}`
+          `${path.split("/").at(-1)!.replace("static", "static_")}.${plugin}`,
         );
       } else {
         throw new Error(`Unexpected polygolf argument ${plugin}.`);
       }
     }
     return `testPlugin(${stringify(plugins.join(", "))}, [${pluginSymbols.join(
-      ", "
+      ", ",
     )}], ${JSON.stringify(kws)}, ${stringify(test.input)}, ${stringify(
-      test.output
+      test.output,
     )});`;
   }
   return `testLang(${stringify(
-    [test.language, ...test.args].join(" ")
+    [test.language, ...test.args].join(" "),
   )}, ${stringify(test.language)}, ${JSON.stringify(kws)}, ${stringify(
-    test.input
+    test.input,
   )}, ${stringify(test.output)});`;
 }
 
@@ -235,7 +208,7 @@ function compileSuite(markdown: string): string {
 function readdirSyncRecursive(p: string, a: string[] = []) {
   if (fs.statSync(p).isDirectory())
     fs.readdirSync(p).map((f) =>
-      readdirSyncRecursive(a[a.push(path.join(p, f)) - 1], a)
+      readdirSyncRecursive(a[a.push(path.join(p, f)) - 1], a),
     );
   return a;
 }

@@ -1,28 +1,33 @@
 import { charLength } from "../../common/objective";
-import { TokenTree } from "@/common/Language";
+import { type TokenTree } from "@/common/Language";
 import {
-  containsMultiExpr,
+  containsMultiNode,
   EmitError,
   emitIntLiteral,
-  emitTextLiteral,
+  emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import {
-  IR,
-  isIntLiteral,
-  TextLiteral,
-  text,
-  isTextLiteral,
-  id,
-  binaryOp,
-} from "../../IR";
-import { CompilationContext } from "@/common/compile";
+import { type IR, isIntLiteral, text, isText, id, infix } from "../../IR";
+import { type CompilationContext } from "@/common/compile";
 
-function precedence(expr: IR.Expr): number {
+export const emitPythonText = emitTextFactory(
+  {
+    '"TEXT"': { "\\": "\\\\", "\n": "\\n", "\r": "\\r", '"': `\\"` },
+    "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\'` },
+    '"""TEXT"""': { "\\": "\\\\", '"""': '\\"""' },
+  },
+  function (x: number) {
+    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
+    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
+    return `\\U${x.toString(16).padStart(8, "0")}`;
+  },
+);
+
+function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return unaryPrecedence(expr.name);
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
   }
   return Infinity;
@@ -61,7 +66,7 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   throw new Error(
-    `Programming error - unknown Python binary operator '${opname}'.`
+    `Programming error - unknown Python binary operator '${opname}'.`,
   );
 }
 
@@ -74,34 +79,34 @@ function unaryPrecedence(opname: string): number {
       return 3;
   }
   throw new Error(
-    `Programming error - unknown Python unary operator '${opname}.'`
+    `Programming error - unknown Python unary operator '${opname}.'`,
   );
 }
 
 export default function emitProgram(
-  program: IR.Program,
-  context: CompilationContext
+  program: IR.Node,
+  context: CompilationContext,
 ): TokenTree {
-  function emitMultiExpr(baseExpr: IR.Expr, isRoot = false): TokenTree {
-    const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
+  function emitMultiNode(BaseNode: IR.Node, isRoot = false): TokenTree {
+    const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
     // Prefer newlines over semicolons at top level for aesthetics
     if (isRoot) {
-      return joinExprs("\n", children);
+      return joinNodes("\n", children);
     }
-    if (containsMultiExpr(children)) {
-      return ["$INDENT$", "\n", joinExprs("\n", children), "$DEDENT$"];
+    if (containsMultiNode(children)) {
+      return ["$INDENT$", "\n", joinNodes("\n", children), "$DEDENT$"];
     }
-    return joinExprs(";", children);
+    return joinNodes(";", children);
   }
 
-  function joinExprs(
+  function joinNodes(
     delim: TokenTree,
-    exprs: readonly IR.Expr[],
-    minPrec = -Infinity
+    exprs: readonly IR.Node[],
+    minPrec = -Infinity,
   ) {
     return joinTrees(
       delim,
-      exprs.map((x) => emit(x, minPrec))
+      exprs.map((x) => emit(x, minPrec)),
     );
   }
 
@@ -111,16 +116,16 @@ export default function emitProgram(
    * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
    * @returns  Token tree corresponding to the expression.
    */
-  function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
+  function emit(expr: IR.Node, minimumPrec = -Infinity): TokenTree {
     const prec = precedence(expr);
-    function emitNoParens(e: IR.Expr): TokenTree {
+    function emitNoParens(e: IR.Node): TokenTree {
       switch (e.kind) {
         case "Block":
-          return emitMultiExpr(expr);
-        case "ImportStatement":
+          return emitMultiNode(expr);
+        case "Import":
           return [e.name, joinTrees(",", e.modules)];
-        case "WhileLoop":
-          return [`while`, emit(e.condition), ":", emitMultiExpr(e.body)];
+        case "While":
+          return [`while`, emit(e.condition), ":", emitMultiNode(e.body)];
         case "ForEach":
           return [
             `for`,
@@ -128,22 +133,22 @@ export default function emitProgram(
             "in",
             emit(e.collection),
             ":",
-            emitMultiExpr(e.body),
+            emitMultiNode(e.body),
           ];
         case "ForRange": {
           const start = emit(e.start);
-          const start0 = isIntLiteral(e.start, 0n);
+          const start0 = isIntLiteral(0n)(e.start);
           const end = emit(e.end);
           const increment = emit(e.increment);
-          const increment1 = isIntLiteral(e.increment, 1n);
+          const increment1 = isIntLiteral(1n)(e.increment);
           return e.variable === undefined && start0 && increment1
             ? [
                 "for",
                 "_",
                 "in",
-                emit(binaryOp("*", text("X"), e.end)),
+                emit(infix("*", text("X"), e.end)),
                 ":",
-                emitMultiExpr(e.body),
+                emitMultiNode(e.body),
               ]
             : [
                 "for",
@@ -156,20 +161,20 @@ export default function emitProgram(
                 increment1 ? [] : [",", increment],
                 ")",
                 ":",
-                emitMultiExpr(e.body),
+                emitMultiNode(e.body),
               ];
         }
-        case "IfStatement":
+        case "If":
           return [
             "if",
             emit(e.condition),
             ":",
-            emitMultiExpr(e.consequent),
+            emitMultiNode(e.consequent),
             e.alternate === undefined
               ? []
-              : e.alternate.kind === "IfStatement"
+              : e.alternate.kind === "If"
               ? ["\n", "el", "$GLUE$", emit(e.alternate)]
-              : ["\n", "else", ":", emitMultiExpr(e.alternate)],
+              : ["\n", "else", ":", emitMultiNode(e.alternate)],
           ];
         case "Variants":
         case "ForEachKey":
@@ -179,18 +184,18 @@ export default function emitProgram(
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
         case "ManyToManyAssignment":
-          return [joinExprs(",", e.variables), "=", joinExprs(",", e.exprs)];
+          return [joinNodes(",", e.variables), "=", joinNodes(",", e.exprs)];
         case "OneToManyAssignment":
           return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
-        case "MutatingBinaryOp":
+        case "MutatingInfix":
           return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, "=", emit(e.value)];
         case "Identifier":
           return e.name;
-        case "TextLiteral":
-          return emitPythonTextLiteral(e.value, context.options.codepointRange);
-        case "IntegerLiteral":
+        case "Text":
+          return emitPythonText(e.value, context.options.codepointRange);
+        case "Integer":
           return emitIntLiteral(e, {
             10: ["", ""],
             16: ["0x", ""],
@@ -201,19 +206,15 @@ export default function emitProgram(
             emit(e.func),
             "(",
             e.args.length > 1 &&
-            e.args.every((x) => isTextLiteral(x) && charLength(x.value) === 1)
-              ? [
-                  "*",
-                  emit(
-                    text(e.args.map((x) => (x as TextLiteral).value).join(""))
-                  ),
-                ]
-              : joinExprs(",", e.args),
+            e.args.every(isText()) &&
+            e.args.every((x) => charLength(x.value) === 1)
+              ? ["*", emit(text(e.args.map((x) => x.value).join("")))]
+              : joinNodes(",", e.args),
             ")",
           ];
         case "PropertyCall":
           return [emit(e.object), ".", emit(e.ident)];
-        case "BinaryOp": {
+        case "Infix": {
           const rightAssoc = e.name === "**";
           return [
             emit(e.left, prec + (rightAssoc ? 1 : 0)),
@@ -221,16 +222,16 @@ export default function emitProgram(
             emit(e.right, prec + (rightAssoc ? 0 : 1)),
           ];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
-        case "ListConstructor":
-          return ["[", joinExprs(",", e.exprs), "]"];
-        case "TableConstructor":
+        case "List":
+          return ["[", joinNodes(",", e.exprs), "]"];
+        case "Table":
           return [
             "{",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
+              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "}",
           ];
@@ -240,10 +241,10 @@ export default function emitProgram(
         case "RangeIndexCall": {
           if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           const low = emit(e.low);
-          const low0 = isIntLiteral(e.low, 0n);
+          const low0 = isIntLiteral(0n)(e.low);
           const high = emit(e.high);
           const step = emit(e.step);
-          const step1 = isIntLiteral(e.step, 1n);
+          const step1 = isIntLiteral(1n)(e.step);
           return [
             emit(e.collection, Infinity),
             "[",
@@ -263,48 +264,5 @@ export default function emitProgram(
     if (prec >= minimumPrec) return inner;
     return ["(", inner, ")"];
   }
-  return emitMultiExpr(program.body, true);
-}
-
-export function emitPythonTextLiteral(
-  x: string,
-  [low, high]: [number, number] = [1, Infinity]
-): string {
-  function mapCodepoint(x: number) {
-    if (low <= x && x <= high) return String.fromCharCode(x);
-    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
-    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
-    return `\\U${x.toString(16).padStart(8, "0")}`;
-  }
-  return emitTextLiteral(
-    x,
-    [
-      [
-        `"`,
-        [
-          [`\\`, `\\\\`],
-          [`\n`, `\\n`],
-          [`\r`, `\\r`],
-          [`"`, `\\"`],
-        ],
-      ],
-      [
-        `'`,
-        [
-          [`\\`, `\\\\`],
-          [`\n`, `\\n`],
-          [`\r`, `\\r`],
-          [`'`, `\\'`],
-        ],
-      ],
-      [
-        `"""`,
-        [
-          [`\\`, `\\\\`],
-          [`"""`, `\\"""`],
-        ],
-      ],
-    ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined
-  );
+  return emitMultiNode(program, true);
 }

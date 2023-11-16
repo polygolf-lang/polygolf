@@ -6,6 +6,8 @@ After making a change, run `npm run build` before running the cli as `node dist/
 
 To run tests, run `npm run test`.
 
+To see which Polygolf features are compilable to the target languages, run `npm run cover` or `npm run cover-all`.
+
 The npm alias `npm run cli` is equivalent to `npm run build; node dist/cli.js`
 
 Some concepts (visitor, Path, etc.) are similar to those used by the JavaScript transpiler Babel, so the [Babel plugin handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md) is worth skimming.
@@ -59,7 +61,7 @@ Plugins are implemented in the `src/plugins` folder.
 
 **Planned plugins & idioms:**
 
-[Plugin issues](https://github.com/jared-hughes/polygolf/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement+label%3Aplugin)
+[Plugin issues](https://github.com/polygolf-lang/polygolf/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement+label%3Aplugin)
 
 ## Intermediate Representation (IR) Transformations
 

@@ -1,51 +1,48 @@
+import type { Spine } from "../common/Spine";
 import {
-  Assignment,
-  ManyToManyAssignment,
-  OneToManyAssignment,
-  VarDeclarationWithAssignment,
-  MutatingBinaryOp,
-  VarDeclaration,
-  VarDeclarationBlock,
+  type Assignment,
+  type ManyToManyAssignment,
+  type OneToManyAssignment,
+  type VarDeclarationWithAssignment,
+  type MutatingInfix,
+  type VarDeclaration,
+  type VarDeclarationBlock,
 } from "./assignments";
+import { type Array, type List, type Table, type Set } from "./collections";
 import {
-  ArrayConstructor,
-  ListConstructor,
-  TableConstructor,
-  SetConstructor,
-} from "./collections";
-import {
-  PolygolfOp,
-  BinaryOp,
-  ConditionalOp,
-  FunctionCall,
-  MethodCall,
-  UnaryOp,
-  IndexCall,
-  KeyValue,
-  RangeIndexCall,
-  Function,
-  NamedArg,
-  ImplicitConversion,
-  PropertyCall,
+  type Op,
+  type Infix,
+  type ConditionalOp,
+  type FunctionCall,
+  type MethodCall,
+  type Prefix,
+  type IndexCall,
+  type KeyValue,
+  type RangeIndexCall,
+  type Function,
+  type NamedArg,
+  type ImplicitConversion,
+  type PropertyCall,
+  type Postfix,
 } from "./exprs";
 import {
-  ForRange,
-  ForEach,
-  ForEachKey,
-  ForEachPair,
-  ForCLike,
-  WhileLoop,
-  ForArgv,
-  ForDifferenceRange,
+  type ForRange,
+  type ForEach,
+  type ForEachKey,
+  type ForEachPair,
+  type ForCLike,
+  type While,
+  type ForArgv,
+  type ForDifferenceRange,
 } from "./loops";
 import {
-  AnyIntegerLiteral,
-  Identifier,
-  IntegerLiteral,
-  TextLiteral,
+  type AnyInteger,
+  type Identifier,
+  type Integer,
+  type Text,
 } from "./terminals";
-import { Block, IfStatement, ImportStatement, Variants } from "./toplevel";
-import { Type } from "./types";
+import { type Block, type If, type Import, type Variants } from "./toplevel";
+import { type Type } from "./types";
 
 export * from "./assignments";
 export * from "./opcodes";
@@ -56,14 +53,13 @@ export * from "./terminals";
 export * from "./toplevel";
 export * from "./types";
 
-export interface BaseExpr extends BaseNode {
+export interface BaseNode {
+  readonly source?: SourcePointer;
   /** type: an uninferrable type, either annotated from the frontend or
    * inserted for language-specific op nodes */
   readonly type?: Type;
-}
-
-export interface BaseNode {
-  readonly source?: SourcePointer;
+  // & {} preserves the unioned literals, enabling autocomplete & lowering risk of typo
+  readonly targetType?: "bigint" | "int" | "string" | "char" | (string & {});
 }
 
 export interface SourcePointer {
@@ -71,30 +67,28 @@ export interface SourcePointer {
   readonly column: number;
 }
 
-export type Node = Program | Expr;
-
-export type Expr =
+export type Node =
   // Frontend nodes
   | Block
   | Variants
   | KeyValue
   | Function
-  | PolygolfOp
+  | Op
   | Assignment
   | FunctionCall
   | Identifier
-  | TextLiteral
-  | IntegerLiteral
-  | AnyIntegerLiteral
-  | ArrayConstructor
-  | ListConstructor
-  | SetConstructor
-  | TableConstructor
+  | Text
+  | Integer
+  | AnyInteger
+  | Array
+  | List
+  | Set
+  | Table
   | ConditionalOp
-  | WhileLoop
+  | While
   | ForRange
   | ForArgv
-  | IfStatement
+  | If
   // Other nodes
   | ImplicitConversion
   | VarDeclaration
@@ -102,14 +96,15 @@ export type Expr =
   | VarDeclarationBlock
   | ManyToManyAssignment
   | OneToManyAssignment
-  | MutatingBinaryOp
+  | MutatingInfix
   | IndexCall
   | RangeIndexCall
   | MethodCall
   | PropertyCall
-  | BinaryOp
-  | UnaryOp
-  | ImportStatement
+  | Infix
+  | Prefix
+  | Postfix
+  | Import
   | ForDifferenceRange
   | ForEach
   | ForEachKey
@@ -117,17 +112,20 @@ export type Expr =
   | ForCLike
   | NamedArg;
 
-/**
- * Program node. This should be the root node. Raw OK
- */
-export interface Program extends BaseNode {
-  readonly kind: "Program";
-  readonly body: Expr;
-}
+export type NodeFuncRecord<Tout, Tin extends Node = Node> = Tin extends Node
+  ? Record<Tin["kind"], (n: Tin, s: Spine<Tin>) => Tout>
+  : never;
 
-export function program(body: Expr): Program {
-  return {
-    kind: "Program",
-    body,
-  };
+export function getNodeFunc<Tout>(
+  nodeMapRecord: NodeFuncRecord<Tout>,
+): (n: Node, s: Spine) => Tout | undefined {
+  function result(node: Node, spine: Spine): Tout | undefined {
+    if (node.kind in nodeMapRecord) {
+      return (nodeMapRecord[node.kind as keyof typeof nodeMapRecord] as any)(
+        node,
+        spine,
+      );
+    }
+  }
+  return result;
 }

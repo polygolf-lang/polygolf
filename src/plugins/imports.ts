@@ -1,30 +1,20 @@
-import { Spine } from "../common/Spine";
-import { Plugin } from "../common/Language";
-import { block, Expr, importStatement, program } from "../IR";
+import { type Spine } from "../common/Spine";
+import { type Plugin } from "../common/Language";
+import { block, type Node, importStatement, isUserIdent } from "../IR";
 
 /**
  * @param rules Map from expr to a import it needs or array encoded map from symbol name to import.
- * @param output Mapping of collected import names to the Import Expr to be added or a name to be used for ImportStatement.
+ * @param output Mapping of collected import names to the Import Node to be added or a name to be used for Import.
  * @returns The import adding plugin.
  */
 export function addImports( // TODO caching
-  rules: [string, string][] | ((n: Expr, s: Spine) => string | undefined),
-  output: string | ((modules: string[]) => Expr | undefined)
+  rules: Record<string, string> | ((n: Node, s: Spine) => string | undefined),
+  output: string | ((modules: string[]) => Node | undefined) = "import",
 ): Plugin {
-  let rulesFunc: (n: Expr, s: Spine) => string | undefined;
-  if (Array.isArray(rules)) {
-    const map = new Map(rules);
-    rulesFunc = function (x: Expr) {
-      if (map.has(x.kind)) return map.get(x.kind)!;
-      if (
-        ((x.kind === "Identifier" && x.builtin) ||
-          x.kind === "BinaryOp" ||
-          x.kind === "UnaryOp") &&
-        map.has(x.name)
-      ) {
-        return map.get(x.name)!;
-      }
-    };
+  let rulesFunc: (n: Node, s: Spine) => string | undefined;
+  if (typeof rules === "object") {
+    rulesFunc = (x) =>
+      rules[x.kind] ?? (isUserIdent()(x) ? undefined : rules[(x as any).name]);
   } else rulesFunc = rules;
 
   const outputFunc =
@@ -34,14 +24,12 @@ export function addImports( // TODO caching
 
   return {
     name: "addImports(...)",
-    visit(node, spine) {
-      if (node.kind !== "Program") return;
-      const modules = spine.compactMap((n, s) =>
-        n.kind === "Program" ? undefined : rulesFunc(n, s)
-      );
-      const outputExpr = outputFunc([...new Set(modules)]);
-      if (outputExpr !== undefined) {
-        return program(block([outputExpr, node.body]));
+    visit(node, spine, context) {
+      context.skipChildren();
+      const modules = spine.compactMap(rulesFunc);
+      const outputNode = outputFunc([...new Set(modules)]);
+      if (outputNode !== undefined) {
+        return block([outputNode, node]);
       }
     },
   };

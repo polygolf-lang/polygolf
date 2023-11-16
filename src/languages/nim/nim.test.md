@@ -123,10 +123,10 @@ b or b
 ## Misc
 
 ```polygolf
-print (list_get (text_split "abc" "b") 0);
+println (list_get (text_split "abc" "b") 0);
 ```
 
-```nim
+```nim nogolf
 include re
 "abc".split"b"[0].echo
 ```
@@ -192,7 +192,7 @@ for_argv $x 100 {
 
 ```nim
 import os
-for x in commandLineParams():x.echo
+for x in..99:(paramStr 1+x).echo
 ```
 
 ```polygolf

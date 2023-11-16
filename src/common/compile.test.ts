@@ -1,8 +1,8 @@
-import { isPolygolfOp, isTextLiteral, text } from "@/IR";
+import { isOp, isText, text } from "@/IR";
 import {
-  Language,
+  type Language,
   defaultDetokenizer,
-  Plugin,
+  type Plugin,
   search,
   required,
 } from "./Language";
@@ -15,38 +15,38 @@ const textLang: Language = {
   name: "text",
   extension: "txt",
   emitter(program, context) {
-    return (
-      program.body.kind === "Block" ? program.body.children : [program.body]
-    ).map((x) => {
-      if (isPolygolfOp(x) && isTextLiteral(x.args[0])) {
-        if (x.args[0].value.endsWith("X")) {
-          context.addWarning(new PolygolfError("global warning"), true);
+    return (program.kind === "Block" ? program.children : [program]).map(
+      (x) => {
+        if (isOp()(x) && isText()(x.args[0])) {
+          if (x.args[0].value.endsWith("X")) {
+            context.addWarning(new PolygolfError("global warning"), true);
+            context.addWarning(
+              new PolygolfError("local warning that should not be visible"),
+              false,
+            );
+          }
           context.addWarning(
-            new PolygolfError("local warning that should not be visible"),
-            false
+            new PolygolfError("local warning that should be visible"),
+            false,
           );
-        }
-        context.addWarning(
-          new PolygolfError("local warning that should be visible"),
-          false
-        );
-        return [x.args[0].value];
-      } else throw new EmitError(x);
-    });
+          return [x.args[0].value];
+        } else throw new EmitError(x);
+      },
+    );
   },
   detokenizer: defaultDetokenizer(() => false),
   phases: [
     search({
       name: "trimEnd",
       visit(node) {
-        return isTextLiteral(node) ? text(node.value.trimEnd()) : undefined;
+        return isText()(node) ? text(node.value.trimEnd()) : undefined;
       },
     }),
     required(nopPlugin("noop")),
     search({
       name: "appendX",
       visit(node) {
-        return isTextLiteral(node) ? text(node.value + "X") : undefined;
+        return isText()(node) ? text(node.value + "X") : undefined;
       },
     }),
   ],
@@ -60,7 +60,7 @@ function compile1(
   return compile(
     source,
     compilationOptionsFromKeywords(compilationKeywords),
-    language
+    language,
   )[0];
 }
 
@@ -77,19 +77,19 @@ describe("Pick shortest variant", () => {
 
 describe("Warnings", () => {
   const warnings = compile1(testProgram, textLang).warnings.map(
-    (x) => x.message
+    (x) => x.message,
   );
   test("global warning and local warning on the shortest path show up", () => {
     expect(warnings).toEqual(
       expect.arrayContaining([
         "global warning",
         "local warning that should be visible",
-      ])
+      ]),
     );
   });
   test("local warning on longer path don't show up", () => {
     expect(warnings).not.toEqual(
-      expect.arrayContaining(["local warning that should not be visible"])
+      expect.arrayContaining(["local warning that should not be visible"]),
     );
   });
 });
@@ -126,7 +126,7 @@ describe("Plugin application sequence", () => {
   for (let i = 1; i <= 4; i++) {
     describe(`Random run ${i}`, () => {
       const history = compile1(testProgram, randomLang).history.map(
-        (x) => x[1]
+        (x) => x[1],
       );
       test("Sequence of phases is respected", () => {
         expect(history).toEqual([...history].sort());

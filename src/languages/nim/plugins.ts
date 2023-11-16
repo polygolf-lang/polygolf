@@ -1,15 +1,19 @@
 import {
+  type Node,
   importStatement,
   integerType,
-  isPolygolfOp,
+  isIdent,
+  isOfKind,
+  isOp,
   isSubtype,
-  isTextLiteral,
+  isText,
   methodCall,
-  polygolfOp,
+  op,
 } from "../../IR";
 import { getType } from "../../common/getType";
-import { Plugin } from "../../common/Language";
+import type { Plugin } from "../../common/Language";
 import { addImports } from "../../plugins/imports";
+import type { Spine } from "../../common/Spine";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -34,18 +38,18 @@ const includes: [string, string[]][] = [
 ];
 
 export const addNimImports: Plugin = addImports(
-  [
-    ["^", "math"],
-    ["repeat", "strutils"],
-    ["replace", "strutils"],
-    ["multireplace", "strutils"],
-    ["join", "strutils"],
-    ["paramStr", "os"],
-    ["commandLineParams", "os"],
-    ["split", "strutils"],
-    ["hash", "hashes"],
-    ["TableConstructor", "tables"],
-  ],
+  {
+    "^": "math",
+    repeat: "strutils",
+    replace: "strutils",
+    multireplace: "strutils",
+    join: "strutils",
+    paramStr: "os",
+    commandLineParams: "os",
+    split: "strutils",
+    hash: "hashes",
+    Table: "tables",
+  },
   (modules: string[]) => {
     if (modules.length < 1) return;
     for (const include of includes) {
@@ -55,36 +59,26 @@ export const addNimImports: Plugin = addImports(
       }
     }
     return importStatement("import", modules);
-  }
+  },
 );
 
-export const useUnsignedDivision: Plugin = {
-  name: "useUnsignedDivision",
-  visit(node, spine) {
-    if (isPolygolfOp(node, "trunc_div", "rem")) {
-      return isSubtype(getType(node.args[0], spine), integerType(0)) &&
-        isSubtype(getType(node.args[0], spine), integerType(0))
-        ? polygolfOp(`unsigned_${node.op}`, ...node.args)
-        : undefined;
-    }
-  },
-};
+export function useUnsignedDivision(node: Node, spine: Spine) {
+  if (isOp("trunc_div", "rem")(node)) {
+    return isSubtype(getType(node.args[0], spine), integerType(0)) &&
+      isSubtype(getType(node.args[0], spine), integerType(0))
+      ? op(`unsigned_${node.op}`, ...node.args)
+      : undefined;
+  }
+}
 
-export const useUFCS: Plugin = {
-  name: "useUFCS",
-  visit(node) {
-    if (node.kind === "FunctionCall" && node.args.length > 0) {
-      if (node.args.length === 1 && isTextLiteral(node.args[0])) {
-        return;
-      }
-      const [obj, ...args] = node.args;
-      if (
-        obj.kind !== "BinaryOp" &&
-        obj.kind !== "UnaryOp" &&
-        node.func.kind === "Identifier"
-      ) {
-        return methodCall(obj, node.func, ...args);
-      }
+export function useUFCS(node: Node) {
+  if (node.kind === "FunctionCall" && node.args.length > 0) {
+    if (node.args.length === 1 && isText()(node.args[0])) {
+      return;
     }
-  },
-};
+    const [obj, ...args] = node.args;
+    if (!isOfKind("Infix", "Prefix")(obj) && isIdent()(node.func)) {
+      return methodCall(obj, node.func, ...args);
+    }
+  }
+}

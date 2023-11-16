@@ -1,4 +1,4 @@
-import { IR } from "../IR";
+import { type IR } from "../IR";
 
 /**
  * The edge in the tree taking a Path to its child
@@ -62,7 +62,7 @@ export function* getChildren(node: IR.Node): Generator<IR.Node> {
  * of `node`'s properties such as boolean flags and string opcodes. */
 export function fromChildRemapFunc(
   node: IR.Node,
-  func: (frag: PathFragment) => IR.Node
+  func: (frag: PathFragment) => IR.Node,
 ): IR.Node {
   const newNode: any = { ...node };
   let changed = false;

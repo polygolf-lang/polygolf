@@ -1,14 +1,21 @@
-import { Expr, Identifier, id, int, block, BaseExpr } from "./IR";
+import {
+  type Node,
+  type Identifier,
+  id,
+  int,
+  block,
+  type BaseNode,
+} from "./IR";
 
 /**
  * A while loop. Raw OK
  *
  * while (condition) { body }.
  */
-export interface WhileLoop extends BaseExpr {
-  readonly kind: "WhileLoop";
-  readonly condition: Expr;
-  readonly body: Expr;
+export interface While extends BaseNode {
+  readonly kind: "While";
+  readonly condition: Node;
+  readonly body: Node;
 }
 
 /**
@@ -19,14 +26,14 @@ export interface WhileLoop extends BaseExpr {
  *
  * Python: for variable in range(low, high, increment):body.
  */
-export interface ForRange extends BaseExpr {
+export interface ForRange extends BaseNode {
   readonly kind: "ForRange";
   readonly inclusive: boolean;
   readonly variable: Identifier | undefined;
-  readonly start: Expr;
-  readonly end: Expr;
-  readonly increment: Expr;
-  readonly body: Expr;
+  readonly start: Node;
+  readonly end: Node;
+  readonly increment: Node;
+  readonly body: Node;
 }
 
 /**
@@ -37,14 +44,14 @@ export interface ForRange extends BaseExpr {
  *
  * Python: for variable in range(low, low+difference, increment):body.
  */
-export interface ForDifferenceRange extends BaseExpr {
+export interface ForDifferenceRange extends BaseNode {
   readonly kind: "ForDifferenceRange";
   readonly inclusive: boolean;
   readonly variable: Identifier;
-  readonly start: Expr;
-  readonly difference: Expr;
-  readonly increment: Expr;
-  readonly body: Expr;
+  readonly start: Node;
+  readonly difference: Node;
+  readonly increment: Node;
+  readonly body: Node;
 }
 
 /**
@@ -52,11 +59,11 @@ export interface ForDifferenceRange extends BaseExpr {
  *
  * Python: for variable in collection:body.
  */
-export interface ForEach extends BaseExpr {
+export interface ForEach extends BaseNode {
   readonly kind: "ForEach";
   readonly variable: Identifier;
-  readonly collection: Expr;
-  readonly body: Expr;
+  readonly collection: Node;
+  readonly body: Node;
 }
 
 /**
@@ -64,11 +71,11 @@ export interface ForEach extends BaseExpr {
  *
  * Python: for variable in array:body.
  */
-export interface ForEachKey extends BaseExpr {
+export interface ForEachKey extends BaseNode {
   readonly kind: "ForEachKey";
   readonly variable: Identifier;
-  readonly table: Expr;
-  readonly body: Expr;
+  readonly table: Node;
+  readonly body: Node;
 }
 
 /**
@@ -76,12 +83,12 @@ export interface ForEachKey extends BaseExpr {
  *
  * C: for(init;condition;append){body}.
  */
-export interface ForCLike extends BaseExpr {
+export interface ForCLike extends BaseNode {
   readonly kind: "ForCLike";
-  readonly init: Expr;
-  readonly condition: Expr;
-  readonly append: Expr;
-  readonly body: Expr;
+  readonly init: Node;
+  readonly condition: Node;
+  readonly append: Node;
+  readonly body: Node;
 }
 
 /**
@@ -89,36 +96,36 @@ export interface ForCLike extends BaseExpr {
  *
  * Python: for variable in array:body.
  */
-export interface ForEachPair extends BaseExpr {
+export interface ForEachPair extends BaseNode {
   readonly kind: "ForEachPair";
   readonly keyVariable: Identifier;
   readonly valueVariable: Identifier;
-  readonly table: Expr;
-  readonly body: Expr;
+  readonly table: Node;
+  readonly body: Node;
 }
 
 /**
  * A loop over argv, with upper bound of argc.
  *
  */
-export interface ForArgv extends BaseExpr {
+export interface ForArgv extends BaseNode {
   readonly kind: "ForArgv";
   readonly variable: Identifier;
   readonly argcUpperBound: number;
-  readonly body: Expr;
+  readonly body: Node;
 }
 
-export function whileLoop(condition: Expr, body: Expr): WhileLoop {
-  return { kind: "WhileLoop", condition, body };
+export function whileLoop(condition: Node, body: Node): While {
+  return { kind: "While", condition, body };
 }
 
 export function forRange(
   variable: Identifier | string | undefined,
-  start: Expr,
-  end: Expr,
-  increment: Expr,
-  body: Expr,
-  inclusive: boolean = false
+  start: Node,
+  end: Node,
+  increment: Node,
+  body: Node,
+  inclusive: boolean = false,
 ): ForRange {
   return {
     kind: "ForRange",
@@ -133,11 +140,11 @@ export function forRange(
 
 export function forDifferenceRange(
   variable: Identifier | string,
-  start: Expr,
-  difference: Expr,
-  increment: Expr,
-  body: Expr,
-  inclusive: boolean = false
+  start: Node,
+  difference: Node,
+  increment: Node,
+  body: Node,
+  inclusive: boolean = false,
 ): ForDifferenceRange {
   return {
     kind: "ForDifferenceRange",
@@ -151,8 +158,8 @@ export function forDifferenceRange(
 }
 
 export function forRangeCommon(
-  bounds: [string, Expr | number, Expr | number, (Expr | number)?, boolean?],
-  ...body: readonly Expr[]
+  bounds: [string, Node | number, Node | number, (Node | number)?, boolean?],
+  ...body: readonly Node[]
 ): ForRange {
   return forRange(
     bounds[0],
@@ -164,14 +171,14 @@ export function forRangeCommon(
       ? int(BigInt(bounds[3]))
       : bounds[3],
     body.length > 1 ? block(body) : body[0],
-    bounds[4]
+    bounds[4],
   );
 }
 
 export function forEach(
   variable: Identifier | string,
-  collection: Expr,
-  body: Expr
+  collection: Node,
+  body: Node,
 ): ForEach {
   return {
     kind: "ForEach",
@@ -183,8 +190,8 @@ export function forEach(
 
 export function forEachKey(
   variable: Identifier | string,
-  table: Expr,
-  body: Expr
+  table: Node,
+  body: Node,
 ): ForEachKey {
   return {
     kind: "ForEachKey",
@@ -195,10 +202,10 @@ export function forEachKey(
 }
 
 export function forCLike(
-  init: Expr,
-  condition: Expr,
-  append: Expr,
-  body: Expr
+  init: Node,
+  condition: Node,
+  append: Node,
+  body: Node,
 ): ForCLike {
   return {
     kind: "ForCLike",
@@ -212,8 +219,8 @@ export function forCLike(
 export function forEachPair(
   keyVariable: Identifier | string,
   valueVariable: Identifier | string,
-  table: Expr,
-  body: Expr
+  table: Node,
+  body: Node,
 ): ForEachPair {
   return {
     kind: "ForEachPair",
@@ -229,7 +236,7 @@ export function forEachPair(
 export function forArgv(
   variable: Identifier,
   argcUpperBound: number,
-  body: Expr
+  body: Node,
 ): ForArgv {
   return {
     kind: "ForArgv",

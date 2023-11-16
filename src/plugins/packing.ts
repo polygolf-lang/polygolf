@@ -1,62 +1,59 @@
-import { TextDecoder, TextEncoder } from "util";
-import { Plugin } from "../common/Language";
 import {
+  type Node,
   assignment,
   block,
   forRangeCommon,
   id,
   int,
-  isPolygolfOp,
-  isTextLiteral,
-  polygolfOp,
+  isOp,
+  isText,
+  op,
   print,
   text,
 } from "../IR";
 import { byteLength } from "../common/objective";
+import type { Spine } from "../common/Spine";
 
-export const useDecimalConstantPackedPrinter: Plugin = {
-  name: "useDecimalConstantPackedPrinter",
-  visit(node) {
-    if (
-      isPolygolfOp(node, "print", "println") &&
-      isTextLiteral(node.args[0]) &&
-      isLargeDecimalConstant(node.args[0].value)
-    ) {
-      const [prefix, main] = node.args[0].value.replace(".", ".,").split(",");
-      const packed = packDecimal(main);
-      return block([
-        assignment("result", text(prefix)),
-        forRangeCommon(
-          ["packindex", 0, packed.length],
-          assignment(
-            "result",
-            polygolfOp(
-              "concat",
-              id("result"),
-              polygolfOp(
-                "text_get_byte_slice",
-                polygolfOp(
-                  "int_to_text",
-                  polygolfOp(
-                    "add",
-                    int(72n),
-                    polygolfOp(
-                      "text_byte_to_int",
-                      polygolfOp("text_get_byte", text(packed), id("packindex"))
-                    )
-                  )
+export function useDecimalConstantPackedPrinter(node: Node, spine: Spine) {
+  if (
+    isOp("print", "println")(node) &&
+    isText()(node.args[0]) &&
+    isLargeDecimalConstant(node.args[0].value)
+  ) {
+    const [prefix, main] = node.args[0].value.replace(".", ".,").split(",");
+    const packed = packDecimal(main);
+    return block([
+      assignment("result", text(prefix)),
+      forRangeCommon(
+        ["packindex", 0, packed.length],
+        assignment(
+          "result",
+          op(
+            "concat",
+            id("result"),
+            op(
+              "text_get_byte_slice",
+              op(
+                "int_to_text",
+                op(
+                  "add",
+                  int(72n),
+                  op(
+                    "text_byte_to_int",
+                    op("text_get_byte", text(packed), id("packindex")),
+                  ),
                 ),
-                int(1n),
-                int(2n)
-              )
-            )
-          )
+              ),
+              int(1n),
+              int(2n),
+            ),
+          ),
         ),
-        print(id("result")),
-      ]);
-    }
-  },
-};
+      ),
+      print(id("result")),
+    ]);
+  }
+}
 
 function isLargeDecimalConstant(output: string): boolean {
   return /^\d\.\d*$/.test(output) && output.length > 200;
@@ -69,19 +66,16 @@ function packDecimal(decimal: string): string {
   return result;
 }
 
-export const useLowDecimalListPackedPrinter: Plugin = {
-  name: "useLowDecimalListPackedPrinter",
-  visit(node) {
-    if (isPolygolfOp(node, "print", "println") && isTextLiteral(node.args[0])) {
-      const packed = packLowDecimalList(node.args[0].value);
-      if (packed === null) return;
-      return forRangeCommon(
-        ["packindex", 0, packed.length],
-        print(polygolfOp("text_get_byte_to_int", text(packed), id("packindex")))
-      );
-    }
-  },
-};
+export function useLowDecimalListPackedPrinter(node: Node) {
+  if (isOp("print", "println")(node) && isText()(node.args[0])) {
+    const packed = packLowDecimalList(node.args[0].value);
+    if (packed === null) return;
+    return forRangeCommon(
+      ["packindex", 0, packed.length],
+      print(op("text_get_byte_to_int", text(packed), id("packindex"))),
+    );
+  }
+}
 
 function packLowDecimalList(value: string): string | null {
   if (/^[\d+\n]+[\d+]$/.test(value)) {

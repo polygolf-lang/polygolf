@@ -1,18 +1,72 @@
-import { TokenTree } from "../../common/Language";
+import { type TokenTree } from "../../common/Language";
 import {
   EmitError,
   emitIntLiteral,
-  emitTextLiteral,
+  emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { IR, isIntLiteral } from "../../IR";
-import { CompilationContext } from "@/common/compile";
+import { type IR, isIntLiteral } from "../../IR";
+import { type CompilationContext } from "@/common/compile";
 
-function precedence(expr: IR.Expr): number {
+const unicode01to09repls = {
+  "\u{1}": `\\u{1}`,
+  "\u{2}": `\\u{2}`,
+  "\u{3}": `\\u{3}`,
+  "\u{4}": `\\u{4}`,
+  "\u{5}": `\\u{5}`,
+  "\u{6}": `\\u{6}`,
+  "\u{7}": `\\u{7}`,
+  "\u{8}": `\\u{8}`,
+  "\u{9}": `\\u{9}`,
+} as const;
+const unicode0Bto1Frepls = {
+  "\u{b}": `\\u{b}`,
+  "\u{c}": `\\u{c}`,
+  "\u{d}": `\\u{d}`,
+  "\u{e}": `\\u{e}`,
+  "\u{f}": `\\u{f}`,
+  "\u{10}": `\\u{10}`,
+  "\u{11}": `\\u{11}`,
+  "\u{12}": `\\u{12}`,
+  "\u{13}": `\\u{13}`,
+  "\u{14}": `\\u{14}`,
+  "\u{15}": `\\u{15}`,
+  "\u{16}": `\\u{16}`,
+  "\u{17}": `\\u{17}`,
+  "\u{18}": `\\u{18}`,
+  "\u{19}": `\\u{19}`,
+  "\u{1a}": `\\u{1a}`,
+  "\u{1b}": `\\u{1b}`,
+  "\u{1c}": `\\u{1c}`,
+  "\u{1d}": `\\u{1d}`,
+  "\u{1e}": `\\u{1e}`,
+  "\u{1f}": `\\u{1f}`,
+} as const;
+
+const emitSwiftText = emitTextFactory(
+  {
+    '"TEXT"': {
+      "\\": `\\\\`,
+      ...unicode01to09repls,
+      "\u{a}": `\\n`,
+      ...unicode0Bto1Frepls,
+      '"': `\\"`,
+    },
+    '"""\nTEXT\n"""': {
+      "\\": `\\\\`,
+      ...unicode01to09repls,
+      ...unicode0Bto1Frepls,
+      '"""': `\\"""`,
+    },
+  },
+  (x) => `\\u{${x.toString(16)}}`,
+);
+
+function precedence(expr: IR.Node): number {
   switch (expr.kind) {
-    case "UnaryOp":
+    case "Prefix":
       return unaryPrecedence(expr.name);
-    case "BinaryOp":
+    case "Infix":
       return binaryPrecedence(expr.name);
   }
   return Infinity;
@@ -46,7 +100,7 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   throw new Error(
-    `Programming error - unknown Swift binary operator '${opname}.'`
+    `Programming error - unknown Swift binary operator '${opname}.'`,
   );
 }
 
@@ -55,17 +109,17 @@ function unaryPrecedence(opname: string): number {
 }
 
 export default function emitProgram(
-  program: IR.Program,
-  context: CompilationContext
+  program: IR.Node,
+  context: CompilationContext,
 ): TokenTree {
-  function joinExprs(
+  function joinNodes(
     delim: TokenTree,
-    exprs: readonly IR.Expr[],
-    minPrec = -Infinity
+    exprs: readonly IR.Node[],
+    minPrec = -Infinity,
   ) {
     return joinTrees(
       delim,
-      exprs.map((x) => emit(x, minPrec))
+      exprs.map((x) => emit(x, minPrec)),
     );
   }
 
@@ -75,27 +129,27 @@ export default function emitProgram(
    * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
    * @returns Token tree corresponding to the expression.
    */
-  function emit(expr: IR.Expr, minimumPrec = -Infinity): TokenTree {
+  function emit(expr: IR.Node, minimumPrec = -Infinity): TokenTree {
     const prec = precedence(expr);
-    function emitNoParens(e: IR.Expr): TokenTree {
+    function emitNoParens(e: IR.Node): TokenTree {
       switch (e.kind) {
         case "VarDeclarationBlock":
-          return ["var", joinExprs(",", e.children)];
+          return ["var", joinNodes(",", e.children)];
         case "VarDeclarationWithAssignment":
           return emit(e.assignment);
         case "Block":
-          return emitMultiExpr(e);
-        case "ImportStatement":
+          return emitMultiNode(e);
+        case "Import":
           return [e.name, joinTrees(",", e.modules)];
-        case "WhileLoop":
-          return [`while`, emit(e.condition), emitMultiExpr(e.body)];
+        case "While":
+          return [`while`, emit(e.condition), emitMultiNode(e.body)];
         case "ForEach":
           return [
             `for`,
             emit(e.variable),
             "in",
             emit(e.collection),
-            emitMultiExpr(e.body),
+            emitMultiNode(e.body),
           ];
         case "ForRange": {
           const start = emit(e.start);
@@ -104,7 +158,7 @@ export default function emitProgram(
             "for",
             e.variable === undefined ? "_" : emit(e.variable),
             "in",
-            isIntLiteral(e.increment, 1n)
+            isIntLiteral(1n)(e.increment)
               ? [start, e.inclusive ? "..." : "..<", end]
               : [
                   "stride",
@@ -116,16 +170,16 @@ export default function emitProgram(
                   ]),
                   ")",
                 ],
-            emitMultiExpr(e.body),
+            emitMultiNode(e.body),
           ];
         }
-        case "IfStatement":
+        case "If":
           return [
             "if",
             emit(e.condition),
-            emitMultiExpr(e.consequent),
+            emitMultiNode(e.consequent),
             e.alternate !== undefined
-              ? ["else", emitMultiExpr(e.alternate)]
+              ? ["else", emitMultiNode(e.alternate)]
               : [],
           ];
         case "Variants":
@@ -135,20 +189,18 @@ export default function emitProgram(
           throw new EmitError(e);
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
-        case "MutatingBinaryOp":
+        case "MutatingInfix":
           return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, ":", emit(e.value)];
         case "Identifier":
           return e.name;
-        case "TextLiteral":
-          return emitSwiftTextLiteral(e.value, context.options.codepointRange);
-        case "IntegerLiteral":
+        case "Text":
+          return emitSwiftText(e.value, context.options.codepointRange);
+        case "Integer":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
-          if (e.func.kind === "Identifier" && e.func.name === "!")
-            return [emit(e.args[0]), "!"]; // TODO consider using special Postfix unary operator node
-          return [emit(e.func), "(", joinExprs(",", e.args), ")"];
+          return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "PropertyCall":
           return [emit(e.object), ".", e.ident.name];
         case "MethodCall":
@@ -157,7 +209,7 @@ export default function emitProgram(
             ".",
             e.ident.name,
             "(",
-            joinExprs(", ", e.args),
+            joinNodes(", ", e.args),
             ")",
           ];
         case "ConditionalOp":
@@ -168,19 +220,21 @@ export default function emitProgram(
             ":",
             emit(e.alternate),
           ];
-        case "BinaryOp": {
+        case "Infix": {
           return [emit(e.left, prec), e.name, emit(e.right, prec + 1)];
         }
-        case "UnaryOp":
+        case "Prefix":
           return [e.name, emit(e.arg, prec)];
-        case "ListConstructor":
-          return ["[", joinExprs(",", e.exprs), "]"];
-        case "TableConstructor":
+        case "Postfix":
+          return [emit(e.arg, prec), e.name];
+        case "List":
+          return ["[", joinNodes(",", e.exprs), "]"];
+        case "Table":
           return [
             "[",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)])
+              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "]",
           ];
@@ -190,7 +244,7 @@ export default function emitProgram(
             "[",
             emit(e.index),
             "]",
-            e.collection.kind === "TableConstructor" ? "!" : "",
+            e.collection.kind === "Table" ? "!" : "",
           ];
 
         default:
@@ -203,82 +257,12 @@ export default function emitProgram(
     return ["(", inner, ")"];
   }
 
-  function emitMultiExpr(baseExpr: IR.Expr, isRoot = false): TokenTree {
-    const children = baseExpr.kind === "Block" ? baseExpr.children : [baseExpr];
+  function emitMultiNode(BaseNode: IR.Node, isRoot = false): TokenTree {
+    const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
     if (isRoot) {
-      return joinExprs("\n", children);
+      return joinNodes("\n", children);
     }
-    return ["{", joinExprs("\n", children), "}"];
+    return ["{", joinNodes("\n", children), "}"];
   }
-  return emitMultiExpr(program.body, true);
-}
-
-const unicode01to09repls: [string, string][] = [
-  [`\u{1}`, `\\u{1}`],
-  [`\u{2}`, `\\u{2}`],
-  [`\u{3}`, `\\u{3}`],
-  [`\u{4}`, `\\u{4}`],
-  [`\u{5}`, `\\u{5}`],
-  [`\u{6}`, `\\u{6}`],
-  [`\u{7}`, `\\u{7}`],
-  [`\u{8}`, `\\u{8}`],
-  [`\u{9}`, `\\u{9}`],
-];
-const unicode0Bto1Frepls: [string, string][] = [
-  [`\u{b}`, `\\u{b}`],
-  [`\u{c}`, `\\u{c}`],
-  [`\u{d}`, `\\u{d}`],
-  [`\u{e}`, `\\u{e}`],
-  [`\u{f}`, `\\u{f}`],
-  [`\u{10}`, `\\u{10}`],
-  [`\u{11}`, `\\u{11}`],
-  [`\u{12}`, `\\u{12}`],
-  [`\u{13}`, `\\u{13}`],
-  [`\u{14}`, `\\u{14}`],
-  [`\u{15}`, `\\u{15}`],
-  [`\u{16}`, `\\u{16}`],
-  [`\u{17}`, `\\u{17}`],
-  [`\u{18}`, `\\u{18}`],
-  [`\u{19}`, `\\u{19}`],
-  [`\u{1a}`, `\\u{1a}`],
-  [`\u{1b}`, `\\u{1b}`],
-  [`\u{1c}`, `\\u{1c}`],
-  [`\u{1d}`, `\\u{1d}`],
-  [`\u{1e}`, `\\u{1e}`],
-  [`\u{1f}`, `\\u{1f}`],
-];
-
-function emitSwiftTextLiteral(
-  x: string,
-  [low, high]: [number, number] = [1, Infinity]
-): string {
-  function mapCodepoint(x: number) {
-    if (low <= x && x <= high) return String.fromCharCode(x);
-    return `\\u{${x.toString(16)}}`;
-  }
-  return emitTextLiteral(
-    x,
-    [
-      [
-        `"`,
-        [
-          [`\\`, `\\\\`],
-          ...unicode01to09repls,
-          [`\u{a}`, `\\n`],
-          ...unicode0Bto1Frepls,
-          [`"`, `\\"`],
-        ],
-      ],
-      [
-        [`"""\n`, `\n"""`],
-        [
-          [`\\`, `\\\\`],
-          ...unicode01to09repls,
-          ...unicode0Bto1Frepls,
-          [`"""`, `\\"""`],
-        ],
-      ],
-    ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined
-  );
+  return emitMultiNode(program, true);
 }
