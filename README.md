@@ -172,6 +172,9 @@ These symbolic aliases can also be used in an infix matter: `(+ 2 3)` is the sam
 Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`bit_and`,`bit_or`,`bit_xor`,`concat`.  
 For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
 
+There's alternative syntax for indexing assignment:
+`($collection @ $index) <- value;` is the same as `set_at $collection $index $value;`
+
 ## Example
 
 For more examples, search this repo for `*.test.md` files like [this one](src/programs/code.golf-default.test.md).

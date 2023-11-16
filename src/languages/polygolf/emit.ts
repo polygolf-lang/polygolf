@@ -15,6 +15,8 @@ import {
   isOpCode,
   isNullary,
   infixableOpCodeNames,
+  assignment,
+  op as opNode,
 } from "../../IR";
 
 /*
@@ -112,6 +114,17 @@ function emitNodeWithoutAnnotation(
           op = (opCodeDefinitions[op as OpCode] as any).front;
       }
     }
+    if (op === "set_at") {
+      return emitNodeWithoutAnnotation(
+        assignment(
+          opNode("at[Ascii]", args[0] as Node, args[1] as Node) as any,
+          args[2] as Node,
+        ),
+        asStatement,
+        indent,
+      );
+    }
+
     const result: TokenTree = [];
     if (!asStatement && !nullary) result.push("(");
     if (indent) result.push("$INDENT$", "\n");

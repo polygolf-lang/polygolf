@@ -66,6 +66,7 @@ import {
   OpCodeFrontNames,
   opCodeDefinitions,
   matchesOpCodeArity,
+  isOp,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -142,6 +143,14 @@ export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
       `Syntax error. Expected single variant block, but got ${e.kind}`,
       e.source,
     );
+  }
+  if (
+    callee === "assign" &&
+    isOp("@" as any)(args[0]) &&
+    args[0].args.length === 2
+  ) {
+    callee = "set_at";
+    args = [...args[0].args, args[1]];
   }
 
   switch (callee) {
@@ -395,11 +404,7 @@ export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
   if (arityMatchingOpCodes.length > 1) {
     // Hack! We temporarily assign the front name to the opCode field.
     // It will be resolved during typecheck.
-    return {
-      kind: "Op",
-      op: callee as OpCode,
-      args,
-    };
+    return op(callee as OpCode, ...args);
   }
 
   return op(arityMatchingOpCodes[0], ...args);
