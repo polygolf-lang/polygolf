@@ -41,7 +41,7 @@ export const opCodeDefinitions = {
   div: { args: [int(), int()], front: "div" },
   trunc_div: { args: [int(), int()] },
   unsigned_trunc_div: { args: [int(), int()] },
-  pow: { args: [int(), int()], front: "^" },
+  pow: { args: [int(), int(0)], front: "^" },
   mod: { args: [int(), int()], front: "mod" },
   rem: { args: [int(), int()] },
   unsigned_rem: { args: [int(), int()] },

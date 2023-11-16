@@ -47,6 +47,7 @@ import {
   opCodeDefinitions,
   type ArgTypes,
   OpCodeFrontNamesToOpCodes,
+  getLiteralOfType,
 } from "../IR";
 import { byteLength, charLength } from "./objective";
 import { PolygolfError } from "./errors";
@@ -267,10 +268,11 @@ function getTypeBitNot(t: IntegerType): IntegerType {
 
 export function getExampleOpCodeArgTypes(op: OpCode): Type[] {
   const type = opCodeDefinitions[op].args;
+  const instantiate = instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) });
   if (!("variadic" in type)) {
-    return type.map(instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) }));
+    return type.map(instantiate);
   }
-  return Array(type.min).fill(type.variadic);
+  return Array(type.min).fill(instantiate(type.variadic));
 }
 
 function expectedTypesToString(expectedTypes: ArgTypes): string {
@@ -287,52 +289,48 @@ function expectedTypesToString(expectedTypes: ArgTypes): string {
  * @returns True iff it is a match.
  */
 function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
-  if (!("variadic" in expectedTypes)) {
-    if (expectedTypes.length !== gotTypes.length) return false;
-    const params: Record<string, Type> = {};
-    const instantiate = instantiateGenerics(params);
-    let i = 0;
-    for (let exp of expectedTypes) {
-      const got = instantiate(gotTypes[i]);
-      exp = instantiate(exp);
-      if (exp.kind === "List" && got.kind === "List") {
-        if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
-          params[exp.member.name] = got.member;
-          exp = { ...exp, member: got.member };
-        }
-      } else if (exp.kind === "Array" && got.kind === "Array") {
-        if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
-          params[exp.member.name] = got.member;
-          exp = { ...exp, member: got.member };
-        }
-        if (exp.length.kind === "TypeArg" && !(exp.length.name in params)) {
-          params[exp.length.name] = got.length;
-          exp = { ...exp, length: got.length };
-        }
-      } else if (exp.kind === "Set" && got.kind === "Set") {
-        if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
-          params[exp.member.name] = got.member;
-          exp = { ...exp, member: got.member };
-        }
-      } else if (exp.kind === "Table" && got.kind === "Table") {
-        if (exp.key.kind === "TypeArg" && !(exp.key.name in params)) {
-          params[exp.key.name] = got.key;
-          exp = { ...exp, key: got.key };
-        }
-        if (exp.value.kind === "TypeArg" && !(exp.value.name in params)) {
-          params[exp.value.name] = got.value;
-          exp = { ...exp, value: got.value };
-        }
+  const variadic = "variadic" in expectedTypes;
+  if (variadic && expectedTypes.min > gotTypes.length) return false;
+  if (!variadic && expectedTypes.length !== gotTypes.length) return false;
+  const params: Record<string, Type> = {};
+  const instantiate = instantiateGenerics(params);
+  let i = 0;
+  for (let got of gotTypes) {
+    got = instantiate(got);
+    let exp = instantiate(variadic ? expectedTypes.variadic : expectedTypes[i]);
+    if (exp.kind === "List" && got.kind === "List") {
+      if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
+        params[exp.member.name] = got.member;
+        exp = { ...exp, member: got.member };
       }
-      if (!isSubtype(got, exp)) return false;
-      i++;
+    } else if (exp.kind === "Array" && got.kind === "Array") {
+      if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
+        params[exp.member.name] = got.member;
+        exp = { ...exp, member: got.member };
+      }
+      if (exp.length.kind === "TypeArg" && !(exp.length.name in params)) {
+        params[exp.length.name] = got.length;
+        exp = { ...exp, length: got.length };
+      }
+    } else if (exp.kind === "Set" && got.kind === "Set") {
+      if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
+        params[exp.member.name] = got.member;
+        exp = { ...exp, member: got.member };
+      }
+    } else if (exp.kind === "Table" && got.kind === "Table") {
+      if (exp.key.kind === "TypeArg" && !(exp.key.name in params)) {
+        params[exp.key.name] = got.key;
+        exp = { ...exp, key: got.key };
+      }
+      if (exp.value.kind === "TypeArg" && !(exp.value.name in params)) {
+        params[exp.value.name] = got.value;
+        exp = { ...exp, value: got.value };
+      }
     }
-    return true;
+    if (!isSubtype(got, exp)) return false;
+    i++;
   }
-  return (
-    gotTypes.length >= expectedTypes.min &&
-    gotTypes.every((x) => isSubtype(x, expectedTypes.variadic))
-  );
+  return true;
 }
 
 function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
@@ -738,11 +736,6 @@ export function getArithmeticType(
       }
       return int();
     case "pow": {
-      if (lt(b.low, 0n))
-        throw new Error(
-          `Type error. Operator 'pow' expected [-oo..oo, 0..oo] but got ` +
-            `[${toString(a)}, ${toString(b)}].`,
-        );
       const values: IntegerBound[] = [];
 
       // For unbounded b, the result must contain the following values:
