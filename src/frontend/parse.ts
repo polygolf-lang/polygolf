@@ -67,6 +67,7 @@ import {
   opCodeDefinitions,
   matchesOpCodeArity,
   isOp,
+  userName,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -83,7 +84,11 @@ export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
   if (callee in deprecatedAliases) {
     warnings.push(
       new PolygolfError(
-        `Deprecated alias used: ${callee}. Use ${deprecatedAliases[callee]} instead.`,
+        `Deprecated alias used: ${callee}. Use ${deprecatedAliases[callee]} ${
+          deprecatedAliases[callee] === userName(deprecatedAliases[callee])
+            ? ""
+            : `or ${userName(deprecatedAliases[callee])} `
+        }instead.`,
         calleeIdent.source,
       ),
     );

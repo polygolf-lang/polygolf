@@ -48,8 +48,8 @@ export const opCodeDefinitions = {
   bit_and: { args: variadic(int()), front: "&", assoc: true, commutes: true },
   bit_or: { args: variadic(int()), front: "|", assoc: true, commutes: true },
   bit_xor: { args: variadic(int()), front: "~", assoc: true, commutes: true },
-  bit_shift_left: { args: [int(), int()], front: "<<" },
-  bit_shift_right: { args: [int(), int()], front: ">>" },
+  bit_shift_left: { args: [int(), int(0)], front: "<<" },
+  bit_shift_right: { args: [int(), int(0)], front: ">>" },
   gcd: { args: variadic(int()), front: true, assoc: true, commutes: true },
   min: { args: variadic(int()), front: true, assoc: true, commutes: true },
   max: { args: variadic(int()), front: true, assoc: true, commutes: true },
@@ -256,6 +256,14 @@ export const OpCodeFrontNamesToOpCodes = Object.fromEntries(
 export const OpCodesUser = OpCodes.filter(
   (op) => "front" in opCodeDefinitions[op],
 );
+
+export function userName(opCode: OpCode) {
+  if ("front" in opCodeDefinitions[opCode]) {
+    return typeof (opCodeDefinitions[opCode] as any).front === "string"
+      ? (opCodeDefinitions[opCode] as any).front
+      : opCode;
+  }
+}
 
 /**
  * Returns parity of an op, -1 denotes variadic.

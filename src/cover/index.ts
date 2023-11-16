@@ -1,4 +1,4 @@
-import { getExampleOpCodeArgTypes, getType } from "../common/getType";
+import { getInstantiatedOpCodeArgTypes, getType } from "../common/getType";
 import type { Language } from "../common/Language";
 import {
   annotate,
@@ -166,7 +166,7 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
       lang.stmt(
         op(
           opCode,
-          ...getExampleOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
+          ...getInstantiatedOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
         ),
       ),
   ]),
@@ -186,7 +186,9 @@ if (options.all === true) {
             lang.stmt(
               op(
                 opCode,
-                ...getExampleOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
+                ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
+                  lang.expr(x),
+                ),
               ),
             ),
         ]),
