@@ -47,7 +47,6 @@ import {
   opCodeDefinitions,
   type ArgTypes,
   OpCodeFrontNamesToOpCodes,
-  getLiteralOfType,
 } from "../IR";
 import { byteLength, charLength } from "./objective";
 import { PolygolfError } from "./errors";
