@@ -45,8 +45,9 @@ export interface Text<Value extends string = string> extends BaseNode {
   readonly value: Value;
 }
 
-export function id(name: string, builtin: boolean = false): Identifier {
-  return { kind: "Identifier", name, builtin };
+let unique = 0;
+export function id(name?: string, builtin: boolean = false): Identifier {
+  return { kind: "Identifier", name: name ?? `unique${unique++}`, builtin };
 }
 
 export function builtin(name: string): Identifier {
