@@ -1,3 +1,4 @@
+import { getOutput } from "../interpreter";
 import { isOp, op, text, isText } from "../IR";
 import { type Plugin } from "../common/Language";
 import { byteLength, charLength } from "../common/objective";
@@ -75,6 +76,20 @@ export function listOpsToTextOps(
           if (node.op === "list_find" && ops.includes("text_codepoint_find"))
             return op("text_codepoint_find", joined, node.args[1]);
         }
+      }
+    },
+  };
+}
+
+export function hardcode(): Plugin {
+  return {
+    name: "hardcode",
+    visit(node, spine) {
+      if (spine.isRoot) {
+        try {
+          const output = getOutput(node);
+          if (output !== "") return op("print", text(output));
+        } catch {}
       }
     },
   };

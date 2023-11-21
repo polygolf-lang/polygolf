@@ -1,7 +1,7 @@
 import { findLang } from "../languages/languages";
 import fs from "fs";
 import path from "path";
-import { emitText } from "../common/emit";
+import { emitTextFactory } from "../common/emit";
 import { keywords } from ".";
 
 interface Test {
@@ -153,38 +153,11 @@ function emitNode(node: Describe | Test, imports: string[]): string {
   return emitTest(node, imports);
 }
 
-function stringify(x: string): string {
-  return emitText(x, [
-    [
-      "`",
-      [
-        [`\\`, `\\\\`],
-        [`\n`, `\\n`],
-        [`\r`, `\\r`],
-        ["`", "\\`"],
-        ["$", "\\$"],
-      ],
-    ],
-    [
-      `"`,
-      [
-        [`\\`, `\\\\`],
-        [`\n`, `\\n`],
-        [`\r`, `\\r`],
-        [`"`, `\\"`],
-      ],
-    ],
-    [
-      `'`,
-      [
-        [`\\`, `\\\\`],
-        [`\n`, `\\n`],
-        [`\r`, `\\r`],
-        [`'`, `\\"`],
-      ],
-    ],
-  ]);
-}
+const stringify = emitTextFactory({
+  "`TEXT`": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "`": "\\`", $: "\\$" },
+  '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
+  "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\"` },
+});
 
 function emitDescribe(describe: Describe, imports: string[]): string {
   return (

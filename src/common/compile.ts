@@ -16,6 +16,7 @@ import {
 } from "./objective";
 import { readsFromArgv, readsFromStdin } from "./symbols";
 import { PolygolfError } from "./errors";
+import { getOutput } from "../interpreter";
 
 export type OptimisationLevel = "nogolf" | "simple" | "full";
 export interface CompilationOptions {
@@ -25,11 +26,31 @@ export interface CompilationOptions {
   skipTypecheck: boolean;
   restrictFrontend: boolean;
   codepointRange: [number, number];
+  skipPlugins: string[];
+}
+
+export function compilationOptions(
+  partial: Partial<CompilationOptions> = {},
+): CompilationOptions {
+  return {
+    level: partial.level ?? "full",
+    objective: partial.objective ?? "bytes",
+    getAllVariants: partial.getAllVariants ?? false,
+    skipTypecheck: partial.skipTypecheck ?? false,
+    restrictFrontend: partial.restrictFrontend ?? true,
+    codepointRange: partial.codepointRange ?? [1, Infinity],
+    skipPlugins: [],
+  };
 }
 
 export type AddWarning = (x: Error, isGlobal: boolean) => void;
 
-export interface CompilationContext {
+export interface VisitorContext {
+  skipReplacement: () => void; // Prevents recursion into a new node.
+  skipChildren: () => void; // Prevents any recursion = into a new node or into children of old node.
+}
+
+export interface CompilationContext extends VisitorContext {
   options: CompilationOptions;
   addWarning: AddWarning;
 }
@@ -37,6 +58,7 @@ export interface CompilationContext {
 export interface CompilationResult {
   language: string;
   result: string | Error;
+  errors: Error[];
   history: [number, string][];
   warnings: Error[];
 }
@@ -44,12 +66,14 @@ export interface CompilationResult {
 function compilationResult(
   language: string,
   result: string | Error,
+  errors: Error[],
   history: [number, string][] = [],
   warnings: Error[] = [],
 ): CompilationResult {
   return {
     language,
     result,
+    errors,
     history,
     warnings,
   };
@@ -57,14 +81,15 @@ function compilationResult(
 
 export function applyAllToAllAndGetCounts(
   program: Node,
-  context: CompilationContext,
+  options: CompilationOptions,
+  addWarning: AddWarning,
   ...visitors: Plugin["visit"][]
 ): [Node, number[]] {
   const counts: number[] = [];
   let result = program;
   let c: number;
   for (const visitor of visitors) {
-    [result, c] = applyToAllAndGetCount(result, context, visitor);
+    [result, c] = applyToAllAndGetCount(result, options, addWarning, visitor);
     counts.push(c);
   }
   return [result, counts];
@@ -92,11 +117,14 @@ function getArray<T>(x: T | T[] | undefined): T[] {
 
 export function applyToAllAndGetCount(
   program: Node,
-  context: CompilationContext,
+  options: CompilationOptions,
+  addWarning: AddWarning,
   visitor: Plugin["visit"],
 ): [Node, number] {
-  const result = programToSpine(program).withReplacer((n, s) => {
-    const repl = getSingleOrUndefined(visitor(n, s, context));
+  const result = programToSpine(program).withReplacer((n, s, ctx) => {
+    const repl = getSingleOrUndefined(
+      visitor(n, s, { options, addWarning, ...ctx }),
+    );
     return repl === undefined
       ? undefined
       : copySource(n, copyTypeAnnotation(n, repl));
@@ -105,11 +133,14 @@ export function applyToAllAndGetCount(
 }
 function* applyToOne(
   spine: Spine,
-  context: CompilationContext,
+  options: CompilationOptions,
+  addWarning: AddWarning,
   visitor: Plugin["visit"],
 ) {
-  for (const altPrograms of spine.compactMap((n, s) => {
-    const suggestions = getArray(visitor(n, s, context));
+  for (const altPrograms of spine.compactMap((n, s, ctx) => {
+    const suggestions = getArray(
+      visitor(n, s, { options, addWarning, ...ctx }),
+    );
     return suggestions.map(
       (x) =>
         s.replacedWith(copySource(n, copyTypeAnnotation(n, x)), true).root.node,
@@ -139,7 +170,7 @@ export default function compile(
   try {
     program = parse(source, options.restrictFrontend);
   } catch (e) {
-    if (isError(e)) return [compilationResult("Polygolf", e)];
+    if (isError(e)) return [compilationResult("Polygolf", e, [e])];
   }
   program = program!;
   let variants = expandVariants(program).map((x) => {
@@ -147,7 +178,7 @@ export default function compile(
       if (!options.skipTypecheck) typecheck(x);
       return x;
     } catch (e) {
-      if (isError(e)) return compilationResult("Polygolf", e);
+      if (isError(e)) return compilationResult("Polygolf", e, [e]);
       throw e;
     }
   });
@@ -229,6 +260,10 @@ export function compileVariant(
   options: CompilationOptions,
   language: Language,
 ): CompilationResult {
+  if (options.level !== "nogolf")
+    try {
+      getOutput(program); // precompute output
+    } catch {}
   const obj = getObjectiveFunc(options);
   let best = compileVariantNoPacking(program, options, language);
   const packers = language.packers ?? [];
@@ -279,8 +314,15 @@ export function compileVariantNoPacking(
   options: CompilationOptions,
   language: Language,
 ): CompilationResult {
-  const phases = language.phases;
-  if (options.level === "nogolf" || options.level === "simple") {
+  const phases = language.phases.map((x) => ({
+    mode: x.mode,
+    plugins: x.plugins.filter((x) => !options.skipPlugins.includes(x.name)),
+  }));
+  if (
+    phases.length < 1 ||
+    options.level === "nogolf" ||
+    options.level === "simple"
+  ) {
     try {
       const warnings: Error[] = [];
       const addWarning = (x: Error) => warnings.push(x);
@@ -293,18 +335,25 @@ export function compileVariantNoPacking(
         .flatMap((x) => x.plugins);
       const [res, counts] = applyAllToAllAndGetCounts(
         program,
-        { addWarning, options },
+        options,
+        addWarning,
         ...plugins.map((x) => x.visit),
       );
       return compilationResult(
         language.name,
-        emit(language, res, { addWarning, options }),
+        emit(language, res, {
+          addWarning,
+          options,
+          skipChildren() {},
+          skipReplacement() {},
+        }),
+        [],
         plugins.map((y, i) => [counts[i], y.name]),
         warnings,
       );
     } catch (e) {
       if (isError(e)) {
-        return compilationResult(language.name, e);
+        return compilationResult(language.name, e, [e]);
       }
       throw e;
     }
@@ -321,16 +370,22 @@ export function compileVariantNoPacking(
       .flatMap((x) => x.plugins);
     const [resProg, counts] = applyAllToAllAndGetCounts(
       prog,
-      { addWarning, options },
+      options,
+      addWarning,
       ...finishingPlugins.map((x) => x.visit),
     );
     return [
-      emit(language, resProg, { addWarning, options }),
+      emit(language, resProg, {
+        addWarning,
+        options,
+        skipChildren() {},
+        skipReplacement() {},
+      }),
       finishingPlugins.map((x, i) => [counts[i], x.name]),
     ];
   }
   let shortestSoFar: SearchState | undefined;
-  let lastError: Error;
+  const errors: Error[] = [];
   let shortestSoFarLength: number = Infinity;
   const latestPhaseWeSawTheProg = new Map<string, number>();
   const queue = new MinPriorityQueue<SearchState>((x) => x.length);
@@ -342,7 +397,7 @@ export function compileVariantNoPacking(
     history: [number, string][],
     warnings: Error[],
   ) {
-    if (startPhase >= language.phases.length) return;
+    if (startPhase >= phases.length) return;
     if (latestPhaseWeSawTheProg.size > 200) return;
     const stringified = stringify(program);
     const latestSeen = latestPhaseWeSawTheProg.get(stringified);
@@ -363,7 +418,7 @@ export function compileVariantNoPacking(
         queue.enqueue(state);
       } catch (e) {
         if (isError(e)) {
-          lastError = e;
+          errors.push(e);
         }
       }
     }
@@ -373,7 +428,7 @@ export function compileVariantNoPacking(
 
   while (!queue.isEmpty()) {
     const state = queue.dequeue();
-    const phase = language.phases[state.startPhase];
+    const phase = phases[state.startPhase];
     const warnings = [...state.warnings];
 
     function addWarning(x: Error, isGlobal: boolean) {
@@ -383,7 +438,8 @@ export function compileVariantNoPacking(
     if (phase.mode !== "search") {
       const [res, counts] = applyAllToAllAndGetCounts(
         state.program,
-        { addWarning, options },
+        options,
+        addWarning,
         ...phase.plugins.map((x) => x.visit),
       );
       enqueue(
@@ -403,7 +459,8 @@ export function compileVariantNoPacking(
       for (const plugin of phase.plugins) {
         for (const altProgram of applyToOne(
           spine,
-          { addWarning, options },
+          options,
+          addWarning,
           plugin.visit,
         )) {
           enqueue(
@@ -418,7 +475,7 @@ export function compileVariantNoPacking(
   }
 
   if (shortestSoFar === undefined) {
-    return compilationResult(language.name, lastError!);
+    return compilationResult(language.name, errors.at(-1)!, errors);
   }
 
   globalWarnings.push(...shortestSoFar.warnings);
@@ -434,6 +491,7 @@ export function compileVariantNoPacking(
   return compilationResult(
     language.name,
     result,
+    errors,
     mergeRepeatedPlugins([...shortestSoFar.history, ...finishingHist]),
     globalWarnings,
   );
@@ -474,14 +532,11 @@ function typecheck(program: Node) {
 export function debugEmit(program: Node): string {
   const result = compileVariantNoPacking(
     program,
-    {
+    compilationOptions({
       level: "nogolf",
-      objective: "bytes",
       skipTypecheck: true,
-      getAllVariants: false,
-      codepointRange: [1, Infinity],
       restrictFrontend: false,
-    },
+    }),
     polygolfLanguage,
   ).result;
   if (typeof result === "string") {
@@ -492,4 +547,17 @@ export function debugEmit(program: Node): string {
 
 export function normalize(source: string): string {
   return debugEmit(parse(source, false));
+}
+
+export function isCompilable(program: Node, lang: Language) {
+  const result = compileVariant(
+    program,
+    compilationOptions({
+      level: "nogolf",
+      restrictFrontend: false,
+      skipTypecheck: true,
+    }),
+    lang,
+  );
+  return typeof result.result === "string";
 }

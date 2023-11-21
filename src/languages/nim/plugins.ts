@@ -1,5 +1,6 @@
 import {
   functionCall,
+  type Node,
   importStatement,
   infix,
   integerType,
@@ -9,8 +10,9 @@ import {
   op,
 } from "../../IR";
 import { getType } from "../../common/getType";
-import { type Plugin } from "../../common/Language";
+import type { Plugin } from "../../common/Language";
 import { addImports } from "../../plugins/imports";
+import type { Spine } from "../../common/Spine";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -59,34 +61,28 @@ export const addNimImports: Plugin = addImports(
   },
 );
 
-export const useUnsignedDivision: Plugin = {
-  name: "useUnsignedDivision",
-  visit(node, spine) {
-    if (isOp("trunc_div", "rem")(node)) {
-      return isSubtype(getType(node.args[0], spine), integerType(0)) &&
-        isSubtype(getType(node.args[0], spine), integerType(0))
-        ? op(`unsigned_${node.op}`, ...node.args)
-        : undefined;
-    }
-  },
-};
+export function useUnsignedDivision(node: Node, spine: Spine) {
+  if (isOp("trunc_div", "rem")(node)) {
+    return isSubtype(getType(node.args[0], spine), integerType(0)) &&
+      isSubtype(getType(node.args[0], spine), integerType(0))
+      ? op(`unsigned_${node.op}`, ...node.args)
+      : undefined;
+  }
+}
 
-export const useUFCS: Plugin = {
-  name: "useUFCS",
-  visit(node) {
-    if (node.kind === "FunctionCall") {
-      if (node.args.length === 1) {
-        return infix(" ", node.func, node.args[0]);
-      }
-      if (node.args.length > 1 && isIdent()(node.func)) {
-        return functionCall(
-          infix(".", node.args[0], node.func),
-          ...node.args.slice(1),
-        );
-      }
+export function useUFCS(node: Node) {
+  if (node.kind === "FunctionCall") {
+    if (node.args.length === 1) {
+      return infix(" ", node.func, node.args[0]);
     }
-    if (node.kind === "Infix" && node.name === " " && isIdent()(node.left)) {
-      return infix(".", node.right, node.left);
+    if (node.args.length > 1 && isIdent()(node.func)) {
+      return functionCall(
+        infix(".", node.args[0], node.func),
+        ...node.args.slice(1),
+      );
     }
-  },
-};
+  }
+  if (node.kind === "Infix" && node.name === " " && isIdent()(node.left)) {
+    return infix(".", node.right, node.left);
+  }
+}

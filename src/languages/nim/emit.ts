@@ -1,12 +1,27 @@
 import { type TokenTree } from "@/common/Language";
 import {
-  emitText,
+  emitTextFactory,
   joinTrees,
   EmitError,
   emitIntLiteral,
 } from "../../common/emit";
 import { type Array, type IR, isIdent, isIntLiteral, isText } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
+
+const emitNimText = emitTextFactory(
+  {
+    '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
+    '"""TEXT"""': { '"""': null },
+    'r"TEXT"': { '"': `""`, "\n": null, "\r": null },
+  },
+  function (x: number, i: number, arr: number[]) {
+    if (x < 100 && (i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57))
+      return `\\${x.toString()}`;
+    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
+    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
+    return `\\u{${x.toString(16)}}`;
+  },
+);
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
@@ -302,42 +317,4 @@ export default function emitProgram(
 function emitAsRawText(value: string, prefix: string = "r"): string | null {
   if (value.includes("\n") || value.includes("\r")) return null;
   return `${prefix}"${value.replaceAll(`"`, `""`)}"`;
-}
-
-function emitNimText(
-  x: string,
-  [low, high]: [number, number] = [1, Infinity],
-): string {
-  function mapCodepoint(x: number, i: number, arr: number[]) {
-    if (low <= x && x <= high) return String.fromCharCode(x);
-    if (x < 100 && (i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57))
-      return `\\${x.toString()}`;
-    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
-    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
-    return `\\u{${x.toString(16)}}`;
-  }
-  return emitText(
-    x,
-    [
-      [
-        `"`,
-        [
-          [`\\`, `\\\\`],
-          [`\n`, `\\n`],
-          [`\r`, `\\r`],
-          [`"`, `\\"`],
-        ],
-      ],
-      [`"""`, [[`"""`, null]]],
-      [
-        [`r"`, `"`],
-        [
-          [`"`, `""`],
-          [`\n`, null],
-          [`\r`, null],
-        ],
-      ],
-    ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined,
-  );
 }
