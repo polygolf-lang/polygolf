@@ -23,6 +23,7 @@ import {
   functionCall,
   propertyCall,
   isIdent,
+  postfix,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -71,12 +72,18 @@ function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
 export function mapTo<T>(
   constructor: (x: T, args: readonly Node[]) => Node,
 ): (opMap: Partial<Record<OpCode, T>>) => Plugin {
-  function result(opMap: Partial<Record<OpCode, T>>) {
+  function result(
+    opMap: Partial<Record<OpCode, T>>,
+    predicate?: (n: Node, s: Spine) => boolean,
+  ) {
     enhanceOpMap(opMap);
     return mapOps(
       mapObjectValues(
         opMap,
-        (name) => (x: readonly Node[]) => constructor(name, x),
+        (name) => (n: readonly Node[], s: Spine) =>
+          predicate === undefined || predicate(s.node, s)
+            ? constructor(name, n)
+            : undefined,
       ),
       `mapTo(${constructor.name})(${JSON.stringify(opMap)})`,
     );
@@ -87,20 +94,47 @@ export function mapTo<T>(
 /**
  * Plugin transforming binary and unary ops to the name and precedence in the target lang.
  * @param opMap OpCode - target op name pairs.
+ * @param asMutatingInfix - array of target op names that should be mapped to mutating infix or true for to signify all.
  * @returns The plugin closure.
  */
-export function mapToPrefixAndInfix(
-  opMap: Partial<Record<UnaryOpCode | BinaryOpCode, string>>,
+export function mapToPrefixAndInfix<
+  TNames extends string,
+  TNamesMutating extends TNames,
+>(
+  opMap: Partial<Record<UnaryOpCode, string> & Record<BinaryOpCode, TNames>>,
+  asMutatingInfix: true | TNamesMutating[] = [],
 ): Plugin {
   enhanceOpMap(opMap);
-  return mapOps(
+  const justPrefixInfix = mapOps(
     mapObjectValues(opMap, (name, op) =>
       isBinary(op)
         ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
         : (x: readonly Node[]) => prefix(name, x[0]),
     ),
-    `mapToPrefixAndInfix(${JSON.stringify(opMap)})`,
+    `mapToPrefixAndInfix(${JSON.stringify(opMap)}, ${JSON.stringify(
+      asMutatingInfix,
+    )})`,
   );
+  if (asMutatingInfix !== true && asMutatingInfix.length < 1)
+    return justPrefixInfix;
+  const mutatingInfix = addMutatingInfix(
+    Object.fromEntries(
+      Object.entries(opMap).filter(
+        ([k, v]) =>
+          isBinary(k as OpCode) &&
+          (asMutatingInfix === true || asMutatingInfix.includes(v as any)),
+      ),
+    ),
+  );
+  return {
+    ...justPrefixInfix,
+    visit(node, spine, context) {
+      return (
+        mutatingInfix.visit(node, spine, context) ??
+        justPrefixInfix.visit(node, spine, context)
+      );
+    },
+  };
 }
 
 function asBinaryChain(
@@ -209,18 +243,25 @@ export function addMutatingInfix(
   };
 }
 
+export function addPostfixIncAndDec(node: Node) {
+  if (
+    node.kind === "MutatingInfix" &&
+    ["+", "-"].includes(node.name) &&
+    isIntLiteral(1n)(node.right)
+  ) {
+    return postfix(node.name.repeat(2), node.variable);
+  }
+}
+
 // (a > b) --> (b < a)
-export const flipBinaryOps: Plugin = {
-  name: "flipBinaryOps",
-  visit(node) {
-    if (isOp(...BinaryOpCodes)(node)) {
-      const flippedOpCode = flipOpCode(node.op);
-      if (flippedOpCode !== null) {
-        return op(flippedOpCode, node.args[1], node.args[0]);
-      }
+export function flipBinaryOps(node: Node) {
+  if (isOp(...BinaryOpCodes)(node)) {
+    const flippedOpCode = flipOpCode(node.op);
+    if (flippedOpCode !== null) {
+      return op(flippedOpCode, node.args[1], node.args[0]);
     }
-  },
-};
+  }
+}
 
 export const removeImplicitConversions: Plugin = {
   name: "removeImplicitConversions",

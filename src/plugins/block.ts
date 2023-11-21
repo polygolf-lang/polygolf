@@ -21,6 +21,7 @@ import { type Plugin } from "../common/Language";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 import { getWrites, hasSideEffect } from "../common/symbols";
+import type { CompilationContext } from "../common/compile";
 
 /**
  * Collects neighbouring block children matching a predicate and replaces them with a different set of children.
@@ -82,18 +83,15 @@ export function blockChildrenCollectAndReplace<T extends Node = Node>(
 }
 
 const declared: Set<string> = new Set<string>();
-export const addVarDeclarations: Plugin = {
-  name: "addVarDeclarations",
-  visit(node, spine) {
-    if (spine.isRoot) declared.clear();
-    if (node.kind === "Assignment") {
-      if (isIdent()(node.variable) && !declared.has(node.variable.name)) {
-        declared.add(node.variable.name);
-        return varDeclarationWithAssignment(node);
-      }
+export function addVarDeclarations(node: Node, spine: Spine) {
+  if (spine.isRoot) declared.clear();
+  if (node.kind === "Assignment") {
+    if (isIdent()(node.variable) && !declared.has(node.variable.name)) {
+      declared.add(node.variable.name);
+      return varDeclarationWithAssignment(node);
     }
-  },
-};
+  }
+}
 
 /**
  * Replaces `v1 = c; v2 = c; ... ; vn = c` with `v1,v2,...vn=c`
@@ -213,96 +211,88 @@ export function groupVarDeclarations(
   );
 }
 
-export const noStandaloneVarDeclarations: Plugin = {
-  name: "noStandaloneVarDeclarations",
-  visit(node, spine) {
-    if (
-      (node.kind === "VarDeclaration" ||
-        node.kind === "VarDeclarationWithAssignment") &&
-      spine.parent?.node.kind !== "VarDeclarationBlock"
-    ) {
-      return varDeclarationBlock([node]);
-    }
-  },
-};
+export function noStandaloneVarDeclarations(node: Node, spine: Spine) {
+  if (
+    (node.kind === "VarDeclaration" ||
+      node.kind === "VarDeclarationWithAssignment") &&
+    spine.parent?.node.kind !== "VarDeclarationBlock"
+  ) {
+    return varDeclarationBlock([node]);
+  }
+}
 
-export const tempVarToMultipleAssignment: Plugin = {
-  name: "tempVarToMultipleAssignment",
-  visit(node) {
-    if (node.kind === "Block") {
-      const newNodes: Node[] = [];
-      let changed = false;
-      for (let i = 0; i < node.children.length; i++) {
-        const a = node.children[i];
-        if (i >= node.children.length - 2) {
-          newNodes.push(a);
-          continue;
-        }
-        const b = node.children[i + 1];
-        const c = node.children[i + 2];
-        if (
-          isAssignmentToIdentifier(a) &&
-          isAssignment(b) &&
-          isAssignmentToIdentifier(c) &&
-          isIdent(c.variable)(b.expr) &&
-          isIdent(a.variable)(c.expr)
-        ) {
-          newNodes.push(
-            manyToManyAssignment([b.variable, c.variable], [b.expr, a.expr]),
-          );
-          changed = true;
-          i += 2;
-        } else {
-          newNodes.push(a);
-        }
+export function tempVarToMultipleAssignment(node: Node) {
+  if (node.kind === "Block") {
+    const newNodes: Node[] = [];
+    let changed = false;
+    for (let i = 0; i < node.children.length; i++) {
+      const a = node.children[i];
+      if (i >= node.children.length - 2) {
+        newNodes.push(a);
+        continue;
       }
-      if (changed) return block(newNodes);
+      const b = node.children[i + 1];
+      const c = node.children[i + 2];
+      if (
+        isAssignmentToIdentifier(a) &&
+        isAssignment(b) &&
+        isAssignmentToIdentifier(c) &&
+        isIdent(c.variable)(b.expr) &&
+        isIdent(a.variable)(c.expr)
+      ) {
+        newNodes.push(
+          manyToManyAssignment([b.variable, c.variable], [b.expr, a.expr]),
+        );
+        changed = true;
+        i += 2;
+      } else {
+        newNodes.push(a);
+      }
     }
-  },
-};
+    if (changed) return block(newNodes);
+  }
+}
 
-export const inlineVariables: Plugin = {
-  name: "inlineVariables",
-  visit(node, spine) {
-    if (spine.isRoot) {
-      const writes = groupby(getWrites(spine), (x) => x.node.name);
-      const suggestions = [];
-      for (const a of writes.values()) {
-        if (a.length === 1) {
-          const variable = a[0].node;
-          const write = a[0].parent!;
-          if (
-            write.node.kind === "Assignment" &&
-            write.parent?.node.kind === "Block" &&
-            spine.someNode(
-              (n) => n !== variable && isUserIdent(variable)(n), // in tests variables are often never read from and we don't want to make those disappear
-            ) &&
-            !write.getChild("expr").someNode(isUserIdent(variable)) &&
-            !hasSideEffect(write.getChild("expr"))
-          ) {
-            const assignmentToInlineSpine = write as Spine<
-              Assignment<Identifier>
-            >;
-            const assignment = assignmentToInlineSpine.node;
-            const assignmentParent = assignmentToInlineSpine.parent?.node;
-            suggestions.push(
-              spine.withReplacer((x) =>
-                x === assignmentParent && x.kind === "Block"
-                  ? blockOrSingle(x.children.filter((y) => y !== assignment))
-                  : x.kind === "Identifier" &&
-                    !x.builtin &&
-                    x.name === assignment.variable.name
-                  ? {
-                      ...assignment.expr,
-                      type: assignment.expr.type ?? assignment.variable.type,
-                    }
-                  : undefined,
-              ).node,
-            );
-          }
-        }
+export function inlineVariables(
+  node: Node,
+  spine: Spine,
+  context: CompilationContext,
+) {
+  context.skipChildren();
+  const writes = groupby(getWrites(spine), (x) => x.node.name);
+  const suggestions = [];
+  for (const a of writes.values()) {
+    if (a.length === 1) {
+      const variable = a[0].node;
+      const write = a[0].parent!;
+      if (
+        write.node.kind === "Assignment" &&
+        write.parent?.node.kind === "Block" &&
+        spine.someNode(
+          (n) => n !== variable && isUserIdent(variable)(n), // in tests variables are often never read from and we don't want to make those disappear
+        ) &&
+        !write.getChild("expr").someNode(isUserIdent(variable)) &&
+        !hasSideEffect(write.getChild("expr"))
+      ) {
+        const assignmentToInlineSpine = write as Spine<Assignment<Identifier>>;
+        const assignment = assignmentToInlineSpine.node;
+        const assignmentParent = assignmentToInlineSpine.parent?.node;
+        suggestions.push(
+          spine.withReplacer((x) =>
+            x === assignmentParent && x.kind === "Block"
+              ? blockOrSingle(x.children.filter((y) => y !== assignment))
+              : x.kind === "Identifier" &&
+                !x.builtin &&
+                x.name === assignment.variable.name
+              ? {
+                  ...assignment.expr,
+                  type: assignment.expr.type ?? assignment.variable.type,
+                }
+              : undefined,
+          ).node,
+        );
       }
-      return suggestions;
     }
-  },
-};
+  }
+  return suggestions;
+}

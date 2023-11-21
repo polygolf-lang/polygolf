@@ -53,9 +53,15 @@ export function conditionalOpToAndOr(
   return {
     name: "conditionalOpToAndOr",
     bakeType: true,
-    visit(node, spine) {
+    visit(node, spine, context) {
       if (node.kind === "ConditionalOp") {
-        if (isProvablyThruthy(node.consequent, spine.getChild("consequent")))
+        if (
+          isProvablyThruthy(
+            node.consequent,
+            spine.getChild("consequent"),
+            context,
+          )
+        )
           return op(
             "unsafe_or",
             op("unsafe_and", node.condition, node.consequent),

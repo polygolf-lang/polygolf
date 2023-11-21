@@ -8,6 +8,7 @@ import compile, {
 import { findLang } from "../languages/languages";
 import { type Plugin } from "../common/Language";
 import { getOnlyVariant } from "../common/expandVariants";
+import type { PluginVisitor } from "../common/Spine";
 
 export const keywords = [
   "nogolf",
@@ -21,6 +22,7 @@ export const keywords = [
   "restrictFrontend",
   "1..127",
   "32..127",
+  "no:hardcode",
 ] as const;
 
 export function compilationOptionsFromKeywords(
@@ -39,6 +41,7 @@ export function compilationOptionsFromKeywords(
     getAllVariants: is("allVariants"),
     restrictFrontend: is("restrictFrontend"),
     skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
+    skipPlugins: is("no:hardcode") ? ["hardcode"] : [],
   };
 }
 
@@ -62,7 +65,7 @@ export function testLang(
 
 export function testPlugin(
   name: string,
-  plugins: Plugin[],
+  plugins: (Plugin | PluginVisitor)[],
   args: string[],
   input: string,
   output: string,
@@ -72,11 +75,11 @@ export function testPlugin(
       debugEmit(
         applyAllToAllAndGetCounts(
           getOnlyVariant(parse(input, false)),
-          {
-            addWarning: () => {},
-            options: compilationOptionsFromKeywords(args),
-          },
-          ...plugins,
+          compilationOptionsFromKeywords(args),
+          () => {},
+          ...plugins.map((x) =>
+            typeof x === "function" ? { name: x.name, visit: x } : x,
+          ),
         )[0],
       ),
     ).toEqual(normalize(output));
