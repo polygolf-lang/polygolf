@@ -4,11 +4,24 @@ import {
   containsMultiNode,
   EmitError,
   emitIntLiteral,
-  emitText,
+  emitTextFactory,
   joinTrees,
 } from "../../common/emit";
 import { type IR, isIntLiteral, text, isText, id, infix } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
+
+export const emitPythonText = emitTextFactory(
+  {
+    '"TEXT"': { "\\": "\\\\", "\n": "\\n", "\r": "\\r", '"': `\\"` },
+    "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\'` },
+    '"""TEXT"""': { "\\": "\\\\", '"""': '\\"""' },
+  },
+  function (x: number) {
+    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
+    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
+    return `\\U${x.toString(16).padStart(8, "0")}`;
+  },
+);
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
@@ -252,47 +265,4 @@ export default function emitProgram(
     return ["(", inner, ")"];
   }
   return emitMultiNode(program, true);
-}
-
-export function emitPythonText(
-  x: string,
-  [low, high]: [number, number] = [1, Infinity],
-): string {
-  function mapCodepoint(x: number) {
-    if (low <= x && x <= high) return String.fromCharCode(x);
-    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
-    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
-    return `\\U${x.toString(16).padStart(8, "0")}`;
-  }
-  return emitText(
-    x,
-    [
-      [
-        `"`,
-        [
-          [`\\`, `\\\\`],
-          [`\n`, `\\n`],
-          [`\r`, `\\r`],
-          [`"`, `\\"`],
-        ],
-      ],
-      [
-        `'`,
-        [
-          [`\\`, `\\\\`],
-          [`\n`, `\\n`],
-          [`\r`, `\\r`],
-          [`'`, `\\'`],
-        ],
-      ],
-      [
-        `"""`,
-        [
-          [`\\`, `\\\\`],
-          [`"""`, `\\"""`],
-        ],
-      ],
-    ],
-    low > 1 || high < Infinity ? mapCodepoint : undefined,
-  );
 }

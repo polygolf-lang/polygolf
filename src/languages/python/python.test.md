@@ -166,7 +166,7 @@ if ($a != 0) {
 $a <- 1;
 ```
 
-```python
+```python no:hardcode
 a=1
 if a:print(a)
 a=1

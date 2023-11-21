@@ -17,7 +17,9 @@
     "test:jest": "jest --config jest.config.js",
     "test": "npm run test:formatting && npm run test:typecheck && npm run test:lint && npm run test:build && npm run test:jest",
     "cli": "npm run build && node --enable-source-maps dist/cli.js",
-    "test:build": "npm run build && node \"dist/markdown-tests/build.js\""
+    "test:build": "npm run build && node \"dist/markdown-tests/build.js\"",
+    "cover": "npm run build && node \"dist/cover/index.js\"",
+    "cover-all": "npm run build && node \"dist/cover/index.js\" -a"
   },
   "repository": {
     "type": "git",
@@ -47,9 +49,10 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@datastructures-js/priority-queue": "^6.3.0",
+    "as-table": "^1.0.55",
     "moo": "^0.5.2",
     "nearley": "^2.20.1",
-    "yargs": "^17.6.0",
-    "@datastructures-js/priority-queue": "^6.3.0"
+    "yargs": "^17.6.0"
   }
 }

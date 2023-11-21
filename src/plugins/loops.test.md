@@ -28,6 +28,30 @@ for_c_like ($i <- 0) ($i < 10) ($i <- (1 + $i)) (
 );
 ```
 
+## For range to while, inside a block
+
+```polygolf
+for $i 0 10 {
+  print_int $x;
+};
+for $j 1 11 {
+  print_int $y;
+};
+```
+
+```polygolf loops.forRangeToWhile
+$i <- 0;
+while ($i < 10) {
+  print_int $x;
+  $i <- (1 + $i);
+};
+$j <- 1;
+while ($j < 11) {
+  print_int $y;
+  $j <- (1 + $j);
+};
+```
+
 ## For each
 
 ```polygolf
