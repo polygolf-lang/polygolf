@@ -10,9 +10,17 @@ import {
   text,
   id,
   assignment,
+  isUserIdent,
+  isAssignmentToIdent,
+  type Assignment,
+  isIdent,
+  blockOrSingle,
+  type Op,
+  isText,
 } from "../IR";
 import { mapOps } from "./ops";
 import type { VisitorContext } from "../common/compile";
+import { getWrites } from "../common/symbols";
 
 export const printLnToPrint = mapOps(
   {
@@ -86,5 +94,37 @@ export function mergePrint(
       newSpine.node,
       op("print", variable),
     ]);
+  }
+}
+
+export function splitPrint(node: Node, spine: Spine) {
+  if (node.kind === "Block") {
+    const last = node.children.at(-1)!;
+    if (isOp("print")(last) && isUserIdent()(last.args[0])) {
+      const printVar = last.args[0];
+      const writes = getWrites(spine, printVar.name);
+      if (writes.every((x) => isAssignmentToIdent()(x.parent!.node))) {
+        const assignments = writes.map((x) => x.parent?.node as Assignment);
+        if (
+          assignments.every(
+            (x, i) =>
+              i < 1 ||
+              (isOp("concat")(x.expr) && isIdent(printVar)(x.expr.args[0])),
+          )
+        ) {
+          return spine.withReplacer((x) =>
+            x === node
+              ? blockOrSingle(node.children.slice(0, -1))
+              : x === assignments[0]
+              ? isText("")(x.expr)
+                ? block([])
+                : op("print", x.expr)
+              : assignments.includes(x as any)
+              ? op("print", ((x as Assignment).expr as Op).args[1])
+              : undefined,
+          ).node;
+        }
+      }
+    }
   }
 }

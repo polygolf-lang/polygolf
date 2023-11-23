@@ -127,8 +127,10 @@ export function assignment(variable: LValue | string, expr: Node): Assignment {
 export function isAssignment(x: Node): x is Assignment {
   return x.kind === "Assignment";
 }
-export function isAssignmentToIdentifier(x: Node): x is Assignment<Identifier> {
-  return isAssignment(x) && isIdent()(x.variable);
+export function isAssignmentToIdent<Name extends string>(
+  ...names: (Name | Identifier<boolean, Name>)[]
+): (x: Node) => x is Assignment<Identifier<boolean, Name>> {
+  return ((x: Node) => isAssignment(x) && isIdent(...names)(x.variable)) as any;
 }
 
 export function manyToManyAssignment(
