@@ -1,7 +1,16 @@
 import type { Spine } from "../common/Spine";
 import { replaceAtIndex } from "../common/arrays";
 import { type Plugin } from "../common/Language";
-import { block, implicitConversion, isOp, type Node, op, text } from "../IR";
+import {
+  block,
+  implicitConversion,
+  isOp,
+  type Node,
+  op,
+  text,
+  isText,
+  blockOrSingle,
+} from "../IR";
 import { mapOps } from "./ops";
 
 export const printLnToPrint = mapOps(
@@ -20,21 +29,20 @@ export function golfLastPrint(toPrintln = true): Plugin {
     name: "golfLastPrint",
     visit(program, spine, context) {
       context.skipChildren();
-      const newOp = toPrintln ? ("println" as const) : ("print" as const);
+      const statements = block([program]).children;
+      const newOp = toPrintln ? "println" : "print";
       const oldOp = toPrintln ? "print" : "println";
-      if (isOp(oldOp)(program)) {
-        return { ...program, op: newOp };
-      } else if (program.kind === "Block") {
-        const oldChildren = program.children;
-        const lastStatement = oldChildren[oldChildren.length - 1];
-        if (isOp(oldOp)(lastStatement)) {
-          const newLastStatement = { ...lastStatement, op: newOp };
-          const children = replaceAtIndex(
-            oldChildren,
-            oldChildren.length - 1,
-            newLastStatement,
+      const lastStatement = statements[statements.length - 1];
+      if (isOp(oldOp, newOp)(lastStatement)) {
+        let arg = lastStatement.args[0];
+        if (isText()(arg)) {
+          const value = arg.value.trimEnd();
+          if (value !== arg.value) arg = text(value);
+        }
+        if (arg !== lastStatement.args[0] || lastStatement.op !== newOp) {
+          return blockOrSingle(
+            replaceAtIndex(statements, statements.length - 1, op(newOp, arg)),
           );
-          return block(children);
         }
       }
     },

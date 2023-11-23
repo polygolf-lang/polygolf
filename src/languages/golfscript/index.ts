@@ -64,9 +64,9 @@ const golfscriptLanguage: Language = {
   phases: [
     search(hardcode()),
     required(printIntToPrint),
+    simplegolf(golfLastPrint(false)),
     search(
       flipBinaryOps,
-      golfLastPrint(),
       equalityToInequality,
       ...bitnotPlugins,
       ...powPlugins,
