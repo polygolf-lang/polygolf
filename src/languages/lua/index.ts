@@ -38,7 +38,11 @@ import {
   tempVarToMultipleAssignment,
   inlineVariables,
 } from "../../plugins/block";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import {
+  golfLastPrint,
+  implicitlyConvertPrintArg,
+  mergePrint,
+} from "../../plugins/print";
 import {
   textToIntToFirstIndexTextGetToInt,
   useEquivalentTextOp,
@@ -64,6 +68,7 @@ const luaLanguage: Language = {
     search(hardcode()),
     required(printIntToPrint),
     search(
+      mergePrint,
       flipBinaryOps,
       golfLastPrint(),
       listOpsToTextOps("text_byte_find", "text_get_byte"),

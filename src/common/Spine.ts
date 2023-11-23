@@ -131,9 +131,14 @@ export class Spine<N extends IR.Node = IR.Node> {
     return false;
   }
 
-  /** Returns all descendants metting the provided condition. */
+  /** Returns all descendants meeting the provided condition. */
   filterNodes(cond: Visitor<boolean>) {
     return this.compactMap((n, s, skip) => (cond(n, s, skip) ? n : undefined));
+  }
+
+  /** Counts the descendants meeting the provided condition. */
+  countNodes(cond: Visitor<boolean>) {
+    return [...this.filterNodes(cond)].length;
   }
 
   /** Return the spine (pointing to this node) determined from replacing this

@@ -43,7 +43,11 @@ import {
   hardcode,
   listOpsToTextOps,
 } from "../../plugins/static";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import {
+  golfLastPrint,
+  implicitlyConvertPrintArg,
+  mergePrint,
+} from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
@@ -85,6 +89,7 @@ const nimLanguage: Language = {
     search(hardcode()),
     required(printIntToPrint),
     search(
+      mergePrint,
       flipBinaryOps,
       golfStringListLiteral(),
       listOpsToTextOps("text_byte_find", "text_get_byte"),

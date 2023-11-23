@@ -1,8 +1,18 @@
 import type { Spine } from "../common/Spine";
 import { replaceAtIndex } from "../common/arrays";
 import { type Plugin } from "../common/Language";
-import { block, implicitConversion, isOp, type Node, op, text } from "../IR";
+import {
+  block,
+  implicitConversion,
+  isOp,
+  type Node,
+  op,
+  text,
+  id,
+  assignment,
+} from "../IR";
 import { mapOps } from "./ops";
+import type { VisitorContext } from "../common/compile";
 
 export const printLnToPrint = mapOps(
   {
@@ -47,5 +57,34 @@ export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
     isOp("print", "println")(spine.parent!.node)
   ) {
     return implicitConversion(node.op, node.args[0]);
+  }
+}
+
+export function mergePrint(
+  program: Node,
+  spine: Spine,
+  context: VisitorContext,
+) {
+  context.skipChildren();
+  const variable = id();
+  if (spine.countNodes(isOp("print", "println")) > 1) {
+    const newSpine = spine.withReplacer((node) =>
+      isOp("print", "println")(node)
+        ? assignment(
+            variable,
+            op(
+              "concat",
+              variable,
+              node.args[0],
+              ...(node.op === "print" ? [] : [text("\n")]),
+            ),
+          )
+        : undefined,
+    );
+    return block([
+      assignment(variable, text("")),
+      newSpine.node,
+      op("print", variable),
+    ]);
   }
 }

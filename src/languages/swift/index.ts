@@ -36,7 +36,11 @@ import {
   hardcode,
   listOpsToTextOps,
 } from "../../plugins/static";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import {
+  golfLastPrint,
+  implicitlyConvertPrintArg,
+  mergePrint,
+} from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import {
   addVarDeclarations,
@@ -73,6 +77,7 @@ const swiftLanguage: Language = {
     search(hardcode()),
     required(printIntToPrint),
     search(
+      mergePrint,
       flipBinaryOps,
       golfStringListLiteral(false),
       listOpsToTextOps(),
