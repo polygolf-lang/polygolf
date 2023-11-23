@@ -91,12 +91,9 @@ t+"bc"
 "x".repeat(10)
 t.includes`sub`
 t.replaceAll(" ","-")
-t.split` `
-[t,"www"].join()
-[t,"www"].join` `
+t.split` `;[t,"www"].join();[t,"www"].join` `
 abs(m)
-~m
--m
+~m;-m
 !b
 ""+m
 m.toString(2)
