@@ -110,8 +110,8 @@ const nimLanguage: Language = {
       forArgvToForRange(true),
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
-      safeConditionalOpToCollectionGet("array"),
     ),
+    simplegolf(safeConditionalOpToCollectionGet("array")),
     required(
       pickAnyInt,
       forArgvToForEach,

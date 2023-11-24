@@ -106,8 +106,8 @@ const pythonLanguage: Language = {
       forArgvToForEach,
       useEquivalentTextOp(false, true),
       decomposeIntLiteral(),
-      safeConditionalOpToCollectionGet("list"),
     ),
+    simplegolf(safeConditionalOpToCollectionGet("list")),
     required(
       pickAnyInt,
       forArgvToForEach,
