@@ -105,7 +105,6 @@ const pythonLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       useEquivalentTextOp(false, true),
-      useIndexCalls(),
       decomposeIntLiteral(),
       safeConditionalOpToCollectionGet("list"),
     ),
