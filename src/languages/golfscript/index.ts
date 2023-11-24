@@ -31,6 +31,7 @@ import {
 } from "../../plugins/ops";
 import { alias, renameIdents, useBuiltinAliases } from "../../plugins/idents";
 import {
+  golfLastPrint,
   implicitlyConvertPrintArg,
   printConcatToMultiPrint,
   printLnToPrint,
