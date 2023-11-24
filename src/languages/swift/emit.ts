@@ -216,11 +216,11 @@ export default function emitProgram(
           ];
         case "ConditionalOp":
           return [
-            emit(e.condition, 1),
+            emit(e.condition, prec + 1),
             "?",
             emit(e.consequent),
             ":",
-            emit(e.alternate),
+            emit(e.alternate, prec),
           ];
         case "Infix": {
           return [emit(e.left, prec), e.name, emit(e.right, prec + 1)];

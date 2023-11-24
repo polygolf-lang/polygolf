@@ -110,9 +110,9 @@ const nimLanguage: Language = {
       forArgvToForRange(true),
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
-      safeConditionalOpToCollectionGet("array"),
     ),
     required(
+      safeConditionalOpToCollectionGet("array"),
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
@@ -231,7 +231,7 @@ const nimLanguage: Language = {
     if (
       /[A-Za-z]/.test(left) &&
       !["var", "in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"({`).includes(right) &&
+      (symbols + `"({[`).includes(right) &&
       !["=", ":", ".", "::"].includes(b)
     )
       return true; // identifier meeting an operator or string literal or opening paren

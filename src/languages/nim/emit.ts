@@ -224,12 +224,12 @@ export default function emitProgram(
         case "ConditionalOp":
           return [
             "if",
-            emit(e.condition),
+            emit(e.condition, 0),
             ":",
-            emit(e.consequent),
+            emit(e.consequent, 0),
             "else",
             ":",
-            emit(e.alternate),
+            emit(e.alternate, 0),
           ];
         case "Identifier":
           return e.name;
@@ -327,12 +327,13 @@ export default function emitProgram(
           ];
         case "IndexCall":
           if (e.oneIndexed) throw new EmitError(expr, "one indexed");
-          return [emit(e.collection, 12), "[", emit(e.index), "]"];
+          return [emit(e.collection, 12), "$GLUE$", "[", emit(e.index), "]"];
         case "RangeIndexCall":
           if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           if (!isIntLiteral(1n)(e.step)) throw new EmitError(expr, "step");
           return [
             emit(e.collection, 12),
+            "$GLUE$",
             "[",
             emit(e.low),
             "..<",

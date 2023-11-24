@@ -229,3 +229,13 @@ for $i 25 {
 ```js
 for(i in{}+1e9)print(i)
 ```
+
+## Conditional associativity
+
+```polygolf
+print_int (conditional (conditional (1 > 0) (1 < 0) (1 > 0)) 1 2);
+```
+
+```js nogolf
+write((1>0?1<0:1>0)?1:2)
+```
