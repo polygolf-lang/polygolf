@@ -70,6 +70,8 @@ export function search(...plugins: (Plugin | PluginVisitor)[]): LanguagePhase {
 
 export interface Plugin {
   name: string;
+  /** If set, annotates the replacement with the calculated type of the original node. */
+  bakeType?: boolean;
   /** visit should return one or more viable replacement nodes, or undefined to represent
    * no replacement. The replacement nodes should be different in value than
    * the initial node if it compares different under reference equality */

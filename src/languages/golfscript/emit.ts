@@ -35,7 +35,6 @@ export default function emitProgram(program: IR.Node): TokenTree {
         if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
         if (!isSubtype(getType(stmt.start, program), integerType(0)))
           throw new EmitError(stmt, "potentially negative low");
-        if (stmt.variable === undefined) throw new EmitError(stmt, "indexless");
         return [
           emitNode(stmt.end),
           ",",
@@ -44,8 +43,9 @@ export default function emitProgram(program: IR.Node): TokenTree {
             ? []
             : [emitNode(stmt.increment), "%"],
           "{",
-          ":",
-          emitNode(stmt.variable),
+          ...(stmt.variable === undefined
+            ? []
+            : [":", emitNode(stmt.variable)]),
           ";",
           emitMultiNode(stmt.body, stmt),
           "}",

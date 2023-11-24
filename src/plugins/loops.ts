@@ -76,16 +76,17 @@ export function forRangeToWhile(node: Node, spine: Spine) {
 }
 
 export function forRangeToForCLike(node: Node, spine: Spine) {
-  if (node.kind === "ForRange" && node.variable !== undefined) {
+  if (node.kind === "ForRange") {
     const low = getType(node.start, spine);
     const high = getType(node.end, spine);
     if (low.kind !== "integer" || high.kind !== "integer") {
       throw new Error(`Unexpected type (${low.kind},${high.kind})`);
     }
+    const variable = node.variable ?? id();
     return forCLike(
-      assignment(node.variable, node.start),
-      op(node.inclusive ? "leq" : "lt", node.variable, node.end),
-      assignment(node.variable, op("add", node.variable, node.increment)),
+      assignment(variable, node.start),
+      op(node.inclusive ? "leq" : "lt", variable, node.end),
+      assignment(variable, op("add", variable, node.increment)),
       node.body,
     );
   }

@@ -120,7 +120,15 @@ export default function emitProgram(
         case "Block":
           return expr === program
             ? joinNodes("\n", e.children)
-            : e.children.some(isOfKind("If", "While", "ForEach", "ForCLike"))
+            : e.children.some(
+                isOfKind(
+                  "If",
+                  "While",
+                  "ForEach",
+                  "ForCLike",
+                  "VarDeclarationWithAssignment",
+                ),
+              )
             ? ["{", joinNodes("\n", e.children), "}"]
             : joinNodes(",", e.children);
         case "Function":
@@ -160,11 +168,11 @@ export default function emitProgram(
           ];
         case "ConditionalOp":
           return [
-            emit(e.condition),
+            emit(e.condition, prec + 1),
             "?",
             emit(e.consequent),
             ":",
-            emit(e.alternate),
+            emit(e.alternate, prec),
           ];
         case "While":
           return [`while`, "(", emit(e.condition), ")", emit(e.body)];

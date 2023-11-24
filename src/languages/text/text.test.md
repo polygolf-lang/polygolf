@@ -23,3 +23,15 @@ Hello, World!
 8
 9
 ```
+
+## Declaration needs block
+
+```polygolf
+for $i 0 32 {
+  $t <- 0;
+};
+```
+
+```text
+
+```

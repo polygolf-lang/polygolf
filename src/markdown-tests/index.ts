@@ -79,7 +79,9 @@ export function testPlugin(
           getOnlyVariant(parse(input, false)),
           compilationOptionsFromKeywords(args),
           () => {},
-          ...plugins.map((x) => (typeof x === "function" ? x : x.visit)),
+          ...plugins.map((x) =>
+            typeof x === "function" ? { name: x.name, visit: x } : x,
+          ),
         )[0],
       ),
     ).toEqual(normalize(output));
