@@ -100,9 +100,9 @@ const golfscriptLanguage: Language = {
           !isSubtype(getType(node.start, spine.root.node), integerType(0)),
       ),
       replaceToSplitAndJoin,
-      useBuiltinAliases({ "\n": "n" }),
     ),
     simplegolf(
+      useBuiltinAliases({ "\n": "n" }),
       alias({
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
