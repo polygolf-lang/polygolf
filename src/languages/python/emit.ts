@@ -205,11 +205,11 @@ export default function emitProgram(
           });
         case "ConditionalOp":
           return [
-            emit(e.consequent, 1),
+            emit(e.consequent, prec + 1),
             "if",
-            emit(e.condition),
+            emit(e.condition, prec + 1),
             "else",
-            emit(e.alternate),
+            emit(e.alternate, prec),
           ];
         case "FunctionCall":
           return [
