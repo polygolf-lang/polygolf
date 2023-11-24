@@ -85,12 +85,12 @@ const pythonLanguage: Language = {
   phases: [
     search(hardcode()),
     required(printIntToPrint),
+    simplegolf(golfLastPrint()),
     search(
       golfStringListLiteral(),
       listOpsToTextOps("text_codepoint_find", "text_get_codepoint"),
       tempVarToMultipleAssignment,
       forRangeToForEach("array_get", "list_get", "text_get_codepoint"),
-      golfLastPrint(),
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
