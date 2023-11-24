@@ -10,7 +10,8 @@ print "b";
 ```
 
 ```golfscript nogolf
-1 n 2"a
+1"
+"+2"a
 ""b"
 ```
 
@@ -115,7 +116,8 @@ for $i 5 80 5 {
 ```
 
 ```golfscript nogolf
-80,5>5%{:i;i n}%
+80,5>5%{:i;i"
+"+}%
 ```
 
 ```polygolf
@@ -125,7 +127,8 @@ for $i -5 31 {
 ```
 
 ```golfscript nogolf
-36,{5-:i;i n}%
+36,{5-:i;i"
+"+}%
 ```
 
 ```polygolf
@@ -136,7 +139,8 @@ for $i $a ($a+6) {
 ```
 
 ```golfscript nogolf
--4:a;6,{a+:i;i n}%
+-4:a;6,{a+:i;i"
+"+}%
 ```
 
 ```polygolf
@@ -156,7 +160,8 @@ println (argv_get 5);
 ```
 
 ```golfscript nogolf
-:a;a 5=n
+:a;a 5="
+"+
 ```
 
 ```polygolf
@@ -166,5 +171,6 @@ for_argv $x 100 {
 ```
 
 ```golfscript nogolf
-:a;a{:x;x n}%
+:a;a{:x;x"
+"+}%
 ```

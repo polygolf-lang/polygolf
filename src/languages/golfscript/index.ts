@@ -68,13 +68,7 @@ const golfscriptLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(
-      printIntToPrint,
-      implicitlyConvertPrintArg,
-      printLnToPrint,
-      printConcatToMultiPrint,
-      printToImplicitOutput,
-    ),
+    required(printIntToPrint),
     search(
       flipBinaryOps,
       equalityToInequality,
@@ -100,8 +94,11 @@ const golfscriptLanguage: Language = {
           !isSubtype(getType(node.start, spine.root.node), integerType(0)),
       ),
       replaceToSplitAndJoin,
+      implicitlyConvertPrintArg,
+      printLnToPrint,
     ),
     simplegolf(
+      printConcatToMultiPrint,
       useBuiltinAliases({ "\n": "n" }),
       alias({
         Integer: (x) => x.value.toString(),
@@ -171,6 +168,9 @@ const golfscriptLanguage: Language = {
         text_byte_reversed: (x) => infix("%", x[0], int(-1)),
         int_to_text_byte: (x) => infix("+", list(x), text("")),
       }),
+    ),
+    required(
+      printToImplicitOutput,
       addImports({ a: "a" }, (x) =>
         x.length > 0 ? assignment("a", builtin("")) : undefined,
       ),
