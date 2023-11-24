@@ -104,7 +104,6 @@ const golfscriptLanguage: Language = {
         argv: builtin("a"),
         true: int(1),
         false: int(0),
-        print: (x) => x[0],
 
         text_get_byte_slice: (x) =>
           rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
@@ -124,6 +123,7 @@ const golfscriptLanguage: Language = {
             ...(isIntLiteral()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
           ),
       }),
+      mapOps({ print: (x) => x[0] }),
       mapToPrefixAndInfix({
         println: "n",
         not: "!",
