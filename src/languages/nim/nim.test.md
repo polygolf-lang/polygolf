@@ -337,7 +337,7 @@ for()in..9:echo"Hi"
 ```
 
 ```nim
-[4,3][c.int]/%2
+[4,3][int c]/%2
 ```
 
 ```polygolf
