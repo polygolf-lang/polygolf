@@ -110,9 +110,9 @@ const nimLanguage: Language = {
       forArgvToForRange(true),
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
+      safeConditionalOpToCollectionGet("array"),
     ),
     required(
-      safeConditionalOpToCollectionGet("array"),
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
