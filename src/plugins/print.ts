@@ -49,3 +49,16 @@ export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
     return implicitConversion(node.op, node.args[0]);
   }
 }
+
+export const printToImplicitOutput = mapOps(
+  {
+    print: (x) => x[0],
+  },
+  "printToImplicitOutput",
+);
+
+export function printConcatToMultiPrint(node: Node, spine: Spine) {
+  if (isOp("print")(node) && isOp("concat")(node.args[0])) {
+    return block(node.args[0].args.map((x) => op("print", x)));
+  }
+}
