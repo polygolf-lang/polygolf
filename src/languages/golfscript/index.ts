@@ -29,8 +29,13 @@ import {
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
-import { alias, renameIdents } from "../../plugins/idents";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import { alias, renameIdents, useBuiltinAliases } from "../../plugins/idents";
+import {
+  implicitlyConvertPrintArg,
+  printConcatToMultiPrint,
+  printLnToPrint,
+  printToImplicitOutput,
+} from "../../plugins/print";
 import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
@@ -63,10 +68,15 @@ const golfscriptLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint),
+    required(
+      printIntToPrint,
+      implicitlyConvertPrintArg,
+      printLnToPrint,
+      printConcatToMultiPrint,
+      printToImplicitOutput,
+    ),
     search(
       flipBinaryOps,
-      golfLastPrint(),
       equalityToInequality,
       ...bitnotPlugins,
       ...powPlugins,
@@ -89,8 +99,8 @@ const golfscriptLanguage: Language = {
         (node, spine) =>
           !isSubtype(getType(node.start, spine.root.node), integerType(0)),
       ),
-      implicitlyConvertPrintArg,
       replaceToSplitAndJoin,
+      useBuiltinAliases({ "\n": "n" }),
     ),
     simplegolf(
       alias({
@@ -125,7 +135,6 @@ const golfscriptLanguage: Language = {
       }),
       mapOps({ print: (x) => x[0] }),
       mapToPrefixAndInfix({
-        println: "n",
         not: "!",
         bit_not: "~",
         mul: "*",

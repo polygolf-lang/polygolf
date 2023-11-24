@@ -10,7 +10,8 @@ print "b";
 ```
 
 ```golfscript nogolf
-1 n 2"a"n"b"
+1 n 2"a
+""b"
 ```
 
 ```polygolf
