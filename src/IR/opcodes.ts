@@ -179,6 +179,172 @@ export const opCodeDefinitions = {
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
+
+export const opCodeDescriptions: Record<AnyOpCode, string> = {
+  add: "Integer addition.",
+  sub: "Integer subtraction.",
+  mul: "Integer multiplication.",
+  div: "Integer floor division.",
+  trunc_div: "Integer truncating (towards zero) division.",
+  unsigned_trunc_div:
+    "Integer truncating division treating the operands as unsigned.",
+  pow: "Integer exponentiation.",
+  mod: "Integer modulo (corresponds to `div`).",
+  rem: "Integer remainder (corresponds to `trunc_div`).",
+  unsigned_rem:
+    "Integer unsigned remainder (corresponds to `unsigned_trunc_div`).",
+  bit_and: "Integer bitwise and.",
+  bit_or: "Integer bitwise or.",
+  bit_xor: "Integer bitwise xor.",
+  bit_shift_left: "Integer left bitshift.",
+  bit_shift_right: "Integer arithmetic right bitshift.",
+  gcd: "Greatest common divisor of two integers.",
+  min: "Integer minimum.",
+  max: "Integer maximum.",
+  neg: "Integer negation.",
+  abs: "Integer absolute value.",
+  bit_not: "Integer bitwise not.",
+
+  // Input
+  "read[codepoint]": "Reads single codepoint from the stdin.",
+  "read[byte]": "Reads single byte from the stdin.",
+  "read[Int]": "Reads single signed integer from the stdin.",
+  "read[line]": "Reads single line from the stdin.",
+  "at[argv]":
+    "Gets argv at the 0-based `n`th position, where `n` is an integer literal.",
+  argv: "Gets argv as a list.",
+  argc: "Gets the length of argv.",
+
+  // Output
+  "print[Text]": "Prints the provided argument.",
+  "print[Int]": "Converts the provided argument to base 10 text and prints it.",
+  "println[Text]": "Prints the provided argument followed by a \\n.",
+  "println[Int]":
+    "Converts the provided argument to base 10 text and prints it followed by a \\n.",
+  println_list_joined:
+    "Joins the items in the list using the delimiter and prints the result.",
+  println_many_joined:
+    "Joins the items in the list using the delimiter and prints the result.",
+  "putc[byte]": "Creates a single byte text and prints it.",
+  "putc[codepoint]": "Creates a single codepoint text and prints it.",
+  "putc[Ascii]": "Creates a single ascii character text and prints it.",
+
+  // Bool arithmetic
+  or: "Non-shortcircuiting logical or. All arguments are to be safely evaluated in any order.",
+  and: "Non-shortcircuiting logical and. All arguments are to be safely evaluated in any order.",
+  unsafe_or: "Shortcircuiting logical or.",
+  unsafe_and: "Shortcircuiting logical and.",
+  not: "Logical not.",
+  true: "True value.",
+  false: "False value.",
+
+  // Comparison
+  lt: "Integer less than.",
+  leq: "Integer less than or equal.",
+  geq: "Integer greater than or equal.",
+  gt: "Integer greater than.",
+  "eq[Int]": "Integer equality.",
+  "eq[Text]": "Text equality.",
+  "neq[Int]": "Integer inequality.",
+  "neq[Text]": "Text inequality.",
+
+  // Access members
+  "at[Array]": "Gets the item at the 0-based index.",
+  "at[List]": "Gets the item at the 0-based index.",
+  "at[Table]": "Gets the item at the key.",
+  "at[Ascii]": "Gets the character at the 0-based index.",
+  "at[byte]": "Gets the byte (as text) at the 0-based index (counting bytes).",
+  "at[codepoint]":
+    "Gets the codepoint (as text) at the 0-based index (counting codepoints).",
+  "set_at[Array]": "Sets the item at the 0-based index.",
+  "set_at[List]": "Sets the item at the 0-based index.",
+  "set_at[Table]": "Sets the item at the key.",
+
+  // Slice
+  "slice[codepoint]": "TODO",
+  "slice[byte]": "TODO",
+  "slice[Ascii]": "TODO",
+  "slice[List]": "TODO",
+
+  // Chars
+  "ord_at[byte]":
+    "Gets the byte (as integer) at the 0-based index (counting bytes).",
+  "ord_at[codepoint]":
+    "Gets the codepoint (as integer) at the 0-based index (counting codepoints).",
+  "ord_at[Ascii]": "Gets the character (as integer) at the 0-based index.",
+  "ord[byte]": "Converts the byte to an integer.",
+  "ord[codepoint]": "Converts the codepoint to an integer.",
+  "ord[Ascii]": "Converts the character to an integer.",
+  "char[byte]": "Returns a byte (as text) corresponding to the integer.",
+  "char[codepoint]":
+    "Returns a codepoint (as text) corresponding to the integer.",
+  "char[Ascii]": "Returns a character corresponding to the integer.",
+
+  // Order
+  "sorted[Int]": "Returns a sorted copy of the input.",
+  "sorted[Ascii]": "Returns a lexicographically sorted copy of the input.",
+  "reversed[byte]": "Returns a text in which the bytes are in reversed order.",
+  "reversed[codepoint]":
+    "Returns a text in which the codepoints are in reversed order.",
+  "reversed[Ascii]":
+    "Returns a text in which the characters are in reversed order.",
+  "reversed[List]": "Returns a list in which the items are in reversed order.",
+  "find[codepoint]":
+    "Returns a 0-based index of the first codepoint at which the search text starts, provided it is included.",
+  "find[byte]":
+    "Returns a 0-based index of the first byte at which the search text starts, provided it is included.",
+  "find[Ascii]":
+    "Returns a 0-based index of the first character at which the search text starts, provided it is included.",
+  "find[List]":
+    "Returns a 0-based index of the first occurence of the searched item, provided it is included.",
+
+  // Membership
+  "contains[Array]": "Asserts whether an item is included in the array.",
+  "contains[List]": "Asserts whether an item is included in the list.",
+  "contains[Table]":
+    "Asserts whether an item is included in the keys of the table.",
+  "contains[Set]": "Asserts whether an item is included in the set.",
+  "contains[Text]":
+    "Asserts whether the 2nd argument is a substring of the 1st one.",
+
+  // Size
+  "size[List]": "Returns the length of the list.",
+  "size[Set]": "Returns the cardinality of the set.",
+  "size[Table]": "Returns the number of keys in the table.",
+  "size[Ascii]": "Returns the length of the text.",
+  "size[codepoint]": "Returns the length of the text in codepoints.",
+  "size[byte]": "Returns the length of the text in bytes.",
+
+  // Adding items
+  include: "Modifies the set by including the given item.",
+  push: "Modifies the list by pushing the given item at the end.",
+  append: "Returns a new list with the given item appended at the end.",
+  "concat[List]": "Returns a new list formed by concatenation of the inputs.",
+  "concat[Text]": "Returns a new text formed by concatenation of the inputs.",
+
+  // Text ops
+  repeat: "Repeats the text a given amount of times.",
+  split: "Splits the text by the delimiter.",
+  split_whitespace: "Splits the text by any whitespace.",
+  join: "Joins the items using the delimiter.",
+  right_align: "Right-aligns the text using spaces to a minimum length.",
+  replace: "Replaces all occurences of a given text with another text.",
+  text_multireplace:
+    "Performs simultaneos replacement of multiple pairs of texts.",
+
+  // Text / Bool <-> Int
+  int_to_bin_aligned:
+    "Converts the integer to a 2-base text and alignes to a minimum length.",
+  int_to_hex_aligned:
+    "Converts the integer to a 16-base text and alignes to a minimum length.",
+  int_to_dec: "Converts the integer to a 10-base text.",
+  int_to_bin: "Converts the integer to a 2-base text.",
+  int_to_hex: "Converts the integer to a 16-base text.",
+  int_to_bool: "Converts 0 to false and 1 to true.",
+  dec_to_int: "Parses a integer from a 10-base text.",
+  bool_to_int: "Converts false to 0 and true to 1.",
+};
+
 export type OpCodeFrontName =
   | {
       [K in AnyOpCode]: (typeof opCodeDefinitions)[K] extends { front: string }

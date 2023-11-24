@@ -10,14 +10,15 @@ import {
   opCodeDefinitions,
   toString,
   userName,
+  opCodeDescriptions,
 } from "../IR";
 import fs from "fs";
 import path from "path";
 
 let result = `# OpCodes
 
-| Alias | Full name | Input | Output |
-|-------|-----------|-------|--------|
+| Alias | Full name | Input | Output | Description |
+|-------|-----------|-------|--------|-------------|
 `;
 
 function getOpCodeOutputType(opCode: OpCode) {
@@ -35,7 +36,11 @@ for (const [alias, opCodes] of groupby(OpCodesUser, userName).entries()) {
     "<br>",
   )} | ${opCodes
     .map((x) => expectedTypesToString(opCodeDefinitions[x].args))
-    .join("<br>")} | ${opCodes.map(getOpCodeOutputType).join("<br>")} |\n`;
+    .join("<br>")} | ${opCodes
+    .map(getOpCodeOutputType)
+    .join("<br>")} | ${opCodes
+    .map((x) => opCodeDescriptions[x])
+    .join("<br>")} |\n`;
 }
 
 fs.writeFileSync(
