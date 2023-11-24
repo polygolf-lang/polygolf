@@ -80,8 +80,8 @@ export const opCodeDefinitions = {
   // Bool arithmetic
   or: { args: variadic(bool), front: true, assoc: true, commutes: true },
   and: { args: variadic(bool), front: true, assoc: true, commutes: true },
-  unsafe_or: { args: variadic(bool), front: true, assoc: true, commutes: true },
-  unsafe_and: { args: variadic(bool), front: true, commutes: true },
+  unsafe_or: { args: [bool, bool], front: true, assoc: true },
+  unsafe_and: { args: [bool, bool], front: true },
   not: { args: [bool], front: true },
   true: { args: [], front: true },
   false: { args: [], front: true },

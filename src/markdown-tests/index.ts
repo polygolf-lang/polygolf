@@ -82,7 +82,9 @@ export function testPlugin(
             program,
             options,
             () => {},
-            ...plugins.map((x) => (typeof x === "function" ? x : x.visit)),
+            ...plugins.map((x) =>
+              typeof x === "function" ? { name: x.name, visit: x } : x,
+            ),
           )[0],
         );
       })(),

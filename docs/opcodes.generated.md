@@ -26,8 +26,8 @@
 | putc | putc[Ascii] | [0..127] | Void | Creates a single ascii character text and prints it. |
 | or | or | [...Bool] | Bool | Non-shortcircuiting logical or. All arguments are to be safely evaluated in any order. |
 | and | and | [...Bool] | Bool | Non-shortcircuiting logical and. All arguments are to be safely evaluated in any order. |
-| unsafe_or | unsafe_or | [...Bool] | Bool | Shortcircuiting logical or. |
-| unsafe_and | unsafe_and | [...Bool] | Bool | Shortcircuiting logical and. |
+| unsafe_or | unsafe_or | [Bool, Bool] | Bool | Shortcircuiting logical or. |
+| unsafe_and | unsafe_and | [Bool, Bool] | Bool | Shortcircuiting logical and. |
 | not | not | [Bool] | Bool | Logical not. |
 | true | true | [] | Bool | True value. |
 | false | false | [] | Bool | False value. |

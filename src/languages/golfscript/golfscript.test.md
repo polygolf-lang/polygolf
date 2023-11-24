@@ -133,6 +133,16 @@ for $i $a ($a+6) {
 -4:a;6,{a+:i;i n}%
 ```
 
+```polygolf
+for 5 {
+  print "x";
+};
+```
+
+```golfscript nogolf
+5,{;"x"}%
+```
+
 ## Argv
 
 ```polygolf

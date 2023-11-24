@@ -29,7 +29,6 @@ import {
   flippedOpCode,
   isVariadic,
 } from "../IR";
-import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 import { mapObjectValues } from "../common/arrays";
@@ -40,6 +39,7 @@ export function mapOps(
 ): Plugin {
   return {
     name,
+    bakeType: true,
     visit(node, spine) {
       if (isOp()(node)) {
         const op = node.op;
@@ -55,7 +55,7 @@ export function mapOps(
               op: node.op,
             };
           }
-          return { ...replacement!, type: getType(node, spine) };
+          return replacement;
         }
       }
     },
@@ -275,17 +275,25 @@ export function flipBinaryOps(node: Node) {
   }
 }
 
-export function removeImplicitConversions(node: Node) {
-  if (node.kind === "ImplicitConversion") {
-    return node.expr;
-  }
-}
+export const removeImplicitConversions: Plugin = {
+  name: "removeImplicitConversions",
+  bakeType: true,
+  visit(node) {
+    if (node.kind === "ImplicitConversion") {
+      return node.expr;
+    }
+  },
+};
 
-export function methodsAsFunctions(node: Node) {
-  if (node.kind === "MethodCall") {
-    return functionCall(propertyCall(node.object, node.ident), node.args);
-  }
-}
+export const methodsAsFunctions: Plugin = {
+  name: "methodsAsFunctions",
+  bakeType: true,
+  visit(node) {
+    if (node.kind === "MethodCall") {
+      return functionCall(propertyCall(node.object, node.ident), node.args);
+    }
+  },
+};
 
 export const printIntToPrint: Plugin = mapOps(
   {
