@@ -37,23 +37,17 @@ export function mapOps(
     name,
     bakeType: true,
     visit(node, spine) {
-      if (isOp()(node)) {
-        const op = node.op;
+      let replacement = node;
+      while (isOp()(replacement)) {
+        const op = replacement.op;
         const f = opMap[op];
-        if (f !== undefined) {
-          let replacement =
-            typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
-          if (replacement === undefined) return undefined;
-          if ("op" in replacement && !isOp()(replacement)) {
-            // "as any" because TS doesn't do well with the "in" keyword
-            replacement = {
-              ...(replacement as any),
-              op: node.op,
-            };
-          }
-          return replacement;
-        }
+        if (f === undefined) break;
+        const nextReplacement =
+          typeof f === "function" ? f(replacement.args, spine as Spine<Op>) : f;
+        if (nextReplacement === undefined) break;
+        replacement = nextReplacement;
       }
+      return node === replacement ? undefined : replacement;
     },
   };
 }
