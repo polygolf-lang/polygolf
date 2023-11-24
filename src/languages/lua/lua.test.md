@@ -27,6 +27,7 @@ print("y")
 ```polygolf
 $a:-100..100 <- 0;
 $b:Text <- "xy";
+$c <- true;
 ~ $a;
 - $a;
 $a + 2;
@@ -59,11 +60,14 @@ text_replace $b "(" "*";
 text_replace $b $b:(Text 1..oo) $b;
 join (list "xy" "abc") "/";
 join (list "12" "345") "";
+conditional ($a == 2) $a 3;
+conditional ($a == 2) $c false;
 ```
 
 ```lua nogolf
 a=0
 b="xy"
+c=true
 ~a
 -a
 2+a
@@ -96,6 +100,8 @@ b:gsub("%(","*")
 b:gsub(b:gsub("(%W)","%%%1"),b:gsub("%%","%%%%"))
 table.concat({"xy","abc"},"/")
 table.concat({"12","345"})
+a==2 and a or 3
+(a==2 and{c}or{false})[1]
 ```
 
 ## Parentheses

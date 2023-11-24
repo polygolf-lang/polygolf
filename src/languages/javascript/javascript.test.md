@@ -91,12 +91,9 @@ t+"bc"
 "x".repeat(10)
 t.includes`sub`
 t.replaceAll(" ","-")
-t.split` `
-[t,"www"].join()
-[t,"www"].join` `
+t.split` `;[t,"www"].join();[t,"www"].join` `
 abs(m)
-~m
--m
+~m;-m
 !b
 ""+m
 m.toString(2)
@@ -228,4 +225,14 @@ for $i 25 {
 
 ```js
 for(i in{}+1e9)print(i)
+```
+
+## Conditional associativity
+
+```polygolf
+print_int (conditional (conditional (1 > 0) (1 < 0) (1 > 0)) 1 2);
+```
+
+```js nogolf
+write((1>0?1<0:1>0)?1:2)
 ```

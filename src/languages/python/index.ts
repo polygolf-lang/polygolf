@@ -71,10 +71,12 @@ import {
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
+  useImplicitBoolToInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
 import { charLength } from "../../common/objective";
+import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
 
 const pythonLanguage: Language = {
   name: "Python",
@@ -103,9 +105,9 @@ const pythonLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       useEquivalentTextOp(false, true),
-      useIndexCalls(),
       decomposeIntLiteral(),
     ),
+    simplegolf(safeConditionalOpToCollectionGet("list")),
     required(
       pickAnyInt,
       forArgvToForEach,
@@ -121,6 +123,8 @@ const pythonLanguage: Language = {
             add1(x[0]),
           ),
       }),
+
+      useImplicitBoolToInt,
       useIndexCalls(),
 
       textGetToIntToTextGet,

@@ -326,6 +326,32 @@ for()in..9:echo"Hi"
 "\u{1f48e}"
 ```
 
+## Conditional ops
+
+```polygolf
+(conditional (builtin "c"):Bool 3 4) div 2;
+```
+
+```nim nogolf
+(if c:3 else:4)/%2
+```
+
+```nim
+[4,3][c.int]/%2
+```
+
+```polygolf
+$c:Bool <- true;
+2 + (conditional $c 3 4);
+```
+
+TODO split left & right prec after #254
+
+```nim nogolf skip
+var c=true
+2+if c:3 else:4
+```
+
 ## Ufcs
 
 ```polygolf

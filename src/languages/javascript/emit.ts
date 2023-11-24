@@ -168,11 +168,11 @@ export default function emitProgram(
           ];
         case "ConditionalOp":
           return [
-            emit(e.condition),
+            emit(e.condition, prec + 1),
             "?",
             emit(e.consequent),
             ":",
-            emit(e.alternate),
+            emit(e.alternate, prec),
           ];
         case "While":
           return [`while`, "(", emit(e.condition), ")", emit(e.body)];

@@ -76,6 +76,7 @@ import {
   pickAnyInt,
   lowBitsPlugins,
 } from "../../plugins/arithmetic";
+import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -110,6 +111,7 @@ const nimLanguage: Language = {
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
     ),
+    simplegolf(safeConditionalOpToCollectionGet("array")),
     required(
       pickAnyInt,
       forArgvToForEach,
@@ -229,7 +231,7 @@ const nimLanguage: Language = {
     if (
       /[A-Za-z]/.test(left) &&
       !["var", "in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"({`).includes(right) &&
+      (symbols + `"({[`).includes(right) &&
       !["=", ":", ".", "::"].includes(b)
     )
       return true; // identifier meeting an operator or string literal or opening paren
