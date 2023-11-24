@@ -29,6 +29,8 @@ function precedence(expr: IR.Node): number {
       return unaryPrecedence(expr.name);
     case "Infix":
       return binaryPrecedence(expr.name);
+    case "ConditionalOp":
+      return 0;
   }
   return Infinity;
 }
@@ -201,6 +203,14 @@ export default function emitProgram(
             16: ["0x", ""],
             36: ["int('", "',36)"],
           });
+        case "ConditionalOp":
+          return [
+            emit(e.consequent, prec + 1),
+            "if",
+            emit(e.condition, prec + 1),
+            "else",
+            emit(e.alternate, prec),
+          ];
         case "FunctionCall":
           return [
             emit(e.func),
@@ -225,6 +235,7 @@ export default function emitProgram(
         case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "List":
+        case "Array":
           return ["[", joinNodes(",", e.exprs), "]"];
         case "Table":
           return [

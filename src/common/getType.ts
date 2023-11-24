@@ -163,6 +163,7 @@ export function calcType(expr: Node, program: Node): Type {
       );
     }
     case "Identifier":
+      if (expr.builtin) throw Error("Cannot calculate type of builtin.");
       return getIdentifierType(expr, program);
     case "Text": {
       const codepoints = charLength(expr.value);

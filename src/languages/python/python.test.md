@@ -316,3 +316,17 @@ println (list_get (list "12345" "ABC") 1);
 ["12345","ABC"][1]
 print("1A2B3C4 5"[1::2])
 ```
+
+## Conditional ops
+
+```polygolf
+conditional true 3 4;
+```
+
+```python nogolf
+3 if 1 else 4
+```
+
+```python
+[4,3][1]
+```

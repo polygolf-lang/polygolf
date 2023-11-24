@@ -18,6 +18,8 @@ import {
   required,
   search,
   simplegolf,
+  flattenTree,
+  defaultWhitespaceInsertLogic,
 } from "../../common/Language";
 
 import emitProgram from "./emit";
@@ -213,6 +215,23 @@ const javascriptLanguage: Language = {
     ),
     required(renameIdents(), removeImplicitConversions),
   ],
+  detokenizer(tree) {
+    let result = "";
+    flattenTree(tree).forEach((token, i, tokens) => {
+      if (i === tokens.length - 1) result += token;
+      else {
+        const nextToken = tokens[i + 1];
+        if (token === "\n" && "([`+-/".includes(nextToken[0])) {
+          token = ";";
+        }
+        result += token;
+        if (defaultWhitespaceInsertLogic(token, nextToken)) {
+          result += " ";
+        }
+      }
+    });
+    return result;
+  },
 };
 
 export default javascriptLanguage;

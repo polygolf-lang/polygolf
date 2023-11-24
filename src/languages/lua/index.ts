@@ -55,6 +55,8 @@ import {
 } from "../../plugins/arithmetic";
 import { hardcode, listOpsToTextOps } from "../../plugins/static";
 import { base10DecompositionToFloatLiteralAsBuiltin } from "./plugins";
+import { getType } from "../../common/getType";
+import { conditionalOpToAndOr } from "../../plugins/conditions";
 
 const luaLanguage: Language = {
   name: "Lua",
@@ -110,6 +112,10 @@ const luaLanguage: Language = {
         text_get_byte: (x) => method(x[0], "sub", add1(x[1]), add1(x[1])),
         text_get_byte_slice: (x) => method(x[0], "sub", x[1], add1(x[2])),
       }),
+      conditionalOpToAndOr(
+        (n, s) => !["boolean", "void"].includes(getType(n, s).kind),
+        "list",
+      ),
       useIndexCalls(true),
       mapOps({
         int_to_text: (x) =>
