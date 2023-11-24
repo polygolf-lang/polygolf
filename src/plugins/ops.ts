@@ -41,17 +41,7 @@ export function mapOps(
         const op = node.op;
         const f = opMap[op];
         if (f !== undefined) {
-          let replacement =
-            typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
-          if (replacement === undefined) return undefined;
-          if ("op" in replacement && !isOp()(replacement)) {
-            // "as any" because TS doesn't do well with the "in" keyword
-            replacement = {
-              ...(replacement as any),
-              op: node.op,
-            };
-          }
-          return replacement;
+          return typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
         }
       }
     },
