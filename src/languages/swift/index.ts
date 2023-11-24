@@ -76,12 +76,12 @@ const swiftLanguage: Language = {
   phases: [
     search(hardcode()),
     required(printIntToPrint),
+    simplegolf(golfLastPrint()),
     search(
       mergePrint,
       flipBinaryOps,
       golfStringListLiteral(false),
       listOpsToTextOps(),
-      golfLastPrint(),
       equalityToInequality,
       forRangeToForRangeInclusive(),
       ...bitnotPlugins,

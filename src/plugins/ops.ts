@@ -25,7 +25,6 @@ import {
   isIdent,
   postfix,
 } from "../IR";
-import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 import { mapObjectValues } from "../common/arrays";
@@ -36,22 +35,13 @@ export function mapOps(
 ): Plugin {
   return {
     name,
+    bakeType: true,
     visit(node, spine) {
       if (isOp()(node)) {
         const op = node.op;
         const f = opMap[op];
         if (f !== undefined) {
-          let replacement =
-            typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
-          if (replacement === undefined) return undefined;
-          if ("op" in replacement && !isOp()(replacement)) {
-            // "as any" because TS doesn't do well with the "in" keyword
-            replacement = {
-              ...(replacement as any),
-              op: node.op,
-            };
-          }
-          return { ...replacement!, type: getType(node, spine) };
+          return typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
         }
       }
     },
@@ -263,17 +253,25 @@ export function flipBinaryOps(node: Node) {
   }
 }
 
-export function removeImplicitConversions(node: Node) {
-  if (node.kind === "ImplicitConversion") {
-    return node.expr;
-  }
-}
+export const removeImplicitConversions: Plugin = {
+  name: "removeImplicitConversions",
+  bakeType: true,
+  visit(node) {
+    if (node.kind === "ImplicitConversion") {
+      return node.expr;
+    }
+  },
+};
 
-export function methodsAsFunctions(node: Node) {
-  if (node.kind === "MethodCall") {
-    return functionCall(propertyCall(node.object, node.ident), node.args);
-  }
-}
+export const methodsAsFunctions: Plugin = {
+  name: "methodsAsFunctions",
+  bakeType: true,
+  visit(node) {
+    if (node.kind === "MethodCall") {
+      return functionCall(propertyCall(node.object, node.ident), node.args);
+    }
+  },
+};
 
 export const printIntToPrint: Plugin = mapOps(
   {

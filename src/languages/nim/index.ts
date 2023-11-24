@@ -80,6 +80,7 @@ import {
   pickAnyInt,
   lowBitsPlugins,
 } from "../../plugins/arithmetic";
+import { safeConditionalOpToCollectionGet } from "../../plugins/conditions";
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -88,12 +89,12 @@ const nimLanguage: Language = {
   phases: [
     search(hardcode()),
     required(printIntToPrint),
+    simplegolf(golfLastPrint()),
     search(
       mergePrint,
       flipBinaryOps,
       golfStringListLiteral(),
       listOpsToTextOps("text_byte_find", "text_get_byte"),
-      golfLastPrint(),
       forRangeToForEach("array_get", "list_get", "text_get_byte"),
       tempVarToMultipleAssignment,
       useDecimalConstantPackedPrinter,
@@ -115,6 +116,7 @@ const nimLanguage: Language = {
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
     ),
+    simplegolf(safeConditionalOpToCollectionGet("array")),
     required(
       pickAnyInt,
       forArgvToForEach,
@@ -234,7 +236,7 @@ const nimLanguage: Language = {
     if (
       /[A-Za-z]/.test(left) &&
       !["var", "in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"({`).includes(right) &&
+      (symbols + `"({[`).includes(right) &&
       !["=", ":", ".", "::"].includes(b)
     )
       return true; // identifier meeting an operator or string literal or opening paren
