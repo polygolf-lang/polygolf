@@ -30,6 +30,11 @@ const integerOpsEquivalenceAscii = toBidirectionalMap<OpCode>([
   ["int_to_text_byte", "int_to_codepoint"],
 ]);
 
+const opsToSwap = [
+  ...textOpsEquivalenceAscii.keys(),
+  ...integerOpsEquivalenceAscii.keys(),
+];
+
 /** Swaps an op to another one, provided they are equivalent for the subtype. */
 export function useEquivalentTextOp(
   useBytes = true,
@@ -42,21 +47,21 @@ export function useEquivalentTextOp(
   return {
     name: `useEquivalentTextOp(${useBytes.toString()}, ${useCodepoints.toString()})`,
     visit(node, spine) {
-      if (!isOp()(node)) return;
-      if (node.args.length < 1) return;
-      const typeArg0 = getType(node.args[0], spine);
-      if (
-        (!useBytes && node.op.includes("codepoint")) ||
-        (!useCodepoints && node.op.includes("byte"))
-      )
-        return;
-      if (typeArg0.kind === "text" && typeArg0.isAscii) {
-        const alternative = textOpsEquivalenceAscii.get(node.op);
-        if (alternative !== undefined) return { ...node, op: alternative };
-      }
-      if (isSubtype(typeArg0, integerType(0, 127))) {
-        const alternative = integerOpsEquivalenceAscii.get(node.op);
-        if (alternative !== undefined) return { ...node, op: alternative };
+      if (isOp(...opsToSwap)(node)) {
+        const typeArg0 = getType(node.args[0], spine);
+        if (
+          (!useBytes && node.op.includes("codepoint")) ||
+          (!useCodepoints && node.op.includes("byte"))
+        )
+          return;
+        if (typeArg0.kind === "text" && typeArg0.isAscii) {
+          const alternative = textOpsEquivalenceAscii.get(node.op);
+          if (alternative !== undefined) return { ...node, op: alternative };
+        }
+        if (isSubtype(typeArg0, integerType(0, 127))) {
+          const alternative = integerOpsEquivalenceAscii.get(node.op);
+          if (alternative !== undefined) return { ...node, op: alternative };
+        }
       }
     },
   };
