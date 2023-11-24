@@ -133,7 +133,6 @@ const golfscriptLanguage: Language = {
             ...(isIntLiteral()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
           ),
       }),
-      mapOps({ print: (x) => x[0] }),
       mapToPrefixAndInfix({
         not: "!",
         bit_not: "~",
