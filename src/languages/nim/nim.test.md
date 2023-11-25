@@ -126,7 +126,7 @@ find(@[""],"")
 println ((int_to_text 1) .. "x");
 ```
 
-```nim
+```nim no:hardcode
 echo $1&"x"
 ```
 
