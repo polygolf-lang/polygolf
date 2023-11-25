@@ -132,7 +132,7 @@ for x in sys.argv[1:]:print(x)
 ```
 
 ```polygolf
-print (argv_get 0);
+print (at[argv] 0);
 ```
 
 ```python
@@ -213,29 +213,19 @@ a=b="Hello"
 ## String encoding Ops
 
 ```polygolf
-text_get_byte "abc" 1;
-text_get_codepoint "def" 1;
-text_byte_to_int "g";
-codepoint_to_int "h";
-text_get_byte_to_int "ijk" 1;
-text_get_codepoint_to_int "lmn" 1;
-text_byte_length "opq";
-text_codepoint_length "rst";
-int_to_text_byte 99;
-int_to_codepoint 999;
+at[Ascii] "abc" 1;
+ord[Ascii] "g";
+ord_at[Ascii] "ijk" 1;
+size[Ascii] "opq";
+char[Ascii] 99;
 ```
 
 ```py nogolf
 "abc"[1]
-"def"[1]
 ord("g")
-ord("h")
 ord("ijk"[1])
-ord("lmn"[1])
 len("opq")
-len("rst")
 chr(99)
-chr(999)
 ```
 
 ## Aliasing partially applied methods

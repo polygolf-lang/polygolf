@@ -39,7 +39,7 @@ export function tableHashing(
   return {
     name: "tableHashing(...)",
     visit(node, spine) {
-      if (isOp("table_get")(node) && node.args[0].kind === "Table") {
+      if (isOp("at[Table]")(node) && node.args[0].kind === "Table") {
         const table = node.args[0];
         const getKey = node.args[1];
         const tableType = getType(table, spine);
@@ -59,7 +59,7 @@ export function tableHashing(
           while (array[lastUsed] === null) lastUsed--;
 
           return op(
-            "list_get",
+            "at[List]",
             list(
               array
                 .slice(0, lastUsed + 1)
@@ -128,7 +128,7 @@ export function testTableHashing(maxMod: number): Plugin {
 }
 
 export function tableToListLookup(node: Node) {
-  if (isOp("table_get")(node) && node.args[0].kind === "Table") {
+  if (isOp("at[Table]")(node) && node.args[0].kind === "Table") {
     const keys = node.args[0].kvPairs.map((x) => x.key);
     if (
       keys.every(isOfKind("Integer", "Text")) &&
@@ -136,7 +136,7 @@ export function tableToListLookup(node: Node) {
     ) {
       const values = node.args[0].kvPairs.map((x) => x.value);
       const at = node.args[1];
-      return op("list_get", list(values), op("list_find", list(keys), at));
+      return op("at[List]", list(values), op("find[List]", list(keys), at));
     }
   }
 }

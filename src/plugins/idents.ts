@@ -8,8 +8,11 @@ import {
   type Identifier,
   type IR,
   isUserIdent,
+  type Node,
   type NodeFuncRecord,
   getNodeFunc,
+  isText,
+  builtin,
 } from "../IR";
 
 function getIdentMap(
@@ -133,5 +136,13 @@ export function alias(
       }, false).node;
       return block([...assignments, replacedDeep]);
     },
+  };
+}
+
+export function useBuiltinAliases(builtins: Record<string, string>) {
+  return function (node: Node) {
+    if (isText()(node) && node.value in builtins) {
+      return builtin(builtins[node.value]);
+    }
   };
 }

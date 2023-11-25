@@ -31,7 +31,7 @@ export const golfTextListLiteralIndex: Plugin = {
       });
       if (
         values.every((x) => x.chars.length === x.targetLength) ||
-        isOp("println")(spine.parent!.node)
+        isOp("println[Text]")(spine.parent!.node)
       ) {
         values.forEach((x) => {
           while (x.chars.length < x.targetLength) x.chars.push(" ");

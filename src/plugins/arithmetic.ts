@@ -43,8 +43,8 @@ export function divToTruncdiv(node: Node, spine: Spine) {
 export const truncatingOpsPlugins = [modToRem, divToTruncdiv];
 
 export function equalityToInequality(node: Node, spine: Spine) {
-  if (isOp("eq", "neq")(node)) {
-    const eq = node.op === "eq";
+  if (isOp("eq[Int]", "neq[Int]")(node)) {
+    const eq = node.op === "eq[Int]";
     const [a, b] = [node.args[0], node.args[1]];
     const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
       IntegerType,
@@ -143,7 +143,7 @@ export function applyDeMorgans(node: Node, spine: Spine) {
 
 export function useIntegerTruthiness(node: Node, spine: Spine) {
   if (
-    isOp("eq", "neq")(node) &&
+    isOp("eq[Int]", "neq[Int]")(node) &&
     spine.parent!.node.kind === "If" &&
     spine.pathFragment === "condition"
   ) {
@@ -152,7 +152,7 @@ export function useIntegerTruthiness(node: Node, spine: Spine) {
       : isIntLiteral(0n)(node.args[0])
       ? implicitConversion("int_to_bool", node.args[1])
       : undefined;
-    return res !== undefined && node.op === "eq" ? op("not", res) : res;
+    return res !== undefined && node.op === "eq[Int]" ? op("not", res) : res;
   }
 }
 
@@ -475,7 +475,7 @@ export function useImplicitBoolToInt(node: Node, spine: Spine) {
   if (
     isOp("bool_to_int")(node) &&
     !spine.isRoot &&
-    isOp("array_get", "list_get")(spine.parent!.node) // This can be extend to other ops, like "mul".
+    isOp("at[Array]", "at[List]")(spine.parent!.node) // This can be extend to other ops, like "mul".
   ) {
     return implicitConversion(node.op, node.args[0]);
   }
