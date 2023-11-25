@@ -29,8 +29,14 @@ import {
   removeImplicitConversions,
   printIntToPrint,
 } from "../../plugins/ops";
-import { alias, renameIdents } from "../../plugins/idents";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import { alias, renameIdents, useBuiltinAliases } from "../../plugins/idents";
+import {
+  golfLastPrint,
+  implicitlyConvertPrintArg,
+  printConcatToMultiPrint,
+  printLnToPrint,
+  printToImplicitOutput,
+} from "../../plugins/print";
 import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
@@ -64,9 +70,9 @@ const golfscriptLanguage: Language = {
   phases: [
     search(hardcode()),
     required(printIntToPrint),
+    simplegolf(golfLastPrint(false)),
     search(
       flipBinaryOps,
-      golfLastPrint(),
       equalityToInequality,
       ...bitnotPlugins,
       ...powPlugins,
@@ -89,10 +95,13 @@ const golfscriptLanguage: Language = {
         (node, spine) =>
           !isSubtype(getType(node.start, spine.root.node), integerType(0)),
       ),
-      implicitlyConvertPrintArg,
       replaceToSplitAndJoin,
+      implicitlyConvertPrintArg,
+      printLnToPrint,
     ),
     simplegolf(
+      printConcatToMultiPrint,
+      useBuiltinAliases({ "\n": "n" }),
       alias({
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
@@ -104,7 +113,6 @@ const golfscriptLanguage: Language = {
         argv: builtin("a"),
         true: int(1),
         false: int(0),
-        "print[Text]": (x) => x[0],
 
         "slice[byte]": (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
         neg: (x) => op("mul", x[0], int(-1)),
@@ -124,7 +132,6 @@ const golfscriptLanguage: Language = {
           ),
       }),
       mapToPrefixAndInfix({
-        "println[Text]": "n",
         not: "!",
         bit_not: "~",
         mul: "*",
@@ -163,6 +170,9 @@ const golfscriptLanguage: Language = {
         "reversed[byte]": (x) => infix("%", x[0], int(-1)),
         "char[byte]": (x) => infix("+", list(x), text("")),
       }),
+    ),
+    required(
+      printToImplicitOutput,
       addImports({ a: "a" }, (x) =>
         x.length > 0 ? assignment("a", builtin("")) : undefined,
       ),

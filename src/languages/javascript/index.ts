@@ -72,10 +72,10 @@ const javascriptLanguage: Language = {
   phases: [
     search(hardcode()),
     required(printIntToPrint),
+    simplegolf(golfLastPrint()),
     search(
       golfStringListLiteral(),
       forRangeToForEach("at[Array]", "at[List]", "at[codepoint]"),
-      golfLastPrint(),
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,

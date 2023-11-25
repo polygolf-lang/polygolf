@@ -85,11 +85,11 @@ const nimLanguage: Language = {
   phases: [
     search(hardcode()),
     required(printIntToPrint),
+    simplegolf(golfLastPrint()),
     search(
       flipBinaryOps,
       golfStringListLiteral(),
       listOpsToTextOps("find[byte]", "at[byte]"),
-      golfLastPrint(),
       forRangeToForEach("at[Array]", "at[List]", "at[byte]"),
       tempVarToMultipleAssignment,
       useDecimalConstantPackedPrinter,

@@ -74,8 +74,9 @@ export function listOpsToTextOps(
 export function hardcode(): Plugin {
   return {
     name: "hardcode",
-    visit(node, spine) {
-      if (spine.isRoot) {
+    visit(node, spine, context) {
+      context.skipChildren();
+      if (!isOp("print[Text]")(node)) {
         try {
           const output = getOutput(node);
           if (output !== "") return op("print[Text]", text(output));

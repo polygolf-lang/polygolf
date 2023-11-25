@@ -65,9 +65,9 @@ const luaLanguage: Language = {
   phases: [
     search(hardcode()),
     required(printIntToPrint),
+    simplegolf(golfLastPrint()),
     search(
       flipBinaryOps,
-      golfLastPrint(),
       listOpsToTextOps("find[byte]", "at[byte]"),
       tempVarToMultipleAssignment,
       equalityToInequality,
