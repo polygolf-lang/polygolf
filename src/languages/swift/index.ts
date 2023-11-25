@@ -50,7 +50,7 @@ import {
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
 import {
-  useEquivalentTextOp,
+  usePrimaryTextOps,
   textToIntToTextGetToInt,
   replaceToSplitAndJoin,
 } from "../../plugins/textOps";
@@ -72,18 +72,17 @@ const swiftLanguage: Language = {
   phases: [
     search(hardcode()),
     required(printIntToPrint),
+    simplegolf(golfLastPrint()),
     search(
       flipBinaryOps,
       golfStringListLiteral(false),
       listOpsToTextOps(),
-      golfLastPrint(),
       equalityToInequality,
       forRangeToForRangeInclusive(),
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
       forRangeToForRangeOneStep,
-      useEquivalentTextOp(true, true),
       inlineVariables,
       replaceToSplitAndJoin,
       textToIntToTextGetToInt,
@@ -91,29 +90,28 @@ const swiftLanguage: Language = {
       ...truncatingOpsPlugins,
       mapOps({
         argv: builtin("CommandLine.arguments[1...]"),
-        argv_get: (x) =>
-          op("list_get", builtin("CommandLine.arguments"), add1(x[0])),
-        codepoint_to_int: (x) => op("text_get_codepoint_to_int", x[0], int(0n)),
-        text_byte_to_int: (x) => op("text_get_byte_to_int", x[0], int(0n)),
-        text_get_byte: (x) =>
-          op("int_to_text_byte", op("text_get_byte_to_int", ...x)),
+        "at[argv]": (x) =>
+          op("at[List]", builtin("CommandLine.arguments"), add1(x[0])),
+        "ord[codepoint]": (x) => op("ord_at[codepoint]", x[0], int(0n)),
+        "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
+        "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", ...x)),
       }),
       useIndexCalls(),
       decomposeIntLiteral(),
     ),
     required(
+      usePrimaryTextOps("codepoint"),
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps({
-        read_line: func("readLine"),
+        "read[line]": func("readLine"),
         argv: builtin("CommandLine.arguments[1...]"),
-        argv_get: (x) =>
-          op("list_get", builtin("CommandLine.arguments"), add1(x[0])),
-        codepoint_to_int: (x) => op("text_get_codepoint_to_int", x[0], int(0n)),
-        text_byte_to_int: (x) => op("text_get_byte_to_int", x[0], int(0n)),
-        text_get_byte: (x) =>
-          op("int_to_text_byte", op("text_get_byte_to_int", ...x)),
+        "at[argv]": (x) =>
+          op("at[List]", builtin("CommandLine.arguments"), add1(x[0])),
+        "ord[codepoint]": (x) => op("ord_at[codepoint]", x[0], int(0n)),
+        "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
+        "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", ...x)),
       }),
       useIndexCalls(),
       implicitlyConvertPrintArg,
@@ -124,31 +122,32 @@ const swiftLanguage: Language = {
             "joined",
             ...(isText("")(x[1]) ? [] : [namedArg("separator", x[1])]),
           ),
-        text_get_byte_to_int: (x) =>
+        "ord_at[byte]": (x) =>
           func("Int", indexCall(func("Array", prop(x[0], "utf8")), x[1])),
-        text_get_codepoint: (x) =>
+        "at[codepoint]": (x) =>
           func("String", indexCall(func("Array", x[0]), x[1])),
-        text_get_codepoint_to_int: (x) =>
+        "ord_at[codepoint]": (x) =>
           prop(
             indexCall(func("Array", prop(x[0], "unicodeScalars")), x[1]),
             "value",
           ),
-        int_to_text_byte: (x) =>
+        "char[byte]": (x) =>
           func("String", postfix("!", func("UnicodeScalar", x))),
-        int_to_codepoint: (x) =>
+        "char[codepoint]": (x) =>
           func("String", postfix("!", func("UnicodeScalar", x))),
-        text_codepoint_length: (x) => prop(x[0], "count"),
-        text_byte_length: (x) => prop(prop(x[0], "utf8"), "count"),
-        int_to_text: (x) => func("String", x),
-        text_split: (x) => method(x[0], "split", namedArg("separator", x[1])),
+        "size[codepoint]": (x) => prop(x[0], "count"),
+        "size[byte]": (x) => prop(prop(x[0], "utf8"), "count"),
+        int_to_dec: (x) => func("String", x),
+        split: (x) => method(x[0], "split", namedArg("separator", x[1])),
         repeat: (x) =>
           func("String", namedArg("repeating", x[0]), namedArg("count", x[1])),
 
         pow: (x) =>
           func("Int", func("pow", func("Double", x[0]), func("Double", x[1]))),
-        println: (x) => func("print", x),
-        print: (x) => func("print", x, namedArg("terminator", text(""))),
-        text_to_int: (x) => postfix("!", func("Int", x)),
+        "println[Text]": (x) => func("print", x),
+        "print[Text]": (x) =>
+          func("print", x, namedArg("terminator", text(""))),
+        dec_to_int: (x) => postfix("!", func("Int", x)),
 
         max: (x) => func("max", x),
         min: (x) => func("min", x),
@@ -156,7 +155,7 @@ const swiftLanguage: Language = {
         true: builtin("true"),
         false: builtin("false"),
 
-        text_replace: (x) =>
+        replace: (x) =>
           method(
             x[0],
             "replacingOccurrences",
@@ -179,11 +178,11 @@ const swiftLanguage: Language = {
           sub: "-",
           bit_or: "|",
           bit_xor: "^",
-          concat: "+",
+          "concat[Text]": "+",
           lt: "<",
           leq: "<=",
-          eq: "==",
-          neq: "!=",
+          "eq[Int]": "==",
+          "neq[Int]": "!=",
           geq: ">=",
           gt: ">",
           and: "&&",

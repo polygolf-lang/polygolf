@@ -5,7 +5,6 @@ import {
   infix,
   type BinaryOpCode,
   type Node,
-  flipOpCode,
   type IndexCall,
   indexCall,
   isBinary,
@@ -19,11 +18,16 @@ import {
   op,
   prefix,
   type UnaryOpCode,
-  BinaryOpCodes,
   functionCall,
   propertyCall,
   isIdent,
   postfix,
+  type VariadicOpCode,
+  BinaryOpCodes,
+  VariadicOpCodes,
+  isUnary,
+  flippedOpCode,
+  isVariadic,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -41,17 +45,7 @@ export function mapOps(
         const op = node.op;
         const f = opMap[op];
         if (f !== undefined) {
-          let replacement =
-            typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
-          if (replacement === undefined) return undefined;
-          if ("op" in replacement && !isOp()(replacement)) {
-            // "as any" because TS doesn't do well with the "in" keyword
-            replacement = {
-              ...(replacement as any),
-              op: node.op,
-            };
-          }
-          return replacement;
+          return typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
         }
       }
     },
@@ -101,15 +95,17 @@ export function mapToPrefixAndInfix<
   TNames extends string,
   TNamesMutating extends TNames,
 >(
-  opMap: Partial<Record<UnaryOpCode, string> & Record<BinaryOpCode, TNames>>,
+  opMap: Partial<
+    Record<UnaryOpCode, string> & Record<BinaryOpCode | VariadicOpCode, TNames>
+  >,
   asMutatingInfix: true | TNamesMutating[] = [],
 ): Plugin {
   enhanceOpMap(opMap);
   const justPrefixInfix = mapOps(
     mapObjectValues(opMap, (name, op) =>
-      isBinary(op)
-        ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
-        : (x: readonly Node[]) => prefix(name, x[0]),
+      isUnary(op)
+        ? (x: readonly Node[]) => prefix(name, x[0])
+        : (x: readonly Node[]) => asBinaryChain(op, x, opMap),
     ),
     `mapToPrefixAndInfix(${JSON.stringify(opMap)}, ${JSON.stringify(
       asMutatingInfix,
@@ -121,7 +117,7 @@ export function mapToPrefixAndInfix<
     Object.fromEntries(
       Object.entries(opMap).filter(
         ([k, v]) =>
-          isBinary(k as OpCode) &&
+          (isBinary(k as OpCode) || isVariadic(k as OpCode)) &&
           (asMutatingInfix === true || asMutatingInfix.includes(v as any)),
       ),
     ),
@@ -138,7 +134,7 @@ export function mapToPrefixAndInfix<
 }
 
 function asBinaryChain(
-  opCode: BinaryOpCode,
+  opCode: BinaryOpCode | VariadicOpCode,
   exprs: readonly Node[],
   names: Partial<Record<OpCode, string>>,
 ): Node {
@@ -170,12 +166,12 @@ function asBinaryChain(
 export function useIndexCalls(
   oneIndexed: boolean = false,
   ops: OpCode[] = [
-    "array_get",
-    "list_get",
-    "table_get",
-    "array_set",
-    "list_set",
-    "table_set",
+    "at[Array]",
+    "at[List]",
+    "at[Table]",
+    "set_at[Array]",
+    "set_at[List]",
+    "set_at[Table]",
   ],
 ): Plugin {
   return {
@@ -185,17 +181,17 @@ export function useIndexCalls(
     visit(node) {
       if (
         isOp(...ops)(node) &&
-        (isIdent()(node.args[0]) || node.op.endsWith("_get"))
+        (isIdent()(node.args[0]) || !node.op.startsWith("set_"))
       ) {
         let indexNode: IndexCall;
-        if (oneIndexed && !node.op.startsWith("table_")) {
+        if (oneIndexed && !node.op.endsWith("[Table]")) {
           indexNode = indexCall(node.args[0], add1(node.args[1]), true);
         } else {
           indexNode = indexCall(node.args[0], node.args[1]);
         }
-        if (node.op.endsWith("_get")) {
+        if (!node.op.startsWith("set_")) {
           return indexNode;
-        } else if (node.op.endsWith("_set")) {
+        } else if (!node.op.startsWith("set_")) {
           return assignment(indexNode, node.args[2]);
         }
       }
@@ -205,14 +201,14 @@ export function useIndexCalls(
 
 // "a = a + b" --> "a += b"
 export function addMutatingInfix(
-  opMap: Partial<Record<BinaryOpCode, string>>,
+  opMap: Partial<Record<BinaryOpCode | VariadicOpCode, string>>,
 ): Plugin {
   return {
     name: `addMutatingInfix(${JSON.stringify(opMap)})`,
     visit(node) {
       if (
         node.kind === "Assignment" &&
-        isOp(...BinaryOpCodes)(node.expr) &&
+        isOp(...BinaryOpCodes, ...VariadicOpCodes)(node.expr) &&
         node.expr.args.length > 1 &&
         node.expr.op in opMap
       ) {
@@ -256,9 +252,15 @@ export function addPostfixIncAndDec(node: Node) {
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {
   if (isOp(...BinaryOpCodes)(node)) {
-    const flippedOpCode = flipOpCode(node.op);
-    if (flippedOpCode !== null) {
-      return op(flippedOpCode, node.args[1], node.args[0]);
+    if (node.op in flippedOpCode) {
+      return op(
+        flippedOpCode[node.op as keyof typeof flippedOpCode],
+        node.args[1],
+        node.args[0],
+      );
+    }
+    if (isCommutative(node.op)) {
+      return op(node.op, node.args[1], node.args[0]);
     }
   }
 }
@@ -285,8 +287,8 @@ export const methodsAsFunctions: Plugin = {
 
 export const printIntToPrint: Plugin = mapOps(
   {
-    print_int: (x) => op("print", op("int_to_text", ...x)),
-    println_int: (x) => op("println", op("int_to_text", ...x)),
+    "print[Int]": (x) => op("print[Text]", op("int_to_dec", ...x)),
+    "println[Int]": (x) => op("println[Text]", op("int_to_dec", ...x)),
   },
   "printIntToPrint",
 );

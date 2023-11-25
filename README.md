@@ -49,13 +49,14 @@ PolyGolf is designed to be decent at golfing, so there's concern about making it
 
 ## Syntax
 
-Program is a sequence of expressions.
-Expression is either
+Program is a tree of nodes.
+Node is either
 
 - integer literal `58`,
 - text literal `"text literal\n another line"`,
 - variable `$very_important_var`,
-- a block, potentially with multiple variants `{ variant1 / variant2 / variant3 }` or
+- root block `op1; op2; op3;`
+- a block `{op1; op2; op3}`, potentially with multiple variants `{ variant1 / variant2 / variant3 }` or
 - s-expression
 
 S-expression takes one of the following forms:
@@ -140,36 +141,16 @@ Each variable must be first used in an assignment. Variable type is determined b
 
 ### Polygolf operators
 
-All other expressions are Polygolf operators. Most of them return values, but some are used for I/O and some are used for setting values in collections.  
-[Complete list of builtins](https://github.com/polygolf-lang/polygolf/blob/main/src/IR/opcodes.ts).  
-All of the Polygolf operators can be called using their name. In addition, several common ops are given symbolic aliases:
+All other expressions are Polygolf operators. Most of them return values, but some are used for I/O and some are used for setting values in collections.
+[Complete list of opcodes](docs/opcodes.generated.md).
 
-| Op name         | alias |
-| --------------- | ----- |
-| add             | +     |
-| sub/neg         | -     |
-| mul             | \*    |
-| pow             | ^     |
-| bit_and         | &     |
-| bit_or          | \|    |
-| bit_shift_left  | <<    |
-| bit_shift_right | >>    |
-| bit_xor/bit_not | ~     |
-| eq              | ==    |
-| neq             | !=    |
-| leq             | <=    |
-| lt              | <     |
-| geq             | >=    |
-| gt              | >     |
-| assign          | <-    |
-| list_length     | #     |
-| concat          | ..    |
-| key_value       | =>    |
+One can reference on opcode be either its name or its alias. Some opcodes share the alias - this is resolved by the used arity / types of inputs.
+Symbolic aliases and `div`, `mod` can also be used in an infix matter: `(+ 2 3)` is the same as `(2 + 3)`.
 
-Notice how `-` and `~` both correspond to two ops - this is resolved by the used arity.
-These symbolic aliases can also be used in an infix matter: `(+ 2 3)` is the same as (`2 + 3)`.
-Additionaly, the following ops can be used as if they were n-ary: `add`,`mul`,`bit_and`,`bit_or`,`bit_xor`,`concat`.  
-For example, `(+ 1 2 3 4)` is the same as `(((1 + 2) + 3) + 4)`.
+There's an alternative syntax for indexing assignment:
+`($collection @ $index) <- value;` is the same as `set_at $collection $index $value;`.
+
+Many text opcodes have `...[byte]`, `...[codepoint]`, `...[Ascii]` variants. Use the ascii one where possible, as that will allow target langs to choose any implementation. The other two will force implementations that are valid outside of the ascii range.
 
 ## Example
 

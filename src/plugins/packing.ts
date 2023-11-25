@@ -16,7 +16,7 @@ import type { Spine } from "../common/Spine";
 
 export function useDecimalConstantPackedPrinter(node: Node, spine: Spine) {
   if (
-    isOp("print", "println")(node) &&
+    isOp("print[Text]", "println[Text]")(node) &&
     isText()(node.args[0]) &&
     isLargeDecimalConstant(node.args[0].value)
   ) {
@@ -29,18 +29,18 @@ export function useDecimalConstantPackedPrinter(node: Node, spine: Spine) {
         assignment(
           "result",
           op(
-            "concat",
+            "concat[Text]",
             id("result"),
             op(
-              "text_get_byte_slice",
+              "slice[byte]",
               op(
-                "int_to_text",
+                "int_to_dec",
                 op(
                   "add",
                   int(72n),
                   op(
-                    "text_byte_to_int",
-                    op("text_get_byte", text(packed), id("packindex")),
+                    "ord[byte]",
+                    op("at[byte]", text(packed), id("packindex")),
                   ),
                 ),
               ),
@@ -67,12 +67,12 @@ function packDecimal(decimal: string): string {
 }
 
 export function useLowDecimalListPackedPrinter(node: Node) {
-  if (isOp("print", "println")(node) && isText()(node.args[0])) {
+  if (isOp("print[Text]", "println[Text]")(node) && isText()(node.args[0])) {
     const packed = packLowDecimalList(node.args[0].value);
     if (packed === null) return;
     return forRangeCommon(
       ["packindex", 0, packed.length],
-      print(op("text_get_byte_to_int", text(packed), id("packindex"))),
+      print(op("ord_at[byte]", text(packed), id("packindex"))),
     );
   }
 }

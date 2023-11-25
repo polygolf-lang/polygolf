@@ -10,19 +10,17 @@ import {
   type Node,
   type Integer,
   type MutatingInfix,
-  isCommutative,
   int,
   isAssociative,
   text,
   integerType,
-  type AliasedOpCode,
-  type FrontendOpCode,
-  type AssociativeOpCode,
-  type CommutativeOpCode,
   isConstantType,
   isBinary,
   booleanNotOpCode,
   type Text,
+  type VariadicOpCode,
+  isCommutative,
+  isOpCode,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseNode {
@@ -172,14 +170,18 @@ function _op(op: OpCode, ...args: Node[]): Op {
 }
 
 export function op(opCode: OpCode, ...args: Node[]): Node {
+  if (!isOpCode(opCode)) return _op(opCode, ...args);
   if (opCode === "not" || opCode === "bit_not") {
     const arg = args[0];
     if (isOp()(arg)) {
       if (arg.op === opCode) return arg.args[0];
       if (opCode === "not") {
-        const negated = booleanNotOpCode(arg.op as BinaryOpCode);
-        if (negated != null) {
-          return op(negated, arg.args[0], arg.args[1]);
+        if (arg.op in booleanNotOpCode) {
+          return op(
+            booleanNotOpCode[arg.op as keyof typeof booleanNotOpCode],
+            arg.args[0],
+            arg.args[1],
+          );
         }
       }
     }
@@ -262,8 +264,12 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
   return _op(opCode, ...args);
 }
 
-function evalInfix(op: BinaryOpCode, left: Node, right: Node): Node | null {
-  if (op === "concat" && isText()(left) && isText()(right)) {
+function evalInfix(
+  op: BinaryOpCode | VariadicOpCode,
+  left: Node,
+  right: Node,
+): Node | null {
+  if (op === "concat[Text]" && isText()(left) && isText()(right)) {
     return text(left.value + right.value);
   }
   if (isIntLiteral()(left) && isIntLiteral()(right)) {
@@ -446,7 +452,7 @@ export function namedArg<T extends Node>(name: string, value: T): NamedArg<T> {
 }
 
 export function print(value: Node, newline: boolean = true): Node {
-  return op(newline ? "println" : "print", value);
+  return op(newline ? "println[Text]" : "print[Text]", value);
 }
 
 export function getArgs(
@@ -551,35 +557,7 @@ export function isNegative(expr: Node) {
   );
 }
 
-export function isOp<O extends OpCode>(
-  ...ops: O[]
-): (x: Node) => x is Op<
-  // Typesafe-wise, this is the same as `x is Op<O>`.
-  // However, this allows `O` to be written using the type aliases.
-  // Alias using the first type that is a match (that is a subtype) and union the rest.
-  // For some reason, when I alias this type, it no longer works.
-  AliasedOpCode<
-    O,
-    OpCode,
-    AliasedOpCode<
-      O,
-      FrontendOpCode,
-      AliasedOpCode<
-        O,
-        BinaryOpCode,
-        AliasedOpCode<
-          O,
-          UnaryOpCode,
-          AliasedOpCode<
-            O,
-            AssociativeOpCode,
-            AliasedOpCode<O, CommutativeOpCode>
-          >
-        >
-      >
-    >
-  >
-> {
+export function isOp<O extends OpCode>(...ops: O[]): (x: Node) => x is Op<O> {
   return ((x: Node) =>
     x.kind === "Op" && (ops.length === 0 || ops?.includes(x.op as any))) as any;
 }

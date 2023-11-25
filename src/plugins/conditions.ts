@@ -11,29 +11,29 @@ import {
   table,
 } from "../IR";
 
-export function safeConditionalOpToCollectionGet(
-  type: "array" | "list" | "table",
+export function safeConditionalOpToAt(
+  type: "Array" | "List" | "Table",
 ): Plugin {
   return {
-    name: "safeConditionalOpToCollectionGet",
+    name: "safeConditionalOpToAt",
     visit(node) {
       if (node.kind === "ConditionalOp" && node.isSafe) {
         switch (type) {
-          case "array":
+          case "Array":
             return op(
-              "array_get",
+              "at[Array]",
               array([node.alternate, node.consequent]),
               op("bool_to_int", node.condition),
             );
-          case "list":
+          case "List":
             return op(
-              "list_get",
+              "at[List]",
               list([node.alternate, node.consequent]),
               op("bool_to_int", node.condition),
             );
-          case "table":
+          case "Table":
             return op(
-              "table_get",
+              "at[Table]",
               table([
                 keyValue(op("true"), node.consequent),
                 keyValue(op("false"), node.alternate),
@@ -48,7 +48,7 @@ export function safeConditionalOpToCollectionGet(
 
 export function conditionalOpToAndOr(
   isProvablyThruthy: Visitor<boolean>,
-  falseyFallback?: "list" | "array",
+  falseyFallback?: "List" | "Array",
 ): Plugin {
   return {
     name: "conditionalOpToAndOr",
@@ -68,8 +68,8 @@ export function conditionalOpToAndOr(
             node.alternate,
           );
         if (falseyFallback !== undefined) {
-          const opCode = `${falseyFallback}_get` as const;
-          const collection = falseyFallback === "list" ? list : array;
+          const opCode = `at[${falseyFallback}]` as const;
+          const collection = falseyFallback === "List" ? list : array;
           return op(
             opCode,
             op(
