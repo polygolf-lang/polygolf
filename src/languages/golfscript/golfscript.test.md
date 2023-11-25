@@ -68,15 +68,10 @@ $a > 2;
 
 % Text Encoding
 text_get_byte "abc" 1;
-text_get_codepoint "def" 1;
 text_byte_to_int "g";
-codepoint_to_int "h";
 text_get_byte_to_int "ijk" 1;
-text_get_codepoint_to_int "lmn" 1;
 text_byte_length "opq";
-text_codepoint_length "rst";
 int_to_text_byte 99;
-int_to_codepoint 99;
 
 % Other
 list_get $d 1;
@@ -94,7 +89,7 @@ repeat $b 3;
 ```
 
 ```golfscript nogolf
-0:a;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!a~-1 a*a abs 2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^[2 a]$1=[2 a]$0=4 a*a 4/a 2<a 3<a 2=a 2=!a 1>a 2>["abc"1=]""+["def"1=]""+"g")"h")"ijk"1="lmn"1="opq","rst",[99]""+[99]""+d 1=d"t"+d,d"_"*d$b"xyz"+5`"5"~"xyz""y"/b-1%b 3*
+0:a;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!a~-1 a*a abs 2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^[2 a]$1=[2 a]$0=4 a*a 4/a 2<a 3<a 2=a 2=!a 1>a 2>["abc"1=]""+"g")"ijk"1="opq",[99]""+d 1=d"t"+d,d"_"*d$b"xyz"+5`"5"~"xyz""y"/b-1%b 3*
 ```
 
 ## Looping
@@ -156,7 +151,7 @@ for 5 {
 ## Argv
 
 ```polygolf
-println (argv_get 5);
+println (at[argv] 5);
 ```
 
 ```golfscript nogolf

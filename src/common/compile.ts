@@ -1,10 +1,10 @@
-import type { Type, Node } from "../IR";
+import { isOp, op, isOpCode, type Type, type Node } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { defaultDetokenizer, type Plugin, type Language } from "./Language";
 import { programToSpine, type Spine } from "./Spine";
-import { getType } from "./getType";
+import { getType, getTypeAndResolveOpCode } from "./getType";
 import { stringify } from "./stringify";
-import parse from "../frontend/parse";
+import parse, { type ParseResult } from "../frontend/parse";
 import { MinPriorityQueue } from "@datastructures-js/priority-queue";
 import polygolfLanguage from "../languages/polygolf";
 import {
@@ -165,16 +165,16 @@ export default function compile(
   ...languages: Language[]
 ): CompilationResult[] {
   const obj = getObjectiveFunc(options);
-  let program: Node;
+  let parsed: ParseResult;
   try {
-    program = parse(source, options.restrictFrontend);
+    parsed = parse(source, options.restrictFrontend);
   } catch (e) {
     if (isError(e)) return [compilationResult("Polygolf", e, [e])];
   }
-  program = program!;
+  const program = parsed!.node;
   let variants = expandVariants(program).map((x) => {
     try {
-      if (!options.skipTypecheck) typecheck(x);
+      x = typecheck(x, !options.skipTypecheck);
       return x;
     } catch (e) {
       if (isError(e)) return compilationResult("Polygolf", e, [e]);
@@ -187,6 +187,9 @@ export default function compile(
     (x) => "result" in x,
   ) as CompilationResult[];
   if (errorlessVariants.length === 0) {
+    for (const variant of variants) {
+      (variant as CompilationResult).warnings = parsed!.warnings;
+    }
     if (options.getAllVariants) {
       return variants as CompilationResult[];
     } else {
@@ -223,6 +226,10 @@ export default function compile(
   }
   if (result.length < 0 && errorVariants.length > 0) {
     result.push(errorVariants[0]);
+  }
+
+  for (const res of result) {
+    res.warnings.push(...parsed!.warnings);
   }
 
   return result;
@@ -527,14 +534,18 @@ function annotate<T extends Node | undefined>(
   };
 }
 
-/** Typecheck a program by asking all nodes about their types.
- * Throws an error on a type error; otherwise is a no-op. */
-function typecheck(program: Node) {
+/** Typecheck a program and return a program with resolved opcodes.
+ * If everyNode is false, typechecks only nodes neccesary to resolve opcodes, otherwise, typechecks every node. */
+export function typecheck(program: Node, everyNode = true): Node {
   const spine = programToSpine(program);
-  spine.everyNode((x) => {
-    getType(x, program);
-    return true;
-  });
+  return spine.withReplacer(function (node, spine) {
+    if (everyNode || (node.kind === "Op" && !isOpCode(node.op))) {
+      const t = getTypeAndResolveOpCode(node, spine);
+      if (isOp()(node) && t.opCode !== undefined) {
+        return op(t.opCode, ...node.args);
+      }
+    }
+  }).node;
 }
 
 export function debugEmit(program: Node): string {
@@ -554,7 +565,7 @@ export function debugEmit(program: Node): string {
 }
 
 export function normalize(source: string): string {
-  return debugEmit(parse(source, false));
+  return debugEmit(parse(source, false).node);
 }
 
 export function isCompilable(program: Node, lang: Language) {

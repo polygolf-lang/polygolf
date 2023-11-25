@@ -280,7 +280,9 @@ export function toString(a: Type): string {
     case "boolean":
       return "Bool";
     case "integer":
-      return `${a.low.toString()}..${a.high.toString()}`;
+      return a.low === "-oo" && a.high === "oo"
+        ? "Int"
+        : `${a.low.toString()}..${a.high.toString()}`;
     case "TypeArg":
       return a.name;
   }

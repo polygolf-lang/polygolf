@@ -4,6 +4,7 @@ import compile, {
   applyAllToAllAndGetCounts,
   debugEmit,
   normalize,
+  typecheck,
 } from "../common/compile";
 import { findLang } from "../languages/languages";
 import { type Plugin } from "../common/Language";
@@ -72,16 +73,21 @@ export function testPlugin(
 ) {
   test(name, () => {
     expect(
-      debugEmit(
-        applyAllToAllAndGetCounts(
-          getOnlyVariant(parse(input, false)),
-          compilationOptionsFromKeywords(args),
-          () => {},
-          ...plugins.map((x) =>
-            typeof x === "function" ? { name: x.name, visit: x } : x,
-          ),
-        )[0],
-      ),
+      (() => {
+        const options = compilationOptionsFromKeywords(args, false);
+        let program = getOnlyVariant(parse(input, false).node);
+        program = typecheck(program, !options.skipTypecheck);
+        return debugEmit(
+          applyAllToAllAndGetCounts(
+            program,
+            options,
+            () => {},
+            ...plugins.map((x) =>
+              typeof x === "function" ? { name: x.name, visit: x } : x,
+            ),
+          )[0],
+        );
+      })(),
     ).toEqual(normalize(output));
   });
 }
