@@ -88,16 +88,16 @@ export function mergePrint(
 ) {
   context.skipChildren();
   const variable = id();
-  if (spine.countNodes(isOp("print", "println")) > 1) {
+  if (spine.countNodes(isOp("print[Text]", "println[Text]")) > 1) {
     const newSpine = spine.withReplacer((node) =>
-      isOp("print", "println")(node)
+      isOp("print[Text]", "println[Text]")(node)
         ? assignment(
             variable,
             op(
-              "concat",
+              "concat[Text]",
               variable,
               node.args[0],
-              ...(node.op === "print" ? [] : [text("\n")]),
+              ...(node.op === "print[Text]" ? [] : [text("\n")]),
             ),
           )
         : undefined,
@@ -105,7 +105,7 @@ export function mergePrint(
     return block([
       assignment(variable, text("")),
       newSpine.node,
-      op("print", variable),
+      op("print[Text]", variable),
     ]);
   }
 }
@@ -113,7 +113,7 @@ export function mergePrint(
 export function splitPrint(node: Node, spine: Spine) {
   if (node.kind === "Block") {
     const last = node.children.at(-1)!;
-    if (isOp("print")(last) && isUserIdent()(last.args[0])) {
+    if (isOp("print[Text]")(last) && isUserIdent()(last.args[0])) {
       const printVar = last.args[0];
       const writes = getWrites(spine, printVar.name);
       if (writes.every((x) => isAssignmentToIdent()(x.parent!.node))) {
@@ -122,7 +122,8 @@ export function splitPrint(node: Node, spine: Spine) {
           assignments.every(
             (x, i) =>
               i < 1 ||
-              (isOp("concat")(x.expr) && isIdent(printVar)(x.expr.args[0])),
+              (isOp("concat[Text]")(x.expr) &&
+                isIdent(printVar)(x.expr.args[0])),
           )
         ) {
           return spine.withReplacer((x) =>
@@ -131,9 +132,9 @@ export function splitPrint(node: Node, spine: Spine) {
               : x === assignments[0]
               ? isText("")(x.expr)
                 ? block([])
-                : op("print", x.expr)
+                : op("print[Text]", x.expr)
               : assignments.includes(x as any)
-              ? op("print", ((x as Assignment).expr as Op).args[1])
+              ? op("print[Text]", ((x as Assignment).expr as Op).args[1])
               : undefined,
           ).node;
         }
