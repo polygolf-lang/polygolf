@@ -49,7 +49,7 @@ import {
   replaceToSplitAndJoin,
   textGetToIntToTextGet,
   textToIntToTextGetToInt,
-  useEquivalentTextOp,
+  usePrimaryTextOps,
 } from "../../plugins/textOps";
 import { addOneToManyAssignments, inlineVariables } from "../../plugins/block";
 import {
@@ -75,7 +75,7 @@ const javascriptLanguage: Language = {
     simplegolf(golfLastPrint()),
     search(
       golfStringListLiteral(),
-      forRangeToForEach("array_get", "list_get", "text_get_codepoint"),
+      forRangeToForEach("at[Array]", "at[List]", "at[codepoint]"),
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
@@ -88,7 +88,6 @@ const javascriptLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       replaceToSplitAndJoin,
-      useEquivalentTextOp(false, true),
       useIndexCalls(),
       decomposeIntLiteral(),
     ),
@@ -108,8 +107,8 @@ const javascriptLanguage: Language = {
         bit_shift_right: "bigint",
         lt: "int",
         leq: "int",
-        eq: "int",
-        neq: "int",
+        "eq[Int]": "int",
+        "neq[Int]": "int",
         geq: "int",
         gt: "int",
       }),
@@ -119,15 +118,15 @@ const javascriptLanguage: Language = {
     simplegolf(forRangeToForEachKey),
     required(
       forRangeToForCLike,
-      useEquivalentTextOp(false, true),
+      usePrimaryTextOps("codepoint"), // TODO should be "codeunit"
       mapOps({
-        text_to_int: (x) =>
-          op("add", int(0n), implicitConversion("text_to_int", x[0])),
+        dec_to_int: (x) =>
+          op("add", int(0n), implicitConversion("dec_to_int", x[0])),
         argv: builtin("arguments"),
 
-        argv_get: (x) =>
+        "at[argv]": (x) =>
           op(
-            "list_get",
+            "at[List]",
             { ...builtin("arguments"), type: listType(textType()) },
             x[0],
           ),
@@ -139,35 +138,35 @@ const javascriptLanguage: Language = {
       mapOps({
         true: builtin("true"),
         false: builtin("false"),
-        text_get_codepoint: (x) => indexCall(x[0], x[1]),
+        "at[codepoint]": (x) => indexCall(x[0], x[1]),
         div: (x, s) =>
           s.node.targetType !== "bigint"
             ? func("Math.floor", infix("/", x[0], x[1]))
             : undefined,
         int_to_bin: (x) => method(x[0], "toString", int(2)),
         int_to_hex: (x) => method(x[0], "toString", int(16)),
-        list_length: (x) => propertyCall(x[0], "length"),
+        "size[List]": (x) => propertyCall(x[0], "length"),
         join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
-        int_to_text: (x) =>
-          op("concat", text(""), implicitConversion("int_to_text", x[0])),
-        text_to_int: (x) =>
-          op("mul", int(1n), implicitConversion("text_to_int", x[0])),
+        int_to_dec: (x) =>
+          op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
+        dec_to_int: (x) =>
+          op("mul", int(1n), implicitConversion("dec_to_int", x[0])),
       }),
       mapTo((name: string, [obj, ...args]) => method(obj, name, ...args))({
-        list_contains: "includes",
-        list_push: "push",
-        list_find: "indexOf",
-        text_split: "split",
-        text_replace: "replaceAll",
+        "contains[List]": "includes",
+        push: "push",
+        "find[List]": "indexOf",
+        split: "split",
+        replace: "replaceAll",
         repeat: "repeat",
-        text_contains: "includes",
+        "contains[Text]": "includes",
       }),
       mapTo(func)({
         abs: "abs",
         max: "Math.max",
         min: "Math.min",
-        println: "print",
-        print: "write",
+        "println[Text]": "print",
+        "print[Text]": "write",
       }),
       mapToPrefixAndInfix(
         {
@@ -178,7 +177,7 @@ const javascriptLanguage: Language = {
           div: "/",
           mod: "%",
           add: "+",
-          concat: "+",
+          "concat[Text]": "+",
           sub: "-",
           bit_shift_left: "<<",
           bit_shift_right: ">>",
@@ -187,8 +186,8 @@ const javascriptLanguage: Language = {
           bit_or: "|",
           lt: "<",
           leq: "<=",
-          eq: "==",
-          neq: "!=",
+          "eq[Int]": "==",
+          "neq[Int]": "!=",
           geq: ">=",
           gt: ">",
           not: "!",

@@ -4,27 +4,27 @@
 
 ```polygolf
 for $i 0 10 {
-  print_int $x;
+  print_int $i;
 };
 ```
 
 ```polygolf loops.forRangeToForRangeInclusive()
 for_range_inclusive $i 0 9 1 (
-  print_int $x
+  print_int $i
 );
 ```
 
 ```polygolf loops.forRangeToWhile
 $i <- 0;
 while ($i < 10) {
-  print_int $x;
+  print_int $i;
   $i <- (1 + $i);
 };
 ```
 
 ```polygolf loops.forRangeToForCLike
 for_c_like ($i <- 0) ($i < 10) ($i <- (1 + $i)) (
-  print_int $x
+  print_int $i
 );
 ```
 
@@ -55,12 +55,12 @@ while ($j < 11) {
 ## For each
 
 ```polygolf
-for $i 0 (# $collection) {
-  print (list_get $collection $i);
+for $i 0 (size[List] $collection) {
+  print[Text] (list_get $collection $i);
 };
 ```
 
-```polygolf loops.forRangeToForEach("list_get")
+```polygolf loops.forRangeToForEach("at[List]")
 for_each (id "i+each") $collection (
   print (id "i+each")
 );
@@ -69,11 +69,11 @@ for_each (id "i+each") $collection (
 ```polygolf
 $collection <- (array "a" "b" "c");
 for $i 0 3 {
-  print (array_get $collection $i);
+  print[Text] (array_get $collection $i);
 };
 ```
 
-```polygolf loops.forRangeToForEach("array_get")
+```polygolf loops.forRangeToForEach("at[Array]")
 $collection <- (array "a" "b" "c");
 for_each (id "i+each") $collection (
   print (id "i+each")
@@ -83,11 +83,11 @@ for_each (id "i+each") $collection (
 ```polygolf
 $collection <- (array "a" "b" "c" "d");
 for $i 0 3 {
-  print (array_get $collection $i);
+  print[Text] (array_get $collection $i);
 };
 ```
 
-```polygolf loops.forRangeToForEach("array_get")
+```polygolf loops.forRangeToForEach("at[Array]")
 $collection <- (array "a" "b" "c" "d");
 for $i 0 3 (
   print (array_get $collection $i)
@@ -100,7 +100,7 @@ for $i 0 10 (
 );
 ```
 
-```polygolf loops.forRangeToForEach("text_get_byte")
+```polygolf loops.forRangeToForEach("at[byte]")
 for_each (id "i+each") "9876543210" (
   print (id "i+each")
 );
@@ -112,7 +112,7 @@ for $i 0 5 (
 );
 ```
 
-```polygolf loops.forRangeToForEach("text_get_byte")
+```polygolf loops.forRangeToForEach("at[byte]")
 for $i 0 5 (
   print (text_get_byte "9876543210" $i)
 );
@@ -124,7 +124,7 @@ for $i 0 5 {
 };
 ```
 
-```polygolf loops.forRangeToForEach("list_get")
+```polygolf loops.forRangeToForEach("at[List]")
 for_each (id "i+each") (list 5 4 3 2 1) (
   print_int (id "i+each")
 );
@@ -133,13 +133,13 @@ for_each (id "i+each") (list 5 4 3 2 1) (
 ## For each pair
 
 ```polygolf
-for $i 0 (# $collection) {
+for $i 0 (size[List] $collection) {
   print_int $i;
   print_int (list_get $collection $i);
 };
 ```
 
-```polygolf loops.forRangeToForEach("list_get")
+```polygolf loops.forRangeToForEach("at[List]")
 for $i 0 (# $collection) {
   print_int $i;
   print_int (list_get $collection $i);
@@ -169,14 +169,14 @@ for_each $x argv (
 
 ```polygolf loops.forArgvToForRange()
 for (id "x+index") 0 100 {
-  $x <- (argv_get (id "x+index"));
+  $x <- (at[argv] (id "x+index"));
   println $x;
 };
 ```
 
 ```polygolf loops.forArgvToForRange(false)
 for (id "x+index") 0 argc {
-  $x <- (argv_get (id "x+index"));
+  $x <- (at[argv] (id "x+index"));
   println $x;
 };
 ```

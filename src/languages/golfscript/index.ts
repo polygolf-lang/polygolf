@@ -56,7 +56,7 @@ import {
   pickAnyInt,
 } from "../../plugins/arithmetic";
 import {
-  useEquivalentTextOp,
+  usePrimaryTextOps,
   textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
 } from "../../plugins/textOps";
@@ -88,7 +88,7 @@ const golfscriptLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       bitShiftToMulOrDiv(false, true, true),
-      useEquivalentTextOp(true, false),
+      usePrimaryTextOps("byte"),
       textGetToTextGetToIntToText,
       removeUnusedForVar,
       forRangeToForDifferenceRange(
@@ -109,16 +109,15 @@ const golfscriptLanguage: Language = {
     ),
     required(
       mapOps({
-        argv_get: (x) => op("list_get", op("argv"), x[0]),
+        "at[argv]": (x) => op("at[List]", op("argv"), x[0]),
         argv: builtin("a"),
         true: int(1),
         false: int(0),
 
-        text_get_byte_slice: (x) =>
-          rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
+        "slice[byte]": (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
         neg: (x) => op("mul", x[0], int(-1)),
-        max: (x) => op("list_get", op("sorted", list(x)), int(1)),
-        min: (x) => op("list_get", op("sorted", list(x)), int(0)),
+        max: (x) => op("at[List]", op("sorted[Int]", list(x)), int(1)),
+        min: (x) => op("at[List]", op("sorted[Int]", list(x)), int(0)),
 
         leq: (x) =>
           op(
@@ -144,31 +143,32 @@ const golfscriptLanguage: Language = {
         sub: "-",
         bit_or: "|",
         bit_xor: "^",
-        concat: "+",
+        "concat[Text]": "+",
         lt: "<",
-        eq: "=",
+        "eq[Int]": "=",
         gt: ">",
         and: "and",
         or: "or",
-        text_get_byte_to_int: "=",
-        text_byte_length: ",",
-        text_byte_to_int: ")",
-        int_to_text: "`",
-        text_split: "/",
+        "ord_at[byte]": "=",
+        "size[byte]": ",",
+        "ord[byte]": ")",
+        int_to_dec: "`",
+        split: "/",
         repeat: "*",
         pow: "?",
-        text_to_int: "~",
+        dec_to_int: "~",
         abs: "abs",
-        list_push: "+",
-        list_get: "=",
-        list_length: ",",
+        push: "+",
+        "at[List]": "=",
+        "size[List]": ",",
         join: "*",
-        sorted: "$",
+        "sorted[Int]": "$",
+        "sorted[Ascii]": "$",
       }),
       mapOps({
-        neq: (x) => prefix("!", infix("=", x[0], x[1])),
-        text_byte_reversed: (x) => infix("%", x[0], int(-1)),
-        int_to_text_byte: (x) => infix("+", list(x), text("")),
+        "neq[Int]": (x) => prefix("!", infix("=", x[0], x[1])),
+        "reversed[byte]": (x) => infix("%", x[0], int(-1)),
+        "char[byte]": (x) => infix("+", list(x), text("")),
       }),
     ),
     required(

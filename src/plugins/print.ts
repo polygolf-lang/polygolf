@@ -15,7 +15,8 @@ import { mapOps } from "./ops";
 
 export const printLnToPrint = mapOps(
   {
-    println: (x) => op("print", op("concat", x[0], text("\n"))),
+    "println[Text]": (x) =>
+      op("print[Text]", op("concat[Text]", x[0], text("\n"))),
   },
   "printLnToPrint",
 );
@@ -30,8 +31,8 @@ export function golfLastPrint(toPrintln = true): Plugin {
     visit(program, spine, context) {
       context.skipChildren();
       const statements = block([program]).children;
-      const newOp = toPrintln ? "println" : "print";
-      const oldOp = toPrintln ? "print" : "println";
+      const newOp = toPrintln ? "println[Text]" : "print[Text]";
+      const oldOp = toPrintln ? "print[Text]" : "println[Text]";
       const lastStatement = statements[statements.length - 1];
       if (isOp(oldOp, newOp)(lastStatement)) {
         let arg = lastStatement.args[0];
@@ -51,8 +52,8 @@ export function golfLastPrint(toPrintln = true): Plugin {
 
 export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
   if (
-    isOp("int_to_text")(node) &&
-    isOp("print", "println")(spine.parent!.node)
+    isOp("int_to_dec")(node) &&
+    isOp("print[Text]", "println[Text]")(spine.parent!.node)
   ) {
     return implicitConversion(node.op, node.args[0]);
   }
@@ -60,13 +61,13 @@ export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
 
 export const printToImplicitOutput = mapOps(
   {
-    print: (x) => x[0],
+    "print[Text]": (x) => x[0],
   },
   "printToImplicitOutput",
 );
 
 export function printConcatToMultiPrint(node: Node, spine: Spine) {
-  if (isOp("print")(node) && isOp("concat")(node.args[0])) {
-    return block(node.args[0].args.map((x) => op("print", x)));
+  if (isOp("print[Text]")(node) && isOp("concat[Text]")(node.args[0])) {
+    return block(node.args[0].args.map((x) => op("print[Text]", x)));
   }
 }

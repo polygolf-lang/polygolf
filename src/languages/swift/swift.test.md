@@ -228,7 +228,7 @@ for x in CommandLine.arguments[1...]{print(x)}
 ```
 
 ```polygolf
-argv_get 0;
+at[argv] 0;
 ```
 
 ```swift nogolf
