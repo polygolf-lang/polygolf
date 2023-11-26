@@ -248,6 +248,16 @@ export default function emitProgram(
             "]",
             e.collection.kind === "Table" ? "!" : "",
           ];
+        case "RangeIndexCall":
+          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
+          return [
+            emit(e.collection, Infinity),
+            "[",
+            emit(e.low),
+            "..<",
+            emit(e.high),
+            "]",
+          ];
 
         default:
           throw new EmitError(expr);

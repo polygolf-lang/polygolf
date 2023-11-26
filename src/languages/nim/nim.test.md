@@ -71,7 +71,7 @@ var
  m=n
  b=1<2
 t[2]
-t[2..<6]
+t[2..<8]
 "a"[0].ord
 "abc"[1].ord
 t.split"|"

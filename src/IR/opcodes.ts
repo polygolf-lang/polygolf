@@ -261,10 +261,14 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   "set_at[Table]": "Sets the item at the key.",
 
   // Slice
-  "slice[codepoint]": "TODO",
-  "slice[byte]": "TODO",
-  "slice[Ascii]": "TODO",
-  "slice[List]": "TODO",
+  "slice[codepoint]":
+    "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in codepoints.",
+  "slice[byte]":
+    "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in bytes.",
+  "slice[Ascii]":
+    "Returns a text slice that starts at the given 0-based index and has given length.",
+  "slice[List]":
+    "Returns a list slice that starts at the given 0-based index and has given length.",
 
   // Chars
   "ord_at[byte]":

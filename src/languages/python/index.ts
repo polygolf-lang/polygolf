@@ -139,7 +139,7 @@ const pythonLanguage: Language = {
         "at[codepoint]": (x) => indexCall(x[0], x[1]),
 
         "slice[codepoint]": (x) =>
-          rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
         split: (x) => method(x[0], "split", x[1]),
         split_whitespace: (x) => method(x[0], "split"),
 

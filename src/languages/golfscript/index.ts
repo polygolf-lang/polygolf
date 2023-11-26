@@ -114,7 +114,8 @@ const golfscriptLanguage: Language = {
         true: int(1),
         false: int(0),
 
-        "slice[byte]": (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
+        "slice[byte]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
         neg: (x) => op("mul", x[0], int(-1)),
         max: (x) => op("at[List]", op("sorted[Int]", list(x)), int(1)),
         min: (x) => op("at[List]", op("sorted[Int]", list(x)), int(0)),

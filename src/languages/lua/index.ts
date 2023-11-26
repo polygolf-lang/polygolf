@@ -90,7 +90,8 @@ const luaLanguage: Language = {
 
         "ord_at[byte]": (x) => method(x[0], "byte", add1(x[1])),
         "at[byte]": (x) => method(x[0], "sub", add1(x[1]), add1(x[1])),
-        "slice[byte]": (x) => method(x[0], "sub", x[1], add1(x[2])),
+        "slice[byte]": (x) =>
+          method(x[0], "sub", add1(x[1]), op("add", x[1], x[2])),
       }),
       useIndexCalls(true),
       decomposeIntLiteral(true, true, true),
@@ -109,7 +110,8 @@ const luaLanguage: Language = {
           op("at[List]", { ...builtin("arg"), type: textType() }, x[0]),
         "ord_at[byte]": (x) => method(x[0], "byte", add1(x[1])),
         "at[byte]": (x) => method(x[0], "sub", add1(x[1]), add1(x[1])),
-        "slice[byte]": (x) => method(x[0], "sub", x[1], add1(x[2])),
+        "slice[byte]": (x) =>
+          method(x[0], "sub", add1(x[1]), op("add", x[1], x[2])),
       }),
       conditionalOpToAndOr(
         (n, s) => !["boolean", "void"].includes(getType(n, s).kind),
