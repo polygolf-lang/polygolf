@@ -145,7 +145,8 @@ const nimLanguage: Language = {
         true: builtin("true"),
         false: builtin("false"),
         "at[byte]": (x) => indexCall(x[0], x[1]),
-        "at[codepoint]": (x) => indexCall(func("toRunes", x[0]), x[1]),
+        "at[codepoint]": (x) =>
+          prefix("$", indexCall(func("toRunes", x[0]), x[1])),
         "slice[byte]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
         "slice[List]": (x) =>
