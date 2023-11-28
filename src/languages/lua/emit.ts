@@ -174,6 +174,10 @@ export default function emitProgram(
         case "List":
         case "Array":
           return ["{", joinNodes(",", e.exprs), "}"];
+        case "Table":
+          return ["{", joinNodes(",", e.kvPairs), "}"];
+        case "KeyValue":
+          return [emit(e.key), "=", emit(e.value)];
 
         default:
           throw new EmitError(e);

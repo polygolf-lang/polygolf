@@ -9,6 +9,7 @@ $m <- $n;
 $b <- (1<2);
 
 text_get_byte $t 2;
+text_get_codepoint $t 2;
 text_get_byte_slice $t 2 6;
 text_byte_to_int "a";
 text_get_byte_to_int "abc" 1;
@@ -24,6 +25,7 @@ print $t;
 println $t;
 bool_to_int $b;
 int_to_text_byte 48;
+int_to_codepoint 48;
 $t .. "x";
 text_replace "a+b+c" "+" "*";
 text_replace "a*b*c" "*" "";
@@ -64,13 +66,14 @@ list_find (list "") "";
 ```
 
 ```nim nogolf
-import strutils,math
+import unicode,strutils,math
 var
  t=""
  n=0
  m=n
  b=1<2
 t[2]
+(t.toRunes)[2]
 t[2..<8]
 "a"[0].ord
 "abc"[1].ord
@@ -86,6 +89,7 @@ stdout.write t
 t.echo
 b.int
 48.chr
+$(48.Rune)
 t&"x"
 "a+b+c".replace("+","*")
 "a*b*c".replace"*"

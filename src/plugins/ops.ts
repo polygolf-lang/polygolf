@@ -181,13 +181,13 @@ export function useIndexCalls(
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.endsWith("[Table]")) {
-          indexNode = indexCall(node.args[0], add1(node.args[1]), true);
+          indexNode = indexCall(node.args[0], add1(node.args[1]), oneIndexed);
         } else {
-          indexNode = indexCall(node.args[0], node.args[1]);
+          indexNode = indexCall(node.args[0], node.args[1], oneIndexed);
         }
         if (!node.op.startsWith("set_")) {
           return indexNode;
-        } else if (!node.op.startsWith("set_")) {
+        } else {
           return assignment(indexNode, node.args[2]);
         }
       }
