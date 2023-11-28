@@ -48,6 +48,7 @@ import {
 import {
   replaceToSplitAndJoin,
   textGetToIntToTextGet,
+  textToIntToFirstIndexTextGetToInt,
   textToIntToTextGetToInt,
   usePrimaryTextOps,
 } from "../../plugins/textOps";
@@ -135,10 +136,16 @@ const javascriptLanguage: Language = {
 
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
+      textToIntToFirstIndexTextGetToInt,
       mapOps({
         true: builtin("true"),
         false: builtin("false"),
-        "at[codepoint]": (x) => indexCall(x[0], x[1]),
+        "at[Ascii]": (x) => indexCall(x[0], x[1]),
+        "slice[List]": (x) =>
+          method(x[0], "slice", x[1], op("add", x[1], x[2])),
+        "slice[Ascii]": (x) =>
+          method(x[0], "slice", x[1], op("add", x[1], x[2])),
+        "char[Ascii]": (x) => func("String.fromCharCode", x),
         div: (x, s) =>
           s.node.targetType !== "bigint"
             ? func("Math.floor", infix("/", x[0], x[1]))
@@ -146,20 +153,24 @@ const javascriptLanguage: Language = {
         int_to_bin: (x) => method(x[0], "toString", int(2)),
         int_to_hex: (x) => method(x[0], "toString", int(16)),
         "size[List]": (x) => propertyCall(x[0], "length"),
+        "size[Ascii]": (x) => propertyCall(x[0], "length"),
         join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
         int_to_dec: (x) =>
           op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
         dec_to_int: (x) =>
           op("mul", int(1n), implicitConversion("dec_to_int", x[0])),
+        "reversed[List]": (x) => method(x[0], "reverse"),
       }),
       mapTo((name: string, [obj, ...args]) => method(obj, name, ...args))({
+        "ord_at[Ascii]": "charCodeAt",
         "contains[List]": "includes",
+        "contains[Text]": "includes",
         push: "push",
         "find[List]": "indexOf",
+        "find[Ascii]": "indexOf",
         split: "split",
         replace: "replaceAll",
         repeat: "repeat",
-        "contains[Text]": "includes",
       }),
       mapTo(func)({
         abs: "abs",
