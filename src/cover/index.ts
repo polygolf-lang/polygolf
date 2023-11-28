@@ -49,7 +49,7 @@ const options = yargs()
  * This aims at providing basic compilable building blocks.
  */
 interface LangCoverConfig {
-  expr: (x?: Type) => Node; // returns any node of given type (or 0..0)
+  expr: (x?: Type, preferBuiltin?: boolean) => Node; // returns any node of given type (or 0..0)
   stmt: (x?: Node) => Node; // returns any node of type void containing given Node (or any)
 }
 
@@ -78,9 +78,11 @@ for (const lang of langs) {
     return x;
   };
 
-  lang.expr = function (x: Type = integerType(1, 1)) {
+  lang.expr = function (x: Type = integerType(1, 1), preferBuiltin = false) {
     const literal = getLiteralOfType(x, true);
-    return isCompilable(literal, lang) ? literal : nextBuiltin(x);
+    return !preferBuiltin && isCompilable(literal, lang)
+      ? literal
+      : nextBuiltin(x);
   };
 }
 
@@ -94,7 +96,9 @@ function printTable(name: string, x: Table) {
         Object.entries(x)
           .filter(
             ([k, v]) =>
-              options.all === true || Object.values(v).some((x) => x !== true),
+              options.all === true ||
+              (Object.values(v).some((x) => x !== true) &&
+                Object.values(v).some((x) => x !== false)),
           )
           .map(([k, v]) => ({
             [name]: k.padEnd(25),
@@ -166,7 +170,9 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
       lang.stmt(
         op(
           opCode,
-          ...getInstantiatedOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
+          ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
+            lang.expr(x, opCode.startsWith("set_") || opCode === "push"),
+          ),
         ),
       ),
   ]),
