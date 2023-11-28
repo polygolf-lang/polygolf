@@ -50,7 +50,6 @@ import {
   textGetToIntToTextGet,
   textToIntToFirstIndexTextGetToInt,
   textToIntToTextGetToInt,
-  usePrimaryTextOps,
 } from "../../plugins/textOps";
 import { addOneToManyAssignments, inlineVariables } from "../../plugins/block";
 import {
@@ -119,7 +118,6 @@ const javascriptLanguage: Language = {
     simplegolf(forRangeToForEachKey),
     required(
       forRangeToForCLike,
-      usePrimaryTextOps("codepoint"), // TODO should be "codeunit"
       mapOps({
         dec_to_int: (x) =>
           op("add", int(0n), implicitConversion("dec_to_int", x[0])),
