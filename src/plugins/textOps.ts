@@ -48,6 +48,7 @@ export const textGetToTextGetToIntToText: Plugin = mapOps(
 
 export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps(
   {
+    "ord[Ascii]": (x) => op("ord_at[Ascii]", x[0], int(0n)),
     "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
     "ord[codepoint]": (x) => op("ord_at[codepoint]", x[0], int(0n)),
   },

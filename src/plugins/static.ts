@@ -76,7 +76,7 @@ export function hardcode(): Plugin {
     name: "hardcode",
     visit(node, spine, context) {
       context.skipChildren();
-      if (!isOp("print[Text]")(node)) {
+      if (!isOp("print[Text]")(node) || !isText()(node.args[0])) {
         try {
           const output = getOutput(node);
           if (output !== "") return op("print[Text]", text(output));

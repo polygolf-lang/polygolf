@@ -56,7 +56,7 @@ import {
   propertyCall,
   isText,
   anyInt,
-  isIntLiteral,
+  isInt,
   isIdent,
   postfix,
   type Text,
@@ -113,7 +113,7 @@ export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
       );
   }
   function assertInteger(e: Node): asserts e is Integer {
-    if (!isIntLiteral()(e))
+    if (!isInt()(e))
       throw new PolygolfError(
         `Syntax error. Expected integer literal, but got ${e.kind}`,
         e.source,

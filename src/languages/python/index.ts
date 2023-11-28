@@ -15,6 +15,8 @@ import {
   type Text,
   builtin,
   isText,
+  infix,
+  list,
 } from "../../IR";
 import {
   type Language,
@@ -132,14 +134,19 @@ const pythonLanguage: Language = {
         true: int(1),
         false: int(0),
         "find[List]": (x) => method(x[0], "index", x[1]),
+        "find[codepoint]": (x) => method(x[0], "find", x[1]),
         join: (x) => method(x[1], "join", x[0]),
 
         "reversed[codepoint]": (x) =>
           rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
+        "reversed[List]": (x) =>
+          rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
         "at[codepoint]": (x) => indexCall(x[0], x[1]),
 
         "slice[codepoint]": (x) =>
-          rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
+        "slice[List]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
         split: (x) => method(x[0], "split", x[1]),
         split_whitespace: (x) => method(x[0], "split"),
 
@@ -172,11 +179,15 @@ const pythonLanguage: Language = {
               ),
             ),
           ),
+        push: (x) => method(x[0], "append", x[1]),
+        append: (x) => op("concat[List]", x[0], list([x[1]])),
       }),
       mapTo(func)({
         "read[line]": "input",
         abs: "abs",
         "size[List]": "len",
+        "size[Table]": "len",
+        "size[Set]": "len",
         "sorted[Int]": "sorted",
         "sorted[Ascii]": "sorted",
         "ord[codepoint]": "ord",
@@ -187,6 +198,13 @@ const pythonLanguage: Language = {
         int_to_dec: "str",
         dec_to_int: "int",
         "println[Text]": "print",
+      }),
+      mapTo((x: string, [right, left]) => infix(x, left, right))({
+        "contains[Array]": "in",
+        "contains[List]": "in",
+        "contains[Table]": "in",
+        "contains[Set]": "in",
+        "contains[Text]": "in",
       }),
       mapToPrefixAndInfix(
         {
@@ -199,6 +217,7 @@ const pythonLanguage: Language = {
           mod: "%",
           add: "+",
           "concat[Text]": "+",
+          "concat[List]": "+",
           sub: "-",
           bit_shift_left: "<<",
           bit_shift_right: ">>",
@@ -208,7 +227,9 @@ const pythonLanguage: Language = {
           lt: "<",
           leq: "<=",
           "eq[Int]": "==",
+          "eq[Text]": "==",
           "neq[Int]": "!=",
+          "neq[Text]": "!=",
           geq: ">=",
           gt: ">",
           not: "not",

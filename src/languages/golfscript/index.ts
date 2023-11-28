@@ -12,7 +12,7 @@ import {
   infix,
   list,
   prefix,
-  isIntLiteral,
+  isInt,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -114,7 +114,8 @@ const golfscriptLanguage: Language = {
         true: int(1),
         false: int(0),
 
-        "slice[byte]": (x) => rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
+        "slice[byte]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
         neg: (x) => op("mul", x[0], int(-1)),
         max: (x) => op("at[List]", op("sorted[Int]", list(x)), int(1)),
         min: (x) => op("at[List]", op("sorted[Int]", list(x)), int(0)),
@@ -122,13 +123,13 @@ const golfscriptLanguage: Language = {
         leq: (x) =>
           op(
             "lt",
-            ...(isIntLiteral()(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])]),
+            ...(isInt()(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])]),
           ),
 
         geq: (x) =>
           op(
             "gt",
-            ...(isIntLiteral()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
+            ...(isInt()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
           ),
       }),
       mapToPrefixAndInfix({

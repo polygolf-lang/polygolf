@@ -11,6 +11,7 @@ import {
   builtin,
   int,
   postfix,
+  isInt,
 } from "../../IR";
 import {
   type Language,
@@ -126,6 +127,14 @@ const swiftLanguage: Language = {
           func("Int", indexCall(func("Array", prop(x[0], "utf8")), x[1])),
         "at[codepoint]": (x) =>
           func("String", indexCall(func("Array", x[0]), x[1])),
+        "slice[codepoint]": (x) =>
+          isInt(0n)(x[1])
+            ? method(x[0], "prefix", x[2])
+            : method(
+                method(x[0], "prefix", op("add", x[1], x[2])),
+                "suffix",
+                x[2],
+              ),
         "ord_at[codepoint]": (x) =>
           prop(
             indexCall(func("Array", prop(x[0], "unicodeScalars")), x[1]),
@@ -182,7 +191,9 @@ const swiftLanguage: Language = {
           lt: "<",
           leq: "<=",
           "eq[Int]": "==",
+          "eq[Text]": "==",
           "neq[Int]": "!=",
+          "neq[Text]": "!=",
           geq: ">=",
           gt: ">",
           and: "&&",

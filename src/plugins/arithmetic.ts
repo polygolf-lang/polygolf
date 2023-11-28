@@ -8,7 +8,7 @@ import {
   type Op,
   isSubtype,
   isOp,
-  isIntLiteral,
+  isInt,
   implicitConversion,
   integerType,
   type Node,
@@ -84,11 +84,7 @@ export const removeBitnot: Plugin = mapOps(
 );
 
 export function addBitnot(node: Node) {
-  if (
-    isOp("add")(node) &&
-    node.args.length === 2 &&
-    isIntLiteral()(node.args[0])
-  ) {
+  if (isOp("add")(node) && node.args.length === 2 && isInt()(node.args[0])) {
     if (node.args[0].value === 1n)
       return op("neg", op("bit_not", node.args[1]));
     if (node.args[0].value === -1n)
@@ -147,9 +143,9 @@ export function useIntegerTruthiness(node: Node, spine: Spine) {
     spine.parent!.node.kind === "If" &&
     spine.pathFragment === "condition"
   ) {
-    const res = isIntLiteral(0n)(node.args[1])
+    const res = isInt(0n)(node.args[1])
       ? implicitConversion("int_to_bool", node.args[0])
-      : isIntLiteral(0n)(node.args[0])
+      : isInt(0n)(node.args[0])
       ? implicitConversion("int_to_bool", node.args[1])
       : undefined;
     return res !== undefined && node.op === "eq[Int]" ? op("not", res) : res;
@@ -200,7 +196,7 @@ export function powToMul(limit: number = 2): Plugin {
     visit(node) {
       if (isOp("pow")(node)) {
         const [a, b] = node.args;
-        if (isIntLiteral()(b) && 1 < b.value && b.value <= limit) {
+        if (isInt()(b) && 1 < b.value && b.value <= limit) {
           return op("mul", ...Array(Number(b.value)).fill(a));
         }
       }
@@ -244,7 +240,7 @@ export function bitShiftToMulOrDiv(
     visit(node) {
       if (isOp("bit_shift_left", "bit_shift_right")(node)) {
         const [a, b] = node.args;
-        if (!literalOnly || isIntLiteral()(b)) {
+        if (!literalOnly || isInt()(b)) {
           if (node.op === "bit_shift_left" && toMul) {
             return op("mul", a, op("pow", int(2), b));
           }
@@ -274,18 +270,18 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
     visit(node) {
       if (isOp("div")(node) && fromDiv) {
         const [a, b] = node.args;
-        if (isIntLiteral()(b)) {
+        if (isInt()(b)) {
           const [n, exp] = getOddAnd2Exp(b.value);
           if (exp > 1 && n === 1n) {
             return op("bit_shift_right", a, int(exp));
           }
         }
-        if (isOp("pow")(b) && isIntLiteral(2n)(b.args[0])) {
+        if (isOp("pow")(b) && isInt(2n)(b.args[0])) {
           return op("bit_shift_right", a, b.args[1]);
         }
       }
       if (isOp("mul")(node) && fromMul) {
-        if (isIntLiteral()(node.args[0])) {
+        if (isInt()(node.args[0])) {
           const [n, exp] = getOddAnd2Exp(node.args[0].value);
           if (exp > 1) {
             return op(
@@ -296,7 +292,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
           }
         }
         const powNode = node.args.find(
-          (x) => isOp("pow")(x) && isIntLiteral(2n)(x.args[0]),
+          (x) => isOp("pow")(x) && isInt(2n)(x.args[0]),
         ) as Op | undefined;
         if (powNode !== undefined) {
           return op(
@@ -439,7 +435,7 @@ export function decomposeIntLiteral(
     ])})`,
     visit(node) {
       let decompositions: IntDecomposition[] = [];
-      if (isIntLiteral()(node) && (node.value <= -1000 || node.value >= 1000)) {
+      if (isInt()(node) && (node.value <= -1000 || node.value >= 1000)) {
         decompositions = decomposeInt(
           node.value,
           hasScientific,

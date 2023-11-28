@@ -117,6 +117,7 @@ text_byte_to_int "a";
 codepoint_to_int "\u00ff";
 int_to_text_byte 99;
 int_to_codepoint 999;
+text_get_codepoint_slice "abcdefg" 2 3;
 
 % Other
 list_get (list "xy" "abc") 1;
@@ -177,6 +178,7 @@ Int(Array("a".utf8)[0])
 Array("ÿ".unicodeScalars)[0].value
 String(UnicodeScalar(99)!)
 String(UnicodeScalar(999)!)
+"abcdefg".prefix(5).suffix(3)
 ["xy","abc"][1]
 b+"xyz"
 String(5)
