@@ -178,7 +178,7 @@ Int(Array("a".utf8)[0])
 Array("ÿ".unicodeScalars)[0].value
 String(UnicodeScalar(99)!)
 String(UnicodeScalar(999)!)
-"abcdefg"[2..<5]
+"abcdefg".prefix(5).suffix(3)
 ["xy","abc"][1]
 b+"xyz"
 String(5)

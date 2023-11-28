@@ -11,7 +11,7 @@ import {
   builtin,
   int,
   postfix,
-  rangeIndexCall,
+  isInt,
 } from "../../IR";
 import {
   type Language,
@@ -128,7 +128,13 @@ const swiftLanguage: Language = {
         "at[codepoint]": (x) =>
           func("String", indexCall(func("Array", x[0]), x[1])),
         "slice[codepoint]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
+          isInt(0n)(x[1])
+            ? method(x[0], "prefix", x[2])
+            : method(
+                method(x[0], "prefix", op("add", x[1], x[2])),
+                "suffix",
+                x[2],
+              ),
         "ord_at[codepoint]": (x) =>
           prop(
             indexCall(func("Array", prop(x[0], "unicodeScalars")), x[1]),

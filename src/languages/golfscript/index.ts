@@ -12,7 +12,7 @@ import {
   infix,
   list,
   prefix,
-  isIntLiteral,
+  isInt,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -123,13 +123,13 @@ const golfscriptLanguage: Language = {
         leq: (x) =>
           op(
             "lt",
-            ...(isIntLiteral()(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])]),
+            ...(isInt()(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])]),
           ),
 
         geq: (x) =>
           op(
             "gt",
-            ...(isIntLiteral()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
+            ...(isInt()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
           ),
       }),
       mapToPrefixAndInfix({

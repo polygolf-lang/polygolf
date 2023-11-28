@@ -5,7 +5,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isIntLiteral } from "../../IR";
+import { type IR, isInt } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 const unicode01to09repls = {
@@ -160,7 +160,7 @@ export default function emitProgram(
             "for",
             e.variable === undefined ? "_" : emit(e.variable),
             "in",
-            isIntLiteral(1n)(e.increment)
+            isInt(1n)(e.increment)
               ? [start, e.inclusive ? "..." : "..<", end]
               : [
                   "stride",
