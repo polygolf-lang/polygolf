@@ -15,7 +15,7 @@ import {
   op,
   type Node,
   type Identifier,
-  isIntLiteral,
+  isInt,
   type OpCode,
   type Text,
   type List,
@@ -40,7 +40,7 @@ export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
       if (
         node.kind === "ForRange" &&
         !node.inclusive &&
-        (!skip1Step || !isIntLiteral(1n)(node.increment))
+        (!skip1Step || !isInt(1n)(node.increment))
       )
         return forRange(
           node.variable,
@@ -107,7 +107,7 @@ export function forRangeToForEachPair(node: Node, spine: Spine) {
     node.kind === "ForRange" &&
     node.variable !== undefined &&
     !node.inclusive &&
-    isIntLiteral(0n)(node.start) &&
+    isInt(0n)(node.start) &&
     isOp("size[List]")(node.end) &&
     isIdent()(node.end.args[0])
   ) {
@@ -158,21 +158,21 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
         node.kind === "ForRange" &&
         node.variable !== undefined &&
         !node.inclusive &&
-        isIntLiteral(0n)(node.start) &&
+        isInt(0n)(node.start) &&
         ((isOp()(node.end) &&
           ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
           isIdent()(node.end.args[0])) ||
-          isIntLiteral()(node.end))
+          isInt()(node.end))
       ) {
         const indexVar = node.variable;
         const bodySpine = spine.getChild("body");
-        const knownLength = isIntLiteral()(node.end)
+        const knownLength = isInt()(node.end)
           ? Number(node.end.value)
           : undefined;
-        const allowedOps = isIntLiteral()(node.end)
+        const allowedOps = isInt()(node.end)
           ? ops
           : [lengthOpToGetOp.get(node.end.op) as GetOp];
-        const collectionVar = isIntLiteral()(node.end)
+        const collectionVar = isInt()(node.end)
           ? undefined
           : (node.end.args[0] as Identifier);
         const indexedCollection = getIndexedCollection(
@@ -318,11 +318,11 @@ export function shiftRangeOneUp(node: Node, spine: Spine) {
   if (
     node.kind === "ForRange" &&
     node.variable !== undefined &&
-    isIntLiteral(1n)(node.increment) &&
+    isInt(1n)(node.increment) &&
     spine.someNode(
       (x) =>
         isOp("add")(x) &&
-        isIntLiteral(1n)(x.args[0]) &&
+        isInt(1n)(x.args[0]) &&
         isIdent(node.variable!)(x.args[1]),
     )
   ) {

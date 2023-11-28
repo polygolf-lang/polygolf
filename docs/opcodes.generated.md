@@ -40,9 +40,9 @@
 | at[byte] | at[byte] | [Text, 0..oo] | (Text 1..1) | Gets the byte (as text) at the 0-based index (counting bytes). |
 | at[codepoint] | at[codepoint] | [Text, 0..oo] | (Text 1..1) | Gets the codepoint (as text) at the 0-based index (counting codepoints). |
 | set_at | set_at[Array]<br>set_at[List]<br>set_at[Table] | [(Array T1 T2), T2, T1]<br>[(List T1), 0..oo, T1]<br>[(Table T1 T2), T1, T2] | Void<br>Void<br>Void | Sets the item at the 0-based index.<br>Sets the item at the 0-based index.<br>Sets the item at the key. |
-| slice[codepoint] | slice[codepoint] | [Text, 0..oo, 0..oo] | Text | TODO |
-| slice[byte] | slice[byte] | [Text, 0..oo, 0..oo] | Text | TODO |
-| slice | slice[Ascii]<br>slice[List] | [Ascii, 0..oo, 0..oo]<br>[(List T1), 0..oo, 0..oo] | Ascii<br>(List T1) | TODO<br>TODO |
+| slice[codepoint] | slice[codepoint] | [Text, 0..oo, 0..oo] | Text | Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in codepoints. |
+| slice[byte] | slice[byte] | [Text, 0..oo, 0..oo] | Text | Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in bytes. |
+| slice | slice[Ascii]<br>slice[List] | [Ascii, 0..oo, 0..oo]<br>[(List T1), 0..oo, 0..oo] | Ascii<br>(List T1) | Returns a text slice that starts at the given 0-based index and has given length.<br>Returns a list slice that starts at the given 0-based index and has given length. |
 | ord_at[byte] | ord_at[byte] | [Text, 0..oo] | 0..255 | Gets the byte (as integer) at the 0-based index (counting bytes). |
 | ord_at[codepoint] | ord_at[codepoint] | [Text, 0..oo] | 0..1114111 | Gets the codepoint (as integer) at the 0-based index (counting codepoints). |
 | ord_at | ord_at[Ascii] | [Ascii, 0..oo] | 0..127 | Gets the character (as integer) at the 0-based index. |

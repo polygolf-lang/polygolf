@@ -133,7 +133,8 @@ const nimLanguage: Language = {
         true: builtin("true"),
         false: builtin("false"),
         "at[byte]": (x) => indexCall(x[0], x[1]),
-        "slice[byte]": (x) => rangeIndexCall(x[0], x[1], x[2], int(1n)),
+        "slice[byte]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
         "print[Text]": (x) => func("write", builtin("stdout"), x),
         replace: (x) => func("replace", isText("")(x[2]) ? [x[0], x[1]] : x),
         text_multireplace: (x) =>

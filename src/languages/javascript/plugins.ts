@@ -3,7 +3,7 @@ import {
   builtin,
   forEachKey,
   indexCall,
-  isIntLiteral,
+  isInt,
   text,
 } from "../../IR";
 
@@ -17,8 +17,8 @@ export function forRangeToForEachKey(node: Node) {
   if (
     node.kind === "ForRange" &&
     node.variable !== undefined &&
-    isIntLiteral(0n)(node.start) &&
-    isIntLiteral()(node.end) &&
+    isInt(0n)(node.start) &&
+    isInt()(node.end) &&
     2 <= node.end.value &&
     node.end.value <= 37
   ) {

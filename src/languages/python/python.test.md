@@ -20,13 +20,13 @@ print(4,end="")
 
 ```polygolf
 $a <- (text_get_codepoint "abcdefg" 4);
-$b <- (text_get_codepoint_slice "abcdefg" 1 3);
+$b <- (text_get_codepoint_slice "abcdefg" 2 3);
 $c <- (text_codepoint_reversed "abcdefg");
 ```
 
 ```python nogolf
 a="abcdefg"[4]
-b="abcdefg"[1:4]
+b="abcdefg"[2:5]
 c="abcdefg"[::-1]
 ```
 

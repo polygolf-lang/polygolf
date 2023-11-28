@@ -72,6 +72,7 @@ text_byte_to_int "g";
 text_get_byte_to_int "ijk" 1;
 text_byte_length "opq";
 int_to_text_byte 99;
+text_get_byte_slice "abcdefg" 2 3;
 
 % Other
 list_get $d 1;
@@ -89,7 +90,7 @@ repeat $b 3;
 ```
 
 ```golfscript nogolf
-0:a;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!a~-1 a*a abs 2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^[2 a]$1=[2 a]$0=4 a*a 4/a 2<a 3<a 2=a 2=!a 1>a 2>["abc"1=]""+"g")"ijk"1="opq",[99]""+d 1=d"t"+d,d"_"*d$b"xyz"+5`"5"~"xyz""y"/b-1%b 3*
+0:a;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!a~-1 a*a abs 2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^[2 a]$1=[2 a]$0=4 a*a 4/a 2<a 3<a 2=a 2=!a 1>a 2>["abc"1=]""+"g")"ijk"1="opq",[99]""+"abcdefg"5<2>d 1=d"t"+d,d"_"*d$b"xyz"+5`"5"~"xyz""y"/b-1%b 3*
 ```
 
 ## Looping

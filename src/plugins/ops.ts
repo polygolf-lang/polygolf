@@ -9,7 +9,7 @@ import {
   indexCall,
   isBinary,
   isCommutative,
-  isIntLiteral,
+  isInt,
   isNegative,
   mutatingInfix,
   isOp,
@@ -139,11 +139,7 @@ function asBinaryChain(
   names: Partial<Record<OpCode, string>>,
 ): Node {
   const negName = names.neg;
-  if (
-    opCode === "mul" &&
-    isIntLiteral(-1n)(exprs[0]) &&
-    negName !== undefined
-  ) {
+  if (opCode === "mul" && isInt(-1n)(exprs[0]) && negName !== undefined) {
     exprs = [prefix(negName, exprs[1]), ...exprs.slice(2)];
   }
   if (opCode === "add") {
@@ -243,7 +239,7 @@ export function addPostfixIncAndDec(node: Node) {
   if (
     node.kind === "MutatingInfix" &&
     ["+", "-"].includes(node.name) &&
-    isIntLiteral(1n)(node.right)
+    isInt(1n)(node.right)
   ) {
     return postfix(node.name.repeat(2), node.variable);
   }

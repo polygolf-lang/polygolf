@@ -1,6 +1,6 @@
 import { type TokenTree } from "../../common/Language";
 import { EmitError, emitTextFactory } from "../../common/emit";
-import { int, integerType, type IR, isIntLiteral, isSubtype } from "../../IR";
+import { int, integerType, type IR, isInt, isSubtype } from "../../IR";
 import { getType } from "../../common/getType";
 
 const emitGolfscriptText = emitTextFactory({
@@ -38,10 +38,8 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return [
           emitNode(stmt.end),
           ",",
-          isIntLiteral(0n)(stmt.start) ? [] : [emitNode(stmt.start), ">"],
-          isIntLiteral(1n)(stmt.increment)
-            ? []
-            : [emitNode(stmt.increment), "%"],
+          isInt(0n)(stmt.start) ? [] : [emitNode(stmt.start), ">"],
+          isInt(1n)(stmt.increment) ? [] : [emitNode(stmt.increment), "%"],
           "{",
           ...(stmt.variable === undefined
             ? []
@@ -57,11 +55,9 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return [
           emitNode(stmt.difference),
           ",",
-          isIntLiteral(1n)(stmt.increment)
-            ? []
-            : [emitNode(stmt.increment), "%"],
+          isInt(1n)(stmt.increment) ? [] : [emitNode(stmt.increment), "%"],
           "{",
-          isIntLiteral()(stmt.start) && stmt.start.value < 0n
+          isInt()(stmt.start) && stmt.start.value < 0n
             ? [emitNode(int(-stmt.start.value)), "-"]
             : [emitNode(stmt.start), "+"],
           ":",
@@ -134,7 +130,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
           "<",
           emitNode(expr.low),
           ">",
-          isIntLiteral(1n)(expr.step) ? [] : [emitNode(expr.step), "%"],
+          isInt(1n)(expr.step) ? [] : [emitNode(expr.step), "%"],
         ];
       }
       default:
