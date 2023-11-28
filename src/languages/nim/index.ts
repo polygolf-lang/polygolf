@@ -12,6 +12,7 @@ import {
   text,
   assignment,
   isIdent,
+  infix,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -189,6 +190,11 @@ const nimLanguage: Language = {
         int_to_hex: "toHex",
       }),
       useUnsignedDivision,
+      mapTo((x: string, [right, left]) => infix(x, left, right))({
+        "contains[Array]": "in",
+        "contains[List]": "in",
+        "contains[Text]": "in",
+      }),
       mapToPrefixAndInfix(
         {
           bit_not: "not",
@@ -221,8 +227,6 @@ const nimLanguage: Language = {
           or: "or",
           bit_or: "or",
           bit_xor: "xor",
-          "contains[Text]": "in",
-          "contains[List]": "in",
         },
         ["+", "*", "%%", "/%", "-", "&"],
       ),
