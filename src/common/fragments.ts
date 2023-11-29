@@ -1,5 +1,11 @@
 import { type IR } from "../IR";
 
+type AllKeys<T> = T extends unknown
+  ? keyof Omit<T, "type" | "targetType" | "sourcePointer">
+  : never;
+
+export type NodeKeys = AllKeys<IR.Node>;
+
 /**
  * The edge in the tree taking a Path to its child
  *
@@ -8,12 +14,10 @@ import { type IR } from "../IR";
  * The object represents `node[prop][index]` such as
  *  `{prop: "children", index: 3}` representing `block.children[3]`
  */
-type AllKeys<T> = T extends unknown ? keyof T : never;
-
 export type PathFragment =
-  | AllKeys<IR.Node>
+  | NodeKeys
   | {
-      readonly prop: AllKeys<IR.Node>;
+      readonly prop: NodeKeys;
       readonly index: number;
     };
 
@@ -28,7 +32,7 @@ export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
 /** Get all keys of a node object corresponding to children nodes. This is the
  * same sequence as `getChildFragments`, but this gives one key for each
  * array prop, while `getChildFragments` gives a `PathFragment` for each entry */
-function* getChildKeys(node: IR.Node): Generator<AllKeys<IR.Node>> {
+function* getChildKeys(node: IR.Node): Generator<NodeKeys> {
   for (const key in node) {
     const value = (node as any)[key];
     if (

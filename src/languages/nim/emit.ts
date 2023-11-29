@@ -128,6 +128,21 @@ export default function emitProgram(
   function emit(expr: IR.Node, minimumPrec = -Infinity): TokenTree {
     let prec = precedence(expr);
     const e = expr;
+    const g = {} as any;
+    const x = {
+      Block: emitMultiNode,
+      VarDeclarationWithAssignment: g.assignment,
+      VarDeclarationBlock: (e) => "TODO",
+      Import: [g.name, g.modules],
+      While: ["while", g.condition, ":", g.body],
+      ForEach: ["for", g.variable, "in", g.collection, ":", g.body],
+      ForRange: "TODO",
+      If: ["if", g.condition, ":", g.consequent],
+      Else: ["else", ":", g.alternate],
+      Assignment: [g.variable, "=", g.expr],
+      ManyToManyAssignment: ["(", g.variables, ")=(", g.exprs, ")"],
+      OneToManyAssignment: [g.variables(","), "=", g.expr],
+    };
     function emitNoParens(): TokenTree {
       switch (e.kind) {
         case "Block":
