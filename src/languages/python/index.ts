@@ -15,6 +15,7 @@ import {
   type Text,
   builtin,
   isText,
+  implicitConversion,
   infix,
   list,
 } from "../../IR";
@@ -47,7 +48,11 @@ import {
   hardcode,
   listOpsToTextOps,
 } from "../../plugins/static";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import {
+  golfLastPrint,
+  implicitlyConvertPrintArg,
+  putcToPrintChar,
+} from "../../plugins/print";
 import {
   packSource2to1,
   packSource3to1,
@@ -113,6 +118,7 @@ const pythonLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       removeUnusedForVar,
+      putcToPrintChar,
       usePrimaryTextOps("codepoint"),
       mapOps({
         argv: builtin("sys.argv[1:]"),
@@ -142,7 +148,8 @@ const pythonLanguage: Language = {
         "reversed[List]": (x) =>
           rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
         "at[codepoint]": (x) => indexCall(x[0], x[1]),
-
+        "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", x[0], x[1])),
+        "ord_at[byte]": (x) => indexCall(func("bytes", x[0], text("u8")), x[1]),
         "slice[codepoint]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
         "slice[List]": (x) =>
@@ -179,8 +186,11 @@ const pythonLanguage: Language = {
               ),
             ),
           ),
+
         push: (x) => method(x[0], "append", x[1]),
         append: (x) => op("concat[List]", x[0], list([x[1]])),
+        int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
+        bool_to_int: (x) => implicitConversion("bool_to_int", x[0]),
       }),
       mapTo(func)({
         "read[line]": "input",
@@ -191,7 +201,9 @@ const pythonLanguage: Language = {
         "sorted[Int]": "sorted",
         "sorted[Ascii]": "sorted",
         "ord[codepoint]": "ord",
+        "ord[byte]": "ord",
         "char[codepoint]": "chr",
+        "char[byte]": "chr",
         max: "max",
         min: "min",
         "size[codepoint]": "len",
