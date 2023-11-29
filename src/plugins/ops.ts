@@ -266,7 +266,11 @@ export const removeImplicitConversions: Plugin = {
   bakeType: true,
   visit(node) {
     if (node.kind === "ImplicitConversion") {
-      return node.expr;
+      let ret: Node = node;
+      while (ret.kind === "ImplicitConversion") {
+        ret = ret.expr;
+      }
+      return ret;
     }
   },
 };

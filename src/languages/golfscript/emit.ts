@@ -112,6 +112,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return [emitNode(expr.left), emitNode(expr.right), expr.name];
       case "Prefix":
         return [emitNode(expr.arg), expr.name];
+      case "Array":
       case "List":
         return ["[", expr.exprs.map(emitNode), "]"];
       case "ConditionalOp":
@@ -121,6 +122,10 @@ export default function emitProgram(program: IR.Node): TokenTree {
           emitNode(expr.alternate),
           "if",
         ];
+      case "IndexCall": {
+        if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
+        return [emitNode(expr.collection), emitNode(expr.index), "="];
+      }
       case "RangeIndexCall": {
         if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
 

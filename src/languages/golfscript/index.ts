@@ -13,6 +13,8 @@ import {
   list,
   prefix,
   isInt,
+  implicitConversion,
+  block,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -28,6 +30,7 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
+  useIndexCalls,
 } from "../../plugins/ops";
 import { alias, renameIdents, useBuiltinAliases } from "../../plugins/idents";
 import {
@@ -36,6 +39,7 @@ import {
   printConcatToMultiPrint,
   printLnToPrint,
   printToImplicitOutput,
+  putcToPrintChar,
 } from "../../plugins/print";
 import {
   forArgvToForEach,
@@ -87,6 +91,7 @@ const golfscriptLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
+      putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
       usePrimaryTextOps("byte"),
       textGetToTextGetToIntToText,
@@ -116,6 +121,8 @@ const golfscriptLanguage: Language = {
 
         "slice[byte]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
+          "slice[List]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
         neg: (x) => op("mul", x[0], int(-1)),
         max: (x) => op("at[List]", op("sorted[Int]", list(x)), int(1)),
         min: (x) => op("at[List]", op("sorted[Int]", list(x)), int(0)),
@@ -131,7 +138,23 @@ const golfscriptLanguage: Language = {
             "gt",
             ...(isInt()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
           ),
+        int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
+        bool_to_int: (x) => implicitConversion("bool_to_int", x[0]),
+        append: (x) => op("concat[List]", x[0], list([x[1]])),
+        "contains[Text]": (x)=>implicitConversion("int_to_bool", op("add", op("find[byte]", x[0], x[1]), int(1n))),
+        "contains[List]": (x)=>implicitConversion("int_to_bool", op("add", op("find[List]", x[0], x[1]), int(1n))),
+        "contains[Array]": (x)=>implicitConversion("int_to_bool", op("add", infix("?", x[0], x[1]), int(1n))),
+        int_to_bin: (x)=>infix("*",infix("base", x[0],int(2n)),text("")),
+        
+        // TO-DO: less hacky implementations for these:
+        int_to_hex: (x) => infix("+",prefix("{.9>7*+48+}%", infix("base", x[0],int(16n))),text("")),
+        gcd: (x) => prefix("{.}{.@@%}while;", x[0]),
+        split_whitespace: (x) => op("split", prefix("{...9<\\13>+*\\32if}%", x[0]),text(" ")),
+        right_align: (x) => infix("1$,-.0>*\" \"*\\+", x[0], x[1]),
+        int_to_hex_aligned: (x) => infix("16base{.9>7*+48+}%\"\"+\\1$,-.0>*\"0\"*\\+", x[0], x[1]),
+        int_to_bin_aligned: (x) => infix("2base\"\"+\\1$,-.0>*\"0\"*\\+", x[0], x[1]),
       }),
+      useIndexCalls(false),
       mapToPrefixAndInfix({
         not: "!",
         bit_not: "~",
@@ -145,8 +168,10 @@ const golfscriptLanguage: Language = {
         bit_or: "|",
         bit_xor: "^",
         "concat[Text]": "+",
+        "concat[List]": "+",
         lt: "<",
         "eq[Int]": "=",
+        "eq[Text]": "=",
         gt: ">",
         and: "and",
         or: "or",
@@ -159,16 +184,18 @@ const golfscriptLanguage: Language = {
         pow: "?",
         dec_to_int: "~",
         abs: "abs",
-        push: "+",
-        "at[List]": "=",
         "size[List]": ",",
         join: "*",
         "sorted[Int]": "$",
         "sorted[Ascii]": "$",
+        "find[byte]": "?",
+        "find[List]": "?",
       }),
       mapOps({
         "neq[Int]": (x) => prefix("!", infix("=", x[0], x[1])),
+        "neq[Text]": (x) => prefix("!", infix("=", x[0], x[1])),
         "reversed[byte]": (x) => infix("%", x[0], int(-1)),
+        "reversed[List]": (x) => infix("%", x[0], int(-1)),
         "char[byte]": (x) => infix("+", list(x), text("")),
       }),
     ),
