@@ -92,13 +92,26 @@ type CoverTableRecipe = Record<string, (x: LangCoverConfig) => Node>;
 function printTable(name: string, x: Table) {
   console.log(
     "\n" +
-      asTable(
-        Object.entries(x)
+      asTable([
+        {
+          [name]: "",
+          ...mapObjectValues(
+            Object.values(x)[0],
+            (v, k) =>
+              `${Math.floor(
+                (100 *
+                  Object.values(x)
+                    .map((x) => x[k])
+                    .filter((x) => x === true).length) /
+                  Object.values(x).length,
+              )}%`,
+          ),
+        },
+        ...Object.entries(x)
           .filter(
             ([k, v]) =>
               options.all === true ||
-              (Object.values(v).some((x) => x !== true) &&
-                Object.values(v).some((x) => x !== false)),
+              Object.values(v).some((x, _, a) => x !== a[0]),
           )
           .map(([k, v]) => ({
             [name]: k.padEnd(25),
@@ -112,7 +125,7 @@ function printTable(name: string, x: Table) {
                 : v2,
             ),
           })),
-      ).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly
+      ]).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly
   );
 }
 
