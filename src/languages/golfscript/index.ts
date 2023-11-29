@@ -164,7 +164,7 @@ const golfscriptLanguage: Language = {
             prefix("{.9>7*+48+}%", infix("base", x[0], int(16n))),
             text(""),
           ),
-        gcd: (x) => prefix("{.}{.@@%}while;", x[0]),
+        gcd: (x) => infix("{.}{.@@%}while;", x[0], x[1]),
         split_whitespace: (x) =>
           op("split", prefix("{...9<\\13>+*\\32if}%", x[0]), text(" ")),
         right_align: (x) => infix('1$,-.0>*" "*\\+', x[0], x[1]),

@@ -67,29 +67,38 @@ $a >= 2;
 $a > 2;
 
 % Text Encoding
-text_get_byte "abc" 1;
-text_byte_to_int "g";
-text_get_byte_to_int "ijk" 1;
-text_byte_length "opq";
-int_to_text_byte 99;
-text_get_byte_slice "abcdefg" 2 3;
+at[byte] "abc" 1;
+ord "g";
+ord_at "ijk" 1;
+size[byte] "opq";
+char[byte] 99;
+slice[byte] "abcdefg" 2 3;
+"a" == "b";
+"a" != "b";
 
 % Other
-list_get $d 1;
-list_length $d;
+at[List] $d 1;
+size[List] $d;
 join $d "_";
 sorted $d;
-concat $b "xyz";
-int_to_text 5;
-text_to_int "5";
-text_split "xyz" "y";
-text_byte_reversed $b;
+concat[Text] $b "xyz";
+int_to_dec 5;
+int_to_bin 6;
+int_to_hex 7;
+int_to_bin_aligned 8 7;
+int_to_hex_aligned 9 7;
+dec_to_int "5";
+split "xyz" "y";
+split_whitespace "a\nb c";
+reversed[byte] $b;
+reversed[List] $d;
 repeat $b 3;
 
 ```
 
 ```golfscript nogolf
-0:a;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!a~-1 a*a abs 2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^[2 a]$1=[2 a]$0=4 a*a 4/a 2<a 3<a 2=a 2=!a 1>a 2>["abc"1=]""+"g")"ijk"1="opq",[99]""+"abcdefg"5<2>d 1=d,d"_"*d$b"xyz"+5`"5"~"xyz""y"/b-1%b 3*
+0:a;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!a~-1 a*a abs 2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^[2 a]$1=[2 a]$0=4 a*a 4/a 2<a 3<a 2=a 2=!a 1>a 2>["abc"1=]""+"g")"ijk"1="opq",[99]""+"abcdefg"5<2>"a""b"="a""b"=!d 1=d,d"_"*d$b"xyz"+5`6 2 base""*7 16 base{.9>7*+48+}%""+8 7 2base""+\1$,-.0>*"0"*\+9 7 16base{.9>7*+48+}%""+\1$,-.0>*"0"*\+"5"~"xyz""y"/"a
+b c"{...9<\13>+*\32if}%" "/b-1%d-1%b 3*
 ```
 
 ## Looping
