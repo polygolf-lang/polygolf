@@ -35,6 +35,7 @@ import {
   methodsAsFunctions,
   printIntToPrint,
   mapTo,
+  arraysToLists,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -91,13 +92,13 @@ const pythonLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint),
+    required(printIntToPrint, arraysToLists),
     simplegolf(golfLastPrint()),
     search(
       golfStringListLiteral(),
       listOpsToTextOps("find[codepoint]", "at[codepoint]"),
       tempVarToMultipleAssignment,
-      forRangeToForEach("at[Array]", "at[List]", "at[codepoint]"),
+      forRangeToForEach("at[List]", "at[codepoint]"),
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
@@ -263,7 +264,6 @@ const pythonLanguage: Language = {
         gcd: "math.gcd",
       }),
       mapTo((x: string, [right, left]) => infix(x, left, right))({
-        "contains[Array]": "in",
         "contains[List]": "in",
         "contains[Table]": "in",
         "contains[Set]": "in",

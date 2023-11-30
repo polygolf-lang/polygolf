@@ -30,6 +30,7 @@ import {
   removeImplicitConversions,
   printIntToPrint,
   useIndexCalls,
+  arraysToLists,
 } from "../../plugins/ops";
 import { alias, renameIdents, useBuiltinAliases } from "../../plugins/idents";
 import {
@@ -90,6 +91,7 @@ const golfscriptLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
+      arraysToLists,
       putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
       usePrimaryTextOps("byte"),
@@ -149,11 +151,6 @@ const golfscriptLanguage: Language = {
           implicitConversion(
             "int_to_bool",
             op("add", op("find[List]", x[0], x[1]), int(1n)),
-          ),
-        "contains[Array]": (x) =>
-          implicitConversion(
-            "int_to_bool",
-            op("add", infix("?", x[0], x[1]), int(1n)),
           ),
         int_to_bin: (x) => infix("*", infix("base", x[0], int(2n)), text("")),
 

@@ -3,8 +3,8 @@
 ## Printing
 
 ```polygolf
-println_int 1;
-print_int 2;
+println[Int] 1;
+print[Int] 2;
 println "a";
 print "b";
 ```
@@ -17,8 +17,8 @@ print "b";
 
 ```polygolf
 $x:Int <- 1;
-print_int $x;
-print_int $x;
+print[Int] $x;
+print[Int] $x;
 ```
 
 ```golfscript nogolf
@@ -105,7 +105,7 @@ b c"{...9<\13>+*\32if}%" "/b-1%d-1%b 3*
 
 ```polygolf
 for $i 0 31 {
-  println_int ((1 + $i) + ($i * $i));
+  println ((1 + $i) + ($i * $i));
 };
 ```
 
@@ -115,7 +115,7 @@ for $i 0 31 {
 
 ```polygolf
 for $i 5 80 5 {
-  println_int $i;
+  println[Int] $i;
 };
 ```
 
@@ -126,7 +126,7 @@ for $i 5 80 5 {
 
 ```polygolf
 for $i -5 31 {
-  println_int $i;
+  println $i;
 };
 ```
 
@@ -138,7 +138,7 @@ for $i -5 31 {
 ```polygolf
 $a:-10..10 <- -4;
 for $i $a ($a+6) {
-  println_int $i;
+  println $i;
 };
 ```
 
