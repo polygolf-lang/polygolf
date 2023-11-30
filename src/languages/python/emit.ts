@@ -235,6 +235,8 @@ export default function emitProgram(
         }
         case "Prefix":
           return [e.name, emit(e.arg, prec)];
+        case "Set":
+          return ["{", joinNodes(",", e.exprs), "}"];
         case "List":
           return ["[", joinNodes(",", e.exprs), "]"];
         case "Table":
