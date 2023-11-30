@@ -73,7 +73,7 @@ const golfscriptLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint),
+    required(printIntToPrint, arraysToLists),
     simplegolf(golfLastPrint(false)),
     search(
       flipBinaryOps,
@@ -91,7 +91,6 @@ const golfscriptLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      arraysToLists,
       putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
       usePrimaryTextOps("byte"),

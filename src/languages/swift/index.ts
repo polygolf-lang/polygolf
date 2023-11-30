@@ -80,7 +80,7 @@ const swiftLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint),
+    required(printIntToPrint, arraysToLists),
     simplegolf(golfLastPrint()),
     search(
       flipBinaryOps,
@@ -109,7 +109,6 @@ const swiftLanguage: Language = {
       decomposeIntLiteral(),
     ),
     required(
-      arraysToLists,
       useIndexCalls(),
       putcToPrintChar,
       usePrimaryTextOps("codepoint"),
