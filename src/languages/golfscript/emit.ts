@@ -101,7 +101,6 @@ export default function emitProgram(program: IR.Node): TokenTree {
   function emitNode(expr: IR.Node): TokenTree {
     switch (expr.kind) {
       case "Assignment": {
-        //a.i.@<[x]+@@)>+:a
         if (expr.variable.kind === "IndexCall") {
           if (expr.variable.oneIndexed)
             throw new EmitError(expr.expr, "one indexed");
