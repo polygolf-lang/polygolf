@@ -77,7 +77,8 @@ import {
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
-import { charLength } from "../../common/objective";
+import { charLength } from "../../common/strings";
+import { golfTextListLiteralIndex } from "./plugins";
 import { safeConditionalOpToAt } from "../../plugins/conditions";
 
 const pythonLanguage: Language = {
@@ -127,7 +128,9 @@ const pythonLanguage: Language = {
 
       useImplicitBoolToInt,
       useIndexCalls(),
-
+    ),
+    simplegolf(golfTextListLiteralIndex),
+    required(
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps({

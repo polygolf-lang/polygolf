@@ -1,4 +1,4 @@
-import { charLength } from "../../common/objective";
+import { charLength } from "../../common/strings";
 import { type TokenTree } from "@/common/Language";
 import {
   containsMultiNode,

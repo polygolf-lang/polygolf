@@ -11,7 +11,7 @@ import {
   print,
   text,
 } from "../IR";
-import { byteLength } from "../common/objective";
+import { byteLength } from "../common/strings";
 import type { Spine } from "../common/Spine";
 
 export function useDecimalConstantPackedPrinter(node: Node, spine: Spine) {
