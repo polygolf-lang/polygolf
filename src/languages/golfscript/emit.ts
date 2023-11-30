@@ -100,8 +100,34 @@ export default function emitProgram(program: IR.Node): TokenTree {
 
   function emitNode(expr: IR.Node): TokenTree {
     switch (expr.kind) {
-      case "Assignment":
+      case "Assignment": {
+        //a.i.@<[x]+@@)>+:a
+        if (expr.variable.kind === "IndexCall") {
+          if (expr.variable.oneIndexed)
+            throw new EmitError(expr.expr, "one indexed");
+          return [
+            emitNode(expr.variable.collection),
+            ".",
+            emitNode(expr.variable.index),
+            ".",
+            "@",
+            "<",
+            "[",
+            emitNode(expr.expr),
+            "]",
+            "+",
+            "@",
+            "@",
+            ")",
+            ">",
+            "+",
+            ":",
+            emitNode(expr.variable.collection),
+            ";",
+          ];
+        }
         return [emitNode(expr.expr), ":", emitNode(expr.variable), ";"];
+      }
       case "Identifier":
         return expr.name;
       case "Text":

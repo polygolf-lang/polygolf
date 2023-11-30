@@ -55,6 +55,7 @@ export const addNimImports: Plugin = addImports(
     split: "strutils",
     hash: "hashes",
     Table: "tables",
+    Set: "sets",
     toRunes: "unicode",
     Rune: "unicode",
     sorted: "algorithm",
