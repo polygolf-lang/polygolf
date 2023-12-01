@@ -11,7 +11,12 @@ const tokenTable = {
   ninf: ["-oo", "-∞"],
   pinf: ["oo", "∞"],
   variant: "/",
-  opalias: [...infixableOpCodeNames, "<-", "=>"],
+  opalias: [
+    ...infixableOpCodeNames,
+    ...infixableOpCodeNames.map((x) => x + "<-"),
+    "<-",
+    "=>",
+  ],
   builtin: /[a-z0-9_]+(?:\[[A-Za-z][a-z]*\])?/,
   type: /[A-Z][a-z]*/,
   lparen: "(",
