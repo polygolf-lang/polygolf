@@ -315,6 +315,8 @@ export default function emitProgram(
             ];
           }
           return ["[", joinNodes(",", e.exprs), "]"];
+        case "Set":
+          return ["[", joinNodes(",", e.exprs), "]", ".", "toSet"];
         case "Table":
           return [
             "{",

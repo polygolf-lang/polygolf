@@ -28,6 +28,7 @@ import {
   isUnary,
   flippedOpCode,
   isVariadic,
+  list,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -266,7 +267,11 @@ export const removeImplicitConversions: Plugin = {
   bakeType: true,
   visit(node) {
     if (node.kind === "ImplicitConversion") {
-      return node.expr;
+      let ret: Node = node;
+      while (ret.kind === "ImplicitConversion") {
+        ret = ret.expr;
+      }
+      return ret;
     }
   },
 };
@@ -288,3 +293,19 @@ export const printIntToPrint: Plugin = mapOps(
   },
   "printIntToPrint",
 );
+
+export const arraysToLists: Plugin = {
+  name: "arraysToLists",
+  bakeType: true,
+  visit(node) {
+    if (node.kind === "Array") {
+      return list(node.exprs);
+    }
+    if (node.kind === "Op") {
+      if (node.op === "at[Array]") return op("at[List]", ...node.args);
+      if (node.op === "set_at[Array]") return op("set_at[List]", ...node.args);
+      if (node.op === "contains[Array]")
+        return op("contains[List]", ...node.args);
+    }
+  },
+};
