@@ -18,7 +18,7 @@
 | max | max | [...Int] | Int | Integer maximum. |
 | abs | abs | [Int] | 0..oo | Integer absolute value. |
 | read[line] | read[line] | [] | Text | Reads single line from the stdin. |
-| @ | at[argv]<br>at[Array]<br>at[List]<br>at[Table]<br>at[Ascii] | [0..oo]<br>[(Array T1 T2), T2]<br>[(List T1), 0..oo]<br>[(Table T1 T2), T1]<br>[Ascii, 0..oo] | Text<br>T1<br>T1<br>T2<br>(Ascii 1..1) | Gets argv at the 0-based `n`th position, where `n` is an integer literal.<br>Gets the item at the 0-based index.<br>Gets the item at the 0-based index.<br>Gets the item at the key.<br>Gets the character at the 0-based index. |
+| @ | at[argv]<br>at[Array]<br>at[List]<br>at_back[List]<br>at[Table]<br>at[Ascii]<br>at_back[Ascii] | [0..oo]<br>[(Array T1 T2), T2]<br>[(List T1), 0..oo]<br>[(List T1), -oo..-1]<br>[(Table T1 T2), T1]<br>[Ascii, 0..oo]<br>[Ascii, -oo..-1] | Text<br>T1<br>T1<br>T1<br>T2<br>(Ascii 1..1)<br>(Ascii 1..1) | Gets argv at the 0-based `n`th position, where `n` is an integer literal.<br>Gets the item at the 0-based index.<br>Gets the item at the 0-based index.<br>Gets the item at the -1-based backwards index.<br>Gets the item at the key.<br>Gets the character at the 0-based index.<br>Gets the character at the -1-based backwards index. |
 | print | print[Text]<br>print[Int] | [Text]<br>[Int] | Void<br>Void | Prints the provided argument.<br>Converts the provided argument to base 10 text and prints it. |
 | println | println[Text]<br>println[Int] | [Text]<br>[Int] | Void<br>Void | Prints the provided argument followed by a \n.<br>Converts the provided argument to base 10 text and prints it followed by a \n. |
 | putc[byte] | putc[byte] | [0..255] | Void | Creates a single byte text and prints it. |
@@ -38,14 +38,18 @@
 | == | eq[Int]<br>eq[Text] | [Int, Int]<br>[Text, Text] | Bool<br>Bool | Integer equality.<br>Text equality. |
 | != | neq[Int]<br>neq[Text] | [Int, Int]<br>[Text, Text] | Bool<br>Bool | Integer inequality.<br>Text inequality. |
 | at[byte] | at[byte] | [Text, 0..oo] | (Text 1..1) | Gets the byte (as text) at the 0-based index (counting bytes). |
+| at_back[byte] | at_back[byte] | [Text, -oo..-1] | (Text 1..1) | Gets the byte (as text) at the -1-based backwards index (counting bytes). |
 | at[codepoint] | at[codepoint] | [Text, 0..oo] | (Text 1..1) | Gets the codepoint (as text) at the 0-based index (counting codepoints). |
-| set_at | set_at[Array]<br>set_at[List]<br>set_at[Table] | [(Array T1 T2), T2, T1]<br>[(List T1), 0..oo, T1]<br>[(Table T1 T2), T1, T2] | Void<br>Void<br>Void | Sets the item at the 0-based index.<br>Sets the item at the 0-based index.<br>Sets the item at the key. |
+| at_back[codepoint] | at_back[codepoint] | [Text, -oo..-1] | (Text 1..1) | Gets the codepoint (as text) at the -1-based backwards index (counting codepoints). |
+| set_at | set_at[Array]<br>set_at[List]<br>set_at_back[List]<br>set_at[Table] | [(Array T1 T2), T2, T1]<br>[(List T1), 0..oo, T1]<br>[(List T1), -oo..-1, T1]<br>[(Table T1 T2), T1, T2] | Void<br>Void<br>Void<br>Void | Sets the item at the 0-based index.<br>Sets the item at the 0-based index.<br>Sets the item at the -1-based backwards index.<br>Sets the item at the key. |
 | slice[codepoint] | slice[codepoint] | [Text, 0..oo, 0..oo] | Text | Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in codepoints. |
 | slice[byte] | slice[byte] | [Text, 0..oo, 0..oo] | Text | Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in bytes. |
 | slice | slice[Ascii]<br>slice[List] | [Ascii, 0..oo, 0..oo]<br>[(List T1), 0..oo, 0..oo] | Ascii<br>(List T1) | Returns a text slice that starts at the given 0-based index and has given length.<br>Returns a list slice that starts at the given 0-based index and has given length. |
 | ord_at[byte] | ord_at[byte] | [Text, 0..oo] | 0..255 | Gets the byte (as integer) at the 0-based index (counting bytes). |
+| ord_at_back[byte] | ord_at_back[byte] | [Text, -oo..-1] | 0..255 | Gets the byte (as integer) at the -1-based backwards index (counting bytes). |
 | ord_at[codepoint] | ord_at[codepoint] | [Text, 0..oo] | 0..1114111 | Gets the codepoint (as integer) at the 0-based index (counting codepoints). |
-| ord_at | ord_at[Ascii] | [Ascii, 0..oo] | 0..127 | Gets the character (as integer) at the 0-based index. |
+| ord_at_back[codepoint] | ord_at_back[codepoint] | [Text, -oo..-1] | 0..1114111 | Gets the codepoint (as integer) at the -1-based backwards index (counting codepoints). |
+| ord_at | ord_at[Ascii]<br>ord_at_back[Ascii] | [Ascii, 0..oo]<br>[Ascii, -oo..-1] | 0..127<br>0..127 | Gets the character (as integer) at the 0-based index.<br>Gets the character (as integer) at the -1-based backwards index. |
 | ord[byte] | ord[byte] | [(Text 1..1)] | 0..255 | Converts the byte to an integer. |
 | ord[codepoint] | ord[codepoint] | [(Text 1..1)] | 0..1114111 | Converts the codepoint to an integer. |
 | ord | ord[Ascii] | [(Ascii 1..1)] | 0..127 | Converts the character to an integer. |

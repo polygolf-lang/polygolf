@@ -27,6 +27,7 @@ bool_to_int $b;
 int_to_text_byte 48;
 int_to_codepoint 48;
 $t .. "x";
+$t @ -1;
 text_replace "a+b+c" "+" "*";
 text_replace "a*b*c" "*" "";
 text_multireplace "XYZXYZ" "Y" "b" "X" "a";
@@ -95,6 +96,7 @@ b.int
 48.chr
 $(48.Rune)
 t&"x"
+t[^1]
 "a+b+c".replace("+","*")
 "a*b*c".replace"*"
 "XYZXYZ".multireplace {"Y":"b","X":"a"}

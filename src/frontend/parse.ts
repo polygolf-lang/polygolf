@@ -275,19 +275,11 @@ export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
         assertIdentifier(args[1]);
         return mutatingInfix(asString(args[0]), args[1], args[2]);
       case "index_call":
-      case "index_call_one_indexed":
         expectArity(2);
-        return indexCall(args[0], args[1], callee === "index_call_one_indexed");
+        return indexCall(args[0], args[1]);
       case "range_index_call":
-      case "range_index_call_one_indexed":
         expectArity(4);
-        return rangeIndexCall(
-          args[0],
-          args[1],
-          args[2],
-          args[3],
-          callee === "range_index_call_one_indexed",
-        );
+        return rangeIndexCall(args[0], args[1], args[2], args[3]);
       case "property_call":
         expectArity(2);
         return propertyCall(args[0], asString(args[1]));

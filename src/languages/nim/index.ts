@@ -31,8 +31,15 @@ import {
   removeImplicitConversions,
   printIntToPrint,
   mapTo,
+  backwardsIndexToForwards,
 } from "../../plugins/ops";
-import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
+import {
+  addNimImports,
+  removeSystemNamespace,
+  useBackwardsIndex,
+  useUFCS,
+  useUnsignedDivision,
+} from "./plugins";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
@@ -125,7 +132,6 @@ const nimLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
-      useIndexCalls(),
       usePrimaryTextOps("byte"),
       mapOps({
         argv: func("commandLineParams"),
@@ -135,6 +141,10 @@ const nimLanguage: Language = {
       forRangeToForRangeInclusive(true),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
+      useUnsignedDivision,
+      useBackwardsIndex,
+      backwardsIndexToForwards(false),
+      useIndexCalls(),
       mapOps({
         "reversed[codepoint]": (x) =>
           op("join", func("reversed", func("toRunes", x)), text("")),
@@ -193,7 +203,7 @@ const nimLanguage: Language = {
         "println[Text]": "echo",
         bool_to_int: "int",
         "char[byte]": "chr",
-        "find[List]": "find",
+        "find[List]": "system.find",
         "find[byte]": "find",
         "sorted[Int]": "sorted",
         "sorted[Ascii]": "sorted",
@@ -202,12 +212,11 @@ const nimLanguage: Language = {
         int_to_hex: "toHex",
         right_align: "align",
       }),
-      useUnsignedDivision,
       mapTo((x: string, [right, left]) => infix(x, left, right))({
-        "contains[Array]": "in",
-        "contains[List]": "in",
+        "contains[Array]": "system.in",
+        "contains[List]": "system.in",
         "contains[Text]": "in",
-        "contains[Table]": "in",
+        "contains[Table]": "system.in",
       }),
       mapToPrefixAndInfix(
         {
@@ -244,7 +253,6 @@ const nimLanguage: Language = {
         },
         ["+", "*", "%%", "/%", "-", "&"],
       ),
-      useUnsignedDivision,
       addNimImports,
     ),
     simplegolf(
@@ -267,6 +275,7 @@ const nimLanguage: Language = {
       assertInt64,
       removeImplicitConversions,
       useUFCS,
+      removeSystemNamespace,
     ),
   ],
   detokenizer: defaultDetokenizer((a, b) => {

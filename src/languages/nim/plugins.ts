@@ -9,11 +9,13 @@ import {
   isText,
   methodCall,
   op,
+  prefix,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import type { Plugin } from "../../common/Language";
 import { addImports } from "../../plugins/imports";
 import type { Spine } from "../../common/Spine";
+import { replaceAtIndex } from "../../common/arrays";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -91,5 +93,24 @@ export function useUFCS(node: Node) {
     if (!isOfKind("Infix", "Prefix")(obj) && isIdent()(node.func)) {
       return methodCall(obj, node.func, ...args);
     }
+  }
+}
+
+export function useBackwardsIndex(node: Node, spine: Spine) {
+  if (isOp()(node) && node.op.includes("at_back")) {
+    return op(
+      node.op,
+      ...replaceAtIndex(
+        node.args,
+        1,
+        prefix("system.^", op("neg", node.args[1])),
+      ),
+    );
+  }
+}
+
+export function removeSystemNamespace(node: Node, spine: Spine) {
+  if ("name" in node && node.name.startsWith("system.")) {
+    return { ...node, name: node.name.slice("system.".length) };
   }
 }

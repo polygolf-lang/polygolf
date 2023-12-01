@@ -100,10 +100,8 @@ export default function emitProgram(program: IR.Node): TokenTree {
 
   function emitNode(expr: IR.Node): TokenTree {
     switch (expr.kind) {
-      case "Assignment": {
-        if (expr.variable.kind === "IndexCall") {
-          if (expr.variable.oneIndexed)
-            throw new EmitError(expr.expr, "one indexed");
+      case "Assignment":
+        if (expr.variable.kind === "IndexCall")
           return [
             emitNode(expr.variable.collection),
             ".",
@@ -124,9 +122,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
             emitNode(expr.variable.collection),
             ";",
           ];
-        }
         return [emitNode(expr.expr), ":", emitNode(expr.variable), ";"];
-      }
       case "Identifier":
         return expr.name;
       case "Text":
@@ -147,12 +143,9 @@ export default function emitProgram(program: IR.Node): TokenTree {
           "if",
         ];
       case "IndexCall": {
-        if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
         return [emitNode(expr.collection), emitNode(expr.index), "="];
       }
-      case "RangeIndexCall": {
-        if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
-
+      case "RangeIndexCall":
         return [
           emitNode(expr.collection),
           emitNode(expr.high),
@@ -161,7 +154,6 @@ export default function emitProgram(program: IR.Node): TokenTree {
           ">",
           isInt(1n)(expr.step) ? [] : [emitNode(expr.step), "%"],
         ];
-      }
       default:
         throw new EmitError(expr);
     }
