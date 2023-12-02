@@ -45,11 +45,6 @@
 | slice[codepoint] | slice[codepoint] | [Text, 0..oo, 0..oo] | Text | Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in codepoints. |
 | slice[byte] | slice[byte] | [Text, 0..oo, 0..oo] | Text | Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in bytes. |
 | slice | slice[Ascii]<br>slice[List] | [Ascii, 0..oo, 0..oo]<br>[(List T1), 0..oo, 0..oo] | Ascii<br>(List T1) | Returns a text slice that starts at the given 0-based index and has given length.<br>Returns a list slice that starts at the given 0-based index and has given length. |
-| ord_at[byte] | ord_at[byte] | [Text, 0..oo] | 0..255 | Gets the byte (as integer) at the 0-based index (counting bytes). |
-| ord_at_back[byte] | ord_at_back[byte] | [Text, -oo..-1] | 0..255 | Gets the byte (as integer) at the -1-based backwards index (counting bytes). |
-| ord_at[codepoint] | ord_at[codepoint] | [Text, 0..oo] | 0..1114111 | Gets the codepoint (as integer) at the 0-based index (counting codepoints). |
-| ord_at_back[codepoint] | ord_at_back[codepoint] | [Text, -oo..-1] | 0..1114111 | Gets the codepoint (as integer) at the -1-based backwards index (counting codepoints). |
-| ord_at | ord_at[Ascii]<br>ord_at_back[Ascii] | [Ascii, 0..oo]<br>[Ascii, -oo..-1] | 0..127<br>0..127 | Gets the character (as integer) at the 0-based index.<br>Gets the character (as integer) at the -1-based backwards index. |
 | ord[byte] | ord[byte] | [(Text 1..1)] | 0..255 | Converts the byte to an integer. |
 | ord[codepoint] | ord[codepoint] | [(Text 1..1)] | 0..1114111 | Converts the codepoint to an integer. |
 | ord | ord[Ascii] | [(Ascii 1..1)] | 0..127 | Converts the character to an integer. |

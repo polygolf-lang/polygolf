@@ -122,12 +122,12 @@ export const opCodeDefinitions = {
   "slice[List]": { args: [list(T1), int(0), int(0)], front: "slice" },
 
   // Chars
-  "ord_at[byte]": { args: [text(), int(0)], front: true },
-  "ord_at_back[byte]": { args: [text(), int("-oo", -1)], front: true },
-  "ord_at[codepoint]": { args: [text(), int(0)], front: true },
-  "ord_at_back[codepoint]": { args: [text(), int("-oo", -1)], front: true },
-  "ord_at[Ascii]": { args: [ascii, int(0)], front: "ord_at" },
-  "ord_at_back[Ascii]": { args: [ascii, int("-oo", -1)], front: "ord_at" },
+  "ord_at[byte]": { args: [text(), int(0)] },
+  "ord_at_back[byte]": { args: [text(), int("-oo", -1)] },
+  "ord_at[codepoint]": { args: [text(), int(0)] },
+  "ord_at_back[codepoint]": { args: [text(), int("-oo", -1)] },
+  "ord_at[Ascii]": { args: [ascii, int(0)] },
+  "ord_at_back[Ascii]": { args: [ascii, int("-oo", -1)] },
   "ord[byte]": { args: [text(int(1, 1))], front: true },
   "ord[codepoint]": { args: [text(int(1, 1))], front: true },
   "ord[Ascii]": { args: [text(int(1, 1), true)], front: "ord" },

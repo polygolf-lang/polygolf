@@ -19,8 +19,13 @@ export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
 
 export const textGetToIntToTextGet: Plugin = mapOps(
   {
+    "ord_at[Ascii]": (x) => op("ord[Ascii]", op("at[Ascii]", ...x)),
     "ord_at[byte]": (x) => op("ord[byte]", op("at[byte]", ...x)),
     "ord_at[codepoint]": (x) => op("ord[codepoint]", op("at[codepoint]", ...x)),
+    "ord_at_back[Ascii]": (x) => op("ord[Ascii]", op("at_back[Ascii]", ...x)),
+    "ord_at_back[byte]": (x) => op("ord[byte]", op("at_back[byte]", ...x)),
+    "ord_at_back[codepoint]": (x) =>
+      op("ord[codepoint]", op("at_back[codepoint]", ...x)),
   },
   "textGetToIntToTextGet",
 );
