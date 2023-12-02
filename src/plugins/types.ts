@@ -58,12 +58,11 @@ export function floodBigints(
         const parent = spine.parent!.node;
         if (isOp()(parent) || isAssignment(parent)) {
           if (parent.targetType === "bigint" || node.targetType === "bigint") {
-            const res = (allowed as any)[
-              isOp()(parent) ? parent.op : "Assignment"
-            ];
+            const op = isOp()(parent) ? parent.op : "Assignment";
+            const res = (allowed as any)[op];
             if (res === undefined) {
               throw new PolygolfError(
-                "Operation that is not supported on bigints encountered.",
+                `Operation that is not supported on bigints encountered. (${op})`,
               );
             }
             if (res === "bigint" && node.targetType !== "bigint") {

@@ -98,7 +98,7 @@ abs(m)
 ""+m
 m.toString(2)
 m.toString(16)
-0+t
+~~t
 ```
 
 ```polygolf
@@ -225,6 +225,16 @@ for $i 25 {
 
 ```js
 for(i in{}+1e9)print(i)
+```
+
+```polygolf
+for $a 0 16 {
+    println (+ $a 20);
+};
+```
+
+```js
+for(a in{}+1)print(20+~~a)
 ```
 
 ## Conditional associativity
