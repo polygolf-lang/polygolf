@@ -242,7 +242,7 @@ const nimLanguage: Language = {
           bit_or: "or",
           bit_xor: "xor",
         },
-        ["+", "*", "%%", "/%", "-", "&"],
+        ["+", "*", "-", "&"],
       ),
       useUnsignedDivision,
       addNimImports,
