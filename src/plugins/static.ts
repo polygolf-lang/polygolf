@@ -1,7 +1,7 @@
 import { getOutput } from "../interpreter";
 import { isOp, op, text, isText } from "../IR";
 import { type Plugin } from "../common/Language";
-import { byteLength, charLength } from "../common/objective";
+import { byteLength, charLength } from "../common/strings";
 
 export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
   return {

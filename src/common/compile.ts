@@ -10,12 +10,12 @@ import polygolfLanguage from "../languages/polygolf";
 import {
   type Objective,
   type ObjectiveFunc,
-  charLength,
   getObjectiveFunc,
   shorterBy,
 } from "./objective";
 import { readsFromArgv, readsFromStdin } from "./symbols";
 import { PolygolfError } from "./errors";
+import { charLength } from "./strings";
 import { getOutput } from "../interpreter";
 
 export type OptimisationLevel = "nogolf" | "simple" | "full";

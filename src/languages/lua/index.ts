@@ -38,7 +38,11 @@ import {
   tempVarToMultipleAssignment,
   inlineVariables,
 } from "../../plugins/block";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import {
+  golfLastPrint,
+  implicitlyConvertPrintArg,
+  putcToPrintChar,
+} from "../../plugins/print";
 import {
   textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
@@ -64,7 +68,7 @@ const luaLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint),
+    required(printIntToPrint, putcToPrintChar),
     simplegolf(golfLastPrint()),
     search(
       flipBinaryOps,
@@ -192,6 +196,11 @@ const luaLanguage: Language = {
     ),
     simplegolf(
       alias({
+        Identifier: (n, s) =>
+          n.builtin &&
+          (s.parent?.node.kind !== "MethodCall" || s.pathFragment !== "ident")
+            ? n.name
+            : undefined,
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
       }),

@@ -48,7 +48,11 @@ import {
   hardcode,
   listOpsToTextOps,
 } from "../../plugins/static";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import {
+  golfLastPrint,
+  implicitlyConvertPrintArg,
+  putcToPrintChar,
+} from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
@@ -89,7 +93,7 @@ const nimLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint),
+    required(printIntToPrint, putcToPrintChar),
     simplegolf(golfLastPrint()),
     search(
       flipBinaryOps,
@@ -168,12 +172,19 @@ const nimLanguage: Language = {
           isIdent()(x[0])
             ? assignment(x[0], op("append", x[0], x[1]))
             : undefined,
+        int_to_bool: (x) => op("eq[Int]", x[0], int(0n)),
+        int_to_bin_aligned: (x) =>
+          func("align", op("int_to_bin", x[0]), x[1], text("0")),
+        int_to_hex_aligned: (x) =>
+          func("align", op("int_to_hex", x[0]), x[1], text("0")),
       }),
       mapTo(func)({
+        gcd: "gcd",
         split: "split",
         split_whitespace: "split",
         "size[byte]": "len",
         "size[List]": "len",
+        "size[Table]": "len",
         repeat: "repeat",
         max: "max",
         min: "min",
@@ -189,12 +200,14 @@ const nimLanguage: Language = {
         "reversed[List]": "reversed",
         int_to_bin: "toBin",
         int_to_hex: "toHex",
+        right_align: "align",
       }),
       useUnsignedDivision,
       mapTo((x: string, [right, left]) => infix(x, left, right))({
         "contains[Array]": "in",
         "contains[List]": "in",
         "contains[Text]": "in",
+        "contains[Table]": "in",
       }),
       mapToPrefixAndInfix(
         {
@@ -229,7 +242,7 @@ const nimLanguage: Language = {
           bit_or: "or",
           bit_xor: "xor",
         },
-        ["+", "*", "%%", "/%", "-", "&"],
+        ["+", "*", "-", "&"],
       ),
       useUnsignedDivision,
       addNimImports,

@@ -39,6 +39,7 @@ const includes: [string, string[]][] = [
 export const addNimImports: Plugin = addImports(
   {
     "^": "math",
+    gcd: "math",
     repeat: "strutils",
     replace: "strutils",
     multireplace: "strutils",
@@ -47,11 +48,13 @@ export const addNimImports: Plugin = addImports(
     in: "strutils",
     toBin: "strutils",
     toHex: "strutils",
+    align: "strutils",
     paramStr: "os",
     commandLineParams: "os",
     split: "strutils",
     hash: "hashes",
     Table: "tables",
+    Set: "sets",
     toRunes: "unicode",
     Rune: "unicode",
     sorted: "algorithm",

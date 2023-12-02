@@ -1,7 +1,7 @@
 import { isOp, isText, op, int, isOpCode } from "../IR";
 import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";
-import { charLength } from "../common/objective";
+import { charLength } from "../common/strings";
 
 /** Implements ascii text op by either byte / codepoint text ops. */
 export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {

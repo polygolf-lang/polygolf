@@ -204,14 +204,14 @@ export default function emitProgram(
         case "FunctionCall":
           return [emit(e.func), "(", joinNodes(",", e.args), ")"];
         case "PropertyCall":
-          return [emit(e.object), ".", e.ident.name];
+          return [emit(e.object, Infinity), ".", e.ident.name];
         case "MethodCall":
           return [
-            emit(e.object),
+            emit(e.object, Infinity),
             ".",
             e.ident.name,
             "(",
-            joinNodes(", ", e.args),
+            joinNodes(",", e.args),
             ")",
           ];
         case "ConditionalOp":
@@ -231,6 +231,8 @@ export default function emitProgram(
           return [emit(e.arg, prec), e.name];
         case "List":
           return ["[", joinNodes(",", e.exprs), "]"];
+        case "Set":
+          return ["Set([", joinNodes(",", e.exprs), "])"];
         case "Table":
           return [
             "[",

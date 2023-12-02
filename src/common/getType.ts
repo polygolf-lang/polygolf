@@ -48,7 +48,7 @@ import {
   type ArgTypes,
   OpCodeFrontNamesToOpCodes,
 } from "../IR";
-import { byteLength, charLength } from "./objective";
+import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
 import { type Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
