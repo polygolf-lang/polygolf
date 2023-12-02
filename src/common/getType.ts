@@ -254,6 +254,11 @@ export function calcTypeAndResolveOpCode(
     case "ForRange":
     case "While":
     case "ForArgv":
+    case "ForCLike":
+    case "ForEach":
+    case "ForEachKey":
+    case "ForEachPair":
+    case "ForDifferenceRange":
       return voidType;
     case "ImplicitConversion": {
       return type(op(expr.behavesLike, expr.expr));

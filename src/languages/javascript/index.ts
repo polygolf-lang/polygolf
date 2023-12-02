@@ -96,6 +96,7 @@ const javascriptLanguage: Language = {
       replaceToSplitAndJoin,
       useIndexCalls(),
       decomposeIntLiteral(),
+      forRangeToForEachKey,
     ),
     required(
       pickAnyInt,
@@ -122,12 +123,9 @@ const javascriptLanguage: Language = {
       forArgvToForEach,
       putcToPrintChar,
     ),
-    simplegolf(forRangeToForEachKey),
     required(
       forRangeToForCLike,
       mapOps({
-        dec_to_int: (x) =>
-          op("add", int(0n), implicitConversion("dec_to_int", x[0])),
         argv: builtin("arguments"),
 
         "at[argv]": (x) =>
@@ -175,7 +173,7 @@ const javascriptLanguage: Language = {
         int_to_dec: (x) =>
           op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
         dec_to_int: (x) =>
-          op("mul", int(1n), implicitConversion("dec_to_int", x[0])),
+          op("bit_not", op("bit_not", implicitConversion("dec_to_int", x[0]))),
         "reversed[List]": (x) => method(x[0], "reverse"),
         "reversed[Ascii]": (x) =>
           method(

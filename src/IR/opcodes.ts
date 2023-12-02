@@ -368,6 +368,7 @@ export type TernaryOpCode = OpCode<{ args: Readonly<[Type, Type, Type]> }>;
 export type VariadicOpCode = OpCode<{ args: Variadic }>;
 export type AssociativeOpCode = OpCode<{ assoc: true }>;
 export type CommutativeOpCode = OpCode<{ commutes: true }>;
+export type ConversionOpCode = UnaryOpCode & `${string}_${string}`;
 
 export function isNullary(op: OpCode): op is NullaryOpCode {
   return arity(op) === 0;
@@ -478,6 +479,14 @@ export const booleanNotOpCode = {
   leq: "gt",
   geq: "lt",
 } as const satisfies Partial<Record<BinaryOpCode, BinaryOpCode>>;
+
+export const inverseOpCode = {
+  bool_to_int: "int_to_bool",
+  int_to_bool: "bool_to_int",
+  int_to_dec: "dec_to_int",
+  not: "not",
+  bit_not: "bit_not",
+} as const satisfies Partial<Record<UnaryOpCode, UnaryOpCode>>;
 
 export const infixableOpCodeNames = [
   "+",
