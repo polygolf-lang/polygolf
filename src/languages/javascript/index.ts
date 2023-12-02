@@ -243,10 +243,9 @@ const javascriptLanguage: Language = {
         },
         ["**", "*", "/", "%", "+", "-", "<<", ">>", "&", "^", "|", "&&", "||"],
       ),
-      addPostfixIncAndDec,
       methodsAsFunctions,
-      addOneToManyAssignments(),
     ),
+    simplegolf(addPostfixIncAndDec, addOneToManyAssignments()),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({
