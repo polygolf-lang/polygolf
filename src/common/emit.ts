@@ -1,7 +1,7 @@
 import { type IR, type Integer, type Node } from "IR";
 import { PolygolfError } from "./errors";
 import { type TokenTree } from "./Language";
-import { codepoints } from "./objective";
+import { codepoints } from "./strings";
 
 export function joinTrees(
   sep: TokenTree,

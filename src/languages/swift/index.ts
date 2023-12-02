@@ -11,6 +11,10 @@ import {
   builtin,
   int,
   postfix,
+  isInt,
+  list,
+  conditional,
+  rangeIndexCall,
 } from "../../IR";
 import {
   type Language,
@@ -29,6 +33,7 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
+  arraysToLists,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -39,6 +44,7 @@ import {
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
+  putcToPrintChar,
   mergePrint,
 } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
@@ -75,7 +81,7 @@ const swiftLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint),
+    required(printIntToPrint, arraysToLists),
     simplegolf(golfLastPrint()),
     search(
       mergePrint,
@@ -101,10 +107,12 @@ const swiftLanguage: Language = {
         "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
         "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", ...x)),
       }),
-      useIndexCalls(),
+
       decomposeIntLiteral(),
     ),
     required(
+      useIndexCalls(),
+      putcToPrintChar,
       usePrimaryTextOps("codepoint"),
       pickAnyInt,
       forArgvToForEach,
@@ -118,7 +126,6 @@ const swiftLanguage: Language = {
         "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
         "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", ...x)),
       }),
-      useIndexCalls(),
       implicitlyConvertPrintArg,
       mapOps({
         join: (x) =>
@@ -131,6 +138,16 @@ const swiftLanguage: Language = {
           func("Int", indexCall(func("Array", prop(x[0], "utf8")), x[1])),
         "at[codepoint]": (x) =>
           func("String", indexCall(func("Array", x[0]), x[1])),
+        "slice[codepoint]": (x) =>
+          isInt(0n)(x[1])
+            ? method(x[0], "prefix", x[2])
+            : method(
+                method(x[0], "prefix", op("add", x[1], x[2])),
+                "suffix",
+                x[2],
+              ),
+        "slice[List]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
         "ord_at[codepoint]": (x) =>
           prop(
             indexCall(func("Array", prop(x[0], "unicodeScalars")), x[1]),
@@ -142,23 +159,93 @@ const swiftLanguage: Language = {
           func("String", postfix("!", func("UnicodeScalar", x))),
         "size[codepoint]": (x) => prop(x[0], "count"),
         "size[byte]": (x) => prop(prop(x[0], "utf8"), "count"),
+        "size[List]": (x) => prop(x[0], "count"),
+        "size[Set]": (x) => prop(x[0], "count"),
+        "size[Table]": (x) => prop(x[0], "count"),
+        "reversed[codepoint]": (x) => func("String", method(x[0], "reversed")),
+        "reversed[List]": (x) => func("Array", method(x[0], "reversed")),
+        "sorted[Int]": (x) => method(x[0], "sorted"),
+        "sorted[Ascii]": (x) => method(x[0], "sorted"),
         int_to_dec: (x) => func("String", x),
-        split: (x) => method(x[0], "split", namedArg("separator", x[1])),
+        split: (x) =>
+          method(
+            x[0],
+            "split",
+            namedArg("separator", x[1]),
+            namedArg("omittingEmptySubsequences", op("false")),
+          ),
         repeat: (x) =>
           func("String", namedArg("repeating", x[0]), namedArg("count", x[1])),
-
+        "contains[Text]": (x) => method(x[0], "contains", x[1]),
+        "contains[List]": (x) => method(x[0], "contains", x[1]),
+        "contains[Set]": (x) => method(x[0], "contains", x[1]),
+        "contains[Table]": (x) => method(prop(x[0], "keys"), "contains", x[1]),
+        "find[List]": (x) => method(x[0], "index", namedArg("of", x[1])),
+        "find[codepoint]": (x) =>
+          conditional(
+            op("contains[Text]", x[0], x[1]),
+            op(
+              "size[codepoint]",
+              op("at[List]", op("split", x[0], x[1]), int(0n)),
+            ),
+            int(-1n),
+          ),
+        "find[byte]": (x) =>
+          conditional(
+            op("contains[Text]", x[0], x[1]),
+            op("size[byte]", op("at[List]", op("split", x[0], x[1]), int(0n))),
+            int(-1n),
+          ),
         pow: (x) =>
           func("Int", func("pow", func("Double", x[0]), func("Double", x[1]))),
         "println[Text]": (x) => func("print", x),
         "print[Text]": (x) =>
           func("print", x, namedArg("terminator", text(""))),
         dec_to_int: (x) => postfix("!", func("Int", x)),
+        append: (x) => op("concat[List]", x[0], list([x[1]])),
+        include: (x) => method(x[0], "insert", x[1]),
+        push: (x) => method(x[0], "append", x[1]),
 
         max: (x) => func("max", x),
         min: (x) => func("min", x),
         abs: (x) => func("abs", x),
         true: builtin("true"),
         false: builtin("false"),
+        bool_to_int: (x) => conditional(x[0], int(1n), int(0n)),
+        int_to_bool: (x) => op("neq[Int]", x[0], int(0n)),
+        int_to_hex: (x) =>
+          func(
+            "String",
+            x[0],
+            namedArg("radix", int(16n)),
+            namedArg("uppercase", op("true")),
+          ),
+        int_to_bin: (x) => func("String", x[0], namedArg("radix", int(2n))),
+        int_to_hex_aligned: (x) =>
+          func(
+            "String",
+            namedArg(
+              "format",
+              op("concat[Text]", text("%0"), op("int_to_dec", x[1]), text("X")),
+            ),
+            x[0],
+          ),
+        int_to_bin_aligned: (x) =>
+          method(
+            op(
+              "concat[Text]",
+              op("repeat", text("0"), x[1]),
+              op("int_to_bin", x[0]),
+            ),
+            "suffix",
+            x[1],
+          ),
+        right_align: (x) =>
+          method(
+            op("concat[Text]", op("repeat", text(" "), x[1]), x[0]),
+            "suffix",
+            x[1],
+          ),
 
         replace: (x) =>
           method(
@@ -184,10 +271,13 @@ const swiftLanguage: Language = {
           bit_or: "|",
           bit_xor: "^",
           "concat[Text]": "+",
+          "concat[List]": "+",
           lt: "<",
           leq: "<=",
           "eq[Int]": "==",
+          "eq[Text]": "==",
           "neq[Int]": "!=",
+          "neq[Text]": "!=",
           geq: ">=",
           gt: ">",
           and: "&&",
@@ -195,7 +285,12 @@ const swiftLanguage: Language = {
         },
         ["+", "-", "*", "/", "%", "&", "|", "^", "<<", ">>"],
       ),
-      addImports({ pow: "Foundation", replacingOccurrences: "Foundation" }),
+      useIndexCalls(),
+      addImports({
+        pow: "Foundation",
+        replacingOccurrences: "Foundation",
+        format: "Foundation",
+      }),
     ),
     simplegolf(
       alias({

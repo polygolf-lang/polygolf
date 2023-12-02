@@ -5,7 +5,7 @@ import {
   EmitError,
   emitIntLiteral,
 } from "../../common/emit";
-import { type Array, type IR, isIdent, isIntLiteral, isText } from "../../IR";
+import { type Array, type IR, isIdent, isInt, isText } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 const emitNimText = emitTextFactory(
@@ -64,6 +64,7 @@ function binaryPrecedence(opname: string): number {
     case "!=":
     case ">=":
     case ">":
+    case "in":
       return 5;
     case "and":
       return 4;
@@ -156,8 +157,8 @@ export default function emitProgram(
             emitMultiNode(e.body),
           ];
         case "ForRange": {
-          const start = isIntLiteral(0n)(e.start) ? [] : emit(e.start);
-          if (isIntLiteral(1n)(e.increment)) {
+          const start = isInt(0n)(e.start) ? [] : emit(e.start);
+          if (isInt(1n)(e.increment)) {
             return [
               "for",
               e.variable === undefined ? "()" : emit(e.variable),
@@ -314,6 +315,8 @@ export default function emitProgram(
             ];
           }
           return ["[", joinNodes(",", e.exprs), "]"];
+        case "Set":
+          return ["[", joinNodes(",", e.exprs), "]", ".", "toSet"];
         case "Table":
           return [
             "{",
@@ -330,7 +333,7 @@ export default function emitProgram(
           return [emit(e.collection, 12), "$GLUE$", "[", emit(e.index), "]"];
         case "RangeIndexCall":
           if (e.oneIndexed) throw new EmitError(expr, "one indexed");
-          if (!isIntLiteral(1n)(e.step)) throw new EmitError(expr, "step");
+          if (!isInt(1n)(e.step)) throw new EmitError(expr, "step");
           return [
             emit(e.collection, 12),
             "$GLUE$",

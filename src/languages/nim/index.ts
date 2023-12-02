@@ -8,6 +8,11 @@ import {
   isText,
   builtin,
   op,
+  prefix,
+  text,
+  assignment,
+  isIdent,
+  infix,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -46,6 +51,7 @@ import {
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
+  putcToPrintChar,
   mergePrint,
 } from "../../plugins/print";
 import {
@@ -88,7 +94,7 @@ const nimLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint),
+    required(printIntToPrint, putcToPrintChar),
     simplegolf(golfLastPrint()),
     search(
       mergePrint,
@@ -132,13 +138,25 @@ const nimLanguage: Language = {
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       mapOps({
+        "reversed[codepoint]": (x) =>
+          op("join", func("reversed", func("toRunes", x)), text("")),
+        "reversed[byte]": (x) => op("join", func("reversed", x[0]), text("")),
+      }),
+      mapOps({
+        "char[codepoint]": (x) => prefix("$", func("Rune", x)),
         "ord_at[byte]": (x) => func("ord", op("at[byte]", ...x)),
+        "ord_at[codepoint]": (x) => func("ord", op("at[byte]", ...x)),
         "read[line]": func("readLine", builtin("stdin")),
         join: (x) => func("join", isText("")(x[1]) ? [x[0]] : x),
         true: builtin("true"),
         false: builtin("false"),
         "at[byte]": (x) => indexCall(x[0], x[1]),
-        "slice[byte]": (x) => rangeIndexCall(x[0], x[1], x[2], int(1n)),
+        "at[codepoint]": (x) =>
+          prefix("$", indexCall(func("toRunes", x[0]), x[1])),
+        "slice[byte]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
+        "slice[List]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
         "print[Text]": (x) => func("write", builtin("stdout"), x),
         replace: (x) => func("replace", isText("")(x[2]) ? [x[0], x[1]] : x),
         text_multireplace: (x) =>
@@ -151,11 +169,24 @@ const nimLanguage: Language = {
               ), // Polygolf doesn't have array of tuples, so we use array of arrays instead
             ),
           ),
+        "size[codepoint]": (x) => op("size[List]", func("toRunes", x)),
+        push: (x) =>
+          isIdent()(x[0])
+            ? assignment(x[0], op("append", x[0], x[1]))
+            : undefined,
+        int_to_bool: (x) => op("eq[Int]", x[0], int(0n)),
+        int_to_bin_aligned: (x) =>
+          func("align", op("int_to_bin", x[0]), x[1], text("0")),
+        int_to_hex_aligned: (x) =>
+          func("align", op("int_to_hex", x[0]), x[1], text("0")),
       }),
       mapTo(func)({
+        gcd: "gcd",
         split: "split",
         split_whitespace: "split",
         "size[byte]": "len",
+        "size[List]": "len",
+        "size[Table]": "len",
         repeat: "repeat",
         max: "max",
         min: "min",
@@ -165,8 +196,21 @@ const nimLanguage: Language = {
         bool_to_int: "int",
         "char[byte]": "chr",
         "find[List]": "find",
+        "find[byte]": "find",
+        "sorted[Int]": "sorted",
+        "sorted[Ascii]": "sorted",
+        "reversed[List]": "reversed",
+        int_to_bin: "toBin",
+        int_to_hex: "toHex",
+        right_align: "align",
       }),
       useUnsignedDivision,
+      mapTo((x: string, [right, left]) => infix(x, left, right))({
+        "contains[Array]": "in",
+        "contains[List]": "in",
+        "contains[Text]": "in",
+        "contains[Table]": "in",
+      }),
       mapToPrefixAndInfix(
         {
           bit_not: "not",
@@ -184,10 +228,14 @@ const nimLanguage: Language = {
           add: "+",
           sub: "-",
           "concat[Text]": "&",
+          "concat[List]": "&",
+          append: "&",
           lt: "<",
           leq: "<=",
           "eq[Int]": "==",
+          "eq[Text]": "==",
           "neq[Int]": "!=",
+          "neq[Text]": "!=",
           geq: ">=",
           gt: ">",
           and: "and",
@@ -196,7 +244,7 @@ const nimLanguage: Language = {
           bit_or: "or",
           bit_xor: "xor",
         },
-        ["+", "*", "%%", "/%", "-", "&"],
+        ["+", "*", "-", "&"],
       ),
       useUnsignedDivision,
       addNimImports,

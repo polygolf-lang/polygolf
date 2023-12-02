@@ -20,13 +20,13 @@ print(4,end="")
 
 ```polygolf
 $a <- (text_get_codepoint "abcdefg" 4);
-$b <- (text_get_codepoint_slice "abcdefg" 1 3);
+$b <- (text_get_codepoint_slice "abcdefg" 2 3);
 $c <- (text_codepoint_reversed "abcdefg");
 ```
 
 ```python nogolf
 a="abcdefg"[4]
-b="abcdefg"[1:4]
+b="abcdefg"[2:5]
 c="abcdefg"[::-1]
 ```
 
@@ -285,6 +285,26 @@ for _ in"X"*10:print("Hi")
 -0x695fd101971cb087
 -int('7m93qx4grzs1ls98c9nh5rs313rz0u',36)
 7*10**22-1
+```
+
+## Golfing literal text list access
+
+```polygolf
+list_get (list "false" "true") 1;
+```
+
+```py
+"ftarlusee"[1::2]
+```
+
+```polygolf
+list_get (list "12345" "ABC") 1;
+println (list_get (list "12345" "ABC") 1);
+```
+
+```py simple
+["12345","ABC"][1]
+print("1A2B3C4 5"[1::2])
 ```
 
 ## Conditional ops

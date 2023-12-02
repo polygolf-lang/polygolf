@@ -187,7 +187,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     }
   }
   if (opCode === "neg") {
-    if (isIntLiteral()(args[0])) {
+    if (isInt()(args[0])) {
       return int(-args[0].value);
     }
     return op("mul", int(-1), args[0]);
@@ -201,8 +201,8 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     else {
       if (isCommutative(opCode)) {
         args = args
-          .filter((x) => isIntLiteral()(x))
-          .concat(args.filter((x) => !isIntLiteral()(x)));
+          .filter((x) => isInt()(x))
+          .concat(args.filter((x) => !isInt()(x)));
       } else {
         args = args.filter((x) => !isText("")(x));
         if (
@@ -230,7 +230,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
         );
         if (toNegate !== undefined) {
           args = args.map((x) =>
-            isIntLiteral()(x)
+            isInt()(x)
               ? int(-x.value)
               : x === toNegate
               ? op("add", ...(x as Op).args.map((y) => op("neg", y)))
@@ -242,7 +242,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     if (
       opCode === "mul" &&
       args.length > 1 &&
-      isIntLiteral(1n)(args[0]) &&
+      isInt(1n)(args[0]) &&
       args[1].kind !== "ImplicitConversion"
     ) {
       args = args.slice(1);
@@ -254,7 +254,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     const combined = evalInfix(opCode, args[0], args[1]);
     if (
       combined !== null &&
-      (!isIntLiteral()(combined) ||
+      (!isInt()(combined) ||
         opCode !== "pow" || // only eval pow if it is a low number
         (combined.value < 1000 && combined.value > -1000))
     ) {
@@ -272,7 +272,7 @@ function evalInfix(
   if (op === "concat[Text]" && isText()(left) && isText()(right)) {
     return text(left.value + right.value);
   }
-  if (isIntLiteral()(left) && isIntLiteral()(right)) {
+  if (isInt()(left) && isInt()(right)) {
     try {
       const type = getArithmeticType(
         op,
@@ -302,9 +302,9 @@ function simplifyPolynomial(terms: Node[]): Node[] {
     }
   }
   for (const x of terms) {
-    if (isIntLiteral()(x)) constant += x.value;
+    if (isInt()(x)) constant += x.value;
     else if (isOp("mul")(x)) {
-      if (isIntLiteral()(x.args[0])) add(x.args[0].value, x.args.slice(1));
+      if (isInt()(x.args[0])) add(x.args[0].value, x.args.slice(1));
       else add(1n, x.args);
     } else add(1n, [x]);
   }
@@ -535,7 +535,7 @@ export function isUserIdent<Name extends string>(
       ))) as any;
 }
 
-export function isIntLiteral<Value extends bigint>(
+export function isInt<Value extends bigint>(
   ...vals: Value[]
 ): (x: Node) => x is Integer<Value> {
   return ((x: Node) =>
@@ -544,7 +544,7 @@ export function isIntLiteral<Value extends bigint>(
 }
 
 export function isNegativeLiteral(expr: Node) {
-  return isIntLiteral()(expr) && expr.value < 0n;
+  return isInt()(expr) && expr.value < 0n;
 }
 
 /**

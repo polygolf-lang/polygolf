@@ -9,7 +9,7 @@ import {
   indexCall,
   isBinary,
   isCommutative,
-  isIntLiteral,
+  isInt,
   isNegative,
   mutatingInfix,
   isOp,
@@ -28,6 +28,7 @@ import {
   isUnary,
   flippedOpCode,
   isVariadic,
+  list,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -139,11 +140,7 @@ function asBinaryChain(
   names: Partial<Record<OpCode, string>>,
 ): Node {
   const negName = names.neg;
-  if (
-    opCode === "mul" &&
-    isIntLiteral(-1n)(exprs[0]) &&
-    negName !== undefined
-  ) {
+  if (opCode === "mul" && isInt(-1n)(exprs[0]) && negName !== undefined) {
     exprs = [prefix(negName, exprs[1]), ...exprs.slice(2)];
   }
   if (opCode === "add") {
@@ -185,13 +182,13 @@ export function useIndexCalls(
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.endsWith("[Table]")) {
-          indexNode = indexCall(node.args[0], add1(node.args[1]), true);
+          indexNode = indexCall(node.args[0], add1(node.args[1]), oneIndexed);
         } else {
-          indexNode = indexCall(node.args[0], node.args[1]);
+          indexNode = indexCall(node.args[0], node.args[1], oneIndexed);
         }
         if (!node.op.startsWith("set_")) {
           return indexNode;
-        } else if (!node.op.startsWith("set_")) {
+        } else {
           return assignment(indexNode, node.args[2]);
         }
       }
@@ -243,7 +240,7 @@ export function addPostfixIncAndDec(node: Node) {
   if (
     node.kind === "MutatingInfix" &&
     ["+", "-"].includes(node.name) &&
-    isIntLiteral(1n)(node.right)
+    isInt(1n)(node.right)
   ) {
     return postfix(node.name.repeat(2), node.variable);
   }
@@ -270,7 +267,11 @@ export const removeImplicitConversions: Plugin = {
   bakeType: true,
   visit(node) {
     if (node.kind === "ImplicitConversion") {
-      return node.expr;
+      let ret: Node = node;
+      while (ret.kind === "ImplicitConversion") {
+        ret = ret.expr;
+      }
+      return ret;
     }
   },
 };
@@ -292,3 +293,19 @@ export const printIntToPrint: Plugin = mapOps(
   },
   "printIntToPrint",
 );
+
+export const arraysToLists: Plugin = {
+  name: "arraysToLists",
+  bakeType: true,
+  visit(node) {
+    if (node.kind === "Array") {
+      return list(node.exprs);
+    }
+    if (node.kind === "Op") {
+      if (node.op === "at[Array]") return op("at[List]", ...node.args);
+      if (node.op === "set_at[Array]") return op("set_at[List]", ...node.args);
+      if (node.op === "contains[Array]")
+        return op("contains[List]", ...node.args);
+    }
+  },
+};

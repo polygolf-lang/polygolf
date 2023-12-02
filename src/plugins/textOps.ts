@@ -1,7 +1,7 @@
 import { isOp, isText, op, int, isOpCode } from "../IR";
 import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";
-import { charLength } from "../common/objective";
+import { charLength } from "../common/strings";
 
 /** Implements ascii text op by either byte / codepoint text ops. */
 export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
@@ -48,6 +48,7 @@ export const textGetToTextGetToIntToText: Plugin = mapOps(
 
 export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps(
   {
+    "ord[Ascii]": (x) => op("ord_at[Ascii]", x[0], int(0n)),
     "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
     "ord[codepoint]": (x) => op("ord_at[codepoint]", x[0], int(0n)),
   },

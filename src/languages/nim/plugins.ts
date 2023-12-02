@@ -40,15 +40,26 @@ const includes: [string, string[]][] = [
 export const addNimImports: Plugin = addImports(
   {
     "^": "math",
+    gcd: "math",
     repeat: "strutils",
     replace: "strutils",
     multireplace: "strutils",
     join: "strutils",
+    find: "strutils",
+    in: "strutils",
+    toBin: "strutils",
+    toHex: "strutils",
+    align: "strutils",
     paramStr: "os",
     commandLineParams: "os",
     split: "strutils",
     hash: "hashes",
     Table: "tables",
+    Set: "sets",
+    toRunes: "unicode",
+    Rune: "unicode",
+    sorted: "algorithm",
+    reversed: "algorithm",
   },
   (modules: string[]) => {
     if (modules.length < 1) return;

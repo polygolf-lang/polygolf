@@ -5,7 +5,7 @@ import {
   type Node,
   id,
   type IR,
-  isIntLiteral,
+  isInt,
   text,
   toString,
   variants,
@@ -224,9 +224,9 @@ function emitNodeWithoutAnnotation(
         );
       }
       let args: Node[] = [];
-      if (!isIntLiteral(1n)(expr.increment)) args = [expr.increment, ...args];
+      if (!isInt(1n)(expr.increment)) args = [expr.increment, ...args];
       args = [expr.end, ...args];
-      if (!isIntLiteral(0n)(expr.start) || args.length > 1)
+      if (!isInt(0n)(expr.start) || args.length > 1)
         args = [expr.start, ...args];
       if (expr.variable !== undefined || args.length > 1)
         args = [expr.variable ?? id("_"), ...args];

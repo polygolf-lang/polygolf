@@ -62,6 +62,7 @@ vwx
 $a:-100..100 <- 0;
 $b:Text <- "xy";
 $c <- (0==0);
+$d <- (list "xy" "abc" "123");
 
 % Boolean
 and $c $c;
@@ -107,33 +108,54 @@ $a <- ($a | 2):-100..100;
 $a <- ($a ~ 2):-100..100;
 
 % Text encoding
-text_get_byte "abc" 1;
-text_get_codepoint "abc" 1;
-text_get_byte_to_int "abc" 1;
-text_get_codepoint_to_int "abc" 1;
-text_byte_length "abc";
-text_codepoint_length "abc";
-text_byte_to_int "a";
-codepoint_to_int "\u00ff";
-int_to_text_byte 99;
-int_to_codepoint 999;
+at[byte] "abc" 1;
+at[codepoint] "abc" 1;
+ord_at[byte] "abc" 1;
+ord_at[codepoint] "abc" 1;
+size[byte] "abc";
+size[codepoint] "abc";
+ord[byte] "a";
+ord[codepoint] "\u00ff";
+char[byte] 99;
+char[codepoint] 999;
+slice[codepoint] "abcdefg" 2 3;
 
 % Other
-list_get (list "xy" "abc") 1;
-concat $b "xyz";
-int_to_text 5;
-text_to_int "5";
+at[List] $d 1;
+concat[Text] $b "xyz";
+concat[List] $d $d;
+reversed[codepoint] "abcdef";
+reversed[List] $d;
+sorted[Ascii] $d;
+sorted[Int] (list 4 3 1 2);
+size[Set] (set 1 2);
+size[Table] (table ("X" => "Y") );
+size[List] $d;
+contains[Text] "abc" "b";
+contains[List] $d "123";
+contains[Set] (set 1 2) 2;
+contains[Table] (table ("X" => "Y") ) "X";
+find[List] $d "xy";
+find[codepoint] "abcdef" "de";
+find[byte] "abcdef" "de";
+int_to_dec 5;
+dec_to_int "5";
 text_split "xyz" "y";
-join (list "xy" "abc") "/";
-join (list "12" "345") "";
+join $d "/";
+join $d "";
 repeat $b 3;
 text_replace "a+b+c" "+" "*";
-table_get (table ("X" => "Y") ) "X";
+at[Table] (table ("X" => "Y") ) "X";
+int_to_hex_aligned 50 7;
+int_to_hex 50;
+int_to_bin_aligned 50 7;
+int_to_bin 50;
+right_align "text" 20;
 ```
 
 ```swift nogolf
 import Foundation
-var a=0,b="xy",c=0==0
+var a=0,b="xy",c=0==0,d=["xy","abc","123"]
 c&&c
 c||c
 !c
@@ -177,16 +199,37 @@ Int(Array("a".utf8)[0])
 Array("ÿ".unicodeScalars)[0].value
 String(UnicodeScalar(99)!)
 String(UnicodeScalar(999)!)
-["xy","abc"][1]
+"abcdefg".prefix(5).suffix(3)
+d[1]
 b+"xyz"
+d+d
+String("abcdef".reversed())
+Array(d.reversed())
+d.sorted()
+[4,3,1,2].sorted()
+Set([1,2]).count
+["X":"Y"].count
+d.count
+"abc".contains("b")
+d.contains("123")
+Set([1,2]).contains(2)
+["X":"Y"].keys.contains("X")
+d.index(of:"xy")
+"abcdef".contains("de") ?"abcdef".split(separator:"de",omittingEmptySubsequences:false)[0].count:-1
+"abcdef".contains("de") ?"abcdef".split(separator:"de",omittingEmptySubsequences:false)[0].utf8.count:-1
 String(5)
 Int("5")!
-"xyz".split(separator:"y")
-["xy","abc"].joined(separator:"/")
-["12","345"].joined()
+"xyz".split(separator:"y",omittingEmptySubsequences:false)
+d.joined(separator:"/")
+d.joined()
 String(repeating:b,count:3)
-"a+b+c".replacingOccurrences(of:"+", with:"*")
+"a+b+c".replacingOccurrences(of:"+",with:"*")
 ["X":"Y"]["X"]!
+String(format:"%0"+String(7)+"X",50)
+String(50,radix:16,uppercase:true)
+(String(repeating:"0",count:7)+String(50,radix:2)).suffix(7)
+String(50,radix:2)
+(String(repeating:" ",count:20)+"text").suffix(20)
 ```
 
 ## Whitespace behavior

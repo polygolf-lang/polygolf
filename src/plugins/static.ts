@@ -1,7 +1,7 @@
 import { getOutput } from "../interpreter";
 import { isOp, op, text, isText } from "../IR";
 import { type Plugin } from "../common/Language";
-import { byteLength, charLength } from "../common/objective";
+import { byteLength, charLength } from "../common/strings";
 
 export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
   return {
@@ -76,7 +76,7 @@ export function hardcode(): Plugin {
     name: "hardcode",
     visit(node, spine, context) {
       context.skipChildren();
-      if (!isOp("print[Text]")(node)) {
+      if (!isOp("print[Text]")(node) || !isText()(node.args[0])) {
         try {
           const output = getOutput(node);
           if (output !== "") return op("print[Text]", text(output));
