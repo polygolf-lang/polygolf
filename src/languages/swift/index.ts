@@ -34,6 +34,7 @@ import {
   removeImplicitConversions,
   printIntToPrint,
   arraysToLists,
+  backwardsIndexToForwards,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -109,6 +110,7 @@ const swiftLanguage: Language = {
       decomposeIntLiteral(),
     ),
     required(
+      backwardsIndexToForwards(),
       useIndexCalls(),
       putcToPrintChar,
       usePrimaryTextOps("codepoint"),
