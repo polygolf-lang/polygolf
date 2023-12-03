@@ -1,22 +1,22 @@
 import {
   type Node,
   type Type,
+  voidType,
+  textType as text,
   listType as list,
   arrayType as array,
   integerType as int,
+  setType as set,
+  tableType as table,
   integerTypeIncludingAll,
   type IntegerType,
   type Op,
   isSubtype,
   union,
   toString,
-  voidType,
-  textType as text,
   type TextType,
   booleanType,
   type OpCode,
-  setType as set,
-  tableType as table,
   type KeyValueType,
   keyValueType,
   getArgs,
@@ -38,23 +38,32 @@ import {
   isConstantType,
   constantIntegerType,
   type ListType,
-  isAssociative,
   op,
   leq,
   isIdent,
-  typeArg,
   instantiateGenerics,
   type ArrayType,
   type TableType,
+  opCodeDefinitions,
+  type ArgTypes,
+  OpCodeFrontNamesToOpCodes,
 } from "../IR";
-import { byteLength, charLength } from "./objective";
+import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
 import { type Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
 
-const cachedType = new WeakMap<Node, Type>();
+interface TypeAndOpCode {
+  type: Type;
+  opCode?: OpCode;
+}
+
+const cachedType = new WeakMap<Node, TypeAndOpCode>();
 const currentlyFinding = new WeakSet<Node>();
-export function getType(expr: Node, context: Node | Spine): Type {
+export function getTypeAndResolveOpCode(
+  expr: Node,
+  context: Node | Spine,
+): TypeAndOpCode {
   const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
   if (currentlyFinding.has(expr))
@@ -62,7 +71,8 @@ export function getType(expr: Node, context: Node | Spine): Type {
 
   currentlyFinding.add(expr);
   try {
-    const t = calcType(expr, program);
+    let t = calcTypeAndResolveOpCode(expr, program);
+    if ("kind" in t) t = { type: t };
     currentlyFinding.delete(expr);
     cachedType.set(expr, t);
     return t;
@@ -74,8 +84,14 @@ export function getType(expr: Node, context: Node | Spine): Type {
     throw e;
   }
 }
+export function getType(expr: Node, context: Node | Spine) {
+  return getTypeAndResolveOpCode(expr, context).type;
+}
 
-export function calcType(expr: Node, program: Node): Type {
+export function calcTypeAndResolveOpCode(
+  expr: Node,
+  program: Node,
+): Type | TypeAndOpCode {
   // user-annotated node
   if (expr.type !== undefined) return expr.type;
   // type inference
@@ -238,6 +254,11 @@ export function calcType(expr: Node, program: Node): Type {
     case "ForRange":
     case "While":
     case "ForArgv":
+    case "ForCLike":
+    case "ForEach":
+    case "ForEachKey":
+    case "ForEachPair":
+    case "ForDifferenceRange":
       return voidType;
     case "ImplicitConversion": {
       return type(op(expr.behavesLike, expr.expr));
@@ -250,186 +271,27 @@ function getTypeBitNot(t: IntegerType): IntegerType {
   return int(sub(-1n, t.high), sub(-1n, t.low));
 }
 
-type ExpectedTypes = { variadic: Type; min: number } | Type[];
-function variadic(type: Type, min = 2): ExpectedTypes {
-  return {
-    variadic: type,
-    min,
-  };
-}
-
-function getOpCodeArgTypes(op: OpCode): ExpectedTypes {
-  const T1 = typeArg("T1");
-  const T2 = typeArg("T2");
-  switch (op) {
-    case "gcd":
-      return [int(), int(1)];
-    case "add":
-    case "sub":
-    case "mul":
-    case "div":
-    case "trunc_div":
-    case "unsigned_trunc_div":
-    case "pow":
-    case "mod":
-    case "rem":
-    case "unsigned_rem":
-    case "bit_and":
-    case "bit_or":
-    case "bit_xor":
-    case "bit_shift_left":
-    case "bit_shift_right":
-    case "min":
-    case "max":
-      return isAssociative(op) ? variadic(int()) : [int(), int()];
-    // (num, num) => bool
-    case "lt":
-    case "leq":
-    case "eq":
-    case "neq":
-    case "geq":
-    case "gt":
-      return [int(), int()];
-    // (bool, bool) => bool
-    case "unsafe_or":
-    case "unsafe_and":
-    case "or":
-    case "and":
-      return variadic(booleanType);
-    // membership
-    case "array_contains":
-      return [array(T1, T2), T1];
-    case "list_contains":
-      return [list(T1), T1];
-    case "table_contains_key":
-      return [table(T1, T2), T1];
-    case "set_contains":
-      return [set(T1), T1];
-    // collection get
-    case "array_get":
-      return [array(T1, T2), T2];
-    case "list_get":
-      return [list(T1), int(0)];
-    case "table_get":
-      return [table(T1, T2), T1];
-    case "argv_get":
-      return [int(0)];
-    // other
-    case "list_push":
-      return [list(T1), T1];
-    case "list_find":
-      return [list(T1), T1];
-    case "concat":
-      return variadic(text());
-    case "repeat":
-      return [text(), int(0)];
-    case "text_contains":
-    case "text_split":
-      return [text(), text()];
-    case "text_codepoint_find":
-    case "text_byte_find":
-      return [text(), text(int(1))];
-    case "text_get_byte":
-    case "text_get_codepoint":
-    case "right_align":
-      return [text(), int(0)];
-    case "join":
-      return [list(text()), text()];
-    case "int_to_bin_aligned":
-    case "int_to_hex_aligned":
-      return [int(0), int(0)];
-    case "simplify_fraction":
-      return [int(0), int(0)];
-    // unary
-    case "abs":
-    case "bit_not":
-    case "neg":
-      return [int()];
-    case "not":
-      return [booleanType];
-    case "int_to_bool":
-      return [int()];
-    case "int_to_text":
-      return [int()];
-    case "int_to_bin":
-    case "int_to_hex":
-      return [int(0)];
-    case "text_to_int":
-      return [text(int(), true)];
-    case "bool_to_int":
-      return [booleanType];
-    case "int_to_text_byte":
-      return [int(0, 255)];
-    case "int_to_codepoint":
-      return [int(0, 0x10ffff)];
-    case "list_length":
-      return [list(T1)];
-    case "text_byte_length":
-    case "text_codepoint_length":
-    case "text_split_whitespace":
-      return [text()];
-    case "sorted":
-      return [list(T1)];
-    case "text_byte_reversed":
-    case "text_codepoint_reversed":
-      return [text()];
-    // other
-    case "true":
-    case "false":
-    case "read_codepoint":
-    case "read_byte":
-    case "read_int":
-    case "read_line":
-    case "argc":
-    case "argv":
-      return [];
-    case "putc":
-      return [int(0, 255)];
-    case "print":
-    case "println":
-      return [text()];
-    case "print_int":
-    case "println_int":
-      return [int()];
-    case "println_list_joined":
-      return [list(text()), text()];
-    case "println_many_joined":
-      return variadic(text(), 2);
-    case "text_replace":
-      return [text(), text(int(1, "oo")), text()];
-    case "text_multireplace":
-      return variadic(text(), 2);
-    case "text_get_byte_slice":
-    case "text_get_codepoint_slice":
-      return [text(), int(0), int(0)];
-    case "text_get_codepoint_to_int":
-      return [text(), int(0)];
-    case "text_get_byte_to_int":
-      return [text(), int(0)];
-    case "codepoint_to_int":
-    case "text_byte_to_int":
-      return [text(int(1, 1))];
-    case "array_set":
-      return [array(T1, T2), T2, T1];
-    case "list_set":
-      return [list(T1), int(0), T1];
-    case "table_set":
-      return [table(T1, T2), T1, T2];
+export function getInstantiatedOpCodeArgTypes(op: OpCode): Type[] {
+  const type = opCodeDefinitions[op].args;
+  const instantiate = instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) });
+  if (!("variadic" in type)) {
+    return type.map(instantiate);
   }
+  return Array(type.min).fill(instantiate(type.variadic));
 }
 
-export function getExampleOpCodeArgTypes(op: OpCode): Type[] {
-  const type = getOpCodeArgTypes(op);
-  if (Array.isArray(type)) {
-    return type.map(instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) }));
+export function getGenericOpCodeArgTypes(op: OpCode): Type[] {
+  const type = opCodeDefinitions[op].args;
+  if (!("variadic" in type)) {
+    return [...type];
   }
   return Array(type.min).fill(type.variadic);
 }
 
-function expectedTypesToString(expectedTypes: ExpectedTypes): string {
-  return Array.isArray(expectedTypes)
-    ? `[${expectedTypes.map(toString).join(", ")}]`
-    : `[...${toString(expectedTypes.variadic)}]`;
+export function expectedTypesToString(expectedTypes: ArgTypes): string {
+  return "variadic" in expectedTypes
+    ? `[...${toString(expectedTypes.variadic)}]`
+    : `[${expectedTypes.map(toString).join(", ")}]`;
 }
 
 /**
@@ -439,70 +301,53 @@ function expectedTypesToString(expectedTypes: ExpectedTypes): string {
  * @param expectedTypes Expected types (array of types or variadic object).
  * @returns True iff it is a match.
  */
-function isTypeMatch(gotTypes: Type[], expectedTypes: ExpectedTypes) {
-  if (Array.isArray(expectedTypes)) {
-    if (expectedTypes.length !== gotTypes.length) return false;
-    const params: Record<string, Type> = {};
-    const instantiate = instantiateGenerics(params);
-    let i = 0;
-    for (let exp of expectedTypes) {
-      const got = instantiate(gotTypes[i]);
-      exp = instantiate(exp);
-      if (exp.kind === "List" && got.kind === "List") {
-        if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
-          params[exp.member.name] = got.member;
-          exp = { ...exp, member: got.member };
-        }
-      } else if (exp.kind === "Array" && got.kind === "Array") {
-        if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
-          params[exp.member.name] = got.member;
-          exp = { ...exp, member: got.member };
-        }
-        if (exp.length.kind === "TypeArg" && !(exp.length.name in params)) {
-          params[exp.length.name] = got.length;
-          exp = { ...exp, length: got.length };
-        }
-      } else if (exp.kind === "Set" && got.kind === "Set") {
-        if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
-          params[exp.member.name] = got.member;
-          exp = { ...exp, member: got.member };
-        }
-      } else if (exp.kind === "Table" && got.kind === "Table") {
-        if (exp.key.kind === "TypeArg" && !(exp.key.name in params)) {
-          params[exp.key.name] = got.key;
-          exp = { ...exp, key: got.key };
-        }
-        if (exp.value.kind === "TypeArg" && !(exp.value.name in params)) {
-          params[exp.value.name] = got.value;
-          exp = { ...exp, value: got.value };
-        }
+function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
+  const variadic = "variadic" in expectedTypes;
+  if (variadic && expectedTypes.min > gotTypes.length) return false;
+  if (!variadic && expectedTypes.length !== gotTypes.length) return false;
+  const params: Record<string, Type> = {};
+  const instantiate = instantiateGenerics(params);
+  let i = 0;
+  for (let got of gotTypes) {
+    got = instantiate(got);
+    let exp = instantiate(variadic ? expectedTypes.variadic : expectedTypes[i]);
+    if (exp.kind === "List" && got.kind === "List") {
+      if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
+        params[exp.member.name] = got.member;
+        exp = { ...exp, member: got.member };
       }
-      if (!isSubtype(got, exp)) return false;
-      i++;
+    } else if (exp.kind === "Array" && got.kind === "Array") {
+      if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
+        params[exp.member.name] = got.member;
+        exp = { ...exp, member: got.member };
+      }
+      if (exp.length.kind === "TypeArg" && !(exp.length.name in params)) {
+        params[exp.length.name] = got.length;
+        exp = { ...exp, length: got.length };
+      }
+    } else if (exp.kind === "Set" && got.kind === "Set") {
+      if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
+        params[exp.member.name] = got.member;
+        exp = { ...exp, member: got.member };
+      }
+    } else if (exp.kind === "Table" && got.kind === "Table") {
+      if (exp.key.kind === "TypeArg" && !(exp.key.name in params)) {
+        params[exp.key.name] = got.key;
+        exp = { ...exp, key: got.key };
+      }
+      if (exp.value.kind === "TypeArg" && !(exp.value.name in params)) {
+        params[exp.value.name] = got.value;
+        exp = { ...exp, value: got.value };
+      }
     }
-    return true;
+    if (!isSubtype(got, exp)) return false;
+    i++;
   }
-  return (
-    gotTypes.length >= expectedTypes.min &&
-    gotTypes.every((x) => isSubtype(x, expectedTypes.variadic))
-  );
+  return true;
 }
 
-function getOpCodeType(expr: Op, program: Node): Type {
-  const got = getArgs(expr).map((x) => getType(x, program));
-  const expected = getOpCodeArgTypes(expr.op);
-
-  if (!isTypeMatch(got, expected)) {
-    throw new Error(
-      `Type error. Operator '${
-        expr.op
-      }' type error. Expected ${expectedTypesToString(expected)} but got [${got
-        .map(toString)
-        .join(", ")}].`,
-    );
-  }
-
-  switch (expr.op) {
+export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
+  switch (opCode) {
     // binary
     // (num, num) => num
     case "gcd": {
@@ -530,13 +375,13 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "min":
     case "max":
       return got.reduce((a, b) =>
-        getArithmeticType(expr.op, a as IntegerType, b as IntegerType),
+        getArithmeticType(opCode, a as IntegerType, b as IntegerType),
       );
     // (num, num) => bool
     case "lt":
     case "leq":
-    case "eq":
-    case "neq":
+    case "eq[Int]":
+    case "neq[Int]":
     case "geq":
     case "gt":
       return booleanType;
@@ -547,26 +392,30 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "and":
       return booleanType;
     // membership
-    case "array_contains":
-    case "list_contains":
-    case "table_contains_key":
-    case "set_contains":
+    case "contains[Array]":
+    case "contains[List]":
+    case "contains[Table]":
+    case "contains[Set]":
       return booleanType;
     // collection get
-    case "array_get":
+    case "at[Array]":
       return (got[0] as ArrayType).member;
-    case "list_get":
+    case "at[List]":
       return (got[0] as ListType).member;
-    case "table_get":
+    case "at[Table]":
       return (got[0] as TableType).value;
-    case "argv_get":
+    case "at[argv]":
       return text();
     // other
-    case "list_push":
+    case "push":
+    case "include":
       return voidType;
-    case "list_find":
+    case "append":
+    case "concat[List]":
+      return got[0];
+    case "find[List]":
       return int(-1, (1n << 31n) - 1n);
-    case "concat": {
+    case "concat[Text]": {
       const textTypes = got as TextType[];
       return text(
         textTypes
@@ -579,26 +428,28 @@ function getOpCodeType(expr: Op, program: Node): Type {
       const [t, i] = got as [TextType, IntegerType];
       return text(getArithmeticType("mul", t.codepointLength, i), t.isAscii);
     }
-    case "text_contains":
+    case "eq[Text]":
+    case "neq[Text]":
+    case "contains[Text]":
       return booleanType;
-    case "text_codepoint_find":
-    case "text_byte_find":
+    case "find[codepoint]":
+    case "find[byte]":
+    case "find[Ascii]":
       return int(
         -1,
         sub(
           mul(
             (got[0] as TextType).codepointLength.high,
-            expr.op === "text_byte_find" && !(got[0] as TextType).isAscii
-              ? 4n
-              : 1n,
+            opCode === "find[byte]" && !(got[0] as TextType).isAscii ? 4n : 1n,
           ),
           (got[1] as TextType).codepointLength.low,
         ),
       );
-    case "text_split":
+    case "split":
       return list(got[0]);
-    case "text_get_byte":
-    case "text_get_codepoint":
+    case "at[byte]":
+    case "at[codepoint]":
+    case "at[Ascii]":
       return text(int(1, 1), (got[0] as TextType).isAscii);
     case "join":
       return text(
@@ -616,8 +467,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
         return text(
           integerTypeIncludingAll(
             BigInt(
-              t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16)
-                .length,
+              t1.high.toString(opCode === "int_to_bin_aligned" ? 2 : 16).length,
             ),
             t2.high,
           ),
@@ -625,21 +475,6 @@ function getOpCodeType(expr: Op, program: Node): Type {
         );
       }
       return text(int(), true);
-    }
-    case "simplify_fraction": {
-      const t1 = got[0] as IntegerType;
-      const t2 = got[1] as IntegerType;
-      if (isFiniteType(t1) && isFiniteType(t2))
-        return text(
-          int(
-            0,
-            1 +
-              Math.max(t1.low.toString().length, t1.high.toString().length) +
-              Math.max(t2.low.toString().length, t2.high.toString().length),
-          ),
-          true,
-        );
-      return text();
     }
     // unary
     case "abs": {
@@ -660,7 +495,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
       return booleanType;
     case "int_to_bool":
       return booleanType;
-    case "int_to_text":
+    case "int_to_dec":
     case "int_to_bin":
     case "int_to_hex": {
       const t = got[0] as IntegerType;
@@ -670,9 +505,9 @@ function getOpCodeType(expr: Op, program: Node): Type {
             ...[t.low, t.high, ...(typeContains(t, 0n) ? [0n] : [])].map((x) =>
               BigInt(
                 x.toString(
-                  expr.op === "int_to_bin"
+                  opCode === "int_to_bin"
                     ? 2
-                    : expr.op === "int_to_hex"
+                    : opCode === "int_to_hex"
                     ? 16
                     : 10,
                 ).length,
@@ -683,7 +518,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
         );
       return text(int(1), true);
     }
-    case "text_to_int": {
+    case "dec_to_int": {
       const t = got[0] as TextType;
       if (!isFiniteType(t.codepointLength)) return int();
       return int(
@@ -693,13 +528,15 @@ function getOpCodeType(expr: Op, program: Node): Type {
     }
     case "bool_to_int":
       return int(0, 1);
-    case "int_to_text_byte":
+    case "char[byte]":
+    case "char[codepoint]":
+    case "char[Ascii]":
       return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
-    case "int_to_codepoint":
-      return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
-    case "list_length":
+    case "size[List]":
+    case "size[Set]":
+    case "size[Table]":
       return int(0, (1n << 31n) - 1n);
-    case "text_byte_length": {
+    case "size[byte]": {
       const codepointLength = (got[0] as TextType).codepointLength;
       return int(
         codepointLength.low,
@@ -709,44 +546,49 @@ function getOpCodeType(expr: Op, program: Node): Type {
         ),
       );
     }
-    case "text_codepoint_length":
+    case "size[codepoint]":
+    case "size[Ascii]":
       return (got[0] as TextType).codepointLength;
-    case "text_split_whitespace":
+    case "split_whitespace":
       return list(got[0]);
-    case "sorted":
-      return got[0];
-    case "text_byte_reversed":
-    case "text_codepoint_reversed":
+    case "sorted[Int]":
+    case "sorted[Ascii]":
+    case "reversed[byte]":
+    case "reversed[codepoint]":
+    case "reversed[Ascii]":
+    case "reversed[List]":
       return got[0];
     // other
     case "true":
     case "false":
       return booleanType;
-    case "read_codepoint":
+    case "read[codepoint]":
       return text(int(1, 1));
-    case "read_byte":
+    case "read[byte]":
       return text(int(1, 1));
-    case "read_int":
+    case "read[Int]":
       return int();
-    case "read_line":
+    case "read[line]":
       return text();
     case "argc":
       return int(0, 2 ** 31 - 1);
     case "argv":
       return list(text());
-    case "putc":
+    case "putc[byte]":
+    case "putc[codepoint]":
+    case "putc[Ascii]":
       return voidType;
-    case "print":
-    case "println":
+    case "print[Text]":
+    case "println[Text]":
       return voidType;
-    case "print_int":
-    case "println_int":
+    case "print[Int]":
+    case "println[Int]":
       return voidType;
     case "println_list_joined":
       return voidType;
     case "println_many_joined":
       return voidType;
-    case "text_replace": {
+    case "replace": {
       const [a, c] = [got[0], got[2]] as TextType[];
       return text(
         getArithmeticType("mul", a.codepointLength, c.codepointLength),
@@ -755,8 +597,9 @@ function getOpCodeType(expr: Op, program: Node): Type {
     }
     case "text_multireplace":
       return text();
-    case "text_get_byte_slice":
-    case "text_get_codepoint_slice": {
+    case "slice[byte]":
+    case "slice[codepoint]":
+    case "slice[Ascii]": {
       const [t, i1, i2] = got as [TextType, IntegerType, IntegerType];
       const maximum = min(
         t.codepointLength.high,
@@ -764,19 +607,42 @@ function getOpCodeType(expr: Op, program: Node): Type {
       );
       return text(int(0n, maximum), t.isAscii);
     }
-    case "text_get_codepoint_to_int":
+    case "slice[List]":
+      return got[0];
+    case "ord_at[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "text_get_byte_to_int":
+    case "ord_at[byte]":
+    case "ord_at[Ascii]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 255);
-    case "codepoint_to_int":
+    case "ord[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "text_byte_to_int":
+    case "ord[byte]":
+    case "ord[Ascii]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 255);
-    case "array_set":
-    case "list_set":
-    case "table_set":
+    case "set_at[Array]":
+    case "set_at[List]":
+    case "set_at[Table]":
       return voidType;
   }
+}
+
+function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
+  const got = getArgs(expr).map((x) => getType(x, program));
+  const opCodes = OpCodeFrontNamesToOpCodes[expr.op];
+
+  const opCode = opCodes.find((opCode) =>
+    isTypeMatch(got, opCodeDefinitions[opCode].args),
+  );
+
+  if (opCode === undefined) {
+    throw new Error(
+      `Type error. Operator '${expr.op}' type error. Expected ${opCodes
+        .map((x) => expectedTypesToString(opCodeDefinitions[x].args))
+        .join(" or ")} but got [${got.map(toString).join(", ")}].`,
+    );
+  }
+
+  return { type: getOpCodeTypeFromTypes(opCode, got), opCode };
 }
 
 export function getArithmeticType(
@@ -880,11 +746,6 @@ export function getArithmeticType(
       }
       return int();
     case "pow": {
-      if (lt(b.low, 0n))
-        throw new Error(
-          `Type error. Operator 'pow' expected [-oo..oo, 0..oo] but got ` +
-            `[${toString(a)}, ${toString(b)}].`,
-        );
       const values: IntegerBound[] = [];
 
       // For unbounded b, the result must contain the following values:

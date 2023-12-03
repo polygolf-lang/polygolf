@@ -5,7 +5,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isIntLiteral } from "../../IR";
+import { type IR, isInt } from "../../IR";
 import { type TokenTree } from "@/common/Language";
 
 const emitLuaText = emitTextFactory(
@@ -118,7 +118,7 @@ export default function emitProgram(
             emit(e.start),
             ",",
             emit(e.end),
-            isIntLiteral(1n)(e.increment) ? [] : [",", emit(e.increment)],
+            isInt(1n)(e.increment) ? [] : [",", emit(e.increment)],
             "do",
             emit(e.body),
             "end",
@@ -174,6 +174,10 @@ export default function emitProgram(
         case "List":
         case "Array":
           return ["{", joinNodes(",", e.exprs), "}"];
+        case "Table":
+          return ["{", joinNodes(",", e.kvPairs), "}"];
+        case "KeyValue":
+          return [emit(e.key), "=", emit(e.value)];
 
         default:
           throw new EmitError(e);

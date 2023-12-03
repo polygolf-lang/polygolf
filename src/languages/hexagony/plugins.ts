@@ -4,7 +4,7 @@ import {
   block,
   type Node,
   int,
-  isIntLiteral,
+  isInt,
   id,
   isOp,
   ifStatement,
@@ -39,7 +39,7 @@ export function limitSetOp(max: number): Plugin {
       if (
         node.kind === "Assignment" &&
         node.variable.kind === "Identifier" &&
-        isIntLiteral()(node.expr)
+        isInt()(node.expr)
       ) {
         const result: Node[] = [];
         let val = node.expr.value;
@@ -137,7 +137,7 @@ export const extractConditions: Plugin = {
       isOp()(node.condition) &&
       (!isOp("gt", "leq")(node.condition) ||
         node.condition.args[0].kind !== "Identifier" ||
-        !isIntLiteral(0n)(node.condition.args[1]))
+        !isInt(0n)(node.condition.args[1]))
     ) {
       let condValue: Node;
       let conditionOp: "gt" | "leq";
@@ -159,11 +159,11 @@ export const extractConditions: Plugin = {
           condValue = op("sub", args[1], args[0]);
           conditionOp = "leq";
           break;
-        case "neq":
+        case "neq[Int]":
           condValue = op("pow", op("sub", ...args), int(2n));
           conditionOp = "gt";
           break;
-        case "eq":
+        case "eq[Int]":
           condValue = op("pow", op("sub", ...args), int(2n));
           conditionOp = "leq";
           break;
@@ -186,7 +186,7 @@ export const printTextLiteral: Plugin = {
   name: "printTextLiteralToPutc",
   visit(node) {
     if (
-      isOp("print")(node) &&
+      isOp("print[Text]")(node) &&
       isText()(node.args[0]) &&
       node.args[0].value.length > 0
     ) {
@@ -211,12 +211,12 @@ export const printTextLiteral: Plugin = {
             decimal = "";
             if (value !== prev) res.push(assignment(newVar, int(value)));
             prev = value;
-            res.push(op("print_int", newVar));
+            res.push(op("print[Int]", newVar));
           }
           if (x !== prev)
             res.push(assignment(newVar, int(isSpecialValue(x) ? 256 + x : x)));
           prev = x;
-          res.push(op("putc", newVar));
+          res.push(op("putc[byte]", newVar));
         }
       });
       if (decimal !== "") {
@@ -224,7 +224,7 @@ export const printTextLiteral: Plugin = {
         decimal = "";
         if (value !== prev) res.push(assignment(newVar, int(value)));
         prev = value;
-        res.push(op("print_int", newVar));
+        res.push(op("print[Int]", newVar));
       }
       return block(res);
     }

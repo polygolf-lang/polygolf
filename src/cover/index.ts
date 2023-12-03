@@ -1,7 +1,6 @@
-import { getExampleOpCodeArgTypes, getType } from "../common/getType";
+import { getInstantiatedOpCodeArgTypes, getType } from "../common/getType";
 import type { Language } from "../common/Language";
 import {
-  FrontendOpCodes,
   annotate,
   assignment,
   builtin,
@@ -27,6 +26,7 @@ import {
   text,
   getLiteralOfType,
   OpCodes,
+  OpCodesUser,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
@@ -49,7 +49,7 @@ const options = yargs()
  * This aims at providing basic compilable building blocks.
  */
 interface LangCoverConfig {
-  expr: (x?: Type) => Node; // returns any node of given type (or 0..0)
+  expr: (x?: Type, preferBuiltin?: boolean) => Node; // returns any node of given type (or 0..0)
   stmt: (x?: Node) => Node; // returns any node of type void containing given Node (or any)
 }
 
@@ -66,21 +66,23 @@ function nextBuiltin(x: Type) {
 
 for (const lang of langs) {
   const compilesAssignment = isCompilable(assignment(id("x"), int(0)), lang);
-  const compilesPrintInt = isCompilable(op("print_int", int(0)), lang);
-  const compilesPrint = isCompilable(op("print", text("x")), lang);
+  const compilesPrintInt = isCompilable(op("print[Int]", int(0)), lang);
+  const compilesPrint = isCompilable(op("print[Text]", text("x")), lang);
 
   lang.stmt = function (x: Node | undefined) {
     x ??= compilesPrintInt ? int(0) : text("x");
     const type = getType(x, x);
-    if (compilesPrint && type.kind === "text") return op("print", x);
-    if (compilesPrintInt && type.kind === "integer") return op("print_int", x);
+    if (compilesPrint && type.kind === "text") return op("print[Text]", x);
+    if (compilesPrintInt && type.kind === "integer") return op("print[Int]", x);
     if (compilesAssignment) return assignment(id("x"), x);
     return x;
   };
 
-  lang.expr = function (x: Type = integerType(1, 1)) {
+  lang.expr = function (x: Type = integerType(1, 1), preferBuiltin = false) {
     const literal = getLiteralOfType(x, true);
-    return isCompilable(literal, lang) ? literal : nextBuiltin(x);
+    return !preferBuiltin && isCompilable(literal, lang)
+      ? literal
+      : nextBuiltin(x);
   };
 }
 
@@ -90,11 +92,26 @@ type CoverTableRecipe = Record<string, (x: LangCoverConfig) => Node>;
 function printTable(name: string, x: Table) {
   console.log(
     "\n" +
-      asTable(
-        Object.entries(x)
+      asTable([
+        {
+          [name]: "",
+          ...mapObjectValues(
+            Object.values(x)[0],
+            (v, k) =>
+              `${Math.floor(
+                (100 *
+                  Object.values(x)
+                    .map((x) => x[k])
+                    .filter((x) => x === true).length) /
+                  Object.values(x).length,
+              )}%`,
+          ),
+        },
+        ...Object.entries(x)
           .filter(
             ([k, v]) =>
-              options.all === true || Object.values(v).some((x) => x !== true),
+              options.all === true ||
+              Object.values(v).some((x, _, a) => x !== a[0]),
           )
           .map(([k, v]) => ({
             [name]: k.padEnd(25),
@@ -108,7 +125,7 @@ function printTable(name: string, x: Table) {
                 : v2,
             ),
           })),
-      ).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly
+      ]).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly
   );
 }
 
@@ -160,13 +177,15 @@ const features: CoverTableRecipe = {
 };
 
 const opCodes: CoverTableRecipe = Object.fromEntries(
-  FrontendOpCodes.map((opCode) => [
+  OpCodesUser.map((opCode) => [
     opCode,
     (lang) =>
       lang.stmt(
         op(
           opCode,
-          ...getExampleOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
+          ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
+            lang.expr(x, opCode.startsWith("set_") || opCode === "push"),
+          ),
         ),
       ),
   ]),
@@ -180,18 +199,18 @@ if (options.all === true) {
     "Backend OpCodes",
     runCoverTableRecipe(
       Object.fromEntries(
-        OpCodes.filter((x) => !FrontendOpCodes.includes(x as any)).map(
-          (opCode) => [
-            opCode,
-            (lang) =>
-              lang.stmt(
-                op(
-                  opCode,
-                  ...getExampleOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
+        OpCodes.filter((x) => !OpCodesUser.includes(x as any)).map((opCode) => [
+          opCode,
+          (lang) =>
+            lang.stmt(
+              op(
+                opCode,
+                ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
+                  lang.expr(x),
                 ),
               ),
-          ],
-        ),
+            ),
+        ]),
       ),
     ),
   );

@@ -1,4 +1,4 @@
-import type { Type, Node } from "../IR";
+import { isOp, op, isOpCode, type Type, type Node } from "../IR";
 import { expandVariants } from "./expandVariants";
 import {
   defaultDetokenizer,
@@ -7,20 +7,20 @@ import {
   type TokenTree,
 } from "./Language";
 import { programToSpine, type Spine } from "./Spine";
-import { getType } from "./getType";
+import { getType, getTypeAndResolveOpCode } from "./getType";
 import { stringify } from "./stringify";
-import parse from "../frontend/parse";
+import parse, { type ParseResult } from "../frontend/parse";
 import { MinPriorityQueue } from "@datastructures-js/priority-queue";
 import polygolfLanguage from "../languages/polygolf";
 import {
   type Objective,
   type ObjectiveFunc,
-  charLength,
   getObjectiveFunc,
   shorterBy,
 } from "./objective";
 import { readsFromArgv, readsFromStdin } from "./symbols";
 import { PolygolfError } from "./errors";
+import { charLength } from "./strings";
 import { getOutput } from "../interpreter";
 
 export type OptimisationLevel = "nogolf" | "simple" | "full";
@@ -35,7 +35,7 @@ export interface CompilationOptions {
   skipPlugins: string[];
 }
 
-export function compilationOptions(
+export function defaultCompilationOptions(
   partial: Partial<CompilationOptions> = {},
 ): CompilationOptions {
   return {
@@ -45,8 +45,8 @@ export function compilationOptions(
     skipTypecheck: partial.skipTypecheck ?? false,
     restrictFrontend: partial.restrictFrontend ?? true,
     codepointRange: partial.codepointRange ?? [1, Infinity],
-    skipPlugins: [],
-    noEmit: false,
+    skipPlugins: partial.skipPlugins ?? [],
+    noEmit: partial.noEmit ?? false,
   };
 }
 
@@ -163,11 +163,15 @@ function emit(
   noEmit: boolean,
 ) {
   let tokenTree: TokenTree;
-  if (noEmit && language.noEmitter !== undefined) {
-    try {
-      tokenTree = language.noEmitter(program, context);
-    } catch {
-      tokenTree = language.emitter(program, context);
+  if (noEmit) {
+    if (language.noEmitter !== undefined) {
+      try {
+        tokenTree = language.noEmitter(program, context);
+      } catch {
+        tokenTree = debugEmit(program);
+      }
+    } else {
+      tokenTree = debugEmit(program);
     }
   } else {
     tokenTree = language.emitter(program, context);
@@ -181,20 +185,21 @@ function isError(x: any): x is Error {
 
 export default function compile(
   source: string,
-  options: CompilationOptions,
+  partialOptions: Partial<CompilationOptions>,
   ...languages: Language[]
 ): CompilationResult[] {
+  const options = defaultCompilationOptions(partialOptions);
   const obj = getObjectiveFunc(options);
-  let program: Node;
+  let parsed: ParseResult;
   try {
-    program = parse(source, options.restrictFrontend);
+    parsed = parse(source, options.restrictFrontend);
   } catch (e) {
     if (isError(e)) return [compilationResult("Polygolf", e, [e])];
   }
-  program = program!;
+  const program = parsed!.node;
   let variants = expandVariants(program).map((x) => {
     try {
-      if (!options.skipTypecheck) typecheck(x);
+      x = typecheck(x, !options.skipTypecheck);
       return x;
     } catch (e) {
       if (isError(e)) return compilationResult("Polygolf", e, [e]);
@@ -207,6 +212,9 @@ export default function compile(
     (x) => "result" in x,
   ) as CompilationResult[];
   if (errorlessVariants.length === 0) {
+    for (const variant of variants) {
+      (variant as CompilationResult).warnings = parsed!.warnings;
+    }
     if (options.getAllVariants) {
       return variants as CompilationResult[];
     } else {
@@ -245,6 +253,10 @@ export default function compile(
     result.push(errorVariants[0]);
   }
 
+  for (const res of result) {
+    res.warnings.push(...parsed!.warnings);
+  }
+
   return result;
 }
 
@@ -276,9 +288,10 @@ function getVariantsByInputMethod(variants: Node[]): Map<boolean, Node[]> {
 
 export function compileVariant(
   program: Node,
-  options: CompilationOptions,
+  partialOptions: Partial<CompilationOptions>,
   language: Language,
 ): CompilationResult {
+  const options = defaultCompilationOptions(partialOptions);
   if (options.level !== "nogolf")
     try {
       getOutput(program); // precompute output
@@ -330,9 +343,10 @@ interface SearchState {
 
 export function compileVariantNoPacking(
   program: Node,
-  options: CompilationOptions,
+  partialOptions: Partial<CompilationOptions>,
   language: Language,
 ): CompilationResult {
+  const options = defaultCompilationOptions(partialOptions);
   const phases = language.phases.map((x) => ({
     mode: x.mode,
     plugins: x.plugins.filter((x) => !options.skipPlugins.includes(x.name)),
@@ -559,25 +573,28 @@ function annotate<T extends Node | undefined>(
   };
 }
 
-/** Typecheck a program by asking all nodes about their types.
- * Throws an error on a type error; otherwise is a no-op. */
-function typecheck(program: Node) {
+/** Typecheck a program and return a program with resolved opcodes.
+ * If everyNode is false, typechecks only nodes neccesary to resolve opcodes, otherwise, typechecks every node. */
+export function typecheck(program: Node, everyNode = true): Node {
   const spine = programToSpine(program);
-  spine.everyNode((x) => {
-    getType(x, program);
-    return true;
-  });
+  return spine.withReplacer(function (node, spine) {
+    if (everyNode || (node.kind === "Op" && !isOpCode(node.op))) {
+      const t = getTypeAndResolveOpCode(node, spine);
+      if (isOp()(node) && t.opCode !== undefined) {
+        return op(t.opCode, ...node.args);
+      }
+    }
+  }).node;
 }
 
 export function debugEmit(program: Node): string {
   const result = compileVariantNoPacking(
     program,
-    compilationOptions({
+    {
       level: "nogolf",
       skipTypecheck: true,
       restrictFrontend: false,
-      noEmit: false,
-    }),
+    },
     polygolfLanguage,
   ).result;
   if (typeof result === "string") {
@@ -587,17 +604,17 @@ export function debugEmit(program: Node): string {
 }
 
 export function normalize(source: string): string {
-  return debugEmit(parse(source, false));
+  return debugEmit(parse(source, false).node);
 }
 
 export function isCompilable(program: Node, lang: Language) {
   const result = compileVariant(
     program,
-    compilationOptions({
+    {
       level: "nogolf",
       restrictFrontend: false,
       skipTypecheck: true,
-    }),
+    },
     lang,
   );
   return typeof result.result === "string";

@@ -27,9 +27,6 @@ import {
   set,
   table,
   type KeyValue,
-  isOpCode,
-  isBinary,
-  arity,
   functionType,
   func,
   conditional,
@@ -37,8 +34,6 @@ import {
   array,
   toString,
   forArgv,
-  isAssociative,
-  isFrontend,
   implicitConversion,
   varDeclaration,
   varDeclarationWithAssignment,
@@ -61,32 +56,60 @@ import {
   propertyCall,
   isText,
   anyInt,
-  isIntLiteral,
+  isInt,
   builtin,
   isIdent,
   postfix,
   type Text,
+  type OpCodeFrontName,
+  OpCodesUser,
+  OpCodeFrontNamesToOpCodes,
+  OpCodeFrontNames,
+  opCodeDefinitions,
+  matchesOpCodeArity,
+  isOp,
+  userName,
 } from "../IR";
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
-export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
-  if (restrictedFrontend) assertIdentifier(callee);
-  if (isText()(callee)) {
-    return functionCall(builtin(callee.value), args);
+let warnings: Error[] = [];
+
+export function sexpr(
+  calleeIdent: Identifier | Text,
+  args: readonly Node[],
+): Node {
+  if (restrictedFrontend) assertIdentifier(calleeIdent);
+  if (isText()(calleeIdent)) {
+    return functionCall(builtin(calleeIdent.value), args);
   }
-  if (!callee.builtin) {
-    return functionCall(callee, args);
+  if (!calleeIdent.builtin) {
+    return functionCall(calleeIdent, args);
   }
-  const opCode = canonicalOp(callee.name, args.length);
+  let callee = calleeIdent.name;
+  if (callee === "<-") callee = "assign";
+  if (callee === "=>") callee = "key_value";
+  if (callee in deprecatedAliases) {
+    warnings.push(
+      new PolygolfError(
+        `Deprecated alias used: ${callee}. Use ${deprecatedAliases[callee]} ${
+          deprecatedAliases[callee] === userName(deprecatedAliases[callee])
+            ? ""
+            : `or ${userName(deprecatedAliases[callee])} `
+        }instead.`,
+        calleeIdent.source,
+      ),
+    );
+    callee = deprecatedAliases[callee];
+  }
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
       throw new PolygolfError(
-        `Syntax error. Invalid argument count in application of ${opCode}: ` +
+        `Syntax error. Invalid argument count in application of ${callee}: ` +
           `Expected ${low}${low === high ? "" : ".." + String(high)} but got ${
             args.length
           }.`,
-        callee.source,
+        calleeIdent.source,
       );
     }
   }
@@ -98,7 +121,7 @@ export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
       );
   }
   function assertInteger(e: Node): asserts e is Integer {
-    if (!isIntLiteral()(e))
+    if (!isInt()(e))
       throw new PolygolfError(
         `Syntax error. Expected integer literal, but got ${e.kind}`,
         e.source,
@@ -111,7 +134,7 @@ export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
     for (const x of e) {
       if (x.kind !== "KeyValue")
         throw new PolygolfError(
-          `Syntax error. Application ${opCode} requires list of key-value pairs as argument`,
+          `Syntax error. Application ${callee} requires list of key-value pairs as argument`,
           x.source,
         );
     }
@@ -134,8 +157,16 @@ export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
       e.source,
     );
   }
+  if (
+    callee === "assign" &&
+    isOp("@" as any)(args[0]) &&
+    args[0].args.length === 2
+  ) {
+    callee = "set_at";
+    args = [...args[0].args, args[1]];
+  }
 
-  switch (opCode) {
+  switch (callee) {
     case "key_value":
       expectArity(2);
       return keyValue(args[0], args[1]);
@@ -168,7 +199,7 @@ export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
     case "conditional":
     case "unsafe_conditional":
       expectArity(3);
-      return conditional(args[0], args[1], args[2], opCode === "conditional");
+      return conditional(args[0], args[1], args[2], callee === "conditional");
     case "while":
       expectArity(2);
       return whileLoop(args[0], args[1]);
@@ -220,7 +251,7 @@ export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
     }
   }
   if (!restrictedFrontend)
-    switch (opCode) {
+    switch (callee) {
       case "implicit_conversion":
         expectArity(2);
         return implicitConversion(asString(args[0]) as any, args[1]);
@@ -254,7 +285,7 @@ export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
       case "index_call":
       case "index_call_one_indexed":
         expectArity(2);
-        return indexCall(args[0], args[1], opCode === "index_call_one_indexed");
+        return indexCall(args[0], args[1], callee === "index_call_one_indexed");
       case "range_index_call":
       case "range_index_call_one_indexed":
         expectArity(4);
@@ -263,7 +294,7 @@ export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
           args[1],
           args[2],
           args[3],
-          opCode === "range_index_call_one_indexed",
+          callee === "range_index_call_one_indexed",
         );
       case "property_call":
         expectArity(2);
@@ -283,7 +314,7 @@ export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
       case "builtin":
       case "id":
         expectArity(1);
-        return id(asString(args[0]), opCode === "builtin");
+        return id(asString(args[0]), callee === "builtin");
       case "import":
         expectArity(2, Infinity);
         return importStatement(asString(args[0]), args.slice(1).map(asString));
@@ -352,22 +383,44 @@ export function sexpr(callee: Identifier | Text, args: readonly Node[]): Node {
         expectArity(2);
         return namedArg(asString(args[0]), args[1]);
     }
-  if (isOpCode(opCode) && (!restrictedFrontend || isFrontend(opCode))) {
-    if (opCode === "argv_get" && restrictedFrontend) {
-      assertInteger(args[0]);
-    }
-    if (isBinary(opCode)) {
-      expectArity(2, isAssociative(opCode) ? Infinity : 2);
-      return op(opCode, ...args);
-    }
-    const ar = arity(opCode);
-    expectArity(ar, ar === -1 ? Infinity : ar);
-    return op(opCode, ...args);
+  let matchingOpCodes = OpCodeFrontNames.includes(callee)
+    ? OpCodeFrontNamesToOpCodes[callee as OpCodeFrontName]
+    : [];
+  if (restrictedFrontend) {
+    matchingOpCodes = matchingOpCodes.filter((opCode) =>
+      OpCodesUser.includes(opCode),
+    );
   }
-  throw new PolygolfError(
-    `Syntax error. Unrecognized builtin: ${opCode}`,
-    callee.source,
+  if (matchingOpCodes.length < 1) {
+    throw new PolygolfError(
+      `Syntax error. Unrecognized builtin: ${callee}`,
+      calleeIdent.source,
+    );
+  }
+
+  const arityMatchingOpCodes = matchingOpCodes.filter((opCode) =>
+    matchesOpCodeArity(opCode, args.length),
   );
+  if (arityMatchingOpCodes.length < 1) {
+    throw new PolygolfError(
+      `Syntax error. Invalid argument count in application of ${callee}: ` +
+        `Expected ${matchingOpCodes
+          .map((opCode) => opCodeDefinitions[opCode].args)
+          .map((args) =>
+            "variadic" in args ? `${args.min}..oo` : `${args.length}`,
+          )
+          .join(", ")} but got ${args.length}.`,
+      calleeIdent.source,
+    );
+  }
+
+  if (arityMatchingOpCodes.length > 1) {
+    // Hack! We temporarily assign the front name to the opCode field.
+    // It will be resolved during typecheck.
+    return op(callee as OpCode, ...args);
+  }
+
+  return op(arityMatchingOpCodes[0], ...args);
 }
 
 function intValue(x: string): bigint {
@@ -379,34 +432,6 @@ function intValue(x: string): bigint {
 
 export function int(x: Token) {
   return integer(intValue(x.text));
-}
-
-export const canonicalOpTable: Record<string, OpCode> = {
-  "+": "add",
-  // neg, sub handled as special case in canonicalOp
-  "*": "mul",
-  "^": "pow",
-  "&": "bit_and",
-  "|": "bit_or",
-  "<<": "bit_shift_left",
-  ">>": "bit_shift_right",
-  // bitxor, bitnot handled as special case in canonicalOp
-  "==": "eq",
-  "!=": "neq",
-  "<=": "leq",
-  "<": "lt",
-  ">=": "geq",
-  ">": "gt",
-  "#": "list_length",
-  "..": "concat",
-};
-
-function canonicalOp(op: string, arity: number): string {
-  if (op === "<-") return "assign";
-  if (op === "=>") return "key_value";
-  if (op === "-") return arity < 2 ? "neg" : "sub";
-  if (op === "~") return arity < 2 ? "bit_not" : "bit_xor";
-  return canonicalOpTable[op] ?? op;
 }
 
 export function userIdentifier(token: Token): Identifier {
@@ -540,7 +565,16 @@ export function refSource(node: Node, ref?: Token | Node): Node {
   };
 }
 
-export default function parse(code: string, restrictFrontend = true) {
+export interface ParseResult {
+  node: Node;
+  warnings: Error[];
+}
+
+export default function parse(
+  code: string,
+  restrictFrontend = true,
+): ParseResult {
+  warnings = [];
   restrictedFrontend = restrictFrontend;
   const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
   try {
@@ -587,5 +621,51 @@ export default function parse(code: string, restrictFrontend = true) {
       column: (lines.at(-1)?.length ?? 0) + 1,
     });
   }
-  return results[0] as Node;
+  return {
+    node: results[0] as Node,
+    warnings,
+  };
 }
+
+// TODO add more
+const deprecatedAliases: Record<string, OpCode> = {
+  text_contains: "contains[Text]",
+  array_contains: "contains[Array]",
+  list_contains: "contains[List]",
+  table_contains_key: "contains[Table]",
+  set_contains: "contains[Set]",
+  argv_get: "at[argv]",
+  array_get: "at[Array]",
+  list_get: "at[List]",
+  table_get: "at[Table]",
+  text_get_byte: "at[byte]",
+  text_get_codepoint: "at[codepoint]",
+  array_set: "set_at[Array]",
+  list_set: "set_at[List]",
+  table_set: "set_at[Table]",
+  text_byte_find: "find[byte]",
+  text_codepoint_find: "find[codepoint]",
+  text_get_byte_to_int: "ord_at[byte]",
+  text_get_codepoint_to_int: "ord_at[codepoint]",
+  text_byte_to_int: "ord[byte]",
+  codepoint_to_int: "ord[codepoint]",
+  int_to_text_byte: "char[byte]",
+  int_to_codepoint: "char[codepoint]",
+  text_replace: "replace",
+  text_split: "split",
+  text_split_whitespace: "split_whitespace",
+  println_int: "println[Int]",
+  print_int: "print[Int]",
+  concat: "concat[Text]",
+  list_push: "push",
+  list_length: "size[List]",
+  text_byte_reversed: "reversed[byte]",
+  text_codepoint_reversed: "reversed[codepoint]",
+  text_get_byte_slice: "slice[byte]",
+  text_get_codepoint_slice: "slice[codepoint]",
+  text_byte_length: "size[byte]",
+  text_codepoint_length: "size[codepoint]",
+  list_find: "find[List]",
+  text_to_int: "dec_to_int",
+  int_to_text: "int_to_dec",
+};

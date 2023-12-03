@@ -67,7 +67,7 @@ const hexagonyLanguage: Language = {
       printLnToPrint,
       printTextLiteral,
       limitSetOp(99999),
-      mapToPrefixAndInfix({ putc: ";", print_int: "!" }),
+      mapToPrefixAndInfix({ "putc[byte]": ";", "print[Int]": "!" }),
     ),
   ],
 };

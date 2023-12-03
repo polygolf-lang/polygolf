@@ -35,6 +35,7 @@ $x <- ($xL * $xR);
 
 ```polygolf
 $a <- 10;
+$b <- 10;
 if ($a == $b){
     putc 77;
 };
@@ -42,6 +43,7 @@ if ($a == $b){
 
 ```polygolf plugins.extractConditions
 $a <- 10;
+$b <- 10;
 $condValue <- (($a - $b) ^ 2);
 if ($condValue <= 0) (
     putc 77
@@ -54,18 +56,18 @@ print "hello-58\n100";
 
 ```polygolf plugins.printTextLiteral
 $printVar <- 104;
-putc $printVar;
+putc[byte] $printVar;
 $printVar <- 101;
-putc $printVar;
+putc[byte] $printVar;
 $printVar <- 108;
-putc $printVar;
-putc $printVar;
+putc[byte] $printVar;
+putc[byte] $printVar;
 $printVar <- 111;
-putc $printVar;
+putc[byte] $printVar;
 $printVar <- -58;
 print_int $printVar;
 $printVar <- 266;
-putc $printVar;
+putc[byte] $printVar;
 $printVar <- 100;
 print_int $printVar;
 ```

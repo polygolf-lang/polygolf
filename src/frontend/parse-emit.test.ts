@@ -2,7 +2,7 @@ import { normalize } from "@/common/compile";
 
 describe("Restricted nodes: parse - emit match", () => {
   for (const t of [
-    `implicit_conversion "text_to_int" "1";`,
+    `implicit_conversion "dec_to_int" "1";`,
     `var_declaration $x:Int;`,
     `var_declaration_with_assignment ($x:Int <- 0);`,
     `var_declaration_block (var_declaration $x:Int) (var_declaration $y:Int);`,

@@ -12,7 +12,8 @@ import {
   infix,
   list,
   prefix,
-  isIntLiteral,
+  isInt,
+  implicitConversion,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -28,9 +29,18 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
+  useIndexCalls,
+  arraysToLists,
 } from "../../plugins/ops";
-import { alias, renameIdents } from "../../plugins/idents";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import { alias, renameIdents, useBuiltinAliases } from "../../plugins/idents";
+import {
+  golfLastPrint,
+  implicitlyConvertPrintArg,
+  printConcatToMultiPrint,
+  printLnToPrint,
+  printToImplicitOutput,
+  putcToPrintChar,
+} from "../../plugins/print";
 import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
@@ -50,7 +60,7 @@ import {
   pickAnyInt,
 } from "../../plugins/arithmetic";
 import {
-  useEquivalentTextOp,
+  usePrimaryTextOps,
   textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
 } from "../../plugins/textOps";
@@ -63,10 +73,10 @@ const golfscriptLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint),
+    required(printIntToPrint, arraysToLists),
+    simplegolf(golfLastPrint(false)),
     search(
       flipBinaryOps,
-      golfLastPrint(),
       equalityToInequality,
       ...bitnotPlugins,
       ...powPlugins,
@@ -81,18 +91,22 @@ const golfscriptLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
+      putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
-      useEquivalentTextOp(true, false),
+      usePrimaryTextOps("byte"),
       textGetToTextGetToIntToText,
       removeUnusedForVar,
       forRangeToForDifferenceRange(
         (node, spine) =>
           !isSubtype(getType(node.start, spine.root.node), integerType(0)),
       ),
-      implicitlyConvertPrintArg,
       replaceToSplitAndJoin,
+      implicitlyConvertPrintArg,
+      printLnToPrint,
     ),
     simplegolf(
+      printConcatToMultiPrint,
+      useBuiltinAliases({ "\n": "n" }),
       alias({
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
@@ -100,32 +114,63 @@ const golfscriptLanguage: Language = {
     ),
     required(
       mapOps({
-        argv_get: (x) => op("list_get", op("argv"), x[0]),
+        "at[argv]": (x) => op("at[List]", op("argv"), x[0]),
         argv: builtin("a"),
         true: int(1),
         false: int(0),
-        print: (x) => x[0],
 
-        text_get_byte_slice: (x) =>
-          rangeIndexCall(x[0], x[1], add1(x[2]), int(1)),
+        "slice[byte]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
+        "slice[List]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
         neg: (x) => op("mul", x[0], int(-1)),
-        max: (x) => op("list_get", op("sorted", list(x)), int(1)),
-        min: (x) => op("list_get", op("sorted", list(x)), int(0)),
+        max: (x) => op("at[List]", op("sorted[Int]", list(x)), int(1)),
+        min: (x) => op("at[List]", op("sorted[Int]", list(x)), int(0)),
 
         leq: (x) =>
           op(
             "lt",
-            ...(isIntLiteral()(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])]),
+            ...(isInt()(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])]),
           ),
 
         geq: (x) =>
           op(
             "gt",
-            ...(isIntLiteral()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
+            ...(isInt()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
           ),
+        int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
+        bool_to_int: (x) => implicitConversion("bool_to_int", x[0]),
+        append: (x) => op("concat[List]", x[0], list([x[1]])),
+        "contains[Text]": (x) =>
+          implicitConversion(
+            "int_to_bool",
+            op("add", op("find[byte]", x[0], x[1]), int(1n)),
+          ),
+        "contains[List]": (x) =>
+          implicitConversion(
+            "int_to_bool",
+            op("add", op("find[List]", x[0], x[1]), int(1n)),
+          ),
+        int_to_bin: (x) => infix("*", infix("base", x[0], int(2n)), text("")),
+
+        // TO-DO: less hacky implementations for these:
+        int_to_hex: (x) =>
+          infix(
+            "+",
+            prefix("{.9>7*+48+}%", infix("base", x[0], int(16n))),
+            text(""),
+          ),
+        gcd: (x) => infix("{.}{.@@%}while;", x[0], x[1]),
+        split_whitespace: (x) =>
+          op("split", prefix("{...9<\\13>+*\\32if}%", x[0]), text(" ")),
+        right_align: (x) => infix('1$,-.0>*" "*\\+', x[0], x[1]),
+        int_to_hex_aligned: (x) =>
+          infix('16base{.9>7*+48+}%""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
+        int_to_bin_aligned: (x) =>
+          infix('2base""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
       }),
+      useIndexCalls(false),
       mapToPrefixAndInfix({
-        println: "n",
         not: "!",
         bit_not: "~",
         mul: "*",
@@ -137,32 +182,40 @@ const golfscriptLanguage: Language = {
         sub: "-",
         bit_or: "|",
         bit_xor: "^",
-        concat: "+",
+        "concat[Text]": "+",
+        "concat[List]": "+",
         lt: "<",
-        eq: "=",
+        "eq[Int]": "=",
+        "eq[Text]": "=",
         gt: ">",
         and: "and",
         or: "or",
-        text_get_byte_to_int: "=",
-        text_byte_length: ",",
-        text_byte_to_int: ")",
-        int_to_text: "`",
-        text_split: "/",
+        "ord_at[byte]": "=",
+        "size[byte]": ",",
+        "ord[byte]": ")",
+        int_to_dec: "`",
+        split: "/",
         repeat: "*",
         pow: "?",
-        text_to_int: "~",
+        dec_to_int: "~",
         abs: "abs",
-        list_push: "+",
-        list_get: "=",
-        list_length: ",",
+        "size[List]": ",",
         join: "*",
-        sorted: "$",
+        "sorted[Int]": "$",
+        "sorted[Ascii]": "$",
+        "find[byte]": "?",
+        "find[List]": "?",
       }),
       mapOps({
-        neq: (x) => prefix("!", infix("=", x[0], x[1])),
-        text_byte_reversed: (x) => infix("%", x[0], int(-1)),
-        int_to_text_byte: (x) => infix("+", list(x), text("")),
+        "neq[Int]": (x) => prefix("!", infix("=", x[0], x[1])),
+        "neq[Text]": (x) => prefix("!", infix("=", x[0], x[1])),
+        "reversed[byte]": (x) => infix("%", x[0], int(-1)),
+        "reversed[List]": (x) => infix("%", x[0], int(-1)),
+        "char[byte]": (x) => infix("+", list(x), text("")),
       }),
+    ),
+    required(
+      printToImplicitOutput,
       addImports({ a: "a" }, (x) =>
         x.length > 0 ? assignment("a", builtin("")) : undefined,
       ),
