@@ -145,7 +145,7 @@ All other expressions are Polygolf operators. Most of them return values, but so
 [Complete list of opcodes](docs/opcodes.generated.md).
 
 One can reference on opcode be either its name or its alias. Some opcodes share the alias - this is resolved by the used arity / types of inputs.
-Symbolic aliases and `div`, `mod` can also be used in an infix matter: `(+ 2 3)` is the same as `(2 + 3)`.
+Symbolic aliases and `div`, `mod` can also be used in an infix manner: `(+ 2 3)` is the same as `(2 + 3)` and in mutating manner: `$x <- ($x + 1);` is the same as `$x +<- 1;`.
 
 There's an alternative syntax for indexing assignment:
 `($collection @ $index) <- value;` is the same as `set_at $collection $index $value;`.

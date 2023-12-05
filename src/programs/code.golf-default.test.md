@@ -29,9 +29,10 @@ _Golfscript_
 _Lua_
 
 ```lua
-print("Hello, World!")
-for i=0,9 do print(i)end
-for a=1,1e3 do print(arg[a])end
+p=print
+p("Hello, World!")
+for i=0,9 do p(i)end
+for a=1,1e3 do p(arg[a])end
 ```
 
 _Nim_
@@ -39,8 +40,8 @@ _Nim_
 ```nim
 import os
 echo"Hello, World!"
-for i in..9:i.echo
-for a in..999:(paramStr 1+a).echo
+for i in..9:echo i
+for a in..999:echo paramStr 1+a
 ```
 
 _Python_

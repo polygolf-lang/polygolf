@@ -1,13 +1,12 @@
 import {
+  functionCall,
   type Node,
   importStatement,
+  infix,
   integerType,
   isIdent,
-  isOfKind,
   isOp,
   isSubtype,
-  isText,
-  methodCall,
   op,
   prefix,
 } from "../../IR";
@@ -85,14 +84,19 @@ export function useUnsignedDivision(node: Node, spine: Spine) {
 }
 
 export function useUFCS(node: Node) {
-  if (node.kind === "FunctionCall" && node.args.length > 0) {
-    if (node.args.length === 1 && isText()(node.args[0])) {
-      return;
+  if (node.kind === "FunctionCall") {
+    if (node.args.length === 1) {
+      return infix(" ", node.func, node.args[0]);
     }
-    const [obj, ...args] = node.args;
-    if (!isOfKind("Infix", "Prefix")(obj) && isIdent()(node.func)) {
-      return methodCall(obj, node.func, ...args);
+    if (node.args.length > 1 && isIdent()(node.func)) {
+      return functionCall(
+        infix(".", node.args[0], node.func),
+        ...node.args.slice(1),
+      );
     }
+  }
+  if (node.kind === "Infix" && node.name === " " && isIdent()(node.left)) {
+    return infix(".", node.right, node.left);
   }
 }
 

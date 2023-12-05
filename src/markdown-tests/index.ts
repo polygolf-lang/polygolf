@@ -24,6 +24,7 @@ export const keywords = [
   "1..127",
   "32..127",
   "no:hardcode",
+  "noEmit",
 ] as const;
 
 export function compilationOptionsFromKeywords(
@@ -43,6 +44,7 @@ export function compilationOptionsFromKeywords(
     restrictFrontend: is("restrictFrontend"),
     skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
     skipPlugins: is("no:hardcode") ? ["hardcode"] : [],
+    noEmit: is("noEmit"),
   };
 }
 

@@ -74,13 +74,23 @@ import grammar from "./grammar";
 let restrictedFrontend = true;
 let warnings: Error[] = [];
 
-export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
+export function sexpr(
+  calleeIdent: Identifier,
+  args: readonly Node[],
+  callee: string = calleeIdent.name,
+): Node {
   if (!calleeIdent.builtin) {
     return functionCall(calleeIdent, args);
   }
-  let callee = calleeIdent.name;
   if (callee === "<-") callee = "assign";
   if (callee === "=>") callee = "key_value";
+  if (callee.endsWith("<-")) {
+    return sexpr(
+      calleeIdent,
+      [args[0], sexpr(calleeIdent, args, callee.slice(0, callee.length - 2))],
+      "<-",
+    );
+  }
   if (callee in deprecatedAliases) {
     warnings.push(
       new PolygolfError(
@@ -175,7 +185,7 @@ export function sexpr(calleeIdent: Identifier, args: readonly Node[]): Node {
       return assignment(args[0], args[1]);
     case "function_call": {
       expectArity(1, Infinity);
-      assertIdentifier(args[0]);
+      if (restrictedFrontend) assertIdentifier(args[0]);
       return functionCall(args[0], args.slice(1));
     }
     case "array":

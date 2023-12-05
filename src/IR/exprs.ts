@@ -21,6 +21,7 @@ import {
   type VariadicOpCode,
   isCommutative,
   isOpCode,
+  inverseOpCode,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseNode {
@@ -172,7 +173,8 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
   if (opCode === "not" || opCode === "bit_not") {
     const arg = args[0];
     if (isOp()(arg)) {
-      if (arg.op === opCode) return arg.args[0];
+      if (arg.op === opCode && arg.args[0].kind !== "ImplicitConversion")
+        return arg.args[0];
       if (opCode === "not") {
         if (arg.op in booleanNotOpCode) {
           return op(
@@ -183,6 +185,13 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
         }
       }
     }
+  }
+  if (
+    opCode in inverseOpCode &&
+    isOp(inverseOpCode[opCode as keyof typeof inverseOpCode])(args[0]) &&
+    args[0].args[0].kind !== "ImplicitConversion"
+  ) {
+    return args[0].args[0];
   }
   if (opCode === "neg") {
     if (isInt()(args[0])) {

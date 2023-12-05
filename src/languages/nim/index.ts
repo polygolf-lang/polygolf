@@ -251,7 +251,7 @@ const nimLanguage: Language = {
           bit_or: "or",
           bit_xor: "xor",
         },
-        ["+", "*", "%%", "/%", "-", "&"],
+        ["+", "*", "-", "&"],
       ),
       addNimImports,
     ),
@@ -274,9 +274,9 @@ const nimLanguage: Language = {
       noStandaloneVarDeclarations,
       assertInt64,
       removeImplicitConversions,
-      useUFCS,
       removeSystemNamespace,
     ),
+    search(useUFCS),
   ],
   detokenizer: defaultDetokenizer((a, b) => {
     const left = a[a.length - 1];

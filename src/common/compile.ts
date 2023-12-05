@@ -1,6 +1,11 @@
 import { isOp, op, isOpCode, type Type, type Node } from "../IR";
 import { expandVariants } from "./expandVariants";
-import { defaultDetokenizer, type Plugin, type Language } from "./Language";
+import {
+  defaultDetokenizer,
+  type Plugin,
+  type Language,
+  type TokenTree,
+} from "./Language";
 import { programToSpine, type Spine } from "./Spine";
 import { getType, getTypeAndResolveOpCode } from "./getType";
 import { stringify } from "./stringify";
@@ -27,9 +32,10 @@ export interface CompilationOptions {
   restrictFrontend: boolean;
   codepointRange: [number, number];
   skipPlugins: string[];
+  noEmit: boolean;
 }
 
-export function compilationOptions(
+export function defaultCompilationOptions(
   partial: Partial<CompilationOptions> = {},
 ): CompilationOptions {
   return {
@@ -39,7 +45,8 @@ export function compilationOptions(
     skipTypecheck: partial.skipTypecheck ?? false,
     restrictFrontend: partial.restrictFrontend ?? true,
     codepointRange: partial.codepointRange ?? [1, Infinity],
-    skipPlugins: [],
+    skipPlugins: partial.skipPlugins ?? [],
+    noEmit: partial.noEmit ?? false,
   };
 }
 
@@ -149,10 +156,27 @@ function* applyToOne(
   }
 }
 
-function emit(language: Language, program: Node, context: CompilationContext) {
-  return (language.detokenizer ?? defaultDetokenizer())(
-    language.emitter(program, context),
-  );
+function emit(
+  language: Language,
+  program: Node,
+  context: CompilationContext,
+  noEmit: boolean,
+) {
+  let tokenTree: TokenTree;
+  if (noEmit) {
+    if (language.noEmitter !== undefined) {
+      try {
+        tokenTree = language.noEmitter(program, context);
+      } catch {
+        tokenTree = debugEmit(program);
+      }
+    } else {
+      tokenTree = debugEmit(program);
+    }
+  } else {
+    tokenTree = language.emitter(program, context);
+  }
+  return (language.detokenizer ?? defaultDetokenizer())(tokenTree);
 }
 
 function isError(x: any): x is Error {
@@ -161,9 +185,10 @@ function isError(x: any): x is Error {
 
 export default function compile(
   source: string,
-  options: CompilationOptions,
+  partialOptions: Partial<CompilationOptions>,
   ...languages: Language[]
 ): CompilationResult[] {
+  const options = defaultCompilationOptions(partialOptions);
   const obj = getObjectiveFunc(options);
   let parsed: ParseResult;
   try {
@@ -263,9 +288,10 @@ function getVariantsByInputMethod(variants: Node[]): Map<boolean, Node[]> {
 
 export function compileVariant(
   program: Node,
-  options: CompilationOptions,
+  partialOptions: Partial<CompilationOptions>,
   language: Language,
 ): CompilationResult {
+  const options = defaultCompilationOptions(partialOptions);
   if (options.level !== "nogolf")
     try {
       getOutput(program); // precompute output
@@ -317,9 +343,10 @@ interface SearchState {
 
 export function compileVariantNoPacking(
   program: Node,
-  options: CompilationOptions,
+  partialOptions: Partial<CompilationOptions>,
   language: Language,
 ): CompilationResult {
+  const options = defaultCompilationOptions(partialOptions);
   const phases = language.phases.map((x) => ({
     mode: x.mode,
     plugins: x.plugins.filter((x) => !options.skipPlugins.includes(x.name)),
@@ -347,12 +374,17 @@ export function compileVariantNoPacking(
       );
       return compilationResult(
         language.name,
-        emit(language, res, {
-          addWarning,
-          options,
-          skipChildren() {},
-          skipReplacement() {},
-        }),
+        emit(
+          language,
+          res,
+          {
+            addWarning,
+            options,
+            skipChildren() {},
+            skipReplacement() {},
+          },
+          options.noEmit,
+        ),
         [],
         plugins.map((y, i) => [counts[i], y.name]),
         warnings,
@@ -368,7 +400,8 @@ export function compileVariantNoPacking(
   function finish(
     prog: Node,
     addWarning: AddWarning,
-    startPhase = 0,
+    startPhase: number,
+    noEmit: boolean,
   ): [string, [number, string][]] {
     const finishingPlugins = phases
       .slice(startPhase)
@@ -381,12 +414,17 @@ export function compileVariantNoPacking(
       ...finishingPlugins,
     );
     return [
-      emit(language, resProg, {
-        addWarning,
-        options,
-        skipChildren() {},
-        skipReplacement() {},
-      }),
+      emit(
+        language,
+        resProg,
+        {
+          addWarning,
+          options,
+          skipChildren() {},
+          skipReplacement() {},
+        },
+        noEmit,
+      ),
       finishingPlugins.map((x, i) => [counts[i], x.name]),
     ];
   }
@@ -415,7 +453,7 @@ export function compileVariantNoPacking(
       }
 
       try {
-        const length = obj(finish(program, addWarning, startPhase)[0]);
+        const length = obj(finish(program, addWarning, startPhase, false)[0]);
         const state = { program, startPhase, length, history, warnings };
         if (shortestSoFar === undefined || length < shortestSoFarLength) {
           shortestSoFarLength = length;
@@ -492,6 +530,7 @@ export function compileVariantNoPacking(
       globalWarnings.push(x);
     },
     shortestSoFar.startPhase,
+    options.noEmit,
   );
 
   return compilationResult(
@@ -551,11 +590,11 @@ export function typecheck(program: Node, everyNode = true): Node {
 export function debugEmit(program: Node): string {
   const result = compileVariantNoPacking(
     program,
-    compilationOptions({
+    {
       level: "nogolf",
       skipTypecheck: true,
       restrictFrontend: false,
-    }),
+    },
     polygolfLanguage,
   ).result;
   if (typeof result === "string") {
@@ -571,11 +610,11 @@ export function normalize(source: string): string {
 export function isCompilable(program: Node, lang: Language) {
   const result = compileVariant(
     program,
-    compilationOptions({
+    {
       level: "nogolf",
       restrictFrontend: false,
       skipTypecheck: true,
-    }),
+    },
     lang,
   );
   return typeof result.result === "string";
