@@ -148,3 +148,19 @@ for_argv $x 100 {
 ```janet nogolf
 (each x(slice(dyn :args)1)(print x))
 ```
+
+## Block in if statement
+
+```polygolf
+if (> 1 0) {
+    $x <- 1;
+    print $x;
+} {
+    $y <- 2;
+    println $y;
+};
+```
+
+```janet nogolf
+(if(> 1 0)(do(var x 1)(prin x))(do(var y 2)(pp y)))
+```
