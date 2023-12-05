@@ -1,6 +1,11 @@
-import { EmitError, joinTrees } from "../../common/emit";
-import { IR } from "../../IR";
-import { TokenTree } from "../../common/Language";
+import { EmitError, emitTextFactory, joinTrees } from "../../common/emit";
+import { isInt, type IR } from "../../IR";
+import { type TokenTree } from "../../common/Language";
+
+const emitJanetText = emitTextFactory({
+  '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
+  "`TEXT`": { "`": null },
+});
 
 export default function emitProgram(program: IR.Node): TokenTree {
   function emitMultiNode(BaseNode: IR.Node, blockNeedsDo = false): TokenTree {
@@ -38,6 +43,20 @@ export default function emitProgram(program: IR.Node): TokenTree {
           emitMultiNode(e.body),
           ")",
         ];
+      case "ForRange": {
+        if (!isInt(1n)(e.increment)) {
+          throw new EmitError(e, `Step in Janet for loop must be 1`);
+        }
+        return [
+          "(",
+          "for",
+          e.variable === undefined ? "_" : emit(e.variable),
+          emit(e.start),
+          emit(e.end),
+          emitMultiNode(e.body),
+          ")",
+        ];
+      }
       case "If":
         return [
           "(",
@@ -58,12 +77,32 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return ["(", "set", emit(e.variable), emit(e.expr), ")"];
       case "Identifier":
         return e.name;
+      case "Text":
+        return emitJanetText(e.value);
       case "Integer":
         return e.value.toString();
-      case "Infix":
-        return ["(", e.name, emit(e.left), emit(e.right), ")"];
-      case "Prefix":
-        return ["(", e.name, emit(e.arg), ")"];
+      case "FunctionCall":
+        return ["(", emit(e.func), e.args.map((x) => emit(x)), ")"];
+      case "ConditionalOp":
+        return [
+          "(",
+          "if",
+          emit(e.condition),
+          emit(e.consequent),
+          emit(e.alternate),
+          ")",
+        ];
+      case "List":
+        return ["@[", e.exprs.map((x) => emit(x)), "]"];
+      case "Table":
+        return [
+          "@{",
+          joinTrees(
+            "",
+            e.kvPairs.map((x) => [emit(x.key), emit(x.value)]),
+          ),
+          "}",
+        ];
       default:
         throw new EmitError(e);
     }
