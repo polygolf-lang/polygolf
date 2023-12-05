@@ -36,6 +36,7 @@ import {
 } from "../../plugins/arithmetic";
 import { forArgvToForEach } from "../../plugins/loops";
 import { renameIdents } from "../../plugins/idents";
+import { assertInt64 } from "../../plugins/types";
 
 const janetLanguage: Language = {
   name: "Janet",
@@ -140,7 +141,7 @@ const janetLanguage: Language = {
       }),
       addVarDeclarations,
     ),
-    required(renameIdents(), removeImplicitConversions),
+    required(renameIdents(), removeImplicitConversions, assertInt64),
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>

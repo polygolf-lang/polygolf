@@ -44,18 +44,32 @@ export default function emitProgram(program: IR.Node): TokenTree {
           ")",
         ];
       case "ForRange": {
-        if (!isInt(1n)(e.increment)) {
-          throw new EmitError(e, `Step in Janet for loop must be 1`);
-        }
-        return [
-          "(",
-          "for",
-          e.variable === undefined ? "_" : emit(e.variable),
-          emit(e.start),
-          emit(e.end),
-          emitMultiNode(e.body),
-          ")",
-        ];
+        const varName = e.variable === undefined ? "_" : emit(e.variable);
+        return isInt(1n)(e.increment)
+          ? [
+              "(",
+              "for",
+              varName,
+              emit(e.start),
+              emit(e.end),
+              emitMultiNode(e.body),
+              ")",
+            ]
+          : [
+              "(",
+              "loop",
+              "[",
+              varName,
+              ":range",
+              "[",
+              emit(e.start),
+              emit(e.end),
+              emit(e.increment),
+              "]",
+              "]",
+              emitMultiNode(e.body),
+              ")",
+            ];
       }
       case "If":
         return [
