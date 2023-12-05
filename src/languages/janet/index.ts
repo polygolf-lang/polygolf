@@ -65,8 +65,7 @@ const janetLanguage: Language = {
         "at[argv]": (x) =>
           op("at[List]", func("dyn", builtin(":args")), add1(x[0])),
         "at[byte]": (x) => op("slice[byte]", x[0], x[1], int(1n)),
-        "contains[Text]": (x) =>
-          op("not", func("nil?", op("find[byte]", x[0], x[1]))),
+        "contains[Text]": (x) => func("int?", op("find[byte]", x[0], x[1])),
         "contains[Table]": (x) =>
           op("not", func("nil?", op("at[Table]", x[0], x[1]))),
       }),
