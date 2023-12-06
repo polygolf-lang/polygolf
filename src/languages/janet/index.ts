@@ -44,6 +44,7 @@ import {
 import { forArgvToForEach } from "../../plugins/loops";
 import { renameIdents } from "../../plugins/idents";
 import { assertInt64 } from "../../plugins/types";
+import { implicitlyConvertConcatArg } from "./plugins";
 
 const janetLanguage: Language = {
   name: "Janet",
@@ -61,11 +62,29 @@ const janetLanguage: Language = {
       ...lowBitsPlugins,
       applyDeMorgans,
     ),
+
     required(
       usePrimaryTextOps("byte"),
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
+      mapOps({
+        right_align: (x) =>
+          func(
+            "string/format",
+            op("concat[Text]", text("%"), op("int_to_dec", x[1]), text("s")),
+            x[0],
+          ),
+        int_to_hex_aligned: (x) =>
+          func(
+            "string/format",
+            op("concat[Text]", text("%0"), op("int_to_dec", x[1]), text("X")),
+            x[0],
+          ),
+      }),
+    ),
+    simplegolf(implicitlyConvertConcatArg),
+    required(
       mapOps({
         argv: func("slice", func("dyn", builtin(":args")), int(1n)),
 
