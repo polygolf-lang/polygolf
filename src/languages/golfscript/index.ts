@@ -32,7 +32,12 @@ import {
   useIndexCalls,
   arraysToLists,
 } from "../../plugins/ops";
-import { alias, renameIdents, useBuiltinAliases } from "../../plugins/idents";
+import {
+  alias,
+  defaultIdentGen,
+  renameIdents,
+  useBuiltinAliases,
+} from "../../plugins/idents";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
@@ -219,21 +224,9 @@ const golfscriptLanguage: Language = {
     required(
       printToImplicitOutput,
       addImports({ a: "a" }, (x) =>
-        x.length > 0 ? assignment("a", builtin("")) : undefined,
+        x.length > 0 ? assignment(builtin("a"), builtin("")) : undefined,
       ),
-      renameIdents({
-        // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
-        preferred(original: string) {
-          const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
-          if (firstLetter === undefined) return [];
-          if (/n/i.test(firstLetter)) return ["N", "m", "M"];
-          const lower = firstLetter.toLowerCase();
-          const upper = firstLetter.toUpperCase();
-          return [firstLetter, firstLetter === lower ? upper : lower];
-        },
-        short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
-        general: (i) => `v${i}`,
-      }),
+      renameIdents(defaultIdentGen("a", "n")),
       removeImplicitConversions,
     ),
   ],
