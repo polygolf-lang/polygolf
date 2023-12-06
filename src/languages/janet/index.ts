@@ -7,6 +7,7 @@ import {
 } from "../../common/Language";
 import emitProgram from "./emit";
 import {
+  addMutatingInfix,
   arraysToLists,
   flipBinaryOps,
   mapOps,
@@ -95,6 +96,7 @@ const janetLanguage: Language = {
         "slice[List]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
       }),
+      addMutatingInfix({ add: "+", sub: "-", mul: "*", rem: "%" }),
       mapTo(func)({
         abs: "math/abs",
         add: "+",
