@@ -52,6 +52,7 @@ import {
   golfLastPrint,
   implicitlyConvertPrintArg,
   putcToPrintChar,
+  mergePrint,
 } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
@@ -96,6 +97,7 @@ const nimLanguage: Language = {
     required(printIntToPrint, putcToPrintChar),
     simplegolf(golfLastPrint()),
     search(
+      mergePrint,
       flipBinaryOps,
       golfStringListLiteral(),
       listOpsToTextOps("find[byte]", "at[byte]"),
