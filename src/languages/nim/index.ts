@@ -282,8 +282,9 @@ const nimLanguage: Language = {
 
     if (
       /[A-Za-z]/.test(left) &&
-      !["var", "in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"({[`).includes(right) &&
+      ((!["var", "in", "else", "if", "while", "for"].includes(a) &&
+        (symbols + `"({[`).includes(right)) ||
+        right === `"`) &&
       !["=", ":", ".", "::"].includes(b)
     )
       return true; // identifier meeting an operator or string literal or opening paren
