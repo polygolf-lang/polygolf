@@ -206,6 +206,7 @@ $x: Int <- 5;
 $y: 0..100 <- 2;
 println_int ((3 + $x) * $y);
 $t <- (4 + $y);
+$z <- ($x - 1);
 ```
 
 ```js nogolf
@@ -213,6 +214,7 @@ x=5n
 y=2
 print((3n+x)*BigInt(y))
 t=4+y
+z=x-1n
 ```
 
 ## Fixed length for loop
