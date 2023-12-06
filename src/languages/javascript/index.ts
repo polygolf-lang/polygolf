@@ -161,6 +161,10 @@ const javascriptLanguage: Language = {
           s.node.targetType !== "bigint"
             ? func("Math.floor", infix("/", x[0], x[1]))
             : undefined,
+        trunc_div: (x, s) =>
+          s.node.targetType !== "bigint"
+            ? func("Math.floor", infix("/", x[0], x[1]))
+            : undefined,
         int_to_bin: (x) => method(x[0], "toString", int(2n)),
         int_to_bin_aligned: (x) =>
           method(method(x[0], "toString", int(2n)), "padStart", x[1], int(0n)),
