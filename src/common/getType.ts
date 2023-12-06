@@ -47,6 +47,7 @@ import {
   opCodeDefinitions,
   type ArgTypes,
   OpCodeFrontNamesToOpCodes,
+  integerType,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -250,8 +251,16 @@ export function calcTypeAndResolveOpCode(
       return voidType;
     case "OneToManyAssignment":
       return type(expr.expr);
+    case "ForRange": {
+      const incType = type(expr.increment);
+      if (!isSubtype(incType, integerType(1, Infinity))) {
+        throw new Error(
+          `Type error. Increment must be positive (got ${toString(incType)}).`,
+        );
+      }
+      return voidType;
+    }
     case "If":
-    case "ForRange":
     case "While":
     case "ForArgv":
     case "ForCLike":
