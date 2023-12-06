@@ -97,6 +97,12 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return e.value.toString();
       case "FunctionCall":
         return ["(", emit(e.func), e.args.map((x) => emit(x)), ")"];
+      case "RangeIndexCall":
+        if (e.oneIndexed) throw new EmitError(e, "one indexed");
+        if (!isInt(1n)(e.step)) throw new EmitError(e, "step not equal one");
+        return isInt(0n)(e.low)
+          ? ["(", "take", emit(e.high), emit(e.collection), ")"]
+          : ["(", "slice", emit(e.collection), emit(e.low), emit(e.high), ")"];
       case "ConditionalOp":
         return [
           "(",

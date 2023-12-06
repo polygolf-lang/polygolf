@@ -22,9 +22,14 @@ import {
   int,
   list,
   op,
+  rangeIndexCall,
   text,
 } from "../../IR";
-import { golfLastPrint, putcToPrintChar } from "../../plugins/print";
+import {
+  golfLastPrint,
+  golfLastPrintInt,
+  putcToPrintChar,
+} from "../../plugins/print";
 import { usePrimaryTextOps } from "../../plugins/textOps";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
@@ -33,6 +38,7 @@ import {
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
+  truncatingOpsPlugins,
 } from "../../plugins/arithmetic";
 import { forArgvToForEach } from "../../plugins/loops";
 import { renameIdents } from "../../plugins/idents";
@@ -44,7 +50,7 @@ const janetLanguage: Language = {
   emitter: emitProgram,
   phases: [
     required(arraysToLists, putcToPrintChar),
-    simplegolf(golfLastPrint()),
+    simplegolf(golfLastPrint(false), golfLastPrintInt(true)),
     search(
       flipBinaryOps,
       golfStringListLiteral(false),
@@ -58,6 +64,7 @@ const janetLanguage: Language = {
       usePrimaryTextOps("byte"),
       pickAnyInt,
       forArgvToForEach,
+      ...truncatingOpsPlugins,
       mapOps({
         argv: func("slice", func("dyn", builtin(":args")), int(1n)),
 
@@ -83,8 +90,10 @@ const janetLanguage: Language = {
         "concat[List]": (x) => func("array/concat", list([]), ...x),
         "find[byte]": (x) => func("string/find", x[1], x[0]),
         "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
-        "slice[byte]": (x) => func("slice", x[0], x[1], op("add", x[1], x[2])),
-        "slice[List]": (x) => func("slice", x[0], x[1], op("add", x[1], x[2])),
+        "slice[byte]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
+        "slice[List]": (x) =>
+          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
       }),
       mapTo(func)({
         abs: "math/abs",
@@ -97,7 +106,6 @@ const janetLanguage: Language = {
         bit_shift_right: "brshift",
         bit_xor: "bxor",
         dec_to_int: "eval-string",
-        div: "div",
         gcd: "math/gcd",
         geq: ">=",
         gt: ">",
@@ -107,15 +115,16 @@ const janetLanguage: Language = {
         lt: "<",
         max: "max",
         min: "min",
-        mod: "%",
         mul: "*",
         neg: "-",
         not: "not",
         or: "or",
         pow: "math/pow",
         push: "array/push",
+        rem: "%",
         repeat: "string/repeat",
         replace: "string/replace-all",
+        trunc_div: "div",
 
         "at[List]": "",
         "at[Table]": "",

@@ -50,6 +50,31 @@ export function golfLastPrint(toPrintln = true): Plugin {
   };
 }
 
+/**
+ * Like golfLastPrint but for print[Int] instead of print[Text]
+ */
+export function golfLastPrintInt(toPrintlnInt = true): Plugin {
+  return {
+    name: "golfLastPrintInt",
+    visit(program, spine, context) {
+      context.skipChildren();
+      const statements = block([program]).children;
+      const newOp = toPrintlnInt ? "println[Int]" : "print[Int]";
+      const oldOp = toPrintlnInt ? "print[Int]" : "println[Int]";
+      const lastStatement = statements[statements.length - 1];
+      if (isOp(oldOp)(lastStatement)) {
+        return blockOrSingle(
+          replaceAtIndex(
+            statements,
+            statements.length - 1,
+            op(newOp, lastStatement.args[0]),
+          ),
+        );
+      }
+    },
+  };
+}
+
 export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
   if (
     isOp("int_to_dec")(node) &&
