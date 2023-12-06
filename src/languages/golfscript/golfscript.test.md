@@ -97,7 +97,7 @@ repeat $b 3;
 ```
 
 ```golfscript nogolf
-0:a;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!a~-1 a*a abs 2 a+a 2- 2 a*a 2/a 2?a 2%2 a&2 a|2 a^[2 a]$1=[2 a]$0=4 a*a 4/a 2<a 3<a 2=a 2=!a 1>a 2>["abc"1=]""+"g")"ijk"1="opq",[99]""+"abcdefg"5<2>"a""b"="a""b"=!d 1=d,d"_"*d$b"xyz"+5`6 2 base""*7 16 base{.9>7*+48+}%""+8 7 2base""+\1$,-.0>*"0"*\+9 7 16base{.9>7*+48+}%""+\1$,-.0>*"0"*\+"5"~"xyz""y"/"a
+0:A;"xy":b;0 0=:c;["q""r""s"]:d;c c and c c or c!A~-1 A*A abs 2 A+A 2- 2 A*A 2/A 2?A 2%2 A&2 A|2 A^[2 A]$1=[2 A]$0=4 A*A 4/A 2<A 3<A 2=A 2=!A 1>A 2>["abc"1=]""+"g")"ijk"1="opq",[99]""+"abcdefg"5<2>"a""b"="a""b"=!d 1=d,d"_"*d$b"xyz"+5`6 2 base""*7 16 base{.9>7*+48+}%""+8 7 2base""+\1$,-.0>*"0"*\+9 7 16base{.9>7*+48+}%""+\1$,-.0>*"0"*\+"5"~"xyz""y"/"a
 b c"{...9<\13>+*\32if}%" "/b-1%d-1%b 3*
 ```
 
@@ -143,7 +143,7 @@ for $i $a ($a+6) {
 ```
 
 ```golfscript nogolf
--4:a;6,{a+:i;i"
+-4:A;6,{A+:i;i"
 "+}%
 ```
 
