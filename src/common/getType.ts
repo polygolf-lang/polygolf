@@ -817,7 +817,7 @@ export function getArithmeticType(
       const left = max(abs(a.low), abs(a.high));
       const right = max(abs(b.low), abs(b.high));
       if (isFiniteBound(left) && isFiniteBound(right)) {
-        const larger = lt(left, right) ? left : right;
+        const larger = lt(left, right) ? right : left;
         const lim = 2n ** BigInt(larger.toString(2).length);
         if (lt(-1n, a.low) && lt(-1n, b.low)) return int(0n, lim);
         return int(neg(lim), lim);
