@@ -65,6 +65,7 @@ import {
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
+  truncatingOpsPlugins,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
@@ -137,6 +138,7 @@ const javascriptLanguage: Language = {
       }),
       useIndexCalls(),
 
+      ...truncatingOpsPlugins,
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
@@ -156,6 +158,10 @@ const javascriptLanguage: Language = {
             "sort",
           ),
         div: (x, s) =>
+          s.node.targetType !== "bigint"
+            ? func("Math.floor", infix("/", x[0], x[1]))
+            : undefined,
+        trunc_div: (x, s) =>
           s.node.targetType !== "bigint"
             ? func("Math.floor", infix("/", x[0], x[1]))
             : undefined,
@@ -219,7 +225,9 @@ const javascriptLanguage: Language = {
           bit_not: "~",
           mul: "*",
           div: "/",
+          trunc_div: "/",
           mod: "%",
+          rem: "%",
           add: "+",
           "concat[Text]": "+",
           "concat[List]": "+",
