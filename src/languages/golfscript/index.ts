@@ -217,7 +217,7 @@ const golfscriptLanguage: Language = {
     required(
       printToImplicitOutput,
       addImports({ a: "a" }, (x) =>
-        x.length > 0 ? assignment("a", builtin("")) : undefined,
+        x.length > 0 ? assignment(builtin("a"), builtin("")) : undefined,
       ),
       renameIdents({
         // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
@@ -225,11 +225,12 @@ const golfscriptLanguage: Language = {
           const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
           if (firstLetter === undefined) return [];
           if (/n/i.test(firstLetter)) return ["N", "m", "M"];
+          if (/a/i.test(firstLetter)) return ["A", "b", "B"];
           const lower = firstLetter.toLowerCase();
           const upper = firstLetter.toUpperCase();
           return [firstLetter, firstLetter === lower ? upper : lower];
         },
-        short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+        short: "bcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
         general: (i) => `v${i}`,
       }),
       removeImplicitConversions,
