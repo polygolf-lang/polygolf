@@ -42,7 +42,7 @@ import {
   truncatingOpsPlugins,
 } from "../../plugins/arithmetic";
 import { forArgvToForEach } from "../../plugins/loops";
-import { renameIdents } from "../../plugins/idents";
+import { alias, renameIdents } from "../../plugins/idents";
 import { assertInt64 } from "../../plugins/types";
 import { implicitlyConvertConcatArg } from "./plugins";
 
@@ -169,9 +169,24 @@ const janetLanguage: Language = {
         "sorted[Ascii]": "sorted",
         "sorted[Int]": "sorted",
       }),
-      addVarDeclarations,
     ),
-    required(renameIdents(), removeImplicitConversions, assertInt64),
+    simplegolf(
+      alias({
+        Identifier: (n, s) =>
+          n.builtin &&
+          (s.parent?.node.kind !== "PropertyCall" || s.pathFragment !== "ident")
+            ? n.name
+            : undefined,
+        Integer: (x) => x.value.toString(),
+        Text: (x) => `"${x.value}"`,
+      }),
+    ),
+    required(
+      renameIdents(),
+      addVarDeclarations,
+      removeImplicitConversions,
+      assertInt64,
+    ),
   ],
   detokenizer: defaultDetokenizer(
     (a, b) =>

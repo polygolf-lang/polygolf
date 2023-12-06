@@ -86,11 +86,24 @@ export default function emitProgram(program: IR.Node): TokenTree {
           ")",
         ];
       case "VarDeclarationWithAssignment": {
-        const ass = e.assignment;
-        if (ass.kind !== "Assignment") {
-          throw new EmitError(e, `Declaration cannot contain ${ass.kind}`);
+        const assignment = e.assignment;
+        if (assignment.kind !== "Assignment") {
+          throw new EmitError(
+            e,
+            `Declaration cannot contain ${assignment.kind}`,
+          );
         }
-        return ["(", "var", emit(ass.variable), emit(ass.expr), ")"];
+        const assignKeyword =
+          assignment.expr.kind === "Identifier" && assignment.expr.builtin
+            ? "def"
+            : "var";
+        return [
+          "(",
+          assignKeyword,
+          emit(assignment.variable),
+          emit(assignment.expr),
+          ")",
+        ];
       }
       case "Assignment":
         return ["(", "set", emit(e.variable), emit(e.expr), ")"];
