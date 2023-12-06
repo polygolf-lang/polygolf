@@ -65,6 +65,7 @@ import {
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
+  truncatingOpsPlugins,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
@@ -137,6 +138,7 @@ const javascriptLanguage: Language = {
       }),
       useIndexCalls(),
 
+      ...truncatingOpsPlugins,
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
@@ -219,7 +221,9 @@ const javascriptLanguage: Language = {
           bit_not: "~",
           mul: "*",
           div: "/",
+          trunc_div: "/",
           mod: "%",
+          rem: "%",
           add: "+",
           "concat[Text]": "+",
           "concat[List]": "+",
