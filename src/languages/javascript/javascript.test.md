@@ -217,6 +217,19 @@ t=4+y
 z=x-1n
 ```
 
+```polygolf
+for $a 1 100 {
+ println ((pow 2 $a) ~ 3);
+ println ((pow 2 $a) | 3);
+ println ((pow 2 $a) & 3);
+ println ((pow 2 $a) mod 3);
+};
+```
+
+```js nogolf
+for(a=1;a<100;a+=1)print(3n^2n**BigInt(a)),print(3n|2n**BigInt(a)),print(3n&2n**BigInt(a)),print(2n**BigInt(a)%3n)
+```
+
 ## Fixed length for loop
 
 ```polygolf
