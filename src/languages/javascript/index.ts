@@ -119,6 +119,7 @@ const javascriptLanguage: Language = {
         "neq[Int]": "int",
         geq: "int",
         gt: "int",
+        int_to_dec: "bigint",
       }),
       mapVarsThatNeedBigint("int53", (x) => func("BigInt", x)),
       forArgvToForEach,

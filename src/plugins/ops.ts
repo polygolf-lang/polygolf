@@ -152,7 +152,10 @@ function asBinaryChain(
   for (const expr of exprs.slice(1)) {
     const subName = names.sub;
     if (opCode === "add" && isNegative(expr) && subName !== undefined) {
-      result = infix(subName, result, op("neg", expr));
+      result = infix(subName, result, {
+        ...op("neg", expr),
+        targetType: expr.targetType,
+      });
     } else {
       result = infix(names[opCode] ?? "?", result, expr);
     }
