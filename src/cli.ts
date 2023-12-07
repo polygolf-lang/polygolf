@@ -7,15 +7,10 @@ import compile, { debugEmit } from "./common/compile";
 import { PolygolfError } from "./common/errors";
 import languages, { findLang } from "./languages/languages";
 import { EmitError } from "./common/emit";
-import { id, int, integerType, op } from "./IR";
-import { getType } from "./common/getType";
 
 const languageChoices = [
   ...new Set(languages.flatMap((x) => [x.name.toLowerCase(), x.extension])),
 ];
-
-const p = op("bit_xor", { ...id("a"), type: integerType(1, 100) }, int(3));
-console.log(getType(p, p));
 
 const options = yargs()
   .options({
