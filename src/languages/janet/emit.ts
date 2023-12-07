@@ -4,7 +4,11 @@ import { type TokenTree } from "../../common/Language";
 
 const emitJanetText = emitTextFactory({
   '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
-  "`TEXT`": { "`": null },
+  "`TEXT`": { "`": null, "\n": null },
+  /* TO-DO: Properly handle backtick literals:
+   * They may include newlines but if the first character in a backtick
+   * literal is a newline it will be ignored.
+   */
 });
 
 export default function emitProgram(program: IR.Node): TokenTree {
