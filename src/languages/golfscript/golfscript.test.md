@@ -69,7 +69,7 @@ $a > 2;
 % Text Encoding
 at[byte] "abc" 1;
 ord "g";
-ord_at "ijk" 1;
+ord_at[byte] "ijk" 1;
 size[byte] "opq";
 char[byte] 99;
 slice[byte] "abcdefg" 2 3;

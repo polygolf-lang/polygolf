@@ -169,7 +169,6 @@ export default function emitProgram(
         case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "IndexCall":
-          if (!e.oneIndexed) throw new EmitError(e, "zero indexed");
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
         case "List":
         case "Array":

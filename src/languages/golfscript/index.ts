@@ -31,6 +31,7 @@ import {
   printIntToPrint,
   useIndexCalls,
   arraysToLists,
+  backwardsIndexToForwards,
 } from "../../plugins/ops";
 import {
   alias,
@@ -101,7 +102,6 @@ const golfscriptLanguage: Language = {
       putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
       usePrimaryTextOps("byte"),
-      textGetToTextGetToIntToText,
       removeUnusedForVar,
       forRangeToForDifferenceRange(
         (node, spine) =>
@@ -176,6 +176,8 @@ const golfscriptLanguage: Language = {
         int_to_bin_aligned: (x) =>
           infix('2base""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
       }),
+      backwardsIndexToForwards(false),
+      textGetToTextGetToIntToText,
       useIndexCalls(false),
       mapToPrefixAndInfix({
         not: "!",
