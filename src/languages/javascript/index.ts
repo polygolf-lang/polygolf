@@ -245,7 +245,7 @@ const javascriptLanguage: Language = {
       ),
       methodsAsFunctions,
     ),
-    simplegolf(addPostfixIncAndDec, addOneToManyAssignments()),
+    simplegolf(addPostfixIncAndDec(), addOneToManyAssignments()),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({

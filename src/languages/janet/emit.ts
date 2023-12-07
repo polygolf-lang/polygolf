@@ -1,9 +1,4 @@
-import {
-  EmitError,
-  emitIntLiteral,
-  emitTextFactory,
-  joinTrees,
-} from "../../common/emit";
+import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
 import { isInt, type IR } from "../../IR";
 import { type TokenTree } from "../../common/Language";
 
@@ -16,16 +11,9 @@ export default function emitProgram(program: IR.Node): TokenTree {
   function emitMultiNode(BaseNode: IR.Node, blockNeedsDo = false): TokenTree {
     const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
     if (BaseNode.kind === "Block" && blockNeedsDo) {
-      return ["(", "do", joinNodes("", children), ")"];
+      return ["(", "do", children.map((x) => emit(x)), ")"];
     }
-    return joinNodes("", children);
-  }
-
-  function joinNodes(delim: TokenTree, exprs: readonly IR.Node[]) {
-    return joinTrees(
-      delim,
-      exprs.map((x) => emit(x)),
-    );
+    return children.map((x) => emit(x));
   }
 
   /**
@@ -153,14 +141,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
       case "List":
         return ["@[", e.exprs.map((x) => emit(x)), "]"];
       case "Table":
-        return [
-          "@{",
-          joinTrees(
-            "",
-            e.kvPairs.map((x) => [emit(x.key), emit(x.value)]),
-          ),
-          "}",
-        ];
+        return ["@{", e.kvPairs.map((x) => [emit(x.key), emit(x.value)]), "}"];
       default:
         throw new EmitError(e);
     }

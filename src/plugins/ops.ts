@@ -29,6 +29,7 @@ import {
   flippedOpCode,
   isVariadic,
   list,
+  type MutatingInfix,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -236,14 +237,22 @@ export function addMutatingInfix(
   };
 }
 
-export function addPostfixIncAndDec(node: Node) {
-  if (
-    node.kind === "MutatingInfix" &&
-    ["+", "-"].includes(node.name) &&
-    isInt(1n)(node.right)
-  ) {
-    return postfix(node.name.repeat(2), node.variable);
-  }
+export function addPostfixIncAndDec(
+  transform: (infix: MutatingInfix) => Node = (x) =>
+    postfix(x.name.repeat(2), x.variable),
+): Plugin {
+  return {
+    name: `addPostfixIncAndDec(${JSON.stringify(transform)})`,
+    visit(node) {
+      if (
+        node.kind === "MutatingInfix" &&
+        ["+", "-"].includes(node.name) &&
+        isInt(1n)(node.right)
+      ) {
+        return transform(node);
+      }
+    },
+  };
 }
 
 // (a > b) --> (b < a)
