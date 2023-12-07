@@ -42,6 +42,7 @@ import {
   golfLastPrint,
   implicitlyConvertPrintArg,
   putcToPrintChar,
+  mergePrint,
 } from "../../plugins/print";
 import {
   textToIntToFirstIndexTextGetToInt,
@@ -71,6 +72,7 @@ const luaLanguage: Language = {
     required(printIntToPrint, putcToPrintChar),
     simplegolf(golfLastPrint()),
     search(
+      mergePrint,
       flipBinaryOps,
       listOpsToTextOps("find[byte]", "at[byte]"),
       tempVarToMultipleAssignment,

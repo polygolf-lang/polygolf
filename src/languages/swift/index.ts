@@ -45,6 +45,7 @@ import {
   golfLastPrint,
   implicitlyConvertPrintArg,
   putcToPrintChar,
+  mergePrint,
 } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -83,6 +84,7 @@ const swiftLanguage: Language = {
     required(printIntToPrint, arraysToLists),
     simplegolf(golfLastPrint()),
     search(
+      mergePrint,
       flipBinaryOps,
       golfStringListLiteral(false),
       listOpsToTextOps(),
@@ -320,7 +322,7 @@ const swiftLanguage: Language = {
       nextToken: string,
     ): boolean {
       return (
-        (/^[-+*/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
+        (/^[-+*%/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
         (token === `&` && /[*+-]/.test(nextToken[0])) ||
         token === `!=`
       );

@@ -52,6 +52,7 @@ import {
   golfLastPrint,
   implicitlyConvertPrintArg,
   putcToPrintChar,
+  mergePrint,
 } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
@@ -96,6 +97,7 @@ const nimLanguage: Language = {
     required(printIntToPrint, putcToPrintChar),
     simplegolf(golfLastPrint()),
     search(
+      mergePrint,
       flipBinaryOps,
       golfStringListLiteral(),
       listOpsToTextOps("find[byte]", "at[byte]"),
@@ -266,8 +268,8 @@ const nimLanguage: Language = {
       noStandaloneVarDeclarations,
       assertInt64,
       removeImplicitConversions,
-      useUFCS,
     ),
+    search(useUFCS),
   ],
   detokenizer: defaultDetokenizer((a, b) => {
     const left = a[a.length - 1];
@@ -280,8 +282,9 @@ const nimLanguage: Language = {
 
     if (
       /[A-Za-z]/.test(left) &&
-      !["var", "in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"({[`).includes(right) &&
+      ((!["var", "in", "else", "if", "while", "for"].includes(a) &&
+        (symbols + `"({[`).includes(right)) ||
+        right === `"`) &&
       !["=", ":", ".", "::"].includes(b)
     )
       return true; // identifier meeting an operator or string literal or opening paren

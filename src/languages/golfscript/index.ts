@@ -40,6 +40,7 @@ import {
   printLnToPrint,
   printToImplicitOutput,
   putcToPrintChar,
+  splitPrint,
 } from "../../plugins/print";
 import {
   forArgvToForEach,
@@ -87,6 +88,7 @@ const golfscriptLanguage: Language = {
       forArgvToForEach,
       bitShiftToMulOrDiv(false, true, true),
       decomposeIntLiteral(false, true, false),
+      splitPrint,
     ),
     required(
       pickAnyInt,
