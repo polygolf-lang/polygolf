@@ -256,6 +256,8 @@ const swiftLanguage: Language = {
             namedArg("of", x[1]),
             namedArg("with", x[2]),
           ),
+        starts_with: (x) => method(x[0], "hasPrefix", x[1]),
+        ends_with: (x) => method(x[0], "hasSuffix", x[1]),
       }),
       mapToPrefixAndInfix(
         {

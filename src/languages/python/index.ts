@@ -66,6 +66,7 @@ import {
   textToIntToTextGetToInt,
   usePrimaryTextOps,
   useMultireplace,
+  startsWithEndsWithToSliceEquality,
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
@@ -115,6 +116,7 @@ const pythonLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       decomposeIntLiteral(),
+      startsWithEndsWithToSliceEquality("codepoint"),
     ),
     simplegolf(safeConditionalOpToAt("List")),
     required(
@@ -249,6 +251,8 @@ const pythonLanguage: Language = {
         bool_to_int: (x) =>
           op("mul", int(1n), implicitConversion("bool_to_int", x[0])),
         include: (x) => method(x[0], "add", x[1]),
+        starts_with: (x) => method(x[0], "startsWith", x[1]),
+        ends_with: (x) => method(x[0], "endsWith", x[1]),
       }),
       mapTo(func)({
         "read[line]": "input",

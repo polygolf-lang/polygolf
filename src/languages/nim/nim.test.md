@@ -4,6 +4,7 @@
 
 ```polygolf
 $t:(Ascii 3) <- "";
+$t2:Text <- "";
 $n:0..1 <- 0;
 $m <- $n;
 $b <- (1<2);
@@ -16,6 +17,8 @@ text_get_byte_to_int "abc" 1;
 text_split $t "|";
 text_split_whitespace $t;
 text_byte_length $t;
+slice $t -10 3;
+slice $t -10 10;
 repeat $t 3;
 max $n 1;
 min $n 1;
@@ -68,12 +71,14 @@ and $b $b;
 or $b $b;
 
 list_find (list "") "";
+starts_with $t $t2;
+ends_with $t $t2;
 ```
 
 ```nim nogolf
 import unicode,strutils,math
 var
- t=""
+ t,T=""
  n=0
  m=n
  b=1<2
@@ -85,6 +90,8 @@ ord("abc"[1])
 split(t,"|")
 split(t)
 len(t)
+t[^10..< ^7]
+t[^10..< ^0]
 repeat(t,3)
 max(1,n)
 min(1,n)
@@ -132,6 +139,8 @@ n>3
 b and b
 b or b
 find(@[""],"")
+startsWith(t,T)
+endsWith(t,T)
 ```
 
 ## Misc

@@ -70,6 +70,7 @@ import {
   usePrimaryTextOps,
   textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
+  startsWithEndsWithToSliceEquality,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
 import { hardcode } from "../../plugins/static";
@@ -112,6 +113,7 @@ const golfscriptLanguage: Language = {
       printLnToPrint,
     ),
     simplegolf(
+      startsWithEndsWithToSliceEquality("byte"),
       printConcatToMultiPrint,
       useBuiltinAliases({ "\n": "n" }),
       alias({
