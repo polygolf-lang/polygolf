@@ -190,6 +190,8 @@ export const opCodeDefinitions = {
   right_align: { args: [text(), int(0)], front: true },
   replace: { args: [text(), text(int(1)), text()], front: true },
   text_multireplace: { args: variadic(text(), 2) },
+  starts_with: { args: [text(), text()], front: true },
+  ends_with: { args: [text(), text()], front: true },
 
   // Text / Bool <-> Int
   int_to_bin_aligned: { args: [int(0), int(0)], front: true },
@@ -380,6 +382,8 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   replace: "Replaces all occurences of a given text with another text.",
   text_multireplace:
     "Performs simultaneos replacement of multiple pairs of texts.",
+  starts_with: "Checks whether the second argument is a prefix of the first.",
+  ends_with: "Checks whether the second argument is a suffix of the first.",
 
   // Text / Bool <-> Int
   int_to_bin_aligned:

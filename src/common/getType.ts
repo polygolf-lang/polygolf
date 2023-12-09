@@ -576,6 +576,9 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
     }
     case "text_multireplace":
       return text();
+    case "starts_with":
+    case "ends_with":
+      return booleanType;
     case "slice[byte]":
     case "slice[codepoint]":
     case "slice[Ascii]":

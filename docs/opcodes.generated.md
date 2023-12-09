@@ -73,6 +73,8 @@
 | join | join | [(List Text), Text] | Text | Joins the items using the delimiter. |
 | right_align | right_align | [Text, 0..oo] | Text | Right-aligns the text using spaces to a minimum length. |
 | replace | replace | [Text, (Text 1..oo), Text] | Text | Replaces all occurences of a given text with another text. |
+| starts_with | starts_with | [Text, Text] | Bool | Checks whether the second argument is a prefix of the first. |
+| ends_with | ends_with | [Text, Text] | Bool | Checks whether the second argument is a suffix of the first. |
 | int_to_bin_aligned | int_to_bin_aligned | [0..oo, 0..oo] | Ascii | Converts the integer to a 2-base text and alignes to a minimum length. |
 | int_to_hex_aligned | int_to_hex_aligned | [0..oo, 0..oo] | Ascii | Converts the integer to a 16-base text and alignes to a minimum length. |
 | int_to_dec | int_to_dec | [Int] | (Ascii 1..oo) | Converts the integer to a 10-base text. |
