@@ -211,6 +211,8 @@ const javascriptLanguage: Language = {
         split: "split",
         replace: "replaceAll",
         repeat: "repeat",
+        starts_with: "startsWith",
+        ends_with: "endsWith",
       }),
       mapTo(func)({
         abs: "abs",
