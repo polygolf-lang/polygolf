@@ -578,15 +578,16 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
       return text();
     case "slice[byte]":
     case "slice[codepoint]":
-    case "slice[Ascii]": {
-      const [t, i1, i2] = got as [TextType, IntegerType, IntegerType];
-      const maximum = min(
-        t.codepointLength.high,
-        max(0n, sub(i2.high, i1.low)),
-      );
-      return text(int(0n, maximum), t.isAscii);
+    case "slice[Ascii]":
+    case "slice_back[byte]":
+    case "slice_back[codepoint]":
+    case "slice_back[Ascii]": {
+      const t = got[0] as TextType;
+      const length = got[2] as IntegerType;
+      return text(int(0n, min(t.codepointLength.high, length.high)), t.isAscii);
     }
     case "slice[List]":
+    case "slice_back[List]":
       return got[0];
     case "ord_at[codepoint]":
     case "ord_at_back[codepoint]":
