@@ -383,7 +383,6 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
     case "at[argv]":
       return text();
     // other
-    case "push":
     case "include":
       return voidType;
     case "append":
@@ -601,11 +600,11 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
     case "ord[byte]":
     case "ord[Ascii]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 255);
-    case "set_at[Array]":
-    case "set_at[List]":
-    case "set_at_back[List]":
-    case "set_at[Table]":
-      return voidType;
+    case "with_at[Array]":
+    case "with_at[List]":
+    case "with_at_back[List]":
+    case "with_at[Table]":
+      return got[0];
   }
 }
 

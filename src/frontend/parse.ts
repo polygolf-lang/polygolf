@@ -68,6 +68,8 @@ import {
   matchesOpCodeArity,
   isOp,
   userName,
+  Op,
+  isOpCode,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -82,6 +84,25 @@ export function sexpr(
   if (!calleeIdent.builtin) {
     return functionCall(calleeIdent, args);
   }
+  if (callee in deprecatedAliases) {
+    let alias0 = deprecatedAliases[callee];
+    const alias =
+      typeof alias0 === "string"
+        ? { opCode: alias0, callee: alias0, newArgs: (x: any) => x }
+        : alias0;
+    const uName = isOpCode(alias.opCode)
+      ? userName(alias.opCode)
+      : alias.opCode;
+    warnings.push(
+      new PolygolfError(
+        `Deprecated alias used: ${callee}. Use ${alias.opCode} ${
+          alias.opCode === uName ? "" : `or ${uName} `
+        }instead.`,
+        calleeIdent.source,
+      ),
+    );
+    callee = alias.callee;
+  }
   if (callee === "<-") callee = "assign";
   if (callee === "=>") callee = "key_value";
   if (callee.endsWith("<-")) {
@@ -90,19 +111,6 @@ export function sexpr(
       [args[0], sexpr(calleeIdent, args, callee.slice(0, callee.length - 2))],
       "<-",
     );
-  }
-  if (callee in deprecatedAliases) {
-    warnings.push(
-      new PolygolfError(
-        `Deprecated alias used: ${callee}. Use ${deprecatedAliases[callee]} ${
-          deprecatedAliases[callee] === userName(deprecatedAliases[callee])
-            ? ""
-            : `or ${userName(deprecatedAliases[callee])} `
-        }instead.`,
-        calleeIdent.source,
-      ),
-    );
-    callee = deprecatedAliases[callee];
   }
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
@@ -158,14 +166,6 @@ export function sexpr(
       `Syntax error. Expected single variant block, but got ${e.kind}`,
       e.source,
     );
-  }
-  if (
-    callee === "assign" &&
-    isOp("@" as any)(args[0]) &&
-    args[0].args.length === 2
-  ) {
-    callee = "set_at";
-    args = [...args[0].args, args[1]];
   }
 
   switch (callee) {
@@ -621,8 +621,21 @@ export default function parse(
   };
 }
 
-// TODO add more
-const deprecatedAliases: Record<string, OpCode> = {
+function toAssignment(opCode: OpCode, callee: string) {
+  return {
+    opCode,
+    callee,
+  };
+}
+
+const deprecatedAliases: Record<
+  string,
+  | OpCode
+  | {
+      opCode: OpCode;
+      callee: string;
+    }
+> = {
   text_contains: "contains[Text]",
   array_contains: "contains[Array]",
   list_contains: "contains[List]",
@@ -634,9 +647,14 @@ const deprecatedAliases: Record<string, OpCode> = {
   table_get: "at[Table]",
   text_get_byte: "at[byte]",
   text_get_codepoint: "at[codepoint]",
-  array_set: "set_at[Array]",
-  list_set: "set_at[List]",
-  table_set: "set_at[Table]",
+  array_set: toAssignment("with_at[Array]", "@<-"),
+  list_set: toAssignment("with_at[List]", "@<-"),
+  table_set: toAssignment("with_at[Table]", "@<-"),
+  "set_at[Array]": toAssignment("with_at[Array]", "@<-"),
+  "set_at[List]": toAssignment("with_at[List]", "@<-"),
+  "set_at_back[List]": toAssignment("with_at_back[List]", "@<-"),
+  "set_at[Table]": toAssignment("with_at[Table]", "@<-"),
+  set_at: toAssignment("@" as any, "@<-"),
   text_byte_find: "find[byte]",
   text_codepoint_find: "find[codepoint]",
   text_get_byte_to_int: "ord_at[byte]",
@@ -651,7 +669,8 @@ const deprecatedAliases: Record<string, OpCode> = {
   println_int: "println[Int]",
   print_int: "print[Int]",
   concat: "concat[Text]",
-  list_push: "push",
+  list_push: toAssignment("append", "..<-"),
+  push: toAssignment("append", "..<-"),
   list_length: "size[List]",
   text_byte_reversed: "reversed[byte]",
   text_codepoint_reversed: "reversed[codepoint]",
