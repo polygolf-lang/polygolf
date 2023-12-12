@@ -237,12 +237,12 @@ export function addMutatingInfix(
   };
 }
 
-export function addPostfixIncAndDec(
+export function addIncAndDec(
   transform: (infix: MutatingInfix) => Node = (x) =>
     postfix(x.name.repeat(2), x.variable),
 ): Plugin {
   return {
-    name: `addPostfixIncAndDec(${JSON.stringify(transform)})`,
+    name: `addIncAndDec(${JSON.stringify(transform)})`,
     visit(node) {
       if (
         node.kind === "MutatingInfix" &&

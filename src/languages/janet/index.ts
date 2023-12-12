@@ -8,7 +8,7 @@ import {
 import emitProgram from "./emit";
 import {
   addMutatingInfix,
-  addPostfixIncAndDec,
+  addIncAndDec,
   arraysToLists,
   flipBinaryOps,
   mapOps,
@@ -172,7 +172,7 @@ const janetLanguage: Language = {
       }),
     ),
     simplegolf(
-      addPostfixIncAndDec((x) => func(x.name.repeat(2), x.variable)),
+      addIncAndDec((x) => func(x.name.repeat(2), x.variable)),
       alias({
         Identifier: (n, s) =>
           n.builtin && s.pathFragment !== "ident" ? n.name : undefined,

@@ -32,7 +32,7 @@ import {
   removeImplicitConversions,
   printIntToPrint,
   mapTo,
-  addPostfixIncAndDec,
+  addIncAndDec,
   methodsAsFunctions,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
@@ -253,7 +253,7 @@ const javascriptLanguage: Language = {
       ),
       methodsAsFunctions,
     ),
-    simplegolf(addPostfixIncAndDec(), addOneToManyAssignments()),
+    simplegolf(addIncAndDec(), addOneToManyAssignments()),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({

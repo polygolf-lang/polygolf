@@ -111,12 +111,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
         });
       case "FunctionCall":
         return ["(", emit(e.func), e.args.map((x) => emit(x)), ")"];
-      case "MutatingInfix": {
-        const incOrDec =
-          (e.name === "+" || e.name === "-") && isInt(1n)(e.right);
-        if (incOrDec) {
-          return ["(", e.name === "+" ? "++" : "--", emit(e.variable), ")"];
-        }
+      case "MutatingInfix":
         return [
           "(",
           e.name,
@@ -126,7 +121,6 @@ export default function emitProgram(program: IR.Node): TokenTree {
           emit(e.right),
           ")",
         ];
-      }
       case "RangeIndexCall":
         if (e.oneIndexed) throw new EmitError(e, "one indexed");
         if (!isInt(1n)(e.step)) throw new EmitError(e, "step not equal one");
