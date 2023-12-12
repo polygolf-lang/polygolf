@@ -50,7 +50,7 @@ const options = yargs()
  * This aims at providing basic compilable building blocks.
  */
 interface LangCoverConfig {
-  expr: (x?: Type, preferBuiltin?: boolean) => Node; // returns any node of given type (or 0..0)
+  expr: (x?: Type) => Node; // returns any node of given type (or 0..0)
   stmt: (x?: Node) => Node; // returns any node of type void containing given Node (or any)
 }
 
@@ -185,12 +185,7 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
     opCode,
     (lang) =>
       lang.stmt(
-        op(
-          opCode,
-          ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
-            lang.expr(x, opCode.startsWith("set_") || opCode === "push"),
-          ),
-        ),
+        op(opCode, ...getInstantiatedOpCodeArgTypes(opCode).map(lang.expr)),
       ),
   ]),
 );

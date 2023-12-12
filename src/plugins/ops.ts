@@ -170,10 +170,6 @@ export function useIndexCalls(
     "at[List]" as const,
     "at_back[List]" as const,
     "at[Table]" as const,
-    "set_at[Array]" as const,
-    "set_at[List]" as const,
-    "set_at_back[List]" as const,
-    "set_at[Table]" as const,
   ],
 ): Plugin {
   return {
@@ -209,7 +205,7 @@ export function backwardsIndexToForwards(
     "at_back[byte]" as const,
     "at_back[codepoint]" as const,
     "at_back[List]" as const,
-    "set_at_back[List]" as const,
+    "with_at_back[List]" as const,
   ],
 ): Plugin {
   return {
@@ -240,8 +236,8 @@ export function backwardsIndexToForwards(
             collection,
             addLength ? op("add", index, op("size[List]", collection)) : index,
           ),
-          "set_at_back[List]": op(
-            "set_at[List]",
+          "with_at_back[List]": op(
+            "with_at_back[List]",
             collection,
             addLength ? op("add", index, op("size[List]", collection)) : index,
             value,
@@ -359,7 +355,8 @@ export const arraysToLists: Plugin = {
     }
     if (node.kind === "Op") {
       if (node.op === "at[Array]") return op("at[List]", ...node.args);
-      if (node.op === "set_at[Array]") return op("set_at[List]", ...node.args);
+      if (node.op === "with_at[Array]")
+        return op("with_at[List]", ...node.args);
       if (node.op === "contains[Array]")
         return op("contains[List]", ...node.args);
     }

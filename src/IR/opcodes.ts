@@ -269,6 +269,13 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
     "Gets the codepoint (as text) at the 0-based index (counting codepoints).",
   "at_back[codepoint]":
     "Gets the codepoint (as text) at the -1-based backwards index (counting codepoints).",
+  "with_at[Array]":
+    "Returns an array with item at the given 0-based index replaced.",
+  "with_at[List]":
+    "Returns a list with item at the given 0-based index replaced.",
+  "with_at_back[List]":
+    "Returns a list with item at the given -1-based backwards index replaced.",
+  "with_at[Table]": "Returns an array with item at the given key replaced.",
 
   // Slice
   "slice[codepoint]":

@@ -285,21 +285,6 @@ function getDirectWriteFragments(node: Node): PathFragment[] {
     case "ManyToManyAssignment":
     case "OneToManyAssignment":
       return node.variables.map((x, index) => ({ prop: "variables", index }));
-    case "Op":
-      return getDirectPolygolfWriteFragments(node).map((index) => ({
-        prop: "args",
-        index,
-      }));
-  }
-  return [];
-}
-
-function getDirectPolygolfWriteFragments(node: Op): number[] {
-  switch (node.op) {
-    case "set_at[Array]":
-    case "set_at[List]":
-    case "set_at[Table]":
-      return [0];
   }
   return [];
 }

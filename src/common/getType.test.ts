@@ -421,12 +421,6 @@ describeOp("at[argv]", [
   [[int(0)], text()],
 ]);
 
-describeOp("push", [
-  [[int(), list(int())], "error"],
-  [[list(int(0, 1000)), int()], "error"],
-  [[list(int(0, 1000)), int(100, 200)], voidType],
-]);
-
 describeOp("concat[Text]", [
   [[text(), int()], "error"],
   [[text(), text()], text()],
@@ -706,25 +700,28 @@ describeOp("slice[byte]", [
   [[text(), int(30, 200), int(0, 58)], text(28)],
 ]);
 
-describeOp("set_at[Array]", [
+describeOp("with_at[Array]", [
   [[array(int(), 4), text(), int()], "error"],
   [[array(int(), 4), int(), int()], "error"],
   [[array(int(), 4), int(1, 4), int()], "error"],
   [[array(int(-300, 300), 4), int(0, 3), text()], "error"],
-  [[array(int(-300, 300), 4), int(0, 3), int(10, 20)], voidType],
+  [
+    [array(int(-300, 300), 4), int(0, 3), int(10, 20)],
+    array(int(-300, 300), 4),
+  ],
 ]);
 
-describeOp("set_at[List]", [
+describeOp("with_at[List]", [
   [[list(int()), text(), int()], "error"],
   [[list(int()), int(), int()], "error"],
   [[list(int(-300, 300)), int(0), text()], "error"],
-  [[list(int(-300, 300)), int(0), int(10, 20)], voidType],
+  [[list(int(-300, 300)), int(0), int(10, 20)], list(int(-300, 300))],
 ]);
 
-describeOp("set_at[Table]", [
+describeOp("with_at[Table]", [
   [[table(text(), int()), int(), text()], "error"],
   [[table(text(5), int()), text(), int()], "error"],
   [[table(text(5), int(0)), text(5), int()], "error"],
   [[table(text(5), int(0)), text(), int(0)], "error"],
-  [[table(text(5), int(0)), text(4), int(100)], voidType],
+  [[table(text(5), int(0)), text(4), int(100)], table(text(5), int(0))],
 ]);
