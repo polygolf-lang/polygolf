@@ -25,7 +25,7 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
@@ -211,7 +211,7 @@ const nimLanguage: Language = {
         "contains[Text]": "in",
         "contains[Table]": "in",
       }),
-      mapToPrefixAndInfix(
+      mapUnaryAndBinary(
         {
           bit_not: "not",
           not: "not",

@@ -27,7 +27,7 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   removeImplicitConversions,
   printIntToPrint,
@@ -218,7 +218,7 @@ const javascriptLanguage: Language = {
         "println[Text]": "print",
         "print[Text]": "write",
       }),
-      mapToPrefixAndInfix(
+      mapUnaryAndBinary(
         {
           pow: "**",
           neg: "-",

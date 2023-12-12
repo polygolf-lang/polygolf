@@ -91,9 +91,11 @@ export function mapTo<T>(
  * Plugin transforming binary and unary ops to the name and precedence in the target lang.
  * @param opMap OpCode - target op name pairs.
  * @param asMutatingInfix - array of target op names that should be mapped to mutating infix or true for to signify all.
+ * @param unaryMapping - The function to transform unary ops.
+ * @param binaryMapping - The function to transform binary ops.
  * @returns The plugin closure.
  */
-export function mapToPrefixAndInfix<
+export function mapUnaryAndBinary<
   TNames extends string,
   TNamesMutating extends TNames,
 >(
@@ -101,13 +103,16 @@ export function mapToPrefixAndInfix<
     Record<UnaryOpCode, string> & Record<BinaryOpCode | VariadicOpCode, TNames>
   >,
   asMutatingInfix: true | TNamesMutating[] = [],
+  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
+  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
 ): Plugin {
   enhanceOpMap(opMap);
   const justPrefixInfix = mapOps(
     mapObjectValues(opMap, (name, op) =>
       isUnary(op)
-        ? (x: readonly Node[]) => prefix(name, x[0])
-        : (x: readonly Node[]) => asBinaryChain(op, x, opMap),
+        ? (x: readonly Node[]) => unaryMapping(name, x[0])
+        : (x: readonly Node[]) =>
+            asBinaryChain(op, x, opMap, unaryMapping, binaryMapping),
     ),
     `mapToPrefixAndInfix(${JSON.stringify(opMap)}, ${JSON.stringify(
       asMutatingInfix,
@@ -139,10 +144,12 @@ function asBinaryChain(
   opCode: BinaryOpCode | VariadicOpCode,
   exprs: readonly Node[],
   names: Partial<Record<OpCode, string>>,
+  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
+  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
 ): Node {
   const negName = names.neg;
   if (opCode === "mul" && isInt(-1n)(exprs[0]) && negName !== undefined) {
-    exprs = [prefix(negName, exprs[1]), ...exprs.slice(2)];
+    exprs = [unaryMapping(negName, exprs[1]), ...exprs.slice(2)];
   }
   if (opCode === "add") {
     exprs = exprs
@@ -153,9 +160,9 @@ function asBinaryChain(
   for (const expr of exprs.slice(1)) {
     const subName = names.sub;
     if (opCode === "add" && isNegative(expr) && subName !== undefined) {
-      result = infix(subName, result, op("neg", expr));
+      result = binaryMapping(subName, result, op("neg", expr));
     } else {
-      result = infix(names[opCode] ?? "?", result, expr);
+      result = binaryMapping(names[opCode] ?? "?", result, expr);
     }
   }
   return result;
