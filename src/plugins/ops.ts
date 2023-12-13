@@ -160,7 +160,10 @@ function asBinaryChain(
   for (const expr of exprs.slice(1)) {
     const subName = names.sub;
     if (opCode === "add" && isNegative(expr) && subName !== undefined) {
-      result = binaryMapping(subName, result, op("neg", expr));
+      result = binaryMapping(subName, result, {
+        ...op("neg", expr),
+        targetType: expr.targetType,
+      });
     } else {
       result = binaryMapping(names[opCode] ?? "?", result, expr);
     }
@@ -170,16 +173,19 @@ function asBinaryChain(
 
 export function useIndexCalls(
   oneIndexed: boolean = false,
-  ops: OpCode[] = [
-    "at[Array]",
-    "at[List]",
-    "at[Table]",
-    "set_at[Array]",
-    "set_at[List]",
-    "set_at[Table]",
+  ops = [
+    "at[Array]" as const,
+    "at[List]" as const,
+    "at_back[List]" as const,
+    "at[Table]" as const,
+    "set_at[Array]" as const,
+    "set_at[List]" as const,
+    "set_at_back[List]" as const,
+    "set_at[Table]" as const,
   ],
 ): Plugin {
   return {
+    bakeType: true,
     name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
       ops,
     )})`,
@@ -190,15 +196,65 @@ export function useIndexCalls(
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.endsWith("[Table]")) {
-          indexNode = indexCall(node.args[0], add1(node.args[1]), oneIndexed);
+          indexNode = indexCall(node.args[0], add1(node.args[1]));
         } else {
-          indexNode = indexCall(node.args[0], node.args[1], oneIndexed);
+          indexNode = indexCall(node.args[0], node.args[1]);
         }
         if (!node.op.startsWith("set_")) {
           return indexNode;
         } else {
           return assignment(indexNode, node.args[2]);
         }
+      }
+    },
+  };
+}
+
+export function backwardsIndexToForwards(
+  addLength = true,
+  ops: OpCode[] = [
+    "at_back[Ascii]" as const,
+    "at_back[byte]" as const,
+    "at_back[codepoint]" as const,
+    "at_back[List]" as const,
+    "set_at_back[List]" as const,
+  ],
+): Plugin {
+  return {
+    name: "backwardsIndexToForwards",
+    visit(node, spine, context) {
+      if (isOp(...ops)(node)) {
+        const [collection, index, value] = node.args;
+        return mapOps({
+          "at_back[Ascii]": op(
+            "at[Ascii]",
+            collection,
+            addLength ? op("add", index, op("size[Ascii]", collection)) : index,
+          ),
+          "at_back[byte]": op(
+            "at[byte]",
+            collection,
+            addLength ? op("add", index, op("size[byte]", collection)) : index,
+          ),
+          "at_back[codepoint]": op(
+            "at[codepoint]",
+            collection,
+            addLength
+              ? op("add", index, op("size[codepoint]", collection))
+              : index,
+          ),
+          "at_back[List]": op(
+            "at[List]",
+            collection,
+            addLength ? op("add", index, op("size[List]", collection)) : index,
+          ),
+          "set_at_back[List]": op(
+            "set_at[List]",
+            collection,
+            addLength ? op("add", index, op("size[List]", collection)) : index,
+            value,
+          ),
+        }).visit(node, spine, context);
       }
     },
   };

@@ -17,7 +17,6 @@ import {
   variants,
   toString,
   voidType,
-  indexCall,
   text as textNode,
   int as intNode,
   array as arrayNode,
@@ -169,33 +168,6 @@ describe("Functions", () => {
     "error",
     block([]),
   );
-});
-
-describe("Index call", () => {
-  testNode("Index int", indexCall(e(int()), e(int())), "error");
-  testNode("Index array", indexCall(e(array(int(), 10)), e(int())), "error");
-  testNode(
-    "Index array",
-    indexCall(e(array(int(), 10)), e(int(10, 10))),
-    "error",
-  );
-  testNode(
-    "Index array",
-    indexCall(e(array(int(), 10)), e(int(0, 0)), true),
-    "error",
-  );
-  testNode(
-    "Index array",
-    indexCall(e(array(text(), 10)), e(int(0, 9))),
-    text(),
-  );
-  testNode(
-    "Index list",
-    indexCall(e(list(int())), e(int(0, 0)), true),
-    "error",
-  );
-  testNode("Index list", indexCall(e(list(int())), e(int())), "error");
-  testNode("Index list", indexCall(e(list(text())), e(int(0))), text());
 });
 
 describe("Literals", () => {

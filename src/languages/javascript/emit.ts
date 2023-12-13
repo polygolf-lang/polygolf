@@ -190,7 +190,6 @@ export default function emitProgram(
         case "MutatingInfix":
           return [emit(e.variable), e.name + "=", emit(e.right)];
         case "IndexCall":
-          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
         case "PropertyCall":
           return [emit(e.object, prec), ".", emit(e.ident)];

@@ -35,6 +35,48 @@ export function assertInt64(node: Node, spine: Spine) {
   return undefined;
 }
 
+function needsBigint(
+  primitiveIntType: IntegerType,
+  allowed: Partial<Record<OpCode | Assignment["kind"], "bigint" | "int">>,
+  node: Node,
+  spine: Spine,
+): boolean {
+  const nodeType = getType(isAssignment(node) ? node.variable : node, spine);
+  if (
+    isSubtype(nodeType, integerType()) &&
+    !isSubtype(nodeType, primitiveIntType) &&
+    node.targetType !== "bigint"
+  ) {
+    return true;
+  }
+  if (!spine.isRoot) {
+    const parent = spine.parent!.node;
+    if (isOp()(parent) || isAssignment(parent)) {
+      if (
+        parent.targetType === "bigint" ||
+        node.targetType === "bigint" ||
+        (isSubtype(nodeType, integerType()) &&
+          isOp()(node) &&
+          spine
+            .getChildSpines()
+            .some((s) => needsBigint(primitiveIntType, allowed, s.node, s)))
+      ) {
+        const op = isOp()(parent) ? parent.op : "Assignment";
+        const res = (allowed as any)[op];
+        if (res === undefined) {
+          throw new PolygolfError(
+            `Operation that is not supported on bigints encountered. (${op})`,
+          );
+        }
+        if (res === "bigint" && node.targetType !== "bigint") {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 export function floodBigints(
   primitiveIntType0: "int64" | "int53" | IntegerType,
   allowed: Partial<Record<OpCode | Assignment["kind"], "bigint" | "int">>,
@@ -43,33 +85,11 @@ export function floodBigints(
   return {
     name: "floodBigints",
     visit(node, spine) {
-      const nodeType = getType(
-        isAssignment(node) ? node.variable : node,
-        spine,
-      );
       if (
-        isSubtype(nodeType, integerType()) &&
-        !isSubtype(nodeType, primitiveIntType) &&
+        needsBigint(primitiveIntType, allowed, node, spine) &&
         node.targetType !== "bigint"
       ) {
         return { ...node, targetType: "bigint" };
-      }
-      if (!spine.isRoot) {
-        const parent = spine.parent!.node;
-        if (isOp()(parent) || isAssignment(parent)) {
-          if (parent.targetType === "bigint" || node.targetType === "bigint") {
-            const op = isOp()(parent) ? parent.op : "Assignment";
-            const res = (allowed as any)[op];
-            if (res === undefined) {
-              throw new PolygolfError(
-                `Operation that is not supported on bigints encountered. (${op})`,
-              );
-            }
-            if (res === "bigint" && node.targetType !== "bigint") {
-              return { ...node, targetType: "bigint" };
-            }
-          }
-        }
       }
     },
   };

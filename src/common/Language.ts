@@ -98,6 +98,7 @@ export interface IdentifierGenerator {
   preferred: (original: string) => string[];
   short: string[];
   general: (i: number) => string;
+  reserved: string[];
 }
 
 export type Emitter = (

@@ -21,7 +21,7 @@ function getIdentMap(
 ): Map<string, string> {
   // First, try mapping as many idents as possible to their preferred versions
   const inputNames = [...getDeclaredIdentifiers(spine.node)];
-  const outputNames = new Set<string>();
+  const outputNames = new Set<string>(identGen.reserved);
   const result = new Map<string, string>();
   for (const iv of inputNames) {
     for (const preferred of identGen.preferred(iv)) {
@@ -63,7 +63,7 @@ function getIdentMap(
 }
 
 export function renameIdents(
-  identGen: IdentifierGenerator = defaultIdentGen,
+  identGen: IdentifierGenerator = defaultIdentGen(),
 ): Plugin {
   return {
     name: "renameIdents(...)",
@@ -87,17 +87,20 @@ export function renameIdents(
   };
 }
 
-const defaultIdentGen: IdentifierGenerator = {
-  preferred(original: string) {
-    const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
-    if (firstLetter === undefined) return [];
-    const lower = firstLetter.toLowerCase();
-    const upper = firstLetter.toUpperCase();
-    return [firstLetter, firstLetter === lower ? upper : lower];
-  },
-  short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
-  general: (i) => `v${i}`,
-};
+export function defaultIdentGen(...reserved: string[]): IdentifierGenerator {
+  return {
+    preferred(original: string) {
+      const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
+      if (firstLetter === undefined) return [];
+      const lower = firstLetter.toLowerCase();
+      const upper = firstLetter.toUpperCase();
+      return [firstLetter, firstLetter === lower ? upper : lower];
+    },
+    short: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+    general: (i) => `v${i}`,
+    reserved,
+  };
+}
 
 /**
  * Aliases repeated expressions by mapping them to new variables.

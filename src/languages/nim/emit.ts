@@ -304,10 +304,8 @@ export default function emitProgram(
             "toTable",
           ];
         case "IndexCall":
-          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           return [emit(e.collection, 12), "$GLUE$", "[", emit(e.index), "]"];
         case "RangeIndexCall":
-          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           if (!isInt(1n)(e.step)) throw new EmitError(expr, "step");
           return [
             emit(e.collection, 12),

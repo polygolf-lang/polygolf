@@ -28,6 +28,7 @@ print("y")
 $a:-100..100 <- 0;
 $b:Text <- "xy";
 $c <- true;
+$L <- (list "a" "b");
 ~ $a;
 - $a;
 $a + 2;
@@ -47,7 +48,10 @@ $a == 2;
 $a >= 2;
 $a > 2;
 array_get (array "xy" "abc") 1;
+$L @ -1;
+$L @ -2;
 text_get_byte "abc" 1;
+"abc" @ -2;
 text_get_byte_slice "abcdefg" 2 3;
 text_byte_to_int "a";
 text_get_byte_to_int "abc" 1;
@@ -69,6 +73,7 @@ conditional ($a == 2) $c false;
 a=0
 b="xy"
 c=true
+L={"a","b"}
 ~a
 -a
 2+a
@@ -88,7 +93,10 @@ a==2
 a>=2
 a>2
 ({"xy","abc"})[2]
+L[#L]
+L[#L-1]
 ("abc"):sub(2,2)
+("abc"):sub(-2,-2)
 ("abcdefg"):sub(3,5)
 ("a"):byte(1)
 ("abc"):byte(2)

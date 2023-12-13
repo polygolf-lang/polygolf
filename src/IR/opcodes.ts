@@ -99,12 +99,20 @@ export const opCodeDefinitions = {
   // Access members
   "at[Array]": { args: [array(T1, T2), T2], front: "@" },
   "at[List]": { args: [list(T1), int(0)], front: "@" },
+  "at_back[List]": { args: [list(T1), int("-oo", -1)], front: "@" },
   "at[Table]": { args: [table(T1, T2), T1], front: "@" },
   "at[Ascii]": { args: [ascii, int(0)], front: "@" },
+  "at_back[Ascii]": { args: [ascii, int("-oo", -1)], front: "@" },
   "at[byte]": { args: [text(), int(0)], front: true },
+  "at_back[byte]": { args: [text(), int("-oo", -1)], front: true },
   "at[codepoint]": { args: [text(), int(0)], front: true },
+  "at_back[codepoint]": { args: [text(), int("-oo", -1)], front: true },
   "set_at[Array]": { args: [array(T1, T2), T2, T1], front: "set_at" },
   "set_at[List]": { args: [list(T1), int(0), T1], front: "set_at" },
+  "set_at_back[List]": {
+    args: [list(T1), int("-oo", -1), T1],
+    front: "set_at",
+  },
   "set_at[Table]": { args: [table(T1, T2), T1, T2], front: "set_at" },
 
   // Slice
@@ -114,9 +122,12 @@ export const opCodeDefinitions = {
   "slice[List]": { args: [list(T1), int(0), int(0)], front: "slice" },
 
   // Chars
-  "ord_at[byte]": { args: [text(), int(0)], front: true },
-  "ord_at[codepoint]": { args: [text(), int(0)], front: true },
-  "ord_at[Ascii]": { args: [ascii, int(0)], front: "ord_at" },
+  "ord_at[byte]": { args: [text(), int(0)] },
+  "ord_at_back[byte]": { args: [text(), int("-oo", -1)] },
+  "ord_at[codepoint]": { args: [text(), int(0)] },
+  "ord_at_back[codepoint]": { args: [text(), int("-oo", -1)] },
+  "ord_at[Ascii]": { args: [ascii, int(0)] },
+  "ord_at_back[Ascii]": { args: [ascii, int("-oo", -1)] },
   "ord[byte]": { args: [text(int(1, 1))], front: true },
   "ord[codepoint]": { args: [text(int(1, 1))], front: true },
   "ord[Ascii]": { args: [text(int(1, 1), true)], front: "ord" },
@@ -251,13 +262,20 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   // Access members
   "at[Array]": "Gets the item at the 0-based index.",
   "at[List]": "Gets the item at the 0-based index.",
+  "at_back[List]": "Gets the item at the -1-based backwards index.",
   "at[Table]": "Gets the item at the key.",
   "at[Ascii]": "Gets the character at the 0-based index.",
+  "at_back[Ascii]": "Gets the character at the -1-based backwards index.",
   "at[byte]": "Gets the byte (as text) at the 0-based index (counting bytes).",
+  "at_back[byte]":
+    "Gets the byte (as text) at the -1-based backwards index (counting bytes).",
   "at[codepoint]":
     "Gets the codepoint (as text) at the 0-based index (counting codepoints).",
+  "at_back[codepoint]":
+    "Gets the codepoint (as text) at the -1-based backwards index (counting codepoints).",
   "set_at[Array]": "Sets the item at the 0-based index.",
   "set_at[List]": "Sets the item at the 0-based index.",
+  "set_at_back[List]": "Sets the item at the -1-based backwards index.",
   "set_at[Table]": "Sets the item at the key.",
 
   // Slice
@@ -273,9 +291,15 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   // Chars
   "ord_at[byte]":
     "Gets the byte (as integer) at the 0-based index (counting bytes).",
+  "ord_at_back[byte]":
+    "Gets the byte (as integer) at the -1-based backwards index (counting bytes).",
   "ord_at[codepoint]":
     "Gets the codepoint (as integer) at the 0-based index (counting codepoints).",
+  "ord_at_back[codepoint]":
+    "Gets the codepoint (as integer) at the -1-based backwards index (counting codepoints).",
   "ord_at[Ascii]": "Gets the character (as integer) at the 0-based index.",
+  "ord_at_back[Ascii]":
+    "Gets the character (as integer) at the -1-based backwards index.",
   "ord[byte]": "Converts the byte to an integer.",
   "ord[codepoint]": "Converts the codepoint to an integer.",
   "ord[Ascii]": "Converts the character to an integer.",

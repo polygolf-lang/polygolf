@@ -268,19 +268,9 @@ function emitNodeWithoutAnnotation(
     case "MutatingInfix":
       return emitSexpr("@", text(expr.name), expr.variable, expr.right);
     case "IndexCall":
-      return emitSexpr(
-        expr.oneIndexed ? "index_call_one_indexed" : "@",
-        expr.collection,
-        expr.index,
-      );
+      return emitSexpr("@", expr.collection, expr.index);
     case "RangeIndexCall":
-      return emitSexpr(
-        expr.oneIndexed ? "range_index_call_one_indexed" : "@",
-        expr.collection,
-        expr.low,
-        expr.high,
-        expr.step,
-      );
+      return emitSexpr("@", expr.collection, expr.low, expr.high, expr.step);
     case "MethodCall":
       return emitSexpr("@", expr.object, text(expr.ident.name), ...expr.args);
     case "PropertyCall":

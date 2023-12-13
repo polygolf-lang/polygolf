@@ -53,6 +53,7 @@ import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
 import { type Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
+import { stringify } from "./stringify";
 
 interface TypeAndOpCode {
   type: Type;
@@ -122,41 +123,6 @@ export function calcTypeAndResolveOpCode(
       }
       throw new Error(
         `Type error. Cannot assign ${toString(b)} to ${toString(a)}.`,
-      );
-    }
-    case "IndexCall": {
-      const a = type(expr.collection);
-      const b = type(expr.index);
-      let expectedIndex: Type;
-      let result: Type;
-      switch (a.kind) {
-        case "Array":
-          expectedIndex =
-            expr.oneIndexed && a.length.kind === "integer"
-              ? int(1, a.length.high + 1n)
-              : a.length;
-          result = a.member;
-          break;
-        case "List": {
-          expectedIndex = int(expr.oneIndexed ? 1 : 0, "oo");
-          result = a.member;
-          break;
-        }
-        case "Table": {
-          expectedIndex = a.key;
-          result = a.value;
-          break;
-        }
-        default:
-          throw new Error(
-            "Type error. IndexCall must be used on a collection.",
-          );
-      }
-      if (isSubtype(b, expectedIndex)) {
-        return result;
-      }
-      throw new Error(
-        `Type error. Cannot index ${toString(a)} with ${toString(b)}.`,
       );
     }
     case "Op":
@@ -273,7 +239,7 @@ export function calcTypeAndResolveOpCode(
       return type(op(expr.behavesLike, expr.expr));
     }
   }
-  throw new Error(`Type error. Unexpected node ${expr.kind}.`);
+  throw new Error(`Type error. Unexpected node ${stringify(expr)}.`);
 }
 
 function getTypeBitNot(t: IntegerType): IntegerType {
@@ -410,6 +376,7 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
     case "at[Array]":
       return (got[0] as ArrayType).member;
     case "at[List]":
+    case "at_back[List]":
       return (got[0] as ListType).member;
     case "at[Table]":
       return (got[0] as TableType).value;
@@ -459,6 +426,9 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
     case "at[byte]":
     case "at[codepoint]":
     case "at[Ascii]":
+    case "at_back[byte]":
+    case "at_back[codepoint]":
+    case "at_back[Ascii]":
       return text(int(1, 1), (got[0] as TextType).isAscii);
     case "join":
       return text(
@@ -619,9 +589,12 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
     case "slice[List]":
       return got[0];
     case "ord_at[codepoint]":
+    case "ord_at_back[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
     case "ord_at[byte]":
     case "ord_at[Ascii]":
+    case "ord_at_back[byte]":
+    case "ord_at_back[Ascii]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 255);
     case "ord[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
@@ -630,6 +603,7 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
       return int(0, (got[0] as TextType).isAscii ? 127 : 255);
     case "set_at[Array]":
     case "set_at[List]":
+    case "set_at_back[List]":
     case "set_at[Table]":
       return voidType;
   }
@@ -826,7 +800,7 @@ export function getArithmeticType(
       const left = max(abs(a.low), abs(a.high));
       const right = max(abs(b.low), abs(b.high));
       if (isFiniteBound(left) && isFiniteBound(right)) {
-        const larger = lt(left, right) ? left : right;
+        const larger = lt(left, right) ? right : left;
         const lim = 2n ** BigInt(larger.toString(2).length);
         if (lt(-1n, a.low) && lt(-1n, b.low)) return int(0n, lim);
         return int(neg(lim), lim);
