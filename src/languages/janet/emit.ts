@@ -122,7 +122,6 @@ export default function emitProgram(program: IR.Node): TokenTree {
           ")",
         ];
       case "RangeIndexCall":
-        if (e.oneIndexed) throw new EmitError(e, "one indexed");
         if (!isInt(1n)(e.step)) throw new EmitError(e, "step not equal one");
         return isInt(0n)(e.low)
           ? ["(", "take", emit(e.high), emit(e.collection), ")"]
