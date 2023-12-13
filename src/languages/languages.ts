@@ -6,6 +6,7 @@ import pythonLanguage from "./python";
 import swiftLanguage from "./swift";
 import golfscriptLanguage from "./golfscript";
 import javascriptLanguage from "./javascript";
+import janetLanguage from "./janet";
 import textLanguage from "./text";
 
 const languages = [
@@ -16,6 +17,7 @@ const languages = [
   pythonLanguage,
   swiftLanguage,
   javascriptLanguage,
+  janetLanguage,
   textLanguage,
 ];
 
