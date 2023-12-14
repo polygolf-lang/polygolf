@@ -31,6 +31,26 @@ println "y";
 ```
 
 ```polygolf
+println 1;
+print 2;
+```
+
+```polygolf print.golfLastPrintInt(true)
+println 1;
+println 2;
+```
+
+```polygolf
+println 1;
+println 2;
+```
+
+```polygolf print.golfLastPrintInt(false)
+println 1;
+print 2;
+```
+
+```polygolf
 for $i 10 {
     print "x";
 };
