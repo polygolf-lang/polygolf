@@ -1,6 +1,6 @@
 import { isOp, isText, op, int, isOpCode } from "../IR";
 import { type Plugin } from "../common/Language";
-import { mapOps } from "./ops";
+import { mapOpsUsing } from "./ops";
 import { charLength } from "../common/strings";
 
 /** Implements ascii text op by either byte / codepoint text ops. */
@@ -17,7 +17,7 @@ export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
   };
 }
 
-export const textGetToIntToTextGet: Plugin = mapOps(
+export const textGetToIntToTextGet: Plugin = mapOpsUsing(
   {
     "ord_at[Ascii]": (x) => op("ord[Ascii]", op("at[Ascii]", ...x)),
     "ord_at[byte]": (x) => op("ord[byte]", op("at[byte]", ...x)),
@@ -30,7 +30,7 @@ export const textGetToIntToTextGet: Plugin = mapOps(
   "textGetToIntToTextGet",
 );
 
-export const textToIntToTextGetToInt: Plugin = mapOps(
+export const textToIntToTextGetToInt: Plugin = mapOpsUsing(
   {
     "ord[byte]": (x) =>
       isOp("at[byte]")(x[0]) ? op("ord_at[byte]", ...x[0].args) : undefined,
@@ -42,7 +42,7 @@ export const textToIntToTextGetToInt: Plugin = mapOps(
   "textToIntToTextGetToInt",
 );
 
-export const textGetToTextGetToIntToText: Plugin = mapOps(
+export const textGetToTextGetToIntToText: Plugin = mapOpsUsing(
   {
     "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", ...x)),
     "at[codepoint]": (x) =>
@@ -51,7 +51,7 @@ export const textGetToTextGetToIntToText: Plugin = mapOps(
   "textGetToTextGetToIntToText",
 );
 
-export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps(
+export const textToIntToFirstIndexTextGetToInt: Plugin = mapOpsUsing(
   {
     "ord[Ascii]": (x) => op("ord_at[Ascii]", x[0], int(0n)),
     "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
@@ -101,7 +101,7 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
   };
 }
 
-export const replaceToSplitAndJoin: Plugin = mapOps(
+export const replaceToSplitAndJoin: Plugin = mapOpsUsing(
   {
     replace: ([x, y, z]) => op("join", op("split", x, y), z),
   },

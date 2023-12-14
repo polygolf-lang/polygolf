@@ -24,14 +24,14 @@ import {
 } from "../../common/Language";
 import emitProgram from "./emit";
 import {
-  mapOps,
-  mapUnaryAndBinary,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
   useIndexCalls,
   arraysToLists,
   backwardsIndexToForwards,
+  mapOps,
+  mapOpsToPrefixOrInfix,
 } from "../../plugins/ops";
 import {
   alias,
@@ -179,7 +179,7 @@ const golfscriptLanguage: Language = {
       backwardsIndexToForwards(false),
       textGetToTextGetToIntToText,
       useIndexCalls(false),
-      mapUnaryAndBinary({
+      mapOpsToPrefixOrInfix({
         not: "!",
         bit_not: "~",
         mul: "*",

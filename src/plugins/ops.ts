@@ -30,29 +30,13 @@ import {
   isVariadic,
   list,
   type MutatingInfix,
+  func,
+  methodCall,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 import { mapObjectValues } from "../common/arrays";
-
-export function mapOps(
-  opMap: Partial<Record<OpCode, OpTransformOutput>>,
-  name = "mapOps(...)",
-): Plugin {
-  return {
-    name,
-    bakeType: true,
-    visit(node, spine) {
-      if (isOp()(node)) {
-        const op = node.op;
-        const f = opMap[op];
-        if (f !== undefined) {
-          return typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
-        }
-      }
-    },
-  };
-}
+import { CompilationContext } from "@/common/compile";
 
 function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
   for (const [a, b] of [
@@ -65,80 +49,58 @@ function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
   }
 }
 
-export function mapTo<T>(
-  constructor: (x: T, args: readonly Node[]) => Node,
-): (opMap: Partial<Record<OpCode, T>>) => Plugin {
-  function result(
-    opMap: Partial<Record<OpCode, T>>,
-    predicate?: (n: Node, s: Spine) => boolean,
-  ) {
-    enhanceOpMap(opMap);
-    return mapOps(
-      mapObjectValues(
-        opMap,
-        (name) => (n: readonly Node[], s: Spine) =>
-          predicate === undefined || predicate(s.node, s)
-            ? constructor(name, n)
-            : undefined,
-      ),
-      `mapTo(${constructor.name})(${JSON.stringify(opMap)})`,
-    );
-  }
-  return result;
-}
+export type OpMapper<T> = (
+  arg: T,
+  opArgs: readonly Node[],
+  opCode: OpCode,
+  s: Spine<Op>,
+  c: CompilationContext,
+) => Node | undefined;
 
-/**
- * Plugin transforming binary and unary ops to the name and precedence in the target lang.
- * @param opMap OpCode - target op name pairs.
- * @param asMutatingInfix - array of target op names that should be mapped to mutating infix or true for to signify all.
- * @param unaryMapping - The function to transform unary ops.
- * @param binaryMapping - The function to transform binary ops.
- * @returns The plugin closure.
- */
-export function mapUnaryAndBinary<
-  TNames extends string,
-  TNamesMutating extends TNames,
->(
-  opMap: Partial<
-    Record<UnaryOpCode, string> & Record<BinaryOpCode | VariadicOpCode, TNames>
-  >,
-  asMutatingInfix: true | TNamesMutating[] = [],
-  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
-  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
-): Plugin {
-  enhanceOpMap(opMap);
-  const justPrefixInfix = mapOps(
-    mapObjectValues(opMap, (name, op) =>
-      isUnary(op)
-        ? (x: readonly Node[]) => unaryMapping(name, x[0])
-        : (x: readonly Node[]) =>
-            asBinaryChain(op, x, opMap, unaryMapping, binaryMapping),
-    ),
-    `mapToPrefixAndInfix(${JSON.stringify(opMap)}, ${JSON.stringify(
-      asMutatingInfix,
-    )})`,
-  );
-  if (asMutatingInfix !== true && asMutatingInfix.length < 1)
-    return justPrefixInfix;
-  const mutatingInfix = addMutatingInfix(
-    Object.fromEntries(
-      Object.entries(opMap).filter(
-        ([k, v]) =>
-          (isBinary(k as OpCode) || isVariadic(k as OpCode)) &&
-          (asMutatingInfix === true || asMutatingInfix.includes(v as any)),
-      ),
-    ),
-  );
-  return {
-    ...justPrefixInfix,
-    visit(node, spine, context) {
-      return (
-        mutatingInfix.visit(node, spine, context) ??
-        justPrefixInfix.visit(node, spine, context)
-      );
-    },
+export const generalOpMapper: OpMapper<
+  | Node
+  | ((
+      opArgs: readonly Node[],
+      s: Spine<Op>,
+      c: CompilationContext,
+    ) => Node | undefined)
+> = (arg, opArgs, opCode, s, c) =>
+  typeof arg === "function" ? arg(opArgs, s, c) : arg;
+export const funcOpMapper: OpMapper<string> = (arg, opArgs) =>
+  functionCall(arg, ...opArgs);
+export const methodOpMapper: OpMapper<string> = (arg, opArgs) =>
+  methodCall(opArgs[0], arg, ...opArgs.slice(1));
+export const prefixOrInfixOpMapper: OpMapper<string> = (arg, opArgs, opCode) =>
+  isUnary(opCode) ? prefix(arg, opArgs[0]) : infix(arg, ...opArgs);
+export const flippedInfixMapper: OpMapper<string> = (arg, opArgs) =>
+  infix(arg, ...opArgs.toReversed());
+
+export function mapOpsUsing<T>(mapper: OpMapper<T>) {
+  return function (
+    opCodeMap: Partial<Record<OpCode, T>>,
+    name = "mapOpsUsing(...)",
+  ) {
+    enhanceOpMap(opCodeMap);
+    return {
+      name,
+      bakeType: true,
+      visit(node: Node, spine: Spine, context: CompilationContext) {
+        if (isOp()(node)) {
+          const arg = opCodeMap[node.op];
+          if (arg !== undefined) {
+            return mapper(arg, node.args, node.op, spine as Spine<Op>, context);
+          }
+        }
+      },
+    };
   };
 }
+
+export const mapOps = mapOpsUsing(generalOpMapper);
+export const mapOpsToFunc = mapOpsUsing(funcOpMapper);
+export const mapOpsToMethod = mapOpsUsing(methodOpMapper);
+export const mapOpsToPrefixOrInfix = mapOpsUsing(prefixOrInfixOpMapper);
+export const mapOpsToFlippedInfix = mapOpsUsing(flippedInfixMapper);
 
 function asBinaryChain(
   opCode: BinaryOpCode | VariadicOpCode,
@@ -221,7 +183,7 @@ export function backwardsIndexToForwards(
     visit(node, spine, context) {
       if (isOp(...ops)(node)) {
         const [collection, index, value] = node.args;
-        return mapOps({
+        return mapOpsUsing({
           "at_back[Ascii]": op(
             "at[Ascii]",
             collection,
@@ -257,7 +219,7 @@ export function backwardsIndexToForwards(
 }
 
 // "a = a + b" --> "a += b"
-export function addMutatingInfix(
+export function mapAsMutation(
   opMap: Partial<Record<BinaryOpCode | VariadicOpCode, string>>,
 ): Plugin {
   return {
@@ -354,7 +316,7 @@ export const methodsAsFunctions: Plugin = {
   },
 };
 
-export const printIntToPrint: Plugin = mapOps(
+export const printIntToPrint: Plugin = mapOpsUsing(
   {
     "print[Int]": (x) => op("print[Text]", op("int_to_dec", ...x)),
     "println[Int]": (x) => op("println[Text]", op("int_to_dec", ...x)),

@@ -25,14 +25,14 @@ import {
 
 import emitProgram from "./emit";
 import {
-  mapOps,
-  mapUnaryAndBinary,
   useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
-  mapTo,
   backwardsIndexToForwards,
+  mapOps,
+  mapOpsToFunc,
+  mapOpsToPrefixOrInfix,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -156,7 +156,7 @@ const luaLanguage: Language = {
               : method(c, "gsub", text("%%"), text("%%%%")),
           ),
       }),
-      mapTo(func)({
+      mapOpsToFunc({
         "read[line]": "io.read",
         "print[Text]": "io.write",
         "println[Text]": "print",
@@ -169,7 +169,7 @@ const luaLanguage: Language = {
 
     simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
     required(
-      mapUnaryAndBinary({
+      mapOpsToPrefixOrInfix({
         pow: "^",
         not: "not",
         neg: "-",
