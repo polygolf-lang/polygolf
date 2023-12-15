@@ -65,9 +65,7 @@ import {
   OpCodeFrontNames,
   opCodeDefinitions,
   matchesOpCodeArity,
-  isOp,
   userName,
-  Op,
   isOpCode,
 } from "../IR";
 import grammar from "./grammar";
@@ -84,7 +82,7 @@ export function sexpr(
     return functionCall(calleeIdent, args);
   }
   if (callee in deprecatedAliases) {
-    let alias0 = deprecatedAliases[callee];
+    const alias0 = deprecatedAliases[callee];
     const alias =
       typeof alias0 === "string"
         ? { opCode: alias0, callee: alias0, newArgs: (x: any) => x }
@@ -293,7 +291,7 @@ export function sexpr(
         return methodCall(args[0], asString(args[1]), ...args.slice(2));
       case "infix":
         expectArity(1, Infinity);
-        return infix(asString(args[0]), ...args.slice(1));
+        return infix(asString(args[0]), args[1], args[2]);
       case "prefix":
         expectArity(2);
         return prefix(asString(args[0]), args[1]);

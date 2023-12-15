@@ -78,10 +78,9 @@ export function equalityToInequality(node: Node, spine: Spine) {
   }
 }
 
-export const removeBitnot: Plugin = mapOps(
-  { bit_not: (x) => op("sub", int(-1), x[0]) },
-  "removeBitnot",
-);
+export const removeBitnot: Plugin = mapOps({
+  bit_not: (x) => op("sub", int(-1), x[0]),
+});
 
 export function addBitnot(node: Node) {
   if (isOp("add")(node) && node.args.length === 2 && isInt()(node.args[0])) {

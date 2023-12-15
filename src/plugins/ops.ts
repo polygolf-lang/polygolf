@@ -1,13 +1,11 @@
-import { type Plugin, type OpTransformOutput } from "../common/Language";
+import type { Plugin } from "../common/Language";
 import {
   add1,
   assignment,
   infix,
   type BinaryOpCode,
   type Node,
-  type IndexCall,
   indexCall,
-  isBinary,
   isCommutative,
   isInt,
   isNegative,
@@ -19,19 +17,19 @@ import {
   type UnaryOpCode,
   functionCall,
   propertyCall,
-  isIdent,
   postfix,
   type VariadicOpCode,
   BinaryOpCodes,
   flippedOpCode,
   list,
   methodCall,
-  TernaryOpCode,
+  type TernaryOpCode,
+  isVariadic,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
-import { mapObjectValues, replaceAtIndex } from "../common/arrays";
-import { CompilationContext } from "@/common/compile";
+import { replaceAtIndex } from "../common/arrays";
+import type { CompilationContext } from "@/common/compile";
 
 function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
   for (const [a, b] of [
@@ -68,11 +66,11 @@ export const methodOpMapper: OpMapper<string> = (arg, [first, ...rest]) =>
 export const prefixOpMapper: OpMapper<string> = (arg, opArgs) =>
   prefix(arg, opArgs[0]);
 export const infixOpMapper: OpMapper<string> = (arg, opArgs) =>
-  infix(arg, ...opArgs);
+  infix(arg, opArgs[0], opArgs[1]);
 export const postfixOpMapper: OpMapper<string> = (arg, opArgs) =>
   postfix(arg, opArgs[0]);
 export const flippedInfixMapper: OpMapper<string> = (arg, opArgs) =>
-  infix(arg, ...opArgs.toReversed());
+  infix(arg, opArgs[1], opArgs[0]);
 export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {
   const index = indexCall(opArgs[0], arg === 1 ? add1(opArgs[1]) : opArgs[1]);
   return opArgs.length > 2 ? assignment(index, opArgs[2]) : index; // TODO: consider mapping to infix "=" instead
@@ -83,17 +81,25 @@ export function mapOpsUsing<Targ = string, TOpCode extends string = OpCode>(
 ) {
   return function (
     opCodeMap: Partial<Record<TOpCode, Targ>>,
-    name = "mapOpsUsing(...)",
+    variadicMode: "variadic" | "leftChain" | "rightChain" = "leftChain",
   ) {
     enhanceOpMap(opCodeMap);
     return {
-      name,
+      name: "mapOpsUsing(...)",
       bakeType: true,
       visit(node: Node, spine: Spine, context: CompilationContext) {
         if (isOp()(node)) {
           const arg = opCodeMap[node.op as TOpCode];
           if (arg !== undefined) {
-            return mapper(arg, node.args, node.op, spine as Spine<Op>, context);
+            const args =
+              variadicMode === "variadic" ||
+              !isVariadic(node.op) ||
+              node.args.length < 2
+                ? node.args
+                : variadicMode === "leftChain"
+                ? [op(node.op, ...node.args.slice(0, -1)), node.args.at(-1)!]
+                : [node.args[0], op(node.op, ...node.args.slice(1))];
+            return mapper(arg, args, node.op, spine as Spine<Op>, context);
           }
         }
       },
@@ -101,7 +107,7 @@ export function mapOpsUsing<Targ = string, TOpCode extends string = OpCode>(
   };
 }
 
-function asBinaryChain(
+export function asBinaryChain(
   opCode: BinaryOpCode | VariadicOpCode,
   exprs: readonly Node[],
   names: Partial<Record<OpCode, string>>,
@@ -274,13 +280,10 @@ export const methodsAsFunctions: Plugin = {
   },
 };
 
-export const printIntToPrint: Plugin = mapOps(
-  {
-    "print[Int]": (x) => op("print[Text]", op("int_to_dec", ...x)),
-    "println[Int]": (x) => op("println[Text]", op("int_to_dec", ...x)),
-  },
-  "printIntToPrint",
-);
+export const printIntToPrint: Plugin = mapOps({
+  "print[Int]": (x) => op("print[Text]", op("int_to_dec", ...x)),
+  "println[Int]": (x) => op("println[Text]", op("int_to_dec", ...x)),
+});
 
 export const arraysToLists: Plugin = {
   name: "arraysToLists",

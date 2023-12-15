@@ -10,9 +10,6 @@ import {
   op,
   prefix,
   text,
-  assignment,
-  isIdent,
-  infix,
 } from "../../IR";
 import {
   defaultDetokenizer,

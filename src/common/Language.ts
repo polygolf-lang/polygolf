@@ -1,10 +1,6 @@
 import { type IR } from "IR";
-import { type Spine, type PluginVisitor } from "./Spine";
+import { type PluginVisitor } from "./Spine";
 import { type CompilationContext } from "./compile";
-
-export type OpTransformOutput =
-  | ((args: readonly IR.Node[], spine: Spine<IR.Node>) => IR.Node | undefined)
-  | IR.Node;
 
 export interface Packer {
   codepointRange: [number, number];
