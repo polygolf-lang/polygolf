@@ -34,8 +34,10 @@ import {
   arraysToLists,
   backwardsIndexToForwards,
   mapOps,
-  methodOpMapper,
-  mapOpsToPrefixOrInfix,
+  mapMutationToMethod,
+  mapMutationToInfix,
+  mapOpsToInfix,
+  mapOpsToPrefix,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -257,10 +259,10 @@ const swiftLanguage: Language = {
             namedArg("with", x[2]),
           ),
       }),
-      mapAsMutationUsing(methodOpMapper)({
+      mapMutationToMethod({
         append: "append",
       }),
-      mapAsMutationUsing(infixOpMapper)({
+      mapMutationToInfix({
         add: "+=",
         sub: "-=",
         mul: "*=",
@@ -272,10 +274,12 @@ const swiftLanguage: Language = {
         bit_shift_left: "<<=",
         bit_shift_right: ">>=",
       }),
-      mapOpsToPrefixOrInfix({
+      mapOpsToPrefix({
         not: "!",
         neg: "-",
         bit_not: "~",
+      }),
+      mapOpsToInfix({
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         mul: "*",

@@ -16,7 +16,7 @@ import {
   add1,
 } from "../IR";
 import { getType } from "../common/getType";
-import { mapOpsUsing } from "./ops";
+import { mapOps } from "./ops";
 import { type Spine } from "@/common/Spine";
 import { filterInplace } from "../common/arrays";
 
@@ -78,7 +78,7 @@ export function equalityToInequality(node: Node, spine: Spine) {
   }
 }
 
-export const removeBitnot: Plugin = mapOpsUsing(
+export const removeBitnot: Plugin = mapOps(
   { bit_not: (x) => op("sub", int(-1), x[0]) },
   "removeBitnot",
 );

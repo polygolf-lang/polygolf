@@ -262,7 +262,7 @@ function emitNodeWithoutAnnotation(
     case "PropertyCall":
       return emitSexpr("@", expr.object, text(expr.ident.name));
     case "Infix":
-      return emitSexpr("@", text(expr.name), expr.left, expr.right);
+      return emitSexpr("@", text(expr.name), ...expr.args);
     case "Prefix":
     case "Postfix":
       return emitSexpr("@", text(expr.name), expr.arg);

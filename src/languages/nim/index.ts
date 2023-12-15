@@ -24,21 +24,17 @@ import {
 
 import emitProgram from "./emit";
 import {
-  mapOpsUsing,
   useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
   backwardsIndexToForwards,
-  generalOpMapper,
-  funcOpMapper,
-  flippedInfixMapper,
-  prefixOrInfixOpMapper,
   mapOps,
   mapOpsToFunc,
   mapOpsToFlippedInfix,
-  mapOpsToPrefixOrInfix,
-  mapAsMutation,
+  mapMutationToInfix,
+  mapOpsToInfix,
+  mapOpsToPrefix,
 } from "../../plugins/ops";
 import {
   addNimImports,
@@ -223,19 +219,21 @@ const nimLanguage: Language = {
         "contains[Text]": "in",
         "contains[Table]": "system.in",
       }),
-      mapAsMutationUsing(infixOpMapper)({
+      mapMutationToInfix({
         add: "+=",
-        neg: "-=",
+        sub: "-=",
         mul: "*=",
         "concat[Text]": "&=",
         "concat[List]": "&=",
         append: "&=",
       }),
-      mapOpsToPrefixOrInfix({
+      mapOpsToPrefix({
         bit_not: "not",
         not: "not",
         neg: "-",
         int_to_dec: "$",
+      }),
+      mapOpsToInfix({
         pow: "^",
         mul: "*",
         trunc_div: "div",

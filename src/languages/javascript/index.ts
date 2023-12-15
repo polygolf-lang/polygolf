@@ -26,17 +26,18 @@ import {
 
 import emitProgram from "./emit";
 import {
-  mapOpsUsing,
   useIndexCalls,
   removeImplicitConversions,
   printIntToPrint,
-  addIncAndDec,
   methodsAsFunctions,
   mapOps,
   mapOpsToMethod,
   mapOpsToFunc,
-  mapOpsToPrefixOrInfix,
-  methodOpMapper,
+  mapMutationToPrefix,
+  mapMutationToMethod,
+  mapMutationToInfix,
+  mapOpsToPrefix,
+  mapOpsToInfix,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -221,15 +222,15 @@ const javascriptLanguage: Language = {
         "println[Text]": "print",
         "print[Text]": "write",
       }),
-      mapAsMutationUsing(prefixOpMapper)({
+      mapMutationToPrefix({
         inc: "++",
         dec: "--",
       }),
-      mapAsMutationUsing(methodOpMapper)({
+      mapMutationToMethod({
         append: "push",
       }),
-      mapAsMutationUsing(infixOpMapper)({
-        pow: "**",
+      mapMutationToInfix({
+        pow: "**=",
         mul: "*=",
         div: "/=",
         trunc_div: "/=",
@@ -247,10 +248,13 @@ const javascriptLanguage: Language = {
         and: "&&=",
         or: "||=",
       }),
-      mapOpsToPrefixOrInfix({
-        pow: "**",
+      mapOpsToPrefix({
         neg: "-",
         bit_not: "~",
+        not: "!",
+      }),
+      mapOpsToInfix({
+        pow: "**",
         mul: "*",
         div: "/",
         trunc_div: "/",
@@ -273,13 +277,12 @@ const javascriptLanguage: Language = {
         "neq[Text]": "!=",
         geq: ">=",
         gt: ">",
-        not: "!",
         and: "&&",
         or: "||",
       }),
       methodsAsFunctions,
     ),
-    simplegolf(addIncAndDec(), addOneToManyAssignments()),
+    simplegolf(addOneToManyAssignments()),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({

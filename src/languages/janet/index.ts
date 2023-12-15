@@ -7,15 +7,11 @@ import {
 } from "../../common/Language";
 import emitProgram from "./emit";
 import {
-  addIncAndDec,
   arraysToLists,
   flipBinaryOps,
-  funcOpMapper,
-  generalOpMapper,
+  mapMutationToFunc,
   mapOps,
   mapOpsToFunc,
-  mapOpsToPrefixOrInfix,
-  mapOpsUsing,
   removeImplicitConversions,
 } from "../../plugins/ops";
 import { addVarDeclarations } from "../../plugins/block";
@@ -119,11 +115,11 @@ const janetLanguage: Language = {
         "slice[List]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
       }),
-      mapAsMutationUsing(funcOpMapper)({
+      mapMutationToFunc({
         inc: "++",
         dec: "--",
         add: "+=",
-        neg: "-=",
+        sub: "-=",
         mul: "*=",
         rem: "%=",
         "with_at[List]": "put",

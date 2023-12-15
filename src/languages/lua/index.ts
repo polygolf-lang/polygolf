@@ -32,7 +32,8 @@ import {
   backwardsIndexToForwards,
   mapOps,
   mapOpsToFunc,
-  mapOpsToPrefixOrInfix,
+  mapOpsToPrefix,
+  mapOpsToInfix,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -169,14 +170,16 @@ const luaLanguage: Language = {
 
     simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
     required(
-      mapOpsToPrefixOrInfix({
-        pow: "^",
+      mapOpsToPrefix({
         not: "not",
         neg: "-",
         "size[List]": "#",
         "size[Table]": "#",
         "size[byte]": "#",
         bit_not: "~",
+      }),
+      mapOpsToInfix({
+        pow: "^",
         mul: "*",
         div: "//",
         mod: "%",

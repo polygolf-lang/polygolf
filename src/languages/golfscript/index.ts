@@ -9,11 +9,10 @@ import {
   op,
   int,
   text,
-  infix,
   list,
-  prefix,
   isInt,
   implicitConversion,
+  functionCall as func,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -31,7 +30,7 @@ import {
   arraysToLists,
   backwardsIndexToForwards,
   mapOps,
-  mapOpsToPrefixOrInfix,
+  mapOpsToFunc,
 } from "../../plugins/ops";
 import {
   alias,
@@ -158,28 +157,28 @@ const golfscriptLanguage: Language = {
             "int_to_bool",
             op("add", op("find[List]", x[0], x[1]), int(1n)),
           ),
-        int_to_bin: (x) => infix("*", infix("base", x[0], int(2n)), text("")),
+        int_to_bin: (x) => func("*", func("base", x[0], int(2n)), text("")),
 
         // TO-DO: less hacky implementations for these:
         int_to_hex: (x) =>
-          infix(
+          func(
             "+",
-            prefix("{.9>7*+48+}%", infix("base", x[0], int(16n))),
+            func("{.9>7*+48+}%", func("base", x[0], int(16n))),
             text(""),
           ),
-        gcd: (x) => infix("{.}{.@@%}while;", x[0], x[1]),
+        gcd: (x) => func("{.}{.@@%}while;", x[0], x[1]),
         split_whitespace: (x) =>
-          op("split", prefix("{...9<\\13>+*\\32if}%", x[0]), text(" ")),
-        right_align: (x) => infix('1$,-.0>*" "*\\+', x[0], x[1]),
+          op("split", func("{...9<\\13>+*\\32if}%", x[0]), text(" ")),
+        right_align: (x) => func('1$,-.0>*" "*\\+', x[0], x[1]),
         int_to_hex_aligned: (x) =>
-          infix('16base{.9>7*+48+}%""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
+          func('16base{.9>7*+48+}%""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
         int_to_bin_aligned: (x) =>
-          infix('2base""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
+          func('2base""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
       }),
       backwardsIndexToForwards(false),
       textGetToTextGetToIntToText,
       useIndexCalls(false),
-      mapOpsToPrefixOrInfix({
+      mapOpsToFunc({
         not: "!",
         bit_not: "~",
         mul: "*",
@@ -216,11 +215,11 @@ const golfscriptLanguage: Language = {
         "find[List]": "?",
       }),
       mapOps({
-        "neq[Int]": (x) => prefix("!", infix("=", x[0], x[1])),
-        "neq[Text]": (x) => prefix("!", infix("=", x[0], x[1])),
-        "reversed[byte]": (x) => infix("%", x[0], int(-1)),
-        "reversed[List]": (x) => infix("%", x[0], int(-1)),
-        "char[byte]": (x) => infix("+", list(x), text("")),
+        "neq[Int]": (x) => func("!", func("=", x[0], x[1])),
+        "neq[Text]": (x) => func("!", func("=", x[0], x[1])),
+        "reversed[byte]": (x) => func("%", x[0], int(-1)),
+        "reversed[List]": (x) => func("%", x[0], int(-1)),
+        "char[byte]": (x) => func("+", list(x), text("")),
       }),
     ),
     required(

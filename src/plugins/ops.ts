@@ -30,6 +30,7 @@ import {
   list,
   func,
   methodCall,
+  TernaryOpCode,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -51,7 +52,7 @@ export type OpMapper<T> = (
   arg: T,
   opArgs: readonly Node[],
   opCode: OpCode,
-  s: Spine<Op>,
+  s: Spine,
   c: CompilationContext,
 ) => Node | undefined;
 
@@ -79,7 +80,7 @@ export const prefixOrInfixOpMapper: OpMapper<string> = (arg, opArgs, opCode) =>
 export const flippedInfixMapper: OpMapper<string> = (arg, opArgs) =>
   infix(arg, ...opArgs.toReversed());
 
-export function mapOpsUsing<Targ = string, TOpCode extends OpCode = OpCode>(
+export function mapOpsUsing<Targ = string, TOpCode extends string = OpCode>(
   mapper: OpMapper<Targ>,
 ) {
   return function (
@@ -101,19 +102,6 @@ export function mapOpsUsing<Targ = string, TOpCode extends OpCode = OpCode>(
     };
   };
 }
-
-export const mapOps = mapOpsUsing(generalOpMapper);
-export const mapOpsToFunc = mapOpsUsing(funcOpMapper);
-export const mapOpsToMethod = mapOpsUsing(methodOpMapper);
-export const mapOpsToPrefixOrInfix = mapOpsUsing(prefixOrInfixOpMapper);
-export const mapOpsToPrefix = mapOpsUsing<string, UnaryOpCode>(prefixOpMapper);
-export const mapOpsToInfix = mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
-  infixOpMapper,
-);
-export const mapOpsToFlippedInfix = mapOpsUsing<
-  string,
-  BinaryOpCode | VariadicOpCode
->(flippedInfixMapper);
 
 function asBinaryChain(
   opCode: BinaryOpCode | VariadicOpCode,
@@ -232,62 +220,83 @@ export function backwardsIndexToForwards(
 }
 
 // "a = a + b" --> "a += b"
-export function mapAsMutation(
-  opMap: Partial<Record<BinaryOpCode | VariadicOpCode, string>>,
-): Plugin {
-  return {
-    name: `addMutatingInfix(${JSON.stringify(opMap)})`,
-    visit(node) {
-      if (
-        node.kind === "Assignment" &&
-        isOp(...BinaryOpCodes, ...VariadicOpCodes)(node.expr) &&
-        node.expr.args.length > 1 &&
-        node.expr.op in opMap
-      ) {
-        const opCode = node.expr.op;
-        const args = node.expr.args;
-        const name = opMap[opCode]!;
-        const leftValueStringified = stringify(node.variable);
-        const index = node.expr.args.findIndex(
-          (x) => stringify(x) === leftValueStringified,
-        );
-        if (index === 0 || (index > 0 && isCommutative(opCode))) {
-          const newArgs = args.filter((x, i) => i !== index);
-          if (opCode === "add" && "sub" in opMap && newArgs.every(isNegative)) {
-            return mutatingInfix(
-              opMap.sub!,
-              node.variable,
-              op("neg", op(opCode, ...newArgs)),
+export function mapMutationUsing<
+  Targ = string,
+  TOpCode extends string = BinaryOpCode | VariadicOpCode,
+>(mapper: OpMapper<Targ>) {
+  return function mapAsMutation(opMap: Partial<Record<TOpCode, Targ>>): Plugin {
+    return {
+      name: `addMutatingInfix(${JSON.stringify(opMap)})`,
+      visit(node, spine, context) {
+        if (
+          node.kind === "Assignment" &&
+          isOp()(node.expr) &&
+          node.expr.op in opMap &&
+          node.expr.args.length > 1 &&
+          node.expr.op in opMap
+        ) {
+          const opCode = node.expr.op;
+          const args = node.expr.args;
+          const name = opMap[opCode as TOpCode]!;
+          const leftValueStringified = stringify(node.variable);
+          const index = node.expr.args.findIndex(
+            (x) => stringify(x) === leftValueStringified,
+          );
+          if (index === 0 || (index > 0 && isCommutative(opCode))) {
+            const newArgs = args.filter((x, i) => i !== index);
+            if (
+              opCode === "add" &&
+              "sub" in opMap &&
+              newArgs.every(isNegative)
+            ) {
+              return mapper(
+                opMap["sub" as TOpCode] as Targ,
+                [node.variable, op("neg", op(opCode, ...newArgs))],
+                opCode,
+                spine,
+                context,
+              );
+            }
+            return mapper(
+              name,
+              [
+                node.variable,
+                ...(isVariadic(opCode) || newArgs.length === 1
+                  ? newArgs
+                  : [op(opCode, ...newArgs)]),
+              ],
+              opCode,
+              spine,
+              context,
             );
           }
-          return mutatingInfix(
-            name,
-            node.variable,
-            newArgs.length > 1 ? op(opCode, ...newArgs) : newArgs[0],
-          );
         }
-      }
-    },
+      },
+    };
   };
 }
 
-export function addIncAndDec(
-  transform: (infix: MutatingInfix) => Node = (x) =>
-    postfix(x.name.repeat(2), x.variable),
-): Plugin {
-  return {
-    name: `addIncAndDec(${JSON.stringify(transform)})`,
-    visit(node) {
-      if (
-        node.kind === "MutatingInfix" &&
-        ["+", "-"].includes(node.name) &&
-        isInt(1n)(node.right)
-      ) {
-        return transform(node);
-      }
-    },
-  };
-}
+export const mapOps = mapOpsUsing(generalOpMapper);
+export const mapOpsToFunc = mapOpsUsing(funcOpMapper);
+export const mapOpsToMethod = mapOpsUsing(methodOpMapper);
+export const mapOpsToPrefix = mapOpsUsing<string, UnaryOpCode>(prefixOpMapper);
+export const mapOpsToInfix = mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
+  infixOpMapper,
+);
+export const mapOpsToFlippedInfix = mapOpsUsing<
+  string,
+  BinaryOpCode | VariadicOpCode
+>(flippedInfixMapper);
+
+export const mapMutationToFunc = mapMutationUsing<
+  string,
+  BinaryOpCode | TernaryOpCode | VariadicOpCode | "inc" | "dec"
+>(funcOpMapper);
+export const mapMutationToMethod = mapMutationUsing(methodOpMapper);
+export const mapMutationToInfix = mapMutationUsing(infixOpMapper);
+export const mapMutationToPrefix = mapMutationUsing<string, "inc" | "dec">(
+  prefixOpMapper,
+);
 
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {
@@ -329,7 +338,7 @@ export const methodsAsFunctions: Plugin = {
   },
 };
 
-export const printIntToPrint: Plugin = mapOpsUsing(
+export const printIntToPrint: Plugin = mapOps(
   {
     "print[Int]": (x) => op("print[Text]", op("int_to_dec", ...x)),
     "println[Int]": (x) => op("println[Text]", op("int_to_dec", ...x)),

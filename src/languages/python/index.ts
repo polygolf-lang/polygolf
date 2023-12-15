@@ -28,17 +28,19 @@ import {
 
 import emitProgram, { emitPythonText } from "./emit";
 import {
-  mapOpsUsing,
   useIndexCalls,
   removeImplicitConversions,
   methodsAsFunctions,
   printIntToPrint,
   arraysToLists,
   backwardsIndexToForwards,
-  generalOpMapper,
-  flippedInfixMapper,
-  prefixOrInfixOpMapper,
   mapOps,
+  mapOpsToFunc,
+  mapOpsToFlippedInfix,
+  mapMutationToInfix,
+  mapOpsToInfix,
+  mapOpsToPrefix,
+  mapMutationToMethod,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -224,8 +226,6 @@ const pythonLanguage: Language = {
               ),
             ),
           ),
-
-        push: (x) => method(x[0], "append", x[1]),
         append: (x) => op("concat[List]", x[0], list([x[1]])),
         right_align: (x) =>
           infix(
@@ -252,7 +252,7 @@ const pythonLanguage: Language = {
           op("mul", int(1n), implicitConversion("bool_to_int", x[0])),
         include: (x) => method(x[0], "add", x[1]),
       }),
-      mapTo(func)({
+      mapOpsToFunc({
         "read[line]": "input",
         abs: "abs",
         "size[List]": "len",
@@ -272,15 +272,18 @@ const pythonLanguage: Language = {
         "println[Text]": "print",
         gcd: "math.gcd",
       }),
-      mapOpsUsing(flippedInfixMapper)({
+      mapOpsToFlippedInfix({
         "contains[List]": "in",
         "contains[Table]": "in",
         "contains[Set]": "in",
         "contains[Text]": "in",
       }),
-      mapAsMutationUsing(infixMapper)({
+      mapMutationToMethod({
+        append: "append",
+      }),
+      mapMutationToInfix({
         add: "+=",
-        neg: "-=",
+        sub: "-=",
         mul: "*=",
         div: "//=",
         mod: "%=",
@@ -291,10 +294,13 @@ const pythonLanguage: Language = {
         bit_shift_left: "<<=",
         bit_shift_right: ">>=",
       }),
-      mapOpsUsing(prefixOrInfixOpMapper)({
-        pow: "**",
+      mapOpsToPrefix({
         neg: "-",
         bit_not: "~",
+        not: "not",
+      }),
+      mapOpsToInfix({
+        pow: "**",
         mul: "*",
         repeat: "*",
         div: "//",
@@ -316,7 +322,6 @@ const pythonLanguage: Language = {
         "neq[Text]": "!=",
         geq: ">=",
         gt: ">",
-        not: "not",
         and: "and",
         or: "or",
       }),

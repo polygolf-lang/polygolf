@@ -129,10 +129,8 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return emitGolfscriptText(expr.value);
       case "Integer":
         return expr.value.toString();
-      case "Infix":
-        return [emitNode(expr.left), emitNode(expr.right), expr.name];
-      case "Prefix":
-        return [emitNode(expr.arg), expr.name];
+      case "FunctionCall":
+        return [...expr.args, expr.func].map(emitNode);
       case "List":
         return ["[", expr.exprs.map(emitNode), "]"];
       case "ConditionalOp":
