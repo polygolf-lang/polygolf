@@ -27,7 +27,6 @@ import {
 
 import emitProgram from "./emit";
 import {
-  useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
@@ -38,6 +37,8 @@ import {
   mapOpsToInfix,
   mapOpsToPrefix,
   mapBackwardsIndexToForwards,
+  mapMutationToIndex,
+  mapOpsToIndex,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -122,7 +123,6 @@ const swiftLanguage: Language = {
         "at_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
-      useIndexCalls(),
       putcToPrintChar,
       usePrimaryTextOps("codepoint"),
       pickAnyInt,
@@ -309,7 +309,16 @@ const swiftLanguage: Language = {
         and: "&&",
         or: "||",
       }),
-      useIndexCalls(),
+      mapMutationToIndex({
+        "with_at[Array]": 0,
+        "with_at[List]": 0,
+        "with_at[Table]": 0,
+      }),
+      mapOpsToIndex({
+        "at[Array]": 0,
+        "at[List]": 0,
+        "at[Table]": 0,
+      }),
       addImports({
         pow: "Foundation",
         replacingOccurrences: "Foundation",

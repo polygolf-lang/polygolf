@@ -95,8 +95,8 @@ export function useUFCS(node: Node) {
       );
     }
   }
-  if (node.kind === "Infix" && node.name === " " && isIdent()(node.left)) {
-    return infix(".", node.right, node.left);
+  if (node.kind === "Infix" && node.name === " " && isIdent()(node.args[0])) {
+    return infix(".", node.args[1], node.args[0]);
   }
 }
 

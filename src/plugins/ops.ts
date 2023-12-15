@@ -23,12 +23,8 @@ import {
   postfix,
   type VariadicOpCode,
   BinaryOpCodes,
-  VariadicOpCodes,
-  isUnary,
   flippedOpCode,
-  isVariadic,
   list,
-  func,
   methodCall,
   TernaryOpCode,
 } from "../IR";
@@ -77,6 +73,10 @@ export const postfixOpMapper: OpMapper<string> = (arg, opArgs) =>
   postfix(arg, opArgs[0]);
 export const flippedInfixMapper: OpMapper<string> = (arg, opArgs) =>
   infix(arg, ...opArgs.toReversed());
+export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {
+  const index = indexCall(opArgs[0], arg === 1 ? add1(opArgs[1]) : opArgs[1]);
+  return opArgs.length > 2 ? assignment(index, opArgs[2]) : index; // TODO: consider mapping to infix "=" instead
+};
 
 export function mapOpsUsing<Targ = string, TOpCode extends string = OpCode>(
   mapper: OpMapper<Targ>,
@@ -132,50 +132,15 @@ function asBinaryChain(
   return result;
 }
 
-export function useIndexCalls(
-  oneIndexed: boolean = false,
-  ops = [
-    "at[Array]" as const,
-    "at[List]" as const,
-    "at_back[List]" as const,
-    "at[Table]" as const,
-  ],
-): Plugin {
-  return {
-    bakeType: true,
-    name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
-      ops,
-    )})`,
-    visit(node) {
-      if (
-        isOp(...ops)(node) &&
-        (isIdent()(node.args[0]) || !node.op.startsWith("set_"))
-      ) {
-        let indexNode: IndexCall;
-        if (oneIndexed && !node.op.endsWith("[Table]")) {
-          indexNode = indexCall(node.args[0], add1(node.args[1]));
-        } else {
-          indexNode = indexCall(node.args[0], node.args[1]);
-        }
-        if (!node.op.startsWith("set_")) {
-          return indexNode;
-        } else {
-          return assignment(indexNode, node.args[2]);
-        }
-      }
-    },
-  };
-}
-
-/** Values are op to be applied to the collection and added to the index or undefined if nothing should be added. */
+/** Values are op to be applied to the collection and added to the index or 0 if nothing should be added. */
 export const mapBackwardsIndexToForwards = mapOpsUsing<
-  undefined | (UnaryOpCode & `size${string}`),
+  0 | (UnaryOpCode & `size${string}`),
   OpCode & `${string}at_back${string}`
 >((arg, opArgs, opCode) => {
   const newOpCode = opCode.replaceAll("_back", "") as OpCode;
   return op(
     newOpCode,
-    ...(arg === undefined
+    ...(arg === 0
       ? opArgs
       : replaceAtIndex(opArgs, 1, op("add", opArgs[1], op(arg, opArgs[0])))),
   );
@@ -252,6 +217,7 @@ export const mapOpsToFlippedInfix = mapOpsUsing<
   string,
   BinaryOpCode | VariadicOpCode
 >(flippedInfixMapper);
+export const mapOpsToIndex = mapOpsUsing<0 | 1, BinaryOpCode>(indexOpMapper);
 
 export const mapMutationToFunc = mapMutationUsing<
   string,
@@ -261,6 +227,9 @@ export const mapMutationToMethod = mapMutationUsing(methodOpMapper);
 export const mapMutationToInfix = mapMutationUsing(infixOpMapper);
 export const mapMutationToPrefix = mapMutationUsing<string, "inc" | "dec">(
   prefixOpMapper,
+);
+export const mapMutationToIndex = mapMutationUsing<0 | 1, TernaryOpCode>(
+  indexOpMapper,
 );
 
 // (a > b) --> (b < a)

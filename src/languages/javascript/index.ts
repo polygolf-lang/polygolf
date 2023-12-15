@@ -26,7 +26,6 @@ import {
 
 import emitProgram from "./emit";
 import {
-  useIndexCalls,
   removeImplicitConversions,
   printIntToPrint,
   methodsAsFunctions,
@@ -38,6 +37,8 @@ import {
   mapMutationToInfix,
   mapOpsToPrefix,
   mapOpsToInfix,
+  mapMutationToIndex,
+  mapOpsToIndex,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -99,7 +100,6 @@ const javascriptLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       replaceToSplitAndJoin,
-      useIndexCalls(),
       decomposeIntLiteral(),
       forRangeToForEachKey,
     ),
@@ -141,7 +141,16 @@ const javascriptLanguage: Language = {
             x[0],
           ),
       }),
-      useIndexCalls(),
+      mapMutationToIndex({
+        "with_at[Array]": 0,
+        "with_at[List]": 0,
+        "with_at[Table]": 0,
+      }),
+      mapOpsToIndex({
+        "at[Array]": 0,
+        "at[List]": 0,
+        "at[Table]": 0,
+      }),
 
       ...truncatingOpsPlugins,
       textGetToIntToTextGet,

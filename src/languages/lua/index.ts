@@ -25,7 +25,6 @@ import {
 
 import emitProgram from "./emit";
 import {
-  useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
@@ -34,6 +33,8 @@ import {
   mapOpsToPrefix,
   mapOpsToInfix,
   mapBackwardsIndexToForwards,
+  mapMutationToIndex,
+  mapOpsToIndex,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -101,7 +102,6 @@ const luaLanguage: Language = {
         "slice[byte]": (x) =>
           method(x[0], "sub", add1(x[1]), op("add", x[1], x[2])),
       }),
-      useIndexCalls(true),
       decomposeIntLiteral(true, true, true),
     ),
     required(
@@ -134,7 +134,16 @@ const luaLanguage: Language = {
         "at_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
-      useIndexCalls(true),
+      mapMutationToIndex({
+        "with_at[Array]": 1,
+        "with_at[List]": 1,
+        "with_at[Table]": 0,
+      }),
+      mapOpsToIndex({
+        "at[Array]": 1,
+        "at[List]": 1,
+        "at[Table]": 0,
+      }),
       mapOps({
         int_to_dec: (x) =>
           op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),

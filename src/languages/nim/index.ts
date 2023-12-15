@@ -24,7 +24,6 @@ import {
 
 import emitProgram from "./emit";
 import {
-  useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
@@ -35,6 +34,8 @@ import {
   mapOpsToInfix,
   mapOpsToPrefix,
   mapBackwardsIndexToForwards,
+  mapMutationToIndex,
+  mapOpsToIndex,
 } from "../../plugins/ops";
 import {
   addNimImports,
@@ -149,13 +150,22 @@ const nimLanguage: Language = {
       useUnsignedDivision,
       useBackwardsIndex,
       mapBackwardsIndexToForwards({
-        "at_back[Ascii]": undefined,
-        "at_back[byte]": undefined,
-        "at_back[codepoint]": undefined,
-        "at_back[List]": undefined,
-        "with_at_back[List]": undefined,
+        "at_back[Ascii]": 0,
+        "at_back[byte]": 0,
+        "at_back[codepoint]": 0,
+        "at_back[List]": 0,
+        "with_at_back[List]": 0,
       }),
-      useIndexCalls(),
+      mapMutationToIndex({
+        "with_at[Array]": 0,
+        "with_at[List]": 0,
+        "with_at[Table]": 0,
+      }),
+      mapOpsToIndex({
+        "at[Array]": 0,
+        "at[List]": 0,
+        "at[Table]": 0,
+      }),
       mapOps({
         "reversed[codepoint]": (x) =>
           op("join", func("reversed", func("toRunes", x)), text("")),
