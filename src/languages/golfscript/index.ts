@@ -28,7 +28,7 @@ import {
   printIntToPrint,
   useIndexCalls,
   arraysToLists,
-  backwardsIndexToForwards,
+  mapBackwardsIndexToForwards,
   mapOps,
   mapOpsToFunc,
 } from "../../plugins/ops";
@@ -175,7 +175,13 @@ const golfscriptLanguage: Language = {
         int_to_bin_aligned: (x) =>
           func('2base""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
       }),
-      backwardsIndexToForwards(false),
+      mapBackwardsIndexToForwards({
+        "at_back[Ascii]": undefined,
+        "at_back[byte]": undefined,
+        "at_back[codepoint]": undefined,
+        "at_back[List]": undefined,
+        "with_at_back[List]": undefined,
+      }),
       textGetToTextGetToIntToText,
       useIndexCalls(false),
       mapOpsToFunc({

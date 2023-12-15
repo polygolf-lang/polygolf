@@ -32,12 +32,12 @@ import {
   removeImplicitConversions,
   printIntToPrint,
   arraysToLists,
-  backwardsIndexToForwards,
   mapOps,
   mapMutationToMethod,
   mapMutationToInfix,
   mapOpsToInfix,
   mapOpsToPrefix,
+  mapBackwardsIndexToForwards,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -115,7 +115,13 @@ const swiftLanguage: Language = {
       decomposeIntLiteral(),
     ),
     required(
-      backwardsIndexToForwards(),
+      mapBackwardsIndexToForwards({
+        "at_back[Ascii]": "size[Ascii]",
+        "at_back[byte]": "size[byte]",
+        "at_back[codepoint]": "size[codepoint]",
+        "at_back[List]": "size[List]",
+        "with_at_back[List]": "size[List]",
+      }),
       useIndexCalls(),
       putcToPrintChar,
       usePrimaryTextOps("codepoint"),

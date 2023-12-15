@@ -29,11 +29,11 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
-  backwardsIndexToForwards,
   mapOps,
   mapOpsToFunc,
   mapOpsToPrefix,
   mapOpsToInfix,
+  mapBackwardsIndexToForwards,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -127,7 +127,13 @@ const luaLanguage: Language = {
         (n, s) => !["boolean", "void"].includes(getType(n, s).kind),
         "List",
       ),
-      backwardsIndexToForwards(),
+      mapBackwardsIndexToForwards({
+        "at_back[Ascii]": "size[Ascii]",
+        "at_back[byte]": "size[byte]",
+        "at_back[codepoint]": "size[codepoint]",
+        "at_back[List]": "size[List]",
+        "with_at_back[List]": "size[List]",
+      }),
       useIndexCalls(true),
       mapOps({
         int_to_dec: (x) =>

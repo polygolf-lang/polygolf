@@ -28,13 +28,13 @@ import {
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
-  backwardsIndexToForwards,
   mapOps,
   mapOpsToFunc,
   mapOpsToFlippedInfix,
   mapMutationToInfix,
   mapOpsToInfix,
   mapOpsToPrefix,
+  mapBackwardsIndexToForwards,
 } from "../../plugins/ops";
 import {
   addNimImports,
@@ -148,7 +148,13 @@ const nimLanguage: Language = {
       textToIntToFirstIndexTextGetToInt,
       useUnsignedDivision,
       useBackwardsIndex,
-      backwardsIndexToForwards(false),
+      mapBackwardsIndexToForwards({
+        "at_back[Ascii]": undefined,
+        "at_back[byte]": undefined,
+        "at_back[codepoint]": undefined,
+        "at_back[List]": undefined,
+        "with_at_back[List]": undefined,
+      }),
       useIndexCalls(),
       mapOps({
         "reversed[codepoint]": (x) =>

@@ -34,7 +34,7 @@ import {
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
-import { mapObjectValues } from "../common/arrays";
+import { mapObjectValues, replaceAtIndex } from "../common/arrays";
 import { CompilationContext } from "@/common/compile";
 
 function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
@@ -167,55 +167,19 @@ export function useIndexCalls(
   };
 }
 
-export function backwardsIndexToForwards(
-  addLength = true,
-  ops: OpCode[] = [
-    "at_back[Ascii]" as const,
-    "at_back[byte]" as const,
-    "at_back[codepoint]" as const,
-    "at_back[List]" as const,
-    "with_at_back[List]" as const,
-  ],
-): Plugin {
-  return {
-    name: "backwardsIndexToForwards",
-    visit(node, spine, context) {
-      if (isOp(...ops)(node)) {
-        const [collection, index, value] = node.args;
-        return mapOpsUsing({
-          "at_back[Ascii]": op(
-            "at[Ascii]",
-            collection,
-            addLength ? op("add", index, op("size[Ascii]", collection)) : index,
-          ),
-          "at_back[byte]": op(
-            "at[byte]",
-            collection,
-            addLength ? op("add", index, op("size[byte]", collection)) : index,
-          ),
-          "at_back[codepoint]": op(
-            "at[codepoint]",
-            collection,
-            addLength
-              ? op("add", index, op("size[codepoint]", collection))
-              : index,
-          ),
-          "at_back[List]": op(
-            "at[List]",
-            collection,
-            addLength ? op("add", index, op("size[List]", collection)) : index,
-          ),
-          "with_at_back[List]": op(
-            "with_at_back[List]",
-            collection,
-            addLength ? op("add", index, op("size[List]", collection)) : index,
-            value,
-          ),
-        }).visit(node, spine, context);
-      }
-    },
-  };
-}
+/** Values are op to be applied to the collection and added to the index or undefined if nothing should be added. */
+export const mapBackwardsIndexToForwards = mapOpsUsing<
+  undefined | (UnaryOpCode & `size${string}`),
+  OpCode & `${string}at_back${string}`
+>((arg, opArgs, opCode) => {
+  const newOpCode = opCode.replaceAll("_back", "") as OpCode;
+  return op(
+    newOpCode,
+    ...(arg === undefined
+      ? opArgs
+      : replaceAtIndex(opArgs, 1, op("add", opArgs[1], op(arg, opArgs[0])))),
+  );
+});
 
 // "a = a + b" --> "a += b"
 export function mapMutationUsing<

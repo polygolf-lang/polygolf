@@ -33,7 +33,6 @@ import {
   methodsAsFunctions,
   printIntToPrint,
   arraysToLists,
-  backwardsIndexToForwards,
   mapOps,
   mapOpsToFunc,
   mapOpsToFlippedInfix,
@@ -41,6 +40,7 @@ import {
   mapOpsToInfix,
   mapOpsToPrefix,
   mapMutationToMethod,
+  mapBackwardsIndexToForwards,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -139,7 +139,13 @@ const pythonLanguage: Language = {
       }),
 
       useImplicitBoolToInt,
-      backwardsIndexToForwards(false),
+      mapBackwardsIndexToForwards({
+        "at_back[Ascii]": undefined,
+        "at_back[byte]": undefined,
+        "at_back[codepoint]": undefined,
+        "at_back[List]": undefined,
+        "with_at_back[List]": undefined,
+      }),
       useIndexCalls(),
     ),
     simplegolf(golfTextListLiteralIndex),
