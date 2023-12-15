@@ -60,23 +60,21 @@ export const generalOpMapper: OpMapper<
   | Node
   | ((
       opArgs: readonly Node[],
-      s: Spine<Op>,
+      s: Spine,
       c: CompilationContext,
     ) => Node | undefined)
 > = (arg, opArgs, opCode, s, c) =>
   typeof arg === "function" ? arg(opArgs, s, c) : arg;
 export const funcOpMapper: OpMapper<string> = (arg, opArgs) =>
   functionCall(arg, ...opArgs);
-export const methodOpMapper: OpMapper<string> = (arg, opArgs) =>
-  methodCall(opArgs[0], arg, ...opArgs.slice(1));
+export const methodOpMapper: OpMapper<string> = (arg, [first, ...rest]) =>
+  methodCall(first, arg, ...rest);
 export const prefixOpMapper: OpMapper<string> = (arg, opArgs) =>
   prefix(arg, opArgs[0]);
 export const infixOpMapper: OpMapper<string> = (arg, opArgs) =>
   infix(arg, ...opArgs);
 export const postfixOpMapper: OpMapper<string> = (arg, opArgs) =>
   postfix(arg, opArgs[0]);
-export const prefixOrInfixOpMapper: OpMapper<string> = (arg, opArgs, opCode) =>
-  isUnary(opCode) ? prefix(arg, opArgs[0]) : infix(arg, ...opArgs);
 export const flippedInfixMapper: OpMapper<string> = (arg, opArgs) =>
   infix(arg, ...opArgs.toReversed());
 
@@ -224,7 +222,10 @@ export function mapMutationUsing<
   Targ = string,
   TOpCode extends string = BinaryOpCode | VariadicOpCode,
 >(mapper: OpMapper<Targ>) {
-  return function mapAsMutation(opMap: Partial<Record<TOpCode, Targ>>): Plugin {
+  return function mapAsMutation(
+    opMap: Partial<Record<TOpCode, Targ>>,
+    keepRestAsOp = true,
+  ): Plugin {
     return {
       name: `addMutatingInfix(${JSON.stringify(opMap)})`,
       visit(node, spine, context) {
@@ -261,9 +262,9 @@ export function mapMutationUsing<
               name,
               [
                 node.variable,
-                ...(isVariadic(opCode) || newArgs.length === 1
-                  ? newArgs
-                  : [op(opCode, ...newArgs)]),
+                ...(keepRestAsOp && newArgs.length > 1
+                  ? [op(opCode, ...newArgs)]
+                  : newArgs),
               ],
               opCode,
               spine,

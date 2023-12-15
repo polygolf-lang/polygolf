@@ -115,17 +115,20 @@ const janetLanguage: Language = {
         "slice[List]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
       }),
-      mapMutationToFunc({
-        inc: "++",
-        dec: "--",
-        add: "+=",
-        sub: "-=",
-        mul: "*=",
-        rem: "%=",
-        "with_at[List]": "put",
-        "with_at[Table]": "put",
-        append: "array/push",
-      }),
+      mapMutationToFunc(
+        {
+          inc: "++",
+          dec: "--",
+          add: "+=",
+          sub: "-=",
+          mul: "*=",
+          rem: "%=",
+          "with_at[List]": "put",
+          "with_at[Table]": "put",
+          append: "array/push",
+        },
+        false,
+      ),
       mapOpsToFunc({
         replace: "string/replace-all",
         "concat[Text]": "string",
