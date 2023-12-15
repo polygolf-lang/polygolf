@@ -217,6 +217,7 @@ export const mapOpsToFlippedInfix = mapOpsUsing<
   string,
   BinaryOpCode | VariadicOpCode
 >(flippedInfixMapper);
+/** Values are what should be added to the key. */
 export const mapOpsToIndex = mapOpsUsing<0 | 1, BinaryOpCode>(indexOpMapper);
 
 export const mapMutationToFunc = mapMutationUsing<
@@ -228,6 +229,7 @@ export const mapMutationToInfix = mapMutationUsing(infixOpMapper);
 export const mapMutationToPrefix = mapMutationUsing<string, "inc" | "dec">(
   prefixOpMapper,
 );
+/** Values are what should be added to the key. */
 export const mapMutationToIndex = mapMutationUsing<0 | 1, TernaryOpCode>(
   indexOpMapper,
 );
