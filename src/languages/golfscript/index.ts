@@ -25,7 +25,7 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
@@ -181,7 +181,7 @@ const golfscriptLanguage: Language = {
       backwardsIndexToForwards(false),
       textGetToTextGetToIntToText,
       useIndexCalls(false),
-      mapToPrefixAndInfix({
+      mapUnaryAndBinary({
         not: "!",
         bit_not: "~",
         mul: "*",

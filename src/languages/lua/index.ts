@@ -26,7 +26,7 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
@@ -171,7 +171,7 @@ const luaLanguage: Language = {
 
     simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
     required(
-      mapToPrefixAndInfix({
+      mapUnaryAndBinary({
         pow: "^",
         not: "not",
         neg: "-",

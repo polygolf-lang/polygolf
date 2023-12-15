@@ -27,12 +27,12 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   removeImplicitConversions,
   printIntToPrint,
   mapTo,
-  addPostfixIncAndDec,
+  addIncAndDec,
   methodsAsFunctions,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
@@ -221,7 +221,7 @@ const javascriptLanguage: Language = {
         "println[Text]": "print",
         "print[Text]": "write",
       }),
-      mapToPrefixAndInfix(
+      mapUnaryAndBinary(
         {
           pow: "**",
           neg: "-",
@@ -256,7 +256,7 @@ const javascriptLanguage: Language = {
       ),
       methodsAsFunctions,
     ),
-    simplegolf(addPostfixIncAndDec, addOneToManyAssignments()),
+    simplegolf(addIncAndDec(), addOneToManyAssignments()),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({

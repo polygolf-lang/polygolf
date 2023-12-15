@@ -29,7 +29,7 @@ import {
 import emitProgram, { emitPythonText } from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   removeImplicitConversions,
   methodsAsFunctions,
@@ -280,7 +280,7 @@ const pythonLanguage: Language = {
         "contains[Set]": "in",
         "contains[Text]": "in",
       }),
-      mapToPrefixAndInfix(
+      mapUnaryAndBinary(
         {
           pow: "**",
           neg: "-",

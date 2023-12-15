@@ -28,7 +28,7 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
@@ -259,7 +259,7 @@ const swiftLanguage: Language = {
         starts_with: (x) => method(x[0], "hasPrefix", x[1]),
         ends_with: (x) => method(x[0], "hasSuffix", x[1]),
       }),
-      mapToPrefixAndInfix(
+      mapUnaryAndBinary(
         {
           not: "!",
           neg: "-",

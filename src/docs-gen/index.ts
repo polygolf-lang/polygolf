@@ -16,9 +16,10 @@ import fs from "fs";
 import path from "path";
 
 let result = `# OpCodes
+Hover opcode name to see a description.
 
-| Alias | Full name | Input | Output | Description |
-|-------|-----------|-------|--------|-------------|
+| Alias | Full name | Input | Output |
+|-------|-----------|-------|--------|
 `;
 
 function getOpCodeOutputType(opCode: OpCode) {
@@ -32,15 +33,11 @@ function getOpCodeOutputType(opCode: OpCode) {
 }
 
 for (const [alias, opCodes] of groupby(OpCodesUser, userName).entries()) {
-  result += `| ${alias.replace("|", "\\|")} | ${opCodes.join(
-    "<br>",
-  )} | ${opCodes
+  result += `| ${alias.replace("|", "\\|")} | ${opCodes
+    .map((x) => `[${x}](## ${JSON.stringify(opCodeDescriptions[x])})`)
+    .join("<br>")} | ${opCodes
     .map((x) => expectedTypesToString(opCodeDefinitions[x].args))
-    .join("<br>")} | ${opCodes
-    .map(getOpCodeOutputType)
-    .join("<br>")} | ${opCodes
-    .map((x) => opCodeDescriptions[x])
-    .join("<br>")} |\n`;
+    .join("<br>")} | ${opCodes.map(getOpCodeOutputType).join("<br>")} |\n`;
 }
 
 fs.writeFileSync(
