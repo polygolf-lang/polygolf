@@ -40,7 +40,6 @@ import {
   varDeclarationBlock,
   manyToManyAssignment,
   oneToManyAssignment,
-  mutatingInfix,
   indexCall,
   rangeIndexCall,
   infix,
@@ -280,10 +279,6 @@ export function sexpr(
         assertIdentifiers(vars); // TODO too strict?
         return oneToManyAssignment(vars, expr);
       }
-      case "mutating_infix":
-        expectArity(3);
-        assertIdentifier(args[1]);
-        return mutatingInfix(asString(args[0]), args[1], args[2]);
       case "index_call":
         expectArity(2);
         return indexCall(args[0], args[1]);
@@ -297,8 +292,8 @@ export function sexpr(
         expectArity(2, Infinity);
         return methodCall(args[0], asString(args[1]), ...args.slice(2));
       case "infix":
-        expectArity(3);
-        return infix(asString(args[0]), args[1], args[2]);
+        expectArity(1, Infinity);
+        return infix(asString(args[0]), ...args.slice(1));
       case "prefix":
         expectArity(2);
         return prefix(asString(args[0]), args[1]);

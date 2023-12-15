@@ -191,8 +191,6 @@ export default function emitProgram(
           throw new EmitError(e);
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
-        case "MutatingInfix":
-          return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, ":", emit(e.value)];
         case "Identifier":

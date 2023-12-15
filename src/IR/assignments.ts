@@ -12,18 +12,6 @@ import {
 export type LValue = Identifier | IndexCall;
 
 /**
- * Mutating operator.
- *
- * a += 5
- */
-export interface MutatingInfix extends BaseNode {
-  readonly kind: "MutatingInfix";
-  readonly name: string;
-  readonly variable: LValue;
-  readonly right: Node;
-}
-
-/**
  * Variable declaration.
  */
 export interface VarDeclaration extends BaseNode {
@@ -82,19 +70,6 @@ export interface VarDeclarationWithAssignment<T = SomeAssignment>
 export interface VarDeclarationBlock extends BaseNode {
   readonly kind: "VarDeclarationBlock";
   readonly children: (VarDeclaration | VarDeclarationWithAssignment)[];
-}
-
-export function mutatingInfix(
-  name: string,
-  variable: LValue,
-  right: Node,
-): MutatingInfix {
-  return {
-    kind: "MutatingInfix",
-    variable,
-    right,
-    name,
-  };
 }
 
 export function varDeclaration(

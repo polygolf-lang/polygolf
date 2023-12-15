@@ -11,7 +11,6 @@ import {
   isCommutative,
   isInt,
   isNegative,
-  mutatingInfix,
   isOp,
   type OpCode,
   type Op,
@@ -29,7 +28,6 @@ import {
   flippedOpCode,
   isVariadic,
   list,
-  type MutatingInfix,
   func,
   methodCall,
 } from "../IR";
@@ -70,14 +68,22 @@ export const funcOpMapper: OpMapper<string> = (arg, opArgs) =>
   functionCall(arg, ...opArgs);
 export const methodOpMapper: OpMapper<string> = (arg, opArgs) =>
   methodCall(opArgs[0], arg, ...opArgs.slice(1));
+export const prefixOpMapper: OpMapper<string> = (arg, opArgs) =>
+  prefix(arg, opArgs[0]);
+export const infixOpMapper: OpMapper<string> = (arg, opArgs) =>
+  infix(arg, ...opArgs);
+export const postfixOpMapper: OpMapper<string> = (arg, opArgs) =>
+  postfix(arg, opArgs[0]);
 export const prefixOrInfixOpMapper: OpMapper<string> = (arg, opArgs, opCode) =>
   isUnary(opCode) ? prefix(arg, opArgs[0]) : infix(arg, ...opArgs);
 export const flippedInfixMapper: OpMapper<string> = (arg, opArgs) =>
   infix(arg, ...opArgs.toReversed());
 
-export function mapOpsUsing<T>(mapper: OpMapper<T>) {
+export function mapOpsUsing<Targ = string, TOpCode extends OpCode = OpCode>(
+  mapper: OpMapper<Targ>,
+) {
   return function (
-    opCodeMap: Partial<Record<OpCode, T>>,
+    opCodeMap: Partial<Record<TOpCode, Targ>>,
     name = "mapOpsUsing(...)",
   ) {
     enhanceOpMap(opCodeMap);
@@ -86,7 +92,7 @@ export function mapOpsUsing<T>(mapper: OpMapper<T>) {
       bakeType: true,
       visit(node: Node, spine: Spine, context: CompilationContext) {
         if (isOp()(node)) {
-          const arg = opCodeMap[node.op];
+          const arg = opCodeMap[node.op as TOpCode];
           if (arg !== undefined) {
             return mapper(arg, node.args, node.op, spine as Spine<Op>, context);
           }
@@ -100,7 +106,14 @@ export const mapOps = mapOpsUsing(generalOpMapper);
 export const mapOpsToFunc = mapOpsUsing(funcOpMapper);
 export const mapOpsToMethod = mapOpsUsing(methodOpMapper);
 export const mapOpsToPrefixOrInfix = mapOpsUsing(prefixOrInfixOpMapper);
-export const mapOpsToFlippedInfix = mapOpsUsing(flippedInfixMapper);
+export const mapOpsToPrefix = mapOpsUsing<string, UnaryOpCode>(prefixOpMapper);
+export const mapOpsToInfix = mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
+  infixOpMapper,
+);
+export const mapOpsToFlippedInfix = mapOpsUsing<
+  string,
+  BinaryOpCode | VariadicOpCode
+>(flippedInfixMapper);
 
 function asBinaryChain(
   opCode: BinaryOpCode | VariadicOpCode,

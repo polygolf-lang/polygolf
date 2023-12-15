@@ -253,8 +253,6 @@ function emitNodeWithoutAnnotation(
       );
     case "OneToManyAssignment":
       return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
-    case "MutatingInfix":
-      return emitSexpr("@", text(expr.name), expr.variable, expr.right);
     case "IndexCall":
       return emitSexpr("@", expr.collection, expr.index);
     case "RangeIndexCall":

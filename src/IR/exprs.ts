@@ -9,7 +9,6 @@ import {
   type OpCode,
   type Node,
   type Integer,
-  type MutatingInfix,
   int,
   isAssociative,
   text,
@@ -95,8 +94,7 @@ export interface RangeIndexCall extends BaseNode {
 export interface Infix extends BaseNode {
   readonly kind: "Infix";
   readonly name: string;
-  readonly left: Node;
-  readonly right: Node;
+  readonly args: readonly Node[];
 }
 
 export interface Prefix extends BaseNode {
@@ -395,11 +393,10 @@ export function rangeIndexCall(
   };
 }
 
-export function infix(name: string, left: Node, right: Node): Infix {
+export function infix(name: string, ...args: readonly Node[]): Infix {
   return {
     kind: "Infix",
-    left,
-    right,
+    args,
     name,
   };
 }
@@ -459,7 +456,6 @@ export function getArgs(
   node:
     | Op
     | Infix
-    | MutatingInfix
     | Prefix
     | FunctionCall
     | MethodCall
@@ -468,9 +464,7 @@ export function getArgs(
 ): readonly Node[] {
   switch (node.kind) {
     case "Infix":
-      return [node.left, node.right];
-    case "MutatingInfix":
-      return [node.variable, node.right];
+      return node.args;
     case "Prefix":
       return [node.arg];
     case "FunctionCall":

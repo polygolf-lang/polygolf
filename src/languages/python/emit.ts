@@ -36,6 +36,7 @@ function precedence(expr: IR.Node): number {
 }
 
 function binaryPrecedence(opname: string): number {
+  if (opname.endsWith("=")) return 0;
   switch (opname) {
     case "**":
       return 12;
@@ -190,8 +191,6 @@ export default function emitProgram(
           return [joinNodes(",", e.variables), "=", joinNodes(",", e.exprs)];
         case "OneToManyAssignment":
           return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
-        case "MutatingInfix":
-          return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, "=", emit(e.value)];
         case "Identifier":

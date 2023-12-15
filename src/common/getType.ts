@@ -127,8 +127,6 @@ export function calcTypeAndResolveOpCode(
     }
     case "Op":
       return getOpCodeType(expr, program);
-    case "MutatingInfix":
-      return voidType;
     case "FunctionCall": {
       const fType = type(expr.func);
       if (fType.kind !== "Function") {
