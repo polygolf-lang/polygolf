@@ -205,6 +205,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
   }
   if (isAssociative(opCode)) {
     args = args.flatMap((x) => (isOp(opCode)(x) ? x.args : [x]));
+    if (args.length === 1) return args[0];
     if (opCode === "add") args = simplifyPolynomial(args);
     else {
       if (isCommutative(opCode)) {

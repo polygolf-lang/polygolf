@@ -95,12 +95,18 @@ export function mapOpsUsing<
             exprs =
               variadicMode === "variadic" ||
               !isVariadic(opCode) ||
-              exprs.length < 2
+              exprs.length < 3
                 ? exprs
                 : variadicMode === "leftChain"
                 ? [op(opCode, ...exprs.slice(0, -1)), exprs.at(-1)!]
                 : [exprs[0], op(opCode, ...exprs.slice(1))];
-            return mapper(arg, exprs, opCode, spine as Spine<Op>, context);
+            return mapper(
+              arg as Targ,
+              exprs,
+              opCode,
+              spine as Spine<Op>,
+              context,
+            );
           }
         }
         if (isOp()(node)) {
@@ -147,6 +153,7 @@ export function mapOpsUsing<
                 })),
               ]);
             }
+            return positive;
           }
           return map(node.op, exprs);
         }
