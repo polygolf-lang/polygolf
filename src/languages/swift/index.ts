@@ -280,15 +280,9 @@ const swiftLanguage: Language = {
         bit_shift_left: "<<=",
         bit_shift_right: ">>=",
       }),
-      mapOpsToPrefix({
-        not: "!",
-        neg: "-",
-        bit_not: "~",
-      }),
       mapOpsToInfix({
         bit_shift_left: "<<",
         bit_shift_right: ">>",
-        mul: "*",
         trunc_div: "/",
         rem: "%",
         bit_and: "&",
@@ -309,6 +303,12 @@ const swiftLanguage: Language = {
         and: "&&",
         or: "||",
       }),
+      mapOpsToPrefix({
+        not: "!",
+        neg: "-",
+        bit_not: "~",
+      }),
+      mapOpsToInfix({ mul: "*" }),
       mapMutationToIndex({
         "with_at[Array]": 0,
         "with_at[List]": 0,

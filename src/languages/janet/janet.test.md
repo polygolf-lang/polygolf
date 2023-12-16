@@ -98,7 +98,7 @@ for $i 0 31 {
 ```
 
 ```janet nogolf
-(for i 0 31(pp(+(+ 1 i)(* i i))))
+(for i 0 31(pp(+ 1 i(* i i))))
 ```
 
 ```polygolf
@@ -193,4 +193,36 @@ $a <- (- $a 1):-10..10;
 
 ```janet implicitlyConvertConcatArg
 (string"he"11"o")
+```
+
+## Summation of mixed-signed terms
+
+```polygolf
+$a <- 0;
+$b <- 0;
+$c <- 0;
+$d <- 0;
+%+ $a $b (-$c) (-$d);
+%- (+ $a $b $c $d);
+- $a (+ $b $c $d);
+```
+
+```janet nogolf
+$a <- 0;
+$b <- 0;
+$c <- 0;
+$d <- 0;
++ $a $b (-$c) (-$d);
+- (+ $a $b $c $d);
+- $a (+ $b $c $d);
+```
+
+```py nogolf
+$a <- 0;
+$b <- 0;
+$c <- 0;
+$d <- 0;
++ $a $b (-$c) (-$d);
+- (+ $a $b $c $d);
+- $a (+ $b $c $d);
 ```

@@ -240,15 +240,8 @@ const nimLanguage: Language = {
         "concat[List]": "&=",
         append: "&=",
       }),
-      mapOpsToPrefix({
-        bit_not: "not",
-        not: "not",
-        neg: "-",
-        int_to_dec: "$",
-      }),
       mapOpsToInfix({
         pow: "^",
-        mul: "*",
         trunc_div: "div",
         rem: "mod",
         unsigned_rem: "%%",
@@ -274,6 +267,13 @@ const nimLanguage: Language = {
         bit_or: "or",
         bit_xor: "xor",
       }),
+      mapOpsToPrefix({
+        bit_not: "not",
+        not: "not",
+        neg: "-",
+        int_to_dec: "$",
+      }),
+      mapOpsToInfix({ mul: "*" }),
       addNimImports,
     ),
     simplegolf(

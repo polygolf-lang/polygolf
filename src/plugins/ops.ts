@@ -79,10 +79,13 @@ export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {
 export function mapOpsUsing<
   Targ = string,
   TOpCode extends OpCode | "pred" | "succ" = OpCode,
->(mapper: OpMapper<Targ>) {
+>(
+  mapper: OpMapper<Targ>,
+  variadicModeDefault: "variadic" | "leftChain" | "rightChain",
+) {
   return function (
     opCodeMap: Partial<Record<TOpCode, Targ>>,
-    variadicMode: "variadic" | "leftChain" | "rightChain" = "leftChain",
+    variadicMode: "variadic" | "leftChain" | "rightChain" = variadicModeDefault,
   ) {
     enhanceOpMap(opCodeMap);
     return {
@@ -140,6 +143,7 @@ export function mapOpsUsing<
               positiveArgs = [negativeArgs[0]];
               negativeArgs = negativeArgs.slice(1);
             }
+            console.log(exprs, positiveArgs, negativeArgs);
             const positive =
               positiveArgs.length > 1
                 ? map("add", positiveArgs)!
@@ -174,7 +178,7 @@ export const mapBackwardsIndexToForwards = mapOpsUsing<
       ? opArgs
       : replaceAtIndex(opArgs, 1, op("add", opArgs[1], op(arg, opArgs[0])))),
   );
-});
+}, "variadic");
 
 // "a = a + b" --> "a += b"
 export function mapMutationUsing<
@@ -261,19 +265,26 @@ export function mapMutationUsing<
   };
 }
 
-export const mapOps = mapOpsUsing(generalOpMapper);
-export const mapOpsToFunc = mapOpsUsing(funcOpMapper);
-export const mapOpsToMethod = mapOpsUsing(methodOpMapper);
-export const mapOpsToPrefix = mapOpsUsing<string, UnaryOpCode>(prefixOpMapper);
+export const mapOps = mapOpsUsing(generalOpMapper, "variadic");
+export const mapOpsToFunc = mapOpsUsing(funcOpMapper, "variadic");
+export const mapOpsToMethod = mapOpsUsing(methodOpMapper, "variadic");
+export const mapOpsToPrefix = mapOpsUsing<string, UnaryOpCode>(
+  prefixOpMapper,
+  "variadic",
+);
 export const mapOpsToInfix = mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
   infixOpMapper,
+  "leftChain",
 );
 export const mapOpsToFlippedInfix = mapOpsUsing<
   string,
   BinaryOpCode | VariadicOpCode
->(flippedInfixMapper);
+>(flippedInfixMapper, "leftChain");
 /** Values are what should be added to the key. */
-export const mapOpsToIndex = mapOpsUsing<0 | 1, BinaryOpCode>(indexOpMapper);
+export const mapOpsToIndex = mapOpsUsing<0 | 1, BinaryOpCode>(
+  indexOpMapper,
+  "variadic",
+);
 
 export const mapMutationToFunc = mapMutationUsing(funcOpMapper);
 export const mapMutationToMethod = mapMutationUsing(methodOpMapper);

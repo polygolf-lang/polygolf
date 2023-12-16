@@ -310,14 +310,8 @@ const pythonLanguage: Language = {
         bit_shift_left: "<<=",
         bit_shift_right: ">>=",
       }),
-      mapOpsToPrefix({
-        neg: "-",
-        bit_not: "~",
-        not: "not",
-      }),
       mapOpsToInfix({
         pow: "**",
-        mul: "*",
         repeat: "*",
         div: "//",
         mod: "%",
@@ -341,6 +335,12 @@ const pythonLanguage: Language = {
         and: "and",
         or: "or",
       }),
+      mapOpsToPrefix({
+        neg: "-",
+        bit_not: "~",
+        not: "not",
+      }),
+      mapOpsToInfix({ mul: "*" }),
       methodsAsFunctions,
       addOneToManyAssignments(),
     ),

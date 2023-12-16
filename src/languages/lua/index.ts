@@ -80,7 +80,6 @@ const luaLanguage: Language = {
       listOpsToTextOps("find[byte]", "at[byte]"),
       tempVarToMultipleAssignment,
       equalityToInequality,
-      shiftRangeOneUp,
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -144,6 +143,9 @@ const luaLanguage: Language = {
         "at[List]": 1,
         "at[Table]": 0,
       }),
+    ),
+    search(shiftRangeOneUp),
+    required(
       mapOps({
         int_to_dec: (x) =>
           op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
@@ -185,17 +187,8 @@ const luaLanguage: Language = {
 
     simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
     required(
-      mapOpsToPrefix({
-        not: "not",
-        neg: "-",
-        "size[List]": "#",
-        "size[Table]": "#",
-        "size[byte]": "#",
-        bit_not: "~",
-      }),
       mapOpsToInfix({
         pow: "^",
-        mul: "*",
         div: "//",
         mod: "%",
         add: "+",
@@ -217,6 +210,15 @@ const luaLanguage: Language = {
         and: "and",
         or: "or",
       }),
+      mapOpsToPrefix({
+        not: "not",
+        neg: "-",
+        "size[List]": "#",
+        "size[Table]": "#",
+        "size[byte]": "#",
+        bit_not: "~",
+      }),
+      mapOpsToInfix({ mul: "*" }),
     ),
     simplegolf(
       alias({
