@@ -290,7 +290,7 @@ export function sexpr(
         expectArity(2, Infinity);
         return methodCall(args[0], asString(args[1]), ...args.slice(2));
       case "infix":
-        expectArity(1, Infinity);
+        expectArity(3);
         return infix(asString(args[0]), args[1], args[2]);
       case "prefix":
         expectArity(2);
