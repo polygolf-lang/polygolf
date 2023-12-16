@@ -27,6 +27,7 @@ import {
   getLiteralOfType,
   OpCodes,
   OpCodesUser,
+  isSubtype,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
@@ -59,7 +60,10 @@ const langs = languages.filter(
 
 let nextBuiltinState = -1;
 function nextBuiltin(x: Type) {
-  if (x.kind === "integer") x = integerType(0, 64);
+  if (x.kind === "integer")
+    x = isSubtype(x, integerType(-Infinity, 0))
+      ? integerType(-64, -1)
+      : integerType(0, 64);
   nextBuiltinState = (nextBuiltinState + 1) % 26;
   return annotate(builtin(String.fromCharCode(65 + nextBuiltinState)), x);
 }

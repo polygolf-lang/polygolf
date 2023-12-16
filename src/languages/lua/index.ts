@@ -26,12 +26,13 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
   mapTo,
+  backwardsIndexToForwards,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -42,6 +43,7 @@ import {
   golfLastPrint,
   implicitlyConvertPrintArg,
   putcToPrintChar,
+  mergePrint,
 } from "../../plugins/print";
 import {
   textToIntToFirstIndexTextGetToInt,
@@ -71,6 +73,7 @@ const luaLanguage: Language = {
     required(printIntToPrint, putcToPrintChar),
     simplegolf(golfLastPrint()),
     search(
+      mergePrint,
       flipBinaryOps,
       listOpsToTextOps("find[byte]", "at[byte]"),
       tempVarToMultipleAssignment,
@@ -113,7 +116,9 @@ const luaLanguage: Language = {
         "at[argv]": (x) =>
           op("at[List]", { ...builtin("arg"), type: textType() }, x[0]),
         "ord_at[byte]": (x) => method(x[0], "byte", add1(x[1])),
+        "ord_at_back[byte]": (x) => method(x[0], "byte", x[1]),
         "at[byte]": (x) => method(x[0], "sub", add1(x[1]), add1(x[1])),
+        "at_back[byte]": (x) => method(x[0], "sub", x[1], x[1]),
         "slice[byte]": (x) =>
           method(x[0], "sub", add1(x[1]), op("add", x[1], x[2])),
       }),
@@ -121,6 +126,7 @@ const luaLanguage: Language = {
         (n, s) => !["boolean", "void"].includes(getType(n, s).kind),
         "List",
       ),
+      backwardsIndexToForwards(),
       useIndexCalls(true),
       mapOps({
         int_to_dec: (x) =>
@@ -163,7 +169,7 @@ const luaLanguage: Language = {
 
     simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
     required(
-      mapToPrefixAndInfix({
+      mapUnaryAndBinary({
         pow: "^",
         not: "not",
         neg: "-",

@@ -25,14 +25,20 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
   useIndexCalls,
   arraysToLists,
+  backwardsIndexToForwards,
 } from "../../plugins/ops";
-import { alias, renameIdents, useBuiltinAliases } from "../../plugins/idents";
+import {
+  alias,
+  defaultIdentGen,
+  renameIdents,
+  useBuiltinAliases,
+} from "../../plugins/idents";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
@@ -40,6 +46,7 @@ import {
   printLnToPrint,
   printToImplicitOutput,
   putcToPrintChar,
+  splitPrint,
 } from "../../plugins/print";
 import {
   forArgvToForEach,
@@ -87,6 +94,7 @@ const golfscriptLanguage: Language = {
       forArgvToForEach,
       bitShiftToMulOrDiv(false, true, true),
       decomposeIntLiteral(false, true, false),
+      splitPrint,
     ),
     required(
       pickAnyInt,
@@ -94,7 +102,6 @@ const golfscriptLanguage: Language = {
       putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
       usePrimaryTextOps("byte"),
-      textGetToTextGetToIntToText,
       removeUnusedForVar,
       forRangeToForDifferenceRange(
         (node, spine) =>
@@ -169,8 +176,10 @@ const golfscriptLanguage: Language = {
         int_to_bin_aligned: (x) =>
           infix('2base""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
       }),
+      backwardsIndexToForwards(false),
+      textGetToTextGetToIntToText,
       useIndexCalls(false),
-      mapToPrefixAndInfix({
+      mapUnaryAndBinary({
         not: "!",
         bit_not: "~",
         mul: "*",
@@ -217,21 +226,9 @@ const golfscriptLanguage: Language = {
     required(
       printToImplicitOutput,
       addImports({ a: "a" }, (x) =>
-        x.length > 0 ? assignment("a", builtin("")) : undefined,
+        x.length > 0 ? assignment(builtin("a"), builtin("")) : undefined,
       ),
-      renameIdents({
-        // Custom Ident generator prevents `n` from being used as an ident, as it is predefined to newline and breaks printing if modified
-        preferred(original: string) {
-          const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
-          if (firstLetter === undefined) return [];
-          if (/n/i.test(firstLetter)) return ["N", "m", "M"];
-          const lower = firstLetter.toLowerCase();
-          const upper = firstLetter.toUpperCase();
-          return [firstLetter, firstLetter === lower ? upper : lower];
-        },
-        short: "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
-        general: (i) => `v${i}`,
-      }),
+      renameIdents(defaultIdentGen("a", "n")),
       removeImplicitConversions,
     ),
   ],

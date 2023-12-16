@@ -78,6 +78,7 @@ let warnings: Error[] = [];
 export function sexpr(
   calleeIdent: Identifier | Text,
   args: readonly Node[],
+  callee: string = (calleeIdent as any)?.name,
 ): Node {
   if (restrictedFrontend) assertIdentifier(calleeIdent);
   if (isText()(calleeIdent)) {
@@ -86,9 +87,15 @@ export function sexpr(
   if (!calleeIdent.builtin) {
     return functionCall(calleeIdent, args);
   }
-  let callee = calleeIdent.name;
   if (callee === "<-") callee = "assign";
   if (callee === "=>") callee = "key_value";
+  if (callee.endsWith("<-")) {
+    return sexpr(
+      calleeIdent,
+      [args[0], sexpr(calleeIdent, args, callee.slice(0, callee.length - 2))],
+      "<-",
+    );
+  }
   if (callee in deprecatedAliases) {
     warnings.push(
       new PolygolfError(
@@ -183,7 +190,7 @@ export function sexpr(
       return assignment(args[0], args[1]);
     case "function_call": {
       expectArity(1, Infinity);
-      assertIdentifier(args[0]);
+      if (restrictedFrontend) assertIdentifier(args[0]);
       return functionCall(args[0], args.slice(1));
     }
     case "array":
@@ -283,19 +290,11 @@ export function sexpr(
         assertIdentifier(args[1]);
         return mutatingInfix(asString(args[0]), args[1], args[2]);
       case "index_call":
-      case "index_call_one_indexed":
         expectArity(2);
-        return indexCall(args[0], args[1], callee === "index_call_one_indexed");
+        return indexCall(args[0], args[1]);
       case "range_index_call":
-      case "range_index_call_one_indexed":
         expectArity(4);
-        return rangeIndexCall(
-          args[0],
-          args[1],
-          args[2],
-          args[3],
-          callee === "range_index_call_one_indexed",
-        );
+        return rangeIndexCall(args[0], args[1], args[2], args[3]);
       case "property_call":
         expectArity(2);
         return propertyCall(args[0], asString(args[1]));

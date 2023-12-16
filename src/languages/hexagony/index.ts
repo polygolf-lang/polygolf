@@ -1,4 +1,4 @@
-import { mapToPrefixAndInfix } from "../../plugins/ops";
+import { mapUnaryAndBinary } from "../../plugins/ops";
 import { printLnToPrint } from "../../plugins/print";
 import {
   type Language,
@@ -56,7 +56,7 @@ const hexagonyLanguage: Language = {
       extractConditions,
       decomposeExpressions,
       powerToForRange,
-      mapToPrefixAndInfix({
+      mapUnaryAndBinary({
         add: "+",
         sub: "-",
         neg: "~",
@@ -67,7 +67,7 @@ const hexagonyLanguage: Language = {
       printLnToPrint,
       printTextLiteral,
       limitSetOp(99999),
-      mapToPrefixAndInfix({ "putc[byte]": ";", "print[Int]": "!" }),
+      mapUnaryAndBinary({ "putc[byte]": ";", "print[Int]": "!" }),
     ),
   ],
 };

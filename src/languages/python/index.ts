@@ -29,13 +29,14 @@ import {
 import emitProgram, { emitPythonText } from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   removeImplicitConversions,
   methodsAsFunctions,
   printIntToPrint,
   mapTo,
   arraysToLists,
+  backwardsIndexToForwards,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -134,6 +135,7 @@ const pythonLanguage: Language = {
       }),
 
       useImplicitBoolToInt,
+      backwardsIndexToForwards(false),
       useIndexCalls(),
     ),
     simplegolf(golfTextListLiteralIndex),
@@ -171,6 +173,8 @@ const pythonLanguage: Language = {
         "at[codepoint]": (x) => indexCall(x[0], x[1]),
         "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", x[0], x[1])),
         "ord_at[byte]": (x) => indexCall(func("bytes", x[0], text("u8")), x[1]),
+        "ord_at_back[byte]": (x) =>
+          indexCall(func("bytes", x[0], text("u8")), x[1]),
         "slice[codepoint]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
         "slice[byte]": (x) =>
@@ -272,7 +276,7 @@ const pythonLanguage: Language = {
         "contains[Set]": "in",
         "contains[Text]": "in",
       }),
-      mapToPrefixAndInfix(
+      mapUnaryAndBinary(
         {
           pow: "**",
           neg: "-",

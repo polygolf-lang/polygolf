@@ -570,6 +570,7 @@ function annotate<T extends Node | undefined>(
     ...node,
     source: sourceSpine.node.source,
     type,
+    targetType: node.targetType ?? sourceSpine.node.targetType,
   };
 }
 

@@ -249,10 +249,8 @@ export default function emitProgram(
             "}",
           ];
         case "IndexCall":
-          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
         case "RangeIndexCall": {
-          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           const low = emit(e.low);
           const low0 = isInt(0n)(e.low);
           const high = emit(e.high);

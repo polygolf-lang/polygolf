@@ -25,14 +25,21 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
   mapTo,
+  backwardsIndexToForwards,
 } from "../../plugins/ops";
-import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
+import {
+  addNimImports,
+  removeSystemNamespace,
+  useBackwardsIndex,
+  useUFCS,
+  useUnsignedDivision,
+} from "./plugins";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
@@ -52,6 +59,7 @@ import {
   golfLastPrint,
   implicitlyConvertPrintArg,
   putcToPrintChar,
+  mergePrint,
 } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
@@ -96,6 +104,7 @@ const nimLanguage: Language = {
     required(printIntToPrint, putcToPrintChar),
     simplegolf(golfLastPrint()),
     search(
+      mergePrint,
       flipBinaryOps,
       golfStringListLiteral(),
       listOpsToTextOps("find[byte]", "at[byte]"),
@@ -125,7 +134,6 @@ const nimLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
-      useIndexCalls(),
       usePrimaryTextOps("byte"),
       mapOps({
         argv: func("commandLineParams"),
@@ -135,6 +143,10 @@ const nimLanguage: Language = {
       forRangeToForRangeInclusive(true),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
+      useUnsignedDivision,
+      useBackwardsIndex,
+      backwardsIndexToForwards(false),
+      useIndexCalls(),
       mapOps({
         "reversed[codepoint]": (x) =>
           op("join", func("reversed", func("toRunes", x)), text("")),
@@ -193,7 +205,7 @@ const nimLanguage: Language = {
         "println[Text]": "echo",
         bool_to_int: "int",
         "char[byte]": "chr",
-        "find[List]": "find",
+        "find[List]": "system.find",
         "find[byte]": "find",
         "sorted[Int]": "sorted",
         "sorted[Ascii]": "sorted",
@@ -202,14 +214,13 @@ const nimLanguage: Language = {
         int_to_hex: "toHex",
         right_align: "align",
       }),
-      useUnsignedDivision,
       mapTo((x: string, [right, left]) => infix(x, left, right))({
-        "contains[Array]": "in",
-        "contains[List]": "in",
+        "contains[Array]": "system.in",
+        "contains[List]": "system.in",
         "contains[Text]": "in",
-        "contains[Table]": "in",
+        "contains[Table]": "system.in",
       }),
-      mapToPrefixAndInfix(
+      mapUnaryAndBinary(
         {
           bit_not: "not",
           not: "not",
@@ -244,7 +255,6 @@ const nimLanguage: Language = {
         },
         ["+", "*", "-", "&"],
       ),
-      useUnsignedDivision,
       addNimImports,
     ),
     simplegolf(
@@ -266,8 +276,9 @@ const nimLanguage: Language = {
       noStandaloneVarDeclarations,
       assertInt64,
       removeImplicitConversions,
-      useUFCS,
+      removeSystemNamespace,
     ),
+    search(useUFCS),
   ],
   detokenizer: defaultDetokenizer((a, b) => {
     const left = a[a.length - 1];
@@ -280,8 +291,9 @@ const nimLanguage: Language = {
 
     if (
       /[A-Za-z]/.test(left) &&
-      !["var", "in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"({[`).includes(right) &&
+      ((!["var", "in", "else", "if", "while", "for"].includes(a) &&
+        (symbols + `"({[`).includes(right)) ||
+        right === `"`) &&
       !["=", ":", ".", "::"].includes(b)
     )
       return true; // identifier meeting an operator or string literal or opening paren

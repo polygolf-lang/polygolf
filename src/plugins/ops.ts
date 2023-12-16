@@ -29,6 +29,7 @@ import {
   flippedOpCode,
   isVariadic,
   list,
+  type MutatingInfix,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -90,9 +91,11 @@ export function mapTo<T>(
  * Plugin transforming binary and unary ops to the name and precedence in the target lang.
  * @param opMap OpCode - target op name pairs.
  * @param asMutatingInfix - array of target op names that should be mapped to mutating infix or true for to signify all.
+ * @param unaryMapping - The function to transform unary ops.
+ * @param binaryMapping - The function to transform binary ops.
  * @returns The plugin closure.
  */
-export function mapToPrefixAndInfix<
+export function mapUnaryAndBinary<
   TNames extends string,
   TNamesMutating extends TNames,
 >(
@@ -100,13 +103,16 @@ export function mapToPrefixAndInfix<
     Record<UnaryOpCode, string> & Record<BinaryOpCode | VariadicOpCode, TNames>
   >,
   asMutatingInfix: true | TNamesMutating[] = [],
+  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
+  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
 ): Plugin {
   enhanceOpMap(opMap);
   const justPrefixInfix = mapOps(
     mapObjectValues(opMap, (name, op) =>
       isUnary(op)
-        ? (x: readonly Node[]) => prefix(name, x[0])
-        : (x: readonly Node[]) => asBinaryChain(op, x, opMap),
+        ? (x: readonly Node[]) => unaryMapping(name, x[0])
+        : (x: readonly Node[]) =>
+            asBinaryChain(op, x, opMap, unaryMapping, binaryMapping),
     ),
     `mapToPrefixAndInfix(${JSON.stringify(opMap)}, ${JSON.stringify(
       asMutatingInfix,
@@ -138,10 +144,12 @@ function asBinaryChain(
   opCode: BinaryOpCode | VariadicOpCode,
   exprs: readonly Node[],
   names: Partial<Record<OpCode, string>>,
+  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
+  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
 ): Node {
   const negName = names.neg;
   if (opCode === "mul" && isInt(-1n)(exprs[0]) && negName !== undefined) {
-    exprs = [prefix(negName, exprs[1]), ...exprs.slice(2)];
+    exprs = [unaryMapping(negName, exprs[1]), ...exprs.slice(2)];
   }
   if (opCode === "add") {
     exprs = exprs
@@ -152,9 +160,12 @@ function asBinaryChain(
   for (const expr of exprs.slice(1)) {
     const subName = names.sub;
     if (opCode === "add" && isNegative(expr) && subName !== undefined) {
-      result = infix(subName, result, op("neg", expr));
+      result = binaryMapping(subName, result, {
+        ...op("neg", expr),
+        targetType: expr.targetType,
+      });
     } else {
-      result = infix(names[opCode] ?? "?", result, expr);
+      result = binaryMapping(names[opCode] ?? "?", result, expr);
     }
   }
   return result;
@@ -162,16 +173,19 @@ function asBinaryChain(
 
 export function useIndexCalls(
   oneIndexed: boolean = false,
-  ops: OpCode[] = [
-    "at[Array]",
-    "at[List]",
-    "at[Table]",
-    "set_at[Array]",
-    "set_at[List]",
-    "set_at[Table]",
+  ops = [
+    "at[Array]" as const,
+    "at[List]" as const,
+    "at_back[List]" as const,
+    "at[Table]" as const,
+    "set_at[Array]" as const,
+    "set_at[List]" as const,
+    "set_at_back[List]" as const,
+    "set_at[Table]" as const,
   ],
 ): Plugin {
   return {
+    bakeType: true,
     name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
       ops,
     )})`,
@@ -182,15 +196,65 @@ export function useIndexCalls(
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.endsWith("[Table]")) {
-          indexNode = indexCall(node.args[0], add1(node.args[1]), oneIndexed);
+          indexNode = indexCall(node.args[0], add1(node.args[1]));
         } else {
-          indexNode = indexCall(node.args[0], node.args[1], oneIndexed);
+          indexNode = indexCall(node.args[0], node.args[1]);
         }
         if (!node.op.startsWith("set_")) {
           return indexNode;
         } else {
           return assignment(indexNode, node.args[2]);
         }
+      }
+    },
+  };
+}
+
+export function backwardsIndexToForwards(
+  addLength = true,
+  ops: OpCode[] = [
+    "at_back[Ascii]" as const,
+    "at_back[byte]" as const,
+    "at_back[codepoint]" as const,
+    "at_back[List]" as const,
+    "set_at_back[List]" as const,
+  ],
+): Plugin {
+  return {
+    name: "backwardsIndexToForwards",
+    visit(node, spine, context) {
+      if (isOp(...ops)(node)) {
+        const [collection, index, value] = node.args;
+        return mapOps({
+          "at_back[Ascii]": op(
+            "at[Ascii]",
+            collection,
+            addLength ? op("add", index, op("size[Ascii]", collection)) : index,
+          ),
+          "at_back[byte]": op(
+            "at[byte]",
+            collection,
+            addLength ? op("add", index, op("size[byte]", collection)) : index,
+          ),
+          "at_back[codepoint]": op(
+            "at[codepoint]",
+            collection,
+            addLength
+              ? op("add", index, op("size[codepoint]", collection))
+              : index,
+          ),
+          "at_back[List]": op(
+            "at[List]",
+            collection,
+            addLength ? op("add", index, op("size[List]", collection)) : index,
+          ),
+          "set_at_back[List]": op(
+            "set_at[List]",
+            collection,
+            addLength ? op("add", index, op("size[List]", collection)) : index,
+            value,
+          ),
+        }).visit(node, spine, context);
       }
     },
   };
@@ -236,14 +300,22 @@ export function addMutatingInfix(
   };
 }
 
-export function addPostfixIncAndDec(node: Node) {
-  if (
-    node.kind === "MutatingInfix" &&
-    ["+", "-"].includes(node.name) &&
-    isInt(1n)(node.right)
-  ) {
-    return postfix(node.name.repeat(2), node.variable);
-  }
+export function addIncAndDec(
+  transform: (infix: MutatingInfix) => Node = (x) =>
+    postfix(x.name.repeat(2), x.variable),
+): Plugin {
+  return {
+    name: `addIncAndDec(${JSON.stringify(transform)})`,
+    visit(node) {
+      if (
+        node.kind === "MutatingInfix" &&
+        ["+", "-"].includes(node.name) &&
+        isInt(1n)(node.right)
+      ) {
+        return transform(node);
+      }
+    },
+  };
 }
 
 // (a > b) --> (b < a)

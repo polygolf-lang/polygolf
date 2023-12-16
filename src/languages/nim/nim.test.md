@@ -27,6 +27,7 @@ bool_to_int $b;
 int_to_text_byte 48;
 int_to_codepoint 48;
 $t .. "x";
+$t @ -1;
 text_replace "a+b+c" "+" "*";
 text_replace "a*b*c" "*" "";
 text_multireplace "XYZXYZ" "Y" "b" "X" "a";
@@ -77,37 +78,38 @@ var
  m=n
  b=1<2
 t[2]
-$(t.toRunes)[2]
+$toRunes(t)[2]
 t[2..<8]
-"a"[0].ord
-"abc"[1].ord
-t.split"|"
-t.split
-t.len
-t.repeat 3
-1.max n
-1.min n
-n.abs
-t.parseInt
-stdout.write t
-t.echo
-b.int
-48.chr
-$(48.Rune)
+ord("a"[0])
+ord("abc"[1])
+split(t,"|")
+split(t)
+len(t)
+repeat(t,3)
+max(1,n)
+min(1,n)
+abs(n)
+parseInt(t)
+write(stdout,t)
+echo(t)
+int(b)
+chr(48)
+$Rune(48)
 t&"x"
-"a+b+c".replace("+","*")
-"a*b*c".replace"*"
-"XYZXYZ".multireplace {"Y":"b","X":"a"}
-@["xy","abc"].join"/"
-@["12","345"].join
+t[^1]
+replace("a+b+c","+","*")
+replace("a*b*c","*")
+multireplace("XYZXYZ",{"Y":"b","X":"a"})
+join(@["xy","abc"],"/")
+join(@["12","345"])
 not n
 not b
 -n
 $n
-3.toBin
-(3.toBin).align(5,"0")
-3.toHex
-(3.toHex).align(5,"0")
+toBin(3)
+align(toBin(3),5,"0")
+toHex(3)
+align(toHex(3),5,"0")
 n^3
 n*m
 -3 div n
@@ -129,35 +131,16 @@ n>=3
 n>3
 b and b
 b or b
-@[""].find""
+find(@[""],"")
 ```
 
 ## Misc
 
 ```polygolf
-println (list_get (text_split "abc" "b") 0);
-```
-
-```nim nogolf
-include re
-"abc".split"b"[0].echo
-```
-
-```polygolf
-$a:0..1 <- 0;
-println_int (($a + 1) * $a);
-```
-
-```nim nogolf
-var a=0
-echo (1+a)*a
-```
-
-```polygolf
 println ((int_to_text 1) .. "x");
 ```
 
-```nim nogolf
+```nim no:hardcode
 echo $1&"x"
 ```
 
@@ -204,7 +187,7 @@ for_argv $x 100 {
 
 ```nim
 import os
-for x in..99:(paramStr 1+x).echo
+for x in..99:echo paramStr 1+x
 ```
 
 ```polygolf
@@ -216,7 +199,7 @@ for $i $b 16 {
 
 ```nim nogolf
 var b=0
-for i in b..<16:i.echo
+for i in b..<16:echo(i)
 ```
 
 ## Variables & Assignments
@@ -286,6 +269,11 @@ list_get (text_split "a b" " ") 1;
 ```
 
 ```nim nogolf
+include re
+split("a b"," ")[1]
+```
+
+```nim
 include re
 "a b".split" "[1]
 ```
@@ -363,7 +351,7 @@ for()in..9:echo"Hi"
 ```
 
 ```nim
-[4,3][c.int]/%2
+[4,3][int c]/%2
 ```
 
 ```polygolf
@@ -376,4 +364,18 @@ TODO split left & right prec after #254
 ```nim nogolf skip
 var c=true
 2+if c:3 else:4
+```
+
+## Ufcs
+
+```polygolf
+function_call (infix "." (builtin "x") (builtin "f")) (builtin "y");
+infix " " (builtin "f") (builtin "x");
+index_call (infix " " (infix "." "x" (builtin "f")) " ") 1;
+```
+
+```nim skipTypecheck
+x.f y
+f x
+"x".f" "[1]
 ```

@@ -6,6 +6,7 @@ import pythonLanguage from "./python";
 import swiftLanguage from "./swift";
 import golfscriptLanguage from "./golfscript";
 import javascriptLanguage from "./javascript";
+import janetLanguage from "./janet";
 import textLanguage from "./text";
 import hexagonyLanguage from "./hexagony";
 
@@ -18,6 +19,7 @@ const languages = [
   swiftLanguage,
   hexagonyLanguage,
   javascriptLanguage,
+  janetLanguage,
   textLanguage,
 ];
 

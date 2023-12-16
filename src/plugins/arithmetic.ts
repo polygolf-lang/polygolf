@@ -140,6 +140,7 @@ export function applyDeMorgans(node: Node, spine: Spine) {
 export function useIntegerTruthiness(node: Node, spine: Spine) {
   if (
     isOp("eq[Int]", "neq[Int]")(node) &&
+    !spine.isRoot &&
     spine.parent!.node.kind === "If" &&
     spine.pathFragment === "condition"
   ) {

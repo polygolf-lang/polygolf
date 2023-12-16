@@ -7,7 +7,7 @@ import {
   type Node,
   type Identifier,
   isAssignment,
-  isAssignmentToIdentifier,
+  isAssignmentToIdent,
   isIdent,
   isUserIdent,
   manyToManyAssignment,
@@ -102,7 +102,7 @@ export function addOneToManyAssignments(
   return blockChildrenCollectAndReplace<Assignment<Identifier>>(
     "addOneToManyAssignments",
     (expr, spine, previous) =>
-      isAssignmentToIdentifier(expr) &&
+      isAssignmentToIdent()(expr) &&
       previous.every((x) => x.variable.name !== expr.variable.name) &&
       (previous.length < 1 ||
         stringify(expr.expr) === stringify(previous[0].expr)),
@@ -128,7 +128,7 @@ export function addVarDeclarationOneToManyAssignments(
     "addVarDeclarationOneToManyAssignments",
     (expr, spine, previous) =>
       expr.kind === "VarDeclarationWithAssignment" &&
-      isAssignmentToIdentifier(expr.assignment) &&
+      isAssignmentToIdent()(expr.assignment) &&
       (previous.length < 1 ||
         stringify(expr.assignment.expr) ===
           stringify(previous[0].assignment.expr)),
@@ -153,7 +153,7 @@ export function addManyToManyAssignments(
   return blockChildrenCollectAndReplace<Assignment<Identifier>>(
     "addManyToManyAssignments",
     (expr, spine, previous) =>
-      isAssignmentToIdentifier(expr) &&
+      isAssignmentToIdent()(expr) &&
       !previous.some((x) => spine.someNode(isUserIdent(x.variable.name))),
     (exprs) => [
       manyToManyAssignment(
@@ -177,7 +177,7 @@ export function addVarDeclarationManyToManyAssignments(
     "addVarDeclarationManyToManyAssignments",
     (expr, spine, previous) =>
       expr.kind === "VarDeclarationWithAssignment" &&
-      isAssignmentToIdentifier(expr.assignment) &&
+      isAssignmentToIdent()(expr.assignment) &&
       !previous.some((x) =>
         spine.someNode(isUserIdent(x.assignment.variable.name)),
       ),
@@ -234,9 +234,9 @@ export function tempVarToMultipleAssignment(node: Node) {
       const b = node.children[i + 1];
       const c = node.children[i + 2];
       if (
-        isAssignmentToIdentifier(a) &&
+        isAssignmentToIdent()(a) &&
         isAssignment(b) &&
-        isAssignmentToIdentifier(c) &&
+        isAssignmentToIdent()(c) &&
         isIdent(c.variable)(b.expr) &&
         isIdent(a.variable)(c.expr)
       ) {

@@ -23,7 +23,7 @@ _Golfscript_
 
 ```gs
 :a;"Hello, World!
-"10,{:i;i n}%a{:A;A n}%
+"10,{:i;i n}%a{:b;b n}%
 ```
 
 _Lua_
@@ -40,8 +40,8 @@ _Nim_
 ```nim
 import os
 echo"Hello, World!"
-for i in..9:i.echo
-for a in..999:(paramStr 1+a).echo
+for i in..9:echo i
+for a in..999:echo paramStr 1+a
 ```
 
 _Python_

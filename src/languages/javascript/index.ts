@@ -27,12 +27,12 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   removeImplicitConversions,
   printIntToPrint,
   mapTo,
-  addPostfixIncAndDec,
+  addIncAndDec,
   methodsAsFunctions,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
@@ -65,6 +65,7 @@ import {
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
+  truncatingOpsPlugins,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
@@ -118,6 +119,7 @@ const javascriptLanguage: Language = {
         "neq[Int]": "int",
         geq: "int",
         gt: "int",
+        int_to_dec: "bigint",
       }),
       mapVarsThatNeedBigint("int53", (x) => func("BigInt", x)),
       forArgvToForEach,
@@ -137,6 +139,7 @@ const javascriptLanguage: Language = {
       }),
       useIndexCalls(),
 
+      ...truncatingOpsPlugins,
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
@@ -156,6 +159,10 @@ const javascriptLanguage: Language = {
             "sort",
           ),
         div: (x, s) =>
+          s.node.targetType !== "bigint"
+            ? func("Math.floor", infix("/", x[0], x[1]))
+            : undefined,
+        trunc_div: (x, s) =>
           s.node.targetType !== "bigint"
             ? func("Math.floor", infix("/", x[0], x[1]))
             : undefined,
@@ -212,14 +219,16 @@ const javascriptLanguage: Language = {
         "println[Text]": "print",
         "print[Text]": "write",
       }),
-      mapToPrefixAndInfix(
+      mapUnaryAndBinary(
         {
           pow: "**",
           neg: "-",
           bit_not: "~",
           mul: "*",
           div: "/",
+          trunc_div: "/",
           mod: "%",
+          rem: "%",
           add: "+",
           "concat[Text]": "+",
           "concat[List]": "+",
@@ -245,7 +254,7 @@ const javascriptLanguage: Language = {
       ),
       methodsAsFunctions,
     ),
-    simplegolf(addPostfixIncAndDec, addOneToManyAssignments()),
+    simplegolf(addIncAndDec(), addOneToManyAssignments()),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({

@@ -83,7 +83,6 @@ export interface IndexCall extends BaseNode {
   readonly kind: "IndexCall";
   readonly collection: Node;
   readonly index: Node;
-  readonly oneIndexed: boolean;
 }
 
 export interface RangeIndexCall extends BaseNode {
@@ -92,7 +91,6 @@ export interface RangeIndexCall extends BaseNode {
   readonly low: Node;
   readonly high: Node;
   readonly step: Node;
-  readonly oneIndexed: boolean;
 }
 
 export interface Infix extends BaseNode {
@@ -375,16 +373,11 @@ export function propertyCall(
   };
 }
 
-export function indexCall(
-  collection: string | Node,
-  index: Node,
-  oneIndexed: boolean = false,
-): IndexCall {
+export function indexCall(collection: string | Node, index: Node): IndexCall {
   return {
     kind: "IndexCall",
     collection: typeof collection === "string" ? id(collection) : collection,
     index,
-    oneIndexed,
   };
 }
 
@@ -393,7 +386,6 @@ export function rangeIndexCall(
   low: Node,
   high: Node,
   step: Node,
-  oneIndexed: boolean = false,
 ): RangeIndexCall {
   return {
     kind: "RangeIndexCall",
@@ -401,7 +393,6 @@ export function rangeIndexCall(
     low,
     high,
     step,
-    oneIndexed,
   };
 }
 
