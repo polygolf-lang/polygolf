@@ -211,12 +211,6 @@ const swiftLanguage: Language = {
         dec_to_int: (x) => postfix("!", func("Int", x)),
         append: (x) => op("concat[List]", x[0], list([x[1]])),
         include: (x) => method(x[0], "insert", x[1]),
-
-        max: (x) => func("max", x),
-        min: (x) => func("min", x),
-        abs: (x) => func("abs", x),
-        true: builtin("true"),
-        false: builtin("false"),
         bool_to_int: (x) => conditional(x[0], int(1n), int(0n)),
         int_to_bool: (x) => op("neq[Int]", x[0], int(0n)),
         int_to_hex: (x) =>
@@ -261,6 +255,12 @@ const swiftLanguage: Language = {
             namedArg("with", x[2]),
           ),
       }),
+      mapOpsTo.func({
+        max: "max",
+        min: "min",
+        abs: "abs",
+      }),
+      mapOpsTo.builtin({ true: "true", false: "false" }),
       mapMutationTo.method({
         append: "append",
       }),

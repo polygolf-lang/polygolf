@@ -25,6 +25,8 @@ import {
   methodCall,
   type TernaryOpCode,
   isVariadic,
+  type NullaryOpCode,
+  builtin,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -63,6 +65,8 @@ export const funcOpMapper: OpMapper<string> = (arg, opArgs) =>
   functionCall(arg, ...opArgs);
 export const methodOpMapper: OpMapper<string> = (arg, [first, ...rest]) =>
   methodCall(first, arg, ...rest);
+export const propertyOpMapper: OpMapper<string> = (arg, [first]) =>
+  propertyCall(first, arg);
 export const prefixOpMapper: OpMapper<string> = (arg, opArgs) =>
   prefix(arg, opArgs[0]);
 export const infixOpMapper: OpMapper<string> = (arg, opArgs) =>
@@ -75,6 +79,7 @@ export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {
   const index = indexCall(opArgs[0], arg === 1 ? add1(opArgs[1]) : opArgs[1]);
   return opArgs.length > 2 ? assignment(index, opArgs[2]) : index; // TODO: consider mapping to infix "=" instead
 };
+export const builtinOpMapper: OpMapper<string> = builtin;
 
 export function mapOpsUsing<
   Targ = string,
@@ -268,6 +273,7 @@ export const mapOps = mapOpsUsing(generalOpMapper, "variadic");
 export const mapOpsTo = {
   func: mapOpsUsing(funcOpMapper, "variadic"),
   method: mapOpsUsing(methodOpMapper, "variadic"),
+  prop: mapOpsUsing(propertyOpMapper, "variadic"),
   prefix: mapOpsUsing<string, UnaryOpCode>(prefixOpMapper, "variadic"),
   infix: mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
     infixOpMapper,
@@ -279,6 +285,7 @@ export const mapOpsTo = {
   ),
   /** Values are what should be added to the key. */
   index: mapOpsUsing<0 | 1, BinaryOpCode>(indexOpMapper, "variadic"),
+  builtin: mapOpsUsing<string, NullaryOpCode>(builtinOpMapper, "variadic"),
 };
 
 export const mapMutationTo = {

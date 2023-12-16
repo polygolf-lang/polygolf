@@ -147,11 +147,6 @@ const luaLanguage: Language = {
         int_to_dec: (x) =>
           op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
         join: (x) => func("table.concat", isText("")(x[1]) ? [x[0]] : x),
-        "size[byte]": (x) => method(x[0], "len"),
-        true: builtin("true"),
-        false: builtin("false"),
-        repeat: (x) => method(x[0], "rep", x[1]),
-        argv: builtin("arg"),
         "char[byte]": (x) => func("string.char", x),
 
         replace: ([a, b, c]) =>
@@ -170,6 +165,15 @@ const luaLanguage: Language = {
               ? text(c.value.replace("%", "%%"))
               : method(c, "gsub", text("%%"), text("%%%%")),
           ),
+      }),
+      mapOpsTo.method({
+        "size[byte]": "len",
+        repeat: "rep",
+      }),
+      mapOpsTo.builtin({
+        argv: "arg",
+        true: "true",
+        false: "false",
       }),
       mapOpsTo.func({
         "read[line]": "io.read",

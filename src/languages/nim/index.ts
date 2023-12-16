@@ -132,7 +132,6 @@ const nimLanguage: Language = {
       ...truncatingOpsPlugins,
       usePrimaryTextOps("byte"),
       mapOps({
-        argv: func("commandLineParams"),
         "at[argv]": (x) => func("paramStr", add1(x[0])),
       }),
       removeUnusedForVar,
@@ -169,8 +168,6 @@ const nimLanguage: Language = {
         "ord_at[codepoint]": (x) => func("ord", op("at[byte]", ...x)),
         "read[line]": func("readLine", builtin("stdin")),
         join: (x) => func("join", isText("")(x[1]) ? [x[0]] : x),
-        true: builtin("true"),
-        false: builtin("false"),
         "at[byte]": (x) => indexCall(x[0], x[1]),
         "at[codepoint]": (x) =>
           prefix("$", indexCall(func("toRunes", x[0]), x[1])),
@@ -197,7 +194,9 @@ const nimLanguage: Language = {
         int_to_hex_aligned: (x) =>
           func("align", op("int_to_hex", x[0]), x[1], text("0")),
       }),
+      mapOpsTo.builtin({ true: "true", false: "false" }),
       mapOpsTo.func({
+        argv: "commandLineParams",
         gcd: "gcd",
         split: "split",
         split_whitespace: "split",

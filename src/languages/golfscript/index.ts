@@ -129,7 +129,6 @@ const golfscriptLanguage: Language = {
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
         "slice[List]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
-        neg: (x) => op("mul", x[0], int(-1)),
         max: (x) => op("at[List]", op("sorted[Int]", list(x)), int(1)),
         min: (x) => op("at[List]", op("sorted[Int]", list(x)), int(0)),
 

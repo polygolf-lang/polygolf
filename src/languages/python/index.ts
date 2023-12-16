@@ -159,8 +159,6 @@ const pythonLanguage: Language = {
       mapOps({
         true: int(1),
         false: int(0),
-        "find[List]": (x) => method(x[0], "index", x[1]),
-        "find[codepoint]": (x) => method(x[0], "find", x[1]),
         "find[byte]": (x) =>
           method(
             func("bytes", x[0], text("u8")),
@@ -204,8 +202,6 @@ const pythonLanguage: Language = {
           ),
         "slice[List]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
-        split: (x) => method(x[0], "split", x[1]),
-        split_whitespace: (x) => method(x[0], "split"),
 
         "print[Text]": (x) =>
           func(
@@ -214,7 +210,6 @@ const pythonLanguage: Language = {
               ? [namedArg("end", x[0])]
               : [x[0], namedArg("end", text(""))],
           ),
-        replace: (x) => method(x[0], "replace", x[1], x[2]),
 
         text_multireplace: (x) =>
           method(
@@ -260,7 +255,13 @@ const pythonLanguage: Language = {
         int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
         bool_to_int: (x) =>
           op("mul", int(1n), implicitConversion("bool_to_int", x[0])),
-        include: (x) => method(x[0], "add", x[1]),
+      }),
+      mapOpsTo.method({
+        "find[List]": "index",
+        "find[codepoint]": "find",
+        split: "split",
+        split_whitespace: "split",
+        replace: "replace",
       }),
       mapOpsTo.func({
         "read[line]": "input",

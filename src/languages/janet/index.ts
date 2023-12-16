@@ -98,9 +98,6 @@ const janetLanguage: Language = {
           op("not", func("nil?", op("at[Table]", x[0], x[1]))),
       }),
       mapOps({
-        true: builtin("true"),
-        false: builtin("false"),
-
         bool_to_int: (x) => conditional(x[0], int(1n), int(0n)),
         int_to_bool: (x) => op("neq[Int]", x[0], int(0n)),
         int_to_hex: (x) => func("string/format", text("%X"), x[0]),
@@ -115,6 +112,7 @@ const janetLanguage: Language = {
         "slice[List]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
       }),
+      mapOpsTo.builtin({ true: "true", false: "false" }),
       mapMutationTo.func(
         {
           succ: "++",
