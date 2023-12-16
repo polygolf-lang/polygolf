@@ -89,17 +89,31 @@ export function mapOpsUsing<Targ = string, TOpCode extends string = OpCode>(
       bakeType: true,
       visit(node: Node, spine: Spine, context: CompilationContext) {
         if (isOp()(node)) {
+          let exprs = node.args;
+          if (node.op === "mul" && isInt(-1n)(exprs[0]) && "neg" in opCodeMap) {
+            const negation = mapper(
+              opCodeMap.neg as Targ,
+              [exprs[1]],
+              "neg",
+              spine,
+              context,
+            );
+            if (negation !== undefined)
+              return exprs.length > 2
+                ? op("mul", negation, ...exprs.slice(2))
+                : negation;
+          }
           const arg = opCodeMap[node.op as TOpCode];
           if (arg !== undefined) {
-            const args =
+            exprs =
               variadicMode === "variadic" ||
               !isVariadic(node.op) ||
-              node.args.length < 2
-                ? node.args
+              exprs.length < 2
+                ? exprs
                 : variadicMode === "leftChain"
-                ? [op(node.op, ...node.args.slice(0, -1)), node.args.at(-1)!]
-                : [node.args[0], op(node.op, ...node.args.slice(1))];
-            return mapper(arg, args, node.op, spine as Spine<Op>, context);
+                ? [op(node.op, ...exprs.slice(0, -1)), exprs.at(-1)!]
+                : [exprs[0], op(node.op, ...exprs.slice(1))];
+            return mapper(arg, exprs, node.op, spine as Spine<Op>, context);
           }
         }
       },

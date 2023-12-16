@@ -36,7 +36,6 @@ function precedence(expr: IR.Node): number {
 }
 
 function binaryPrecedence(opname: string): number {
-  if (opname.endsWith("=")) return 0;
   switch (opname) {
     case "**":
       return 12;
@@ -69,6 +68,7 @@ function binaryPrecedence(opname: string): number {
     case "or":
       return 1;
   }
+  if (opname.endsWith("=")) return 0;
   throw new Error(
     `Programming error - unknown Python binary operator '${opname}'.`,
   );

@@ -49,7 +49,6 @@ function precedence(expr: IR.Node): number {
 }
 
 function binaryPrecedence(opname: string): number {
-  if (opname.endsWith("=")) return 0;
   switch (opname) {
     case "**":
       return 13;
@@ -86,6 +85,7 @@ function binaryPrecedence(opname: string): number {
     case "||":
       return 3;
   }
+  if (opname.endsWith("=")) return 0;
   throw new Error(
     `Programming error - unknown Javascript binary operator '${opname}.'`,
   );

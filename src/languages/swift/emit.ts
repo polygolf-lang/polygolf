@@ -101,6 +101,7 @@ function binaryPrecedence(opname: string): number {
     case "||":
       return 1;
   }
+  if (opname.endsWith("=")) return 0;
   throw new Error(
     `Programming error - unknown Swift binary operator '${opname}.'`,
   );
