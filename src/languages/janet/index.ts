@@ -127,6 +127,7 @@ const janetLanguage: Language = {
         },
         false,
       ),
+      mapOpsTo.func({ gcd: "math/gcd" }, "leftChain"),
       mapOpsTo.func({
         replace: "string/replace-all",
         "concat[Text]": "string",
@@ -140,7 +141,6 @@ const janetLanguage: Language = {
         bit_shift_right: "brshift",
         bit_xor: "bxor",
         dec_to_int: "eval-string",
-        gcd: "math/gcd",
         geq: ">=",
         gt: ">",
         int_to_dec: "string",
