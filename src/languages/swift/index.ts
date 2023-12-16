@@ -32,13 +32,9 @@ import {
   printIntToPrint,
   arraysToLists,
   mapOps,
-  mapMutationToMethod,
-  mapMutationToInfix,
-  mapOpsToInfix,
-  mapOpsToPrefix,
+  mapOpsTo,
   mapBackwardsIndexToForwards,
-  mapMutationToIndex,
-  mapOpsToIndex,
+  mapMutationTo,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -265,10 +261,10 @@ const swiftLanguage: Language = {
             namedArg("with", x[2]),
           ),
       }),
-      mapMutationToMethod({
+      mapMutationTo.method({
         append: "append",
       }),
-      mapMutationToInfix({
+      mapMutationTo.infix({
         add: "+=",
         sub: "-=",
         mul: "*=",
@@ -280,7 +276,7 @@ const swiftLanguage: Language = {
         bit_shift_left: "<<=",
         bit_shift_right: ">>=",
       }),
-      mapOpsToInfix({
+      mapOpsTo.infix({
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         trunc_div: "/",
@@ -303,18 +299,18 @@ const swiftLanguage: Language = {
         and: "&&",
         or: "||",
       }),
-      mapOpsToPrefix({
+      mapOpsTo.prefix({
         not: "!",
         neg: "-",
         bit_not: "~",
       }),
-      mapOpsToInfix({ mul: "*" }),
-      mapMutationToIndex({
+      mapOpsTo.infix({ mul: "*" }),
+      mapMutationTo.index({
         "with_at[Array]": 0,
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
-      mapOpsToIndex({
+      mapOpsTo.index({
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,

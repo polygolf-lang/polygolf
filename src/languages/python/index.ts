@@ -33,15 +33,9 @@ import {
   printIntToPrint,
   arraysToLists,
   mapOps,
-  mapOpsToFunc,
-  mapOpsToFlippedInfix,
-  mapMutationToInfix,
-  mapOpsToInfix,
-  mapOpsToPrefix,
-  mapMutationToMethod,
   mapBackwardsIndexToForwards,
-  mapMutationToIndex,
-  mapOpsToIndex,
+  mapMutationTo,
+  mapOpsTo,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -147,12 +141,12 @@ const pythonLanguage: Language = {
         "at_back[List]": 0,
         "with_at_back[List]": 0,
       }),
-      mapMutationToIndex({
+      mapMutationTo.index({
         "with_at[Array]": 0,
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
-      mapOpsToIndex({
+      mapOpsTo.index({
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
@@ -268,7 +262,7 @@ const pythonLanguage: Language = {
           op("mul", int(1n), implicitConversion("bool_to_int", x[0])),
         include: (x) => method(x[0], "add", x[1]),
       }),
-      mapOpsToFunc({
+      mapOpsTo.func({
         "read[line]": "input",
         abs: "abs",
         "size[List]": "len",
@@ -288,16 +282,16 @@ const pythonLanguage: Language = {
         "println[Text]": "print",
         gcd: "math.gcd",
       }),
-      mapOpsToFlippedInfix({
+      mapOpsTo.flippedInfix({
         "contains[List]": "in",
         "contains[Table]": "in",
         "contains[Set]": "in",
         "contains[Text]": "in",
       }),
-      mapMutationToMethod({
+      mapMutationTo.method({
         append: "append",
       }),
-      mapMutationToInfix({
+      mapMutationTo.infix({
         add: "+=",
         sub: "-=",
         mul: "*=",
@@ -310,7 +304,7 @@ const pythonLanguage: Language = {
         bit_shift_left: "<<=",
         bit_shift_right: ">>=",
       }),
-      mapOpsToInfix({
+      mapOpsTo.infix({
         pow: "**",
         repeat: "*",
         div: "//",
@@ -335,12 +329,12 @@ const pythonLanguage: Language = {
         and: "and",
         or: "or",
       }),
-      mapOpsToPrefix({
+      mapOpsTo.prefix({
         neg: "-",
         bit_not: "~",
         not: "not",
       }),
-      mapOpsToInfix({ mul: "*" }),
+      mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
       addOneToManyAssignments(),
     ),

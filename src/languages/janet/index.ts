@@ -9,9 +9,9 @@ import emitProgram from "./emit";
 import {
   arraysToLists,
   flipBinaryOps,
-  mapMutationToFunc,
+  mapMutationTo,
   mapOps,
-  mapOpsToFunc,
+  mapOpsTo,
   removeImplicitConversions,
 } from "../../plugins/ops";
 import { addVarDeclarations } from "../../plugins/block";
@@ -115,7 +115,7 @@ const janetLanguage: Language = {
         "slice[List]": (x) =>
           rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
       }),
-      mapMutationToFunc(
+      mapMutationTo.func(
         {
           succ: "++",
           pred: "--",
@@ -129,7 +129,7 @@ const janetLanguage: Language = {
         },
         false,
       ),
-      mapOpsToFunc({
+      mapOpsTo.func({
         replace: "string/replace-all",
         "concat[Text]": "string",
         abs: "math/abs",

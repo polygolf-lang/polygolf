@@ -265,36 +265,30 @@ export function mapMutationUsing<
 }
 
 export const mapOps = mapOpsUsing(generalOpMapper, "variadic");
-export const mapOpsToFunc = mapOpsUsing(funcOpMapper, "variadic");
-export const mapOpsToMethod = mapOpsUsing(methodOpMapper, "variadic");
-export const mapOpsToPrefix = mapOpsUsing<string, UnaryOpCode>(
-  prefixOpMapper,
-  "variadic",
-);
-export const mapOpsToInfix = mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
-  infixOpMapper,
-  "leftChain",
-);
-export const mapOpsToFlippedInfix = mapOpsUsing<
-  string,
-  BinaryOpCode | VariadicOpCode
->(flippedInfixMapper, "leftChain");
-/** Values are what should be added to the key. */
-export const mapOpsToIndex = mapOpsUsing<0 | 1, BinaryOpCode>(
-  indexOpMapper,
-  "variadic",
-);
+export const mapOpsTo = {
+  func: mapOpsUsing(funcOpMapper, "variadic"),
+  method: mapOpsUsing(methodOpMapper, "variadic"),
+  prefix: mapOpsUsing<string, UnaryOpCode>(prefixOpMapper, "variadic"),
+  infix: mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
+    infixOpMapper,
+    "leftChain",
+  ),
+  flippedInfix: mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
+    flippedInfixMapper,
+    "leftChain",
+  ),
+  /** Values are what should be added to the key. */
+  index: mapOpsUsing<0 | 1, BinaryOpCode>(indexOpMapper, "variadic"),
+};
 
-export const mapMutationToFunc = mapMutationUsing(funcOpMapper);
-export const mapMutationToMethod = mapMutationUsing(methodOpMapper);
-export const mapMutationToInfix = mapMutationUsing(infixOpMapper);
-export const mapMutationToPrefix = mapMutationUsing<string, UnaryOpCode>(
-  prefixOpMapper,
-);
-/** Values are what should be added to the key. */
-export const mapMutationToIndex = mapMutationUsing<0 | 1, TernaryOpCode>(
-  indexOpMapper,
-);
+export const mapMutationTo = {
+  func: mapMutationUsing(funcOpMapper),
+  method: mapMutationUsing(methodOpMapper),
+  infix: mapMutationUsing(infixOpMapper),
+  prefix: mapMutationUsing<string, UnaryOpCode>(prefixOpMapper),
+  /** Values are what should be added to the key. */
+  index: mapMutationUsing<0 | 1, TernaryOpCode>(indexOpMapper),
+};
 
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {

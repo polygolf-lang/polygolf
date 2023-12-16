@@ -25,14 +25,9 @@ import {
   removeImplicitConversions,
   printIntToPrint,
   mapOps,
-  mapOpsToFunc,
-  mapOpsToFlippedInfix,
-  mapMutationToInfix,
-  mapOpsToInfix,
-  mapOpsToPrefix,
+  mapOpsTo,
   mapBackwardsIndexToForwards,
-  mapMutationToIndex,
-  mapOpsToIndex,
+  mapMutationTo,
 } from "../../plugins/ops";
 import {
   addNimImports,
@@ -153,12 +148,12 @@ const nimLanguage: Language = {
         "at_back[List]": 0,
         "with_at_back[List]": 0,
       }),
-      mapMutationToIndex({
+      mapMutationTo.index({
         "with_at[Array]": 0,
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
-      mapOpsToIndex({
+      mapOpsTo.index({
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
@@ -202,7 +197,7 @@ const nimLanguage: Language = {
         int_to_hex_aligned: (x) =>
           func("align", op("int_to_hex", x[0]), x[1], text("0")),
       }),
-      mapOpsToFunc({
+      mapOpsTo.func({
         gcd: "gcd",
         split: "split",
         split_whitespace: "split",
@@ -226,13 +221,13 @@ const nimLanguage: Language = {
         int_to_hex: "toHex",
         right_align: "align",
       }),
-      mapOpsToFlippedInfix({
+      mapOpsTo.flippedInfix({
         "contains[Array]": "system.in",
         "contains[List]": "system.in",
         "contains[Text]": "in",
         "contains[Table]": "system.in",
       }),
-      mapMutationToInfix({
+      mapMutationTo.infix({
         add: "+=",
         sub: "-=",
         mul: "*=",
@@ -240,7 +235,7 @@ const nimLanguage: Language = {
         "concat[List]": "&=",
         append: "&=",
       }),
-      mapOpsToInfix({
+      mapOpsTo.infix({
         pow: "^",
         trunc_div: "div",
         rem: "mod",
@@ -267,13 +262,13 @@ const nimLanguage: Language = {
         bit_or: "or",
         bit_xor: "xor",
       }),
-      mapOpsToPrefix({
+      mapOpsTo.prefix({
         bit_not: "not",
         not: "not",
         neg: "-",
         int_to_dec: "$",
       }),
-      mapOpsToInfix({ mul: "*" }),
+      mapOpsTo.infix({ mul: "*" }),
       addNimImports,
     ),
     simplegolf(

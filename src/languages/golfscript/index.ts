@@ -29,9 +29,8 @@ import {
   arraysToLists,
   mapBackwardsIndexToForwards,
   mapOps,
-  mapOpsToFunc,
-  mapMutationToIndex,
-  mapOpsToIndex,
+  mapOpsTo,
+  mapMutationTo,
 } from "../../plugins/ops";
 import {
   alias,
@@ -184,19 +183,19 @@ const golfscriptLanguage: Language = {
         "with_at_back[List]": 0,
       }),
       textGetToTextGetToIntToText,
-      mapMutationToIndex({
+      mapMutationTo.index({
         "with_at[Array]": 0,
         "with_at[List]": 0,
         "with_at_back[List]": 0,
         "with_at[Table]": 0,
       }),
-      mapOpsToIndex({
+      mapOpsTo.index({
         "at[Array]": 0,
         "at[List]": 0,
         "at_back[List]": 0,
         "at[Table]": 0,
       }),
-      mapOpsToFunc(
+      mapOpsTo.func(
         {
           not: "!",
           bit_not: "~",

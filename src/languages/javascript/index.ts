@@ -30,15 +30,8 @@ import {
   printIntToPrint,
   methodsAsFunctions,
   mapOps,
-  mapOpsToMethod,
-  mapOpsToFunc,
-  mapMutationToPrefix,
-  mapMutationToMethod,
-  mapMutationToInfix,
-  mapOpsToPrefix,
-  mapOpsToInfix,
-  mapMutationToIndex,
-  mapOpsToIndex,
+  mapOpsTo,
+  mapMutationTo,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -141,12 +134,12 @@ const javascriptLanguage: Language = {
             x[0],
           ),
       }),
-      mapMutationToIndex({
+      mapMutationTo.index({
         "with_at[Array]": 0,
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
-      mapOpsToIndex({
+      mapOpsTo.index({
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
@@ -156,7 +149,7 @@ const javascriptLanguage: Language = {
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
-      mapMutationToMethod({
+      mapMutationTo.method({
         append: "push",
       }),
       mapOps({
@@ -215,11 +208,11 @@ const javascriptLanguage: Language = {
         int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
         "contains[Table]": (x) => infix("in", x[1], x[0]),
       }),
-      mapMutationToPrefix({
+      mapMutationTo.prefix({
         succ: "++",
         pred: "--",
       }),
-      mapMutationToInfix({
+      mapMutationTo.infix({
         pow: "**=",
         mul: "*=",
         div: "/=",
@@ -237,7 +230,7 @@ const javascriptLanguage: Language = {
         and: "&&=",
         or: "||=",
       }),
-      mapOpsToMethod({
+      mapOpsTo.method({
         "ord_at[Ascii]": "charCodeAt",
         "contains[List]": "includes",
         "contains[Array]": "includes",
@@ -250,14 +243,14 @@ const javascriptLanguage: Language = {
         replace: "replaceAll",
         repeat: "repeat",
       }),
-      mapOpsToFunc({
+      mapOpsTo.func({
         abs: "abs",
         max: "Math.max",
         min: "Math.min",
         "println[Text]": "print",
         "print[Text]": "write",
       }),
-      mapOpsToInfix({
+      mapOpsTo.infix({
         pow: "**",
         div: "/",
         trunc_div: "/",
@@ -282,12 +275,12 @@ const javascriptLanguage: Language = {
         and: "&&",
         or: "||",
       }),
-      mapOpsToPrefix({
+      mapOpsTo.prefix({
         neg: "-",
         bit_not: "~",
         not: "!",
       }),
-      mapOpsToInfix({ mul: "*" }),
+      mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
     ),
     simplegolf(addOneToManyAssignments()),

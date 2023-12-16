@@ -29,12 +29,9 @@ import {
   removeImplicitConversions,
   printIntToPrint,
   mapOps,
-  mapOpsToFunc,
-  mapOpsToPrefix,
-  mapOpsToInfix,
+  mapOpsTo,
   mapBackwardsIndexToForwards,
-  mapMutationToIndex,
-  mapOpsToIndex,
+  mapMutationTo,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -133,12 +130,12 @@ const luaLanguage: Language = {
         "at_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
-      mapMutationToIndex({
+      mapMutationTo.index({
         "with_at[Array]": 1,
         "with_at[List]": 1,
         "with_at[Table]": 0,
       }),
-      mapOpsToIndex({
+      mapOpsTo.index({
         "at[Array]": 1,
         "at[List]": 1,
         "at[Table]": 0,
@@ -174,7 +171,7 @@ const luaLanguage: Language = {
               : method(c, "gsub", text("%%"), text("%%%%")),
           ),
       }),
-      mapOpsToFunc({
+      mapOpsTo.func({
         "read[line]": "io.read",
         "print[Text]": "io.write",
         "println[Text]": "print",
@@ -187,7 +184,7 @@ const luaLanguage: Language = {
 
     simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
     required(
-      mapOpsToInfix({
+      mapOpsTo.infix({
         pow: "^",
         div: "//",
         mod: "%",
@@ -210,7 +207,7 @@ const luaLanguage: Language = {
         and: "and",
         or: "or",
       }),
-      mapOpsToPrefix({
+      mapOpsTo.prefix({
         not: "not",
         neg: "-",
         "size[List]": "#",
@@ -218,7 +215,7 @@ const luaLanguage: Language = {
         "size[byte]": "#",
         bit_not: "~",
       }),
-      mapOpsToInfix({ mul: "*" }),
+      mapOpsTo.infix({ mul: "*" }),
     ),
     simplegolf(
       alias({
