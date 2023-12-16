@@ -44,6 +44,26 @@ function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
   }
 }
 
+interface WithPreprocess<T> {
+  value: T;
+  preprocess: (x: readonly Node[]) => readonly Node[];
+}
+
+function isWithPreprocess<T>(x: T | WithPreprocess<T>): x is WithPreprocess<T> {
+  return (
+    typeof x === "object" && x !== null && "preprocess" in x && "value" in x
+  );
+}
+
+export function flipped<T>(
+  value: T,
+): WithPreprocess<T extends TemplateStringsArray ? string : T> {
+  return {
+    value: Array.isArray(value) && "raw" in value ? value[0] : value,
+    preprocess: (x) => [...x].reverse(),
+  };
+}
+
 export type OpMapper<T> = (
   arg: T,
   opArgs: readonly Node[],
@@ -73,8 +93,6 @@ export const infixOpMapper: OpMapper<string> = (arg, opArgs) =>
   infix(arg, opArgs[0], opArgs[1]);
 export const postfixOpMapper: OpMapper<string> = (arg, opArgs) =>
   postfix(arg, opArgs[0]);
-export const flippedInfixMapper: OpMapper<string> = (arg, opArgs) =>
-  infix(arg, opArgs[1], opArgs[0]);
 export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {
   const index = indexCall(opArgs[0], arg === 1 ? add1(opArgs[1]) : opArgs[1]);
   return opArgs.length > 2 ? assignment(index, opArgs[2]) : index; // TODO: consider mapping to infix "=" instead
@@ -89,7 +107,7 @@ export function mapOpsUsing<
   variadicModeDefault: "variadic" | "leftChain" | "rightChain",
 ) {
   return function (
-    opCodeMap: Partial<Record<TOpCode, Targ>>,
+    opCodeMap: Partial<Record<TOpCode, Targ | WithPreprocess<Targ>>>,
     variadicMode: "variadic" | "leftChain" | "rightChain" = variadicModeDefault,
   ) {
     enhanceOpMap(opCodeMap);
@@ -98,8 +116,12 @@ export function mapOpsUsing<
       bakeType: true,
       visit(node: Node, spine: Spine, context: CompilationContext) {
         function map(opCode: OpCode, exprs: readonly Node[]) {
-          const arg = opCodeMap[opCode as TOpCode];
+          let arg = opCodeMap[opCode as TOpCode];
           if (arg !== undefined) {
+            if (isWithPreprocess(arg)) {
+              exprs = arg.preprocess(exprs);
+              arg = arg.value;
+            }
             exprs =
               variadicMode === "variadic" ||
               (!isVariadic(opCode) && opCode !== "sub") ||
@@ -277,10 +299,6 @@ export const mapOpsTo = {
   prefix: mapOpsUsing<string, UnaryOpCode>(prefixOpMapper, "variadic"),
   infix: mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
     infixOpMapper,
-    "leftChain",
-  ),
-  flippedInfix: mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
-    flippedInfixMapper,
     "leftChain",
   ),
   /** Values are what should be added to the key. */

@@ -28,6 +28,7 @@ import {
   mapOpsTo,
   mapBackwardsIndexToForwards,
   mapMutationTo,
+  flipped,
 } from "../../plugins/ops";
 import {
   addNimImports,
@@ -223,12 +224,6 @@ const nimLanguage: Language = {
         },
         "leftChain",
       ),
-      mapOpsTo.flippedInfix({
-        "contains[Array]": "system.in",
-        "contains[List]": "system.in",
-        "contains[Text]": "in",
-        "contains[Table]": "system.in",
-      }),
       mapMutationTo.infix({
         add: "+=",
         sub: "-=",
@@ -238,6 +233,10 @@ const nimLanguage: Language = {
         append: "&=",
       }),
       mapOpsTo.infix({
+        "contains[Array]": flipped`system.in`,
+        "contains[List]": flipped`system.in`,
+        "contains[Text]": flipped`in`,
+        "contains[Table]": flipped`system.in`,
         pow: "^",
         trunc_div: "div",
         rem: "mod",

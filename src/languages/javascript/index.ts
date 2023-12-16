@@ -124,9 +124,12 @@ const javascriptLanguage: Language = {
     ),
     required(
       forRangeToForCLike,
+      mapOpsTo.builtin({
+        true: "true",
+        false: "false",
+        argv: "arguments",
+      }),
       mapOps({
-        argv: builtin("arguments"),
-
         "at[argv]": (x) =>
           op(
             "at[List]",
@@ -153,8 +156,6 @@ const javascriptLanguage: Language = {
         append: "push",
       }),
       mapOps({
-        true: builtin("true"),
-        false: builtin("false"),
         "at[Ascii]": (x) => indexCall(x[0], x[1]),
         "slice[List]": (x) =>
           method(x[0], "slice", x[1], op("add", x[1], x[2])),

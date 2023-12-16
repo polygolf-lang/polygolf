@@ -36,6 +36,7 @@ import {
   mapBackwardsIndexToForwards,
   mapMutationTo,
   mapOpsTo,
+  flipped,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -165,7 +166,6 @@ const pythonLanguage: Language = {
             "find",
             func("bytes", x[1], text("u8")),
           ),
-        join: (x) => method(x[1], "join", x[0]),
         "size[byte]": (x) => func("len", func("bytes", x[0], text("u8"))),
         "reversed[codepoint]": (x) =>
           rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
@@ -262,6 +262,7 @@ const pythonLanguage: Language = {
         split: "split",
         split_whitespace: "split",
         replace: "replace",
+        join: flipped`join`,
       }),
       mapOpsTo.func({
         "read[line]": "input",
@@ -283,12 +284,6 @@ const pythonLanguage: Language = {
         "println[Text]": "print",
         gcd: "math.gcd",
       }),
-      mapOpsTo.flippedInfix({
-        "contains[List]": "in",
-        "contains[Table]": "in",
-        "contains[Set]": "in",
-        "contains[Text]": "in",
-      }),
       mapMutationTo.method({
         append: "append",
       }),
@@ -306,6 +301,10 @@ const pythonLanguage: Language = {
         bit_shift_right: ">>=",
       }),
       mapOpsTo.infix({
+        "contains[List]": flipped`in`,
+        "contains[Table]": flipped`in`,
+        "contains[Set]": flipped`in`,
+        "contains[Text]": flipped`in`,
         pow: "**",
         repeat: "*",
         div: "//",
