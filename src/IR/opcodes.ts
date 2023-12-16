@@ -35,6 +35,8 @@ const T2 = typeArg("T2");
 
 export const opCodeDefinitions = {
   // Arithmetic
+  succ: { args: [int()] },
+  pred: { args: [int()] },
   add: { args: variadic(int()), front: "+", assoc: true, commutes: true },
   sub: { args: [int(), int()], front: "-" },
   mul: { args: variadic(int()), front: "*", assoc: true, commutes: true },
@@ -188,6 +190,8 @@ export const opCodeDefinitions = {
 type AnyOpCode = keyof typeof opCodeDefinitions;
 
 export const opCodeDescriptions: Record<AnyOpCode, string> = {
+  succ: "Integer successor.",
+  pred: "Integer predecessor.",
   add: "Integer addition.",
   sub: "Integer subtraction.",
   mul: "Integer multiplication.",

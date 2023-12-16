@@ -117,8 +117,8 @@ const janetLanguage: Language = {
       }),
       mapMutationToFunc(
         {
-          inc: "++",
-          dec: "--",
+          succ: "++",
+          pred: "--",
           add: "+=",
           sub: "-=",
           mul: "*=",

@@ -232,8 +232,8 @@ const javascriptLanguage: Language = {
         "print[Text]": "write",
       }),
       mapMutationToPrefix({
-        inc: "++",
-        dec: "--",
+        succ: "++",
+        pred: "--",
       }),
       mapMutationToMethod({
         append: "push",

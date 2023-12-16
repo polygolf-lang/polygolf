@@ -169,6 +169,8 @@ function _op(op: OpCode, ...args: Node[]): Op {
 
 export function op(opCode: OpCode, ...args: Node[]): Node {
   if (!isOpCode(opCode)) return _op(opCode, ...args);
+  if (opCode === "pred") return sub1(args[0]);
+  if (opCode === "succ") return add1(args[0]);
   if (opCode === "not" || opCode === "bit_not") {
     const arg = args[0];
     if (isOp()(arg)) {

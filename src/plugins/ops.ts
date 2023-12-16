@@ -76,9 +76,10 @@ export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {
   return opArgs.length > 2 ? assignment(index, opArgs[2]) : index; // TODO: consider mapping to infix "=" instead
 };
 
-export function mapOpsUsing<Targ = string, TOpCode extends string = OpCode>(
-  mapper: OpMapper<Targ>,
-) {
+export function mapOpsUsing<
+  Targ = string,
+  TOpCode extends OpCode | "pred" | "succ" = OpCode,
+>(mapper: OpMapper<Targ>) {
   return function (
     opCodeMap: Partial<Record<TOpCode, Targ>>,
     variadicMode: "variadic" | "leftChain" | "rightChain" = "leftChain",
@@ -88,68 +89,70 @@ export function mapOpsUsing<Targ = string, TOpCode extends string = OpCode>(
       name: "mapOpsUsing(...)",
       bakeType: true,
       visit(node: Node, spine: Spine, context: CompilationContext) {
-        if (isOp()(node)) {
-          let exprs = node.args;
-          if (node.op === "mul" && isInt(-1n)(exprs[0]) && "neg" in opCodeMap) {
-            const negation = mapper(
-              opCodeMap.neg as Targ,
-              [exprs[1]],
-              "neg",
-              spine,
-              context,
-            );
-            if (negation !== undefined)
-              return exprs.length > 2
-                ? op("mul", negation, ...exprs.slice(2))
-                : negation;
-          }
-          const arg = opCodeMap[node.op as TOpCode];
+        function map(opCode: OpCode, exprs: readonly Node[]) {
+          const arg = opCodeMap[opCode as TOpCode];
           if (arg !== undefined) {
             exprs =
               variadicMode === "variadic" ||
-              !isVariadic(node.op) ||
+              !isVariadic(opCode) ||
               exprs.length < 2
                 ? exprs
                 : variadicMode === "leftChain"
-                ? [op(node.op, ...exprs.slice(0, -1)), exprs.at(-1)!]
-                : [exprs[0], op(node.op, ...exprs.slice(1))];
-            return mapper(arg, exprs, node.op, spine as Spine<Op>, context);
+                ? [op(opCode, ...exprs.slice(0, -1)), exprs.at(-1)!]
+                : [exprs[0], op(opCode, ...exprs.slice(1))];
+            return mapper(arg, exprs, opCode, spine as Spine<Op>, context);
           }
+        }
+        if (isOp()(node)) {
+          let exprs = node.args;
+          if (
+            node.op === "add" &&
+            exprs.length === 2 &&
+            isInt(-1n, 1n)(exprs[0])
+          ) {
+            if (exprs[0].value === -1n && "pred" in opCodeMap) {
+              return map("pred", [exprs[1]]);
+            }
+            if (exprs[0].value === 1n && "succ" in opCodeMap) {
+              return map("succ", [exprs[1]]);
+            }
+          }
+          if (node.op === "mul" && isInt(-1n)(exprs[0]) && "neg" in opCodeMap) {
+            const negation = map("neg", [exprs[1]]);
+            if (negation !== undefined) {
+              if (exprs.length > 2) {
+                exprs = [negation, ...exprs.slice(2)];
+              } else {
+                return negation;
+              }
+            }
+          }
+          if (node.op === "add" && "add" in opCodeMap) {
+            let positiveArgs = exprs.filter((x) => !isNegative(x));
+            let negativeArgs = exprs.filter((x) => isNegative(x));
+            if (positiveArgs.length < 1) {
+              positiveArgs = [negativeArgs[0]];
+              negativeArgs = negativeArgs.slice(1);
+            }
+            const positive =
+              positiveArgs.length > 1
+                ? map("add", positiveArgs)!
+                : positiveArgs[0];
+            if (negativeArgs.length > 0) {
+              return map("sub", [
+                positive,
+                ...negativeArgs.map((x) => ({
+                  ...op("neg", x),
+                  targetType: x.targetType,
+                })),
+              ]);
+            }
+          }
+          return map(node.op, exprs);
         }
       },
     };
   };
-}
-
-export function asBinaryChain(
-  opCode: BinaryOpCode | VariadicOpCode,
-  exprs: readonly Node[],
-  names: Partial<Record<OpCode, string>>,
-  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
-  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
-): Node {
-  const negName = names.neg;
-  if (opCode === "mul" && isInt(-1n)(exprs[0]) && negName !== undefined) {
-    exprs = [unaryMapping(negName, exprs[1]), ...exprs.slice(2)];
-  }
-  if (opCode === "add") {
-    exprs = exprs
-      .filter((x) => !isNegative(x))
-      .concat(exprs.filter(isNegative));
-  }
-  let result = exprs[0];
-  for (const expr of exprs.slice(1)) {
-    const subName = names.sub;
-    if (opCode === "add" && isNegative(expr) && subName !== undefined) {
-      result = binaryMapping(subName, result, {
-        ...op("neg", expr),
-        targetType: expr.targetType,
-      });
-    } else {
-      result = binaryMapping(names[opCode] ?? "?", result, expr);
-    }
-  }
-  return result;
 }
 
 /** Values are op to be applied to the collection and added to the index or 0 if nothing should be added. */
@@ -169,7 +172,7 @@ export const mapBackwardsIndexToForwards = mapOpsUsing<
 // "a = a + b" --> "a += b"
 export function mapMutationUsing<
   Targ = string,
-  TOpCode extends string = BinaryOpCode | VariadicOpCode,
+  TOpCode extends OpCode = OpCode,
 >(mapper: OpMapper<Targ>) {
   return function mapAsMutation(
     opMap: Partial<Record<TOpCode, Targ>>,
@@ -193,6 +196,31 @@ export function mapMutationUsing<
             (x) => stringify(x) === leftValueStringified,
           );
           if (index === 0 || (index > 0 && isCommutative(opCode))) {
+            if (
+              opCode === "add" &&
+              args.length === 2 &&
+              index === 1 &&
+              isInt()(args[0])
+            ) {
+              if (args[0].value === -1n && "pred" in opMap) {
+                return mapper(
+                  opMap.pred as Targ,
+                  [args[1]],
+                  opCode,
+                  spine,
+                  context,
+                );
+              }
+              if (args[0].value === 1n && "succ" in opMap) {
+                return mapper(
+                  opMap.succ as Targ,
+                  [args[1]],
+                  opCode,
+                  spine,
+                  context,
+                );
+              }
+            }
             const newArgs = args.filter((x, i) => i !== index);
             if (
               opCode === "add" &&
@@ -240,13 +268,10 @@ export const mapOpsToFlippedInfix = mapOpsUsing<
 /** Values are what should be added to the key. */
 export const mapOpsToIndex = mapOpsUsing<0 | 1, BinaryOpCode>(indexOpMapper);
 
-export const mapMutationToFunc = mapMutationUsing<
-  string,
-  BinaryOpCode | TernaryOpCode | VariadicOpCode | "inc" | "dec"
->(funcOpMapper);
+export const mapMutationToFunc = mapMutationUsing(funcOpMapper);
 export const mapMutationToMethod = mapMutationUsing(methodOpMapper);
 export const mapMutationToInfix = mapMutationUsing(infixOpMapper);
-export const mapMutationToPrefix = mapMutationUsing<string, "inc" | "dec">(
+export const mapMutationToPrefix = mapMutationUsing<string, UnaryOpCode>(
   prefixOpMapper,
 );
 /** Values are what should be added to the key. */

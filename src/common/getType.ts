@@ -467,6 +467,18 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
       const t = got[0] as IntegerType;
       return int(neg(t.high), neg(t.low));
     }
+    case "succ":
+      return getArithmeticType(
+        "add",
+        got[0] as IntegerType,
+        integerType(1n, 1n),
+      );
+    case "pred":
+      return getArithmeticType(
+        "sub",
+        got[0] as IntegerType,
+        integerType(1n, 1n),
+      );
     case "not":
       return booleanType;
     case "int_to_bool":
