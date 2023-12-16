@@ -29,7 +29,7 @@ import {
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 import { replaceAtIndex } from "../common/arrays";
-import type { CompilationContext } from "@/common/compile";
+import { type CompilationContext } from "@/common/compile";
 
 function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
   for (const [a, b] of [
@@ -97,12 +97,12 @@ export function mapOpsUsing<
           if (arg !== undefined) {
             exprs =
               variadicMode === "variadic" ||
-              !isVariadic(opCode) ||
+              (!isVariadic(opCode) && opCode !== "sub") ||
               exprs.length < 3
                 ? exprs
                 : variadicMode === "leftChain"
-                ? [op(opCode, ...exprs.slice(0, -1)), exprs.at(-1)!]
-                : [exprs[0], op(opCode, ...exprs.slice(1))];
+                ? [map(opCode, exprs.slice(0, -1))!, exprs.at(-1)!]
+                : [exprs[0], map(opCode, exprs.slice(1))!];
             return mapper(
               arg as Targ,
               exprs,
@@ -143,7 +143,6 @@ export function mapOpsUsing<
               positiveArgs = [negativeArgs[0]];
               negativeArgs = negativeArgs.slice(1);
             }
-            console.log(exprs, positiveArgs, negativeArgs);
             const positive =
               positiveArgs.length > 1
                 ? map("add", positiveArgs)!
