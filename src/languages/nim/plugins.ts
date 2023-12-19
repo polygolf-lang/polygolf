@@ -9,6 +9,8 @@ import {
   isSubtype,
   op,
   prefix,
+  Op,
+  OpCode,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import type { Plugin } from "../../common/Language";
@@ -107,7 +109,10 @@ export function useBackwardsIndex(node: Node, spine: Spine) {
       ...replaceAtIndex(
         node.args,
         1,
-        prefix("system.^", op("neg", node.args[1])),
+        prefix(
+          "system.^",
+          op("neg", (node as Op<`${string}at_back${string}` & OpCode>).args[1]),
+        ),
       ),
     );
   }

@@ -200,10 +200,17 @@ export function useIndexCalls(
         } else {
           indexNode = indexCall(node.args[0], node.args[1]);
         }
-        if (!node.op.startsWith("set_")) {
-          return indexNode;
-        } else {
+        if (
+          isOp(
+            "set_at[Array]",
+            "set_at[List]",
+            "set_at_back[List]",
+            "set_at[Table]",
+          )(node)
+        ) {
           return assignment(indexNode, node.args[2]);
+        } else {
+          return indexNode;
         }
       }
     },

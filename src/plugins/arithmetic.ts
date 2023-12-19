@@ -294,7 +294,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
         }
         const powNode = node.args.find(
           (x) => isOp("pow")(x) && isInt(2n)(x.args[0]),
-        ) as Op | undefined;
+        ) as Op<"pow"> | undefined;
         if (powNode !== undefined) {
           return op(
             "bit_shift_left",

@@ -22,6 +22,7 @@ import {
   isCommutative,
   isOpCode,
   inverseOpCode,
+  OpCodeArgValues,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseNode {
@@ -50,7 +51,7 @@ export interface ImplicitConversion extends BaseNode {
 export interface Op<Op extends OpCode = OpCode> extends BaseNode {
   readonly kind: "Op";
   readonly op: Op;
-  readonly args: readonly Node[];
+  readonly args: OpCodeArgValues<Op>;
 }
 
 export interface KeyValue extends BaseNode {
@@ -173,14 +174,14 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
   if (opCode === "not" || opCode === "bit_not") {
     const arg = args[0];
     if (isOp()(arg)) {
-      if (arg.op === opCode && arg.args[0].kind !== "ImplicitConversion")
-        return arg.args[0];
+      if (arg.op === opCode && arg.args[0]?.kind !== "ImplicitConversion")
+        return arg.args[0]!;
       if (opCode === "not") {
         if (arg.op in booleanNotOpCode) {
           return op(
             booleanNotOpCode[arg.op as keyof typeof booleanNotOpCode],
-            arg.args[0],
-            arg.args[1],
+            arg.args[0]!,
+            arg.args[1]!,
           );
         }
       }

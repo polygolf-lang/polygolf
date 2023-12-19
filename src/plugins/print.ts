@@ -169,7 +169,7 @@ export function splitPrint(node: Node, spine: Spine) {
                 ? block([])
                 : op("print[Text]", x.expr)
               : assignments.includes(x as any)
-              ? op("print[Text]", ((x as Assignment).expr as Op).args[1])
+              ? op("print[Text]", ((x as Assignment).expr as Op).args[1]!)
               : undefined,
           ).node;
         }

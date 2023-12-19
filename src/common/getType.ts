@@ -45,7 +45,7 @@ import {
   type ArrayType,
   type TableType,
   opCodeDefinitions,
-  type ArgTypes,
+  type AnyOpCodeArgTypes,
   OpCodeFrontNamesToOpCodes,
   integerType,
 } from "../IR";
@@ -252,7 +252,7 @@ export function getInstantiatedOpCodeArgTypes(op: OpCode): Type[] {
   if (!("variadic" in type)) {
     return type.map(instantiate);
   }
-  return Array(type.min).fill(instantiate(type.variadic));
+  return Array(type.min).fill(instantiate(type.rest));
 }
 
 export function getGenericOpCodeArgTypes(op: OpCode): Type[] {
@@ -260,10 +260,12 @@ export function getGenericOpCodeArgTypes(op: OpCode): Type[] {
   if (!("variadic" in type)) {
     return [...type];
   }
-  return Array(type.min).fill(type.variadic);
+  return Array(type.min).fill(type.rest);
 }
 
-export function expectedTypesToString(expectedTypes: ArgTypes): string {
+export function expectedTypesToString(
+  expectedTypes: AnyOpCodeArgTypes,
+): string {
   return "variadic" in expectedTypes
     ? `[...${toString(expectedTypes.variadic)}]`
     : `[${expectedTypes.map(toString).join(", ")}]`;
@@ -276,7 +278,7 @@ export function expectedTypesToString(expectedTypes: ArgTypes): string {
  * @param expectedTypes Expected types (array of types or variadic object).
  * @returns True iff it is a match.
  */
-function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
+function isTypeMatch(gotTypes: Type[], expectedTypes: AnyOpCodeArgTypes) {
   const variadic = "variadic" in expectedTypes;
   if (variadic && expectedTypes.min > gotTypes.length) return false;
   if (!variadic && expectedTypes.length !== gotTypes.length) return false;

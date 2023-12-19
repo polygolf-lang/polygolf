@@ -161,7 +161,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
         isInt(0n)(node.start) &&
         ((isOp()(node.end) &&
           ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
-          isIdent()(node.end.args[0])) ||
+          isIdent()(node.end.args[0]!)) ||
           isInt()(node.end))
       ) {
         const indexVar = node.variable;
@@ -188,7 +188,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
             if (
               isOp()(n) &&
               n.args[0] === indexedCollection &&
-              isUserIdent(indexVar.name)(n.args[1])
+              isUserIdent(indexVar.name)(n.args[1]!)
             )
               return elementIdentifier;
           }).node;
