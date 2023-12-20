@@ -493,8 +493,8 @@ export function arity(op: OpCode): number {
 
 export function matchesOpCodeArity(op: OpCode, arity: number) {
   const expectedTypes = opCodeDefinitions[op].args;
-  if ("variadic" in expectedTypes) {
-    return arity >= expectedTypes.min;
+  if (expectedTypes.length > 0 && "variadic" in expectedTypes.at(-1)!) {
+    return arity >= expectedTypes.length - 1;
   }
   return expectedTypes.length === arity;
 }

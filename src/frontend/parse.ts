@@ -401,7 +401,9 @@ export function sexpr(
         `Expected ${matchingOpCodes
           .map((opCode) => opCodeDefinitions[opCode].args)
           .map((args) =>
-            "variadic" in args ? `${args.min}..oo` : `${args.length}`,
+            args.length > 0 && "variadic" in args
+              ? `${args.length - 1}..oo`
+              : `${args.length}`,
           )
           .join(", ")} but got ${args.length}.`,
       calleeIdent.source,
