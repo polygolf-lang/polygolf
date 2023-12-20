@@ -610,7 +610,7 @@ export function getOpCodeTypeFromTypes(
     }
     case "slice[List]":
       return got[0];
-    case "slice_back[List]":
+    case "slice_back[List]": {
       const start = got[1] as IntegerType;
       const length = got[2] as IntegerType;
       const startPlusLength = getArithmeticType("add", start, length);
@@ -624,6 +624,7 @@ export function getOpCodeTypeFromTypes(
           startPlusLength,
         )}.`,
       );
+    }
     case "ord_at[codepoint]":
     case "ord_at_back[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
