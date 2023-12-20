@@ -321,7 +321,11 @@ function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
   return true;
 }
 
-export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
+export function getOpCodeTypeFromTypes(
+  opCode: OpCode,
+  got: Type[],
+  skipAdditionalChecks = false,
+): Type {
   switch (opCode) {
     // binary
     // (num, num) => num
@@ -586,12 +590,40 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
     case "slice_back[codepoint]":
     case "slice_back[Ascii]": {
       const t = got[0] as TextType;
+      const start = got[1] as IntegerType;
       const length = got[2] as IntegerType;
-      return text(int(0n, min(t.codepointLength.high, length.high)), t.isAscii);
+      const startPlusLength = getArithmeticType("add", start, length);
+      if (
+        skipAdditionalChecks ||
+        !opCode.includes("back") ||
+        isSubtype(startPlusLength, integerType(-Infinity, 0))
+      )
+        return text(
+          int(0n, min(t.codepointLength.high, length.high)),
+          t.isAscii,
+        );
+      throw new Error(
+        `Type error. start index + length must be nonpositive, but got ${toString(
+          startPlusLength,
+        )}.`,
+      );
     }
     case "slice[List]":
-    case "slice_back[List]":
       return got[0];
+    case "slice_back[List]":
+      const start = got[1] as IntegerType;
+      const length = got[2] as IntegerType;
+      const startPlusLength = getArithmeticType("add", start, length);
+      if (
+        skipAdditionalChecks ||
+        isSubtype(startPlusLength, integerType(-Infinity, 0))
+      )
+        return got[0];
+      throw new Error(
+        `Type error. start index + length must be nonpositive, but got ${toString(
+          startPlusLength,
+        )}.`,
+      );
     case "ord_at[codepoint]":
     case "ord_at_back[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
