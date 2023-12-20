@@ -105,7 +105,10 @@ export default function emitProgram(program: IR.Node): TokenTree {
           return [
             emitNode(expr.variable.collection),
             ".",
+            ".",
+            ",",
             emitNode(expr.variable.index),
+            "+",
             ".",
             "@",
             "<",
