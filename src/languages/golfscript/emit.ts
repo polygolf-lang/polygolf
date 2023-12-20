@@ -101,14 +101,25 @@ export default function emitProgram(program: IR.Node): TokenTree {
   function emitNode(expr: IR.Node): TokenTree {
     switch (expr.kind) {
       case "Assignment":
-        if (expr.variable.kind === "IndexCall")
+        if (expr.variable.kind === "IndexCall") {
+          if (isInt(-1n)(expr.variable.index)) {
+            return [
+              emitNode(expr.variable.collection),
+              "-1",
+              "<",
+              "[",
+              emitNode(expr.expr),
+              "]",
+              "+",
+              ":",
+              emitNode(expr.variable.collection),
+              ";",
+            ];
+          }
           return [
             emitNode(expr.variable.collection),
             ".",
-            ".",
-            ",",
             emitNode(expr.variable.index),
-            "+",
             ".",
             "@",
             "<",
@@ -125,6 +136,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
             emitNode(expr.variable.collection),
             ";",
           ];
+        }
         return [emitNode(expr.expr), ":", emitNode(expr.variable), ";"];
       case "Identifier":
         return expr.name;
