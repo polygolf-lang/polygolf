@@ -253,14 +253,15 @@ export default function emitProgram(
           const low = emit(e.low);
           const low0 = isInt(0n)(e.low);
           const high = emit(e.high);
+          const high0 = isInt(0n)(e.high);
           const step = emit(e.step);
           const step1 = isInt(1n)(e.step);
           return [
             emit(e.collection, Infinity),
             "[",
-            ...(low0 ? [] : low),
+            low0 ? [] : low,
             ":",
-            high,
+            high0 ? [] : high,
             step1 ? [] : [":", ...step],
             "]",
           ];

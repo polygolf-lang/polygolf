@@ -45,6 +45,7 @@ import {
   mergePrint,
 } from "../../plugins/print";
 import {
+  startsWithEndsWithToSliceEquality,
   textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
 } from "../../plugins/textOps";
@@ -107,6 +108,7 @@ const luaLanguage: Language = {
       implicitlyConvertPrintArg,
       usePrimaryTextOps("byte"),
       textToIntToFirstIndexTextGetToInt,
+      startsWithEndsWithToSliceEquality("byte"),
       mapOps({
         dec_to_int: (x) =>
           op("mul", int(1n), implicitConversion("dec_to_int", x[0])),
@@ -128,6 +130,10 @@ const luaLanguage: Language = {
         "at_back[byte]": "size[byte]",
         "at_back[codepoint]": "size[codepoint]",
         "at_back[List]": "size[List]",
+        "slice_back[Ascii]": "size[Ascii]",
+        "slice_back[byte]": "size[byte]",
+        "slice_back[codepoint]": "size[codepoint]",
+        "slice_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
       mapMutationTo.index({

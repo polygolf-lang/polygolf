@@ -19,17 +19,30 @@ print(4,end="")
 ## Indexing
 
 ```polygolf
-$a <- (text_get_codepoint "abcdefg" 4);
-$b <- (text_get_codepoint_slice "abcdefg" 2 3);
-$c <- (text_codepoint_reversed "abcdefg");
-$d <- ("abcdefg" @ -2);
+$a <- ("abcdefg" @ 4);
+$b <- (slice "abcdefg" 2 3);
+$c <- (slice "abcdefg" -4 3);
+$d <- (slice "abcdefg" -4 4);
+$e <- (reversed "abcdefg");
+$f <- ("abcdefg" @ -2);
 ```
 
 ```python nogolf
 a="abcdefg"[4]
 b="abcdefg"[2:5]
-c="abcdefg"[::-1]
-d="abcdefg"[-2]
+c="abcdefg"[-4:-1]
+d="abcdefg"[-4:]
+e="abcdefg"[::-1]
+f="abcdefg"[-2]
+```
+
+```polygolf
+starts_with (@0) "abc";
+```
+
+```py
+import sys
+sys.argv[1][:3]=="abc"
 ```
 
 ## Text splitting
@@ -215,18 +228,20 @@ a=b="Hello"
 ## String encoding Ops
 
 ```polygolf
+$t <- "opq";
 at[Ascii] "abc" 1;
 ord[Ascii] "g";
 ord_at[Ascii] "ijk" 1;
-size[Ascii] "opq";
+size[Ascii] $t;
 char[Ascii] 99;
 ```
 
 ```py nogolf
+t="opq"
 "abc"[1]
 ord("g")
 ord("ijk"[1])
-len("opq")
+len(t)
 chr(99)
 ```
 

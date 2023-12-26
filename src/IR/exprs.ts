@@ -1,3 +1,4 @@
+import { byteLength, charLength } from "../common/strings";
 import { getArithmeticType } from "../common/getType";
 import { stringify } from "../common/stringify";
 import {
@@ -21,6 +22,7 @@ import {
   isCommutative,
   isOpCode,
   inverseOpCode,
+  isUnary,
 } from "./IR";
 
 export interface ImplicitConversion extends BaseNode {
@@ -171,6 +173,10 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
   if (!isOpCode(opCode)) return _op(opCode, ...args);
   if (opCode === "pred") return sub1(args[0]);
   if (opCode === "succ") return add1(args[0]);
+  if (isUnary(opCode)) {
+    const value = evalUnary(opCode, args[0]);
+    if (value !== null) return value;
+  }
   if (opCode === "not" || opCode === "bit_not") {
     const arg = args[0];
     if (isOp()(arg)) {
@@ -224,7 +230,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
       const newArgs: Node[] = [];
       for (const arg of args) {
         if (newArgs.length > 0) {
-          const combined = evalInfix(opCode, newArgs[newArgs.length - 1], arg);
+          const combined = evalBinary(opCode, newArgs[newArgs.length - 1], arg);
           if (combined !== null) {
             newArgs[newArgs.length - 1] = combined;
           } else {
@@ -260,7 +266,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     if (args.length === 1) return args[0];
   }
   if (isBinary(opCode) && args.length === 2) {
-    const combined = evalInfix(opCode, args[0], args[1]);
+    const combined = evalBinary(opCode, args[0], args[1]);
     if (
       combined !== null &&
       (!isInt()(combined) ||
@@ -273,11 +279,11 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
   return _op(opCode, ...args);
 }
 
-function evalInfix(
+function evalBinary(
   op: BinaryOpCode | VariadicOpCode,
   left: Node,
   right: Node,
-): Node | null {
+): Integer | Text | null {
   if (op === "concat[Text]" && isText()(left) && isText()(right)) {
     return text(left.value + right.value);
   }
@@ -291,6 +297,20 @@ function evalInfix(
       if (isConstantType(type)) return int(type.low);
     } catch {
       // The output type is not an integer.
+    }
+  }
+  return null;
+}
+
+function evalUnary(op: UnaryOpCode, arg: Node): Integer | Text | null {
+  if (isText()(arg)) {
+    const value = arg.value;
+    switch (op) {
+      case "size[byte]":
+      case "size[Ascii]":
+        return int(byteLength(value));
+      case "size[codepoint]":
+        return int(charLength(value));
     }
   }
   return null;

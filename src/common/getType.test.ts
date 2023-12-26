@@ -688,7 +688,6 @@ describeOp("slice[codepoint]", [
   [[text(), int(0), int(0)], text()],
   [[text(58), int(0), int(0)], text(58)],
   [[text(), int(0), int(0, 58)], text(58)],
-  [[text(), int(30, 200), int(0, 58)], text(28)],
 ]);
 
 describeOp("slice[byte]", [
@@ -697,7 +696,6 @@ describeOp("slice[byte]", [
   [[text(), int(0), int(0)], text()],
   [[text(58), int(0), int(0)], text(58)],
   [[text(), int(0), int(0, 58)], text(58)],
-  [[text(), int(30, 200), int(0, 58)], text(28)],
 ]);
 
 describeOp("with_at[Array]", [

@@ -195,7 +195,7 @@ export function mapOpsUsing<
 /** Values are op to be applied to the collection and added to the index or 0 if nothing should be added. */
 export const mapBackwardsIndexToForwards = mapOpsUsing<
   0 | (UnaryOpCode & `size${string}`),
-  OpCode & `${string}at_back${string}`
+  OpCode & `${string}${"at" | "slice"}_back${string}`
 >((arg, opArgs, opCode) => {
   const newOpCode = opCode.replaceAll("_back", "") as OpCode;
   return op(

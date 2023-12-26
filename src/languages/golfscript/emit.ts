@@ -102,10 +102,15 @@ export default function emitProgram(program: IR.Node): TokenTree {
     switch (expr.kind) {
       case "Assignment":
         if (expr.variable.kind === "IndexCall")
+          /*  Implements equivalent of this Python code:
+                temp = (index+len(col))%len(col); coll = coll[:temp] + [expr] + coll[temp+1:];
+          */
           return [
             emitNode(expr.variable.collection),
             ".",
-            emitNode(expr.variable.index),
+            isSubtype(getType(expr.variable.index, program), integerType(0))
+              ? emitNode(expr.variable.index)
+              : [".", ",", ".", emitNode(expr.variable.index), "+", "\\", "%"],
             ".",
             "@",
             "<",

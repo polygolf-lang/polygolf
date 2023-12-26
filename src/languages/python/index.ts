@@ -66,6 +66,7 @@ import {
   textToIntToTextGetToInt,
   usePrimaryTextOps,
   useMultireplace,
+  startsWithEndsWithToSliceEquality,
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
@@ -115,6 +116,7 @@ const pythonLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       decomposeIntLiteral(),
+      startsWithEndsWithToSliceEquality("codepoint"),
     ),
     simplegolf(safeConditionalOpToAt("List")),
     required(
@@ -140,6 +142,10 @@ const pythonLanguage: Language = {
         "at_back[byte]": 0,
         "at_back[codepoint]": 0,
         "at_back[List]": 0,
+        "slice_back[Ascii]": 0,
+        "slice_back[byte]": 0,
+        "slice_back[codepoint]": 0,
+        "slice_back[List]": 0,
         "with_at_back[List]": 0,
       }),
       mapMutationTo.index({
@@ -263,6 +269,8 @@ const pythonLanguage: Language = {
         split_whitespace: "split",
         replace: "replace",
         join: flipped`join`,
+        starts_with: "startsWith",
+        ends_with: "endsWith",
       }),
       mapOpsTo.func({
         "read[line]": "input",

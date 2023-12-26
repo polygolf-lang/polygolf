@@ -43,8 +43,10 @@ Hover opcode name to see a description.
 | at[codepoint] | [at[codepoint]](## "Gets the codepoint (as text) at the 0-based index (counting codepoints).") | [Text, 0..oo] | (Text 1..1) |
 | at_back[codepoint] | [at_back[codepoint]](## "Gets the codepoint (as text) at the -1-based backwards index (counting codepoints).") | [Text, -oo..-1] | (Text 1..1) |
 | slice[codepoint] | [slice[codepoint]](## "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in codepoints.") | [Text, 0..oo, 0..oo] | Text |
+| slice_back[codepoint] | [slice_back[codepoint]](## "Returns a text slice that starts at the given -1-based backwards index and has given length. Start and length are measured in codepoints.") | [Text, -oo..-1, 0..oo] | Text |
 | slice[byte] | [slice[byte]](## "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in bytes.") | [Text, 0..oo, 0..oo] | Text |
-| slice | [slice[Ascii]](## "Returns a text slice that starts at the given 0-based index and has given length.")<br>[slice[List]](## "Returns a list slice that starts at the given 0-based index and has given length.") | [Ascii, 0..oo, 0..oo]<br>[(List T1), 0..oo, 0..oo] | Ascii<br>(List T1) |
+| slice_back[byte] | [slice_back[byte]](## "Returns a text slice that starts at the given -1-based backwards index and has given length. Start and length are measured in bytes.") | [Text, -oo..-1, 0..oo] | Text |
+| slice | [slice[Ascii]](## "Returns a text slice that starts at the given 0-based index and has given length.")<br>[slice_back[Ascii]](## "Returns a text slice that starts at the given -1-based backwards index and has given length.")<br>[slice[List]](## "Returns a list slice that starts at the given 0-based index and has given length.")<br>[slice_back[List]](## "Returns a list slice that starts at the given -1-based backwards index and has given length.") | [Ascii, 0..oo, 0..oo]<br>[Ascii, -oo..-1, 0..oo]<br>[(List T1), 0..oo, 0..oo]<br>[(List T1), -oo..-1, 0..oo] | Ascii<br>Ascii<br>(List T1)<br>(List T1) |
 | ord[byte] | [ord[byte]](## "Converts the byte to an integer.") | [(Text 1..1)] | 0..255 |
 | ord[codepoint] | [ord[codepoint]](## "Converts the codepoint to an integer.") | [(Text 1..1)] | 0..1114111 |
 | ord | [ord[Ascii]](## "Converts the character to an integer.") | [(Ascii 1..1)] | 0..127 |
@@ -70,6 +72,8 @@ Hover opcode name to see a description.
 | join | [join](## "Joins the items using the delimiter.") | [(List Text), Text] | Text |
 | right_align | [right_align](## "Right-aligns the text using spaces to a minimum length.") | [Text, 0..oo] | Text |
 | replace | [replace](## "Replaces all occurences of a given text with another text.") | [Text, (Text 1..oo), Text] | Text |
+| starts_with | [starts_with](## "Checks whether the second argument is a prefix of the first.") | [Text, Text] | Bool |
+| ends_with | [ends_with](## "Checks whether the second argument is a suffix of the first.") | [Text, Text] | Bool |
 | int_to_bin_aligned | [int_to_bin_aligned](## "Converts the integer to a 2-base text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
 | int_to_hex_aligned | [int_to_hex_aligned](## "Converts the integer to a 16-base text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
 | int_to_dec | [int_to_dec](## "Converts the integer to a 10-base text.") | [Int] | (Ascii 1..oo) |

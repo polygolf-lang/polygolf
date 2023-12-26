@@ -32,6 +32,7 @@ import {
 } from "../../plugins/ops";
 import {
   addNimImports,
+  getEndIndex,
   removeSystemNamespace,
   useBackwardsIndex,
   useUFCS,
@@ -69,6 +70,7 @@ import {
   textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
   useMultireplace,
+  startsWithEndsWithToSliceEquality,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -125,6 +127,7 @@ const nimLanguage: Language = {
       forArgvToForRange(true),
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
+      startsWithEndsWithToSliceEquality("byte"),
     ),
     simplegolf(safeConditionalOpToAt("Array")),
     required(
@@ -146,6 +149,10 @@ const nimLanguage: Language = {
         "at_back[byte]": 0,
         "at_back[codepoint]": 0,
         "at_back[List]": 0,
+        "slice_back[Ascii]": 0,
+        "slice_back[byte]": 0,
+        "slice_back[codepoint]": 0,
+        "slice_back[List]": 0,
         "with_at_back[List]": 0,
       }),
       mapMutationTo.index({
@@ -173,9 +180,9 @@ const nimLanguage: Language = {
         "at[codepoint]": (x) =>
           prefix("$", indexCall(func("toRunes", x[0]), x[1])),
         "slice[byte]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
+          rangeIndexCall(x[0], x[1], getEndIndex(x[1], x[2]), int(1n)),
         "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
+          rangeIndexCall(x[0], x[1], getEndIndex(x[1], x[2]), int(1n)),
         "print[Text]": (x) => func("write", builtin("stdout"), x),
         replace: (x) => func("replace", isText("")(x[2]) ? [x[0], x[1]] : x),
         text_multireplace: (x) =>
@@ -221,6 +228,8 @@ const nimLanguage: Language = {
           int_to_bin: "toBin",
           int_to_hex: "toHex",
           right_align: "align",
+          starts_with: "startsWith",
+          ends_with: "endsWith",
         },
         "leftChain",
       ),
