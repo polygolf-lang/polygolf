@@ -60,7 +60,7 @@ vwx
 
 ```polygolf
 $a:-100..100 <- 0;
-$b:Text <- "xy";
+$b <- "xy";
 $c <- (0==0);
 $d <- (list "xy" "abc" "123");
 
@@ -108,30 +108,30 @@ $a <- ($a | 2):-100..100;
 $a <- ($a ~ 2):-100..100;
 
 % Text encoding
-at[byte] "abc" 1;
-at[codepoint] "abc" 1;
-ord_at[byte] "abc" 1;
-ord_at[codepoint] "abc" 1;
-size[byte] "abc";
-size[codepoint] "abc";
+at[byte] $b 1;
+at[codepoint] $b 1;
+ord_at[byte] $b 1;
+ord_at[codepoint] $b 1;
+size[byte] $b;
+size[codepoint] $b;
 ord[byte] "a";
 ord[codepoint] "\u00ff";
 char[byte] 99;
 char[codepoint] 999;
-slice[codepoint] "abcdefg" 2 3;
+slice[codepoint] $b 2 3;
 
 % Other
 at[List] $d 1;
 concat[Text] $b "xyz";
 concat[List] $d $d;
-reversed[codepoint] "abcdef";
+reversed[codepoint] $b;
 reversed[List] $d;
 sorted[Ascii] $d;
 sorted[Int] (list 4 3 1 2);
 size[Set] (set 1 2);
 size[Table] (table ("X" => "Y") );
 size[List] $d;
-contains[Text] "abc" "b";
+contains[Text] $b "b";
 contains[List] $d "123";
 contains[Set] (set 1 2) 2;
 contains[Table] (table ("X" => "Y") ) "X";
@@ -189,28 +189,28 @@ a%=2
 a&=2
 a|=2
 a^=2
-String(UnicodeScalar(Int(Array("abc".utf8)[1]))!)
-String(Array("abc")[1])
-Int(Array("abc".utf8)[1])
-Array("abc".unicodeScalars)[1].value
-"abc".utf8.count
-"abc".count
+String(UnicodeScalar(Int(Array(b.utf8)[1]))!)
+String(Array(b)[1])
+Int(Array(b.utf8)[1])
+Array(b.unicodeScalars)[1].value
+b.utf8.count
+b.count
 Int(Array("a".utf8)[0])
 Array("ÿ".unicodeScalars)[0].value
 String(UnicodeScalar(99)!)
 String(UnicodeScalar(999)!)
-"abcdefg".prefix(5).suffix(3)
+b.prefix(5).suffix(3)
 d[1]
 b+"xyz"
 d+d
-String("abcdef".reversed())
+String(b.reversed())
 Array(d.reversed())
 d.sorted()
 [4,3,1,2].sorted()
 Set([1,2]).count
 ["X":"Y"].count
 d.count
-"abc".contains("b")
+b.contains("b")
 d.contains("123")
 Set([1,2]).contains(2)
 ["X":"Y"].keys.contains("X")

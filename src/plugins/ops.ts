@@ -218,13 +218,17 @@ export function backwardsIndexToForwards(
     "at_back[codepoint]" as const,
     "at_back[List]" as const,
     "set_at_back[List]" as const,
+    "slice_back[Ascii]" as const,
+    "slice_back[byte]" as const,
+    "slice_back[codepoint]" as const,
+    "slice_back[List]" as const,
   ],
 ): Plugin {
   return {
     name: "backwardsIndexToForwards",
     visit(node, spine, context) {
       if (isOp(...ops)(node)) {
-        const [collection, index, value] = node.args;
+        const [collection, index, third] = node.args;
         return mapOps({
           "at_back[Ascii]": op(
             "at[Ascii]",
@@ -252,7 +256,33 @@ export function backwardsIndexToForwards(
             "set_at[List]",
             collection,
             addLength ? op("add", index, op("size[List]", collection)) : index,
-            value,
+            third,
+          ),
+          "slice_back[Ascii]": op(
+            "slice[Ascii]",
+            collection,
+            addLength ? op("add", index, op("size[Ascii]", collection)) : index,
+            third,
+          ),
+          "slice_back[byte]": op(
+            "slice[byte]",
+            collection,
+            addLength ? op("add", index, op("size[byte]", collection)) : index,
+            third,
+          ),
+          "slice_back[codepoint]": op(
+            "slice[codepoint]",
+            collection,
+            addLength
+              ? op("add", index, op("size[codepoint]", collection))
+              : index,
+            third,
+          ),
+          "slice_back[List]": op(
+            "slice[List]",
+            collection,
+            addLength ? op("add", index, op("size[List]", collection)) : index,
+            third,
           ),
         }).visit(node, spine, context);
       }

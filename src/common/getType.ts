@@ -321,7 +321,11 @@ function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
   return true;
 }
 
-export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
+export function getOpCodeTypeFromTypes(
+  opCode: OpCode,
+  got: Type[],
+  skipAdditionalChecks = false,
+): Type {
   switch (opCode) {
     // binary
     // (num, num) => num
@@ -576,18 +580,51 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
     }
     case "text_multireplace":
       return text();
+    case "starts_with":
+    case "ends_with":
+      return booleanType;
     case "slice[byte]":
     case "slice[codepoint]":
-    case "slice[Ascii]": {
-      const [t, i1, i2] = got as [TextType, IntegerType, IntegerType];
-      const maximum = min(
-        t.codepointLength.high,
-        max(0n, sub(i2.high, i1.low)),
+    case "slice[Ascii]":
+    case "slice_back[byte]":
+    case "slice_back[codepoint]":
+    case "slice_back[Ascii]": {
+      const t = got[0] as TextType;
+      const start = got[1] as IntegerType;
+      const length = got[2] as IntegerType;
+      const startPlusLength = getArithmeticType("add", start, length);
+      if (
+        skipAdditionalChecks ||
+        !opCode.includes("back") ||
+        isSubtype(startPlusLength, integerType(-Infinity, 0))
+      )
+        return text(
+          int(0n, min(t.codepointLength.high, length.high)),
+          t.isAscii,
+        );
+      throw new Error(
+        `Type error. start index + length must be nonpositive, but got ${toString(
+          startPlusLength,
+        )}.`,
       );
-      return text(int(0n, maximum), t.isAscii);
     }
     case "slice[List]":
       return got[0];
+    case "slice_back[List]": {
+      const start = got[1] as IntegerType;
+      const length = got[2] as IntegerType;
+      const startPlusLength = getArithmeticType("add", start, length);
+      if (
+        skipAdditionalChecks ||
+        isSubtype(startPlusLength, integerType(-Infinity, 0))
+      )
+        return got[0];
+      throw new Error(
+        `Type error. start index + length must be nonpositive, but got ${toString(
+          startPlusLength,
+        )}.`,
+      );
+    }
     case "ord_at[codepoint]":
     case "ord_at_back[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
