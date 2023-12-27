@@ -103,7 +103,7 @@ const nimLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint, putcToPrintChar),
+    required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint()),
     search(
       mergePrint,
@@ -137,7 +137,6 @@ const nimLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
-      usePrimaryTextOps("byte"),
       mapOps({
         argv: func("commandLineParams"),
         "at[argv]": (x) => func("paramStr", add1(x[0])),

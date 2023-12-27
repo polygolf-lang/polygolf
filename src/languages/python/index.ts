@@ -95,7 +95,7 @@ const pythonLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint, arraysToLists),
+    required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint()),
     search(
       golfStringListLiteral(),
@@ -124,7 +124,6 @@ const pythonLanguage: Language = {
       forArgvToForEach,
       removeUnusedForVar,
       putcToPrintChar,
-      usePrimaryTextOps("codepoint"),
       mapOps({
         argv: builtin("sys.argv[1:]"),
 
