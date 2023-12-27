@@ -221,9 +221,10 @@ export function mapMutationUsing<
         if (
           node.kind === "Assignment" &&
           isOp()(node.expr) &&
-          node.expr.op in opMap &&
-          node.expr.args.length > 1 &&
-          node.expr.op in opMap
+          (node.expr.op in opMap ||
+            (node.expr.op === "add" &&
+              ("succ" in opMap || "pred" in opMap || "sub" in opMap))) &&
+          node.expr.args.length > 1
         ) {
           const opCode = node.expr.op;
           const args = node.expr.args;
@@ -272,18 +273,20 @@ export function mapMutationUsing<
                 context,
               );
             }
-            return mapper(
-              name,
-              [
-                node.variable,
-                ...(keepRestAsOp && newArgs.length > 1
-                  ? [op(opCode, ...newArgs)]
-                  : newArgs),
-              ],
-              opCode,
-              spine,
-              context,
-            );
+            if (opCode in opMap) {
+              return mapper(
+                name,
+                [
+                  node.variable,
+                  ...(keepRestAsOp && newArgs.length > 1
+                    ? [op(opCode, ...newArgs)]
+                    : newArgs),
+                ],
+                opCode,
+                spine,
+                context,
+              );
+            }
           }
         }
       },
