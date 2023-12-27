@@ -71,7 +71,7 @@ const luaLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint, putcToPrintChar),
+    required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint()),
     search(
       mergePrint,
@@ -109,7 +109,6 @@ const luaLanguage: Language = {
       forArgvToForRange(),
       forRangeToForRangeInclusive(),
       implicitlyConvertPrintArg,
-      usePrimaryTextOps("byte"),
       textToIntToFirstIndexTextGetToInt,
       startsWithEndsWithToSliceEquality("byte"),
       mapOps({

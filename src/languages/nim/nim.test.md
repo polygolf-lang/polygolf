@@ -186,6 +186,17 @@ for i in..9:
  a=i
 ```
 
+```polygolf
+$e <- "abc";
+for $i 0 3 {
+  println (at[byte] $e $i);
+};
+```
+
+```nim
+for i in "abc":echo i
+```
+
 ## Argv
 
 ```polygolf
