@@ -401,7 +401,7 @@ export function sexpr(
         `Expected ${matchingOpCodes
           .map((opCode) => opCodeDefinitions[opCode].args)
           .map((args) =>
-            args.length > 0 && "variadic" in args
+            args.length > 0 && "rest" in args.at(-1)!
               ? `${args.length - 1}..oo`
               : `${args.length}`,
           )

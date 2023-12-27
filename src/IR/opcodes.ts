@@ -508,7 +508,7 @@ export function userName(opCode: OpCode) {
 export function arity(op: OpCode): number {
   try {
     const args = opCodeDefinitions[op].args;
-    if ("variadic" in args) return -1;
+    if (args.length > 0 && "res" in args.at(-1)!) return -1;
     return args.length;
   } catch (e) {
     console.log("arity of", op);
@@ -518,7 +518,7 @@ export function arity(op: OpCode): number {
 
 export function matchesOpCodeArity(op: OpCode, arity: number) {
   const expectedTypes = opCodeDefinitions[op].args;
-  if (expectedTypes.length > 0 && "variadic" in expectedTypes.at(-1)!) {
+  if (expectedTypes.length > 0 && "rest" in expectedTypes.at(-1)!) {
     return arity >= expectedTypes.length - 1;
   }
   return expectedTypes.length === arity;
