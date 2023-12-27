@@ -25,7 +25,10 @@ import {
   inverseOpCode,
   type OpCodeArgValues,
   isUnary,
+  opCodeDefinitions,
+  isNullary,
 } from "./IR";
+import { mapObjectValues } from "../common/arrays";
 
 export interface ImplicitConversion extends BaseNode {
   readonly kind: "ImplicitConversion";
@@ -160,6 +163,21 @@ export function keyValue(key: Node, value: Node): KeyValue {
 }
 
 /**
+ * This object contains contructors for each opcode, with signatures
+ * validating the arities.
+ */
+export const op = {
+  ...(mapObjectValues(opCodeDefinitions, (v, k) =>
+    isNullary(k) ? opUnsafe(k) : (...x: Node[]) => opUnsafe(k, ...x),
+  ) as {
+    [O in OpCode]: OpCodeArgValues<O> extends readonly []
+      ? Op<O>
+      : (...args: OpCodeArgValues<O>) => Op<O>;
+  }),
+  unsafe: opUnsafe,
+} as const;
+
+/**
  * This assumes that the construction will not break the invariants described
  * on `Op` interface and hence is made private.
  */
@@ -171,7 +189,11 @@ function _op(op: OpCode, ...args: Node[]): Op {
   };
 }
 
-export function op(opCode: OpCode, ...args: Node[]): Node {
+/**
+ * This is the implementation respecting the invariants described on the `Op`
+ * interface, but it doesn't validate arity.
+ */
+function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   if (!isOpCode(opCode)) return _op(opCode, ...args);
   if (isUnary(opCode)) {
     const value = evalUnary(opCode, args[0]);
@@ -184,7 +206,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
         return arg.args[0]!;
       if (opCode === "not") {
         if (arg.op in booleanNotOpCode) {
-          return op(
+          return op.unsafe(
             booleanNotOpCode[arg.op as keyof typeof booleanNotOpCode],
             arg.args[0]!,
             arg.args[1]!,
@@ -204,10 +226,10 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     if (isInt()(args[0])) {
       return int(-args[0].value);
     }
-    return op("mul", int(-1), args[0]);
+    return op.mul(int(-1), args[0]);
   }
   if (opCode === "sub") {
-    return op("add", args[0], op("neg", args[1]));
+    return op.add(args[0], op.neg(args[1]));
   }
   if (isAssociative(opCode)) {
     args = args.flatMap((x) => (isOp(opCode)(x) ? x.args : [x]));
@@ -247,7 +269,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
             isInt()(x)
               ? int(-x.value)
               : x === toNegate
-              ? op("add", ...(x as Op).args.map((y) => op("neg", y)))
+              ? op.unsafe("add", ...(x as Op).args.map(op.neg))
               : x,
           );
         }
@@ -355,8 +377,8 @@ function simplifyPolynomial(terms: Node[]): Node[] {
   return result;
 }
 
-export const add1 = (expr: Node) => op("add", expr, int(1n));
-export const sub1 = (expr: Node) => op("add", expr, int(-1n));
+export const succ = (expr: Node) => op.add(expr, int(1n));
+export const prec = (expr: Node) => op.add(expr, int(-1n));
 
 export function functionCall(
   func: string | Node,
@@ -473,7 +495,7 @@ export function namedArg<T extends Node>(name: string, value: T): NamedArg<T> {
 }
 
 export function print(value: Node, newline: boolean = true): Node {
-  return op(newline ? "println[Text]" : "print[Text]", value);
+  return op[newline ? "println[Text]" : "print[Text]"](value);
 }
 
 export function getArgs(

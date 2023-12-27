@@ -237,7 +237,7 @@ export function calcTypeAndResolveOpCode(
     case "ForDifferenceRange":
       return voidType;
     case "ImplicitConversion": {
-      return type(op(expr.behavesLike, expr.expr));
+      return type(op.unsafe(expr.behavesLike, expr.expr));
     }
   }
   throw new Error(`Type error. Unexpected node ${stringify(expr)}.`);

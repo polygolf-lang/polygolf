@@ -3,8 +3,6 @@ import {
   integerType,
   isSubtype,
   rangeIndexCall,
-  add1,
-  sub1,
   builtin,
   op,
   int,
@@ -14,6 +12,8 @@ import {
   prefix,
   isInt,
   implicitConversion,
+  prec,
+  succ,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -122,42 +122,36 @@ const golfscriptLanguage: Language = {
     ),
     required(
       mapOps({
-        "at[argv]": (x) => op("at[List]", op("argv"), x[0]),
+        "at[argv]": (x) => op["at[List]"](op.argv, x[0]),
         argv: builtin("a"),
         true: int(1),
         false: int(0),
 
         "slice[byte]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
+          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1)),
         "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1)),
-        neg: (x) => op("mul", x[0], int(-1)),
-        max: (x) => op("at[List]", op("sorted[Int]", list(x)), int(1)),
-        min: (x) => op("at[List]", op("sorted[Int]", list(x)), int(0)),
+          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1)),
+        neg: (x) => op.mul(x[0], int(-1)),
+        max: (x) => op["at[List]"](op["sorted[Int]"](list(x)), int(1)),
+        min: (x) => op["at[List]"](op["sorted[Int]"](list(x)), int(0)),
 
         leq: (x) =>
-          op(
-            "lt",
-            ...(isInt()(x[0]) ? [sub1(x[0]), x[1]] : [x[0], add1(x[1])]),
-          ),
+          isInt()(x[0]) ? op.lt(prec(x[0]), x[1]) : op.lt(x[0], succ(x[1])),
 
         geq: (x) =>
-          op(
-            "gt",
-            ...(isInt()(x[0]) ? [add1(x[0]), x[1]] : [x[0], sub1(x[1])]),
-          ),
+          isInt()(x[0]) ? op.gt(succ(x[0]), x[1]) : op.gt(x[0], prec(x[1])),
         int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
         bool_to_int: (x) => implicitConversion("bool_to_int", x[0]),
-        append: (x) => op("concat[List]", x[0], list([x[1]])),
+        append: (x) => op["concat[List]"](x[0], list([x[1]])),
         "contains[Text]": (x) =>
           implicitConversion(
             "int_to_bool",
-            op("add", op("find[byte]", x[0], x[1]), int(1n)),
+            op.add(op["find[byte]"](x[0], x[1]), int(1n)),
           ),
         "contains[List]": (x) =>
           implicitConversion(
             "int_to_bool",
-            op("add", op("find[List]", x[0], x[1]), int(1n)),
+            op.add(op["find[List]"](x[0], x[1]), int(1n)),
           ),
         int_to_bin: (x) => infix("*", infix("base", x[0], int(2n)), text("")),
 
@@ -170,7 +164,7 @@ const golfscriptLanguage: Language = {
           ),
         gcd: (x) => infix("{.}{.@@%}while;", x[0], x[1]),
         split_whitespace: (x) =>
-          op("split", prefix("{...9<\\13>+*\\32if}%", x[0]), text(" ")),
+          op.split(prefix("{...9<\\13>+*\\32if}%", x[0]), text(" ")),
         right_align: (x) => infix('1$,-.0>*" "*\\+', x[0], x[1]),
         int_to_hex_aligned: (x) =>
           infix('16base{.9>7*+48+}%""+\\1$,-.0>*"0"*\\+', x[0], x[1]),

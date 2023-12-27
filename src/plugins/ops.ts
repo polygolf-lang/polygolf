@@ -1,6 +1,6 @@
 import { type Plugin, type OpTransformOutput } from "../common/Language";
 import {
-  add1,
+  succ,
   assignment,
   infix,
   type BinaryOpCode,
@@ -161,7 +161,7 @@ function asBinaryChain(
     const subName = names.sub;
     if (opCode === "add" && isNegative(expr) && subName !== undefined) {
       result = binaryMapping(subName, result, {
-        ...op("neg", expr),
+        ...op.neg(expr),
         targetType: expr.targetType,
       });
     } else {
@@ -196,7 +196,7 @@ export function useIndexCalls(
       ) {
         let indexNode: IndexCall;
         if (oneIndexed && !node.op.endsWith("[Table]")) {
-          indexNode = indexCall(node.args[0], add1(node.args[1]));
+          indexNode = indexCall(node.args[0], succ(node.args[1]));
         } else {
           indexNode = indexCall(node.args[0], node.args[1]);
         }
@@ -237,58 +237,49 @@ export function backwardsIndexToForwards(
       if (isOp(...ops)(node)) {
         const [collection, index, third] = node.args;
         return mapOps({
-          "at_back[Ascii]": op(
-            "at[Ascii]",
+          "at_back[Ascii]": op["at[Ascii]"](
             collection,
-            addLength ? op("add", index, op("size[Ascii]", collection)) : index,
+            addLength ? op.add(index, op["size[Ascii]"](collection)) : index,
           ),
-          "at_back[byte]": op(
-            "at[byte]",
+          "at_back[byte]": op["at[byte]"](
             collection,
-            addLength ? op("add", index, op("size[byte]", collection)) : index,
+            addLength ? op.add(index, op["size[byte]"](collection)) : index,
           ),
-          "at_back[codepoint]": op(
-            "at[codepoint]",
+          "at_back[codepoint]": op["at[codepoint]"](
             collection,
             addLength
-              ? op("add", index, op("size[codepoint]", collection))
+              ? op.add(index, op["size[codepoint]"](collection))
               : index,
           ),
-          "at_back[List]": op(
-            "at[List]",
+          "at_back[List]": op["at[List]"](
             collection,
-            addLength ? op("add", index, op("size[List]", collection)) : index,
+            addLength ? op.add(index, op["size[List]"](collection)) : index,
           ),
-          "set_at_back[List]": op(
-            "set_at[List]",
+          "set_at_back[List]": op["set_at[List]"](
             collection,
-            addLength ? op("add", index, op("size[List]", collection)) : index,
+            addLength ? op.add(index, op["size[List]"](collection)) : index,
             third,
           ),
-          "slice_back[Ascii]": op(
-            "slice[Ascii]",
+          "slice_back[Ascii]": op["slice[Ascii]"](
             collection,
-            addLength ? op("add", index, op("size[Ascii]", collection)) : index,
+            addLength ? op.add(index, op["size[Ascii]"](collection)) : index,
             third,
           ),
-          "slice_back[byte]": op(
-            "slice[byte]",
+          "slice_back[byte]": op["slice[byte]"](
             collection,
-            addLength ? op("add", index, op("size[byte]", collection)) : index,
+            addLength ? op.add(index, op["size[byte]"](collection)) : index,
             third,
           ),
-          "slice_back[codepoint]": op(
-            "slice[codepoint]",
+          "slice_back[codepoint]": op["slice[codepoint]"](
             collection,
             addLength
-              ? op("add", index, op("size[codepoint]", collection))
+              ? op.add(index, op["size[codepoint]"](collection))
               : index,
             third,
           ),
-          "slice_back[List]": op(
-            "slice[List]",
+          "slice_back[List]": op["slice[List]"](
             collection,
-            addLength ? op("add", index, op("size[List]", collection)) : index,
+            addLength ? op.add(index, op["size[List]"](collection)) : index,
             third,
           ),
         }).visit(node, spine, context);
@@ -323,13 +314,13 @@ export function addMutatingInfix(
             return mutatingInfix(
               opMap.sub!,
               node.variable,
-              op("neg", op(opCode, ...newArgs)),
+              op.neg(op.unsafe(opCode, ...newArgs)),
             );
           }
           return mutatingInfix(
             name,
             node.variable,
-            newArgs.length > 1 ? op(opCode, ...newArgs) : newArgs[0],
+            newArgs.length > 1 ? op.unsafe(opCode, ...newArgs) : newArgs[0],
           );
         }
       }
@@ -359,14 +350,14 @@ export function addIncAndDec(
 export function flipBinaryOps(node: Node) {
   if (isOp(...BinaryOpCodes)(node)) {
     if (node.op in flippedOpCode) {
-      return op(
+      return op.unsafe(
         flippedOpCode[node.op as keyof typeof flippedOpCode],
         node.args[1],
         node.args[0],
       );
     }
     if (isCommutative(node.op)) {
-      return op(node.op, node.args[1], node.args[0]);
+      return op[node.op](node.args[1], node.args[0]);
     }
   }
 }
@@ -397,8 +388,8 @@ export const methodsAsFunctions: Plugin = {
 
 export const printIntToPrint: Plugin = mapOps(
   {
-    "print[Int]": (x) => op("print[Text]", op("int_to_dec", ...x)),
-    "println[Int]": (x) => op("println[Text]", op("int_to_dec", ...x)),
+    "print[Int]": (x) => op["print[Text]"](op.int_to_dec(x[0])),
+    "println[Int]": (x) => op["println[Text]"](op.int_to_dec(x[0])),
   },
   "printIntToPrint",
 );
@@ -411,10 +402,10 @@ export const arraysToLists: Plugin = {
       return list(node.exprs);
     }
     if (node.kind === "Op") {
-      if (node.op === "at[Array]") return op("at[List]", ...node.args);
-      if (node.op === "set_at[Array]") return op("set_at[List]", ...node.args);
-      if (node.op === "contains[Array]")
-        return op("contains[List]", ...node.args);
+      if (isOp("at[Array]")(node)) return op["at[List]"](...node.args);
+      if (isOp("set_at[Array]")(node)) return op["set_at[List]"](...node.args);
+      if (isOp("contains[Array]")(node))
+        return op["contains[List]"](...node.args);
     }
   },
 };

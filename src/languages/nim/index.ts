@@ -3,7 +3,7 @@ import {
   indexCall,
   int,
   rangeIndexCall,
-  add1,
+  succ,
   array,
   isText,
   builtin,
@@ -139,7 +139,7 @@ const nimLanguage: Language = {
       ...truncatingOpsPlugins,
       mapOps({
         argv: func("commandLineParams"),
-        "at[argv]": (x) => func("paramStr", add1(x[0])),
+        "at[argv]": (x) => func("paramStr", succ(x[0])),
       }),
       removeUnusedForVar,
       forRangeToForRangeInclusive(true),
@@ -151,13 +151,14 @@ const nimLanguage: Language = {
       useIndexCalls(),
       mapOps({
         "reversed[codepoint]": (x) =>
-          op("join", func("reversed", func("toRunes", x)), text("")),
-        "reversed[byte]": (x) => op("join", func("reversed", x[0]), text("")),
+          op.join(func("reversed", func("toRunes", x)), text("")),
+        "reversed[byte]": (x) => op.join(func("reversed", x[0]), text("")),
       }),
       mapOps({
         "char[codepoint]": (x) => prefix("$", func("Rune", x)),
-        "ord_at[byte]": (x) => func("ord", op("at[byte]", ...x)),
-        "ord_at[codepoint]": (x) => func("ord", op("at[byte]", ...x)),
+        "ord_at[byte]": (x) => func("ord", op["at[byte]"](x[0], x[1])),
+        "ord_at[codepoint]": (x) =>
+          func("ord", op["at[codepoint]"](x[0], x[1])),
         "read[line]": func("readLine", builtin("stdin")),
         join: (x) => func("join", isText("")(x[1]) ? [x[0]] : x),
         true: builtin("true"),
@@ -181,16 +182,14 @@ const nimLanguage: Language = {
               ), // Polygolf doesn't have array of tuples, so we use array of arrays instead
             ),
           ),
-        "size[codepoint]": (x) => op("size[List]", func("toRunes", x)),
+        "size[codepoint]": (x) => op["size[List]"](func("toRunes", x)),
         push: (x) =>
-          isIdent()(x[0])
-            ? assignment(x[0], op("append", x[0], x[1]))
-            : undefined,
-        int_to_bool: (x) => op("eq[Int]", x[0], int(0n)),
+          isIdent()(x[0]) ? assignment(x[0], op.append(x[0], x[1])) : undefined,
+        int_to_bool: (x) => op["eq[Int]"](x[0], int(0n)),
         int_to_bin_aligned: (x) =>
-          func("align", op("int_to_bin", x[0]), x[1], text("0")),
+          func("align", op.int_to_bin(x[0]), x[1], text("0")),
         int_to_hex_aligned: (x) =>
-          func("align", op("int_to_hex", x[0]), x[1], text("0")),
+          func("align", op.int_to_hex(x[0]), x[1], text("0")),
       }),
       mapTo(func)({
         gcd: "gcd",

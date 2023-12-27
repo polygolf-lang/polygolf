@@ -82,7 +82,7 @@ export function useUnsignedDivision(node: Node, spine: Spine) {
   if (isOp("trunc_div", "rem")(node)) {
     return isSubtype(getType(node.args[0], spine), integerType(0)) &&
       isSubtype(getType(node.args[0], spine), integerType(0))
-      ? op(`unsigned_${node.op}`, ...node.args)
+      ? op[`unsigned_${node.op}`](...node.args)
       : undefined;
   }
 }
@@ -109,14 +109,14 @@ export function useBackwardsIndex(node: Node, spine: Spine) {
     isOp()(node) &&
     (node.op.includes("at_back") || node.op.includes("slice_back"))
   ) {
-    return op(
+    return op.unsafe(
       node.op,
       ...replaceAtIndex(
         node.args,
         1,
         prefix(
           "system.^",
-          op("neg", (node as Op<`${string}at_back${string}` & OpCode>).args[1]),
+          op.neg((node as Op<`${string}at_back${string}` & OpCode>).args[1]),
         ),
       ),
     );
@@ -125,9 +125,9 @@ export function useBackwardsIndex(node: Node, spine: Spine) {
 
 export function getEndIndex(start: Node, length: Node) {
   if (start.kind === "Prefix" && start.name === "system.^") {
-    return prefix(start.name, op("sub", start.arg, length));
+    return prefix(start.name, op.sub(start.arg, length));
   }
-  return op("add", start, length);
+  return op.add(start, length);
 }
 
 export function removeSystemNamespace(node: Node, spine: Spine) {

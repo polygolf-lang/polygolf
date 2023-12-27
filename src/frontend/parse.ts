@@ -413,10 +413,10 @@ export function sexpr(
   if (arityMatchingOpCodes.length > 1) {
     // Hack! We temporarily assign the front name to the opCode field.
     // It will be resolved during typecheck.
-    return op(callee as OpCode, ...args);
+    return op.unsafe(callee as OpCode, ...args);
   }
 
-  return op(arityMatchingOpCodes[0], ...args);
+  return op.unsafe(arityMatchingOpCodes[0], ...args);
 }
 
 function intValue(x: string): bigint {
