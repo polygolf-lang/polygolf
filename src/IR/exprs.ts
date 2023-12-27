@@ -167,8 +167,16 @@ export function keyValue(key: Node, value: Node): KeyValue {
  * validating the arities.
  */
 export const op = {
-  ...(mapObjectValues(opCodeDefinitions, (v, k) =>
-    isNullary(k) ? opUnsafe(k) : (...x: Node[]) => opUnsafe(k, ...x),
+  ...(mapObjectValues(
+    opCodeDefinitions,
+    (v, k) =>
+      isNullary(k)
+        ? opUnsafe(k)
+        : (...x: Node[]) =>
+            opUnsafe(
+              k,
+              ...x.filter((x) => typeof x === "object" && "kind" in x),
+            ), // allow unary opcodes to be used in map
   ) as {
     [O in OpCode]: OpCodeArgValues<O> extends readonly []
       ? Op<O>
