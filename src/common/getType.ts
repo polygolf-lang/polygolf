@@ -45,9 +45,10 @@ import {
   type ArrayType,
   type TableType,
   opCodeDefinitions,
-  type ArgTypes,
+  type AnyOpCodeArgTypes,
   OpCodeFrontNamesToOpCodes,
   integerType,
+  type Rest,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -234,7 +235,7 @@ export function calcTypeAndResolveOpCode(
     case "ForDifferenceRange":
       return voidType;
     case "ImplicitConversion": {
-      return type(op(expr.behavesLike, expr.expr));
+      return type(op.unsafe(expr.behavesLike, expr.expr));
     }
   }
   throw new Error(`Type error. Unexpected node ${stringify(expr)}.`);
@@ -245,26 +246,22 @@ function getTypeBitNot(t: IntegerType): IntegerType {
 }
 
 export function getInstantiatedOpCodeArgTypes(op: OpCode): Type[] {
-  const type = opCodeDefinitions[op].args;
-  const instantiate = instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) });
-  if (!("variadic" in type)) {
-    return type.map(instantiate);
-  }
-  return Array(type.min).fill(instantiate(type.variadic));
+  return getGenericOpCodeArgTypes(op).map(
+    instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) }),
+  );
 }
 
 export function getGenericOpCodeArgTypes(op: OpCode): Type[] {
   const type = opCodeDefinitions[op].args;
-  if (!("variadic" in type)) {
-    return [...type];
-  }
-  return Array(type.min).fill(type.variadic);
+  return type.filter((x) => !("rest" in x)) as Type[];
 }
 
-export function expectedTypesToString(expectedTypes: ArgTypes): string {
-  return "variadic" in expectedTypes
-    ? `[...${toString(expectedTypes.variadic)}]`
-    : `[${expectedTypes.map(toString).join(", ")}]`;
+export function expectedTypesToString(
+  expectedTypes: AnyOpCodeArgTypes,
+): string {
+  return `[${expectedTypes
+    .map((x) => ("rest" in x ? `...${toString(x.rest)}` : toString(x)))
+    .join(", ")}]`;
 }
 
 /**
@@ -274,16 +271,21 @@ export function expectedTypesToString(expectedTypes: ArgTypes): string {
  * @param expectedTypes Expected types (array of types or variadic object).
  * @returns True iff it is a match.
  */
-function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
-  const variadic = "variadic" in expectedTypes;
-  if (variadic && expectedTypes.min > gotTypes.length) return false;
-  if (!variadic && expectedTypes.length !== gotTypes.length) return false;
+function isTypeMatch(gotTypes: Type[], expectedTypes: AnyOpCodeArgTypes) {
+  const isVariadic =
+    expectedTypes.length > 0 && "rest" in expectedTypes.at(-1)!;
+  if (isVariadic && gotTypes.length < expectedTypes.length - 1) return false;
+  if (!isVariadic && expectedTypes.length !== gotTypes.length) return false;
   const params: Record<string, Type> = {};
   const instantiate = instantiateGenerics(params);
   let i = 0;
   for (let got of gotTypes) {
     got = instantiate(got);
-    let exp = instantiate(variadic ? expectedTypes.variadic : expectedTypes[i]);
+    let exp = instantiate(
+      isVariadic && i >= expectedTypes.length - 1
+        ? (expectedTypes.at(-1) as Rest).rest
+        : (expectedTypes[i] as Type),
+    );
     if (exp.kind === "List" && got.kind === "List") {
       if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
         params[exp.member.name] = got.member;

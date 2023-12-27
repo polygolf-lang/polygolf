@@ -11,8 +11,8 @@ export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
         const strings = node.exprs.map((x) => x.value);
         const delim = getDelim(strings, useTextSplitWhitespace);
         return delim === true
-          ? op("split_whitespace", text(strings.join(" ")))
-          : op("split", text(strings.join(delim)), text(delim));
+          ? op.split_whitespace(text(strings.join(" ")))
+          : op.split(text(strings.join(delim)), text(delim));
       }
     },
   };
@@ -57,14 +57,14 @@ export function listOpsToTextOps(
           const joined = text(texts.join(""));
           if (texts.every((x) => byteLength(x) === 1)) {
             if (node.op === "at[List]" && ops.includes("at[byte]"))
-              return op("at[byte]", joined, node.args[1]);
+              return op["at[byte]"](joined, node.args[1]);
             if (node.op === "find[List]" && ops.includes("find[byte]"))
-              return op("find[byte]", joined, node.args[1]);
+              return op["find[byte]"](joined, node.args[1]);
           }
           if (node.op === "at[List]" && ops.includes("at[codepoint]"))
-            return op("at[codepoint]", joined, node.args[1]);
+            return op["at[codepoint]"](joined, node.args[1]);
           if (node.op === "find[List]" && ops.includes("find[codepoint]"))
-            return op("find[codepoint]", joined, node.args[1]);
+            return op["find[codepoint]"](joined, node.args[1]);
         }
       }
     },
@@ -79,7 +79,7 @@ export function hardcode(): Plugin {
       if (!isOp("print[Text]")(node) || !isText()(node.args[0])) {
         try {
           const output = getOutput(node);
-          if (output !== "") return op("print[Text]", text(output));
+          if (output !== "") return op["print[Text]"](text(output));
         } catch {}
       }
     },

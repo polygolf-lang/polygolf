@@ -17,7 +17,7 @@ const textLang: Language = {
   emitter(program, context) {
     return (program.kind === "Block" ? program.children : [program]).map(
       (x) => {
-        if (isOp()(x) && isText()(x.args[0])) {
+        if (isOp()(x) && x.args.length > 0 && isText()(x.args[0]!)) {
           if (x.args[0].value.endsWith("X")) {
             context.addWarning(new PolygolfError("global warning"), true);
             context.addWarning(

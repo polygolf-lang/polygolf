@@ -24,7 +24,7 @@ import { getWrites } from "../common/symbols";
 
 export const printLnToPrint = mapOps({
   "println[Text]": (x) =>
-    op("print[Text]", op("concat[Text]", x[0], text("\n"))),
+    op["print[Text]"](op["concat[Text]"](x[0], text("\n"))),
 });
 
 /**
@@ -48,7 +48,7 @@ export function golfLastPrint(toPrintln = true): Plugin {
         }
         if (arg !== lastStatement.args[0] || lastStatement.op !== newOp) {
           return blockOrSingle(
-            replaceAtIndex(statements, statements.length - 1, op(newOp, arg)),
+            replaceAtIndex(statements, statements.length - 1, op[newOp](arg)),
           );
         }
       }
@@ -73,7 +73,7 @@ export function golfLastPrintInt(toPrintlnInt = true): Plugin {
           replaceAtIndex(
             statements,
             statements.length - 1,
-            op(newOp, lastStatement.args[0]),
+            op[newOp](lastStatement.args[0]),
           ),
         );
       }
@@ -97,14 +97,14 @@ export const printToImplicitOutput = mapOps({
 
 export function printConcatToMultiPrint(node: Node, spine: Spine) {
   if (isOp("print[Text]")(node) && isOp("concat[Text]")(node.args[0])) {
-    return block(node.args[0].args.map((x) => op("print[Text]", x)));
+    return block(node.args[0].args.map(op["print[Text]"]));
   }
 }
 
 export const putcToPrintChar = mapOps({
-  "putc[Ascii]": (x) => op("print[Text]", op("char[Ascii]", x[0])),
-  "putc[byte]": (x) => op("print[Text]", op("char[byte]", x[0])),
-  "putc[codepoint]": (x) => op("print[Text]", op("char[codepoint]", x[0])),
+  "putc[Ascii]": (x) => op["print[Text]"](op["char[Ascii]"](x[0])),
+  "putc[byte]": (x) => op["print[Text]"](op["char[byte]"](x[0])),
+  "putc[codepoint]": (x) => op["print[Text]"](op["char[codepoint]"](x[0])),
 });
 
 export function mergePrint(
@@ -119,8 +119,7 @@ export function mergePrint(
       isOp("print[Text]", "println[Text]")(node)
         ? assignment(
             variable,
-            op(
-              "concat[Text]",
+            op["concat[Text]"](
               variable,
               node.args[0],
               ...(node.op === "print[Text]" ? [] : [text("\n")]),
@@ -131,7 +130,7 @@ export function mergePrint(
     return block([
       assignment(variable, text("")),
       newSpine.node,
-      op("print[Text]", variable),
+      op["print[Text]"](variable),
     ]);
   }
 }
@@ -158,9 +157,9 @@ export function splitPrint(node: Node, spine: Spine) {
               : x === assignments[0]
               ? isText("")(x.expr)
                 ? block([])
-                : op("print[Text]", x.expr)
+                : op["print[Text]"](x.expr)
               : assignments.includes(x as any)
-              ? op("print[Text]", ((x as Assignment).expr as Op).args[1])
+              ? op["print[Text]"](((x as Assignment).expr as Op).args[1]!)
               : undefined,
           ).node;
         }

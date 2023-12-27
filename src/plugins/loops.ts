@@ -24,8 +24,8 @@ import {
   isOp,
   isSubtype,
   integerType,
-  add1,
-  sub1,
+  succ,
+  pred,
   isText,
   isIdent,
   isUserIdent,
@@ -45,7 +45,7 @@ export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
         return forRange(
           node.variable,
           node.start,
-          sub1(node.end),
+          pred(node.end),
           node.increment,
           node.body,
           true,
@@ -63,12 +63,12 @@ export function forRangeToWhile(node: Node, spine: Spine) {
     }
     const increment = assignment(
       node.variable,
-      op("add", node.variable, node.increment),
+      op.add(node.variable, node.increment),
     );
     return block([
       assignment(node.variable, node.start),
       whileLoop(
-        op(node.inclusive ? "leq" : "lt", node.variable, node.end),
+        op[node.inclusive ? "leq" : "lt"](node.variable, node.end),
         block([node.body, increment]),
       ),
     ]);
@@ -85,8 +85,8 @@ export function forRangeToForCLike(node: Node, spine: Spine) {
     const variable = node.variable ?? id();
     return forCLike(
       assignment(variable, node.start),
-      op(node.inclusive ? "leq" : "lt", variable, node.end),
-      assignment(variable, op("add", variable, node.increment)),
+      op[node.inclusive ? "leq" : "lt"](variable, node.end),
+      assignment(variable, op.add(variable, node.increment)),
       node.body,
     );
   }
@@ -143,13 +143,13 @@ type GetOp = OpCode & ("at[Array]" | "at[List]" | "at[byte]" | "at[codepoint]");
 export function forRangeToForEach(...ops: GetOp[]): Plugin {
   if (ops.includes("at[byte]") && ops.includes("at[codepoint]"))
     throw new Error(
-      "Programming error. Choose only one of 'text_get_byte' && 'text_get_codepoint'.",
+      "Programming error. Choose only one of 'at[byte]' && 'at[codepoint]'.",
     );
   const lengthOpToGetOp = new Map([
-    ["array_length", "at[Array]"],
+    ["size[Array]", "at[Array]"],
     ["size[List]", "at[List]"],
     ["size[byte]", "at[byte]"],
-    ["array_length", "at[codepoint]"],
+    ["size[codepoint]", "at[codepoint]"],
   ]);
   return {
     name: "forRangeToForEach",
@@ -161,7 +161,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
         isInt(0n)(node.start) &&
         ((isOp()(node.end) &&
           ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
-          isIdent()(node.end.args[0])) ||
+          isIdent()(node.end.args[0]!)) ||
           isInt()(node.end))
       ) {
         const indexVar = node.variable;
@@ -188,7 +188,7 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
             if (
               isOp()(n) &&
               n.args[0] === indexedCollection &&
-              isUserIdent(indexVar.name)(n.args[1])
+              isUserIdent(indexVar.name)(n.args[1]!)
             )
               return elementIdentifier;
           }).node;
@@ -253,7 +253,7 @@ function literalLength(expr: Text | List, countTextBytes: boolean): number {
 
 export function forArgvToForEach(node: Node) {
   if (node.kind === "ForArgv") {
-    return forEach(node.variable, op("argv"), node.body);
+    return forEach(node.variable, op.argv, node.body);
   }
 }
 
@@ -264,7 +264,7 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
       if (node.kind === "ForArgv") {
         const indexVar = id(node.variable.name + "+index");
         const newBody = block([
-          assignment(node.variable, op("at[argv]", indexVar)),
+          assignment(node.variable, op["at[argv]"](indexVar)),
           node.body,
         ]);
         return forRange(
@@ -272,9 +272,9 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
           int(0),
           overshoot
             ? inclusive
-              ? sub1(int(node.argcUpperBound))
+              ? pred(int(node.argcUpperBound))
               : int(node.argcUpperBound)
-            : op("argc"),
+            : op.argc,
           int(1),
           newBody,
           inclusive,
@@ -330,13 +330,13 @@ export function shiftRangeOneUp(node: Node, spine: Spine) {
     const newVar = id(node.variable.name + "+shift");
     const newBodySpine = bodySpine.withReplacer((x) =>
       newVar !== undefined && isIdent(node.variable!)(x)
-        ? sub1(newVar)
+        ? pred(newVar)
         : undefined,
     );
     return forRange(
       newVar,
-      add1(node.start),
-      add1(node.end),
+      succ(node.start),
+      succ(node.end),
       int(1n),
       newBodySpine.node,
       node.inclusive,
@@ -361,7 +361,7 @@ export function forRangeToForDifferenceRange(
         return forDifferenceRange(
           node.variable,
           node.start,
-          op("sub", node.end, node.start),
+          op.sub(node.end, node.start),
           node.increment,
           node.body,
           node.inclusive,
@@ -382,15 +382,13 @@ export function forRangeToForRangeOneStep(node: Node, spine: Spine) {
       newVar,
       int(0n),
       node.inclusive
-        ? op("div", op("sub", node.end, node.start), node.increment)
-        : add1(
-            op("div", op("sub", sub1(node.end), node.start), node.increment),
-          ),
+        ? op.div(op.sub(node.end, node.start), node.increment)
+        : succ(op.div(op.sub(pred(node.end), node.start), node.increment)),
       int(1n),
       block([
         assignment(
           node.variable,
-          op("add", op("mul", newVar, node.increment), node.start),
+          op.add(op.mul(newVar, node.increment), node.start),
         ),
         node.body,
       ]),

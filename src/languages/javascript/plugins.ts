@@ -78,7 +78,7 @@ export function forRangeToForEachKey(node: Node) {
         ),
         tableType(textType(integerType(1, 2), true), textType()),
       ),
-      block([assignment(node.variable, op("dec_to_int", loopVar)), node.body]),
+      block([assignment(node.variable, op.dec_to_int(loopVar)), node.body]),
     );
   }
 }

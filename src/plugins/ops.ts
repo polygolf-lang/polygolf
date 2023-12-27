@@ -1,6 +1,6 @@
 import type { Plugin } from "../common/Language";
 import {
-  add1,
+  succ,
   assignment,
   infix,
   type BinaryOpCode,
@@ -94,7 +94,7 @@ export const infixOpMapper: OpMapper<string> = (arg, opArgs) =>
 export const postfixOpMapper: OpMapper<string> = (arg, opArgs) =>
   postfix(arg, opArgs[0]);
 export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {
-  const index = indexCall(opArgs[0], arg === 1 ? add1(opArgs[1]) : opArgs[1]);
+  const index = indexCall(opArgs[0], arg === 1 ? succ(opArgs[1]) : opArgs[1]);
   return opArgs.length > 2 ? assignment(index, opArgs[2]) : index; // TODO: consider mapping to infix "=" instead
 };
 export const builtinOpMapper: OpMapper<string> = builtin;
@@ -153,8 +153,12 @@ export function mapOpsUsing<
               return map("succ", [exprs[1]]);
             }
           }
-          if (node.op === "mul" && isInt(-1n)(exprs[0]) && "neg" in opCodeMap) {
-            const negation = map("neg", [exprs[1]]);
+          if (
+            isOp("mul")(node) &&
+            isInt(-1n)(node.args[0]) &&
+            "neg" in opCodeMap
+          ) {
+            const negation = map("neg", [node.args[1]]);
             if (negation !== undefined) {
               if (exprs.length > 2) {
                 exprs = [negation, ...exprs.slice(2)];
@@ -177,10 +181,13 @@ export function mapOpsUsing<
             if (negativeArgs.length > 0) {
               return map("sub", [
                 positive,
-                ...negativeArgs.map((x) => ({
-                  ...op("neg", x),
-                  targetType: x.targetType,
-                })),
+                ...negativeArgs.map(
+                  (x) =>
+                    ({
+                      ...op.neg(x),
+                      targetType: x.targetType,
+                    }) as any,
+                ),
               ]);
             }
             return positive;
@@ -198,11 +205,11 @@ export const mapBackwardsIndexToForwards = mapOpsUsing<
   OpCode & `${string}${"at" | "slice"}_back${string}`
 >((arg, opArgs, opCode) => {
   const newOpCode = opCode.replaceAll("_back", "") as OpCode;
-  return op(
+  return op.unsafe(
     newOpCode,
     ...(arg === 0
       ? opArgs
-      : replaceAtIndex(opArgs, 1, op("add", opArgs[1], op(arg, opArgs[0])))),
+      : replaceAtIndex(opArgs, 1, op.add(opArgs[1], op[arg](opArgs[0])))),
   );
 }, "variadic");
 
@@ -267,7 +274,7 @@ export function mapMutationUsing<
             ) {
               return mapper(
                 opMap["sub" as TOpCode] as Targ,
-                [node.variable, op("neg", op(opCode, ...newArgs))],
+                [node.variable, op.neg(op.unsafe(opCode, ...newArgs))],
                 opCode,
                 spine,
                 context,
@@ -279,7 +286,7 @@ export function mapMutationUsing<
                 [
                   node.variable,
                   ...(keepRestAsOp && newArgs.length > 1
-                    ? [op(opCode, ...newArgs)]
+                    ? [op.unsafe(opCode, ...newArgs)]
                     : newArgs),
                 ],
                 opCode,
@@ -322,14 +329,14 @@ export const mapMutationTo = {
 export function flipBinaryOps(node: Node) {
   if (isOp(...BinaryOpCodes)(node)) {
     if (node.op in flippedOpCode) {
-      return op(
+      return op.unsafe(
         flippedOpCode[node.op as keyof typeof flippedOpCode],
         node.args[1],
         node.args[0],
       );
     }
     if (isCommutative(node.op)) {
-      return op(node.op, node.args[1], node.args[0]);
+      return op[node.op](node.args[1], node.args[0]);
     }
   }
 }
@@ -359,8 +366,8 @@ export const methodsAsFunctions: Plugin = {
 };
 
 export const printIntToPrint: Plugin = mapOps({
-  "print[Int]": (x) => op("print[Text]", op("int_to_dec", ...x)),
-  "println[Int]": (x) => op("println[Text]", op("int_to_dec", ...x)),
+  "print[Int]": (x) => op["print[Text]"](op.int_to_dec(x[0])),
+  "println[Int]": (x) => op["println[Text]"](op.int_to_dec(x[0])),
 });
 
 export const arraysToLists: Plugin = {
@@ -371,11 +378,11 @@ export const arraysToLists: Plugin = {
       return list(node.exprs);
     }
     if (node.kind === "Op") {
-      if (node.op === "at[Array]") return op("at[List]", ...node.args);
-      if (node.op === "with_at[Array]")
-        return op("with_at[List]", ...node.args);
-      if (node.op === "contains[Array]")
-        return op("contains[List]", ...node.args);
+      if (isOp("at[Array]")(node)) return op["at[List]"](...node.args);
+      if (isOp("with_at[Array]")(node))
+        return op["with_at[List]"](...node.args);
+      if (isOp("contains[Array]")(node))
+        return op["contains[List]"](...node.args);
     }
   },
 };

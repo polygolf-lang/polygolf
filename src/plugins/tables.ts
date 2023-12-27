@@ -58,18 +58,16 @@ export function tableHashing(
           let lastUsed = array.length - 1;
           while (array[lastUsed] === null) lastUsed--;
 
-          return op(
-            "at[List]",
+          return op["at[List]"](
             list(
               array
                 .slice(0, lastUsed + 1)
                 .map((x) => x ?? defaultValue(tableType.value)),
             ),
-            op(
-              "mod",
+            op.mod(
               mod === array.length
                 ? hash(getKey)
-                : op("mod", hash(getKey), int(mod)),
+                : op.mod(hash(getKey), int(mod)),
               int(array.length),
             ),
           );
@@ -136,7 +134,7 @@ export function tableToListLookup(node: Node) {
     ) {
       const values = node.args[0].kvPairs.map((x) => x.value);
       const at = node.args[1];
-      return op("at[List]", list(values), op("find[List]", list(keys), at));
+      return op["at[List]"](list(values), op["find[List]"](list(keys), at));
     }
   }
 }
