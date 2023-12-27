@@ -3,20 +3,20 @@ Hover opcode name to see a description.
 
 | Alias | Full name | Input | Output |
 |-------|-----------|-------|--------|
-| + | [add](## "Integer addition.") | [...Int] | ? |
+| + | [add](## "Integer addition.") | [Int, Int, ...Int] | Int |
 | - | [sub](## "Integer subtraction.")<br>[neg](## "Integer negation.") | [Int, Int]<br>[Int] | Int<br>Int |
-| * | [mul](## "Integer multiplication.") | [...Int] | ? |
+| * | [mul](## "Integer multiplication.") | [Int, Int, ...Int] | Int |
 | div | [div](## "Integer floor division.") | [Int, Int] | Int |
 | ^ | [pow](## "Integer exponentiation.") | [Int, 0..oo] | Int |
 | mod | [mod](## "Integer modulo (corresponds to `div`).") | [Int, Int] | Int |
-| & | [bit_and](## "Integer bitwise and.") | [...Int] | ? |
-| \| | [bit_or](## "Integer bitwise or.") | [...Int] | ? |
-| ~ | [bit_xor](## "Integer bitwise xor.")<br>[bit_not](## "Integer bitwise not.") | [...Int]<br>[Int] | ?<br>Int |
+| & | [bit_and](## "Integer bitwise and.") | [Int, Int, ...Int] | Int |
+| \| | [bit_or](## "Integer bitwise or.") | [Int, Int, ...Int] | Int |
+| ~ | [bit_xor](## "Integer bitwise xor.")<br>[bit_not](## "Integer bitwise not.") | [Int, Int, ...Int]<br>[Int] | Int<br>Int |
 | << | [bit_shift_left](## "Integer left bitshift.") | [Int, 0..oo] | Int |
 | >> | [bit_shift_right](## "Integer arithmetic right bitshift.") | [Int, 0..oo] | Int |
-| gcd | [gcd](## "Greatest common divisor of two integers.") | [...Int] | ? |
-| min | [min](## "Integer minimum.") | [...Int] | ? |
-| max | [max](## "Integer maximum.") | [...Int] | ? |
+| gcd | [gcd](## "Greatest common divisor of two integers.") | [Int, Int, ...Int] | 1..oo |
+| min | [min](## "Integer minimum.") | [Int, Int, ...Int] | Int |
+| max | [max](## "Integer maximum.") | [Int, Int, ...Int] | Int |
 | abs | [abs](## "Integer absolute value.") | [Int] | 0..oo |
 | read[line] | [read[line]](## "Reads single line from the stdin.") | [] | Text |
 | @ | [at[argv]](## "Gets argv at the 0-based `n`th position, where `n` is an integer literal.")<br>[at[Array]](## "Gets the item at the 0-based index.")<br>[at[List]](## "Gets the item at the 0-based index.")<br>[at_back[List]](## "Gets the item at the -1-based backwards index.")<br>[at[Table]](## "Gets the item at the key.")<br>[at[Ascii]](## "Gets the character at the 0-based index.")<br>[at_back[Ascii]](## "Gets the character at the -1-based backwards index.") | [0..oo]<br>[(Array T1 T2), T2]<br>[(List T1), 0..oo]<br>[(List T1), -oo..-1]<br>[(Table T1 T2), T1]<br>[Ascii, 0..oo]<br>[Ascii, -oo..-1] | Text<br>T1<br>T1<br>T1<br>T2<br>(Ascii 1..1)<br>(Ascii 1..1) |
@@ -25,8 +25,8 @@ Hover opcode name to see a description.
 | putc[byte] | [putc[byte]](## "Creates a single byte text and prints it.") | [0..255] | Void |
 | putc[codepoint] | [putc[codepoint]](## "Creates a single codepoint text and prints it.") | [0..1114111] | Void |
 | putc | [putc[Ascii]](## "Creates a single ascii character text and prints it.") | [0..127] | Void |
-| or | [or](## "Non-shortcircuiting logical or. All arguments are to be safely evaluated in any order.") | [...Bool] | Bool |
-| and | [and](## "Non-shortcircuiting logical and. All arguments are to be safely evaluated in any order.") | [...Bool] | Bool |
+| or | [or](## "Non-shortcircuiting logical or. All arguments are to be safely evaluated in any order.") | [Bool, Bool, ...Bool] | Bool |
+| and | [and](## "Non-shortcircuiting logical and. All arguments are to be safely evaluated in any order.") | [Bool, Bool, ...Bool] | Bool |
 | unsafe_or | [unsafe_or](## "Shortcircuiting logical or.") | [Bool, Bool] | Bool |
 | unsafe_and | [unsafe_and](## "Shortcircuiting logical and.") | [Bool, Bool] | Bool |
 | not | [not](## "Logical not.") | [Bool] | Bool |

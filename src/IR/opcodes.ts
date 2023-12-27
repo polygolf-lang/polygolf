@@ -32,11 +32,13 @@ function rest<T extends Type>(rest: T): Rest<T> {
 const T1 = typeArg("T1");
 const T2 = typeArg("T2");
 
+const int2OrMore = [int(), int(), rest(int())] as const;
+const bool2OrMore = [bool, bool, rest(bool)] as const;
 export const opCodeDefinitions = {
   // Arithmetic
-  add: { args: [rest(int())], front: "+", assoc: true, commutes: true },
+  add: { args: int2OrMore, front: "+", assoc: true, commutes: true },
   sub: { args: [int(), int()], front: "-" },
-  mul: { args: [rest(int())], front: "*", assoc: true, commutes: true },
+  mul: { args: int2OrMore, front: "*", assoc: true, commutes: true },
   div: { args: [int(), int()], front: "div" },
   trunc_div: { args: [int(), int()] },
   unsigned_trunc_div: { args: [int(), int()] },
@@ -44,14 +46,14 @@ export const opCodeDefinitions = {
   mod: { args: [int(), int()], front: "mod" },
   rem: { args: [int(), int()] },
   unsigned_rem: { args: [int(), int()] },
-  bit_and: { args: [rest(int())], front: "&", assoc: true, commutes: true },
-  bit_or: { args: [rest(int())], front: "|", assoc: true, commutes: true },
-  bit_xor: { args: [rest(int())], front: "~", assoc: true, commutes: true },
+  bit_and: { args: int2OrMore, front: "&", assoc: true, commutes: true },
+  bit_or: { args: int2OrMore, front: "|", assoc: true, commutes: true },
+  bit_xor: { args: int2OrMore, front: "~", assoc: true, commutes: true },
   bit_shift_left: { args: [int(), int(0)], front: "<<" },
   bit_shift_right: { args: [int(), int(0)], front: ">>" },
-  gcd: { args: [rest(int())], front: true, assoc: true, commutes: true },
-  min: { args: [rest(int())], front: true, assoc: true, commutes: true },
-  max: { args: [rest(int())], front: true, assoc: true, commutes: true },
+  gcd: { args: int2OrMore, front: true, assoc: true, commutes: true },
+  min: { args: int2OrMore, front: true, assoc: true, commutes: true },
+  max: { args: int2OrMore, front: true, assoc: true, commutes: true },
   neg: { args: [int()], front: "-" },
   abs: { args: [int()], front: true },
   bit_not: { args: [int()], front: "~" },
@@ -77,8 +79,8 @@ export const opCodeDefinitions = {
   "putc[Ascii]": { args: [int(0, 127)], front: "putc" },
 
   // Bool arithmetic
-  or: { args: [rest(bool)], front: true, assoc: true, commutes: true },
-  and: { args: [rest(bool)], front: true, assoc: true, commutes: true },
+  or: { args: bool2OrMore, front: true, assoc: true, commutes: true },
+  and: { args: bool2OrMore, front: true, assoc: true, commutes: true },
   unsafe_or: { args: [bool, bool], front: true, assoc: true },
   unsafe_and: { args: [bool, bool], front: true },
   not: { args: [bool], front: true },
@@ -508,7 +510,7 @@ export function userName(opCode: OpCode) {
 export function arity(op: OpCode): number {
   try {
     const args = opCodeDefinitions[op].args;
-    if (args.length > 0 && "res" in args.at(-1)!) return -1;
+    if (args.length > 0 && "rest" in args.at(-1)!) return -1;
     return args.length;
   } catch (e) {
     console.log("arity of", op);
