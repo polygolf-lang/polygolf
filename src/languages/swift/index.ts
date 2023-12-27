@@ -5,7 +5,7 @@ import {
   namedArg,
   op,
   text,
-  add1,
+  succ,
   propertyCall as prop,
   isText,
   builtin,
@@ -103,10 +103,10 @@ const swiftLanguage: Language = {
       mapOps({
         argv: builtin("CommandLine.arguments[1...]"),
         "at[argv]": (x) =>
-          op("at[List]", builtin("CommandLine.arguments"), add1(x[0])),
-        "ord[codepoint]": (x) => op("ord_at[codepoint]", x[0], int(0n)),
-        "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
-        "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", ...x)),
+          op["at[List]"](builtin("CommandLine.arguments"), succ(x[0])),
+        "ord[codepoint]": (x) => op["ord_at[codepoint]"](x[0], int(0n)),
+        "ord[byte]": (x) => op["ord_at[byte]"](x[0], int(0n)),
+        "at[byte]": (x) => op["char[byte]"](op["ord_at[byte]"](x[0], x[1])),
       }),
 
       decomposeIntLiteral(),
@@ -122,10 +122,10 @@ const swiftLanguage: Language = {
         "read[line]": func("readLine"),
         argv: builtin("CommandLine.arguments[1...]"),
         "at[argv]": (x) =>
-          op("at[List]", builtin("CommandLine.arguments"), add1(x[0])),
-        "ord[codepoint]": (x) => op("ord_at[codepoint]", x[0], int(0n)),
-        "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
-        "at[byte]": (x) => op("char[byte]", op("ord_at[byte]", ...x)),
+          op["at[List]"](builtin("CommandLine.arguments"), succ(x[0])),
+        "ord[codepoint]": (x) => op["ord_at[codepoint]"](x[0], int(0n)),
+        "ord[byte]": (x) => op["ord_at[byte]"](x[0], int(0n)),
+        "at[byte]": (x) => op["char[byte]"](op["ord_at[byte]"](x[0], x[1])),
       }),
       implicitlyConvertPrintArg,
       mapOps({
@@ -143,12 +143,12 @@ const swiftLanguage: Language = {
           isInt(0n)(x[1])
             ? method(x[0], "prefix", x[2])
             : method(
-                method(x[0], "prefix", op("add", x[1], x[2])),
+                method(x[0], "prefix", op.add(x[1], x[2])),
                 "suffix",
                 x[2],
               ),
         "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
+          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1n)),
         "ord_at[codepoint]": (x) =>
           prop(
             indexCall(func("Array", prop(x[0], "unicodeScalars")), x[1]),
@@ -173,7 +173,7 @@ const swiftLanguage: Language = {
             x[0],
             "split",
             namedArg("separator", x[1]),
-            namedArg("omittingEmptySubsequences", op("false")),
+            namedArg("omittingEmptySubsequences", op.false),
           ),
         repeat: (x) =>
           func("String", namedArg("repeating", x[0]), namedArg("count", x[1])),
@@ -184,17 +184,16 @@ const swiftLanguage: Language = {
         "find[List]": (x) => method(x[0], "index", namedArg("of", x[1])),
         "find[codepoint]": (x) =>
           conditional(
-            op("contains[Text]", x[0], x[1]),
-            op(
-              "size[codepoint]",
-              op("at[List]", op("split", x[0], x[1]), int(0n)),
+            op["contains[Text]"](x[0], x[1]),
+            op["size[codepoint]"](
+              op["at[List]"](op.split(x[0], x[1]), int(0n)),
             ),
             int(-1n),
           ),
         "find[byte]": (x) =>
           conditional(
-            op("contains[Text]", x[0], x[1]),
-            op("size[byte]", op("at[List]", op("split", x[0], x[1]), int(0n))),
+            op["contains[Text]"](x[0], x[1]),
+            op["size[byte]"](op["at[List]"](op.split(x[0], x[1]), int(0n))),
             int(-1n),
           ),
         pow: (x) =>
@@ -203,7 +202,7 @@ const swiftLanguage: Language = {
         "print[Text]": (x) =>
           func("print", x, namedArg("terminator", text(""))),
         dec_to_int: (x) => postfix("!", func("Int", x)),
-        append: (x) => op("concat[List]", x[0], list([x[1]])),
+        append: (x) => op["concat[List]"](x[0], list([x[1]])),
         include: (x) => method(x[0], "insert", x[1]),
         push: (x) => method(x[0], "append", x[1]),
 
@@ -213,13 +212,13 @@ const swiftLanguage: Language = {
         true: builtin("true"),
         false: builtin("false"),
         bool_to_int: (x) => conditional(x[0], int(1n), int(0n)),
-        int_to_bool: (x) => op("neq[Int]", x[0], int(0n)),
+        int_to_bool: (x) => op["neq[Int]"](x[0], int(0n)),
         int_to_hex: (x) =>
           func(
             "String",
             x[0],
             namedArg("radix", int(16n)),
-            namedArg("uppercase", op("true")),
+            namedArg("uppercase", op.true),
           ),
         int_to_bin: (x) => func("String", x[0], namedArg("radix", int(2n))),
         int_to_hex_aligned: (x) =>
@@ -227,23 +226,19 @@ const swiftLanguage: Language = {
             "String",
             namedArg(
               "format",
-              op("concat[Text]", text("%0"), op("int_to_dec", x[1]), text("X")),
+              op["concat[Text]"](text("%0"), op.int_to_dec(x[1]), text("X")),
             ),
             x[0],
           ),
         int_to_bin_aligned: (x) =>
           method(
-            op(
-              "concat[Text]",
-              op("repeat", text("0"), x[1]),
-              op("int_to_bin", x[0]),
-            ),
+            op["concat[Text]"](op.repeat(text("0"), x[1]), op.int_to_bin(x[0])),
             "suffix",
             x[1],
           ),
         right_align: (x) =>
           method(
-            op("concat[Text]", op("repeat", text(" "), x[1]), x[0]),
+            op["concat[Text]"](op.repeat(text(" "), x[1]), x[0]),
             "suffix",
             x[1],
           ),

@@ -401,7 +401,9 @@ export function sexpr(
         `Expected ${matchingOpCodes
           .map((opCode) => opCodeDefinitions[opCode].args)
           .map((args) =>
-            "variadic" in args ? `${args.min}..oo` : `${args.length}`,
+            args.length > 0 && "rest" in args.at(-1)!
+              ? `${args.length - 1}..oo`
+              : `${args.length}`,
           )
           .join(", ")} but got ${args.length}.`,
       calleeIdent.source,
@@ -411,10 +413,10 @@ export function sexpr(
   if (arityMatchingOpCodes.length > 1) {
     // Hack! We temporarily assign the front name to the opCode field.
     // It will be resolved during typecheck.
-    return op(callee as OpCode, ...args);
+    return op.unsafe(callee as OpCode, ...args);
   }
 
-  return op(arityMatchingOpCodes[0], ...args);
+  return op.unsafe(arityMatchingOpCodes[0], ...args);
 }
 
 function intValue(x: string): bigint {

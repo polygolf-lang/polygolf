@@ -28,19 +28,14 @@ export function useDecimalConstantPackedPrinter(node: Node, spine: Spine) {
         ["packindex", 0, packed.length],
         assignment(
           "result",
-          op(
-            "concat[Text]",
+          op["concat[Text]"](
             id("result"),
-            op(
-              "slice[byte]",
-              op(
-                "int_to_dec",
-                op(
-                  "add",
+            op["slice[byte]"](
+              op.int_to_dec(
+                op.add(
                   int(72n),
-                  op(
-                    "ord[byte]",
-                    op("at[byte]", text(packed), id("packindex")),
+                  op["ord[byte]"](
+                    op["at[byte]"](text(packed), id("packindex")),
                   ),
                 ),
               ),
@@ -72,7 +67,7 @@ export function useLowDecimalListPackedPrinter(node: Node) {
     if (packed === null) return;
     return forRangeCommon(
       ["packindex", 0, packed.length],
-      print(op("ord_at[byte]", text(packed), id("packindex"))),
+      print(op["ord_at[byte]"](text(packed), id("packindex"))),
     );
   }
 }

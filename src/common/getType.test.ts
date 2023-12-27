@@ -154,7 +154,7 @@ describe("Assignment", () => {
   );
   test("Self-referential assignment", () => {
     const aLHS = id("a");
-    const expr = assignment(aLHS, op("add", id("a"), e(int(1))));
+    const expr = assignment(aLHS, op.add(id("a"), e(int(1))));
     expect(() => calcTypeAndResolveOpCode(aLHS, block([expr]))).toThrow(
       PolygolfError,
     );
@@ -174,8 +174,8 @@ describe("Literals", () => {
   testNode("int", intNode(4n), int(4, 4));
   testNode("text", textNode("ahoj"), ascii(int(4, 4)));
   testNode("text", textNode("dobrý den"), text(int(9, 9)));
-  testNode("bool", op("true"), bool);
-  testNode("bool", op("false"), bool);
+  testNode("bool", op.true, bool);
+  testNode("bool", op.false, bool);
   testNode("array", arrayNode([e(int()), e(text())]), "error");
   testNode(
     "array",

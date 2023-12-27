@@ -572,7 +572,7 @@ export function getLiteralOfType(type: Type, nonEmpty = false): Node {
           : (type.low as bigint),
       );
     case "boolean":
-      return op("true");
+      return op.true;
     case "Array":
       if (isArrayIndexType(type.length))
         return array(

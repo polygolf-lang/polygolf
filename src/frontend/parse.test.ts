@@ -49,8 +49,8 @@ describe("Parse literals", () => {
 });
 
 describe("Parse s-expressions", () => {
-  expectExprParse("true nullary op", "true", op("true"));
-  expectExprParse("argv nullary op", "argv", op("argv"));
+  expectExprParse("true nullary op", "true", op.true);
+  expectExprParse("argv nullary op", "argv", op.argv);
   expectExprParse(
     "user function",
     "($f 1 2)",
@@ -61,10 +61,10 @@ describe("Parse s-expressions", () => {
     "($f $x $y)",
     functionCall(id("f"), id("x"), id("y")),
   );
-  expectExprParse("add", "(add $x $y)", op("add", id("x"), id("y")));
-  expectExprParse("add infix", "($x + $y)", op("add", id("x"), id("y")));
-  expectExprParse("mod infix", "($x mod $y)", op("mod", id("x"), id("y")));
-  expectExprParse("or", "(or $x $y)", op("or", id("x"), id("y")));
+  expectExprParse("add", "(add $x $y)", op.add(id("x"), id("y")));
+  expectExprParse("add infix", "($x + $y)", op.add(id("x"), id("y")));
+  expectExprParse("mod infix", "($x mod $y)", op.mod(id("x"), id("y")));
+  expectExprParse("or", "(or $x $y)", op.or(id("x"), id("y")));
   expectExprParse("println[Text]", "(println[Text] $x)", print(id("x"), true));
   expectExprParse("print[Text]", "(print[Text] $x)", print(id("x"), false));
   expectExprParse("assign", "(assign $x 5)", assignment(id("x"), int(5n)));
@@ -73,17 +73,17 @@ describe("Parse s-expressions", () => {
   expectExprParse(
     "+",
     "(+ $x $y $z $w)",
-    op("add", op("add", op("add", id("x"), id("y")), id("z")), id("w")),
+    op.add(id("x"), id("y"), id("z"), id("w")),
   );
   expectExprParse(
     "..",
     "(concat[Text] $x $y $z)",
-    op("concat[Text]", op("concat[Text]", id("x"), id("y")), id("z")),
+    op["concat[Text]"](id("x"), id("y"), id("z")),
   );
-  expectExprParse("- as neg", "(- $x)", op("neg", id("x")));
-  expectExprParse("- as sub", "(- $x $y)", op("sub", id("x"), id("y")));
-  expectExprParse("~ as bitnot", "(~ $x)", op("bit_not", id("x")));
-  expectExprParse("~ as bitxor", "(~ $x $y)", op("bit_xor", id("x"), id("y")));
+  expectExprParse("- as neg", "(- $x)", op.neg(id("x")));
+  expectExprParse("- as sub", "(- $x $y)", op.sub(id("x"), id("y")));
+  expectExprParse("~ as bitnot", "(~ $x)", op.bit_not(id("x")));
+  expectExprParse("~ as bitxor", "(~ $x $y)", op.bit_xor(id("x"), id("y")));
 });
 
 describe("Parse annotations", () => {
@@ -167,7 +167,7 @@ describe("Parse indexing asignment", () => {
   `,
     block([
       assignment("x", list([int(2), int(3)])),
-      op("set_at" as any, id("x"), int(0), int(3)),
+      op.unsafe("set_at" as any, id("x"), int(0), int(3)),
     ]),
   );
 });
