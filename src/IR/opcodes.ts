@@ -1,4 +1,4 @@
-import { Node } from "./IR";
+import type { Node } from "./IR";
 import {
   type Type,
   typeArg,
@@ -19,7 +19,7 @@ interface OpCodeDefinition {
   commutes?: true;
 }
 
-interface Rest<T extends Type = Type> {
+export interface Rest<T extends Type = Type> {
   rest: T;
 }
 export type AnyOpCodeArgTypes =

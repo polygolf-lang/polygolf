@@ -9,8 +9,8 @@ import {
   isSubtype,
   op,
   prefix,
-  Op,
-  OpCode,
+  type Op,
+  type OpCode,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import type { Plugin } from "../../common/Language";

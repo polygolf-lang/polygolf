@@ -23,7 +23,7 @@ import {
   isCommutative,
   isOpCode,
   inverseOpCode,
-  OpCodeArgValues,
+  type OpCodeArgValues,
   isUnary,
 } from "./IR";
 
