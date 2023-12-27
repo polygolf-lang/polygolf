@@ -1,5 +1,5 @@
-import { type IR, isOp, op, block } from "../IR";
-import { type CompilationContext } from "./compile";
+import { type IR, isOp, op, block, isOfKind, type Node } from "../IR";
+import type { VisitorContext, CompilationContext } from "./compile";
 import {
   getChild,
   getChildFragments,
@@ -79,26 +79,29 @@ export class Spine<N extends IR.Node = IR.Node> {
     if (this.parent === null || this.pathFragment === null) {
       return new Spine(newNode, null, null);
     }
-    if (newNode.kind === "Block" && this.parent.node.kind === "Block") {
-      throw new Error(
-        `Programming error: attempt to insert a Block into a Block`,
-      );
-    }
     const parentNode = this.parent.node;
     const parent =
       canonizeAndReturnRoot &&
-      isOp()(parentNode) &&
+      isOfKind("Op", "Block")(parentNode) &&
       typeof this.pathFragment === "object"
         ? this.parent.replacedWith(
             {
-              ...op(
-                parentNode.op,
-                ...replaceAtIndex(
-                  parentNode.args,
-                  this.pathFragment.index,
-                  newNode,
-                ),
-              ),
+              ...(isOp()(parentNode)
+                ? op.unsafe(
+                    parentNode.op,
+                    ...replaceAtIndex(
+                      parentNode.args,
+                      this.pathFragment.index,
+                      newNode,
+                    ),
+                  )
+                : block(
+                    replaceAtIndex(
+                      parentNode.children,
+                      this.pathFragment.index,
+                      newNode,
+                    ),
+                  )),
               targetType: parentNode.targetType,
             },
             true,
@@ -113,9 +116,16 @@ export class Spine<N extends IR.Node = IR.Node> {
    * by removal of `undefined` return values. Returns a generator, so is a no-op
    * if the values are not used. Name inspired by Swift's `compactMap`. */
   *compactMap<T>(func: Visitor<T | undefined>): Generator<T, void, undefined> {
-    const ret = func(this.node, this);
+    let skipChildren = false;
+    const ret = func(this.node, this, {
+      skipChildren() {
+        skipChildren ||= true;
+      },
+      skipReplacement() {},
+    });
     if (ret !== undefined) yield ret;
-    for (const child of this.getChildSpines()) yield* child.compactMap(func);
+    if (!skipChildren)
+      for (const child of this.getChildSpines()) yield* child.compactMap(func);
   }
 
   /** Test whether this node and all children meet the provided condition. */
@@ -130,9 +140,14 @@ export class Spine<N extends IR.Node = IR.Node> {
     return false;
   }
 
-  /** Returns all descendants metting the provided condition. */
+  /** Returns all descendants meeting the provided condition. */
   filterNodes(cond: Visitor<boolean>) {
-    return this.compactMap((n, s) => (cond(n, s) ? n : undefined));
+    return this.compactMap((n, s, skip) => (cond(n, s, skip) ? n : undefined));
+  }
+
+  /** Counts the descendants meeting the provided condition. */
+  countNodes(cond: Visitor<boolean>) {
+    return [...this.filterNodes(cond)].length;
   }
 
   /** Return the spine (pointing to this node) determined from replacing this
@@ -148,13 +163,25 @@ export class Spine<N extends IR.Node = IR.Node> {
     skipReplaced = false,
     skipThis = false,
   ): Spine {
-    const ret = skipThis ? undefined : replacer(this.node, this);
-    if (ret === undefined) {
+    let skipReplacement = skipReplaced;
+    let skipChildren = false;
+    const ret = skipThis
+      ? undefined
+      : replacer(this.node, this, {
+          skipChildren() {
+            skipChildren ||= true;
+          },
+          skipReplacement() {
+            skipReplacement ||= true;
+          },
+        });
+    if (ret === undefined && skipChildren) return this;
+    else if (ret === undefined) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let curr = this as Spine;
       // recurse on children
-      if (isOp()(this.node)) {
-        // Create canonical Op instead of just replacing the chidren
+      if (isOfKind("Op", "Block")(this.node)) {
+        // Create canonical Op / block instead of just replacing the chidren
         const newChildren: IR.Node[] = [];
         let someChildrenIsNew = false;
         for (const child of this.getChildSpines()) {
@@ -164,7 +191,9 @@ export class Spine<N extends IR.Node = IR.Node> {
         }
         if (someChildrenIsNew)
           curr = curr.replacedWith({
-            ...op(this.node.op, ...newChildren),
+            ...(isOp()(this.node)
+              ? op.unsafe(this.node.op, ...newChildren)
+              : block(newChildren)),
             targetType: this.node.targetType,
           });
       } else {
@@ -178,47 +207,26 @@ export class Spine<N extends IR.Node = IR.Node> {
         }
       }
       return curr;
-    } else if (skipReplaced) {
+    } else if (skipReplacement || skipChildren) {
       return this.replacedWith(ret);
     } else {
       // replace this, then recurse on children but not this
       return this.replacedWith(ret).withReplacer(replacer, skipReplaced, true);
     }
   }
-
-  flatMapWithChildrenReplacer(
-    replacer: Visitor<readonly IR.Node[] | undefined>,
-  ): IR.Node | undefined {
-    if (this.isRoot) {
-      const repl = replacer(this.node, this);
-      if (repl !== undefined) return block(repl);
-    }
-    if (this.node.kind !== "Block") return;
-    const children = this.node.children;
-    let newChildren: IR.Node[] | undefined;
-    for (let i = 0; i < children.length; i++) {
-      const child = this.getChild({ prop: "children", index: i });
-      const replacement = replacer(child.node, child);
-      if (replacement !== undefined) {
-        if (newChildren === undefined) {
-          newChildren = children.slice(0, i);
-        }
-        newChildren.push(...replacement);
-      } else if (newChildren !== undefined) {
-        newChildren.push(child.node);
-      }
-    }
-    if (newChildren !== undefined) return block(newChildren);
-  }
 }
 
-export type PluginVisitor<T> = <N extends IR.Node>(
-  node: N,
-  spine: Spine<N>,
+export type PluginVisitor<T = IR.Node[] | IR.Node | undefined> = (
+  node: Node,
+  spine: Spine,
   context: CompilationContext,
 ) => T;
 
-export type Visitor<T> = <N extends IR.Node>(node: N, spine: Spine<N>) => T;
+export type Visitor<T> = (
+  node: Node,
+  spine: Spine,
+  context: VisitorContext,
+) => T;
 
 export function programToSpine(node: IR.Node) {
   return new Spine(node, null, null);

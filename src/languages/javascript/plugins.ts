@@ -1,29 +1,40 @@
-import { builtin, forEachKey, indexCall, isIntLiteral, text } from "../../IR";
-import type { Plugin } from "../../common/Language";
+import {
+  type Node,
+  builtin,
+  forEachKey,
+  indexCall,
+  isInt,
+  text,
+  id,
+  block,
+  assignment,
+  op,
+  annotate,
+  tableType,
+  textType,
+  integerType,
+} from "../../IR";
 
-export const propertyCallToIndexCall: Plugin = {
-  name: "propertyCallToIndexCall",
-  visit(node) {
-    if (node.kind === "PropertyCall") {
-      return indexCall(node.object, text(node.ident.name));
-    }
-  },
-};
+export function propertyCallToIndexCall(node: Node) {
+  if (node.kind === "PropertyCall") {
+    return indexCall(node.object, text(node.ident.name));
+  }
+}
 
-export const forRangeToForEachKey: Plugin = {
-  name: "forRangeToForEachKey",
-  visit(node) {
-    if (
-      node.kind === "ForRange" &&
-      node.variable !== undefined &&
-      isIntLiteral(0n)(node.start) &&
-      isIntLiteral()(node.end) &&
-      2 <= node.end.value &&
-      node.end.value <= 37
-    ) {
-      const end = Number(node.end.value);
-      return forEachKey(
-        node.variable,
+export function forRangeToForEachKey(node: Node) {
+  if (
+    node.kind === "ForRange" &&
+    node.variable !== undefined &&
+    isInt(0n)(node.start) &&
+    isInt()(node.end) &&
+    2 <= node.end.value &&
+    node.end.value <= 37
+  ) {
+    const end = Number(node.end.value);
+    const loopVar = id(node.variable.name + id().name);
+    return forEachKey(
+      loopVar,
+      annotate(
         builtin(
           [
             "'??'",
@@ -65,8 +76,9 @@ export const forRangeToForEachKey: Plugin = {
             "{}+Map",
           ][end - 2],
         ),
-        node.body,
-      );
-    }
-  },
-};
+        tableType(textType(integerType(1, 2), true), textType()),
+      ),
+      block([assignment(node.variable, op.dec_to_int(loopVar)), node.body]),
+    );
+  }
+}

@@ -76,7 +76,7 @@ class FlatIRChunk {
           const arg = this.addNode(node.args[0], true);
           if (arg === null)
             throw new EmitError(node.args[0], "Unary Op arg is void");
-          const opres = op(node.op, arg);
+          const opres = op.unsafe(node.op, arg);
           // An op like println_int which returns void.
           this.pushInstruction(opres);
           return null;
@@ -90,7 +90,7 @@ class FlatIRChunk {
           throw new EmitError(cond, "flattening if condition");
         const left = this.addNodeRequired(cond.args[0], true);
         const right = this.addNodeRequired(cond.args[1], true);
-        const newCond = op(cond.op, left, right);
+        const newCond = op.unsafe(cond.op, left, right);
         const stmt = ifStatement(newCond, node.consequent, node.alternate);
         this.pushInstruction(stmt);
         return null;

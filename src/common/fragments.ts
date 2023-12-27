@@ -51,7 +51,10 @@ export function* getChildFragments(node: IR.Node): Generator<PathFragment> {
   for (const key of getChildKeys(node)) {
     const value = (node as any)[key] as IR.Node[] | IR.Node;
     if (Array.isArray(value)) {
-      for (const v of value.map((_, i) => ({ prop: key, index: i }))) yield v;
+      for (const v of value
+        .filter((x) => typeof x === "object")
+        .map((_, i) => ({ prop: key, index: i })))
+        yield v;
     } else {
       yield key;
     }

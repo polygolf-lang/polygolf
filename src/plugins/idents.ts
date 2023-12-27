@@ -8,8 +8,11 @@ import {
   type Identifier,
   type IR,
   isUserIdent,
+  type Node,
   type NodeFuncRecord,
   getNodeFunc,
+  isText,
+  builtin,
 } from "../IR";
 
 function getIdentMap(
@@ -18,7 +21,7 @@ function getIdentMap(
 ): Map<string, string> {
   // First, try mapping as many idents as possible to their preferred versions
   const inputNames = [...getDeclaredIdentifiers(spine.node)];
-  const outputNames = new Set<string>();
+  const outputNames = new Set<string>(identGen.reserved);
   const result = new Map<string, string>();
   for (const iv of inputNames) {
     for (const preferred of identGen.preferred(iv)) {
@@ -60,12 +63,12 @@ function getIdentMap(
 }
 
 export function renameIdents(
-  identGen: IdentifierGenerator = defaultIdentGen,
+  identGen: IdentifierGenerator = defaultIdentGen(),
 ): Plugin {
   return {
     name: "renameIdents(...)",
-    visit(program, spine) {
-      if (!spine.isRoot) return;
+    visit(program, spine, context) {
+      context.skipChildren();
       const identMap = getIdentMap(spine.root, identGen);
       return spine.withReplacer((node) => {
         if (isUserIdent()(node)) {
@@ -86,20 +89,23 @@ export function renameIdents(
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-const defaultIdentGen: IdentifierGenerator = {
-  preferred(original: string) {
-    const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
-    if (firstLetter === undefined) return [];
-    const lower = firstLetter.toLowerCase();
-    const upper = firstLetter.toUpperCase();
-    return [firstLetter, firstLetter === lower ? upper : lower];
-  },
-  short: letters.split(""),
-  general: (i) => `v${i}`,
-};
+export function defaultIdentGen(...reserved: string[]): IdentifierGenerator {
+  return {
+    preferred(original: string) {
+      const firstLetter = [...original].find((x) => /[A-Za-z]/.test(x));
+      if (firstLetter === undefined) return [];
+      const lower = firstLetter.toLowerCase();
+      const upper = firstLetter.toUpperCase();
+      return [firstLetter, firstLetter === lower ? upper : lower];
+    },
+    short: letters.split(""),
+    general: (i) => `v${i}`,
+    reserved,
+  };
+}
 
 export const lettersOnlyIdentGen: IdentifierGenerator = {
-  ...defaultIdentGen,
+  ...defaultIdentGen(),
   general: (i) => {
     let s = "";
     // 0 is the first general id. Skip over the shorts, so map it to 53.
@@ -136,8 +142,8 @@ export function alias(
           (key.length - save[0]) * (freq - 1) - save[0] - save[1];
   return {
     name: "alias(...)",
-    visit(prog, spine) {
-      if (!spine.isRoot) return;
+    visit(prog, spine, context) {
+      context.skipChildren();
       // get frequency of expr
       const timesUsed = new Map<string, number>();
       for (const key of spine.compactMap(getKey)) {
@@ -156,5 +162,13 @@ export function alias(
       }, false).node;
       return block([...assignments, replacedDeep]);
     },
+  };
+}
+
+export function useBuiltinAliases(builtins: Record<string, string>) {
+  return function (node: Node) {
+    if (isText()(node) && node.value in builtins) {
+      return builtin(builtins[node.value]);
+    }
   };
 }

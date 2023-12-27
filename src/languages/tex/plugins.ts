@@ -30,12 +30,10 @@ import { addDefinitions } from "../../plugins/imports";
 // TODO: I don't know what's the actual term. 3 argument code?
 export const exprTreeToFlat2AC: Plugin = {
   name: "exprTreeToFlat2AC",
-  visit(_node, spine) {
-    return spine.flatMapWithChildrenReplacer((node, spine) => {
-      if (spine.parent?.node.kind !== "Block") return;
-      if (isOfKind("Assignment", "Op", "If")(node))
-        return convertNodeToListOfStatements(node);
-    });
+  visit(node, spine) {
+    if (spine.parent?.node.kind !== "Block") return;
+    if (isOfKind("Assignment", "Op", "If")(node))
+      return [...convertNodeToListOfStatements(node)];
   },
 };
 
@@ -58,9 +56,9 @@ export const stuffToMacros: Plugin = {
         return ifToMacros(node, spine);
       case "Op":
         switch (node.op) {
-          case "println_int": {
-            const arg = node.args[0];
-            assertImmediate(arg, "println_int");
+          case "println[Int]": {
+            const arg = node.args[0]!;
+            assertImmediate(arg, "println[Int]");
             return voidIt(
               // TODO: \\endgraf is long but works everywhere. Try \n\n sometimes
               // TODO: the \\endgraf should be outside the other scanningMacroCall.

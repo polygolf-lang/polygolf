@@ -1,17 +1,22 @@
 import {
+  functionCall,
+  type Node,
   importStatement,
+  infix,
   integerType,
   isIdent,
-  isOfKind,
   isOp,
   isSubtype,
-  isText,
-  methodCall,
   op,
+  prefix,
+  type Op,
+  type OpCode,
 } from "../../IR";
 import { getType } from "../../common/getType";
-import { type Plugin } from "../../common/Language";
+import type { Plugin } from "../../common/Language";
 import { addImports } from "../../plugins/imports";
+import type { Spine } from "../../common/Spine";
+import { replaceAtIndex } from "../../common/arrays";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -38,15 +43,28 @@ const includes: [string, string[]][] = [
 export const addNimImports: Plugin = addImports(
   {
     "^": "math",
+    gcd: "math",
     repeat: "strutils",
     replace: "strutils",
     multireplace: "strutils",
     join: "strutils",
+    find: "strutils",
+    in: "strutils",
+    toBin: "strutils",
+    toHex: "strutils",
+    align: "strutils",
     paramStr: "os",
     commandLineParams: "os",
     split: "strutils",
     hash: "hashes",
     Table: "tables",
+    Set: "sets",
+    toRunes: "unicode",
+    Rune: "unicode",
+    sorted: "algorithm",
+    reversed: "algorithm",
+    startsWith: "strutils",
+    endsWith: "strutils",
   },
   (modules: string[]) => {
     if (modules.length < 1) return;
@@ -60,29 +78,64 @@ export const addNimImports: Plugin = addImports(
   },
 );
 
-export const useUnsignedDivision: Plugin = {
-  name: "useUnsignedDivision",
-  visit(node, spine) {
-    if (isOp("trunc_div", "rem")(node)) {
-      return isSubtype(getType(node.args[0], spine), integerType(0)) &&
-        isSubtype(getType(node.args[0], spine), integerType(0))
-        ? op(`unsigned_${node.op}`, ...node.args)
-        : undefined;
-    }
-  },
-};
+export function useUnsignedDivision(node: Node, spine: Spine) {
+  if (isOp("trunc_div", "rem")(node)) {
+    return isSubtype(getType(node.args[0], spine), integerType(0)) &&
+      isSubtype(getType(node.args[0], spine), integerType(0))
+      ? op[`unsigned_${node.op}`](...node.args)
+      : undefined;
+  }
+}
 
-export const useUFCS: Plugin = {
-  name: "useUFCS",
-  visit(node) {
-    if (node.kind === "FunctionCall" && node.args.length > 0) {
-      if (node.args.length === 1 && isText()(node.args[0])) {
-        return;
-      }
-      const [obj, ...args] = node.args;
-      if (!isOfKind("Infix", "Prefix")(obj) && isIdent()(node.func)) {
-        return methodCall(obj, node.func, ...args);
-      }
+export function useUFCS(node: Node) {
+  if (node.kind === "FunctionCall") {
+    if (node.args.length === 1) {
+      return infix(" ", node.func, node.args[0]);
     }
-  },
-};
+    if (node.args.length > 1 && isIdent()(node.func)) {
+      return functionCall(
+        infix(".", node.args[0], node.func),
+        ...node.args.slice(1),
+      );
+    }
+  }
+  if (node.kind === "Infix" && node.name === " " && isIdent()(node.left)) {
+    return infix(".", node.right, node.left);
+  }
+}
+
+export function useBackwardsIndex(node: Node, spine: Spine) {
+  if (
+    isOp()(node) &&
+    (node.op.includes("at_back") || node.op.includes("slice_back"))
+  ) {
+    return op.unsafe(
+      node.op,
+      ...replaceAtIndex(
+        node.args,
+        1,
+        prefix(
+          "system.^",
+          op.neg((node as Op<`${string}at_back${string}` & OpCode>).args[1]),
+        ),
+      ),
+    );
+  }
+}
+
+export function getEndIndex(start: Node, length: Node) {
+  if (start.kind === "Prefix" && start.name === "system.^") {
+    return prefix(start.name, op.sub(start.arg, length));
+  }
+  return op.add(start, length);
+}
+
+export function removeSystemNamespace(node: Node, spine: Spine) {
+  if (
+    "name" in node &&
+    node.kind !== "FunctionDefinition" &&
+    node.name.startsWith("system.")
+  ) {
+    return { ...node, name: node.name.slice("system.".length) };
+  }
+}

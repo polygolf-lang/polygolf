@@ -1,3 +1,4 @@
+import { byteLength, charLength } from "../common/strings";
 import { getArithmeticType } from "../common/getType";
 import { stringify } from "../common/stringify";
 import {
@@ -10,22 +11,26 @@ import {
   type Node,
   type Integer,
   type MutatingInfix,
-  isCommutative,
   int,
   isAssociative,
   text,
   integerType,
-  type AliasedOpCode,
-  type FrontendOpCode,
-  type AssociativeOpCode,
-  type CommutativeOpCode,
   isConstantType,
   isBinary,
   booleanNotOpCode,
   type Text,
   type IDCastable,
   castID,
+  type VariadicOpCode,
+  isCommutative,
+  isOpCode,
+  inverseOpCode,
+  type OpCodeArgValues,
+  isUnary,
+  opCodeDefinitions,
+  isNullary,
 } from "./IR";
+import { mapObjectValues } from "../common/arrays";
 
 export interface ImplicitConversion extends BaseNode {
   readonly kind: "ImplicitConversion";
@@ -53,7 +58,7 @@ export interface ImplicitConversion extends BaseNode {
 export interface Op<Op extends OpCode = OpCode> extends BaseNode {
   readonly kind: "Op";
   readonly op: Op;
-  readonly args: readonly Node[];
+  readonly args: OpCodeArgValues<Op>;
 }
 
 export interface KeyValue extends BaseNode {
@@ -99,7 +104,6 @@ export interface IndexCall extends BaseNode {
   readonly kind: "IndexCall";
   readonly collection: Node;
   readonly index: Node;
-  readonly oneIndexed: boolean;
 }
 
 export interface RangeIndexCall extends BaseNode {
@@ -108,7 +112,6 @@ export interface RangeIndexCall extends BaseNode {
   readonly low: Node;
   readonly high: Node;
   readonly step: Node;
-  readonly oneIndexed: boolean;
 }
 
 export interface Infix extends BaseNode {
@@ -176,6 +179,29 @@ export function keyValue(key: Node, value: Node): KeyValue {
 }
 
 /**
+ * This object contains contructors for each opcode, with signatures
+ * validating the arities.
+ */
+export const op = {
+  ...(mapObjectValues(
+    opCodeDefinitions,
+    (v, k) =>
+      isNullary(k)
+        ? opUnsafe(k)
+        : (...x: Node[]) =>
+            opUnsafe(
+              k,
+              ...x.filter((x) => typeof x === "object" && "kind" in x),
+            ), // allow unary opcodes to be used in map
+  ) as {
+    [O in OpCode]: OpCodeArgValues<O> extends readonly []
+      ? Op<O>
+      : (...args: OpCodeArgValues<O>) => Op<O>;
+  }),
+  unsafe: opUnsafe,
+} as const;
+
+/**
  * This assumes that the construction will not break the invariants described
  * on `Op` interface and hence is made private.
  */
@@ -187,27 +213,47 @@ function _op(op: OpCode, ...args: Node[]): Op {
   };
 }
 
-export function op(opCode: OpCode, ...args: Node[]): Node {
+/**
+ * This is the implementation respecting the invariants described on the `Op`
+ * interface, but it doesn't validate arity.
+ */
+function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
+  if (!isOpCode(opCode)) return _op(opCode, ...args);
+  if (isUnary(opCode)) {
+    const value = evalUnary(opCode, args[0]);
+    if (value !== null) return value;
+  }
   if (opCode === "not" || opCode === "bit_not") {
     const arg = args[0];
     if (isOp()(arg)) {
-      if (arg.op === opCode) return arg.args[0];
+      if (arg.op === opCode && arg.args[0]?.kind !== "ImplicitConversion")
+        return arg.args[0]!;
       if (opCode === "not") {
-        const negated = booleanNotOpCode(arg.op as BinaryOpCode);
-        if (negated != null) {
-          return op(negated, arg.args[0], arg.args[1]);
+        if (arg.op in booleanNotOpCode) {
+          return op.unsafe(
+            booleanNotOpCode[arg.op as keyof typeof booleanNotOpCode],
+            arg.args[0]!,
+            arg.args[1]!,
+          );
         }
       }
     }
   }
+  if (
+    opCode in inverseOpCode &&
+    isOp(inverseOpCode[opCode as keyof typeof inverseOpCode])(args[0]) &&
+    args[0].args[0].kind !== "ImplicitConversion"
+  ) {
+    return args[0].args[0];
+  }
   if (opCode === "neg") {
-    if (isIntLiteral()(args[0])) {
+    if (isInt()(args[0])) {
       return int(-args[0].value);
     }
-    return op("mul", int(-1), args[0]);
+    return op.mul(int(-1), args[0]);
   }
   if (opCode === "sub") {
-    return op("add", args[0], op("neg", args[1]));
+    return op.add(args[0], op.neg(args[1]));
   }
   if (isAssociative(opCode)) {
     args = args.flatMap((x) => (isOp(opCode)(x) ? x.args : [x]));
@@ -215,8 +261,8 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     else {
       if (isCommutative(opCode)) {
         args = args
-          .filter((x) => isIntLiteral()(x))
-          .concat(args.filter((x) => !isIntLiteral()(x)));
+          .filter((x) => isInt()(x))
+          .concat(args.filter((x) => !isInt()(x)));
       } else {
         args = args.filter((x) => !isText("")(x));
         if (
@@ -229,7 +275,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
       const newArgs: Node[] = [];
       for (const arg of args) {
         if (newArgs.length > 0) {
-          const combined = evalInfix(opCode, newArgs[newArgs.length - 1], arg);
+          const combined = evalBinary(opCode, newArgs[newArgs.length - 1], arg);
           if (combined !== null) {
             newArgs[newArgs.length - 1] = combined;
           } else {
@@ -244,10 +290,10 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
         );
         if (toNegate !== undefined) {
           args = args.map((x) =>
-            isIntLiteral()(x)
+            isInt()(x)
               ? int(-x.value)
               : x === toNegate
-              ? op("add", ...(x as Op).args.map((y) => op("neg", y)))
+              ? op.unsafe("add", ...(x as Op).args.map(op.neg))
               : x,
           );
         }
@@ -256,7 +302,7 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     if (
       opCode === "mul" &&
       args.length > 1 &&
-      isIntLiteral(1n)(args[0]) &&
+      isInt(1n)(args[0]) &&
       args[1].kind !== "ImplicitConversion"
     ) {
       args = args.slice(1);
@@ -265,10 +311,10 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
     if (args.length === 1) return args[0];
   }
   if (isBinary(opCode) && args.length === 2) {
-    const combined = evalInfix(opCode, args[0], args[1]);
+    const combined = evalBinary(opCode, args[0], args[1]);
     if (
       combined !== null &&
-      (!isIntLiteral()(combined) ||
+      (!isInt()(combined) ||
         opCode !== "pow" || // only eval pow if it is a low number
         (combined.value < 1000 && combined.value > -1000))
     ) {
@@ -278,11 +324,15 @@ export function op(opCode: OpCode, ...args: Node[]): Node {
   return _op(opCode, ...args);
 }
 
-function evalInfix(op: BinaryOpCode, left: Node, right: Node): Node | null {
-  if (op === "concat" && isText()(left) && isText()(right)) {
+function evalBinary(
+  op: BinaryOpCode | VariadicOpCode,
+  left: Node,
+  right: Node,
+): Integer | Text | null {
+  if (op === "concat[Text]" && isText()(left) && isText()(right)) {
     return text(left.value + right.value);
   }
-  if (isIntLiteral()(left) && isIntLiteral()(right)) {
+  if (isInt()(left) && isInt()(right)) {
     try {
       const type = getArithmeticType(
         op,
@@ -292,6 +342,20 @@ function evalInfix(op: BinaryOpCode, left: Node, right: Node): Node | null {
       if (isConstantType(type)) return int(type.low);
     } catch {
       // The output type is not an integer.
+    }
+  }
+  return null;
+}
+
+function evalUnary(op: UnaryOpCode, arg: Node): Integer | Text | null {
+  if (isText()(arg)) {
+    const value = arg.value;
+    switch (op) {
+      case "size[byte]":
+      case "size[Ascii]":
+        return int(byteLength(value));
+      case "size[codepoint]":
+        return int(charLength(value));
     }
   }
   return null;
@@ -312,9 +376,9 @@ function simplifyPolynomial(terms: Node[]): Node[] {
     }
   }
   for (const x of terms) {
-    if (isIntLiteral()(x)) constant += x.value;
+    if (isInt()(x)) constant += x.value;
     else if (isOp("mul")(x)) {
-      if (isIntLiteral()(x.args[0])) add(x.args[0].value, x.args.slice(1));
+      if (isInt()(x.args[0])) add(x.args[0].value, x.args.slice(1));
       else add(1n, x.args);
     } else add(1n, [x]);
   }
@@ -337,8 +401,8 @@ function simplifyPolynomial(terms: Node[]): Node[] {
   return result;
 }
 
-export const add1 = (expr: Node) => op("add", expr, int(1n));
-export const sub1 = (expr: Node) => op("add", expr, int(-1n));
+export const succ = (expr: Node) => op.add(expr, int(1n));
+export const prec = (expr: Node) => op.add(expr, int(-1n));
 
 export function functionCall(
   func: string | Node,
@@ -386,16 +450,11 @@ export function propertyCall(
   };
 }
 
-export function indexCall(
-  collection: string | Node,
-  index: Node,
-  oneIndexed: boolean = false,
-): IndexCall {
+export function indexCall(collection: string | Node, index: Node): IndexCall {
   return {
     kind: "IndexCall",
     collection: typeof collection === "string" ? id(collection) : collection,
     index,
-    oneIndexed,
   };
 }
 
@@ -404,7 +463,6 @@ export function rangeIndexCall(
   low: Node,
   high: Node,
   step: Node,
-  oneIndexed: boolean = false,
 ): RangeIndexCall {
   return {
     kind: "RangeIndexCall",
@@ -412,7 +470,6 @@ export function rangeIndexCall(
     low,
     high,
     step,
-    oneIndexed,
   };
 }
 
@@ -473,7 +530,7 @@ export function namedArg<T extends Node>(name: string, value: T): NamedArg<T> {
 }
 
 export function print(value: Node, newline: boolean = true): Node {
-  return op(newline ? "println" : "print", value);
+  return op[newline ? "println[Text]" : "print[Text]"](value);
 }
 
 export function getArgs(
@@ -556,7 +613,7 @@ export function isUserIdent<Name extends string>(
       ))) as any;
 }
 
-export function isIntLiteral<Value extends bigint>(
+export function isInt<Value extends bigint>(
   ...vals: Value[]
 ): (x: Node) => x is Integer<Value> {
   return ((x: Node) =>
@@ -565,7 +622,7 @@ export function isIntLiteral<Value extends bigint>(
 }
 
 export function isNegativeLiteral(expr: Node) {
-  return isIntLiteral()(expr) && expr.value < 0n;
+  return isInt()(expr) && expr.value < 0n;
 }
 
 /**
@@ -578,35 +635,7 @@ export function isNegative(expr: Node) {
   );
 }
 
-export function isOp<O extends OpCode>(
-  ...ops: O[]
-): (x: Node) => x is Op<
-  // Typesafe-wise, this is the same as `x is Op<O>`.
-  // However, this allows `O` to be written using the type aliases.
-  // Alias using the first type that is a match (that is a subtype) and union the rest.
-  // For some reason, when I alias this type, it no longer works.
-  AliasedOpCode<
-    O,
-    OpCode,
-    AliasedOpCode<
-      O,
-      FrontendOpCode,
-      AliasedOpCode<
-        O,
-        BinaryOpCode,
-        AliasedOpCode<
-          O,
-          UnaryOpCode,
-          AliasedOpCode<
-            O,
-            AssociativeOpCode,
-            AliasedOpCode<O, CommutativeOpCode>
-          >
-        >
-      >
-    >
-  >
-> {
+export function isOp<O extends OpCode>(...ops: O[]): (x: Node) => x is Op<O> {
   return ((x: Node) =>
     x.kind === "Op" && (ops.length === 0 || ops?.includes(x.op as any))) as any;
 }

@@ -7,16 +7,20 @@ import swiftLanguage from "./swift";
 import golfscriptLanguage from "./golfscript";
 import javascriptLanguage from "./javascript";
 import texLanguage from "./tex";
+import janetLanguage from "./janet";
+import textLanguage from "./text";
 
 const languages = [
+  polygolfLanguage,
   golfscriptLanguage,
   luaLanguage,
   nimLanguage,
   pythonLanguage,
   swiftLanguage,
-  polygolfLanguage,
   javascriptLanguage,
   texLanguage,
+  janetLanguage,
+  textLanguage,
 ];
 
 export default languages;

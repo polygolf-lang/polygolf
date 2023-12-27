@@ -25,7 +25,7 @@ import parse from "./parse";
 
 function testStmtParse(desc: string, str: string, output: Node) {
   test(desc, () => {
-    expect(stringify(parse(str, false))).toEqual(stringify(output));
+    expect(stringify(parse(str, false).node)).toEqual(stringify(output));
   });
 }
 
@@ -49,8 +49,8 @@ describe("Parse literals", () => {
 });
 
 describe("Parse s-expressions", () => {
-  expectExprParse("true nullary op", "true", op("true"));
-  expectExprParse("argv nullary op", "argv", op("argv"));
+  expectExprParse("true nullary op", "true", op.true);
+  expectExprParse("argv nullary op", "argv", op.argv);
   expectExprParse(
     "user function",
     "($f 1 2)",
@@ -61,29 +61,29 @@ describe("Parse s-expressions", () => {
     "($f $x $y)",
     functionCall(id("f"), id("x"), id("y")),
   );
-  expectExprParse("add", "(add $x $y)", op("add", id("x"), id("y")));
-  expectExprParse("add infix", "($x + $y)", op("add", id("x"), id("y")));
-  expectExprParse("mod infix", "($x mod $y)", op("mod", id("x"), id("y")));
-  expectExprParse("or", "(or $x $y)", op("or", id("x"), id("y")));
-  expectExprParse("println", "(println $x)", print(id("x"), true));
-  expectExprParse("print", "(print $x)", print(id("x"), false));
+  expectExprParse("add", "(add $x $y)", op.add(id("x"), id("y")));
+  expectExprParse("add infix", "($x + $y)", op.add(id("x"), id("y")));
+  expectExprParse("mod infix", "($x mod $y)", op.mod(id("x"), id("y")));
+  expectExprParse("or", "(or $x $y)", op.or(id("x"), id("y")));
+  expectExprParse("println[Text]", "(println[Text] $x)", print(id("x"), true));
+  expectExprParse("print[Text]", "(print[Text] $x)", print(id("x"), false));
   expectExprParse("assign", "(assign $x 5)", assignment(id("x"), int(5n)));
   expectExprParse("assign infix", "($x <- 5)", assignment(id("x"), int(5n)));
   expectExprParse("list", "(list 1 2 3)", list([int(1n), int(2n), int(3n)]));
   expectExprParse(
     "+",
     "(+ $x $y $z $w)",
-    op("add", op("add", op("add", id("x"), id("y")), id("z")), id("w")),
+    op.add(id("x"), id("y"), id("z"), id("w")),
   );
   expectExprParse(
     "..",
-    "(.. $x $y $z)",
-    op("concat", op("concat", id("x"), id("y")), id("z")),
+    "(concat[Text] $x $y $z)",
+    op["concat[Text]"](id("x"), id("y"), id("z")),
   );
-  expectExprParse("- as neg", "(- $x)", op("neg", id("x")));
-  expectExprParse("- as sub", "(- $x $y)", op("sub", id("x"), id("y")));
-  expectExprParse("~ as bitnot", "(~ $x)", op("bit_not", id("x")));
-  expectExprParse("~ as bitxor", "(~ $x $y)", op("bit_xor", id("x"), id("y")));
+  expectExprParse("- as neg", "(- $x)", op.neg(id("x")));
+  expectExprParse("- as sub", "(- $x $y)", op.sub(id("x"), id("y")));
+  expectExprParse("~ as bitnot", "(~ $x)", op.bit_not(id("x")));
+  expectExprParse("~ as bitxor", "(~ $x $y)", op.bit_xor(id("x"), id("y")));
 });
 
 describe("Parse annotations", () => {
@@ -105,18 +105,18 @@ describe("Parse annotations", () => {
 describe("Parse statements", () => {
   testStmtParse(
     "comment",
-    `%one\nprintln 58;%two\n%println -3;`,
+    `%one\nprintln[Text] 58;%two\n%println[Text] -3;`,
     print(int(58n), true),
   );
   testStmtParse("infix assignment", "$x <- 5;", assignment(id("x"), int(5n)));
   testStmtParse(
     "if",
-    "if $x (println $y);",
+    "if $x (println[Text] $y);",
     ifStatement(id("x"), print(id("y"), true)),
   );
   testStmtParse(
     "forRange",
-    "for $x 1 20 1 (println $x);",
+    "for $x 1 20 1 (println[Text] $x);",
     forRange(id("x"), int(1n), int(20n), int(1n), print(id("x"), true)),
   );
 });
@@ -124,7 +124,7 @@ describe("Parse statements", () => {
 describe("Parse variants", () => {
   testStmtParse(
     "Two variants",
-    `{ println $x; / print $x; print "\\n"; }`,
+    `{ println[Text] $x; / print[Text] $x; print[Text] "\\n"; }`,
     variants([
       print(id("x"), true),
       block([print(id("x"), false), print(text("\n"), false)]),
@@ -132,7 +132,7 @@ describe("Parse variants", () => {
   );
   testStmtParse(
     "Three variants",
-    `{ println $x; / print $x; print "\\n"; / print $x; print "\\n"; }`,
+    `{ println[Text] $x; / print[Text] $x; print[Text] "\\n"; / print[Text] $x; print[Text] "\\n"; }`,
     variants([
       print(id("x"), true),
       block([print(id("x"), false), print(text("\n"), false)]),
@@ -141,7 +141,7 @@ describe("Parse variants", () => {
   );
   testStmtParse(
     "Node variants",
-    `println { 0 / 1 };`,
+    `println[Text] { 0 / 1 };`,
     print(variants([int(0n), int(1n)]), true),
   );
 });
@@ -155,5 +155,19 @@ describe("Parse unambiguously", () => {
       }
     }`,
     variants([variants([assignment(id("a"), int(0n))])]),
+  );
+});
+
+describe("Parse indexing asignment", () => {
+  testStmtParse(
+    `Rewrite to set_at`,
+    `
+  $x <- (list 2 3);
+  ($x @ 0) <- 3;
+  `,
+    block([
+      assignment("x", list([int(2), int(3)])),
+      op.unsafe("set_at" as any, id("x"), int(0), int(3)),
+    ]),
   );
 });

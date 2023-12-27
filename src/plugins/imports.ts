@@ -24,8 +24,8 @@ export function addImports( // TODO caching
 
   return {
     name: "addImports(...)",
-    visit(node, spine) {
-      if (!spine.isRoot) return;
+    visit(node, spine, context) {
+      context.skipChildren();
       const modules = spine.compactMap(rulesFunc);
       const outputNode = outputFunc([...new Set(modules)]);
       if (outputNode !== undefined) {

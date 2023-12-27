@@ -1,7 +1,7 @@
 import { type IR, type Integer, type Node } from "IR";
 import { PolygolfError } from "./errors";
 import { type TokenTree } from "./Language";
-import { codepoints } from "./objective";
+import { codepoints } from "./strings";
 
 export function joinTrees(
   sep: TokenTree,
@@ -58,12 +58,14 @@ export function containsMultiNode(exprs: readonly IR.Node[]): boolean {
 }
 
 export class EmitError extends PolygolfError {
+  expr: Node;
   constructor(expr: Node, detail?: string) {
     const kind = expr.kind + ("op" in expr ? `[${expr.op}]` : "");
     detail = detail === undefined ? "" : ` (${detail})`;
     const message = `emit error - ${kind}${detail} not supported.`;
     super(message, expr.source);
     this.name = "EmitError";
+    this.expr = expr;
     Object.setPrototypeOf(this, EmitError.prototype);
   }
 }

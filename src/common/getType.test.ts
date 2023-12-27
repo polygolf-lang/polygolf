@@ -17,7 +17,6 @@ import {
   variants,
   toString,
   voidType,
-  indexCall,
   text as textNode,
   int as intNode,
   array as arrayNode,
@@ -31,9 +30,10 @@ import {
   forRangeCommon,
   forDifferenceRange,
   type Node,
+  asciiType,
 } from "IR";
 import { PolygolfError } from "./errors";
-import { calcType } from "./getType";
+import { calcTypeAndResolveOpCode, getType } from "./getType";
 
 const ascii = (x: number | IntegerType = int(0)) => text(x, true);
 
@@ -49,8 +49,9 @@ function testNode(
   prog: Node = block([]),
 ) {
   test(name, () => {
-    if (result === "error") expect(() => calcType(expr, prog)).toThrow();
-    else expect(toString(calcType(expr, prog))).toEqual(toString(result));
+    if (result === "error")
+      expect(() => calcTypeAndResolveOpCode(expr, prog)).toThrow();
+    else expect(toString(getType(expr, prog))).toEqual(toString(result));
   });
 }
 
@@ -153,8 +154,10 @@ describe("Assignment", () => {
   );
   test("Self-referential assignment", () => {
     const aLHS = id("a");
-    const expr = assignment(aLHS, op("add", id("a"), e(int(1))));
-    expect(() => calcType(aLHS, block([expr]))).toThrow(PolygolfError);
+    const expr = assignment(aLHS, op.add(id("a"), e(int(1))));
+    expect(() => calcTypeAndResolveOpCode(aLHS, block([expr]))).toThrow(
+      PolygolfError,
+    );
   });
 });
 
@@ -167,39 +170,12 @@ describe("Functions", () => {
   );
 });
 
-describe("Index call", () => {
-  testNode("Index int", indexCall(e(int()), e(int())), "error");
-  testNode("Index array", indexCall(e(array(int(), 10)), e(int())), "error");
-  testNode(
-    "Index array",
-    indexCall(e(array(int(), 10)), e(int(10, 10))),
-    "error",
-  );
-  testNode(
-    "Index array",
-    indexCall(e(array(int(), 10)), e(int(0, 0)), true),
-    "error",
-  );
-  testNode(
-    "Index array",
-    indexCall(e(array(text(), 10)), e(int(0, 9))),
-    text(),
-  );
-  testNode(
-    "Index list",
-    indexCall(e(list(int())), e(int(0, 0)), true),
-    "error",
-  );
-  testNode("Index list", indexCall(e(list(int())), e(int())), "error");
-  testNode("Index list", indexCall(e(list(text())), e(int(0))), text());
-});
-
 describe("Literals", () => {
   testNode("int", intNode(4n), int(4, 4));
   testNode("text", textNode("ahoj"), ascii(int(4, 4)));
   testNode("text", textNode("dobrý den"), text(int(9, 9)));
-  testNode("bool", op("true"), bool);
-  testNode("bool", op("false"), bool);
+  testNode("bool", op.true, bool);
+  testNode("bool", op.false, bool);
   testNode("array", arrayNode([e(int()), e(text())]), "error");
   testNode(
     "array",
@@ -352,28 +328,28 @@ describeArithmeticOp("bit_shift_right", [
   [[int(10, 50), int(2, 3)], int(1, 12)],
 ]);
 
-describeOp("print", [
+describeOp("print[Text]", [
   [[int()], "error"],
   [[bool], "error"],
   [[text(), text()], "error"],
   [[text()], voidType],
 ]);
 
-describeOp("println", [
+describeOp("println[Text]", [
   [[int()], "error"],
   [[bool], "error"],
   [[text(), text()], "error"],
   [[text()], voidType],
 ]);
 
-describeOp("print_int", [
+describeOp("print[Int]", [
   [[text()], "error"],
   [[bool], "error"],
   [[int(), int()], "error"],
   [[int()], voidType],
 ]);
 
-describeOp("println_int", [
+describeOp("println[Int]", [
   [[text()], "error"],
   [[bool], "error"],
   [[int(), int()], "error"],
@@ -392,33 +368,33 @@ describeOp("and", [
   [[bool, bool], bool],
 ]);
 
-describeOp("array_contains", [
+describeOp("contains[Array]", [
   [[int(), array(int(), 10)], "error"],
   [[list(int()), int()], "error"],
   [[array(int(), 10), text()], "error"],
   [[array(int(), 10), int()], bool],
 ]);
 
-describeOp("list_contains", [
+describeOp("contains[List]", [
   [[int(), list(int())], "error"],
   [[array(int(), 10), int()], "error"],
   [[list(int()), text()], "error"],
   [[list(int()), int()], bool],
 ]);
 
-describeOp("table_contains_key", [
+describeOp("contains[Table]", [
   [[text(), table(text(), int())], "error"],
   [[table(text(), int()), int()], "error"],
   [[table(text(), int()), text()], bool],
 ]);
 
-describeOp("set_contains", [
+describeOp("contains[Set]", [
   [[int(), set(int())], "error"],
   [[set(int()), text()], "error"],
   [[set(int()), int()], bool],
 ]);
 
-describeOp("array_get", [
+describeOp("at[Array]", [
   [[int(0, 3), array(int(), 4)], "error"],
   [[array(int(), 4), text()], "error"],
   [[array(int(), 4), int()], "error"],
@@ -426,32 +402,32 @@ describeOp("array_get", [
   [[array(int(-300, 300), 4), int(0, 3)], int(-300, 300)],
 ]);
 
-describeOp("list_get", [
+describeOp("at[List]", [
   [[int(0), list(int())], "error"],
   [[list(int()), text()], "error"],
   [[list(int()), int()], "error"],
   [[list(int(-300, 300)), int(0)], int(-300, 300)],
 ]);
 
-describeOp("table_get", [
+describeOp("at[Table]", [
   [[text(), table(text(), int())], "error"],
   [[table(text(), int()), int()], "error"],
   [[table(text(5), int()), text()], "error"],
   [[table(text(), int()), text()], int()],
 ]);
 
-describeOp("argv_get", [
+describeOp("at[argv]", [
   [[int()], "error"],
   [[int(0)], text()],
 ]);
 
-describeOp("list_push", [
+describeOp("push", [
   [[int(), list(int())], "error"],
   [[list(int(0, 1000)), int()], "error"],
-  [[list(int(0, 1000)), int(100, 200)], int(0, 1000)],
+  [[list(int(0, 1000)), int(100, 200)], voidType],
 ]);
 
-describeOp("concat", [
+describeOp("concat[Text]", [
   [[text(), int()], "error"],
   [[text(), text()], text()],
   [[ascii(), text(100, true)], ascii()],
@@ -471,19 +447,19 @@ describeOp("repeat", [
   [[text(int(10, 20), true), int(3, 5)], text(int(30, 100), true)],
 ]);
 
-describeOp("text_contains", [
+describeOp("contains[Text]", [
   [[text(), int()], "error"],
   [[text(), text()], bool],
 ]);
 
-describeOp("text_codepoint_find", [
+describeOp("find[codepoint]", [
   [[text(), int()], "error"],
   [[text(), text()], "error"],
   [[text(), text(int(1, 1))], int(-1)],
   [[text(100), text(int(10))], int(-1, 90)],
 ]);
 
-describeOp("text_byte_find", [
+describeOp("find[byte]", [
   [[text(), int()], "error"],
   [[text(), text()], "error"],
   [[text(), text(int(1, 1))], int(-1)],
@@ -491,47 +467,47 @@ describeOp("text_byte_find", [
   [[ascii(100), text(int(10))], int(-1, 90)],
 ]);
 
-describeOp("text_split", [
+describeOp("split", [
   [[text(), int()], "error"],
   [[text(), text()], listType(text())],
   [[text(500), text()], listType(text(500))],
 ]);
 
-describeOp("text_get_byte", [
+describeOp("at[byte]", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], text(int(1, 1))],
   [[ascii(), int(0)], ascii(int(1, 1))],
 ]);
 
-describeOp("text_get_codepoint", [
+describeOp("at[codepoint]", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], text(int(1, 1))],
   [[ascii(), int(0)], ascii(int(1, 1))],
 ]);
 
-describeOp("text_get_codepoint_to_int", [
+describeOp("ord_at[codepoint]", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], int(0, 0x10ffff)],
   [[ascii(), int(0)], int(0, 127)],
 ]);
 
-describeOp("codepoint_to_int", [
+describeOp("ord[codepoint]", [
   [[text(), text()], "error"],
   [[text()], "error"],
   [[text(int(1, 1))], int(0, 0x10ffff)],
 ]);
 
-describeOp("text_get_byte_to_int", [
+describeOp("ord_at[byte]", [
   [[text(), text()], "error"],
   [[text(), int()], "error"],
   [[text(), int(0)], int(0, 255)],
   [[ascii(), int(0)], int(0, 127)],
 ]);
 
-describeOp("text_byte_to_int", [
+describeOp("ord[byte]", [
   [[text(), text()], "error"],
   [[text()], "error"],
   [[ascii(int(1, 1))], int(0, 127)],
@@ -586,7 +562,7 @@ describeOp("not", [
   [[bool], bool],
 ]);
 
-describeOp("int_to_text", [
+describeOp("int_to_dec", [
   [[bool], "error"],
   [[text()], "error"],
   [[int()], ascii(int(1))],
@@ -613,7 +589,7 @@ describeOp("int_to_hex", [
   [[int(0, 0x10000)], ascii(int(1, 5))],
 ]);
 
-describeOp("text_to_int", [
+describeOp("dec_to_int", [
   [[bool], "error"],
   [[int()], "error"],
   [[text()], "error"],
@@ -627,58 +603,68 @@ describeOp("bool_to_int", [
   [[bool], int(0, 1)],
 ]);
 
-describeOp("int_to_text_byte", [
+describeOp("char[byte]", [
   [[text()], "error"],
   [[int(0)], "error"],
   [[int(0, 255)], text(int(1, 1))],
   [[int(0, 127)], ascii(int(1, 1))],
 ]);
 
-describeOp("int_to_codepoint", [
+describeOp("char[codepoint]", [
   [[text()], "error"],
   [[int(0)], "error"],
   [[int(0, 0x10ffff)], text(int(1, 1))],
   [[int(0, 127)], ascii(int(1, 1))],
 ]);
 
-describeOp("list_length", [
+describeOp("size[List]", [
   [[list(int()), int()], "error"],
   [[array(int(), 10)], "error"],
   [[list(int())], int(0, (1n << 31n) - 1n)],
 ]);
 
-describeOp("text_codepoint_length", [
+describeOp("size[codepoint]", [
   [[list(int())], "error"],
   [[text(int(20, 58))], int(20, 58)],
   [[ascii(int(20, 58))], int(20, 58)],
 ]);
 
-describeOp("text_byte_length", [
+describeOp("size[byte]", [
   [[list(int())], "error"],
   [[text(int(20, 58))], int(20, 4 * 58)],
   [[ascii(int(20, 58))], int(20, 58)],
 ]);
 
-describeOp("text_split_whitespace", [
+describeOp("split_whitespace", [
   [[list(text())], "error"],
   [[text(58)], list(text(58))],
 ]);
 
-describeOp("sorted", [
+describeOp("sorted[Int]", [
   [[array(text(), 5)], "error"],
   [[set(text())], "error"],
   [[table(text(), text())], "error"],
   [[text()], "error"],
   [[list(int())], list(int())],
-  [[list(text())], list(text())],
+  [[list(asciiType)], "error"],
 ]);
 
-describeOp("text_byte_reversed", [
+describeOp("sorted[Ascii]", [
+  [[array(text(), 5)], "error"],
+  [[set(text())], "error"],
+  [[table(text(), text())], "error"],
+  [[text()], "error"],
+  [[list(int())], "error"],
+  [[list(asciiType)], list(asciiType)],
+  [[list(text())], "error"],
+]);
+
+describeOp("reversed[byte]", [
   [[list(text())], "error"],
   [[text()], text()],
 ]);
 
-describeOp("text_codepoint_reversed", [
+describeOp("reversed[codepoint]", [
   [[list(text())], "error"],
   [[text()], text()],
 ]);
@@ -693,7 +679,7 @@ describeOp("argc", [
   [[], int(0, 2 ** 31 - 1)],
 ]);
 
-describeOp("text_replace", [
+describeOp("replace", [
   [[text(), text()], "error"],
   [[text(), text(), text()], "error"],
   [[text(), text(int(1)), text()], text()],
@@ -702,43 +688,41 @@ describeOp("text_replace", [
   [[text(58), text(int(1)), text(58)], text(58 * 58)],
 ]);
 
-describeOp("text_get_codepoint_slice", [
+describeOp("slice[codepoint]", [
   [[text(), int(0)], "error"],
   [[text(), int(), int()], "error"],
   [[text(), int(0), int(0)], text()],
   [[text(58), int(0), int(0)], text(58)],
   [[text(), int(0), int(0, 58)], text(58)],
-  [[text(), int(30, 200), int(0, 58)], text(28)],
 ]);
 
-describeOp("text_get_byte_slice", [
+describeOp("slice[byte]", [
   [[text(), int(0)], "error"],
   [[text(), int(), int()], "error"],
   [[text(), int(0), int(0)], text()],
   [[text(58), int(0), int(0)], text(58)],
   [[text(), int(0), int(0, 58)], text(58)],
-  [[text(), int(30, 200), int(0, 58)], text(28)],
 ]);
 
-describeOp("array_set", [
+describeOp("set_at[Array]", [
   [[array(int(), 4), text(), int()], "error"],
   [[array(int(), 4), int(), int()], "error"],
   [[array(int(), 4), int(1, 4), int()], "error"],
   [[array(int(-300, 300), 4), int(0, 3), text()], "error"],
-  [[array(int(-300, 300), 4), int(0, 3), int(10, 20)], int(-300, 300)],
+  [[array(int(-300, 300), 4), int(0, 3), int(10, 20)], voidType],
 ]);
 
-describeOp("list_set", [
+describeOp("set_at[List]", [
   [[list(int()), text(), int()], "error"],
   [[list(int()), int(), int()], "error"],
   [[list(int(-300, 300)), int(0), text()], "error"],
-  [[list(int(-300, 300)), int(0), int(10, 20)], int(-300, 300)],
+  [[list(int(-300, 300)), int(0), int(10, 20)], voidType],
 ]);
 
-describeOp("table_set", [
+describeOp("set_at[Table]", [
   [[table(text(), int()), int(), text()], "error"],
   [[table(text(5), int()), text(), int()], "error"],
   [[table(text(5), int(0)), text(5), int()], "error"],
   [[table(text(5), int(0)), text(), int(0)], "error"],
-  [[table(text(5), int(0)), text(4), int(100)], int(0)],
+  [[table(text(5), int(0)), text(4), int(100)], voidType],
 ]);

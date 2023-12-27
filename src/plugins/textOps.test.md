@@ -1,38 +1,6 @@
 # Text ops plugins
 
-## Text ops equivalent for ascii
-
-```polygolf
-text_byte_length "abcdefgh";
-text_get_byte_slice "abcdefgh" 1 3;
-text_byte_length "ěščřžýáíé";
-int_to_text_byte 48;
-int_to_text_byte 150;
-```
-
-```polygolf textOps.useEquivalentTextOp(true,true)
-text_codepoint_length "abcdefgh";
-text_get_codepoint_slice "abcdefgh" 1 3;
-text_byte_length "ěščřžýáíé";
-int_to_codepoint 48;
-int_to_text_byte 150;
-```
-
-```polygolf
-text_codepoint_length "abcdefgh";
-text_get_codepoint_slice "abcdefgh" 1 3;
-text_codepoint_length "ěščřžýáíé";
-int_to_codepoint 48;
-int_to_codepoint 150;
-```
-
-```polygolf textOps.useEquivalentTextOp(true,true)
-text_byte_length "abcdefgh";
-text_get_byte_slice "abcdefgh" 1 3;
-text_codepoint_length "ěščřžýáíé";
-int_to_text_byte 48;
-int_to_codepoint 150;
-```
+## Replace
 
 ```polygolf
 text_replace (text_replace "ABCD" "A" "a") "BC" "b";
@@ -52,4 +20,30 @@ text_replace (text_replace "ABCD" "A" "a") "BC" "b";
 
 ```polygolf textOps.useMultireplace(true)
 text_replace (text_replace "ABCD" "A" "a") "BC" "b";
+```
+
+## Starts/ends with
+
+```polygolf
+$a <- (@0);
+$b <- (@1);
+starts_with $a $b;
+```
+
+```polygolf textOps.startsWithEndsWithToSliceEquality("byte")
+$a <- (@0);
+$b <- (@1);
+(slice[byte] $a 0 (size[byte] $b)) == $b;
+```
+
+```polygolf
+$a <- (@0);
+$b <- (@1);
+ends_with $a $b;
+```
+
+```polygolf textOps.startsWithEndsWithToSliceEquality("codepoint")
+$a <- (@0);
+$b <- (@1);
+(slice_back[codepoint] $a (- (size[codepoint] $b)) (size[codepoint] $b)) == $b;
 ```

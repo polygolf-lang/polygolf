@@ -4,10 +4,12 @@ import compile, {
   applyAllToAllAndGetCounts,
   debugEmit,
   normalize,
+  typecheck,
 } from "../common/compile";
 import { findLang } from "../languages/languages";
 import { type Plugin } from "../common/Language";
 import { getOnlyVariant } from "../common/expandVariants";
+import type { PluginVisitor } from "../common/Spine";
 
 export const keywords = [
   "nogolf",
@@ -21,6 +23,8 @@ export const keywords = [
   "restrictFrontend",
   "1..127",
   "32..127",
+  "no:hardcode",
+  "noEmit",
 ] as const;
 
 export function compilationOptionsFromKeywords(
@@ -39,6 +43,8 @@ export function compilationOptionsFromKeywords(
     getAllVariants: is("allVariants"),
     restrictFrontend: is("restrictFrontend"),
     skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
+    skipPlugins: is("no:hardcode") ? ["hardcode"] : [],
+    noEmit: is("noEmit"),
   };
 }
 
@@ -62,23 +68,28 @@ export function testLang(
 
 export function testPlugin(
   name: string,
-  plugins: Plugin[],
+  plugins: (Plugin | PluginVisitor)[],
   args: string[],
   input: string,
   output: string,
 ) {
   test(name, () => {
     expect(
-      debugEmit(
-        applyAllToAllAndGetCounts(
-          getOnlyVariant(parse(input, false)),
-          {
-            addWarning: () => {},
-            options: compilationOptionsFromKeywords(args),
-          },
-          ...plugins.map((x) => x.visit),
-        )[0],
-      ),
+      (() => {
+        const options = compilationOptionsFromKeywords(args, false);
+        let program = getOnlyVariant(parse(input, false).node);
+        program = typecheck(program, !options.skipTypecheck);
+        return debugEmit(
+          applyAllToAllAndGetCounts(
+            program,
+            options,
+            () => {},
+            ...plugins.map((x) =>
+              typeof x === "function" ? { name: x.name, visit: x } : x,
+            ),
+          )[0],
+        );
+      })(),
     ).toEqual(normalize(output));
   });
 }

@@ -1,16 +1,15 @@
 import { type Plugin, type OpTransformOutput } from "../common/Language";
 import {
-  add1,
+  succ,
   assignment,
   infix,
   type BinaryOpCode,
   type Node,
-  flipOpCode,
   type IndexCall,
   indexCall,
   isBinary,
   isCommutative,
-  isIntLiteral,
+  isInt,
   isNegative,
   mutatingInfix,
   isOp,
@@ -19,13 +18,19 @@ import {
   op,
   prefix,
   type UnaryOpCode,
-  BinaryOpCodes,
   functionCall,
   propertyCall,
   isIdent,
   postfix,
+  type VariadicOpCode,
+  BinaryOpCodes,
+  VariadicOpCodes,
+  isUnary,
+  flippedOpCode,
+  isVariadic,
+  list,
+  type MutatingInfix,
 } from "../IR";
-import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 import { mapObjectValues } from "../common/arrays";
@@ -36,22 +41,13 @@ export function mapOps(
 ): Plugin {
   return {
     name,
+    bakeType: true,
     visit(node, spine) {
       if (isOp()(node)) {
         const op = node.op;
         const f = opMap[op];
         if (f !== undefined) {
-          let replacement =
-            typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
-          if (replacement === undefined) return undefined;
-          if ("op" in replacement && !isOp()(replacement)) {
-            // "as any" because TS doesn't do well with the "in" keyword
-            replacement = {
-              ...(replacement as any),
-              op: node.op,
-            };
-          }
-          return { ...replacement!, type: getType(node, spine) };
+          return typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
         }
       }
     },
@@ -95,21 +91,28 @@ export function mapTo<T>(
  * Plugin transforming binary and unary ops to the name and precedence in the target lang.
  * @param opMap OpCode - target op name pairs.
  * @param asMutatingInfix - array of target op names that should be mapped to mutating infix or true for to signify all.
+ * @param unaryMapping - The function to transform unary ops.
+ * @param binaryMapping - The function to transform binary ops.
  * @returns The plugin closure.
  */
-export function mapToPrefixAndInfix<
+export function mapUnaryAndBinary<
   TNames extends string,
   TNamesMutating extends TNames,
 >(
-  opMap: Partial<Record<UnaryOpCode, string> & Record<BinaryOpCode, TNames>>,
+  opMap: Partial<
+    Record<UnaryOpCode, string> & Record<BinaryOpCode | VariadicOpCode, TNames>
+  >,
   asMutatingInfix: true | TNamesMutating[] = [],
+  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
+  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
 ): Plugin {
   enhanceOpMap(opMap);
   const justPrefixInfix = mapOps(
     mapObjectValues(opMap, (name, op) =>
-      isBinary(op)
-        ? (x: readonly Node[]) => asBinaryChain(op, x, opMap)
-        : (x: readonly Node[]) => prefix(name, x[0]),
+      isUnary(op)
+        ? (x: readonly Node[]) => unaryMapping(name, x[0])
+        : (x: readonly Node[]) =>
+            asBinaryChain(op, x, opMap, unaryMapping, binaryMapping),
     ),
     `mapToPrefixAndInfix(${JSON.stringify(opMap)}, ${JSON.stringify(
       asMutatingInfix,
@@ -121,7 +124,7 @@ export function mapToPrefixAndInfix<
     Object.fromEntries(
       Object.entries(opMap).filter(
         ([k, v]) =>
-          isBinary(k as OpCode) &&
+          (isBinary(k as OpCode) || isVariadic(k as OpCode)) &&
           (asMutatingInfix === true || asMutatingInfix.includes(v as any)),
       ),
     ),
@@ -138,17 +141,15 @@ export function mapToPrefixAndInfix<
 }
 
 function asBinaryChain(
-  opCode: BinaryOpCode,
+  opCode: BinaryOpCode | VariadicOpCode,
   exprs: readonly Node[],
   names: Partial<Record<OpCode, string>>,
+  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
+  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
 ): Node {
   const negName = names.neg;
-  if (
-    opCode === "mul" &&
-    isIntLiteral(-1n)(exprs[0]) &&
-    negName !== undefined
-  ) {
-    exprs = [prefix(negName, exprs[1]), ...exprs.slice(2)];
+  if (opCode === "mul" && isInt(-1n)(exprs[0]) && negName !== undefined) {
+    exprs = [unaryMapping(negName, exprs[1]), ...exprs.slice(2)];
   }
   if (opCode === "add") {
     exprs = exprs
@@ -159,9 +160,12 @@ function asBinaryChain(
   for (const expr of exprs.slice(1)) {
     const subName = names.sub;
     if (opCode === "add" && isNegative(expr) && subName !== undefined) {
-      result = infix(subName, result, op("neg", expr));
+      result = binaryMapping(subName, result, {
+        ...op.neg(expr),
+        targetType: expr.targetType,
+      });
     } else {
-      result = infix(names[opCode] ?? "?", result, expr);
+      result = binaryMapping(names[opCode] ?? "?", result, expr);
     }
   }
   return result;
@@ -169,35 +173,116 @@ function asBinaryChain(
 
 export function useIndexCalls(
   oneIndexed: boolean = false,
-  ops: OpCode[] = [
-    "array_get",
-    "list_get",
-    "table_get",
-    "array_set",
-    "list_set",
-    "table_set",
+  ops = [
+    "at[Array]" as const,
+    "at[List]" as const,
+    "at_back[List]" as const,
+    "at[Table]" as const,
+    "set_at[Array]" as const,
+    "set_at[List]" as const,
+    "set_at_back[List]" as const,
+    "set_at[Table]" as const,
   ],
 ): Plugin {
   return {
+    bakeType: true,
     name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
       ops,
     )})`,
     visit(node) {
       if (
         isOp(...ops)(node) &&
-        (isIdent()(node.args[0]) || node.op.endsWith("_get"))
+        (isIdent()(node.args[0]) || !node.op.startsWith("set_"))
       ) {
         let indexNode: IndexCall;
-        if (oneIndexed && !node.op.startsWith("table_")) {
-          indexNode = indexCall(node.args[0], add1(node.args[1]), true);
+        if (oneIndexed && !node.op.endsWith("[Table]")) {
+          indexNode = indexCall(node.args[0], succ(node.args[1]));
         } else {
           indexNode = indexCall(node.args[0], node.args[1]);
         }
-        if (node.op.endsWith("_get")) {
-          return indexNode;
-        } else if (node.op.endsWith("_set")) {
+        if (
+          isOp(
+            "set_at[Array]",
+            "set_at[List]",
+            "set_at_back[List]",
+            "set_at[Table]",
+          )(node)
+        ) {
           return assignment(indexNode, node.args[2]);
+        } else {
+          return indexNode;
         }
+      }
+    },
+  };
+}
+
+export function backwardsIndexToForwards(
+  addLength = true,
+  ops: OpCode[] = [
+    "at_back[Ascii]" as const,
+    "at_back[byte]" as const,
+    "at_back[codepoint]" as const,
+    "at_back[List]" as const,
+    "set_at_back[List]" as const,
+    "slice_back[Ascii]" as const,
+    "slice_back[byte]" as const,
+    "slice_back[codepoint]" as const,
+    "slice_back[List]" as const,
+  ],
+): Plugin {
+  return {
+    name: "backwardsIndexToForwards",
+    visit(node, spine, context) {
+      if (isOp(...ops)(node)) {
+        const [collection, index, third] = node.args;
+        return mapOps({
+          "at_back[Ascii]": op["at[Ascii]"](
+            collection,
+            addLength ? op.add(index, op["size[Ascii]"](collection)) : index,
+          ),
+          "at_back[byte]": op["at[byte]"](
+            collection,
+            addLength ? op.add(index, op["size[byte]"](collection)) : index,
+          ),
+          "at_back[codepoint]": op["at[codepoint]"](
+            collection,
+            addLength
+              ? op.add(index, op["size[codepoint]"](collection))
+              : index,
+          ),
+          "at_back[List]": op["at[List]"](
+            collection,
+            addLength ? op.add(index, op["size[List]"](collection)) : index,
+          ),
+          "set_at_back[List]": op["set_at[List]"](
+            collection,
+            addLength ? op.add(index, op["size[List]"](collection)) : index,
+            third,
+          ),
+          "slice_back[Ascii]": op["slice[Ascii]"](
+            collection,
+            addLength ? op.add(index, op["size[Ascii]"](collection)) : index,
+            third,
+          ),
+          "slice_back[byte]": op["slice[byte]"](
+            collection,
+            addLength ? op.add(index, op["size[byte]"](collection)) : index,
+            third,
+          ),
+          "slice_back[codepoint]": op["slice[codepoint]"](
+            collection,
+            addLength
+              ? op.add(index, op["size[codepoint]"](collection))
+              : index,
+            third,
+          ),
+          "slice_back[List]": op["slice[List]"](
+            collection,
+            addLength ? op.add(index, op["size[List]"](collection)) : index,
+            third,
+          ),
+        }).visit(node, spine, context);
       }
     },
   };
@@ -205,14 +290,14 @@ export function useIndexCalls(
 
 // "a = a + b" --> "a += b"
 export function addMutatingInfix(
-  opMap: Partial<Record<BinaryOpCode, string>>,
+  opMap: Partial<Record<BinaryOpCode | VariadicOpCode, string>>,
 ): Plugin {
   return {
     name: `addMutatingInfix(${JSON.stringify(opMap)})`,
     visit(node) {
       if (
         node.kind === "Assignment" &&
-        isOp(...BinaryOpCodes)(node.expr) &&
+        isOp(...BinaryOpCodes, ...VariadicOpCodes)(node.expr) &&
         node.expr.args.length > 1 &&
         node.expr.op in opMap
       ) {
@@ -229,13 +314,13 @@ export function addMutatingInfix(
             return mutatingInfix(
               opMap.sub!,
               node.variable,
-              op("neg", op(opCode, ...newArgs)),
+              op.neg(op.unsafe(opCode, ...newArgs)),
             );
           }
           return mutatingInfix(
             name,
             node.variable,
-            newArgs.length > 1 ? op(opCode, ...newArgs) : newArgs[0],
+            newArgs.length > 1 ? op.unsafe(opCode, ...newArgs) : newArgs[0],
           );
         }
       }
@@ -243,43 +328,57 @@ export function addMutatingInfix(
   };
 }
 
-export const addPostfixIncAndDec: Plugin = {
-  name: "addPostfixIncAndDec",
-  visit(node) {
-    if (
-      node.kind === "MutatingInfix" &&
-      ["+", "-"].includes(node.name) &&
-      isIntLiteral(1n)(node.right)
-    ) {
-      return postfix(node.name.repeat(2), node.variable);
-    }
-  },
-};
+export function addIncAndDec(
+  transform: (infix: MutatingInfix) => Node = (x) =>
+    postfix(x.name.repeat(2), x.variable),
+): Plugin {
+  return {
+    name: `addIncAndDec(${JSON.stringify(transform)})`,
+    visit(node) {
+      if (
+        node.kind === "MutatingInfix" &&
+        ["+", "-"].includes(node.name) &&
+        isInt(1n)(node.right)
+      ) {
+        return transform(node);
+      }
+    },
+  };
+}
 
 // (a > b) --> (b < a)
-export const flipBinaryOps: Plugin = {
-  name: "flipBinaryOps",
-  visit(node) {
-    if (isOp(...BinaryOpCodes)(node)) {
-      const flippedOpCode = flipOpCode(node.op);
-      if (flippedOpCode !== null) {
-        return op(flippedOpCode, node.args[1], node.args[0]);
-      }
+export function flipBinaryOps(node: Node) {
+  if (isOp(...BinaryOpCodes)(node)) {
+    if (node.op in flippedOpCode) {
+      return op.unsafe(
+        flippedOpCode[node.op as keyof typeof flippedOpCode],
+        node.args[1],
+        node.args[0],
+      );
     }
-  },
-};
+    if (isCommutative(node.op)) {
+      return op[node.op](node.args[1], node.args[0]);
+    }
+  }
+}
 
 export const removeImplicitConversions: Plugin = {
   name: "removeImplicitConversions",
+  bakeType: true,
   visit(node) {
     if (node.kind === "ImplicitConversion") {
-      return node.expr;
+      let ret: Node = node;
+      while (ret.kind === "ImplicitConversion") {
+        ret = ret.expr;
+      }
+      return ret;
     }
   },
 };
 
 export const methodsAsFunctions: Plugin = {
   name: "methodsAsFunctions",
+  bakeType: true,
   visit(node) {
     if (node.kind === "MethodCall") {
       return functionCall(propertyCall(node.object, node.ident), node.args);
@@ -289,8 +388,24 @@ export const methodsAsFunctions: Plugin = {
 
 export const printIntToPrint: Plugin = mapOps(
   {
-    print_int: (x) => op("print", op("int_to_text", ...x)),
-    println_int: (x) => op("println", op("int_to_text", ...x)),
+    "print[Int]": (x) => op["print[Text]"](op.int_to_dec(x[0])),
+    "println[Int]": (x) => op["println[Text]"](op.int_to_dec(x[0])),
   },
   "printIntToPrint",
 );
+
+export const arraysToLists: Plugin = {
+  name: "arraysToLists",
+  bakeType: true,
+  visit(node) {
+    if (node.kind === "Array") {
+      return list(node.exprs);
+    }
+    if (node.kind === "Op") {
+      if (isOp("at[Array]")(node)) return op["at[List]"](...node.args);
+      if (isOp("set_at[Array]")(node)) return op["set_at[List]"](...node.args);
+      if (isOp("contains[Array]")(node))
+        return op["contains[List]"](...node.args);
+    }
+  },
+};

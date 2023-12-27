@@ -1,22 +1,22 @@
 import {
   type Node,
   type Type,
-  listType,
-  arrayType,
-  integerType,
+  voidType,
+  textType as text,
+  listType as list,
+  arrayType as array,
+  integerType as int,
+  setType as set,
+  tableType as table,
   integerTypeIncludingAll,
   type IntegerType,
   type Op,
   isSubtype,
   union,
   toString,
-  voidType,
-  textType,
   type TextType,
   booleanType,
   type OpCode,
-  setType,
-  tableType,
   type KeyValueType,
   keyValueType,
   getArgs,
@@ -38,19 +38,35 @@ import {
   isConstantType,
   constantIntegerType,
   type ListType,
-  isAssociative,
   op,
   leq,
   isIdent,
+  instantiateGenerics,
+  type ArrayType,
+  type TableType,
+  opCodeDefinitions,
+  type AnyOpCodeArgTypes,
+  OpCodeFrontNamesToOpCodes,
+  integerType,
+  type Rest,
 } from "../IR";
-import { byteLength, charLength } from "./objective";
+import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
 import { type Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
+import { stringify } from "./stringify";
 
-const cachedType = new WeakMap<Node, Type>();
+interface TypeAndOpCode {
+  type: Type;
+  opCode?: OpCode;
+}
+
+const cachedType = new WeakMap<Node, TypeAndOpCode>();
 const currentlyFinding = new WeakSet<Node>();
-export function getType(expr: Node, context: Node | Spine): Type {
+export function getTypeAndResolveOpCode(
+  expr: Node,
+  context: Node | Spine,
+): TypeAndOpCode {
   const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
   if (currentlyFinding.has(expr))
@@ -58,7 +74,8 @@ export function getType(expr: Node, context: Node | Spine): Type {
 
   currentlyFinding.add(expr);
   try {
-    const t = calcType(expr, program);
+    let t = calcTypeAndResolveOpCode(expr, program);
+    if ("kind" in t) t = { type: t };
     currentlyFinding.delete(expr);
     cachedType.set(expr, t);
     return t;
@@ -70,8 +87,14 @@ export function getType(expr: Node, context: Node | Spine): Type {
     throw e;
   }
 }
+export function getType(expr: Node, context: Node | Spine) {
+  return getTypeAndResolveOpCode(expr, context).type;
+}
 
-export function calcType(expr: Node, program: Node): Type {
+export function calcTypeAndResolveOpCode(
+  expr: Node,
+  program: Node,
+): Type | TypeAndOpCode {
   // user-annotated node
   if (expr.type !== undefined) return expr.type;
   // type inference
@@ -105,40 +128,6 @@ export function calcType(expr: Node, program: Node): Type {
         `Type error. Cannot assign ${toString(b)} to ${toString(a)}.`,
       );
     }
-    case "IndexCall": {
-      const a = type(expr.collection);
-      const b = type(expr.index);
-      let expectedIndex: Type;
-      let result: Type;
-      switch (a.kind) {
-        case "Array":
-          expectedIndex = expr.oneIndexed
-            ? integerType(1, a.length)
-            : integerType(0, a.length - 1);
-          result = a.member;
-          break;
-        case "List": {
-          expectedIndex = integerType(expr.oneIndexed ? 1 : 0, "oo");
-          result = a.member;
-          break;
-        }
-        case "Table": {
-          expectedIndex = a.key;
-          result = a.value;
-          break;
-        }
-        default:
-          throw new Error(
-            "Type error. IndexCall must be used on a collection.",
-          );
-      }
-      if (isSubtype(b, expectedIndex)) {
-        return result;
-      }
-      throw new Error(
-        `Type error. Cannot index ${toString(a)} with ${toString(b)}.`,
-      );
-    }
     case "Op":
       return getOpCodeType(expr, program);
     case "MutatingInfix":
@@ -160,29 +149,30 @@ export function calcType(expr: Node, program: Node): Type {
       );
     }
     case "Identifier":
+      if (expr.builtin) throw Error("Cannot calculate type of builtin.");
       return getIdentifierType(expr, program);
     case "Text": {
       const codepoints = charLength(expr.value);
-      return textType(
-        integerType(codepoints, codepoints),
+      return text(
+        int(codepoints, codepoints),
         codepoints === byteLength(expr.value),
       );
     }
     case "Integer":
-      return integerType(expr.value, expr.value);
+      return int(expr.value, expr.value);
     case "Array":
-      return arrayType(
+      return array(
         expr.exprs.map(type).reduce((a, b) => union(a, b)),
         expr.exprs.length,
       );
     case "List":
       return expr.exprs.length > 0
-        ? listType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
-        : listType("void");
+        ? list(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+        : list("void");
     case "Set":
       return expr.exprs.length > 0
-        ? setType(expr.exprs.map(type).reduce((a, b) => union(a, b)))
-        : setType("void");
+        ? set(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+        : set("void");
     case "KeyValue": {
       const k = type(expr.key);
       const v = type(expr.value);
@@ -200,11 +190,11 @@ export function calcType(expr: Node, program: Node): Type {
         const kTypes = kvTypes.map((x) => x.key);
         const vTypes = kvTypes.map((x) => x.value);
         return expr.kvPairs.length > 0
-          ? tableType(
+          ? table(
               kTypes.reduce((a, b) => union(a, b) as any),
               vTypes.reduce((a, b) => union(a, b)),
             )
-          : tableType(integerType(), "void");
+          : table(int(), "void");
       }
       throw new Error(
         "Programming error. Type of KeyValue nodes should always be KeyValue.",
@@ -230,128 +220,122 @@ export function calcType(expr: Node, program: Node): Type {
       return voidType;
     case "OneToManyAssignment":
       return type(expr.expr);
+    case "ForRange": {
+      const incType = type(expr.increment);
+      if (!isSubtype(incType, integerType(1, Infinity))) {
+        throw new Error(
+          `Type error. Increment must be positive (got ${toString(incType)}).`,
+        );
+      }
+      return voidType;
+    }
     case "If":
-    case "ForRange":
     case "While":
     case "ForArgv":
+    case "ForCLike":
+    case "ForEach":
+    case "ForEachKey":
+    case "ForEachPair":
+    case "ForDifferenceRange":
       return voidType;
     case "ImplicitConversion": {
-      return type(op(expr.behavesLike, expr.expr));
+      return type(op.unsafe(expr.behavesLike, expr.expr));
     }
   }
-  throw new Error(`Type error. Unexpected node ${expr.kind}.`);
+  throw new Error(`Type error. Unexpected node ${stringify(expr)}.`);
 }
 
 function getTypeBitNot(t: IntegerType): IntegerType {
-  return integerType(sub(-1n, t.high), sub(-1n, t.low));
+  return int(sub(-1n, t.high), sub(-1n, t.low));
 }
 
-function getOpCodeType(expr: Op, program: Node): Type {
-  const types = getArgs(expr).map((x) => getType(x, program));
-  function expectVariadicType(
-    expected: Type,
-    minArityOrArityCheck: number | ((x: number) => boolean) = 2,
-  ) {
-    const arityCheck =
-      typeof minArityOrArityCheck === "number"
-        ? (x: number) => x >= minArityOrArityCheck
-        : minArityOrArityCheck;
-    if (
-      !arityCheck(types.length) ||
-      types.some((x, i) => !isSubtype(x, expected))
-    ) {
-      throw new Error(
-        `Type error. Operator '${
-          expr.op ?? "null"
-        }' type error. Expected [...${toString(expected)}] but got [${types
-          .map(toString)
-          .join(", ")}].`,
-      );
-    }
-  }
-  function expectType(...expected: Type[]) {
-    if (
-      types.length !== expected.length ||
-      types.some((x, i) => !isSubtype(x, expected[i]))
-    ) {
-      throw new Error(
-        `Type error. Operator '${
-          expr.op ?? "null"
-        }' type error. Expected [${expected
-          .map(toString)
-          .join(", ")}] but got [${types.map(toString).join(", ")}].`,
-      );
-    }
-  }
-  function expectGenericType(
-    ...expected: (
-      | "Set"
-      | "Array"
-      | "List"
-      | "Table"
-      | [string, (typeArgs: Type[]) => Type]
-    )[]
-  ): Type[] {
-    function _throw() {
-      let i = 1;
-      const expectedS = expected.map((e) => {
-        switch (e) {
-          case "List":
-          case "Set":
-            return `(${e} T${i++})`;
-          case "Array":
-          case "Table":
-            return `(${e} T${i++} T${i++})`;
-        }
-        return e[0];
-      });
-      throw new Error(
-        `Type error. Operator '${
-          expr.op ?? "null"
-        }' type error. Expected [${expectedS.join(", ")}] but got [${types
-          .map(toString)
-          .join(", ")}].`,
-      );
-    }
-    if (types.length !== expected.length) _throw();
-    const typeArgs: Type[] = [];
-    for (let i = 0; i < types.length; i++) {
-      const exp = expected[i];
-      const got = types[i];
-      if (typeof exp === "string") {
-        if (exp === "List" && got.kind === "List") {
-          typeArgs.push(got.member);
-        } else if (exp === "Array" && got.kind === "Array") {
-          typeArgs.push(got.member);
-          typeArgs.push(integerType(0, got.length - 1));
-        } else if (exp === "Set" && got.kind === "Set") {
-          typeArgs.push(got.member);
-        } else if (exp === "Table" && got.kind === "Table") {
-          typeArgs.push(got.key);
-          typeArgs.push(got.value);
-        } else {
-          _throw();
-        }
-      }
-    }
-    for (let i = 0; i < types.length; i++) {
-      const exp = expected[i];
-      const got = types[i];
-      if (typeof exp !== "string") {
-        const expInstantiated = exp[1](typeArgs);
-        if (!isSubtype(got, expInstantiated)) _throw();
-      }
-    }
-    return typeArgs;
-  }
+export function getInstantiatedOpCodeArgTypes(op: OpCode): Type[] {
+  return getGenericOpCodeArgTypes(op).map(
+    instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) }),
+  );
+}
 
-  switch (expr.op) {
+export function getGenericOpCodeArgTypes(op: OpCode): Type[] {
+  const type = opCodeDefinitions[op].args;
+  return type.filter((x) => !("rest" in x)) as Type[];
+}
+
+export function expectedTypesToString(
+  expectedTypes: AnyOpCodeArgTypes,
+): string {
+  return `[${expectedTypes
+    .map((x) => ("rest" in x ? `...${toString(x.rest)}` : toString(x)))
+    .join(", ")}]`;
+}
+
+/**
+ * Simple algorithm for validating types of arguments of ops. Type vars are only bound by being used as an arg to a List, Array, Set or Table at a top level.
+ * TODO: More general unifying algo.
+ * @param gotTypes List of actual types provided.
+ * @param expectedTypes Expected types (array of types or variadic object).
+ * @returns True iff it is a match.
+ */
+function isTypeMatch(gotTypes: Type[], expectedTypes: AnyOpCodeArgTypes) {
+  const isVariadic =
+    expectedTypes.length > 0 && "rest" in expectedTypes.at(-1)!;
+  if (isVariadic && gotTypes.length < expectedTypes.length - 1) return false;
+  if (!isVariadic && expectedTypes.length !== gotTypes.length) return false;
+  const params: Record<string, Type> = {};
+  const instantiate = instantiateGenerics(params);
+  let i = 0;
+  for (let got of gotTypes) {
+    got = instantiate(got);
+    let exp = instantiate(
+      isVariadic && i >= expectedTypes.length - 1
+        ? (expectedTypes.at(-1) as Rest).rest
+        : (expectedTypes[i] as Type),
+    );
+    if (exp.kind === "List" && got.kind === "List") {
+      if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
+        params[exp.member.name] = got.member;
+        exp = { ...exp, member: got.member };
+      }
+    } else if (exp.kind === "Array" && got.kind === "Array") {
+      if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
+        params[exp.member.name] = got.member;
+        exp = { ...exp, member: got.member };
+      }
+      if (exp.length.kind === "TypeArg" && !(exp.length.name in params)) {
+        params[exp.length.name] = got.length;
+        exp = { ...exp, length: got.length };
+      }
+    } else if (exp.kind === "Set" && got.kind === "Set") {
+      if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
+        params[exp.member.name] = got.member;
+        exp = { ...exp, member: got.member };
+      }
+    } else if (exp.kind === "Table" && got.kind === "Table") {
+      if (exp.key.kind === "TypeArg" && !(exp.key.name in params)) {
+        params[exp.key.name] = got.key;
+        exp = { ...exp, key: got.key };
+      }
+      if (exp.value.kind === "TypeArg" && !(exp.value.name in params)) {
+        params[exp.value.name] = got.value;
+        exp = { ...exp, value: got.value };
+      }
+    }
+    if (!isSubtype(got, exp)) return false;
+    i++;
+  }
+  return true;
+}
+
+export function getOpCodeTypeFromTypes(
+  opCode: OpCode,
+  got: Type[],
+  skipAdditionalChecks = false,
+): Type {
+  switch (opCode) {
     // binary
     // (num, num) => num
     case "gcd": {
-      expectType(integerType(), integerType(1));
-      const [a, b] = types as [IntegerType, IntegerType];
-      return integerType(
+      const [a, b] = got as [IntegerType, IntegerType];
+      return int(
         1n,
         min(max(abs(a.low), abs(a.high)), max(abs(b.low), abs(b.high))),
       );
@@ -372,67 +356,52 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "bit_shift_left":
     case "bit_shift_right":
     case "min":
-    case "max": {
-      const op = expr.op;
-      if (isAssociative(op)) {
-        expectVariadicType(integerType());
-      } else {
-        expectType(integerType(), integerType());
-      }
-      return types.reduce((a, b) =>
-        getArithmeticType(op, a as IntegerType, b as IntegerType),
+    case "max":
+      return got.reduce((a, b) =>
+        getArithmeticType(opCode, a as IntegerType, b as IntegerType),
       );
-    }
     // (num, num) => bool
     case "lt":
     case "leq":
-    case "eq":
-    case "neq":
+    case "eq[Int]":
+    case "neq[Int]":
     case "geq":
     case "gt":
-      expectType(integerType(), integerType());
       return booleanType;
     // (bool, bool) => bool
     case "unsafe_or":
     case "unsafe_and":
-      return booleanType;
     case "or":
     case "and":
-      expectVariadicType(booleanType);
       return booleanType;
     // membership
-    case "array_contains":
-      expectGenericType("Array", ["T1", (x) => x[0]]);
-      return booleanType;
-    case "list_contains":
-      expectGenericType("List", ["T1", (x) => x[0]]);
-      return booleanType;
-    case "table_contains_key":
-      expectGenericType("Table", ["T1", (x) => x[0]]);
-      return booleanType;
-    case "set_contains":
-      expectGenericType("Set", ["T1", (x) => x[0]]);
+    case "contains[Array]":
+    case "contains[List]":
+    case "contains[Table]":
+    case "contains[Set]":
       return booleanType;
     // collection get
-    case "array_get":
-      return expectGenericType("Array", ["T2", (x) => x[1]])[0];
-    case "list_get":
-      return expectGenericType("List", ["0..oo", () => integerType(0)])[0];
-    case "table_get":
-      return expectGenericType("Table", ["T1", (x) => x[0]])[1];
-    case "argv_get":
-      expectType(integerType(0));
-      return textType();
+    case "at[Array]":
+      return (got[0] as ArrayType).member;
+    case "at[List]":
+    case "at_back[List]":
+      return (got[0] as ListType).member;
+    case "at[Table]":
+      return (got[0] as TableType).value;
+    case "at[argv]":
+      return text();
     // other
-    case "list_push":
-      return expectGenericType("List", ["T1", (x) => x[0]])[0];
-    case "list_find":
-      expectGenericType("List", ["T1", (x) => x[0]]);
-      return integerType(-1, (1n << 31n) - 1n);
-    case "concat": {
-      expectVariadicType(textType());
-      const textTypes = types as TextType[];
-      return textType(
+    case "push":
+    case "include":
+      return voidType;
+    case "append":
+    case "concat[List]":
+      return got[0];
+    case "find[List]":
+      return int(-1, (1n << 31n) - 1n);
+    case "concat[Text]": {
+      const textTypes = got as TextType[];
+      return text(
         textTypes
           .map((x) => x.codepointLength)
           .reduce((a, b) => getArithmeticType("add", a, b)),
@@ -440,124 +409,92 @@ function getOpCodeType(expr: Op, program: Node): Type {
       );
     }
     case "repeat": {
-      expectType(textType(), integerType(0));
-      const [t, i] = types as [TextType, IntegerType];
-      return textType(
-        getArithmeticType("mul", t.codepointLength, i),
-        t.isAscii,
-      );
+      const [t, i] = got as [TextType, IntegerType];
+      return text(getArithmeticType("mul", t.codepointLength, i), t.isAscii);
     }
-    case "text_contains":
-      expectType(textType(), textType());
+    case "eq[Text]":
+    case "neq[Text]":
+    case "contains[Text]":
       return booleanType;
-    case "text_codepoint_find":
-    case "text_byte_find":
-      expectType(textType(), textType(integerType(1, "oo")));
-      return integerType(
+    case "find[codepoint]":
+    case "find[byte]":
+    case "find[Ascii]":
+      return int(
         -1,
         sub(
           mul(
-            (types[0] as TextType).codepointLength.high,
-            expr.op === "text_byte_find" && !(types[0] as TextType).isAscii
-              ? 4n
-              : 1n,
+            (got[0] as TextType).codepointLength.high,
+            opCode === "find[byte]" && !(got[0] as TextType).isAscii ? 4n : 1n,
           ),
-          (types[1] as TextType).codepointLength.low,
+          (got[1] as TextType).codepointLength.low,
         ),
       );
-    case "text_split":
-      expectType(textType(), textType());
-      return listType(types[0]);
-    case "text_get_byte":
-    case "text_get_codepoint":
-      expectType(textType(), integerType(0));
-      return textType(integerType(1, 1), (types[0] as TextType).isAscii);
+    case "split":
+      return list(got[0]);
+    case "at[byte]":
+    case "at[codepoint]":
+    case "at[Ascii]":
+    case "at_back[byte]":
+    case "at_back[codepoint]":
+    case "at_back[Ascii]":
+      return text(int(1, 1), (got[0] as TextType).isAscii);
     case "join":
-      expectType(listType(textType()), textType());
-      return textType(
-        integerType(0, "oo"),
-        ((types[0] as ListType).member as TextType).isAscii &&
-          (types[1] as TextType).isAscii,
+      return text(
+        int(0, "oo"),
+        ((got[0] as ListType).member as TextType).isAscii &&
+          (got[1] as TextType).isAscii,
       );
     case "right_align":
-      expectType(textType(), integerType(0));
-      return textType(integerType(0, "oo"), (types[0] as TextType).isAscii);
+      return text(int(0, "oo"), (got[0] as TextType).isAscii);
     case "int_to_bin_aligned":
     case "int_to_hex_aligned": {
-      expectType(integerType(0), integerType(0));
-      const t1 = types[0] as IntegerType;
-      const t2 = types[0] as IntegerType;
+      const t1 = got[0] as IntegerType;
+      const t2 = got[1] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2)) {
-        return textType(
+        return text(
           integerTypeIncludingAll(
             BigInt(
-              t1.high.toString(expr.op === "int_to_bin_aligned" ? 2 : 16)
-                .length,
+              t1.high.toString(opCode === "int_to_bin_aligned" ? 2 : 16).length,
             ),
             t2.high,
           ),
           true,
         );
       }
-      return textType(integerType(), true);
-    }
-    case "simplify_fraction": {
-      expectType(integerType(), integerType());
-      const t1 = types[0] as IntegerType;
-      const t2 = types[1] as IntegerType;
-      if (isFiniteType(t1) && isFiniteType(t2))
-        return textType(
-          integerType(
-            0,
-            1 +
-              Math.max(t1.low.toString().length, t1.high.toString().length) +
-              Math.max(t2.low.toString().length, t2.high.toString().length),
-          ),
-          true,
-        );
-      return textType();
+      return text(int(), true);
     }
     // unary
     case "abs": {
-      expectType(integerType());
-      const t = types[0] as IntegerType;
+      const t = got[0] as IntegerType;
       if (lt(t.low, 0n) && lt(0n, t.high))
-        return integerType(0, max(neg(t.low), t.high));
-      return integerType(
-        min(abs(t.low), abs(t.high)),
-        max(abs(t.low), abs(t.high)),
-      );
+        return int(0, max(neg(t.low), t.high));
+      return int(min(abs(t.low), abs(t.high)), max(abs(t.low), abs(t.high)));
     }
     case "bit_not": {
-      expectType(integerType());
-      const t = types[0] as IntegerType;
+      const t = got[0] as IntegerType;
       return getTypeBitNot(t);
     }
     case "neg": {
-      expectType(integerType());
-      const t = types[0] as IntegerType;
-      return integerType(neg(t.high), neg(t.low));
+      const t = got[0] as IntegerType;
+      return int(neg(t.high), neg(t.low));
     }
     case "not":
-      expectType(booleanType);
       return booleanType;
     case "int_to_bool":
-      expectType(integerType());
       return booleanType;
-    case "int_to_text":
+    case "int_to_dec":
     case "int_to_bin":
     case "int_to_hex": {
-      expectType(integerType(expr.op === "int_to_text" ? "-oo" : 0));
-      const t = types[0] as IntegerType;
+      const t = got[0] as IntegerType;
       if (isFiniteType(t))
-        return textType(
+        return text(
           integerTypeIncludingAll(
             ...[t.low, t.high, ...(typeContains(t, 0n) ? [0n] : [])].map((x) =>
               BigInt(
                 x.toString(
-                  expr.op === "int_to_bin"
+                  opCode === "int_to_bin"
                     ? 2
-                    : expr.op === "int_to_hex"
+                    : opCode === "int_to_hex"
                     ? 16
                     : 10,
                 ).length,
@@ -566,150 +503,170 @@ function getOpCodeType(expr: Op, program: Node): Type {
           ),
           true,
         );
-      return textType(integerType(1), true);
+      return text(int(1), true);
     }
-    case "text_to_int": {
-      expectType(textType(integerType(), true));
-      const t = types[0] as TextType;
-      if (!isFiniteType(t.codepointLength)) return integerType();
-      return integerType(
+    case "dec_to_int": {
+      const t = got[0] as TextType;
+      if (!isFiniteType(t.codepointLength)) return int();
+      return int(
         1n - 10n ** (t.codepointLength.high - 1n),
         10n ** t.codepointLength.high - 1n,
       );
     }
     case "bool_to_int":
-      expectType(booleanType);
-      return integerType(0, 1);
-    case "int_to_text_byte":
-      expectType(integerType(0, 255));
-      return textType(
-        integerType(1n, 1n),
-        lt((types[0] as IntegerType).high, 128n),
-      );
-    case "int_to_codepoint":
-      expectType(integerType(0, 0x10ffff));
-      return textType(
-        integerType(1n, 1n),
-        lt((types[0] as IntegerType).high, 128n),
-      );
-    case "list_length":
-      expectGenericType("List");
-      return integerType(0, (1n << 31n) - 1n);
-    case "text_byte_length": {
-      expectType(textType());
-      const codepointLength = (types[0] as TextType).codepointLength;
-      return integerType(
+      return int(0, 1);
+    case "char[byte]":
+    case "char[codepoint]":
+    case "char[Ascii]":
+      return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
+    case "size[List]":
+    case "size[Set]":
+    case "size[Table]":
+      return int(0, (1n << 31n) - 1n);
+    case "size[byte]": {
+      const codepointLength = (got[0] as TextType).codepointLength;
+      return int(
         codepointLength.low,
         min(
           1n << 31n,
-          mul(codepointLength.high, (types[0] as TextType).isAscii ? 1n : 4n),
+          mul(codepointLength.high, (got[0] as TextType).isAscii ? 1n : 4n),
         ),
       );
     }
-    case "text_codepoint_length":
-      expectType(textType());
-      return (types[0] as TextType).codepointLength;
-    case "text_split_whitespace":
-      expectType(textType());
-      return listType(types[0]);
-    case "sorted":
-      return listType(expectGenericType("List")[0]);
-    case "text_byte_reversed":
-    case "text_codepoint_reversed":
-      expectType(textType());
-      return types[0];
+    case "size[codepoint]":
+    case "size[Ascii]":
+      return (got[0] as TextType).codepointLength;
+    case "split_whitespace":
+      return list(got[0]);
+    case "sorted[Int]":
+    case "sorted[Ascii]":
+    case "reversed[byte]":
+    case "reversed[codepoint]":
+    case "reversed[Ascii]":
+    case "reversed[List]":
+      return got[0];
     // other
     case "true":
     case "false":
-      expectType();
       return booleanType;
-    case "read_codepoint":
-      return textType(integerType(1, 1));
-    case "read_byte":
-      return textType(integerType(1, 1));
-    case "read_int":
-      return integerType();
-    case "read_line":
-      return textType();
+    case "read[codepoint]":
+      return text(int(1, 1));
+    case "read[byte]":
+      return text(int(1, 1));
+    case "read[Int]":
+      return int();
+    case "read[line]":
+      return text();
     case "argc":
-      expectType();
-      return integerType(0, 2 ** 31 - 1);
+      return int(0, 2 ** 31 - 1);
     case "argv":
-      expectType();
-      return listType(textType());
-    case "putc":
-      expectType(integerType(0, 255));
+      return list(text());
+    case "putc[byte]":
+    case "putc[codepoint]":
+    case "putc[Ascii]":
       return voidType;
-    case "print":
-    case "println":
-      expectType(textType());
+    case "print[Text]":
+    case "println[Text]":
       return voidType;
-    case "print_int":
-    case "println_int":
-      expectType(integerType());
+    case "print[Int]":
+    case "println[Int]":
       return voidType;
     case "println_list_joined":
-      expectType(listType(textType()), textType());
       return voidType;
     case "println_many_joined":
-      expectVariadicType(textType(), 1);
       return voidType;
-    case "text_replace": {
-      expectType(textType(), textType(integerType(1, "oo")), textType());
-      const [a, c] = [types[0], types[2]] as TextType[];
-      return textType(
+    case "replace": {
+      const [a, c] = [got[0], got[2]] as TextType[];
+      return text(
         getArithmeticType("mul", a.codepointLength, c.codepointLength),
         a.isAscii && c.isAscii,
       );
     }
     case "text_multireplace":
-      expectVariadicType(textType(), (x) => x > 2 && x % 2 > 0);
-      return textType();
-    case "text_get_byte_slice":
-    case "text_get_codepoint_slice": {
-      expectType(textType(), integerType(0), integerType(0));
-      const [t, i1, i2] = types as [TextType, IntegerType, IntegerType];
-      const maximum = min(
-        t.codepointLength.high,
-        max(0n, sub(i2.high, i1.low)),
-      );
-      return textType(integerType(0n, maximum), t.isAscii);
-    }
-    case "text_get_codepoint_to_int":
-      expectType(textType(), integerType(0));
-      return integerType(0, (types[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "text_get_byte_to_int":
-      expectType(textType(), integerType(0));
-      return integerType(0, (types[0] as TextType).isAscii ? 127 : 255);
-    case "codepoint_to_int":
-      expectType(textType(integerType(1, 1)));
-      return integerType(0, (types[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "text_byte_to_int":
-      expectType(textType(integerType(1, 1)));
-      return integerType(0, (types[0] as TextType).isAscii ? 127 : 255);
-    case "array_set":
-      return expectGenericType(
-        "Array",
-        ["T2", (x) => x[1]],
-        ["T1", (x) => x[0]],
-      )[0];
-    case "list_set":
-      return expectGenericType(
-        "List",
-        ["0..oo", () => integerType(0)],
-        ["T1", (x) => x[0]],
-      )[0];
-    case "table_set":
-      return expectGenericType(
-        "Table",
-        ["T1", (x) => x[0]],
-        ["T2", (x) => x[1]],
-      )[1];
-    case null:
+      return text();
+    case "starts_with":
+    case "ends_with":
+      return booleanType;
+    case "slice[byte]":
+    case "slice[codepoint]":
+    case "slice[Ascii]":
+    case "slice_back[byte]":
+    case "slice_back[codepoint]":
+    case "slice_back[Ascii]": {
+      const t = got[0] as TextType;
+      const start = got[1] as IntegerType;
+      const length = got[2] as IntegerType;
+      const startPlusLength = getArithmeticType("add", start, length);
+      if (
+        skipAdditionalChecks ||
+        !opCode.includes("back") ||
+        isSubtype(startPlusLength, integerType(-Infinity, 0))
+      )
+        return text(
+          int(0n, min(t.codepointLength.high, length.high)),
+          t.isAscii,
+        );
       throw new Error(
-        "Cannot determine type based on null opcode - this is most likely a programming error - a plugin introduced a node missing both an opcode and a type annotation.",
+        `Type error. start index + length must be nonpositive, but got ${toString(
+          startPlusLength,
+        )}.`,
       );
+    }
+    case "slice[List]":
+      return got[0];
+    case "slice_back[List]": {
+      const start = got[1] as IntegerType;
+      const length = got[2] as IntegerType;
+      const startPlusLength = getArithmeticType("add", start, length);
+      if (
+        skipAdditionalChecks ||
+        isSubtype(startPlusLength, integerType(-Infinity, 0))
+      )
+        return got[0];
+      throw new Error(
+        `Type error. start index + length must be nonpositive, but got ${toString(
+          startPlusLength,
+        )}.`,
+      );
+    }
+    case "ord_at[codepoint]":
+    case "ord_at_back[codepoint]":
+      return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
+    case "ord_at[byte]":
+    case "ord_at[Ascii]":
+    case "ord_at_back[byte]":
+    case "ord_at_back[Ascii]":
+      return int(0, (got[0] as TextType).isAscii ? 127 : 255);
+    case "ord[codepoint]":
+      return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
+    case "ord[byte]":
+    case "ord[Ascii]":
+      return int(0, (got[0] as TextType).isAscii ? 127 : 255);
+    case "set_at[Array]":
+    case "set_at[List]":
+    case "set_at_back[List]":
+    case "set_at[Table]":
+      return voidType;
   }
+}
+
+function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
+  const got = getArgs(expr).map((x) => getType(x, program));
+  const opCodes = OpCodeFrontNamesToOpCodes[expr.op];
+
+  const opCode = opCodes.find((opCode) =>
+    isTypeMatch(got, opCodeDefinitions[opCode].args),
+  );
+
+  if (opCode === undefined) {
+    throw new Error(
+      `Type error. Operator '${expr.op}' type error. Expected ${opCodes
+        .map((x) => expectedTypesToString(opCodeDefinitions[x].args))
+        .join(" or ")} but got [${got.map(toString).join(", ")}].`,
+    );
+  }
+
+  return { type: getOpCodeTypeFromTypes(opCode, got), opCode };
 }
 
 export function getArithmeticType(
@@ -719,13 +676,13 @@ export function getArithmeticType(
 ): IntegerType {
   switch (op) {
     case "min":
-      return integerType(min(a.low, b.low), min(a.high, b.high));
+      return int(min(a.low, b.low), min(a.high, b.high));
     case "max":
-      return integerType(max(a.low, b.low), max(a.high, b.high));
+      return int(max(a.low, b.low), max(a.high, b.high));
     case "add":
-      return integerType(add(a.low, b.low), add(a.high, b.high));
+      return int(add(a.low, b.low), add(a.high, b.high));
     case "sub":
-      return integerType(sub(a.low, b.high), sub(a.high, b.low));
+      return int(sub(a.low, b.high), sub(a.high, b.low));
     case "mul": {
       // Extreme values of a product arise from multiplying the extremes of the inputs.
       // The single case were simple multiplication of the bounds is not defined, corresponds to multiplying
@@ -811,13 +768,8 @@ export function getArithmeticType(
           b,
         );
       }
-      return integerType();
+      return int();
     case "pow": {
-      if (lt(b.low, 0n))
-        throw new Error(
-          `Type error. Operator 'pow' expected [-oo..oo, 0..oo] but got ` +
-            `[${toString(a)}, ${toString(b)}].`,
-        );
       const values: IntegerBound[] = [];
 
       // For unbounded b, the result must contain the following values:
@@ -876,25 +828,25 @@ export function getArithmeticType(
       return getArithmeticType(
         "mul",
         a,
-        getArithmeticType("pow", integerType(2, 2), b),
+        getArithmeticType("pow", int(2, 2), b),
       );
     case "bit_shift_right":
       return getArithmeticType(
         "div",
         a,
-        getArithmeticType("pow", integerType(2, 2), b),
+        getArithmeticType("pow", int(2, 2), b),
       );
     case "bit_or":
     case "bit_xor": {
       const left = max(abs(a.low), abs(a.high));
       const right = max(abs(b.low), abs(b.high));
       if (isFiniteBound(left) && isFiniteBound(right)) {
-        const larger = lt(left, right) ? left : right;
+        const larger = lt(left, right) ? right : left;
         const lim = 2n ** BigInt(larger.toString(2).length);
-        if (lt(-1n, a.low) && lt(-1n, b.low)) return integerType(0n, lim);
-        return integerType(neg(lim), lim);
+        if (lt(-1n, a.low) && lt(-1n, b.low)) return int(0n, lim);
+        return int(neg(lim), lim);
       }
-      return integerType();
+      return int();
     }
   }
   throw new Error(`Type error. Unknown opcode. ${op ?? "null"}`);
@@ -910,7 +862,7 @@ export function getCollectionTypes(expr: Node, program: Node): Type[] {
     case "Table":
       return [exprType.key, exprType.value];
     case "text":
-      return [textType(integerType(1, 1), exprType.isAscii)];
+      return [text(int(1, 1), exprType.isAscii)];
   }
   throw new Error("Type error. Node is not a collection.");
 }
@@ -933,5 +885,5 @@ function getIntegerTypeRem(a: IntegerType, b: IntegerType): IntegerType {
     return constantIntegerType(a.low % b.low);
   }
   const m = max(abs(b.low), abs(b.high));
-  return integerType(lt(a.low, 0n) ? neg(m) : 0n, m);
+  return int(lt(a.low, 0n) ? neg(m) : 0n, m);
 }

@@ -1,5 +1,5 @@
 import emitProgram from "./emit";
-import { mapToPrefixAndInfix } from "../../plugins/ops";
+import { mapUnaryAndBinary } from "../../plugins/ops";
 import { forRangeToWhile, whileToRecursion } from "../../plugins/loops";
 import { lettersOnlyIdentGen, renameIdents } from "../../plugins/idents";
 import { type Language, required } from "../../common/Language";
@@ -21,7 +21,7 @@ const texLanguage: Language = {
     required(
       forRangeToWhile,
       whileToRecursion,
-      mapToPrefixAndInfix(
+      mapUnaryAndBinary(
         {
           mul: "\\multiply",
           /** helper_mod is defined in addTeXImports */
@@ -41,6 +41,7 @@ const texLanguage: Language = {
         preferred: (o) => lettersOnlyIdentGen.preferred(o).map((w) => "\\" + w),
         short: ["~"].concat(lettersOnlyIdentGen.short.map((c) => "\\" + c)),
         general: (i) => "\\" + lettersOnlyIdentGen.general(i),
+        reserved: [],
       }),
       macroParamsToHash,
     ),

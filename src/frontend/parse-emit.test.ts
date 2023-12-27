@@ -2,7 +2,7 @@ import { normalize } from "@/common/compile";
 
 describe("Restricted nodes: parse - emit match", () => {
   for (const t of [
-    `implicit_conversion "text_to_int" "1";`,
+    `implicit_conversion "dec_to_int" "1";`,
     `var_declaration $x:Int;`,
     `func $x $x;`,
     `var_declaration_with_assignment ($x:Int <- 0);`,
@@ -11,9 +11,7 @@ describe("Restricted nodes: parse - emit match", () => {
     `one_to_many_assignment {$x; $y} "x";`,
     `mutating_infix "+" $x $y;`,
     `index_call $x $y;`,
-    `index_call_one_indexed $x $y;`,
     `range_index_call $x $y $z $w;`,
-    `range_index_call_one_indexed $x $y $z $w;`,
     `method_call $o "name" $x $y;`,
     `property_call $o "name";`,
     `infix "name" $x $y;`,

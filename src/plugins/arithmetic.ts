@@ -8,154 +8,142 @@ import {
   type Op,
   isSubtype,
   isOp,
-  isIntLiteral,
+  isInt,
   implicitConversion,
   integerType,
   type Node,
-  sub1,
-  add1,
+  prec,
+  succ,
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
 import { type Spine } from "@/common/Spine";
 import { filterInplace } from "../common/arrays";
 
-export const modToRem: Plugin = {
-  name: "modToRem",
-  visit(node, spine) {
-    if (isOp("mod")(node)) {
-      return isSubtype(getType(node.args[1], spine), integerType(0))
-        ? op("rem", ...node.args)
-        : op(
-            "rem",
-            op("add", op("rem", ...node.args), node.args[1]),
-            node.args[1],
-          );
-    }
-  },
-};
+export function modToRem(node: Node, spine: Spine) {
+  if (isOp("mod")(node)) {
+    return isSubtype(getType(node.args[1], spine), integerType(0))
+      ? op.rem(...node.args)
+      : op.rem(op.add(op.rem(...node.args), node.args[1]), node.args[1]);
+  }
+}
 
-export const divToTruncdiv: Plugin = {
-  name: "divToTruncdiv",
-  visit(node, spine) {
-    if (isOp("div")(node)) {
-      return isSubtype(getType(node.args[1], spine), integerType(0))
-        ? op("trunc_div", ...node.args)
-        : undefined; // TODO
-    }
-  },
-};
+export function divToTruncdiv(node: Node, spine: Spine) {
+  if (isOp("div")(node)) {
+    return isSubtype(getType(node.args[1], spine), integerType(0))
+      ? op.trunc_div(...node.args)
+      : undefined; // TODO
+  }
+}
 
 export const truncatingOpsPlugins = [modToRem, divToTruncdiv];
 
-export const equalityToInequality: Plugin = {
-  name: "equalityToInequality",
-  visit(node, spine) {
-    if (isOp("eq", "neq")(node)) {
-      const eq = node.op === "eq";
-      const [a, b] = [node.args[0], node.args[1]];
-      const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
-        IntegerType,
-        IntegerType,
-      ];
-      if (isConstantType(t1)) {
-        if (t1.low === t2.low) {
-          // (0 == $x:0..9) -> (1 > $x:0..9)
-          // (0 != $x:0..9) -> (0 < $x:0..9)
-          return eq ? op("gt", int(t1.low + 1n), b) : op("lt", int(t1.low), b);
-        }
-        if (t1.low === t2.high) {
-          // (9 == $x:0..9) -> (8 < $x:0..9)
-          // (9 != $x:0..9) -> (9 > $x:0..9)
-          return eq ? op("lt", int(t1.low - 1n), b) : op("gt", int(t1.low), b);
-        }
+export function equalityToInequality(node: Node, spine: Spine) {
+  if (isOp("eq[Int]", "neq[Int]")(node)) {
+    const eq = node.op === "eq[Int]";
+    const [a, b] = [node.args[0], node.args[1]];
+    const [t1, t2] = [a, b].map((x) => getType(x, spine)) as [
+      IntegerType,
+      IntegerType,
+    ];
+    if (isConstantType(t1)) {
+      if (t1.low === t2.low) {
+        // (0 == $x:0..9) -> (1 > $x:0..9)
+        // (0 != $x:0..9) -> (0 < $x:0..9)
+        return eq ? op.gt(int(t1.low + 1n), b) : op.lt(int(t1.low), b);
       }
-
-      if (isConstantType(t2)) {
-        if (t1.low === t2.low) {
-          // ($x:0..9 == 0) -> ($x:0..9 < 1)
-          // ($x:0..9 != 0) -> ($x:0..9 > 0)
-          return eq ? op("lt", a, int(t2.low + 1n)) : op("gt", a, int(t2.low));
-        }
-        if (t1.high === t2.low) {
-          // ($x:0..9 == 9) -> ($x:0..9 > 8)
-          // ($x:0..9 != 9) -> ($x:0..9 < 9)
-          return eq ? op("gt", a, int(t2.low - 1n)) : op("lt", a, int(t2.low));
-        }
+      if (t1.low === t2.high) {
+        // (9 == $x:0..9) -> (8 < $x:0..9)
+        // (9 != $x:0..9) -> (9 > $x:0..9)
+        return eq ? op.lt(int(t1.low - 1n), b) : op.gt(int(t1.low), b);
       }
     }
-  },
-};
+
+    if (isConstantType(t2)) {
+      if (t1.low === t2.low) {
+        // ($x:0..9 == 0) -> ($x:0..9 < 1)
+        // ($x:0..9 != 0) -> ($x:0..9 > 0)
+        return eq ? op.lt(a, int(t2.low + 1n)) : op.gt(a, int(t2.low));
+      }
+      if (t1.high === t2.low) {
+        // ($x:0..9 == 9) -> ($x:0..9 > 8)
+        // ($x:0..9 != 9) -> ($x:0..9 < 9)
+        return eq ? op.gt(a, int(t2.low - 1n)) : op.lt(a, int(t2.low));
+      }
+    }
+  }
+}
 
 export const removeBitnot: Plugin = mapOps(
-  { bit_not: (x) => op("sub", int(-1), x[0]) },
+  { bit_not: (x) => op.sub(int(-1), x[0]) },
   "removeBitnot",
 );
 
-export const addBitnot: Plugin = {
-  name: "addBitnot",
-  visit(node) {
-    if (
-      isOp("add")(node) &&
-      node.args.length === 2 &&
-      isIntLiteral()(node.args[0])
-    ) {
-      if (node.args[0].value === 1n)
-        return op("neg", op("bit_not", node.args[1]));
-      if (node.args[0].value === -1n)
-        return op("bit_not", op("neg", node.args[1]));
-    }
-  },
-};
+export function addBitnot(node: Node) {
+  if (isOp("add")(node) && node.args.length === 2 && isInt()(node.args[0])) {
+    if (node.args[0].value === 1n) return op.neg(op.bit_not(node.args[1]));
+    if (node.args[0].value === -1n) return op.bit_not(op.neg(node.args[1]));
+  }
+}
 
 export const bitnotPlugins = [removeBitnot, addBitnot];
 
-export const applyDeMorgans: Plugin = {
-  name: "applyDeMorgans",
-  visit(node, spine) {
-    if (isOp("and", "or", "unsafe_and", "unsafe_or")(node)) {
-      const negation = op(
-        node.op === "and"
-          ? "or"
-          : node.op === "or"
-          ? "and"
-          : node.op === "unsafe_and"
-          ? "unsafe_or"
-          : "unsafe_and",
-        ...node.args.map((x) => op("not", x)),
-      );
-      if (getType(node, spine).kind === "void") return negation; // If we are promised we won't read the result, we don't need to negate.
-      return op("not", negation);
-    }
-    if (isOp("bit_and", "bit_or")(node)) {
-      return op(
-        "bit_not",
-        op(
-          node.op === "bit_and" ? "bit_or" : "bit_and",
-          ...node.args.map((x) => op("bit_not", x)),
-        ),
-      );
-    }
-  },
-};
+type BinaryBoolOp = "and" | "or" | "unsafe_and" | "unsafe_or";
+function complementaryBoolOp(op: BinaryBoolOp): BinaryBoolOp {
+  switch (op) {
+    case "and":
+      return "or";
+    case "or":
+      return "and";
+    case "unsafe_and":
+      return "unsafe_or";
+    case "unsafe_or":
+      return "unsafe_and";
+  }
+}
 
-export const useIntegerTruthiness: Plugin = {
-  name: "useIntegerTruthiness",
-  visit(node, spine) {
+export function applyDeMorgans(node: Node, spine: Spine) {
+  if (isOp("and", "or", "unsafe_and", "unsafe_or")(node)) {
     if (
-      isOp("eq", "neq")(node) &&
-      spine.parent!.node.kind === "If" &&
-      spine.pathFragment === "condition"
+      isOp("unsafe_and", "unsafe_or")(node) &&
+      getType(node, spine).kind === "void"
     ) {
-      const res = isIntLiteral(0n)(node.args[1])
-        ? implicitConversion("int_to_bool", node.args[0])
-        : isIntLiteral(0n)(node.args[0])
-        ? implicitConversion("int_to_bool", node.args[1])
-        : undefined;
-      return res !== undefined && node.op === "eq" ? op("not", res) : res;
+      // If we are promised we won't read the result, we don't need to negate.
+      return op.unsafe(
+        complementaryBoolOp(node.op),
+        op.not(node.args[0]),
+        node.args[1],
+      );
     }
-  },
-};
+    return op.not(
+      op.unsafe(complementaryBoolOp(node.op), ...node.args.map(op.not)),
+    );
+  }
+  if (isOp("bit_and", "bit_or")(node)) {
+    return op.bit_not(
+      op.unsafe(
+        node.op === "bit_and" ? "bit_or" : "bit_and",
+        ...(node.args.map(op.bit_not) as any),
+      ),
+    );
+  }
+}
+
+export function useIntegerTruthiness(node: Node, spine: Spine) {
+  if (
+    isOp("eq[Int]", "neq[Int]")(node) &&
+    !spine.isRoot &&
+    spine.parent!.node.kind === "If" &&
+    spine.pathFragment === "condition"
+  ) {
+    const res = isInt(0n)(node.args[1])
+      ? implicitConversion("int_to_bool", node.args[0])
+      : isInt(0n)(node.args[0])
+      ? implicitConversion("int_to_bool", node.args[1])
+      : undefined;
+    return res !== undefined && node.op === "eq[Int]" ? op.not(res) : res;
+  }
+}
 
 function isConstantTypePowerOfTwo(n: Node, s: Spine) {
   const type = getType(n, s);
@@ -173,31 +161,25 @@ function isPowerOfTwo(n: Node, s: Spine): boolean {
   );
 }
 
-export const modToBitand: Plugin = {
-  name: "modToBitand",
-  visit(node, spine) {
-    if (isOp("mod")(node)) {
-      const n = node.args[1];
-      if (isPowerOfTwo(n, spine)) {
-        return op("bit_and", node.args[0], sub1(n));
-      }
+export function modToBitand(node: Node, spine: Spine) {
+  if (isOp("mod")(node)) {
+    const n = node.args[1];
+    if (isPowerOfTwo(n, spine)) {
+      return op.bit_and(node.args[0], prec(n));
     }
-  },
-};
+  }
+}
 
-export const bitandToMod: Plugin = {
-  name: "bitandToMod",
-  visit(node, spine) {
-    if (isOp("bit_and")(node)) {
-      for (const i of [0, 1]) {
-        const n = add1(node.args[i]);
-        if (isPowerOfTwo(n, spine)) {
-          return op("mod", node.args[1 - i], n);
-        }
+export function bitandToMod(node: Node, spine: Spine) {
+  if (isOp("bit_and")(node)) {
+    for (const i of [0, 1]) {
+      const n = succ(node.args[i]);
+      if (isPowerOfTwo(n, spine)) {
+        return op.mod(node.args[1 - i], n);
       }
     }
-  },
-};
+  }
+}
 
 export const lowBitsPlugins = [modToBitand, bitandToMod];
 
@@ -207,38 +189,35 @@ export function powToMul(limit: number = 2): Plugin {
     visit(node) {
       if (isOp("pow")(node)) {
         const [a, b] = node.args;
-        if (isIntLiteral()(b) && 1 < b.value && b.value <= limit) {
-          return op("mul", ...Array(Number(b.value)).fill(a));
+        if (isInt()(b) && 1 < b.value && b.value <= limit) {
+          return op.mul(a, a, ...Array(Number(b.value) - 2).fill(a));
         }
       }
     },
   };
 }
 
-export const mulToPow: Plugin = {
-  name: "mulToPow",
-  visit(node) {
-    if (isOp("mul")(node)) {
-      const factors = new Map<string, [Node, number]>();
-      for (const e of node.args) {
-        const stringified = stringify(e);
-        factors.set(stringified, [
-          e,
-          1 + ((factors.get(stringified)?.at(1) as number) ?? 0),
-        ]);
-      }
-      const pairs = [...factors.values()];
-      if (pairs.some((pair) => pair[1] > 1)) {
-        return op(
-          "mul",
-          ...pairs.map(([expr, exp]) =>
-            exp > 1 ? op("pow", expr, int(exp)) : expr,
-          ),
-        );
-      }
+export function mulToPow(node: Node, spine: Spine) {
+  if (isOp("mul")(node)) {
+    const factors = new Map<string, [Node, number]>();
+    for (const e of node.args) {
+      const stringified = stringify(e);
+      factors.set(stringified, [
+        e,
+        1 + ((factors.get(stringified)?.at(1) as number) ?? 0),
+      ]);
     }
-  },
-};
+    const pairs = [...factors.values()];
+    if (pairs.some((pair) => pair[1] > 1)) {
+      return op.unsafe(
+        "mul",
+        ...pairs.map(([expr, exp]) =>
+          exp > 1 ? op.pow(expr, int(exp)) : expr,
+        ),
+      );
+    }
+  }
+}
 
 export const powPlugins = [powToMul(), mulToPow];
 
@@ -254,12 +233,12 @@ export function bitShiftToMulOrDiv(
     visit(node) {
       if (isOp("bit_shift_left", "bit_shift_right")(node)) {
         const [a, b] = node.args;
-        if (!literalOnly || isIntLiteral()(b)) {
+        if (!literalOnly || isInt()(b)) {
           if (node.op === "bit_shift_left" && toMul) {
-            return op("mul", a, op("pow", int(2), b));
+            return op.mul(a, op.pow(int(2), b));
           }
           if (node.op === "bit_shift_right" && toDiv) {
-            return op("div", a, op("pow", int(2), b));
+            return op.div(a, op.pow(int(2), b));
           }
         }
       }
@@ -284,34 +263,32 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
     visit(node) {
       if (isOp("div")(node) && fromDiv) {
         const [a, b] = node.args;
-        if (isIntLiteral()(b)) {
+        if (isInt()(b)) {
           const [n, exp] = getOddAnd2Exp(b.value);
           if (exp > 1 && n === 1n) {
-            return op("bit_shift_right", a, int(exp));
+            return op.bit_shift_right(a, int(exp));
           }
         }
-        if (isOp("pow")(b) && isIntLiteral(2n)(b.args[0])) {
-          return op("bit_shift_right", a, b.args[1]);
+        if (isOp("pow")(b) && isInt(2n)(b.args[0])) {
+          return op.bit_shift_right(a, b.args[1]);
         }
       }
       if (isOp("mul")(node) && fromMul) {
-        if (isIntLiteral()(node.args[0])) {
+        if (isInt()(node.args[0])) {
           const [n, exp] = getOddAnd2Exp(node.args[0].value);
           if (exp > 1) {
-            return op(
-              "bit_shift_left",
-              op("mul", int(n), ...node.args.slice(1)),
+            return op.bit_shift_left(
+              op.unsafe("mul", int(n), ...node.args.slice(1)),
               int(exp),
             );
           }
         }
         const powNode = node.args.find(
-          (x) => isOp("pow")(x) && isIntLiteral(2n)(x.args[0]),
-        ) as Op | undefined;
+          (x) => isOp("pow")(x) && isInt(2n)(x.args[0]),
+        ) as Op<"pow"> | undefined;
         if (powNode !== undefined) {
-          return op(
-            "bit_shift_left",
-            op("mul", ...node.args.filter((x) => x !== powNode)),
+          return op.bit_shift_left(
+            op.unsafe("mul", ...node.args.filter((x) => x !== powNode)),
             powNode.args[1],
           );
         }
@@ -449,7 +426,7 @@ export function decomposeIntLiteral(
     ])})`,
     visit(node) {
       let decompositions: IntDecomposition[] = [];
-      if (isIntLiteral()(node) && (node.value <= -1000 || node.value >= 1000)) {
+      if (isInt()(node) && (node.value <= -1000 || node.value >= 1000)) {
         decompositions = decomposeInt(
           node.value,
           hasScientific,
@@ -467,19 +444,26 @@ export function decomposeIntLiteral(
       }
 
       return decompositions.map(([k, b, e, d]) =>
-        op("add", op("mul", int(k), op("pow", int(b), int(e))), int(d)),
+        op.add(op.mul(int(k), op.pow(int(b), int(e))), int(d)),
       );
     },
   };
 }
 
-export const pickAnyInt: Plugin = {
-  name: "pickAnyInt",
-  visit(node) {
-    if (node.kind === "AnyInteger") {
-      return node.low.toString().length < node.high.toString().length
-        ? int(node.low)
-        : int(node.high);
-    }
-  },
-};
+export function pickAnyInt(node: Node) {
+  if (node.kind === "AnyInteger") {
+    return node.low.toString().length < node.high.toString().length
+      ? int(node.low)
+      : int(node.high);
+  }
+}
+
+export function useImplicitBoolToInt(node: Node, spine: Spine) {
+  if (
+    isOp("bool_to_int")(node) &&
+    !spine.isRoot &&
+    isOp("at[Array]", "at[List]")(spine.parent!.node) // This can be extend to other ops, like "mul".
+  ) {
+    return implicitConversion(node.op, node.args[0]);
+  }
+}

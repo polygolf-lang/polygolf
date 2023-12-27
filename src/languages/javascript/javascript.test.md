@@ -91,17 +91,14 @@ t+"bc"
 "x".repeat(10)
 t.includes`sub`
 t.replaceAll(" ","-")
-t.split` `
-[t,"www"].join()
-[t,"www"].join` `
+t.split` `;[t,"www"].join();[t,"www"].join` `
 abs(m)
-~m
--m
+~m;-m
 !b
 ""+m
 m.toString(2)
 m.toString(16)
-0+t
+~~t
 ```
 
 ```polygolf
@@ -209,6 +206,7 @@ $x: Int <- 5;
 $y: 0..100 <- 2;
 println_int ((3 + $x) * $y);
 $t <- (4 + $y);
+$z <- ($x - 1);
 ```
 
 ```js nogolf
@@ -216,6 +214,20 @@ x=5n
 y=2
 print((3n+x)*BigInt(y))
 t=4+y
+z=x-1n
+```
+
+```polygolf
+for $a 1 100 {
+ println ((pow 2 $a) ~ 3);
+ println ((pow 2 $a) | 3);
+ println ((pow 2 $a) & 3);
+ println ((pow 2 $a) mod 3);
+};
+```
+
+```js nogolf
+for(a=1;a<100;a+=1)print(3n^2n**BigInt(a)),print(3n|2n**BigInt(a)),print(3n&2n**BigInt(a)),print(2n**BigInt(a)%3n)
 ```
 
 ## Fixed length for loop
@@ -228,4 +240,24 @@ for $i 25 {
 
 ```js
 for(i in{}+1e9)print(i)
+```
+
+```polygolf
+for $a 0 16 {
+    println (+ $a 20);
+};
+```
+
+```js
+for(a in{}+1)print(20+~~a)
+```
+
+## Conditional associativity
+
+```polygolf
+print_int (conditional (conditional (1 > 0) (1 < 0) (1 > 0)) 1 2);
+```
+
+```js nogolf
+write((1>0?1<0:1>0)?1:2)
 ```

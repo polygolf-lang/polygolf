@@ -1,6 +1,6 @@
 import { type TokenTree } from "../../common/Language";
 import { EmitError, emitTextFactory } from "../../common/emit";
-import { int, integerType, type IR, isIntLiteral, isSubtype } from "../../IR";
+import { int, integerType, type IR, isInt, isSubtype } from "../../IR";
 import { getType } from "../../common/getType";
 
 const emitGolfscriptText = emitTextFactory({
@@ -35,17 +35,15 @@ export default function emitProgram(program: IR.Node): TokenTree {
         if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
         if (!isSubtype(getType(stmt.start, program), integerType(0)))
           throw new EmitError(stmt, "potentially negative low");
-        if (stmt.variable === undefined) throw new EmitError(stmt, "indexless");
         return [
           emitNode(stmt.end),
           ",",
-          isIntLiteral(0n)(stmt.start) ? [] : [emitNode(stmt.start), ">"],
-          isIntLiteral(1n)(stmt.increment)
-            ? []
-            : [emitNode(stmt.increment), "%"],
+          isInt(0n)(stmt.start) ? [] : [emitNode(stmt.start), ">"],
+          isInt(1n)(stmt.increment) ? [] : [emitNode(stmt.increment), "%"],
           "{",
-          ":",
-          emitNode(stmt.variable),
+          ...(stmt.variable === undefined
+            ? []
+            : [":", emitNode(stmt.variable)]),
           ";",
           emitMultiNode(stmt.body, stmt),
           "}",
@@ -57,11 +55,9 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return [
           emitNode(stmt.difference),
           ",",
-          isIntLiteral(1n)(stmt.increment)
-            ? []
-            : [emitNode(stmt.increment), "%"],
+          isInt(1n)(stmt.increment) ? [] : [emitNode(stmt.increment), "%"],
           "{",
-          isIntLiteral()(stmt.start) && stmt.start.value < 0n
+          isInt()(stmt.start) && stmt.start.value < 0n
             ? [emitNode(int(-stmt.start.value)), "-"]
             : [emitNode(stmt.start), "+"],
           ":",
@@ -105,6 +101,32 @@ export default function emitProgram(program: IR.Node): TokenTree {
   function emitNode(expr: IR.Node): TokenTree {
     switch (expr.kind) {
       case "Assignment":
+        if (expr.variable.kind === "IndexCall")
+          /*  Implements equivalent of this Python code:
+                temp = (index+len(col))%len(col); coll = coll[:temp] + [expr] + coll[temp+1:];
+          */
+          return [
+            emitNode(expr.variable.collection),
+            ".",
+            isSubtype(getType(expr.variable.index, program), integerType(0))
+              ? emitNode(expr.variable.index)
+              : [".", ",", ".", emitNode(expr.variable.index), "+", "\\", "%"],
+            ".",
+            "@",
+            "<",
+            "[",
+            emitNode(expr.expr),
+            "]",
+            "+",
+            "@",
+            "@",
+            ")",
+            ">",
+            "+",
+            ":",
+            emitNode(expr.variable.collection),
+            ";",
+          ];
         return [emitNode(expr.expr), ":", emitNode(expr.variable), ";"];
       case "Identifier":
         return expr.name;
@@ -125,18 +147,18 @@ export default function emitProgram(program: IR.Node): TokenTree {
           emitNode(expr.alternate),
           "if",
         ];
-      case "RangeIndexCall": {
-        if (expr.oneIndexed) throw new EmitError(expr, "one indexed");
-
+      case "IndexCall": {
+        return [emitNode(expr.collection), emitNode(expr.index), "="];
+      }
+      case "RangeIndexCall":
         return [
           emitNode(expr.collection),
           emitNode(expr.high),
           "<",
           emitNode(expr.low),
           ">",
-          isIntLiteral(1n)(expr.step) ? [] : [emitNode(expr.step), "%"],
+          isInt(1n)(expr.step) ? [] : [emitNode(expr.step), "%"],
         ];
-      }
       default:
         throw new EmitError(expr);
     }

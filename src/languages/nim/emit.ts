@@ -5,7 +5,7 @@ import {
   EmitError,
   emitIntLiteral,
 } from "../../common/emit";
-import { type Array, type IR, isIdent, isIntLiteral, isText } from "../../IR";
+import { type Array, type IR, isIdent, isInt, isText } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 const emitNimText = emitTextFactory(
@@ -25,20 +25,22 @@ const emitNimText = emitTextFactory(
 
 function precedence(expr: IR.Node): number {
   switch (expr.kind) {
+    case "FunctionCall":
+      return 12;
     case "Prefix":
       return 11;
     case "Infix":
       return binaryPrecedence(expr.name);
-    case "FunctionCall":
-      return 2;
-    case "MethodCall":
-      return 12;
+    case "ConditionalOp":
+      return -Infinity;
   }
   return Infinity;
 }
 
 function binaryPrecedence(opname: string): number {
   switch (opname) {
+    case ".":
+      return 12;
     case "^":
       return 10;
     case "*":
@@ -62,12 +64,15 @@ function binaryPrecedence(opname: string): number {
     case "!=":
     case ">=":
     case ">":
+    case "in":
       return 5;
     case "and":
       return 4;
     case "or":
     case "xor":
       return 3;
+    case " ":
+      return 1;
   }
   throw new Error(
     `Programming error - unknown Nim binary operator '${opname}.'`,
@@ -154,8 +159,8 @@ export default function emitProgram(
             emitMultiNode(e.body),
           ];
         case "ForRange": {
-          const start = isIntLiteral(0n)(e.start) ? [] : emit(e.start);
-          if (isIntLiteral(1n)(e.increment)) {
+          const start = isInt(0n)(e.start) ? [] : emit(e.start);
+          if (isInt(1n)(e.increment)) {
             return [
               "for",
               e.variable === undefined ? "()" : emit(e.variable),
@@ -219,6 +224,16 @@ export default function emitProgram(
           return [joinNodes(",", e.variables), "=", emit(e.expr)];
         case "MutatingInfix":
           return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
+        case "ConditionalOp":
+          return [
+            "if",
+            emit(e.condition, 0),
+            ":",
+            emit(e.consequent, 0),
+            "else",
+            ":",
+            emit(e.alternate, 0),
+          ];
         case "Identifier":
           return e.name;
         case "Text":
@@ -226,56 +241,29 @@ export default function emitProgram(
         case "Integer":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
-          if (isIdent()(e.func) && e.args.length === 1 && isText()(e.args[0])) {
+          return [emit(e.func), "$GLUE$", "(", joinNodes(",", e.args), ")"];
+        case "Infix": {
+          const rightAssoc = e.name === "^" || e.name === " ";
+          if (
+            e.name === " " &&
+            isText()(e.right) &&
+            (isIdent()(e.left) ||
+              (e.left.kind === "Infix" && e.left.name === "."))
+          ) {
             const [low, high] = context.options.codepointRange;
             if (low === 1 && high === Infinity) {
-              const raw = emitAsRawText(e.args[0].value, e.func.name);
+              const raw = emitAsRawText(e.right.value, "");
               if (raw !== null) {
+                const res = [
+                  emit(e.left, prec + (rightAssoc ? 1 : 0)),
+                  "$GLUE$",
+                  raw,
+                ];
                 prec = Infinity;
-                return raw;
+                return res;
               }
             }
           }
-          if (e.args.length > 1) {
-            prec = 11.5;
-          }
-          if (e.args.length > 1 || e.args.length === 0)
-            return [emit(e.func), "$GLUE$", "(", joinNodes(",", e.args), ")"];
-          return [emit(e.func), joinNodes(",", e.args)];
-        case "MethodCall":
-          if (e.args.length > 1)
-            return [
-              emit(e.object, prec),
-              ".",
-              e.ident.name,
-              e.args.length > 0
-                ? ["$GLUE$", "(", joinNodes(",", e.args), ")"]
-                : [],
-            ];
-          else {
-            const [low, high] = context.options.codepointRange;
-            if (
-              e.args.length === 1 &&
-              isText()(e.args[0]) &&
-              low === 1 &&
-              high === Infinity
-            ) {
-              const raw = emitAsRawText(e.args[0].value, e.ident.name);
-              if (raw !== null) {
-                prec = 12;
-                return [emit(e.object, prec), ".", raw];
-              }
-            }
-            prec = 2;
-            return [
-              emit(e.object, precedence(e)),
-              ".",
-              e.ident.name,
-              e.args.length > 0 ? joinNodes(",", e.args) : [],
-            ];
-          }
-        case "Infix": {
-          const rightAssoc = e.name === "^";
           return [
             emit(e.left, prec + (rightAssoc ? 1 : 0)),
             /[A-Za-z]/.test(e.name[0]) ? [] : "$GLUE$",
@@ -302,6 +290,8 @@ export default function emitProgram(
             ];
           }
           return ["[", joinNodes(",", e.exprs), "]"];
+        case "Set":
+          return ["[", joinNodes(",", e.exprs), "]", ".", "toSet"];
         case "Table":
           return [
             "{",
@@ -314,13 +304,12 @@ export default function emitProgram(
             "toTable",
           ];
         case "IndexCall":
-          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
-          return [emit(e.collection, 12), "[", emit(e.index), "]"];
+          return [emit(e.collection, 12), "$GLUE$", "[", emit(e.index), "]"];
         case "RangeIndexCall":
-          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
-          if (!isIntLiteral(1n)(e.step)) throw new EmitError(expr, "step");
+          if (!isInt(1n)(e.step)) throw new EmitError(expr, "step");
           return [
             emit(e.collection, 12),
+            "$GLUE$",
             "[",
             emit(e.low),
             "..<",

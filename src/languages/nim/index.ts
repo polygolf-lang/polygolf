@@ -3,11 +3,16 @@ import {
   indexCall,
   int,
   rangeIndexCall,
-  add1,
+  succ,
   array,
   isText,
   builtin,
   op,
+  prefix,
+  text,
+  assignment,
+  isIdent,
+  infix,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -20,14 +25,22 @@ import {
 import emitProgram from "./emit";
 import {
   mapOps,
-  mapToPrefixAndInfix,
+  mapUnaryAndBinary,
   useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
   mapTo,
+  backwardsIndexToForwards,
 } from "../../plugins/ops";
-import { addNimImports, useUFCS, useUnsignedDivision } from "./plugins";
+import {
+  addNimImports,
+  getEndIndex,
+  removeSystemNamespace,
+  useBackwardsIndex,
+  useUFCS,
+  useUnsignedDivision,
+} from "./plugins";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
@@ -38,8 +51,17 @@ import {
   removeUnusedForVar,
   shiftRangeOneUp,
 } from "../../plugins/loops";
-import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
-import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
+import {
+  golfStringListLiteral,
+  hardcode,
+  listOpsToTextOps,
+} from "../../plugins/static";
+import {
+  golfLastPrint,
+  implicitlyConvertPrintArg,
+  putcToPrintChar,
+  mergePrint,
+} from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
@@ -49,8 +71,9 @@ import hash from "./hash";
 import {
   textToIntToTextGetToInt,
   textToIntToFirstIndexTextGetToInt,
-  useEquivalentTextOp,
+  usePrimaryTextOps,
   useMultireplace,
+  startsWithEndsWithToSliceEquality,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -72,19 +95,22 @@ import {
   pickAnyInt,
   lowBitsPlugins,
 } from "../../plugins/arithmetic";
+import { safeConditionalOpToAt } from "../../plugins/conditions";
 
 const nimLanguage: Language = {
   name: "Nim",
   extension: "nim",
   emitter: emitProgram,
   phases: [
-    required(printIntToPrint),
+    search(hardcode()),
+    required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
+    simplegolf(golfLastPrint()),
     search(
+      mergePrint,
       flipBinaryOps,
       golfStringListLiteral(),
-      listOpsToTextOps("text_byte_find", "text_get_byte"),
-      golfLastPrint(),
-      forRangeToForEach("array_get", "list_get", "text_get_byte"),
+      listOpsToTextOps("find[byte]", "at[byte]"),
+      forRangeToForEach("at[Array]", "at[List]", "at[byte]"),
       tempVarToMultipleAssignment,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
@@ -104,32 +130,48 @@ const nimLanguage: Language = {
       forArgvToForRange(true),
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
+      startsWithEndsWithToSliceEquality("byte"),
     ),
+    simplegolf(safeConditionalOpToAt("Array")),
     required(
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
-      useIndexCalls(),
-      useEquivalentTextOp(true, false),
       mapOps({
         argv: func("commandLineParams"),
-        argv_get: (x) => func("paramStr", add1(x[0])),
+        "at[argv]": (x) => func("paramStr", succ(x[0])),
       }),
       removeUnusedForVar,
       forRangeToForRangeInclusive(true),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
+      useUnsignedDivision,
+      useBackwardsIndex,
+      backwardsIndexToForwards(false),
+      useIndexCalls(),
       mapOps({
-        text_get_byte_to_int: (x) => func("ord", op("text_get_byte", ...x)),
-        read_line: func("readLine", builtin("stdin")),
+        "reversed[codepoint]": (x) =>
+          op.join(func("reversed", func("toRunes", x)), text("")),
+        "reversed[byte]": (x) => op.join(func("reversed", x[0]), text("")),
+      }),
+      mapOps({
+        "char[codepoint]": (x) => prefix("$", func("Rune", x)),
+        "ord_at[byte]": (x) => func("ord", op["at[byte]"](x[0], x[1])),
+        "ord_at[codepoint]": (x) =>
+          func("ord", op["at[codepoint]"](x[0], x[1])),
+        "read[line]": func("readLine", builtin("stdin")),
         join: (x) => func("join", isText("")(x[1]) ? [x[0]] : x),
         true: builtin("true"),
         false: builtin("false"),
-        text_get_byte: (x) => indexCall(x[0], x[1]),
-        text_get_byte_slice: (x) => rangeIndexCall(x[0], x[1], x[2], int(1n)),
-        print: (x) => func("write", builtin("stdout"), x),
-        text_replace: (x) =>
-          func("replace", isText("")(x[2]) ? [x[0], x[1]] : x),
+        "at[byte]": (x) => indexCall(x[0], x[1]),
+        "at[codepoint]": (x) =>
+          prefix("$", indexCall(func("toRunes", x[0]), x[1])),
+        "slice[byte]": (x) =>
+          rangeIndexCall(x[0], x[1], getEndIndex(x[1], x[2]), int(1n)),
+        "slice[List]": (x) =>
+          rangeIndexCall(x[0], x[1], getEndIndex(x[1], x[2]), int(1n)),
+        "print[Text]": (x) => func("write", builtin("stdout"), x),
+        replace: (x) => func("replace", isText("")(x[2]) ? [x[0], x[1]] : x),
         text_multireplace: (x) =>
           func(
             "multireplace",
@@ -140,28 +182,53 @@ const nimLanguage: Language = {
               ), // Polygolf doesn't have array of tuples, so we use array of arrays instead
             ),
           ),
+        "size[codepoint]": (x) => op["size[List]"](func("toRunes", x)),
+        push: (x) =>
+          isIdent()(x[0]) ? assignment(x[0], op.append(x[0], x[1])) : undefined,
+        int_to_bool: (x) => op["eq[Int]"](x[0], int(0n)),
+        int_to_bin_aligned: (x) =>
+          func("align", op.int_to_bin(x[0]), x[1], text("0")),
+        int_to_hex_aligned: (x) =>
+          func("align", op.int_to_hex(x[0]), x[1], text("0")),
       }),
       mapTo(func)({
-        text_split: "split",
-        text_split_whitespace: "split",
-        text_byte_length: "len",
+        gcd: "gcd",
+        split: "split",
+        split_whitespace: "split",
+        "size[byte]": "len",
+        "size[List]": "len",
+        "size[Table]": "len",
         repeat: "repeat",
         max: "max",
         min: "min",
         abs: "abs",
-        text_to_int: "parseInt",
-        println: "echo",
+        dec_to_int: "parseInt",
+        "println[Text]": "echo",
         bool_to_int: "int",
-        int_to_text_byte: "chr",
-        list_find: "find",
+        "char[byte]": "chr",
+        "find[List]": "system.find",
+        "find[byte]": "find",
+        "sorted[Int]": "sorted",
+        "sorted[Ascii]": "sorted",
+        "reversed[List]": "reversed",
+        int_to_bin: "toBin",
+        int_to_hex: "toHex",
+        right_align: "align",
+        starts_with: "startsWith",
+        ends_with: "endsWith",
       }),
-      useUnsignedDivision,
-      mapToPrefixAndInfix(
+      mapTo((x: string, [right, left]) => infix(x, left, right))({
+        "contains[Array]": "system.in",
+        "contains[List]": "system.in",
+        "contains[Text]": "in",
+        "contains[Table]": "system.in",
+      }),
+      mapUnaryAndBinary(
         {
           bit_not: "not",
           not: "not",
           neg: "-",
-          int_to_text: "$",
+          int_to_dec: "$",
           pow: "^",
           mul: "*",
           trunc_div: "div",
@@ -172,11 +239,15 @@ const nimLanguage: Language = {
           bit_shift_right: "shr",
           add: "+",
           sub: "-",
-          concat: "&",
+          "concat[Text]": "&",
+          "concat[List]": "&",
+          append: "&",
           lt: "<",
           leq: "<=",
-          eq: "==",
-          neq: "!=",
+          "eq[Int]": "==",
+          "eq[Text]": "==",
+          "neq[Int]": "!=",
+          "neq[Text]": "!=",
           geq: ">=",
           gt: ">",
           and: "and",
@@ -185,9 +256,8 @@ const nimLanguage: Language = {
           bit_or: "or",
           bit_xor: "xor",
         },
-        ["+", "*", "%%", "/%", "-", "&"],
+        ["+", "*", "-", "&"],
       ),
-      useUnsignedDivision,
       addNimImports,
     ),
     simplegolf(
@@ -209,8 +279,9 @@ const nimLanguage: Language = {
       noStandaloneVarDeclarations,
       assertInt64,
       removeImplicitConversions,
-      useUFCS,
+      removeSystemNamespace,
     ),
+    search(useUFCS),
   ],
   detokenizer: defaultDetokenizer((a, b) => {
     const left = a[a.length - 1];
@@ -223,8 +294,9 @@ const nimLanguage: Language = {
 
     if (
       /[A-Za-z]/.test(left) &&
-      !["var", "in", "else", "if", "while", "for"].includes(a) &&
-      (symbols + `"({`).includes(right) &&
+      ((!["var", "in", "else", "if", "while", "for"].includes(a) &&
+        (symbols + `"({[`).includes(right)) ||
+        right === `"`) &&
       !["=", ":", ".", "::"].includes(b)
     )
       return true; // identifier meeting an operator or string literal or opening paren

@@ -1,4 +1,4 @@
-import { charLength } from "../../common/objective";
+import { charLength } from "../../common/strings";
 import { type TokenTree } from "@/common/Language";
 import {
   containsMultiNode,
@@ -7,7 +7,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isIntLiteral, text, isText, id, infix } from "../../IR";
+import { type IR, isInt, text, isText, id, infix } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 export const emitPythonText = emitTextFactory(
@@ -29,6 +29,8 @@ function precedence(expr: IR.Node): number {
       return unaryPrecedence(expr.name);
     case "Infix":
       return binaryPrecedence(expr.name);
+    case "ConditionalOp":
+      return 0;
   }
   return Infinity;
 }
@@ -59,6 +61,7 @@ function binaryPrecedence(opname: string): number {
     case "!=":
     case ">=":
     case ">":
+    case "in":
       return 4;
     case "and":
       return 2;
@@ -137,10 +140,10 @@ export default function emitProgram(
           ];
         case "ForRange": {
           const start = emit(e.start);
-          const start0 = isIntLiteral(0n)(e.start);
+          const start0 = isInt(0n)(e.start);
           const end = emit(e.end);
           const increment = emit(e.increment);
-          const increment1 = isIntLiteral(1n)(e.increment);
+          const increment1 = isInt(1n)(e.increment);
           return e.variable === undefined && start0 && increment1
             ? [
                 "for",
@@ -201,6 +204,14 @@ export default function emitProgram(
             16: ["0x", ""],
             36: ["int('", "',36)"],
           });
+        case "ConditionalOp":
+          return [
+            emit(e.consequent, prec + 1),
+            "if",
+            emit(e.condition, prec + 1),
+            "else",
+            emit(e.alternate, prec),
+          ];
         case "FunctionCall":
           return [
             emit(e.func),
@@ -224,6 +235,8 @@ export default function emitProgram(
         }
         case "Prefix":
           return [e.name, emit(e.arg, prec)];
+        case "Set":
+          return ["{", joinNodes(",", e.exprs), "}"];
         case "List":
           return ["[", joinNodes(",", e.exprs), "]"];
         case "Table":
@@ -236,21 +249,20 @@ export default function emitProgram(
             "}",
           ];
         case "IndexCall":
-          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
         case "RangeIndexCall": {
-          if (e.oneIndexed) throw new EmitError(expr, "one indexed");
           const low = emit(e.low);
-          const low0 = isIntLiteral(0n)(e.low);
+          const low0 = isInt(0n)(e.low);
           const high = emit(e.high);
+          const high0 = isInt(0n)(e.high);
           const step = emit(e.step);
-          const step1 = isIntLiteral(1n)(e.step);
+          const step1 = isInt(1n)(e.step);
           return [
             emit(e.collection, Infinity),
             "[",
-            ...(low0 ? [] : low),
+            low0 ? [] : low,
             ":",
-            high,
+            high0 ? [] : high,
             step1 ? [] : [":", ...step],
             "]",
           ];

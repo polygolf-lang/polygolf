@@ -20,14 +20,29 @@ print(4,end="")
 
 ```polygolf
 $a <- (text_get_codepoint "abcdefg" 4);
-$b <- (text_get_codepoint_slice "abcdefg" 1 3);
-$c <- (text_codepoint_reversed "abcdefg");
+$b <- (text_get_codepoint_slice "abcdefg" 2 3);
+$c <- (slice_back[codepoint] "abcdefg" -4 3);
+$d <- (slice_back[codepoint] "abcdefg" -4 4);
+$e <- (text_codepoint_reversed "abcdefg");
+$f <- ("abcdefg" @ -2);
 ```
 
 ```python nogolf
 a="abcdefg"[4]
-b="abcdefg"[1:4]
-c="abcdefg"[::-1]
+b="abcdefg"[2:5]
+c="abcdefg"[-4:-1]
+d="abcdefg"[-4:]
+e="abcdefg"[::-1]
+f="abcdefg"[-2]
+```
+
+```polygolf
+starts_with (@0) "abc";
+```
+
+```py
+import sys
+sys.argv[1][:3]=="abc"
 ```
 
 ## Text splitting
@@ -132,7 +147,7 @@ for x in sys.argv[1:]:print(x)
 ```
 
 ```polygolf
-print (argv_get 0);
+print (at[argv] 0);
 ```
 
 ```python
@@ -166,7 +181,7 @@ if ($a != 0) {
 $a <- 1;
 ```
 
-```python
+```python no:hardcode
 a=1
 if a:print(a)
 a=1
@@ -213,29 +228,21 @@ a=b="Hello"
 ## String encoding Ops
 
 ```polygolf
-text_get_byte "abc" 1;
-text_get_codepoint "def" 1;
-text_byte_to_int "g";
-codepoint_to_int "h";
-text_get_byte_to_int "ijk" 1;
-text_get_codepoint_to_int "lmn" 1;
-text_byte_length "opq";
-text_codepoint_length "rst";
-int_to_text_byte 99;
-int_to_codepoint 999;
+$t <- "opq";
+at[Ascii] "abc" 1;
+ord[Ascii] "g";
+ord_at[Ascii] "ijk" 1;
+size[Ascii] $t;
+char[Ascii] 99;
 ```
 
 ```py nogolf
+t="opq"
 "abc"[1]
-"def"[1]
 ord("g")
-ord("h")
 ord("ijk"[1])
-ord("lmn"[1])
-len("opq")
-len("rst")
+len(t)
 chr(99)
-chr(999)
 ```
 
 ## Aliasing partially applied methods
@@ -295,4 +302,38 @@ for _ in"X"*10:print("Hi")
 -0x695fd101971cb087
 -int('7m93qx4grzs1ls98c9nh5rs313rz0u',36)
 7*10**22-1
+```
+
+## Golfing literal text list access
+
+```polygolf
+list_get (list "false" "true") 1;
+```
+
+```py
+"ftarlusee"[1::2]
+```
+
+```polygolf
+list_get (list "12345" "ABC") 1;
+println (list_get (list "12345" "ABC") 1);
+```
+
+```py simple
+["12345","ABC"][1]
+print("1A2B3C4 5"[1::2])
+```
+
+## Conditional ops
+
+```polygolf
+conditional true 3 4;
+```
+
+```python nogolf
+3 if 1 else 4
+```
+
+```python
+[4,3][1]
 ```

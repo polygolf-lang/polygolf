@@ -2,3 +2,4 @@ node_modules
 dist
 src/frontend/grammar.ts
 *.test.md.ts
+*.generated.md

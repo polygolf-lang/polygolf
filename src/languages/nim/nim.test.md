@@ -4,17 +4,21 @@
 
 ```polygolf
 $t:(Ascii 3) <- "";
+$t2:Text <- "";
 $n:0..1 <- 0;
 $m <- $n;
 $b <- (1<2);
 
 text_get_byte $t 2;
+text_get_codepoint $t 2;
 text_get_byte_slice $t 2 6;
 text_byte_to_int "a";
 text_get_byte_to_int "abc" 1;
 text_split $t "|";
 text_split_whitespace $t;
 text_byte_length $t;
+slice $t -10 3;
+slice $t -10 10;
 repeat $t 3;
 max $n 1;
 min $n 1;
@@ -24,7 +28,9 @@ print $t;
 println $t;
 bool_to_int $b;
 int_to_text_byte 48;
+int_to_codepoint 48;
 $t .. "x";
+$t @ -1;
 text_replace "a+b+c" "+" "*";
 text_replace "a*b*c" "*" "";
 text_multireplace "XYZXYZ" "Y" "b" "X" "a";
@@ -36,6 +42,10 @@ not $b;
 
 - $n;
 int_to_text $n;
+int_to_bin 3;
+int_to_bin_aligned 3 5;
+int_to_hex 3;
+int_to_hex_aligned 3 5;
 $n ^ 3;
 $n * $m;
 -3 trunc_div $n;
@@ -61,41 +71,52 @@ and $b $b;
 or $b $b;
 
 list_find (list "") "";
+starts_with $t $t2;
+ends_with $t $t2;
 ```
 
 ```nim nogolf
-import strutils,math
+import unicode,strutils,math
 var
- t=""
+ t,T=""
  n=0
  m=n
  b=1<2
 t[2]
-t[2..<6]
-"a"[0].ord
-"abc"[1].ord
-t.split"|"
-t.split
-t.len
-t.repeat 3
-1.max n
-1.min n
-n.abs
-t.parseInt
-stdout.write t
-t.echo
-b.int
-48.chr
+$toRunes(t)[2]
+t[2..<8]
+ord("a"[0])
+ord("abc"[1])
+split(t,"|")
+split(t)
+len(t)
+t[^10..< ^7]
+t[^10..< ^0]
+repeat(t,3)
+max(1,n)
+min(1,n)
+abs(n)
+parseInt(t)
+write(stdout,t)
+echo(t)
+int(b)
+chr(48)
+$Rune(48)
 t&"x"
-"a+b+c".replace("+","*")
-"a*b*c".replace"*"
-"XYZXYZ".multireplace {"Y":"b","X":"a"}
-@["xy","abc"].join"/"
-@["12","345"].join
+t[^1]
+replace("a+b+c","+","*")
+replace("a*b*c","*")
+multireplace("XYZXYZ",{"Y":"b","X":"a"})
+join(@["xy","abc"],"/")
+join(@["12","345"])
 not n
 not b
 -n
 $n
+toBin(3)
+align(toBin(3),5,"0")
+toHex(3)
+align(toHex(3),5,"0")
 n^3
 n*m
 -3 div n
@@ -117,35 +138,18 @@ n>=3
 n>3
 b and b
 b or b
-@[""].find""
+find(@[""],"")
+startsWith(t,T)
+endsWith(t,T)
 ```
 
 ## Misc
 
 ```polygolf
-print (list_get (text_split "abc" "b") 0);
-```
-
-```nim
-include re
-"abc".split"b"[0].echo
-```
-
-```polygolf
-$a:0..1 <- 0;
-println_int (($a + 1) * $a);
-```
-
-```nim nogolf
-var a=0
-echo (1+a)*a
-```
-
-```polygolf
 println ((int_to_text 1) .. "x");
 ```
 
-```nim nogolf
+```nim no:hardcode
 echo $1&"x"
 ```
 
@@ -182,6 +186,17 @@ for i in..9:
  a=i
 ```
 
+```polygolf
+$e <- "abc";
+for $i 0 3 {
+  println (at[byte] $e $i);
+};
+```
+
+```nim
+for i in "abc":echo i
+```
+
 ## Argv
 
 ```polygolf
@@ -192,7 +207,7 @@ for_argv $x 100 {
 
 ```nim
 import os
-for x in..99:(paramStr 1+x).echo
+for x in..99:echo paramStr 1+x
 ```
 
 ```polygolf
@@ -204,7 +219,7 @@ for $i $b 16 {
 
 ```nim nogolf
 var b=0
-for i in b..<16:i.echo
+for i in b..<16:echo(i)
 ```
 
 ## Variables & Assignments
@@ -275,6 +290,11 @@ list_get (text_split "a b" " ") 1;
 
 ```nim nogolf
 include re
+split("a b"," ")[1]
+```
+
+```nim
+include re
 "a b".split" "[1]
 ```
 
@@ -338,4 +358,44 @@ for()in..9:echo"Hi"
 "\5xx"
 "\u0161"
 "\u{1f48e}"
+```
+
+## Conditional ops
+
+```polygolf
+(conditional (builtin "c"):Bool 3 4) div 2;
+```
+
+```nim nogolf
+(if c:3 else:4)/%2
+```
+
+```nim
+[4,3][int c]/%2
+```
+
+```polygolf
+$c:Bool <- true;
+2 + (conditional $c 3 4);
+```
+
+TODO split left & right prec after #254
+
+```nim nogolf skip
+var c=true
+2+if c:3 else:4
+```
+
+## Ufcs
+
+```polygolf
+function_call (infix "." (builtin "x") (builtin "f")) (builtin "y");
+infix " " (builtin "f") (builtin "x");
+index_call (infix " " (infix "." "x" (builtin "f")) " ") 1;
+```
+
+```nim skipTypecheck
+x.f y
+f x
+"x".f" "[1]
 ```

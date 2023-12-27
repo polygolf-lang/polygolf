@@ -3,9 +3,10 @@
 import yargs from "yargs";
 import fs from "fs";
 import path from "path";
-import compile from "./common/compile";
+import compile, { debugEmit } from "./common/compile";
 import { PolygolfError } from "./common/errors";
 import languages, { findLang } from "./languages/languages";
+import { EmitError } from "./common/emit";
 
 const languageChoices = [
   ...new Set(languages.flatMap((x) => [x.name.toLowerCase(), x.extension])),
@@ -62,12 +63,8 @@ const printingMultipleLangs = langs.length > 1 && options.output === undefined;
 for (const result of compile(
   code,
   {
-    level: "full",
     objective: options.chars === true ? "chars" : "bytes",
     getAllVariants: options.all === true,
-    codepointRange: [1, Infinity],
-    restrictFrontend: true,
-    skipTypecheck: false,
   },
   ...langs,
 )) {
@@ -92,6 +89,19 @@ for (const result of compile(
     if (options.debug === true) {
       console.log("History:");
       console.log(result.history.map(([c, name]) => `${c} ${name}`).join("\n"));
+
+      if (result.errors.length > 0) {
+        console.log("Errors:");
+        console.log(
+          result.errors
+            .map(
+              (e) =>
+                e.message +
+                (e instanceof EmitError ? "\n" + debugEmit(e.expr) : ""),
+            )
+            .join("\n"),
+        );
+      }
     }
   } else {
     if (!printingMultipleLangs && langs.length > 1)
