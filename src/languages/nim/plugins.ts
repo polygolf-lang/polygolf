@@ -63,6 +63,8 @@ export const addNimImports: Plugin = addImports(
     Rune: "unicode",
     sorted: "algorithm",
     reversed: "algorithm",
+    startsWith: "strutils",
+    endsWith: "strutils",
   },
   (modules: string[]) => {
     if (modules.length < 1) return;
@@ -103,7 +105,10 @@ export function useUFCS(node: Node) {
 }
 
 export function useBackwardsIndex(node: Node, spine: Spine) {
-  if (isOp()(node) && node.op.includes("at_back")) {
+  if (
+    isOp()(node) &&
+    (node.op.includes("at_back") || node.op.includes("slice_back"))
+  ) {
     return op(
       node.op,
       ...replaceAtIndex(
@@ -116,6 +121,13 @@ export function useBackwardsIndex(node: Node, spine: Spine) {
       ),
     );
   }
+}
+
+export function getEndIndex(start: Node, length: Node) {
+  if (start.kind === "Prefix" && start.name === "system.^") {
+    return prefix(start.name, op("sub", start.arg, length));
+  }
+  return op("add", start, length);
 }
 
 export function removeSystemNamespace(node: Node, spine: Spine) {

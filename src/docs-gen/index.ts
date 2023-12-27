@@ -25,7 +25,7 @@ Hover opcode name to see a description.
 function getOpCodeOutputType(opCode: OpCode) {
   try {
     return toString(
-      getOpCodeTypeFromTypes(opCode, getGenericOpCodeArgTypes(opCode)),
+      getOpCodeTypeFromTypes(opCode, getGenericOpCodeArgTypes(opCode), true),
     );
   } catch {
     return "?";

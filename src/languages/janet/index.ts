@@ -52,7 +52,7 @@ const janetLanguage: Language = {
   extension: "janet",
   emitter: emitProgram,
   phases: [
-    required(arraysToLists, putcToPrintChar),
+    required(arraysToLists, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false), golfLastPrintInt(true)),
     search(
       flipBinaryOps,
@@ -65,7 +65,6 @@ const janetLanguage: Language = {
     ),
 
     required(
-      usePrimaryTextOps("byte"),
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,

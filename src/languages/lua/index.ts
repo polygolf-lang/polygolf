@@ -46,6 +46,7 @@ import {
   mergePrint,
 } from "../../plugins/print";
 import {
+  startsWithEndsWithToSliceEquality,
   textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
 } from "../../plugins/textOps";
@@ -70,7 +71,7 @@ const luaLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint, putcToPrintChar),
+    required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint()),
     search(
       mergePrint,
@@ -108,8 +109,8 @@ const luaLanguage: Language = {
       forArgvToForRange(),
       forRangeToForRangeInclusive(),
       implicitlyConvertPrintArg,
-      usePrimaryTextOps("byte"),
       textToIntToFirstIndexTextGetToInt,
+      startsWithEndsWithToSliceEquality("byte"),
       mapOps({
         dec_to_int: (x) =>
           op("mul", int(1n), implicitConversion("dec_to_int", x[0])),

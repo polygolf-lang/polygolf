@@ -143,13 +143,13 @@ type GetOp = OpCode & ("at[Array]" | "at[List]" | "at[byte]" | "at[codepoint]");
 export function forRangeToForEach(...ops: GetOp[]): Plugin {
   if (ops.includes("at[byte]") && ops.includes("at[codepoint]"))
     throw new Error(
-      "Programming error. Choose only one of 'text_get_byte' && 'text_get_codepoint'.",
+      "Programming error. Choose only one of 'at[byte]' && 'at[codepoint]'.",
     );
   const lengthOpToGetOp = new Map([
-    ["array_length", "at[Array]"],
+    ["size[Array]", "at[Array]"],
     ["size[List]", "at[List]"],
     ["size[byte]", "at[byte]"],
-    ["array_length", "at[codepoint]"],
+    ["size[codepoint]", "at[codepoint]"],
   ]);
   return {
     name: "forRangeToForEach",

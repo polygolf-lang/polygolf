@@ -82,7 +82,7 @@ const swiftLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint, arraysToLists),
+    required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint()),
     search(
       mergePrint,
@@ -115,7 +115,6 @@ const swiftLanguage: Language = {
       backwardsIndexToForwards(),
       useIndexCalls(),
       putcToPrintChar,
-      usePrimaryTextOps("codepoint"),
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
@@ -256,6 +255,8 @@ const swiftLanguage: Language = {
             namedArg("of", x[1]),
             namedArg("with", x[2]),
           ),
+        starts_with: (x) => method(x[0], "hasPrefix", x[1]),
+        ends_with: (x) => method(x[0], "hasSuffix", x[1]),
       }),
       mapUnaryAndBinary(
         {

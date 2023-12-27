@@ -116,9 +116,22 @@ export const opCodeDefinitions = {
 
   // Slice
   "slice[codepoint]": { args: [text(), int(0), int(0)], front: true },
+  "slice_back[codepoint]": {
+    args: [text(), int("-oo", -1), int(0)],
+    front: true,
+  },
   "slice[byte]": { args: [text(), int(0), int(0)], front: true },
+  "slice_back[byte]": { args: [text(), int("-oo", -1), int(0)], front: true },
   "slice[Ascii]": { args: [ascii, int(0), int(0)], front: "slice" },
+  "slice_back[Ascii]": {
+    args: [ascii, int("-oo", -1), int(0)],
+    front: "slice",
+  },
   "slice[List]": { args: [list(T1), int(0), int(0)], front: "slice" },
+  "slice_back[List]": {
+    args: [list(T1), int("-oo", -1), int(0)],
+    front: "slice",
+  },
 
   // Chars
   "ord_at[byte]": { args: [text(), int(0)] },
@@ -176,6 +189,8 @@ export const opCodeDefinitions = {
   right_align: { args: [text(), int(0)], front: true },
   replace: { args: [text(), text(int(1)), text()], front: true },
   text_multireplace: { args: [text(), text(), rest(text())] },
+  starts_with: { args: [text(), text()], front: true },
+  ends_with: { args: [text(), text()], front: true },
 
   // Text / Bool <-> Int
   int_to_bin_aligned: { args: [int(0), int(0)], front: true },
@@ -294,12 +309,20 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   // Slice
   "slice[codepoint]":
     "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in codepoints.",
+  "slice_back[codepoint]":
+    "Returns a text slice that starts at the given -1-based backwards index and has given length. Start and length are measured in codepoints.",
   "slice[byte]":
     "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in bytes.",
+  "slice_back[byte]":
+    "Returns a text slice that starts at the given -1-based backwards index and has given length. Start and length are measured in bytes.",
   "slice[Ascii]":
     "Returns a text slice that starts at the given 0-based index and has given length.",
+  "slice_back[Ascii]":
+    "Returns a text slice that starts at the given -1-based backwards index and has given length.",
   "slice[List]":
     "Returns a list slice that starts at the given 0-based index and has given length.",
+  "slice_back[List]":
+    "Returns a list slice that starts at the given -1-based backwards index and has given length.",
 
   // Chars
   "ord_at[byte]":
@@ -372,6 +395,8 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   replace: "Replaces all occurences of a given text with another text.",
   text_multireplace:
     "Performs simultaneos replacement of multiple pairs of texts.",
+  starts_with: "Checks whether the second argument is a prefix of the first.",
+  ends_with: "Checks whether the second argument is a suffix of the first.",
 
   // Text / Bool <-> Int
   int_to_bin_aligned:

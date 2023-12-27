@@ -35,6 +35,7 @@ import {
 } from "../../plugins/ops";
 import {
   addNimImports,
+  getEndIndex,
   removeSystemNamespace,
   useBackwardsIndex,
   useUFCS,
@@ -72,6 +73,7 @@ import {
   textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
   useMultireplace,
+  startsWithEndsWithToSliceEquality,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -101,7 +103,7 @@ const nimLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint, putcToPrintChar),
+    required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint()),
     search(
       mergePrint,
@@ -128,13 +130,13 @@ const nimLanguage: Language = {
       forArgvToForRange(true),
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
+      startsWithEndsWithToSliceEquality("byte"),
     ),
     simplegolf(safeConditionalOpToAt("Array")),
     required(
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
-      usePrimaryTextOps("byte"),
       mapOps({
         argv: func("commandLineParams"),
         "at[argv]": (x) => func("paramStr", add1(x[0])),
@@ -164,9 +166,9 @@ const nimLanguage: Language = {
         "at[codepoint]": (x) =>
           prefix("$", indexCall(func("toRunes", x[0]), x[1])),
         "slice[byte]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
+          rangeIndexCall(x[0], x[1], getEndIndex(x[1], x[2]), int(1n)),
         "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
+          rangeIndexCall(x[0], x[1], getEndIndex(x[1], x[2]), int(1n)),
         "print[Text]": (x) => func("write", builtin("stdout"), x),
         replace: (x) => func("replace", isText("")(x[2]) ? [x[0], x[1]] : x),
         text_multireplace: (x) =>
@@ -213,6 +215,8 @@ const nimLanguage: Language = {
         int_to_bin: "toBin",
         int_to_hex: "toHex",
         right_align: "align",
+        starts_with: "startsWith",
+        ends_with: "endsWith",
       }),
       mapTo((x: string, [right, left]) => infix(x, left, right))({
         "contains[Array]": "system.in",

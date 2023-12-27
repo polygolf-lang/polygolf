@@ -47,23 +47,23 @@ $a <= 2;
 $a == 2;
 $a >= 2;
 $a > 2;
-array_get (array "xy" "abc") 1;
+array_get (array "xy" $b) 1;
 $L @ -1;
 $L @ -2;
-text_get_byte "abc" 1;
-"abc" @ -2;
+text_get_byte $b 1;
+$b:Ascii @ -2;
 text_get_byte_slice "abcdefg" 2 3;
 text_byte_to_int "a";
-text_get_byte_to_int "abc" 1;
+text_get_byte_to_int $b 1;
 int_to_text_byte 99;
 concat $b "xyz";
-text_byte_length "abc";
+text_byte_length $b;
 int_to_text 5;
 text_to_int "5";
 text_replace $b "a" "A";
 text_replace $b "(" "*";
 text_replace $b $b:(Text 1..oo) $b;
-join (list "xy" "abc") "/";
+join (list "xy" $b) "/";
 join (list "12" "345") "";
 conditional ($a == 2) $a 3;
 conditional ($a == 2) $c false;
@@ -92,23 +92,23 @@ a<=2
 a==2
 a>=2
 a>2
-({"xy","abc"})[2]
+({"xy",b})[2]
 L[#L]
 L[#L-1]
-("abc"):sub(2,2)
-("abc"):sub(-2,-2)
+b:sub(2,2)
+b:sub(-2,-2)
 ("abcdefg"):sub(3,5)
 ("a"):byte(1)
-("abc"):byte(2)
+b:byte(2)
 string.char(99)
 b.."xyz"
-("abc"):len()
+b:len()
 ""..5
 1*"5"
 b:gsub("a","A")
 b:gsub("%(","*")
 b:gsub(b:gsub("(%W)","%%%1"),b:gsub("%%","%%%%"))
-table.concat({"xy","abc"},"/")
+table.concat({"xy",b},"/")
 table.concat({"12","345"})
 a==2 and a or 3
 (a==2 and{c}or{false})[1]
@@ -118,12 +118,16 @@ a==2 and a or 3
 
 ```polygolf
 $t <- "abc";
-text_byte_length $t;
+$i <- 0;
+# $t;
+ord_at[byte] "abc" $i;
 ```
 
 ```lua nogolf
 t="abc"
+i=0
 t:len()
+("abc"):byte(1+i)
 ```
 
 ```polygolf

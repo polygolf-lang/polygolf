@@ -70,6 +70,7 @@ import {
   usePrimaryTextOps,
   textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
+  startsWithEndsWithToSliceEquality,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
 import { hardcode } from "../../plugins/static";
@@ -80,7 +81,7 @@ const golfscriptLanguage: Language = {
   emitter: emitProgram,
   phases: [
     search(hardcode()),
-    required(printIntToPrint, arraysToLists),
+    required(printIntToPrint, arraysToLists, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false)),
     search(
       flipBinaryOps,
@@ -101,7 +102,6 @@ const golfscriptLanguage: Language = {
       forArgvToForEach,
       putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
-      usePrimaryTextOps("byte"),
       removeUnusedForVar,
       forRangeToForDifferenceRange(
         (node, spine) =>
@@ -112,6 +112,7 @@ const golfscriptLanguage: Language = {
       printLnToPrint,
     ),
     simplegolf(
+      startsWithEndsWithToSliceEquality("byte"),
       printConcatToMultiPrint,
       useBuiltinAliases({ "\n": "n" }),
       alias({
