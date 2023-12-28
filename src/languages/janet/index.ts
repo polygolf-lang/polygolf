@@ -17,7 +17,7 @@ import {
 } from "../../plugins/ops";
 import { addVarDeclarations } from "../../plugins/block";
 import {
-  add1,
+  succ,
   builtin,
   conditional,
   functionCall as func,
@@ -52,7 +52,7 @@ const janetLanguage: Language = {
   extension: "janet",
   emitter: emitProgram,
   phases: [
-    required(arraysToLists, putcToPrintChar),
+    required(arraysToLists, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false), golfLastPrintInt(true)),
     search(
       flipBinaryOps,
@@ -65,7 +65,6 @@ const janetLanguage: Language = {
     ),
 
     required(
-      usePrimaryTextOps("byte"),
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
@@ -73,13 +72,13 @@ const janetLanguage: Language = {
         right_align: (x) =>
           func(
             "string/format",
-            op("concat[Text]", text("%"), op("int_to_dec", x[1]), text("s")),
+            op["concat[Text]"](text("%"), op.int_to_dec(x[1]), text("s")),
             x[0],
           ),
         int_to_hex_aligned: (x) =>
           func(
             "string/format",
-            op("concat[Text]", text("%0"), op("int_to_dec", x[1]), text("X")),
+            op["concat[Text]"](text("%0"), op.int_to_dec(x[1]), text("X")),
             x[0],
           ),
       }),
@@ -89,32 +88,32 @@ const janetLanguage: Language = {
       mapOps({
         argv: func("slice", func("dyn", builtin(":args")), int(1n)),
 
-        append: (x) => op("concat[List]", x[0], list([x[1]])),
+        append: (x) => op["concat[List]"](x[0], list([x[1]])),
 
         "at[argv]": (x) =>
-          op("at[List]", func("dyn", builtin(":args")), add1(x[0])),
-        "at[byte]": (x) => op("slice[byte]", x[0], x[1], int(1n)),
-        "contains[Text]": (x) => func("int?", op("find[byte]", x[0], x[1])),
+          op["at[List]"](func("dyn", builtin(":args")), succ(x[0])),
+        "at[byte]": (x) => op["slice[byte]"](x[0], x[1], int(1n)),
+        "contains[Text]": (x) => func("int?", op["find[byte]"](x[0], x[1])),
         "contains[Table]": (x) =>
-          op("not", func("nil?", op("at[Table]", x[0], x[1]))),
+          op.not(func("nil?", op["at[Table]"](x[0], x[1]))),
       }),
       mapOps({
         true: builtin("true"),
         false: builtin("false"),
 
         bool_to_int: (x) => conditional(x[0], int(1n), int(0n)),
-        int_to_bool: (x) => op("neq[Int]", x[0], int(0n)),
+        int_to_bool: (x) => op["neq[Int]"](x[0], int(0n)),
         int_to_hex: (x) => func("string/format", text("%X"), x[0]),
         split: (x) => func("string/split", x[1], x[0]),
 
         "char[byte]": (x) => func("string/format", text("%c"), x[0]),
         "concat[List]": (x) => func("array/concat", list([]), ...x),
         "find[byte]": (x) => func("string/find", x[1], x[0]),
-        "ord[byte]": (x) => op("ord_at[byte]", x[0], int(0n)),
+        "ord[byte]": (x) => op["ord_at[byte]"](x[0], int(0n)),
         "slice[byte]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
+          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1n)),
         "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], op("add", x[1], x[2]), int(1n)),
+          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1n)),
       }),
       mapTo(func)({
         replace: "string/replace-all",

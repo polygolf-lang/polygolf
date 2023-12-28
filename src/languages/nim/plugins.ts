@@ -9,6 +9,8 @@ import {
   isSubtype,
   op,
   prefix,
+  type Op,
+  type OpCode,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import type { Plugin } from "../../common/Language";
@@ -61,6 +63,8 @@ export const addNimImports: Plugin = addImports(
     Rune: "unicode",
     sorted: "algorithm",
     reversed: "algorithm",
+    startsWith: "strutils",
+    endsWith: "strutils",
   },
   (modules: string[]) => {
     if (modules.length < 1) return;
@@ -78,7 +82,7 @@ export function useUnsignedDivision(node: Node, spine: Spine) {
   if (isOp("trunc_div", "rem")(node)) {
     return isSubtype(getType(node.args[0], spine), integerType(0)) &&
       isSubtype(getType(node.args[0], spine), integerType(0))
-      ? op(`unsigned_${node.op}`, ...node.args)
+      ? op[`unsigned_${node.op}`](...node.args)
       : undefined;
   }
 }
@@ -101,16 +105,29 @@ export function useUFCS(node: Node) {
 }
 
 export function useBackwardsIndex(node: Node, spine: Spine) {
-  if (isOp()(node) && node.op.includes("at_back")) {
-    return op(
+  if (
+    isOp()(node) &&
+    (node.op.includes("at_back") || node.op.includes("slice_back"))
+  ) {
+    return op.unsafe(
       node.op,
       ...replaceAtIndex(
         node.args,
         1,
-        prefix("system.^", op("neg", node.args[1])),
+        prefix(
+          "system.^",
+          op.neg((node as Op<`${string}at_back${string}` & OpCode>).args[1]),
+        ),
       ),
     );
   }
+}
+
+export function getEndIndex(start: Node, length: Node) {
+  if (start.kind === "Prefix" && start.name === "system.^") {
+    return prefix(start.name, op.sub(start.arg, length));
+  }
+  return op.add(start, length);
 }
 
 export function removeSystemNamespace(node: Node, spine: Spine) {

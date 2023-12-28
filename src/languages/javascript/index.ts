@@ -131,8 +131,7 @@ const javascriptLanguage: Language = {
         argv: builtin("arguments"),
 
         "at[argv]": (x) =>
-          op(
-            "at[List]",
+          op["at[List]"](
             { ...builtin("arguments"), type: listType(textType()) },
             x[0],
           ),
@@ -147,10 +146,8 @@ const javascriptLanguage: Language = {
         true: builtin("true"),
         false: builtin("false"),
         "at[Ascii]": (x) => indexCall(x[0], x[1]),
-        "slice[List]": (x) =>
-          method(x[0], "slice", x[1], op("add", x[1], x[2])),
-        "slice[Ascii]": (x) =>
-          method(x[0], "slice", x[1], op("add", x[1], x[2])),
+        "slice[List]": (x) => method(x[0], "slice", x[1], op.add(x[1], x[2])),
+        "slice[Ascii]": (x) => method(x[0], "slice", x[1], op.add(x[1], x[2])),
         "char[Ascii]": (x) => func("String.fromCharCode", x),
         "char[byte]": (x) => func("String.fromCharCode", x),
         "sorted[Ascii]": (x) =>
@@ -178,9 +175,9 @@ const javascriptLanguage: Language = {
         right_align: (x) => method(x[0], "padStart", x[1]),
         join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
         int_to_dec: (x) =>
-          op("concat[Text]", text(""), implicitConversion("int_to_dec", x[0])),
+          op["concat[Text]"](text(""), implicitConversion("int_to_dec", x[0])),
         dec_to_int: (x) =>
-          op("bit_not", op("bit_not", implicitConversion("dec_to_int", x[0]))),
+          op.bit_not(op.bit_not(implicitConversion("dec_to_int", x[0]))),
         "reversed[List]": (x) => method(x[0], "reverse"),
         "reversed[Ascii]": (x) =>
           method(
@@ -194,7 +191,7 @@ const javascriptLanguage: Language = {
             "join",
             text(""),
           ),
-        append: (x) => op("concat[List]", x[0], list([x[1]])),
+        append: (x) => op["concat[List]"](x[0], list([x[1]])),
         bool_to_int: (x) => implicitConversion("bool_to_int", x[0]),
         int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
         "contains[Table]": (x) => infix("in", x[1], x[0]),
@@ -211,6 +208,8 @@ const javascriptLanguage: Language = {
         split: "split",
         replace: "replaceAll",
         repeat: "repeat",
+        starts_with: "startsWith",
+        ends_with: "endsWith",
       }),
       mapTo(func)({
         abs: "abs",

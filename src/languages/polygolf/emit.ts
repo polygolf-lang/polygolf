@@ -117,7 +117,7 @@ function emitNodeWithoutAnnotation(
     if (op === "set_at") {
       return emitNodeWithoutAnnotation(
         assignment(
-          opNode("at[Ascii]", args[0] as Node, args[1] as Node) as any,
+          opNode["at[Ascii]"](args[0] as Node, args[1] as Node) as any,
           args[2] as Node,
         ),
         asStatement,

@@ -45,9 +45,10 @@ import {
   type ArrayType,
   type TableType,
   opCodeDefinitions,
-  type ArgTypes,
+  type AnyOpCodeArgTypes,
   OpCodeFrontNamesToOpCodes,
   integerType,
+  type Rest,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -236,7 +237,7 @@ export function calcTypeAndResolveOpCode(
     case "ForDifferenceRange":
       return voidType;
     case "ImplicitConversion": {
-      return type(op(expr.behavesLike, expr.expr));
+      return type(op.unsafe(expr.behavesLike, expr.expr));
     }
   }
   throw new Error(`Type error. Unexpected node ${stringify(expr)}.`);
@@ -247,26 +248,22 @@ function getTypeBitNot(t: IntegerType): IntegerType {
 }
 
 export function getInstantiatedOpCodeArgTypes(op: OpCode): Type[] {
-  const type = opCodeDefinitions[op].args;
-  const instantiate = instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) });
-  if (!("variadic" in type)) {
-    return type.map(instantiate);
-  }
-  return Array(type.min).fill(instantiate(type.variadic));
+  return getGenericOpCodeArgTypes(op).map(
+    instantiateGenerics({ T1: int(0, 100), T2: int(0, 100) }),
+  );
 }
 
 export function getGenericOpCodeArgTypes(op: OpCode): Type[] {
   const type = opCodeDefinitions[op].args;
-  if (!("variadic" in type)) {
-    return [...type];
-  }
-  return Array(type.min).fill(type.variadic);
+  return type.filter((x) => !("rest" in x)) as Type[];
 }
 
-export function expectedTypesToString(expectedTypes: ArgTypes): string {
-  return "variadic" in expectedTypes
-    ? `[...${toString(expectedTypes.variadic)}]`
-    : `[${expectedTypes.map(toString).join(", ")}]`;
+export function expectedTypesToString(
+  expectedTypes: AnyOpCodeArgTypes,
+): string {
+  return `[${expectedTypes
+    .map((x) => ("rest" in x ? `...${toString(x.rest)}` : toString(x)))
+    .join(", ")}]`;
 }
 
 /**
@@ -276,16 +273,21 @@ export function expectedTypesToString(expectedTypes: ArgTypes): string {
  * @param expectedTypes Expected types (array of types or variadic object).
  * @returns True iff it is a match.
  */
-function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
-  const variadic = "variadic" in expectedTypes;
-  if (variadic && expectedTypes.min > gotTypes.length) return false;
-  if (!variadic && expectedTypes.length !== gotTypes.length) return false;
+function isTypeMatch(gotTypes: Type[], expectedTypes: AnyOpCodeArgTypes) {
+  const isVariadic =
+    expectedTypes.length > 0 && "rest" in expectedTypes.at(-1)!;
+  if (isVariadic && gotTypes.length < expectedTypes.length - 1) return false;
+  if (!isVariadic && expectedTypes.length !== gotTypes.length) return false;
   const params: Record<string, Type> = {};
   const instantiate = instantiateGenerics(params);
   let i = 0;
   for (let got of gotTypes) {
     got = instantiate(got);
-    let exp = instantiate(variadic ? expectedTypes.variadic : expectedTypes[i]);
+    let exp = instantiate(
+      isVariadic && i >= expectedTypes.length - 1
+        ? (expectedTypes.at(-1) as Rest).rest
+        : (expectedTypes[i] as Type),
+    );
     if (exp.kind === "List" && got.kind === "List") {
       if (exp.member.kind === "TypeArg" && !(exp.member.name in params)) {
         params[exp.member.name] = got.member;
@@ -321,7 +323,11 @@ function isTypeMatch(gotTypes: Type[], expectedTypes: ArgTypes) {
   return true;
 }
 
-export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
+export function getOpCodeTypeFromTypes(
+  opCode: OpCode,
+  got: Type[],
+  skipAdditionalChecks = false,
+): Type {
   switch (opCode) {
     // binary
     // (num, num) => num
@@ -576,18 +582,51 @@ export function getOpCodeTypeFromTypes(opCode: OpCode, got: Type[]): Type {
     }
     case "text_multireplace":
       return text();
+    case "starts_with":
+    case "ends_with":
+      return booleanType;
     case "slice[byte]":
     case "slice[codepoint]":
-    case "slice[Ascii]": {
-      const [t, i1, i2] = got as [TextType, IntegerType, IntegerType];
-      const maximum = min(
-        t.codepointLength.high,
-        max(0n, sub(i2.high, i1.low)),
+    case "slice[Ascii]":
+    case "slice_back[byte]":
+    case "slice_back[codepoint]":
+    case "slice_back[Ascii]": {
+      const t = got[0] as TextType;
+      const start = got[1] as IntegerType;
+      const length = got[2] as IntegerType;
+      const startPlusLength = getArithmeticType("add", start, length);
+      if (
+        skipAdditionalChecks ||
+        !opCode.includes("back") ||
+        isSubtype(startPlusLength, integerType(-Infinity, 0))
+      )
+        return text(
+          int(0n, min(t.codepointLength.high, length.high)),
+          t.isAscii,
+        );
+      throw new Error(
+        `Type error. start index + length must be nonpositive, but got ${toString(
+          startPlusLength,
+        )}.`,
       );
-      return text(int(0n, maximum), t.isAscii);
     }
     case "slice[List]":
       return got[0];
+    case "slice_back[List]": {
+      const start = got[1] as IntegerType;
+      const length = got[2] as IntegerType;
+      const startPlusLength = getArithmeticType("add", start, length);
+      if (
+        skipAdditionalChecks ||
+        isSubtype(startPlusLength, integerType(-Infinity, 0))
+      )
+        return got[0];
+      throw new Error(
+        `Type error. start index + length must be nonpositive, but got ${toString(
+          startPlusLength,
+        )}.`,
+      );
+    }
     case "ord_at[codepoint]":
     case "ord_at_back[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);

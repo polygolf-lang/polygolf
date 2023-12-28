@@ -1,3 +1,4 @@
+import type { Node } from "./IR";
 import {
   type Type,
   typeArg,
@@ -12,32 +13,32 @@ import {
 } from "./types";
 
 interface OpCodeDefinition {
-  args: Readonly<ArgTypes>;
+  args: AnyOpCodeArgTypes;
   front?: true | string;
   assoc?: true;
   commutes?: true;
 }
 
-interface Variadic {
-  variadic: Type;
-  min: number;
+export interface Rest<T extends Type = Type> {
+  rest: T;
 }
-export type ArgTypes = Variadic | readonly Type[];
-function variadic(type: Type, min = 2): Variadic {
-  return {
-    variadic: type,
-    min,
-  };
+export type AnyOpCodeArgTypes =
+  | readonly [...(readonly Type[])]
+  | readonly [...(readonly Type[]), Rest];
+function rest<T extends Type>(rest: T): Rest<T> {
+  return { rest };
 }
 
 const T1 = typeArg("T1");
 const T2 = typeArg("T2");
 
+const int2OrMore = [int(), int(), rest(int())] as const;
+const bool2OrMore = [bool, bool, rest(bool)] as const;
 export const opCodeDefinitions = {
   // Arithmetic
-  add: { args: variadic(int()), front: "+", assoc: true, commutes: true },
+  add: { args: int2OrMore, front: "+", assoc: true, commutes: true },
   sub: { args: [int(), int()], front: "-" },
-  mul: { args: variadic(int()), front: "*", assoc: true, commutes: true },
+  mul: { args: int2OrMore, front: "*", assoc: true, commutes: true },
   div: { args: [int(), int()], front: "div" },
   trunc_div: { args: [int(), int()] },
   unsigned_trunc_div: { args: [int(), int()] },
@@ -45,14 +46,14 @@ export const opCodeDefinitions = {
   mod: { args: [int(), int()], front: "mod" },
   rem: { args: [int(), int()] },
   unsigned_rem: { args: [int(), int()] },
-  bit_and: { args: variadic(int()), front: "&", assoc: true, commutes: true },
-  bit_or: { args: variadic(int()), front: "|", assoc: true, commutes: true },
-  bit_xor: { args: variadic(int()), front: "~", assoc: true, commutes: true },
+  bit_and: { args: int2OrMore, front: "&", assoc: true, commutes: true },
+  bit_or: { args: int2OrMore, front: "|", assoc: true, commutes: true },
+  bit_xor: { args: int2OrMore, front: "~", assoc: true, commutes: true },
   bit_shift_left: { args: [int(), int(0)], front: "<<" },
   bit_shift_right: { args: [int(), int(0)], front: ">>" },
-  gcd: { args: variadic(int()), front: true, assoc: true, commutes: true },
-  min: { args: variadic(int()), front: true, assoc: true, commutes: true },
-  max: { args: variadic(int()), front: true, assoc: true, commutes: true },
+  gcd: { args: int2OrMore, front: true, assoc: true, commutes: true },
+  min: { args: int2OrMore, front: true, assoc: true, commutes: true },
+  max: { args: int2OrMore, front: true, assoc: true, commutes: true },
   neg: { args: [int()], front: "-" },
   abs: { args: [int()], front: true },
   bit_not: { args: [int()], front: "~" },
@@ -72,14 +73,14 @@ export const opCodeDefinitions = {
   "println[Text]": { args: [text()], front: "println" },
   "println[Int]": { args: [int()], front: "println" },
   println_list_joined: { args: [list(text()), text()] },
-  println_many_joined: { args: variadic(text(), 2) },
+  println_many_joined: { args: [text(), text(), rest(text())] },
   "putc[byte]": { args: [int(0, 255)], front: true },
   "putc[codepoint]": { args: [int(0, 0x10ffff)], front: true },
   "putc[Ascii]": { args: [int(0, 127)], front: "putc" },
 
   // Bool arithmetic
-  or: { args: variadic(bool), front: true, assoc: true, commutes: true },
-  and: { args: variadic(bool), front: true, assoc: true, commutes: true },
+  or: { args: bool2OrMore, front: true, assoc: true, commutes: true },
+  and: { args: bool2OrMore, front: true, assoc: true, commutes: true },
   unsafe_or: { args: [bool, bool], front: true, assoc: true },
   unsafe_and: { args: [bool, bool], front: true },
   not: { args: [bool], front: true },
@@ -117,9 +118,22 @@ export const opCodeDefinitions = {
 
   // Slice
   "slice[codepoint]": { args: [text(), int(0), int(0)], front: true },
+  "slice_back[codepoint]": {
+    args: [text(), int("-oo", -1), int(0)],
+    front: true,
+  },
   "slice[byte]": { args: [text(), int(0), int(0)], front: true },
+  "slice_back[byte]": { args: [text(), int("-oo", -1), int(0)], front: true },
   "slice[Ascii]": { args: [ascii, int(0), int(0)], front: "slice" },
+  "slice_back[Ascii]": {
+    args: [ascii, int("-oo", -1), int(0)],
+    front: "slice",
+  },
   "slice[List]": { args: [list(T1), int(0), int(0)], front: "slice" },
+  "slice_back[List]": {
+    args: [list(T1), int("-oo", -1), int(0)],
+    front: "slice",
+  },
 
   // Chars
   "ord_at[byte]": { args: [text(), int(0)] },
@@ -166,8 +180,8 @@ export const opCodeDefinitions = {
   include: { args: [set(T1), T1], front: true },
   push: { args: [list(T1), T1], front: true },
   append: { args: [list(T1), T1], front: ".." },
-  "concat[List]": { args: variadic(list(T1)), front: "..", assoc: true },
-  "concat[Text]": { args: variadic(text()), front: "..", assoc: true },
+  "concat[List]": { args: [rest(list(T1))], front: "..", assoc: true },
+  "concat[Text]": { args: [rest(text())], front: "..", assoc: true },
 
   // Text ops
   repeat: { args: [text(), int(0)], front: true },
@@ -176,7 +190,9 @@ export const opCodeDefinitions = {
   join: { args: [list(text()), text()], front: true },
   right_align: { args: [text(), int(0)], front: true },
   replace: { args: [text(), text(int(1)), text()], front: true },
-  text_multireplace: { args: variadic(text(), 2) },
+  text_multireplace: { args: [text(), text(), rest(text())] },
+  starts_with: { args: [text(), text()], front: true },
+  ends_with: { args: [text(), text()], front: true },
 
   // Text / Bool <-> Int
   int_to_bin_aligned: { args: [int(0), int(0)], front: true },
@@ -190,6 +206,20 @@ export const opCodeDefinitions = {
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
+
+export type OpCodeArgTypes<T extends OpCode = OpCode> =
+  (typeof opCodeDefinitions)[T]["args"];
+
+type ValuesOfLengthOf<T extends readonly [...unknown[]]> = {
+  [K in keyof T]: Node;
+};
+
+export type OpCodeArgValues<
+  O extends OpCode = OpCode,
+  Types extends OpCodeArgTypes<O> = OpCodeArgTypes<O>,
+> = Types extends readonly [...infer T, Rest]
+  ? [...ValuesOfLengthOf<T>, ...(readonly Node[])]
+  : ValuesOfLengthOf<Types>;
 
 export const opCodeDescriptions: Record<AnyOpCode, string> = {
   add: "Integer addition.",
@@ -281,12 +311,20 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   // Slice
   "slice[codepoint]":
     "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in codepoints.",
+  "slice_back[codepoint]":
+    "Returns a text slice that starts at the given -1-based backwards index and has given length. Start and length are measured in codepoints.",
   "slice[byte]":
     "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in bytes.",
+  "slice_back[byte]":
+    "Returns a text slice that starts at the given -1-based backwards index and has given length. Start and length are measured in bytes.",
   "slice[Ascii]":
     "Returns a text slice that starts at the given 0-based index and has given length.",
+  "slice_back[Ascii]":
+    "Returns a text slice that starts at the given -1-based backwards index and has given length.",
   "slice[List]":
     "Returns a list slice that starts at the given 0-based index and has given length.",
+  "slice_back[List]":
+    "Returns a list slice that starts at the given -1-based backwards index and has given length.",
 
   // Chars
   "ord_at[byte]":
@@ -359,6 +397,8 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   replace: "Replaces all occurences of a given text with another text.",
   text_multireplace:
     "Performs simultaneos replacement of multiple pairs of texts.",
+  starts_with: "Checks whether the second argument is a prefix of the first.",
+  ends_with: "Checks whether the second argument is a suffix of the first.",
 
   // Text / Bool <-> Int
   int_to_bin_aligned:
@@ -389,7 +429,11 @@ export type NullaryOpCode = OpCode<{ args: Readonly<[]> }>;
 export type UnaryOpCode = OpCode<{ args: Readonly<[Type]> }>;
 export type BinaryOpCode = OpCode<{ args: Readonly<[Type, Type]> }>;
 export type TernaryOpCode = OpCode<{ args: Readonly<[Type, Type, Type]> }>;
-export type VariadicOpCode = OpCode<{ args: Variadic }>;
+export type VariadicOpCode = {
+  [K in AnyOpCode]: OpCodeArgTypes<K> extends readonly [...Type[], Rest]
+    ? K
+    : never;
+}[AnyOpCode];
 export type AssociativeOpCode = OpCode<{ assoc: true }>;
 export type CommutativeOpCode = OpCode<{ commutes: true }>;
 export type ConversionOpCode = UnaryOpCode & `${string}_${string}`;
@@ -466,7 +510,7 @@ export function userName(opCode: OpCode) {
 export function arity(op: OpCode): number {
   try {
     const args = opCodeDefinitions[op].args;
-    if ("variadic" in args) return -1;
+    if (args.length > 0 && "rest" in args.at(-1)!) return -1;
     return args.length;
   } catch (e) {
     console.log("arity of", op);
@@ -476,8 +520,8 @@ export function arity(op: OpCode): number {
 
 export function matchesOpCodeArity(op: OpCode, arity: number) {
   const expectedTypes = opCodeDefinitions[op].args;
-  if ("variadic" in expectedTypes) {
-    return arity >= expectedTypes.min;
+  if (expectedTypes.length > 0 && "rest" in expectedTypes.at(-1)!) {
+    return arity >= expectedTypes.length - 1;
   }
   return expectedTypes.length === arity;
 }

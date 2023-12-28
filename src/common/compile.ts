@@ -106,9 +106,7 @@ function getSingleOrUndefined<T>(x: T | T[] | undefined): T | undefined {
   if (Array.isArray(x)) {
     if (x.length > 1)
       throw new Error(
-        `Programming error. Expected at most 1 item, but got ${JSON.stringify(
-          x,
-        )}.`,
+        `Programming error. Expected at most 1 item, but got ${stringify(x)}.`,
       );
     return x[0];
   }
@@ -582,7 +580,7 @@ export function typecheck(program: Node, everyNode = true): Node {
     if (everyNode || (node.kind === "Op" && !isOpCode(node.op))) {
       const t = getTypeAndResolveOpCode(node, spine);
       if (isOp()(node) && t.opCode !== undefined) {
-        return op(t.opCode, ...node.args);
+        return op.unsafe(t.opCode, ...node.args);
       }
     }
   }).node;
