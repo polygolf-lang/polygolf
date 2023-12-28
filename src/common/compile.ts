@@ -106,9 +106,7 @@ function getSingleOrUndefined<T>(x: T | T[] | undefined): T | undefined {
   if (Array.isArray(x)) {
     if (x.length > 1)
       throw new Error(
-        `Programming error. Expected at most 1 item, but got ${JSON.stringify(
-          x,
-        )}.`,
+        `Programming error. Expected at most 1 item, but got ${stringify(x)}.`,
       );
     return x[0];
   }
