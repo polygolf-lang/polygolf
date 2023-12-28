@@ -35,7 +35,6 @@ import {
 } from "../IR";
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
-import { tempId } from "../common/symbols";
 
 export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
   return {
@@ -426,7 +425,7 @@ export const whileToRecursion: Plugin = {
 
 function whileToRecursionVisitor(node: IR.Node) {
   if (node.kind !== "While") return;
-  const name = id(tempId());
+  const name = id();
   return [
     // Create a function to perform the while
     functionDefinition(

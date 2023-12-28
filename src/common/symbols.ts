@@ -352,9 +352,3 @@ export function readsFromArgv(node: Node): boolean {
 export function readsFromInput(node: Node): boolean {
   return readsFromArgv(node) || readsFromStdin(node);
 }
-
-// TODO: global counter here silly;
-let globalID = 0;
-export function tempId() {
-  return `__tmp_id_${globalID++}`;
-}
