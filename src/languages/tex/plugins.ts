@@ -33,7 +33,7 @@ export const exprTreeToFlat2AC: Plugin = {
   visit(node, spine) {
     if (spine.parent?.node.kind !== "Block") return;
     if (isOfKind("Assignment", "Op", "If")(node))
-      return [...convertNodeToListOfStatements(node)];
+      return block(convertNodeToListOfStatements(node));
   },
 };
 
