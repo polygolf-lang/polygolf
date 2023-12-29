@@ -68,7 +68,6 @@ const janetLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      ...truncatingOpsPlugins,
       mapOps({
         right_align: (x) =>
           func(
@@ -125,6 +124,11 @@ const janetLanguage: Language = {
           rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1n)),
       }),
       mapOpsTo.builtin({ true: "true", false: "false" }),
+      mapOpsTo.func({
+        is_even: "even?",
+        is_odd: "odd?",
+      }),
+      ...truncatingOpsPlugins,
       mapMutationTo.func({
         succ: "++",
         pred: "--",

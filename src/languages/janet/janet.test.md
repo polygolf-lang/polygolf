@@ -56,6 +56,11 @@ $a != 2;
 $a >= 2;
 $a > 2;
 
+% Parity
+
+is_even $a;
+is_odd $a;
+
 % Text Encoding
 at[byte] "abc" 1;
 ord "g";
@@ -88,7 +93,7 @@ int_to_hex_aligned 31 7;
 ```
 
 ```janet nogolf
-(var a 0)(var b"xy")(var c(= 0 0))(var d @["q""r""s"])(and c c)(or c c)(not c)(bnot a)(- a)(math/abs a)(+ 2 a)(- a 2)(* 2 a)(div a 2)(math/pow a 2)(% a 2)(band 2 a)(bor 2 a)(bxor 2 a)(max 2 a)(min 2 a)(blshift a 2)(brshift a 2)(< a 2)(<= a 2)(= a 2)(not= a 2)(>= a 2)(> a 2)(slice"abc"1 2)("g"0)("ijk"1)(length b)(string/format"%c"99)(slice"abcdefg"2 5)(take 3"abcdefg")(="a""b")(not="a""b")(@{1 2}1)(d 1)(d(-(length d)2))(last d)(length d)(string/join d"_")(sorted d)(string b"xyz")(string 5)(string/format"%X"7)(eval-string"5")(string/split"y""xyz")(reverse b)(reverse d)(string/repeat b 3)(string/format(string"%"(string 7)"s")"he")(string/format(string"%0"(string 7)"X")31)
+(var a 0)(var b"xy")(var c(= 0 0))(var d @["q""r""s"])(and c c)(or c c)(not c)(bnot a)(- a)(math/abs a)(+ 2 a)(- a 2)(* 2 a)(div a 2)(math/pow a 2)(% a 2)(band 2 a)(bor 2 a)(bxor 2 a)(max 2 a)(min 2 a)(blshift a 2)(brshift a 2)(< a 2)(<= a 2)(= a 2)(not= a 2)(>= a 2)(> a 2)(even? a)(odd? a)(slice"abc"1 2)("g"0)("ijk"1)(length b)(string/format"%c"99)(slice"abcdefg"2 5)(take 3"abcdefg")(="a""b")(not="a""b")(@{1 2}1)(d 1)(d(-(length d)2))(last d)(length d)(string/join d"_")(sorted d)(string b"xyz")(string 5)(string/format"%X"7)(eval-string"5")(string/split"y""xyz")(reverse b)(reverse d)(string/repeat b 3)(string/format(string"%"(string 7)"s")"he")(string/format(string"%0"(string 7)"X")31)
 ```
 
 ## Looping

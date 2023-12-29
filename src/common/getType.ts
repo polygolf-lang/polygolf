@@ -474,6 +474,9 @@ export function getOpCodeTypeFromTypes(
       const t = got[0] as IntegerType;
       return int(neg(t.high), neg(t.low));
     }
+    case "is_even":
+    case "is_odd":
+      return booleanType;
     case "succ":
       return getArithmeticType(
         "add",
