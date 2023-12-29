@@ -59,7 +59,7 @@ import {
   pickAnyInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
-import { hardcode, listOpsToTextOps } from "../../plugins/static";
+import { listOpsToTextOps } from "../../plugins/static";
 import { base10DecompositionToFloatLiteralAsBuiltin } from "./plugins";
 import { getType } from "../../common/getType";
 import { conditionalOpToAndOr } from "../../plugins/conditions";
@@ -69,7 +69,6 @@ const luaLanguage: Language = {
   extension: "lua",
   emitter: emitProgram,
   phases: [
-    search(hardcode()),
     required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint()),
     search(

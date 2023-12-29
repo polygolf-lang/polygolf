@@ -37,11 +37,7 @@ import {
   mapMutationTo,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
-import {
-  golfStringListLiteral,
-  hardcode,
-  listOpsToTextOps,
-} from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
@@ -81,7 +77,6 @@ const swiftLanguage: Language = {
   extension: "swift",
   emitter: emitProgram,
   phases: [
-    search(hardcode()),
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint()),
     search(

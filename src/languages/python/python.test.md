@@ -319,7 +319,7 @@ list_get (list "12345" "ABC") 1;
 println (list_get (list "12345" "ABC") 1);
 ```
 
-```py simple
+```py simple no:hardcode
 ["12345","ABC"][1]
 print("1A2B3C4 5"[1::2])
 ```
