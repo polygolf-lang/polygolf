@@ -85,7 +85,7 @@ export function sexpr(
     const alias0 = deprecatedAliases[callee];
     const alias =
       typeof alias0 === "string"
-        ? { opCode: alias0, callee: alias0, newArgs: (x: any) => x }
+        ? { opCode: alias0, callee: alias0, asRhsOfAssignment: false }
         : alias0;
     const uName = isOpCode(alias.opCode)
       ? userName(alias.opCode)
@@ -94,7 +94,7 @@ export function sexpr(
       new PolygolfError(
         `Deprecated alias used: ${callee}. Use ${alias.opCode} ${
           alias.opCode === uName ? "" : `or ${uName} `
-        }instead.`,
+        }${alias.asRhsOfAssignment ? "as RHS of an assignment " : ""}instead.`,
         calleeIdent.source,
       ),
     );
@@ -620,6 +620,7 @@ function toAssignment(opCode: OpCode, callee: string) {
   return {
     opCode,
     callee,
+    asRhsOfAssignment: true,
   };
 }
 
@@ -627,6 +628,7 @@ const deprecatedAliases: Record<
   string,
   | OpCode
   | {
+      asRhsOfAssignment: boolean;
       opCode: OpCode;
       callee: string;
     }
