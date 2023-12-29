@@ -43,8 +43,9 @@ export interface ImplicitConversion extends BaseNode {
  
 * Polygolf ensures that in the IR, there will never be:
 
- * - Op(neg)
- * - Op(sub)
+ * - Op(neg), Op(sub)
+ * - Op(pred), Op(succ)
+ * - Op(is_even), Op(is_odd)
  * - Op as a direct child of a Op with the same associative OpCode
  * - Integer as a nonfirst child of a commutative Op
  * - Boolean negation of a boolean negation
@@ -204,6 +205,10 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   if (!isOpCode(opCode)) return _op(opCode, ...args);
   if (opCode === "pred") return op.add(args[0], int(-1n));
   if (opCode === "succ") return op.add(args[0], int(1n));
+  if (opCode === "is_even")
+    return op["eq[Int]"](int(0), op.mod(args[0], int(2)));
+  if (opCode === "is_odd")
+    return op["eq[Int]"](int(1), op.mod(args[0], int(2)));
   if (isUnary(opCode)) {
     const value = evalUnary(opCode, args[0]);
     if (value !== null) return value;

@@ -142,6 +142,31 @@ export function mapOpsUsing<
         if (isOp()(node)) {
           let exprs = node.args;
           if (
+            ("is_even" in opCodeMap || "is_odd" in opCodeMap) &&
+            isOp("eq[Int]", "neq[Int]", "leq", "geq", "lt", "gt")(node)
+          ) {
+            let [a, b] = node.args;
+            if (isInt(0n, 1n)(b)) {
+              [a, b] = [b, a];
+            }
+            if (isInt(0n, 1n)(a) && isOp("mod")(b) && isInt(2n)(b.args[1])) {
+              let parity: undefined | 0 | 1;
+              if (a.value === 0n) {
+                if (isOp("neq[Int]", "gt")(node)) parity = 1;
+                else if (isOp("eq[Int]", "leq")(node)) parity = 0;
+              } else {
+                if (isOp("neq[Int]", "lt")(node)) parity = 0;
+                else if (isOp("eq[Int]", "geq")(node)) parity = 1;
+              }
+              if (parity === 0 && "is_even" in opCodeMap) {
+                return map("is_even", [b.args[0]]);
+              }
+              if (parity === 1 && "is_odd" in opCodeMap) {
+                return map("is_odd", [b.args[0]]);
+              }
+            }
+          }
+          if (
             node.op === "add" &&
             exprs.length === 2 &&
             isInt(-1n, 1n)(exprs[0])

@@ -3,6 +3,10 @@ Hover opcode name to see a description.
 
 | Alias | Full name | Input | Output |
 |-------|-----------|-------|--------|
+| is_even | [is_even](## "Evenness predicate.") | [Int] | Bool |
+| is_odd | [is_odd](## "Oddness predicate.") | [Int] | Bool |
+| succ | [succ](## "Integer successor.") | [Int] | Int |
+| pred | [pred](## "Integer predecessor.") | [Int] | Int |
 | + | [add](## "Integer addition.") | [Int, Int, ...Int] | Int |
 | - | [sub](## "Integer subtraction.")<br>[neg](## "Integer negation.") | [Int, Int]<br>[Int] | Int<br>Int |
 | * | [mul](## "Integer multiplication.") | [Int, Int, ...Int] | Int |
