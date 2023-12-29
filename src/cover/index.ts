@@ -28,7 +28,7 @@ import {
   OpCodes,
   OpCodesUser,
   isSubtype,
-  OpCode,
+  type OpCode,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";

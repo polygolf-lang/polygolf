@@ -20,6 +20,7 @@ import {
   textType,
   booleanType,
   type Type,
+  lengthToArrayIndexType,
 } from "../IR";
 import parse from "./parse";
 
@@ -96,7 +97,10 @@ describe("Parse annotations", () => {
   expectTypeParse("(Text 120)", textType(120));
   expectTypeParse("(Text 40..120)", textType(integerType(40, 120)));
   expectTypeParse("(Ascii 40..120)", textType(integerType(40, 120), true));
-  expectTypeParse("(Array Text 5)", arrayType(textType(), 5));
+  expectTypeParse(
+    "(Array Text 5)",
+    arrayType(textType(), lengthToArrayIndexType(5)),
+  );
   expectTypeParse("(List Text)", listType(textType()));
   expectTypeParse("(List (List Text))", listType(listType(textType())));
   expectTypeParse("(List -999..999)", listType(integerType(-999, 999)));

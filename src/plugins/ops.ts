@@ -161,7 +161,7 @@ export function mapOpsUsing<
             const negation = map("neg", [node.args[1]]);
             if (negation !== undefined) {
               if (exprs.length > 2) {
-                exprs = [negation, ...exprs.slice(2)];
+                exprs = [negation, ...exprs.slice(2)] as any;
               } else {
                 return negation;
               }

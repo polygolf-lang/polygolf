@@ -32,15 +32,16 @@ function rest<T extends Type>(rest: T): Rest<T> {
 const T1 = typeArg("T1");
 const T2 = typeArg("T2");
 
-const int2OrMore = [int(), int(), rest(int())] as const;
-const bool2OrMore = [bool, bool, rest(bool)] as const;
+function atLeast2<T extends Type>(type: T): [T, T, Rest<T>] {
+  return [type, type, rest(type)];
+}
 export const opCodeDefinitions = {
   // Arithmetic
   succ: { args: [int()] },
   pred: { args: [int()] },
-  add: { args: int2OrMore, front: "+", assoc: true, commutes: true },
+  add: { args: atLeast2(int()), front: "+", assoc: true, commutes: true },
   sub: { args: [int(), int()], front: "-" },
-  mul: { args: int2OrMore, front: "*", assoc: true, commutes: true },
+  mul: { args: atLeast2(int()), front: "*", assoc: true, commutes: true },
   div: { args: [int(), int()], front: "div" },
   trunc_div: { args: [int(), int()] },
   unsigned_trunc_div: { args: [int(), int()] },
@@ -48,14 +49,14 @@ export const opCodeDefinitions = {
   mod: { args: [int(), int()], front: "mod" },
   rem: { args: [int(), int()] },
   unsigned_rem: { args: [int(), int()] },
-  bit_and: { args: int2OrMore, front: "&", assoc: true, commutes: true },
-  bit_or: { args: int2OrMore, front: "|", assoc: true, commutes: true },
-  bit_xor: { args: int2OrMore, front: "~", assoc: true, commutes: true },
+  bit_and: { args: atLeast2(int()), front: "&", assoc: true, commutes: true },
+  bit_or: { args: atLeast2(int()), front: "|", assoc: true, commutes: true },
+  bit_xor: { args: atLeast2(int()), front: "~", assoc: true, commutes: true },
   bit_shift_left: { args: [int(), int(0)], front: "<<" },
   bit_shift_right: { args: [int(), int(0)], front: ">>" },
-  gcd: { args: int2OrMore, front: true, assoc: true, commutes: true },
-  min: { args: int2OrMore, front: true, assoc: true, commutes: true },
-  max: { args: int2OrMore, front: true, assoc: true, commutes: true },
+  gcd: { args: atLeast2(int()), front: true, assoc: true, commutes: true },
+  min: { args: atLeast2(int()), front: true, assoc: true, commutes: true },
+  max: { args: atLeast2(int()), front: true, assoc: true, commutes: true },
   neg: { args: [int()], front: "-" },
   abs: { args: [int()], front: true },
   bit_not: { args: [int()], front: "~" },
@@ -81,8 +82,8 @@ export const opCodeDefinitions = {
   "putc[Ascii]": { args: [int(0, 127)], front: "putc" },
 
   // Bool arithmetic
-  or: { args: bool2OrMore, front: true, assoc: true, commutes: true },
-  and: { args: bool2OrMore, front: true, assoc: true, commutes: true },
+  or: { args: atLeast2(bool), front: true, assoc: true, commutes: true },
+  and: { args: atLeast2(bool), front: true, assoc: true, commutes: true },
   unsafe_or: { args: [bool, bool], front: true, assoc: true },
   unsafe_and: { args: [bool, bool], front: true },
   not: { args: [bool], front: true },
@@ -178,8 +179,8 @@ export const opCodeDefinitions = {
   // Adding items
   include: { args: [set(T1), T1], front: true },
   append: { args: [list(T1), T1], front: ".." },
-  "concat[List]": { args: [rest(list(T1))], front: "..", assoc: true },
-  "concat[Text]": { args: [rest(text())], front: "..", assoc: true },
+  "concat[List]": { args: atLeast2(list(T1)), front: "..", assoc: true },
+  "concat[Text]": { args: atLeast2(text()), front: "..", assoc: true },
 
   // Text ops
   repeat: { args: [text(), int(0)], front: true },

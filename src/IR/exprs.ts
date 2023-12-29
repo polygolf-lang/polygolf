@@ -192,7 +192,7 @@ function _op(op: OpCode, ...args: Node[]): Op {
   return {
     kind: "Op",
     op,
-    args,
+    args: args as any,
   };
 }
 

@@ -49,6 +49,7 @@ import {
   OpCodeFrontNamesToOpCodes,
   integerType,
   type Rest,
+  lengthToArrayIndexType,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -159,16 +160,16 @@ export function calcTypeAndResolveOpCode(
     case "Array":
       return array(
         expr.exprs.map(type).reduce((a, b) => union(a, b)),
-        expr.exprs.length,
+        lengthToArrayIndexType(expr.exprs.length),
       );
     case "List":
       return expr.exprs.length > 0
         ? list(expr.exprs.map(type).reduce((a, b) => union(a, b)))
-        : list("void");
+        : list(voidType);
     case "Set":
       return expr.exprs.length > 0
         ? set(expr.exprs.map(type).reduce((a, b) => union(a, b)))
-        : set("void");
+        : set(voidType);
     case "KeyValue": {
       const k = type(expr.key);
       const v = type(expr.value);
@@ -190,7 +191,7 @@ export function calcTypeAndResolveOpCode(
               kTypes.reduce((a, b) => union(a, b) as any),
               vTypes.reduce((a, b) => union(a, b)),
             )
-          : table(int(), "void");
+          : table(int(), voidType);
       }
       throw new Error(
         "Programming error. Type of KeyValue nodes should always be KeyValue.",
