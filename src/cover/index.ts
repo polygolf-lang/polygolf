@@ -83,11 +83,9 @@ for (const lang of langs) {
     return x;
   };
 
-  lang.expr = function (x: Type = integerType(1, 1), preferBuiltin = false) {
+  lang.expr = function (x: Type = integerType(1, 1)) {
     const literal = getLiteralOfType(x, true);
-    return !preferBuiltin && isCompilable(literal, lang)
-      ? literal
-      : nextBuiltin(x);
+    return isCompilable(literal, lang) ? literal : nextBuiltin(x);
   };
 }
 
