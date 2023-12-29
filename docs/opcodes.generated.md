@@ -67,7 +67,7 @@ Hover opcode name to see a description.
 | size[byte] | [size[byte]](## "Returns the length of the text in bytes.") | [Text] | 0..2147483648 |
 | include | [include](## "Modifies the set by including the given item.") | [(Set T1), T1] | Void |
 | push | [push](## "Modifies the list by pushing the given item at the end.") | [(List T1), T1] | Void |
-| .. | [append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.") | [(List T1), T1]<br>[...(List T1)]<br>[...Text] | (List T1)<br>?<br>? |
+| .. | [append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.") | [(List T1), T1]<br>[(List T1), (List T1), ...(List T1)]<br>[Text, Text, ...Text] | (List T1)<br>(List T1)<br>Text |
 | repeat | [repeat](## "Repeats the text a given amount of times.") | [Text, 0..oo] | Text |
 | split | [split](## "Splits the text by the delimiter.") | [Text, Text] | (List Text) |
 | split_whitespace | [split_whitespace](## "Splits the text by any whitespace.") | [Text] | (List Text) |

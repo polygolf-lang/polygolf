@@ -68,6 +68,7 @@ import {
   matchesOpCodeArity,
   isOp,
   userName,
+  lengthToArrayIndexType,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -496,7 +497,7 @@ export function typeSexpr(callee: Token, args: (Type | Integer)[]): Type {
       expectArity(2);
       assertType(args[0]);
       assertNumber(args[1]);
-      return arrayType(args[0], Number(args[1].value));
+      return arrayType(args[0], lengthToArrayIndexType(Number(args[1].value)));
     case "List":
       expectArity(1);
       assertType(args[0]);

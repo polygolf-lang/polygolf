@@ -219,7 +219,7 @@ export function useIndexCalls(
 
 export function backwardsIndexToForwards(
   addLength = true,
-  ops: OpCode[] = [
+  ops = [
     "at_back[Ascii]" as const,
     "at_back[byte]" as const,
     "at_back[codepoint]" as const,
@@ -258,29 +258,29 @@ export function backwardsIndexToForwards(
           "set_at_back[List]": op["set_at[List]"](
             collection,
             addLength ? op.add(index, op["size[List]"](collection)) : index,
-            third,
+            third!,
           ),
           "slice_back[Ascii]": op["slice[Ascii]"](
             collection,
             addLength ? op.add(index, op["size[Ascii]"](collection)) : index,
-            third,
+            third!,
           ),
           "slice_back[byte]": op["slice[byte]"](
             collection,
             addLength ? op.add(index, op["size[byte]"](collection)) : index,
-            third,
+            third!,
           ),
           "slice_back[codepoint]": op["slice[codepoint]"](
             collection,
             addLength
               ? op.add(index, op["size[codepoint]"](collection))
               : index,
-            third,
+            third!,
           ),
           "slice_back[List]": op["slice[List]"](
             collection,
             addLength ? op.add(index, op["size[List]"](collection)) : index,
-            third,
+            third!,
           ),
         }).visit(node, spine, context);
       }

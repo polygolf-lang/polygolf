@@ -13,10 +13,13 @@ import {
 } from "./IR";
 
 /** The type of the value of a node when evaluated */
-export interface IntegerType {
+export interface IntegerType<
+  Low extends IntegerBound = IntegerBound,
+  High extends IntegerBound = IntegerBound,
+> {
   readonly kind: "integer";
-  readonly low: IntegerBound;
-  readonly high: IntegerBound;
+  readonly low: Low;
+  readonly high: High;
 }
 export interface ArrayIndexType {
   readonly kind: "integer";
@@ -25,42 +28,60 @@ export interface ArrayIndexType {
 }
 export type IntegerBound = bigint | "-oo" | "oo";
 
-export interface TextType {
+export interface TextType<
+  Length extends IntegerType = IntegerType,
+  IsAscii extends boolean = boolean,
+> {
   readonly kind: "text";
-  readonly codepointLength: IntegerType;
-  readonly isAscii: boolean;
+  readonly codepointLength: Length;
+  readonly isAscii: IsAscii;
 }
-export interface KeyValueType {
+export interface KeyValueType<
+  Key extends IntegerType | TextType = IntegerType | TextType,
+  Value extends Type = Type,
+> {
   readonly kind: "KeyValue";
-  readonly key: IntegerType | TextType;
-  readonly value: Type;
+  readonly key: Key;
+  readonly value: Value;
 }
-export interface FunctionType {
+export interface FunctionType<
+  Arguments extends readonly Type[] = readonly Type[],
+  Result extends Type = Type,
+> {
   readonly kind: "Function";
-  readonly arguments: readonly Type[];
-  readonly result: Type;
+  readonly arguments: Arguments;
+  readonly result: Result;
 }
-export interface TableType {
+export interface TableType<
+  Key extends IntegerType | TextType | TypeArg =
+    | IntegerType
+    | TextType
+    | TypeArg,
+  Value extends Type = Type,
+> {
   kind: "Table";
-  key: IntegerType | TextType | TypeArg;
-  value: Type;
+  key: Key;
+  value: Value;
 }
-export interface ArrayType {
+export interface ArrayType<
+  Member extends Type = Type,
+  Length extends ArrayIndexType | TypeArg = ArrayIndexType | TypeArg,
+> {
   kind: "Array";
-  member: Type;
-  length: ArrayIndexType | TypeArg;
+  member: Member;
+  length: Length;
 }
-export interface ListType {
+export interface ListType<Member extends Type = Type> {
   kind: "List";
-  member: Type;
+  member: Member;
 }
-export interface SetType {
+export interface SetType<Member extends Type = Type> {
   kind: "Set";
-  member: Type;
+  member: Member;
 }
-export interface TypeArg {
+export interface TypeArg<Name extends string = string> {
   kind: "TypeArg";
-  name: string;
+  name: Name;
 }
 
 export type Type =
@@ -87,6 +108,8 @@ export const int53Type: Type = integerType(
   9007199254740991n,
 );
 
+export function type<T extends Type>(type: T): T;
+export function type(type: Type | "void" | "boolean" | "int64" | "int53"): Type;
 export function type(
   type: Type | "void" | "boolean" | "int64" | "int53",
 ): Type {
@@ -113,7 +136,10 @@ export function isArrayIndexType(type: Type): type is ArrayIndexType {
   );
 }
 
-export function functionType(args: Type[], result: Type): FunctionType {
+export function functionType<
+  Arguments extends readonly Type[],
+  Result extends Type,
+>(args: Arguments, result: Result): FunctionType<Arguments, Result> {
   return {
     kind: "Function",
     arguments: args,
@@ -121,53 +147,56 @@ export function functionType(args: Type[], result: Type): FunctionType {
   };
 }
 
-export function keyValueType(
-  key: IntegerType | TextType,
-  value: Type | "void" | "boolean",
-): Type {
+export function keyValueType<
+  Key extends IntegerType | TextType,
+  Value extends Type,
+>(key: Key, value: Value): KeyValueType<Key, Value> {
   return {
     kind: "KeyValue",
     key,
-    value: type(value),
+    value,
   };
 }
 
-export function tableType(
-  key: IntegerType | TextType | TypeArg,
-  value: Type | "void" | "boolean",
-): TableType {
+export function tableType<
+  Key extends IntegerType | TextType | TypeArg,
+  Value extends Type,
+>(key: Key, value: Value): TableType<Key, Value> {
   return {
     kind: "Table",
     key,
-    value: type(value),
+    value,
   };
 }
 
-export function setType(member: Type | "void" | "boolean"): SetType {
+export function setType<Member extends Type>(member: Member): SetType<Member> {
   return {
     kind: "Set",
-    member: type(member),
+    member,
   };
 }
 
-export function listType(member: Type | "void" | "boolean"): ListType {
+export function listType<Member extends Type>(
+  member: Member,
+): ListType<Member> {
   return {
     kind: "List",
-    member: type(member),
+    member,
   };
 }
 
-export function arrayType(
-  member: Type | "void" | "boolean",
-  length: number | ArrayIndexType | TypeArg,
-): ArrayType {
+export function lengthToArrayIndexType(length: number): ArrayIndexType {
+  return { kind: "integer", low: 0n, high: BigInt(length - 1) };
+}
+
+export function arrayType<
+  Member extends Type,
+  Length extends ArrayIndexType | TypeArg,
+>(member: Member, length: Length): ArrayType<Member, Length> {
   return {
     kind: "Array",
     member: type(member),
-    length:
-      typeof length === "number"
-        ? { kind: "integer", low: 0n, high: BigInt(length - 1) }
-        : length,
+    length,
   };
 }
 
@@ -217,7 +246,7 @@ export function textType(
   };
 }
 
-export function typeArg(name: string): TypeArg {
+export function typeArg<Name extends string>(name: Name): TypeArg<Name> {
   return { kind: "TypeArg", name };
 }
 
