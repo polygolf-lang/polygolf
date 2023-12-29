@@ -9,6 +9,7 @@ import emitProgram from "./emit";
 import {
   arraysToLists,
   flipBinaryOps,
+  mapBackwardsIndexToForwards,
   mapMutationTo,
   mapOps,
   mapOpsTo,
@@ -25,6 +26,7 @@ import {
   op,
   rangeIndexCall,
   text,
+  isInt,
 } from "../../IR";
 import {
   golfLastPrint,
@@ -95,6 +97,17 @@ const janetLanguage: Language = {
         "contains[Text]": (x) => func("int?", op["find[byte]"](x[0], x[1])),
         "contains[Table]": (x) =>
           op.not(func("nil?", op["at[Table]"](x[0], x[1]))),
+      }),
+      mapOps({
+        "at_back[List]": ([a, b]) =>
+          isInt(-1n)(b) ? func("last", a) : undefined,
+      }),
+      mapBackwardsIndexToForwards({
+        "at_back[Ascii]": "size[Ascii]",
+        "at_back[byte]": "size[byte]",
+        "at_back[codepoint]": "size[codepoint]",
+        "at_back[List]": "size[List]",
+        "with_at_back[List]": "size[List]",
       }),
       mapOps({
         bool_to_int: (x) => conditional(x[0], int(1n), int(0n)),
