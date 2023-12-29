@@ -140,6 +140,14 @@ a={"abc","xyz"}
 a[2]:len()
 ```
 
+```polygolf
+(list 1 2 3) @ 1;
+```
+
+```lua
+({1,2,3})[2]
+```
+
 ## Argv
 
 ```polygolf
