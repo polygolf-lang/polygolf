@@ -74,6 +74,7 @@ function binaryPrecedence(opname: string): number {
     case " ":
       return 1;
   }
+  if (opname.endsWith("=")) return 0;
   throw new Error(
     `Programming error - unknown Nim binary operator '${opname}.'`,
   );
@@ -222,8 +223,6 @@ export default function emitProgram(
           ];
         case "OneToManyAssignment":
           return [joinNodes(",", e.variables), "=", emit(e.expr)];
-        case "MutatingInfix":
-          return [emit(e.variable), "$GLUE$", e.name + "=", emit(e.right)];
         case "ConditionalOp":
           return [
             "if",

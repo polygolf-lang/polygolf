@@ -4,7 +4,6 @@ import {
   type ManyToManyAssignment,
   type OneToManyAssignment,
   type VarDeclarationWithAssignment,
-  type MutatingInfix,
   type VarDeclaration,
   type VarDeclarationBlock,
 } from "./assignments";
@@ -96,7 +95,6 @@ export type Node =
   | VarDeclarationBlock
   | ManyToManyAssignment
   | OneToManyAssignment
-  | MutatingInfix
   | IndexCall
   | RangeIndexCall
   | MethodCall

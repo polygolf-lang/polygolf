@@ -85,6 +85,7 @@ function binaryPrecedence(opname: string): number {
     case "||":
       return 3;
   }
+  if (opname.endsWith("=")) return 0;
   throw new Error(
     `Programming error - unknown Javascript binary operator '${opname}.'`,
   );
@@ -187,8 +188,6 @@ export default function emitProgram(
           ];
         case "OneToManyAssignment":
           return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
-        case "MutatingInfix":
-          return [emit(e.variable), e.name + "=", emit(e.right)];
         case "IndexCall":
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
         case "PropertyCall":

@@ -98,7 +98,7 @@ for $i 0 31 {
 ```
 
 ```janet nogolf
-(for i 0 31(pp(+(+ 1 i)(* i i))))
+(for i 0 31(pp(+ 1 i(* i i))))
 ```
 
 ```polygolf

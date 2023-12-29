@@ -110,6 +110,15 @@ text_replace "" " " "-";
 "".split` `.join`-`
 ```
 
+```polygolf
+$x:0..9 <- 0;
+$x <- ($x + 1):0..9;
+```
+
+```js simple
+x=0;++x
+```
+
 ## Argv
 
 ```polygolf
@@ -227,7 +236,7 @@ for $a 1 100 {
 ```
 
 ```js nogolf
-for(a=1;a<100;a+=1)print(3n^2n**BigInt(a)),print(3n|2n**BigInt(a)),print(3n&2n**BigInt(a)),print(2n**BigInt(a)%3n)
+for(a=1;a<100;++a)print(3n^2n**BigInt(a)),print(3n|2n**BigInt(a)),print(3n&2n**BigInt(a)),print(2n**BigInt(a)%3n)
 ```
 
 ## Fixed length for loop

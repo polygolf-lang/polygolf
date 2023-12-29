@@ -1,17 +1,14 @@
-import { type Plugin, type OpTransformOutput } from "../common/Language";
+import type { Plugin } from "../common/Language";
 import {
   succ,
   assignment,
   infix,
   type BinaryOpCode,
   type Node,
-  type IndexCall,
   indexCall,
-  isBinary,
   isCommutative,
   isInt,
   isNegative,
-  mutatingInfix,
   isOp,
   type OpCode,
   type Op,
@@ -20,39 +17,21 @@ import {
   type UnaryOpCode,
   functionCall,
   propertyCall,
-  isIdent,
   postfix,
   type VariadicOpCode,
   BinaryOpCodes,
-  VariadicOpCodes,
-  isUnary,
   flippedOpCode,
-  isVariadic,
   list,
-  type MutatingInfix,
+  methodCall,
+  type TernaryOpCode,
+  isVariadic,
+  type NullaryOpCode,
+  builtin,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
-import { mapObjectValues } from "../common/arrays";
-
-export function mapOps(
-  opMap: Partial<Record<OpCode, OpTransformOutput>>,
-  name = "mapOps(...)",
-): Plugin {
-  return {
-    name,
-    bakeType: true,
-    visit(node, spine) {
-      if (isOp()(node)) {
-        const op = node.op;
-        const f = opMap[op];
-        if (f !== undefined) {
-          return typeof f === "function" ? f(node.args, spine as Spine<Op>) : f;
-        }
-      }
-    },
-  };
-}
+import { replaceAtIndex } from "../common/arrays";
+import { type CompilationContext } from "@/common/compile";
 
 function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
   for (const [a, b] of [
@@ -65,286 +44,286 @@ function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
   }
 }
 
-export function mapTo<T>(
-  constructor: (x: T, args: readonly Node[]) => Node,
-): (opMap: Partial<Record<OpCode, T>>) => Plugin {
-  function result(
-    opMap: Partial<Record<OpCode, T>>,
-    predicate?: (n: Node, s: Spine) => boolean,
-  ) {
-    enhanceOpMap(opMap);
-    return mapOps(
-      mapObjectValues(
-        opMap,
-        (name) => (n: readonly Node[], s: Spine) =>
-          predicate === undefined || predicate(s.node, s)
-            ? constructor(name, n)
-            : undefined,
-      ),
-      `mapTo(${constructor.name})(${JSON.stringify(opMap)})`,
-    );
-  }
-  return result;
+interface WithPreprocess<T> {
+  value: T;
+  preprocess: (x: readonly Node[]) => readonly Node[];
 }
 
-/**
- * Plugin transforming binary and unary ops to the name and precedence in the target lang.
- * @param opMap OpCode - target op name pairs.
- * @param asMutatingInfix - array of target op names that should be mapped to mutating infix or true for to signify all.
- * @param unaryMapping - The function to transform unary ops.
- * @param binaryMapping - The function to transform binary ops.
- * @returns The plugin closure.
- */
-export function mapUnaryAndBinary<
-  TNames extends string,
-  TNamesMutating extends TNames,
+function isWithPreprocess<T>(x: T | WithPreprocess<T>): x is WithPreprocess<T> {
+  return (
+    typeof x === "object" && x !== null && "preprocess" in x && "value" in x
+  );
+}
+
+export function flipped<T>(
+  value: T,
+): WithPreprocess<T extends TemplateStringsArray ? string : T> {
+  return {
+    value: Array.isArray(value) && "raw" in value ? value[0] : value,
+    preprocess: (x) => [...x].reverse(),
+  };
+}
+
+export type OpMapper<T> = (
+  arg: T,
+  opArgs: readonly Node[],
+  opCode: OpCode,
+  s: Spine,
+  c: CompilationContext,
+) => Node | undefined;
+
+export const generalOpMapper: OpMapper<
+  | Node
+  | ((
+      opArgs: readonly Node[],
+      s: Spine,
+      c: CompilationContext,
+    ) => Node | undefined)
+> = (arg, opArgs, opCode, s, c) =>
+  typeof arg === "function" ? arg(opArgs, s, c) : arg;
+export const funcOpMapper: OpMapper<string> = (arg, opArgs) =>
+  functionCall(arg, ...opArgs);
+export const methodOpMapper: OpMapper<string> = (arg, [first, ...rest]) =>
+  methodCall(first, arg, ...rest);
+export const propertyOpMapper: OpMapper<string> = (arg, [first]) =>
+  propertyCall(first, arg);
+export const prefixOpMapper: OpMapper<string> = (arg, opArgs) =>
+  prefix(arg, opArgs[0]);
+export const infixOpMapper: OpMapper<string> = (arg, opArgs) =>
+  infix(arg, opArgs[0], opArgs[1]);
+export const postfixOpMapper: OpMapper<string> = (arg, opArgs) =>
+  postfix(arg, opArgs[0]);
+export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {
+  const index = indexCall(opArgs[0], arg === 1 ? succ(opArgs[1]) : opArgs[1]);
+  return opArgs.length > 2 ? assignment(index, opArgs[2]) : index; // TODO: consider mapping to infix "=" instead
+};
+export const builtinOpMapper: OpMapper<string> = builtin;
+
+export function mapOpsUsing<
+  Targ = string,
+  TOpCode extends OpCode | "pred" | "succ" = OpCode,
 >(
-  opMap: Partial<
-    Record<UnaryOpCode, string> & Record<BinaryOpCode | VariadicOpCode, TNames>
-  >,
-  asMutatingInfix: true | TNamesMutating[] = [],
-  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
-  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
-): Plugin {
-  enhanceOpMap(opMap);
-  const justPrefixInfix = mapOps(
-    mapObjectValues(opMap, (name, op) =>
-      isUnary(op)
-        ? (x: readonly Node[]) => unaryMapping(name, x[0])
-        : (x: readonly Node[]) =>
-            asBinaryChain(op, x, opMap, unaryMapping, binaryMapping),
-    ),
-    `mapToPrefixAndInfix(${JSON.stringify(opMap)}, ${JSON.stringify(
-      asMutatingInfix,
-    )})`,
-  );
-  if (asMutatingInfix !== true && asMutatingInfix.length < 1)
-    return justPrefixInfix;
-  const mutatingInfix = addMutatingInfix(
-    Object.fromEntries(
-      Object.entries(opMap).filter(
-        ([k, v]) =>
-          (isBinary(k as OpCode) || isVariadic(k as OpCode)) &&
-          (asMutatingInfix === true || asMutatingInfix.includes(v as any)),
-      ),
-    ),
-  );
-  return {
-    ...justPrefixInfix,
-    visit(node, spine, context) {
-      return (
-        mutatingInfix.visit(node, spine, context) ??
-        justPrefixInfix.visit(node, spine, context)
-      );
-    },
-  };
-}
-
-function asBinaryChain(
-  opCode: BinaryOpCode | VariadicOpCode,
-  exprs: readonly Node[],
-  names: Partial<Record<OpCode, string>>,
-  unaryMapping: (name: string, ...args: Node[]) => Node = prefix,
-  binaryMapping: (name: string, ...args: Node[]) => Node = infix,
-): Node {
-  const negName = names.neg;
-  if (opCode === "mul" && isInt(-1n)(exprs[0]) && negName !== undefined) {
-    exprs = [unaryMapping(negName, exprs[1]), ...exprs.slice(2)];
-  }
-  if (opCode === "add") {
-    exprs = exprs
-      .filter((x) => !isNegative(x))
-      .concat(exprs.filter(isNegative));
-  }
-  let result = exprs[0];
-  for (const expr of exprs.slice(1)) {
-    const subName = names.sub;
-    if (opCode === "add" && isNegative(expr) && subName !== undefined) {
-      result = binaryMapping(subName, result, {
-        ...op.neg(expr),
-        targetType: expr.targetType,
-      });
-    } else {
-      result = binaryMapping(names[opCode] ?? "?", result, expr);
-    }
-  }
-  return result;
-}
-
-export function useIndexCalls(
-  oneIndexed: boolean = false,
-  ops = [
-    "at[Array]" as const,
-    "at[List]" as const,
-    "at_back[List]" as const,
-    "at[Table]" as const,
-    "set_at[Array]" as const,
-    "set_at[List]" as const,
-    "set_at_back[List]" as const,
-    "set_at[Table]" as const,
-  ],
-): Plugin {
-  return {
-    bakeType: true,
-    name: `useIndexCalls(${JSON.stringify(oneIndexed)}, ${JSON.stringify(
-      ops,
-    )})`,
-    visit(node) {
-      if (
-        isOp(...ops)(node) &&
-        (isIdent()(node.args[0]) || !node.op.startsWith("set_"))
-      ) {
-        let indexNode: IndexCall;
-        if (oneIndexed && !node.op.endsWith("[Table]")) {
-          indexNode = indexCall(node.args[0], succ(node.args[1]));
-        } else {
-          indexNode = indexCall(node.args[0], node.args[1]);
-        }
-        if (
-          isOp(
-            "set_at[Array]",
-            "set_at[List]",
-            "set_at_back[List]",
-            "set_at[Table]",
-          )(node)
-        ) {
-          return assignment(indexNode, node.args[2]);
-        } else {
-          return indexNode;
-        }
-      }
-    },
-  };
-}
-
-export function backwardsIndexToForwards(
-  addLength = true,
-  ops = [
-    "at_back[Ascii]" as const,
-    "at_back[byte]" as const,
-    "at_back[codepoint]" as const,
-    "at_back[List]" as const,
-    "set_at_back[List]" as const,
-    "slice_back[Ascii]" as const,
-    "slice_back[byte]" as const,
-    "slice_back[codepoint]" as const,
-    "slice_back[List]" as const,
-  ],
-): Plugin {
-  return {
-    name: "backwardsIndexToForwards",
-    visit(node, spine, context) {
-      if (isOp(...ops)(node)) {
-        const [collection, index, third] = node.args;
-        return mapOps({
-          "at_back[Ascii]": op["at[Ascii]"](
-            collection,
-            addLength ? op.add(index, op["size[Ascii]"](collection)) : index,
-          ),
-          "at_back[byte]": op["at[byte]"](
-            collection,
-            addLength ? op.add(index, op["size[byte]"](collection)) : index,
-          ),
-          "at_back[codepoint]": op["at[codepoint]"](
-            collection,
-            addLength
-              ? op.add(index, op["size[codepoint]"](collection))
-              : index,
-          ),
-          "at_back[List]": op["at[List]"](
-            collection,
-            addLength ? op.add(index, op["size[List]"](collection)) : index,
-          ),
-          "set_at_back[List]": op["set_at[List]"](
-            collection,
-            addLength ? op.add(index, op["size[List]"](collection)) : index,
-            third!,
-          ),
-          "slice_back[Ascii]": op["slice[Ascii]"](
-            collection,
-            addLength ? op.add(index, op["size[Ascii]"](collection)) : index,
-            third!,
-          ),
-          "slice_back[byte]": op["slice[byte]"](
-            collection,
-            addLength ? op.add(index, op["size[byte]"](collection)) : index,
-            third!,
-          ),
-          "slice_back[codepoint]": op["slice[codepoint]"](
-            collection,
-            addLength
-              ? op.add(index, op["size[codepoint]"](collection))
-              : index,
-            third!,
-          ),
-          "slice_back[List]": op["slice[List]"](
-            collection,
-            addLength ? op.add(index, op["size[List]"](collection)) : index,
-            third!,
-          ),
-        }).visit(node, spine, context);
-      }
-    },
-  };
-}
-
-// "a = a + b" --> "a += b"
-export function addMutatingInfix(
-  opMap: Partial<Record<BinaryOpCode | VariadicOpCode, string>>,
-): Plugin {
-  return {
-    name: `addMutatingInfix(${JSON.stringify(opMap)})`,
-    visit(node) {
-      if (
-        node.kind === "Assignment" &&
-        isOp(...BinaryOpCodes, ...VariadicOpCodes)(node.expr) &&
-        node.expr.args.length > 1 &&
-        node.expr.op in opMap
-      ) {
-        const opCode = node.expr.op;
-        const args = node.expr.args;
-        const name = opMap[opCode]!;
-        const leftValueStringified = stringify(node.variable);
-        const index = node.expr.args.findIndex(
-          (x) => stringify(x) === leftValueStringified,
-        );
-        if (index === 0 || (index > 0 && isCommutative(opCode))) {
-          const newArgs = args.filter((x, i) => i !== index);
-          if (opCode === "add" && "sub" in opMap && newArgs.every(isNegative)) {
-            return mutatingInfix(
-              opMap.sub!,
-              node.variable,
-              op.neg(op.unsafe(opCode, ...newArgs)),
+  mapper: OpMapper<Targ>,
+  variadicModeDefault: "variadic" | "leftChain" | "rightChain",
+) {
+  return function (
+    opCodeMap: Partial<Record<TOpCode, Targ | WithPreprocess<Targ>>>,
+    variadicMode: "variadic" | "leftChain" | "rightChain" = variadicModeDefault,
+  ) {
+    enhanceOpMap(opCodeMap);
+    return {
+      name: "mapOpsUsing(...)",
+      bakeType: true,
+      visit(node: Node, spine: Spine, context: CompilationContext) {
+        function map(opCode: OpCode, exprs: readonly Node[]) {
+          let arg = opCodeMap[opCode as TOpCode];
+          if (arg !== undefined) {
+            if (isWithPreprocess(arg)) {
+              exprs = arg.preprocess(exprs);
+              arg = arg.value;
+            }
+            exprs =
+              variadicMode === "variadic" ||
+              (!isVariadic(opCode) && opCode !== "sub") ||
+              exprs.length < 3
+                ? exprs
+                : variadicMode === "leftChain"
+                ? [map(opCode, exprs.slice(0, -1))!, exprs.at(-1)!]
+                : [exprs[0], map(opCode, exprs.slice(1))!];
+            return mapper(
+              arg as Targ,
+              exprs,
+              opCode,
+              spine as Spine<Op>,
+              context,
             );
           }
-          return mutatingInfix(
-            name,
-            node.variable,
-            newArgs.length > 1 ? op.unsafe(opCode, ...newArgs) : newArgs[0],
-          );
         }
-      }
-    },
+        if (isOp()(node)) {
+          let exprs = node.args;
+          if (
+            node.op === "add" &&
+            exprs.length === 2 &&
+            isInt(-1n, 1n)(exprs[0])
+          ) {
+            if (exprs[0].value === -1n && "pred" in opCodeMap) {
+              return map("pred", [exprs[1]]);
+            }
+            if (exprs[0].value === 1n && "succ" in opCodeMap) {
+              return map("succ", [exprs[1]]);
+            }
+          }
+          if (
+            isOp("mul")(node) &&
+            isInt(-1n)(node.args[0]) &&
+            "neg" in opCodeMap
+          ) {
+            const negation = map("neg", [node.args[1]]);
+            if (negation !== undefined) {
+              if (exprs.length > 2) {
+                exprs = [negation, ...exprs.slice(2)] as any;
+              } else {
+                return negation;
+              }
+            }
+          }
+          if (node.op === "add" && "add" in opCodeMap) {
+            let positiveArgs = exprs.filter((x) => !isNegative(x));
+            let negativeArgs = exprs.filter((x) => isNegative(x));
+            if (positiveArgs.length < 1) {
+              positiveArgs = [negativeArgs[0]];
+              negativeArgs = negativeArgs.slice(1);
+            }
+            const positive =
+              positiveArgs.length > 1
+                ? map("add", positiveArgs)!
+                : positiveArgs[0];
+            if (negativeArgs.length > 0) {
+              return map("sub", [
+                positive,
+                ...negativeArgs.map(
+                  (x) =>
+                    ({
+                      ...op.neg(x),
+                      targetType: x.targetType,
+                    }) as any,
+                ),
+              ]);
+            }
+            return positive;
+          }
+          return map(node.op, exprs);
+        }
+      },
+    };
   };
 }
 
-export function addIncAndDec(
-  transform: (infix: MutatingInfix) => Node = (x) =>
-    postfix(x.name.repeat(2), x.variable),
-): Plugin {
-  return {
-    name: `addIncAndDec(${JSON.stringify(transform)})`,
-    visit(node) {
-      if (
-        node.kind === "MutatingInfix" &&
-        ["+", "-"].includes(node.name) &&
-        isInt(1n)(node.right)
-      ) {
-        return transform(node);
-      }
-    },
+/** Values are op to be applied to the collection and added to the index or 0 if nothing should be added. */
+export const mapBackwardsIndexToForwards = mapOpsUsing<
+  0 | (UnaryOpCode & `size${string}`),
+  OpCode & `${string}${"at" | "slice"}_back${string}`
+>((arg, opArgs, opCode) => {
+  const newOpCode = opCode.replaceAll("_back", "") as OpCode;
+  return op.unsafe(
+    newOpCode,
+    ...(arg === 0
+      ? opArgs
+      : replaceAtIndex(opArgs, 1, op.add(opArgs[1], op[arg](opArgs[0])))),
+  );
+}, "variadic");
+
+// "a = a + b" --> "a += b"
+export function mapMutationUsing<
+  Targ = string,
+  TOpCode extends OpCode = OpCode,
+>(mapper: OpMapper<Targ>, keepRestAsOpDefault: boolean) {
+  return function mapAsMutation(
+    opMap: Partial<Record<TOpCode, Targ>>,
+    keepRestAsOp = keepRestAsOpDefault,
+  ): Plugin {
+    return {
+      name: `addMutatingInfix(${JSON.stringify(opMap)})`,
+      visit(node, spine, context) {
+        if (
+          node.kind === "Assignment" &&
+          isOp()(node.expr) &&
+          (node.expr.op in opMap ||
+            (node.expr.op === "add" &&
+              ("succ" in opMap || "pred" in opMap || "sub" in opMap))) &&
+          node.expr.args.length > 1
+        ) {
+          const opCode = node.expr.op;
+          const args = node.expr.args;
+          const name = opMap[opCode as TOpCode]!;
+          const leftValueStringified = stringify(node.variable);
+          const index = node.expr.args.findIndex(
+            (x) => stringify(x) === leftValueStringified,
+          );
+          if (index === 0 || (index > 0 && isCommutative(opCode))) {
+            if (
+              opCode === "add" &&
+              args.length === 2 &&
+              index === 1 &&
+              isInt()(args[0])
+            ) {
+              if (args[0].value === -1n && "pred" in opMap) {
+                return mapper(
+                  opMap.pred as Targ,
+                  [args[1]],
+                  opCode,
+                  spine,
+                  context,
+                );
+              }
+              if (args[0].value === 1n && "succ" in opMap) {
+                return mapper(
+                  opMap.succ as Targ,
+                  [args[1]],
+                  opCode,
+                  spine,
+                  context,
+                );
+              }
+            }
+            const newArgs = args.filter((x, i) => i !== index);
+            if (
+              opCode === "add" &&
+              "sub" in opMap &&
+              newArgs.every(isNegative)
+            ) {
+              return mapper(
+                opMap["sub" as TOpCode] as Targ,
+                [node.variable, op.neg(op.unsafe(opCode, ...newArgs))],
+                opCode,
+                spine,
+                context,
+              );
+            }
+            if (opCode in opMap) {
+              return mapper(
+                name,
+                [
+                  node.variable,
+                  ...(keepRestAsOp && newArgs.length > 1
+                    ? [op.unsafe(opCode, ...newArgs)]
+                    : newArgs),
+                ],
+                opCode,
+                spine,
+                context,
+              );
+            }
+          }
+        }
+      },
+    };
   };
 }
+
+export const mapOps = mapOpsUsing(generalOpMapper, "variadic");
+export const mapOpsTo = {
+  func: mapOpsUsing(funcOpMapper, "variadic"),
+  method: mapOpsUsing(methodOpMapper, "variadic"),
+  prop: mapOpsUsing(propertyOpMapper, "variadic"),
+  prefix: mapOpsUsing<string, UnaryOpCode>(prefixOpMapper, "variadic"),
+  infix: mapOpsUsing<string, BinaryOpCode | VariadicOpCode>(
+    infixOpMapper,
+    "leftChain",
+  ),
+  /** Values are what should be added to the key. */
+  index: mapOpsUsing<0 | 1, BinaryOpCode>(indexOpMapper, "variadic"),
+  builtin: mapOpsUsing<string, NullaryOpCode>(builtinOpMapper, "variadic"),
+};
+
+export const mapMutationTo = {
+  func: mapMutationUsing(funcOpMapper, false),
+  method: mapMutationUsing(methodOpMapper, false),
+  infix: mapMutationUsing(infixOpMapper, true),
+  prefix: mapMutationUsing<string, UnaryOpCode>(prefixOpMapper, true),
+  /** Values are what should be added to the key. */
+  index: mapMutationUsing<0 | 1, TernaryOpCode>(indexOpMapper, false),
+};
 
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {
@@ -386,13 +365,10 @@ export const methodsAsFunctions: Plugin = {
   },
 };
 
-export const printIntToPrint: Plugin = mapOps(
-  {
-    "print[Int]": (x) => op["print[Text]"](op.int_to_dec(x[0])),
-    "println[Int]": (x) => op["println[Text]"](op.int_to_dec(x[0])),
-  },
-  "printIntToPrint",
-);
+export const printIntToPrint: Plugin = mapOps({
+  "print[Int]": (x) => op["print[Text]"](op.int_to_dec(x[0])),
+  "println[Int]": (x) => op["println[Text]"](op.int_to_dec(x[0])),
+});
 
 export const arraysToLists: Plugin = {
   name: "arraysToLists",
@@ -403,7 +379,8 @@ export const arraysToLists: Plugin = {
     }
     if (node.kind === "Op") {
       if (isOp("at[Array]")(node)) return op["at[List]"](...node.args);
-      if (isOp("set_at[Array]")(node)) return op["set_at[List]"](...node.args);
+      if (isOp("with_at[Array]")(node))
+        return op["with_at[List]"](...node.args);
       if (isOp("contains[Array]")(node))
         return op["contains[List]"](...node.args);
     }

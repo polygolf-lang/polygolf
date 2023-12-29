@@ -37,6 +37,8 @@ function atLeast2<T extends Type>(type: T): [T, T, Rest<T>] {
 }
 export const opCodeDefinitions = {
   // Arithmetic
+  succ: { args: [int()] },
+  pred: { args: [int()] },
   add: { args: atLeast2(int()), front: "+", assoc: true, commutes: true },
   sub: { args: [int(), int()], front: "-" },
   mul: { args: atLeast2(int()), front: "*", assoc: true, commutes: true },
@@ -109,13 +111,10 @@ export const opCodeDefinitions = {
   "at_back[byte]": { args: [text(), int("-oo", -1)], front: true },
   "at[codepoint]": { args: [text(), int(0)], front: true },
   "at_back[codepoint]": { args: [text(), int("-oo", -1)], front: true },
-  "set_at[Array]": { args: [array(T1, T2), T2, T1], front: "set_at" },
-  "set_at[List]": { args: [list(T1), int(0), T1], front: "set_at" },
-  "set_at_back[List]": {
-    args: [list(T1), int("-oo", -1), T1],
-    front: "set_at",
-  },
-  "set_at[Table]": { args: [table(T1, T2), T1, T2], front: "set_at" },
+  "with_at[Array]": { args: [array(T1, T2), T2, T1], front: "@" },
+  "with_at[List]": { args: [list(T1), int(0), T1], front: "@" },
+  "with_at_back[List]": { args: [list(T1), int("-oo", -1), T1], front: "@" },
+  "with_at[Table]": { args: [table(T1, T2), T1, T2], front: "@" },
 
   // Slice
   "slice[codepoint]": { args: [text(), int(0), int(0)], front: true },
@@ -179,7 +178,6 @@ export const opCodeDefinitions = {
 
   // Adding items
   include: { args: [set(T1), T1], front: true },
-  push: { args: [list(T1), T1], front: true },
   append: { args: [list(T1), T1], front: ".." },
   "concat[List]": { args: atLeast2(list(T1)), front: "..", assoc: true },
   "concat[Text]": { args: atLeast2(text()), front: "..", assoc: true },
@@ -223,6 +221,8 @@ export type OpCodeArgValues<
   : ValuesOfLengthOf<Types>;
 
 export const opCodeDescriptions: Record<AnyOpCode, string> = {
+  succ: "Integer successor.",
+  pred: "Integer predecessor.",
   add: "Integer addition.",
   sub: "Integer subtraction.",
   mul: "Integer multiplication.",
@@ -304,10 +304,13 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
     "Gets the codepoint (as text) at the 0-based index (counting codepoints).",
   "at_back[codepoint]":
     "Gets the codepoint (as text) at the -1-based backwards index (counting codepoints).",
-  "set_at[Array]": "Sets the item at the 0-based index.",
-  "set_at[List]": "Sets the item at the 0-based index.",
-  "set_at_back[List]": "Sets the item at the -1-based backwards index.",
-  "set_at[Table]": "Sets the item at the key.",
+  "with_at[Array]":
+    "Returns an array with item at the given 0-based index replaced.",
+  "with_at[List]":
+    "Returns a list with item at the given 0-based index replaced.",
+  "with_at_back[List]":
+    "Returns a list with item at the given -1-based backwards index replaced.",
+  "with_at[Table]": "Returns an array with item at the given key replaced.",
 
   // Slice
   "slice[codepoint]":
@@ -384,7 +387,6 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
 
   // Adding items
   include: "Modifies the set by including the given item.",
-  push: "Modifies the list by pushing the given item at the end.",
   append: "Returns a new list with the given item appended at the end.",
   "concat[List]": "Returns a new list formed by concatenation of the inputs.",
   "concat[Text]": "Returns a new text formed by concatenation of the inputs.",

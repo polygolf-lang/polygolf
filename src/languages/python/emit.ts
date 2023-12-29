@@ -68,6 +68,7 @@ function binaryPrecedence(opname: string): number {
     case "or":
       return 1;
   }
+  if (opname.endsWith("=")) return 0;
   throw new Error(
     `Programming error - unknown Python binary operator '${opname}'.`,
   );
@@ -190,8 +191,6 @@ export default function emitProgram(
           return [joinNodes(",", e.variables), "=", joinNodes(",", e.exprs)];
         case "OneToManyAssignment":
           return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
-        case "MutatingInfix":
-          return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, "=", emit(e.value)];
         case "Identifier":

@@ -22,13 +22,10 @@ import { mapOps } from "./ops";
 import type { VisitorContext } from "../common/compile";
 import { getWrites } from "../common/symbols";
 
-export const printLnToPrint = mapOps(
-  {
-    "println[Text]": (x) =>
-      op["print[Text]"](op["concat[Text]"](x[0], text("\n"))),
-  },
-  "printLnToPrint",
-);
+export const printLnToPrint = mapOps({
+  "println[Text]": (x) =>
+    op["print[Text]"](op["concat[Text]"](x[0], text("\n"))),
+});
 
 /**
  * Since code.golf strips output whitespace, for the last print,
@@ -94,12 +91,9 @@ export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
   }
 }
 
-export const printToImplicitOutput = mapOps(
-  {
-    "print[Text]": (x) => x[0],
-  },
-  "printToImplicitOutput",
-);
+export const printToImplicitOutput = mapOps({
+  "print[Text]": (x) => x[0],
+});
 
 export function printConcatToMultiPrint(node: Node, spine: Spine) {
   if (isOp("print[Text]")(node) && isOp("concat[Text]")(node.args[0])) {
@@ -107,14 +101,11 @@ export function printConcatToMultiPrint(node: Node, spine: Spine) {
   }
 }
 
-export const putcToPrintChar = mapOps(
-  {
-    "putc[Ascii]": (x) => op["print[Text]"](op["char[Ascii]"](x[0])),
-    "putc[byte]": (x) => op["print[Text]"](op["char[byte]"](x[0])),
-    "putc[codepoint]": (x) => op["print[Text]"](op["char[codepoint]"](x[0])),
-  },
-  "putcToPrintChar",
-);
+export const putcToPrintChar = mapOps({
+  "putc[Ascii]": (x) => op["print[Text]"](op["char[Ascii]"](x[0])),
+  "putc[byte]": (x) => op["print[Text]"](op["char[byte]"](x[0])),
+  "putc[codepoint]": (x) => op["print[Text]"](op["char[codepoint]"](x[0])),
+});
 
 export function mergePrint(
   program: Node,

@@ -19,11 +19,11 @@ print(4,end="")
 ## Indexing
 
 ```polygolf
-$a <- (text_get_codepoint "abcdefg" 4);
-$b <- (text_get_codepoint_slice "abcdefg" 2 3);
-$c <- (slice_back[codepoint] "abcdefg" -4 3);
-$d <- (slice_back[codepoint] "abcdefg" -4 4);
-$e <- (text_codepoint_reversed "abcdefg");
+$a <- ("abcdefg" @ 4);
+$b <- (slice "abcdefg" 2 3);
+$c <- (slice "abcdefg" -4 3);
+$d <- (slice "abcdefg" -4 4);
+$e <- (reversed "abcdefg");
 $f <- ("abcdefg" @ -2);
 ```
 

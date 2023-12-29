@@ -161,17 +161,3 @@ describe("Parse unambiguously", () => {
     variants([variants([assignment(id("a"), int(0n))])]),
   );
 });
-
-describe("Parse indexing asignment", () => {
-  testStmtParse(
-    `Rewrite to set_at`,
-    `
-  $x <- (list 2 3);
-  ($x @ 0) <- 3;
-  `,
-    block([
-      assignment("x", list([int(2), int(3)])),
-      op.unsafe("set_at" as any, id("x"), int(0), int(3)),
-    ]),
-  );
-});

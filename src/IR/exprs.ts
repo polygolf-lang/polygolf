@@ -10,7 +10,6 @@ import {
   type OpCode,
   type Node,
   type Integer,
-  type MutatingInfix,
   int,
   isAssociative,
   text,
@@ -203,6 +202,8 @@ function _op(op: OpCode, ...args: Node[]): Op {
  */
 function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   if (!isOpCode(opCode)) return _op(opCode, ...args);
+  if (opCode === "pred") return op.add(args[0], int(-1n));
+  if (opCode === "succ") return op.add(args[0], int(1n));
   if (isUnary(opCode)) {
     const value = evalUnary(opCode, args[0]);
     if (value !== null) return value;
@@ -241,6 +242,7 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   }
   if (isAssociative(opCode)) {
     args = args.flatMap((x) => (isOp(opCode)(x) ? x.args : [x]));
+    if (args.length === 1) return args[0];
     if (opCode === "add") args = simplifyPolynomial(args);
     else {
       if (isCommutative(opCode)) {
@@ -385,8 +387,8 @@ function simplifyPolynomial(terms: Node[]): Node[] {
   return result;
 }
 
-export const succ = (expr: Node) => op.add(expr, int(1n));
-export const prec = (expr: Node) => op.add(expr, int(-1n));
+export const succ = op.succ;
+export const pred = op.pred;
 
 export function functionCall(
   func: string | Node,
@@ -510,7 +512,6 @@ export function getArgs(
   node:
     | Op
     | Infix
-    | MutatingInfix
     | Prefix
     | FunctionCall
     | MethodCall
@@ -520,8 +521,6 @@ export function getArgs(
   switch (node.kind) {
     case "Infix":
       return [node.left, node.right];
-    case "MutatingInfix":
-      return [node.variable, node.right];
     case "Prefix":
       return [node.arg];
     case "FunctionCall":

@@ -129,8 +129,6 @@ export function calcTypeAndResolveOpCode(
     }
     case "Op":
       return getOpCodeType(expr, program);
-    case "MutatingInfix":
-      return voidType;
     case "FunctionCall": {
       const fType = type(expr.func);
       if (fType.kind !== "Function") {
@@ -390,7 +388,6 @@ export function getOpCodeTypeFromTypes(
     case "at[argv]":
       return text();
     // other
-    case "push":
     case "include":
       return voidType;
     case "append":
@@ -477,6 +474,18 @@ export function getOpCodeTypeFromTypes(
       const t = got[0] as IntegerType;
       return int(neg(t.high), neg(t.low));
     }
+    case "succ":
+      return getArithmeticType(
+        "add",
+        got[0] as IntegerType,
+        integerType(1n, 1n),
+      );
+    case "pred":
+      return getArithmeticType(
+        "sub",
+        got[0] as IntegerType,
+        integerType(1n, 1n),
+      );
     case "not":
       return booleanType;
     case "int_to_bool":
@@ -641,11 +650,11 @@ export function getOpCodeTypeFromTypes(
     case "ord[byte]":
     case "ord[Ascii]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 255);
-    case "set_at[Array]":
-    case "set_at[List]":
-    case "set_at_back[List]":
-    case "set_at[Table]":
-      return voidType;
+    case "with_at[Array]":
+    case "with_at[List]":
+    case "with_at_back[List]":
+    case "with_at[Table]":
+      return got[0];
   }
 }
 

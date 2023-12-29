@@ -17,51 +17,38 @@ export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
   };
 }
 
-export const textGetToIntToTextGet: Plugin = mapOps(
-  {
-    "ord_at[Ascii]": (x) => op["ord[Ascii]"](op["at[Ascii]"](x[0], x[1])),
-    "ord_at[byte]": (x) => op["ord[byte]"](op["at[byte]"](x[0], x[1])),
-    "ord_at[codepoint]": (x) =>
-      op["ord[codepoint]"](op["at[codepoint]"](x[0], x[1])),
-    "ord_at_back[Ascii]": (x) =>
-      op["ord[Ascii]"](op["at_back[Ascii]"](x[0], x[1])),
-    "ord_at_back[byte]": (x) =>
-      op["ord[byte]"](op["at_back[byte]"](x[0], x[1])),
-    "ord_at_back[codepoint]": (x) =>
-      op["ord[codepoint]"](op["at_back[codepoint]"](x[0], x[1])),
-  },
-  "textGetToIntToTextGet",
-);
+export const textGetToIntToTextGet: Plugin = mapOps({
+  "ord_at[Ascii]": (x) => op["ord[Ascii]"](op["at[Ascii]"](x[0], x[1])),
+  "ord_at[byte]": (x) => op["ord[byte]"](op["at[byte]"](x[0], x[1])),
+  "ord_at[codepoint]": (x) =>
+    op["ord[codepoint]"](op["at[codepoint]"](x[0], x[1])),
+  "ord_at_back[Ascii]": (x) =>
+    op["ord[Ascii]"](op["at_back[Ascii]"](x[0], x[1])),
+  "ord_at_back[byte]": (x) => op["ord[byte]"](op["at_back[byte]"](x[0], x[1])),
+  "ord_at_back[codepoint]": (x) =>
+    op["ord[codepoint]"](op["at_back[codepoint]"](x[0], x[1])),
+});
 
-export const textToIntToTextGetToInt: Plugin = mapOps(
-  {
-    "ord[byte]": (x) =>
-      isOp("at[byte]")(x[0]) ? op["ord_at[byte]"](...x[0].args) : undefined,
-    "ord[codepoint]": (x) =>
-      isOp("at[codepoint]")(x[0])
-        ? op["ord_at[codepoint]"](...x[0].args)
-        : undefined,
-  },
-  "textToIntToTextGetToInt",
-);
+export const textToIntToTextGetToInt: Plugin = mapOps({
+  "ord[byte]": (x) =>
+    isOp("at[byte]")(x[0]) ? op["ord_at[byte]"](...x[0].args) : undefined,
+  "ord[codepoint]": (x) =>
+    isOp("at[codepoint]")(x[0])
+      ? op["ord_at[codepoint]"](...x[0].args)
+      : undefined,
+});
 
-export const textGetToTextGetToIntToText: Plugin = mapOps(
-  {
-    "at[byte]": (x) => op["char[byte]"](op["ord_at[byte]"](x[0], x[1])),
-    "at[codepoint]": (x) =>
-      op["char[codepoint]"](op["ord_at[codepoint]"](x[0], x[1])),
-  },
-  "textGetToTextGetToIntToText",
-);
+export const textGetToTextGetToIntToText: Plugin = mapOps({
+  "at[byte]": (x) => op["char[byte]"](op["ord_at[byte]"](x[0], x[1])),
+  "at[codepoint]": (x) =>
+    op["char[codepoint]"](op["ord_at[codepoint]"](x[0], x[1])),
+});
 
-export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps(
-  {
-    "ord[Ascii]": (x) => op["ord_at[Ascii]"](x[0], int(0n)),
-    "ord[byte]": (x) => op["ord_at[byte]"](x[0], int(0n)),
-    "ord[codepoint]": (x) => op["ord_at[codepoint]"](x[0], int(0n)),
-  },
-  "textToIntToFirstIndexTextGetToInt",
-);
+export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps({
+  "ord[Ascii]": (x) => op["ord_at[Ascii]"](x[0], int(0n)),
+  "ord[byte]": (x) => op["ord_at[byte]"](x[0], int(0n)),
+  "ord[codepoint]": (x) => op["ord_at[codepoint]"](x[0], int(0n)),
+});
 
 /**
  * Converts nested text_replace to a text_multireplace provided the arguments are
@@ -104,12 +91,9 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
   };
 }
 
-export const replaceToSplitAndJoin: Plugin = mapOps(
-  {
-    replace: ([x, y, z]) => op.join(op.split(x, y), z),
-  },
-  "replaceToSplitAndJoin",
-);
+export const replaceToSplitAndJoin: Plugin = mapOps({
+  replace: ([x, y, z]) => op.join(op.split(x, y), z),
+});
 
 export function startsWithEndsWithToSliceEquality(
   char: "byte" | "codepoint",

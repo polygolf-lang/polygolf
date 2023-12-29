@@ -8,7 +8,6 @@ describe("Restricted nodes: parse - emit match", () => {
     `var_declaration_block (var_declaration $x:Int) (var_declaration $y:Int);`,
     `many_to_many_assignment {$x; $y} {"x"; "y"};`,
     `one_to_many_assignment {$x; $y} "x";`,
-    `mutating_infix "+" $x $y;`,
     `index_call $x $y;`,
     `range_index_call $x $y $z $w;`,
     `method_call $o "name" $x $y;`,

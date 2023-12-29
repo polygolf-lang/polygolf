@@ -28,6 +28,7 @@ import {
   OpCodes,
   OpCodesUser,
   isSubtype,
+  type OpCode,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
@@ -50,7 +51,7 @@ const options = yargs()
  * This aims at providing basic compilable building blocks.
  */
 interface LangCoverConfig {
-  expr: (x?: Type, preferBuiltin?: boolean) => Node; // returns any node of given type (or 0..0)
+  expr: (x?: Type) => Node; // returns any node of given type (or 0..0)
   stmt: (x?: Node) => Node; // returns any node of type void containing given Node (or any)
 }
 
@@ -82,11 +83,9 @@ for (const lang of langs) {
     return x;
   };
 
-  lang.expr = function (x: Type = integerType(1, 1), preferBuiltin = false) {
+  lang.expr = function (x: Type = integerType(1, 1)) {
     const literal = getLiteralOfType(x, true);
-    return !preferBuiltin && isCompilable(literal, lang)
-      ? literal
-      : nextBuiltin(x);
+    return isCompilable(literal, lang) ? literal : nextBuiltin(x);
   };
 }
 
@@ -180,19 +179,45 @@ const features: CoverTableRecipe = {
   function: () => func(["x", "y"], id("x")),
 };
 
+const tryAsMutation: OpCode[] = [
+  "with_at[Array]",
+  "with_at[List]",
+  "with_at_back[List]",
+  "with_at[Table]",
+  "append",
+];
+
 const opCodes: CoverTableRecipe = Object.fromEntries(
-  OpCodesUser.map((opCode) => [
-    opCode,
-    (lang) =>
-      lang.stmt(
-        op.unsafe(
-          opCode,
-          ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
-            lang.expr(x, opCode.startsWith("set_") || opCode === "push"),
-          ),
-        ),
-      ),
-  ]),
+  OpCodesUser.flatMap((opCode) =>
+    (tryAsMutation.includes(opCode) ? [false, true] : [false]).map(
+      (asMutation) =>
+        asMutation
+          ? [
+              opCode + "<-",
+              (lang) => {
+                const types = getInstantiatedOpCodeArgTypes(opCode);
+                const variable = { ...id(undefined, true), type: types[0] };
+                return assignment(
+                  variable,
+                  op.unsafe(
+                    opCode,
+                    ...types.map((x, i) => (i < 1 ? variable : lang.expr(x))),
+                  ),
+                );
+              },
+            ]
+          : [
+              opCode,
+              (lang) =>
+                lang.stmt(
+                  op.unsafe(
+                    opCode,
+                    ...getInstantiatedOpCodeArgTypes(opCode).map(lang.expr),
+                  ),
+                ),
+            ],
+    ),
+  ),
 );
 
 printTable("Features", runCoverTableRecipe(features));

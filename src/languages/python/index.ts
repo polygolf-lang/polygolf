@@ -28,15 +28,15 @@ import {
 
 import emitProgram, { emitPythonText } from "./emit";
 import {
-  mapOps,
-  mapUnaryAndBinary,
-  useIndexCalls,
   removeImplicitConversions,
   methodsAsFunctions,
   printIntToPrint,
-  mapTo,
   arraysToLists,
-  backwardsIndexToForwards,
+  mapOps,
+  mapBackwardsIndexToForwards,
+  mapMutationTo,
+  mapOpsTo,
+  flipped,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -135,8 +135,27 @@ const pythonLanguage: Language = {
       }),
 
       useImplicitBoolToInt,
-      backwardsIndexToForwards(false),
-      useIndexCalls(),
+      mapBackwardsIndexToForwards({
+        "at_back[Ascii]": 0,
+        "at_back[byte]": 0,
+        "at_back[codepoint]": 0,
+        "at_back[List]": 0,
+        "slice_back[Ascii]": 0,
+        "slice_back[byte]": 0,
+        "slice_back[codepoint]": 0,
+        "slice_back[List]": 0,
+        "with_at_back[List]": 0,
+      }),
+      mapMutationTo.index({
+        "with_at[Array]": 0,
+        "with_at[List]": 0,
+        "with_at[Table]": 0,
+      }),
+      mapOpsTo.index({
+        "at[Array]": 0,
+        "at[List]": 0,
+        "at[Table]": 0,
+      }),
     ),
     simplegolf(golfTextListLiteralIndex),
     required(
@@ -145,15 +164,12 @@ const pythonLanguage: Language = {
       mapOps({
         true: int(1),
         false: int(0),
-        "find[List]": (x) => method(x[0], "index", x[1]),
-        "find[codepoint]": (x) => method(x[0], "find", x[1]),
         "find[byte]": (x) =>
           method(
             func("bytes", x[0], text("u8")),
             "find",
             func("bytes", x[1], text("u8")),
           ),
-        join: (x) => method(x[1], "join", x[0]),
         "size[byte]": (x) => func("len", func("bytes", x[0], text("u8"))),
         "reversed[codepoint]": (x) =>
           rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
@@ -190,8 +206,6 @@ const pythonLanguage: Language = {
           ),
         "slice[List]": (x) =>
           rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1)),
-        split: (x) => method(x[0], "split", x[1]),
-        split_whitespace: (x) => method(x[0], "split"),
 
         "print[Text]": (x) =>
           func(
@@ -200,7 +214,6 @@ const pythonLanguage: Language = {
               ? [namedArg("end", x[0])]
               : [x[0], namedArg("end", text(""))],
           ),
-        replace: (x) => method(x[0], "replace", x[1], x[2]),
 
         text_multireplace: (x) =>
           method(
@@ -222,8 +235,6 @@ const pythonLanguage: Language = {
               ),
             ),
           ),
-
-        push: (x) => method(x[0], "append", x[1]),
         append: (x) => op["concat[List]"](x[0], list([x[1]])),
         right_align: (x) =>
           infix(
@@ -248,11 +259,18 @@ const pythonLanguage: Language = {
         int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
         bool_to_int: (x) =>
           op.mul(int(1n), implicitConversion("bool_to_int", x[0])),
-        include: (x) => method(x[0], "add", x[1]),
-        starts_with: (x) => method(x[0], "startsWith", x[1]),
-        ends_with: (x) => method(x[0], "endsWith", x[1]),
       }),
-      mapTo(func)({
+      mapOpsTo.method({
+        "find[List]": "index",
+        "find[codepoint]": "find",
+        split: "split",
+        split_whitespace: "split",
+        replace: "replace",
+        join: flipped`join`,
+        starts_with: "startsWith",
+        ends_with: "endsWith",
+      }),
+      mapOpsTo.func({
         "read[line]": "input",
         abs: "abs",
         "size[List]": "len",
@@ -272,44 +290,57 @@ const pythonLanguage: Language = {
         "println[Text]": "print",
         gcd: "math.gcd",
       }),
-      mapTo((x: string, [right, left]) => infix(x, left, right))({
-        "contains[List]": "in",
-        "contains[Table]": "in",
-        "contains[Set]": "in",
-        "contains[Text]": "in",
+      mapMutationTo.method({
+        append: "append",
       }),
-      mapUnaryAndBinary(
-        {
-          pow: "**",
-          neg: "-",
-          bit_not: "~",
-          mul: "*",
-          repeat: "*",
-          div: "//",
-          mod: "%",
-          add: "+",
-          "concat[Text]": "+",
-          "concat[List]": "+",
-          sub: "-",
-          bit_shift_left: "<<",
-          bit_shift_right: ">>",
-          bit_and: "&",
-          bit_xor: "^",
-          bit_or: "|",
-          lt: "<",
-          leq: "<=",
-          "eq[Int]": "==",
-          "eq[Text]": "==",
-          "neq[Int]": "!=",
-          "neq[Text]": "!=",
-          geq: ">=",
-          gt: ">",
-          not: "not",
-          and: "and",
-          or: "or",
-        },
-        ["+", "-", "*", "//", "%", "**", "&", "^", "|", "<<", ">>"],
-      ),
+      mapMutationTo.infix({
+        add: "+=",
+        sub: "-=",
+        mul: "*=",
+        div: "//=",
+        mod: "%=",
+        pow: "**=",
+        bit_and: "&=",
+        bit_xor: "^=",
+        bit_or: "|=",
+        bit_shift_left: "<<=",
+        bit_shift_right: ">>=",
+      }),
+      mapOpsTo.infix({
+        "contains[List]": flipped`in`,
+        "contains[Table]": flipped`in`,
+        "contains[Set]": flipped`in`,
+        "contains[Text]": flipped`in`,
+        pow: "**",
+        repeat: "*",
+        div: "//",
+        mod: "%",
+        add: "+",
+        "concat[Text]": "+",
+        "concat[List]": "+",
+        sub: "-",
+        bit_shift_left: "<<",
+        bit_shift_right: ">>",
+        bit_and: "&",
+        bit_xor: "^",
+        bit_or: "|",
+        lt: "<",
+        leq: "<=",
+        "eq[Int]": "==",
+        "eq[Text]": "==",
+        "neq[Int]": "!=",
+        "neq[Text]": "!=",
+        geq: ">=",
+        gt: ">",
+        and: "and",
+        or: "or",
+      }),
+      mapOpsTo.prefix({
+        neg: "-",
+        bit_not: "~",
+        not: "not",
+      }),
+      mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
       addOneToManyAssignments(),
     ),

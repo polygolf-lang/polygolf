@@ -25,7 +25,7 @@ import {
   isSubtype,
   integerType,
   succ,
-  prec,
+  pred,
   isText,
   isIdent,
   isUserIdent,
@@ -45,7 +45,7 @@ export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
         return forRange(
           node.variable,
           node.start,
-          prec(node.end),
+          pred(node.end),
           node.increment,
           node.body,
           true,
@@ -272,7 +272,7 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
           int(0),
           overshoot
             ? inclusive
-              ? prec(int(node.argcUpperBound))
+              ? pred(int(node.argcUpperBound))
               : int(node.argcUpperBound)
             : op.argc,
           int(1),
@@ -330,7 +330,7 @@ export function shiftRangeOneUp(node: Node, spine: Spine) {
     const newVar = id(node.variable.name + "+shift");
     const newBodySpine = bodySpine.withReplacer((x) =>
       newVar !== undefined && isIdent(node.variable!)(x)
-        ? prec(newVar)
+        ? pred(newVar)
         : undefined,
     );
     return forRange(
@@ -383,7 +383,7 @@ export function forRangeToForRangeOneStep(node: Node, spine: Spine) {
       int(0n),
       node.inclusive
         ? op.div(op.sub(node.end, node.start), node.increment)
-        : succ(op.div(op.sub(prec(node.end), node.start), node.increment)),
+        : succ(op.div(op.sub(pred(node.end), node.start), node.increment)),
       int(1n),
       block([
         assignment(
