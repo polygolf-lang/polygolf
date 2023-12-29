@@ -155,3 +155,26 @@ t[2]=1
 var t=[1,2,3]
 t[2]=1
 ```
+
+## Bit ops
+
+```polygolf
+bit_count 67;
+```
+
+```js nogolf
+67.toString(2).replace(/0/g,``).length
+```
+
+```nim nogolf
+include math
+popcount(67)
+```
+
+```py nogolf
+67.bit_count()
+```
+
+```swift nogolf
+String(67,radix:2).filter({$0>"0"}).count
+```
