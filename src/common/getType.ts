@@ -443,7 +443,8 @@ export function getOpCodeTypeFromTypes(
     case "right_align":
       return text(int(0, "oo"), (got[0] as TextType).isAscii);
     case "int_to_bin_aligned":
-    case "int_to_hex_aligned": {
+    case "int_to_hex_aligned":
+    case "int_to_Hex_aligned": {
       const t1 = got[0] as IntegerType;
       const t2 = got[1] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2)) {
@@ -495,7 +496,8 @@ export function getOpCodeTypeFromTypes(
       return booleanType;
     case "int_to_dec":
     case "int_to_bin":
-    case "int_to_hex": {
+    case "int_to_hex":
+    case "int_to_Hex": {
       const t = got[0] as IntegerType;
       if (isFiniteType(t))
         return text(
@@ -505,9 +507,9 @@ export function getOpCodeTypeFromTypes(
                 x.toString(
                   opCode === "int_to_bin"
                     ? 2
-                    : opCode === "int_to_hex"
-                    ? 16
-                    : 10,
+                    : opCode === "int_to_dec"
+                    ? 10
+                    : 16,
                 ).length,
               ),
             ),

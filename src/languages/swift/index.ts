@@ -15,6 +15,7 @@ import {
   list,
   conditional,
   rangeIndexCall,
+  intToDecOpOrText,
 } from "../../IR";
 import {
   type Language,
@@ -220,6 +221,13 @@ const swiftLanguage: Language = {
             "String",
             x[0],
             namedArg("radix", int(16n)),
+            namedArg("uppercase", op.false),
+          ),
+        int_to_Hex: (x) =>
+          func(
+            "String",
+            x[0],
+            namedArg("radix", int(16n)),
             namedArg("uppercase", op.true),
           ),
         int_to_bin: (x) => func("String", x[0], namedArg("radix", int(2n))),
@@ -228,7 +236,16 @@ const swiftLanguage: Language = {
             "String",
             namedArg(
               "format",
-              op["concat[Text]"](text("%0"), op.int_to_dec(x[1]), text("X")),
+              op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("x")),
+            ),
+            x[0],
+          ),
+        int_to_Hex_aligned: (x) =>
+          func(
+            "String",
+            namedArg(
+              "format",
+              op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("X")),
             ),
             x[0],
           ),

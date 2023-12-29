@@ -27,6 +27,7 @@ import {
   rangeIndexCall,
   text,
   isInt,
+  intToDecOpOrText,
 } from "../../IR";
 import {
   golfLastPrint,
@@ -72,13 +73,19 @@ const janetLanguage: Language = {
         right_align: (x) =>
           func(
             "string/format",
-            op["concat[Text]"](text("%"), op.int_to_dec(x[1]), text("s")),
+            op["concat[Text]"](text("%"), intToDecOpOrText(x[1]), text("s")),
             x[0],
           ),
         int_to_hex_aligned: (x) =>
           func(
             "string/format",
-            op["concat[Text]"](text("%0"), op.int_to_dec(x[1]), text("X")),
+            op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("x")),
+            x[0],
+          ),
+        int_to_Hex_aligned: (x) =>
+          func(
+            "string/format",
+            op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("X")),
             x[0],
           ),
       }),
@@ -111,7 +118,8 @@ const janetLanguage: Language = {
       mapOps({
         bool_to_int: (x) => conditional(x[0], int(1n), int(0n)),
         int_to_bool: (x) => op["neq[Int]"](x[0], int(0n)),
-        int_to_hex: (x) => func("string/format", text("%X"), x[0]),
+        int_to_hex: (x) => func("string/format", text("%x"), x[0]),
+        int_to_Hex: (x) => func("string/format", text("%X"), x[0]),
         split: (x) => func("string/split", x[1], x[0]),
 
         "char[byte]": (x) => func("string/format", text("%c"), x[0]),

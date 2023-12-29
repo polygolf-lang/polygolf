@@ -201,8 +201,13 @@ const nimLanguage: Language = {
           func("align", op.int_to_bin(x[0]), x[1], text("0")),
         int_to_hex_aligned: (x) =>
           func("align", op.int_to_hex(x[0]), x[1], text("0")),
+        int_to_Hex_aligned: (x) =>
+          func("align", op.int_to_Hex(x[0]), x[1], text("0")),
       }),
       mapOpsTo.builtin({ true: "true", false: "false" }),
+      mapOps({
+        int_to_hex: (x) => func("toLowerAscii", op.int_to_Hex(x[0])),
+      }),
       mapOpsTo.func(
         {
           argv: "commandLineParams",
@@ -226,7 +231,7 @@ const nimLanguage: Language = {
           "sorted[Ascii]": "sorted",
           "reversed[List]": "reversed",
           int_to_bin: "toBin",
-          int_to_hex: "toHex",
+          int_to_Hex: "toHex",
           right_align: "align",
           starts_with: "startsWith",
           ends_with: "endsWith",

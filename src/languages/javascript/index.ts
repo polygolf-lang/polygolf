@@ -177,8 +177,17 @@ const javascriptLanguage: Language = {
         int_to_bin_aligned: (x) =>
           method(method(x[0], "toString", int(2n)), "padStart", x[1], int(0n)),
         int_to_hex: (x) => method(x[0], "toString", int(16n)),
+        int_to_Hex: (x) =>
+          method(method(x[0], "toString", int(16n)), "toUpperCase"),
         int_to_hex_aligned: (x) =>
           method(method(x[0], "toString", int(16n)), "padStart", x[1], int(0n)),
+        int_to_Hex_aligned: (x) =>
+          method(
+            method(method(x[0], "toString", int(16n)), "toUpperCase"),
+            "padStart",
+            x[1],
+            int(0n),
+          ),
         "size[List]": (x) => propertyCall(x[0], "length"),
         "size[Ascii]": (x) => propertyCall(x[0], "length"),
         "size[Table]": (x) => propertyCall(func("Object.keys", x[0]), "length"),

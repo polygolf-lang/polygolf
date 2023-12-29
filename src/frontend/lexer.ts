@@ -17,7 +17,7 @@ const tokenTable = {
     "<-",
     "=>",
   ],
-  builtin: /[a-z0-9_]+(?:\[[A-Za-z][a-z]*\])?/,
+  builtin: /(?:[a-z0-9_]|Hex)+(?:\[[A-Za-z][a-z]*\])?/,
   type: /[A-Z][a-z]*/,
   lparen: "(",
   rparen: ")",
