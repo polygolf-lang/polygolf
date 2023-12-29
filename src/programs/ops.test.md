@@ -115,3 +115,43 @@ import math
 a=b=c=0
 math.gcd(a,b,c)
 ```
+
+## List mutation
+
+```polygolf
+$t <- (list 1 2 3);
+$t @<- 2 1;
+```
+
+```gs nogolf
+[1 2 3]:t;t.2.@<[1]+@@)>+:t;
+```
+
+```janet nogolf
+(var t @[1 2 3])(put t 2 1)
+```
+
+```js nogolf
+t=[1,2,3]
+t[2]=1
+```
+
+```lua nogolf
+t={1,2,3}
+t[3]=1
+```
+
+```nim nogolf
+var t= @[1,2,3]
+t[2]=1
+```
+
+```py nogolf
+t=[1,2,3]
+t[2]=1
+```
+
+```swift nogolf
+var t=[1,2,3]
+t[2]=1
+```

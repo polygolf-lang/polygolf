@@ -217,10 +217,10 @@ export const mapBackwardsIndexToForwards = mapOpsUsing<
 export function mapMutationUsing<
   Targ = string,
   TOpCode extends OpCode = OpCode,
->(mapper: OpMapper<Targ>) {
+>(mapper: OpMapper<Targ>, keepRestAsOpDefault: boolean) {
   return function mapAsMutation(
     opMap: Partial<Record<TOpCode, Targ>>,
-    keepRestAsOp = true,
+    keepRestAsOp = keepRestAsOpDefault,
   ): Plugin {
     return {
       name: `addMutatingInfix(${JSON.stringify(opMap)})`,
@@ -317,12 +317,12 @@ export const mapOpsTo = {
 };
 
 export const mapMutationTo = {
-  func: mapMutationUsing(funcOpMapper),
-  method: mapMutationUsing(methodOpMapper),
-  infix: mapMutationUsing(infixOpMapper),
-  prefix: mapMutationUsing<string, UnaryOpCode>(prefixOpMapper),
+  func: mapMutationUsing(funcOpMapper, false),
+  method: mapMutationUsing(methodOpMapper, false),
+  infix: mapMutationUsing(infixOpMapper, true),
+  prefix: mapMutationUsing<string, UnaryOpCode>(prefixOpMapper, true),
   /** Values are what should be added to the key. */
-  index: mapMutationUsing<0 | 1, TernaryOpCode>(indexOpMapper),
+  index: mapMutationUsing<0 | 1, TernaryOpCode>(indexOpMapper, false),
 };
 
 // (a > b) --> (b < a)
