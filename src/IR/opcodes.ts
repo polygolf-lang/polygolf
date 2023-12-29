@@ -37,8 +37,10 @@ function atLeast2<T extends Type>(type: T): [T, T, Rest<T>] {
 }
 export const opCodeDefinitions = {
   // Arithmetic
-  succ: { args: [int()] },
-  pred: { args: [int()] },
+  is_even: { args: [int()], front: true },
+  is_odd: { args: [int()], front: true },
+  succ: { args: [int()], front: true },
+  pred: { args: [int()], front: true },
   add: { args: atLeast2(int()), front: "+", assoc: true, commutes: true },
   sub: { args: [int(), int()], front: "-" },
   mul: { args: atLeast2(int()), front: "*", assoc: true, commutes: true },
@@ -221,6 +223,8 @@ export type OpCodeArgValues<
   : ValuesOfLengthOf<Types>;
 
 export const opCodeDescriptions: Record<AnyOpCode, string> = {
+  is_even: "Evenness predicate.",
+  is_odd: "Oddness predicate.",
   succ: "Integer successor.",
   pred: "Integer predecessor.",
   add: "Integer addition.",
