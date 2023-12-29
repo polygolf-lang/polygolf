@@ -470,6 +470,8 @@ export function getOpCodeTypeFromTypes(
       const t = got[0] as IntegerType;
       return getTypeBitNot(t);
     }
+    case "bit_count":
+      return int(0, BigInt((got[0] as IntegerType).high.toString(2).length));
     case "neg": {
       const t = got[0] as IntegerType;
       return int(neg(t.high), neg(t.low));

@@ -62,6 +62,7 @@ export const opCodeDefinitions = {
   neg: { args: [int()], front: "-" },
   abs: { args: [int()], front: true },
   bit_not: { args: [int()], front: "~" },
+  bit_count: { args: [int(0)], front: true },
 
   // Input
   "read[codepoint]": { args: [] },
@@ -250,6 +251,7 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   neg: "Integer negation.",
   abs: "Integer absolute value.",
   bit_not: "Integer bitwise not.",
+  bit_count: "Number of set bits in the integer.",
 
   // Input
   "read[codepoint]": "Reads single codepoint from the stdin.",

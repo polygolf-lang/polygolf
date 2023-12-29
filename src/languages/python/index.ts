@@ -264,6 +264,7 @@ const pythonLanguage: Language = {
         join: flipped`join`,
         starts_with: "startsWith",
         ends_with: "endsWith",
+        bit_count: "bit_count",
       }),
       mapOpsTo.func({
         "read[line]": "input",

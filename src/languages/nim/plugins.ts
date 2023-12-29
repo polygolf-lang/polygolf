@@ -65,6 +65,7 @@ export const addNimImports: Plugin = addImports(
     reversed: "algorithm",
     startsWith: "strutils",
     endsWith: "strutils",
+    popcount: "bitops",
   },
   (modules: string[]) => {
     if (modules.length < 1) return;

@@ -225,6 +225,7 @@ const nimLanguage: Language = {
           right_align: "align",
           starts_with: "startsWith",
           ends_with: "endsWith",
+          bit_count: "popcount",
         },
         "leftChain",
       ),
