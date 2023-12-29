@@ -28,6 +28,7 @@ import {
   OpCodes,
   OpCodesUser,
   isSubtype,
+  OpCode,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
@@ -180,17 +181,45 @@ const features: CoverTableRecipe = {
   function: () => func(["x", "y"], id("x")),
 };
 
+const tryAsMutation: OpCode[] = [
+  "with_at[Array]",
+  "with_at[List]",
+  "with_at_back[List]",
+  "with_at[Table]",
+  "append",
+];
+
 const opCodes: CoverTableRecipe = Object.fromEntries(
-  OpCodesUser.map((opCode) => [
-    opCode,
-    (lang) =>
-      lang.stmt(
-        op.unsafe(
-          opCode,
-          ...getInstantiatedOpCodeArgTypes(opCode).map(lang.expr),
-        ),
-      ),
-  ]),
+  OpCodesUser.flatMap((opCode) =>
+    (tryAsMutation.includes(opCode) ? [false, true] : [false]).map(
+      (asMutation) =>
+        asMutation
+          ? [
+              opCode + "<-",
+              (lang) => {
+                const types = getInstantiatedOpCodeArgTypes(opCode);
+                const variable = { ...id(undefined, true), type: types[0] };
+                return assignment(
+                  variable,
+                  op.unsafe(
+                    opCode,
+                    ...types.map((x, i) => (i < 1 ? variable : lang.expr(x))),
+                  ),
+                );
+              },
+            ]
+          : [
+              opCode,
+              (lang) =>
+                lang.stmt(
+                  op.unsafe(
+                    opCode,
+                    ...getInstantiatedOpCodeArgTypes(opCode).map(lang.expr),
+                  ),
+                ),
+            ],
+    ),
+  ),
 );
 
 printTable("Features", runCoverTableRecipe(features));
