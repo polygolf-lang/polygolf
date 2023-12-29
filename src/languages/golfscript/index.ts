@@ -72,14 +72,12 @@ import {
   startsWithEndsWithToSliceEquality,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
-import { hardcode } from "../../plugins/static";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
   emitter: emitProgram,
   phases: [
-    search(hardcode()),
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false)),
     search(
