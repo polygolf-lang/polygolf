@@ -155,6 +155,12 @@ const golfscriptLanguage: Language = {
         int_to_hex: (x) =>
           func(
             "+",
+            func("{.9>39*+48+}%", func("base", x[0], int(16n))),
+            text(""),
+          ),
+        int_to_Hex: (x) =>
+          func(
+            "+",
             func("{.9>7*+48+}%", func("base", x[0], int(16n))),
             text(""),
           ),
@@ -163,6 +169,8 @@ const golfscriptLanguage: Language = {
           op.split(func("{...9<\\13>+*\\32if}%", x[0]), text(" ")),
         right_align: (x) => func('1$,-.0>*" "*\\+', x[0], x[1]),
         int_to_hex_aligned: (x) =>
+          func('16base{.9>39*+48+}%""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
+        int_to_Hex_aligned: (x) =>
           func('16base{.9>7*+48+}%""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
         int_to_bin_aligned: (x) =>
           func('2base""+\\1$,-.0>*"0"*\\+', x[0], x[1]),

@@ -80,10 +80,12 @@ Hover opcode name to see a description.
 | starts_with | [starts_with](## "Checks whether the second argument is a prefix of the first.") | [Text, Text] | Bool |
 | ends_with | [ends_with](## "Checks whether the second argument is a suffix of the first.") | [Text, Text] | Bool |
 | int_to_bin_aligned | [int_to_bin_aligned](## "Converts the integer to a 2-base text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
-| int_to_hex_aligned | [int_to_hex_aligned](## "Converts the integer to a 16-base text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
+| int_to_hex_aligned | [int_to_hex_aligned](## "Converts the integer to a 16-base lowercase text and aligns to a minimum length.") | [0..oo, 0..oo] | Ascii |
+| int_to_Hex_aligned | [int_to_Hex_aligned](## "Converts the integer to a 16-base uppercase text and aligns to a minimum length.") | [0..oo, 0..oo] | Ascii |
 | int_to_dec | [int_to_dec](## "Converts the integer to a 10-base text.") | [Int] | (Ascii 1..oo) |
 | int_to_bin | [int_to_bin](## "Converts the integer to a 2-base text.") | [0..oo] | (Ascii 1..oo) |
-| int_to_hex | [int_to_hex](## "Converts the integer to a 16-base text.") | [0..oo] | (Ascii 1..oo) |
+| int_to_hex | [int_to_hex](## "Converts the integer to a 16-base lowercase text.") | [0..oo] | (Ascii 1..oo) |
+| int_to_Hex | [int_to_Hex](## "Converts the integer to a 16-base uppercase text.") | [0..oo] | (Ascii 1..oo) |
 | int_to_bool | [int_to_bool](## "Converts 0 to false and 1 to true.") | [0..1] | Bool |
 | dec_to_int | [dec_to_int](## "Parses a integer from a 10-base text.") | [Ascii] | Int |
 | bool_to_int | [bool_to_int](## "Converts false to 0 and true to 1.") | [Bool] | 0..1 |

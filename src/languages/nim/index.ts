@@ -10,6 +10,7 @@ import {
   op,
   prefix,
   text,
+  type Text,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -89,6 +90,8 @@ import {
   lowBitsPlugins,
 } from "../../plugins/arithmetic";
 import { safeConditionalOpToAt } from "../../plugins/conditions";
+
+const char48: Text = { ...text("0"), targetType: "char" };
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -193,11 +196,16 @@ const nimLanguage: Language = {
         "size[codepoint]": (x) => op["size[List]"](func("toRunes", x)),
         int_to_bool: (x) => op["eq[Int]"](x[0], int(0n)),
         int_to_bin_aligned: (x) =>
-          func("align", op.int_to_bin(x[0]), x[1], text("0")),
+          func("align", op.int_to_bin(x[0]), x[1], char48),
         int_to_hex_aligned: (x) =>
-          func("align", op.int_to_hex(x[0]), x[1], text("0")),
+          func("align", op.int_to_hex(x[0]), x[1], char48),
+        int_to_Hex_aligned: (x) =>
+          func("align", op.int_to_Hex(x[0]), x[1], char48),
       }),
       mapOpsTo.builtin({ true: "true", false: "false" }),
+      mapOps({
+        int_to_hex: (x) => func("toLowerAscii", op.int_to_Hex(x[0])),
+      }),
       mapOpsTo.func(
         {
           argv: "commandLineParams",
@@ -221,7 +229,7 @@ const nimLanguage: Language = {
           "sorted[Ascii]": "sorted",
           "reversed[List]": "reversed",
           int_to_bin: "toBin",
-          int_to_hex: "toHex",
+          int_to_Hex: "toHex",
           right_align: "align",
           starts_with: "startsWith",
           ends_with: "endsWith",

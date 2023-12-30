@@ -199,9 +199,11 @@ export const opCodeDefinitions = {
   // Text / Bool <-> Int
   int_to_bin_aligned: { args: [int(0), int(0)], front: true },
   int_to_hex_aligned: { args: [int(0), int(0)], front: true },
+  int_to_Hex_aligned: { args: [int(0), int(0)], front: true },
   int_to_dec: { args: [int()], front: true },
   int_to_bin: { args: [int(0)], front: true },
   int_to_hex: { args: [int(0)], front: true },
+  int_to_Hex: { args: [int(0)], front: true },
   int_to_bool: { args: [int(0, 1)], front: true },
   dec_to_int: { args: [ascii], front: true },
   bool_to_int: { args: [bool], front: true },
@@ -413,10 +415,13 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   int_to_bin_aligned:
     "Converts the integer to a 2-base text and alignes to a minimum length.",
   int_to_hex_aligned:
-    "Converts the integer to a 16-base text and alignes to a minimum length.",
+    "Converts the integer to a 16-base lowercase text and aligns to a minimum length.",
+  int_to_Hex_aligned:
+    "Converts the integer to a 16-base uppercase text and aligns to a minimum length.",
   int_to_dec: "Converts the integer to a 10-base text.",
   int_to_bin: "Converts the integer to a 2-base text.",
-  int_to_hex: "Converts the integer to a 16-base text.",
+  int_to_hex: "Converts the integer to a 16-base lowercase text.",
+  int_to_Hex: "Converts the integer to a 16-base uppercase text.",
   int_to_bool: "Converts 0 to false and 1 to true.",
   dec_to_int: "Parses a integer from a 10-base text.",
   bool_to_int: "Converts false to 0 and true to 1.",

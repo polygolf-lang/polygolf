@@ -393,6 +393,10 @@ function simplifyPolynomial(terms: Node[]): Node[] {
   return result;
 }
 
+export function intToDecOpOrText(x: Node) {
+  return isInt()(x) ? text(x.value.toString()) : op.int_to_dec(x);
+}
+
 export const succ = op.succ;
 export const pred = op.pred;
 

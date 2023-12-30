@@ -18,6 +18,7 @@ import {
   implicitConversion,
   infix,
   list,
+  intToDecOpOrText,
 } from "../../IR";
 import {
   type Language,
@@ -234,7 +235,7 @@ const pythonLanguage: Language = {
         right_align: (x) =>
           infix(
             "%",
-            op["concat[Text]"](text("%"), op.int_to_dec(x[1]), text("s")),
+            op["concat[Text]"](text("%"), intToDecOpOrText(x[1]), text("s")),
             x[0],
           ),
         int_to_bin: (x) => func("format", x[0], text("b")),
@@ -242,13 +243,20 @@ const pythonLanguage: Language = {
           func(
             "format",
             x[0],
-            op["concat[Text]"](text("0"), op.int_to_dec(x[1]), text("b")),
+            op["concat[Text]"](text("0"), intToDecOpOrText(x[1]), text("b")),
           ),
-        int_to_hex: (x) => infix("%", text("%X"), x[0]),
+        int_to_hex: (x) => infix("%", text("%x"), x[0]),
+        int_to_Hex: (x) => infix("%", text("%X"), x[0]),
         int_to_hex_aligned: (x) =>
           infix(
             "%",
-            op["concat[Text]"](text("%0"), op.int_to_dec(x[1]), text("X")),
+            op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("x")),
+            x[0],
+          ),
+        int_to_Hex_aligned: (x) =>
+          infix(
+            "%",
+            op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("X")),
             x[0],
           ),
         int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
