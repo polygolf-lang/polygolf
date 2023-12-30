@@ -48,11 +48,7 @@ import {
   removeUnusedForVar,
   shiftRangeOneUp,
 } from "../../plugins/loops";
-import {
-  golfStringListLiteral,
-  hardcode,
-  listOpsToTextOps,
-} from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
@@ -99,7 +95,6 @@ const nimLanguage: Language = {
   extension: "nim",
   emitter: emitProgram,
   phases: [
-    search(hardcode()),
     required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint()),
     search(
@@ -235,6 +230,7 @@ const nimLanguage: Language = {
           right_align: "align",
           starts_with: "startsWith",
           ends_with: "endsWith",
+          bit_count: "popcount",
         },
         "leftChain",
       ),

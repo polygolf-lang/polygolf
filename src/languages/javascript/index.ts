@@ -8,7 +8,7 @@ import {
   builtin,
   infix,
   int,
-  propertyCall,
+  propertyCall as property,
   isText,
   text,
   implicitConversion,
@@ -39,7 +39,7 @@ import {
   forRangeToForCLike,
   forRangeToForEach,
 } from "../../plugins/loops";
-import { golfStringListLiteral, hardcode } from "../../plugins/static";
+import { golfStringListLiteral } from "../../plugins/static";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
@@ -75,7 +75,6 @@ const javascriptLanguage: Language = {
   extension: "js",
   emitter: emitProgram,
   phases: [
-    search(hardcode()),
     required(printIntToPrint),
     simplegolf(golfLastPrint()),
     search(
@@ -188,9 +187,9 @@ const javascriptLanguage: Language = {
             x[1],
             int(0n),
           ),
-        "size[List]": (x) => propertyCall(x[0], "length"),
-        "size[Ascii]": (x) => propertyCall(x[0], "length"),
-        "size[Table]": (x) => propertyCall(func("Object.keys", x[0]), "length"),
+        "size[List]": (x) => property(x[0], "length"),
+        "size[Ascii]": (x) => property(x[0], "length"),
+        "size[Table]": (x) => property(func("Object.keys", x[0]), "length"),
         right_align: (x) => method(x[0], "padStart", x[1]),
         join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
         int_to_dec: (x) =>
@@ -214,6 +213,11 @@ const javascriptLanguage: Language = {
         bool_to_int: (x) => implicitConversion("bool_to_int", x[0]),
         int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
         "contains[Table]": (x) => infix("in", x[1], x[0]),
+        bit_count: (x) =>
+          property(
+            method(op.int_to_bin(x[0]), "replace", builtin("/0/g,``")),
+            "length",
+          ),
       }),
       mapMutationTo.prefix({
         succ: "++",
