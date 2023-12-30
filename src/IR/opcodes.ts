@@ -413,9 +413,9 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   int_to_bin_aligned:
     "Converts the integer to a 2-base text and alignes to a minimum length.",
   int_to_hex_aligned:
-    "Converts the integer to a 16-base lowercase text and alignes to a minimum length.",
+    "Converts the integer to a 16-base lowercase text and aligns to a minimum length.",
   int_to_Hex_aligned:
-    "Converts the integer to a 16-base uppercase text and alignes to a minimum length.",
+    "Converts the integer to a 16-base uppercase text and aligns to a minimum length.",
   int_to_dec: "Converts the integer to a 10-base text.",
   int_to_bin: "Converts the integer to a 2-base text.",
   int_to_hex: "Converts the integer to a 16-base lowercase text.",
