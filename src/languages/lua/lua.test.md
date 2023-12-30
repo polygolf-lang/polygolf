@@ -67,6 +67,7 @@ join (list "xy" $b) "/";
 join (list "12" "345") "";
 conditional ($a == 2) $a 3;
 conditional ($a == 2) $c false;
+conditional ($a == 2) "x" "";
 ```
 
 ```lua nogolf
@@ -112,6 +113,7 @@ table.concat({"xy",b},"/")
 table.concat({"12","345"})
 a==2 and a or 3
 (a==2 and{c}or{false})[1]
+a==2 and"x"or""
 ```
 
 ## Parentheses
