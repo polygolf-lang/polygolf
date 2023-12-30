@@ -149,7 +149,7 @@ const janetLanguage: Language = {
       mapOpsTo.func({
         split: flipped`string/split`,
         "find[byte]": flipped`string/find`,
-        replace: "string/replace-all",
+        replace: "peg/replace-all",
         "concat[Text]": "string",
         abs: "math/abs",
         add: "+",
