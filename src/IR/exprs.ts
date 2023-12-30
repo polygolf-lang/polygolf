@@ -255,7 +255,8 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
           .filter((x) => isInt()(x))
           .concat(args.filter((x) => !isInt()(x)));
       } else {
-        args = args.filter((x) => !isText("")(x));
+        if (opCode === "concat[Text]")
+          args = args.filter((x) => !isText("")(x));
         if (
           args.length === 0 ||
           (args.length === 1 && args[0].kind === "ImplicitConversion")
