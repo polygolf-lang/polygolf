@@ -98,7 +98,7 @@ export function startsWithEndsWithToSliceEquality(
   return {
     name: `startsWithEndsWithToSliceEquality(${JSON.stringify(char)})`,
     visit(node) {
-      if (isOp("starts_with")(node)) {
+      if (isOp.starts_with(node)) {
         return op["eq[Text]"](
           op[`slice[${char}]`](
             node.args[0],
@@ -108,7 +108,7 @@ export function startsWithEndsWithToSliceEquality(
           node.args[1],
         );
       }
-      if (isOp("ends_with")(node)) {
+      if (isOp.ends_with(node)) {
         return op["eq[Text]"](
           op[`slice_back[${char}]`](
             node.args[0],

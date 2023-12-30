@@ -88,10 +88,10 @@ export function forRangeToForEachKey(node: Node) {
 
 export function numberDivisionToSlash(node: Node) {
   // TODO - this looks sus
-  if (isOp("div")(node) && node.targetType !== "bigint") {
+  if (isOp.div(node) && node.targetType !== "bigint") {
     return functionCall("Math.floor", infix("/", ...node.args));
   }
-  if (isOp("trunc_div")(node) && node.targetType !== "bigint") {
+  if (isOp.trunc_div(node) && node.targetType !== "bigint") {
     return functionCall("Math.floor", infix("/", ...node.args));
   }
 }

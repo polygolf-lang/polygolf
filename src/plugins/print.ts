@@ -82,7 +82,7 @@ export function golfLastPrintInt(toPrintlnInt = true): Plugin {
 
 export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
   if (
-    isOp("int_to_dec")(node) &&
+    isOp.int_to_dec(node) &&
     !spine.isRoot &&
     isOp("print[Text]", "println[Text]")(spine.parent!.node)
   ) {

@@ -321,7 +321,7 @@ export function shiftRangeOneUp(node: Node, spine: Spine) {
     isInt(1n)(node.increment) &&
     spine.someNode(
       (x) =>
-        isOp("add")(x) &&
+        isOp.add(x) &&
         isInt(1n)(x.args[0]) &&
         isIdent(node.variable!)(x.args[1]),
     )

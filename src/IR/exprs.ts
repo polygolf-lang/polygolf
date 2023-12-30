@@ -26,6 +26,7 @@ import {
   isUnary,
   opCodeDefinitions,
   isNullary,
+  OpCodes,
 } from "./IR";
 import { mapObjectValues } from "../common/arrays";
 
@@ -278,7 +279,7 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
       args = newArgs;
       if (opCode === "mul" && args.length > 1 && isNegativeLiteral(args[0])) {
         const toNegate = args.find(
-          (x) => isOp("add")(x) && x.args.some(isNegative),
+          (x) => isOp.add(x) && x.args.some(isNegative),
         );
         if (toNegate !== undefined) {
           args = args.map((x) =>
@@ -369,7 +370,7 @@ function simplifyPolynomial(terms: Node[]): Node[] {
   }
   for (const x of terms) {
     if (isInt()(x)) constant += x.value;
-    else if (isOp("mul")(x)) {
+    else if (isOp.mul(x)) {
       if (isInt()(x.args[0])) add(x.args[0].value, x.args.slice(1));
       else add(1n, x.args);
     } else add(1n, [x]);
@@ -613,11 +614,19 @@ export function isNegativeLiteral(expr: Node) {
 export function isNegative(expr: Node) {
   return (
     isNegativeLiteral(expr) ||
-    (isOp("mul")(expr) && isNegativeLiteral(expr.args[0]))
+    (isOp.mul(expr) && isNegativeLiteral(expr.args[0]))
   );
 }
 
-export function isOp<O extends OpCode>(...ops: O[]): (x: Node) => x is Op<O> {
+function _isOp<O extends OpCode>(...ops: O[]): (x: Node) => x is Op<O> {
   return ((x: Node) =>
     x.kind === "Op" && (ops.length === 0 || ops?.includes(x.op as any))) as any;
+}
+
+export const isOp: {
+  [O in OpCode]: (x: Node) => x is Op<O>;
+} & (<O extends OpCode>(...op: O[]) => (x: Node) => x is Op<O>) = _isOp as any;
+
+for (const opCode of OpCodes) {
+  isOp[opCode] = _isOp(opCode) as any;
 }
