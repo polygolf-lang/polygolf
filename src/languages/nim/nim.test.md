@@ -116,11 +116,11 @@ not b
 -n
 $n
 toBin(3)
-align(toBin(3),5,"0")
+align(toBin(3),5,'0')
 toLowerAscii(toHex(3))
-align(toLowerAscii(toHex(3)),5,"0")
+align(toLowerAscii(toHex(3)),5,'0')
 toHex(3)
-align(toHex(3),5,"0")
+align(toHex(3),5,'0')
 n^3
 n*m
 -3 div n

@@ -8,19 +8,27 @@ import {
 import { type Array, type IR, isIdent, isInt, isText } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
+function escape(x: number, i: number, arr: number[]) {
+  if (x < 100 && (i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57))
+    return `\\${x.toString()}`;
+  if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
+  if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
+  return `\\u{${x.toString(16)}}`;
+}
+
 const emitNimText = emitTextFactory(
   {
     '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
     '"""TEXT"""': { '"""': null },
     'r"TEXT"': { '"': `""`, "\n": null, "\r": null },
   },
-  function (x: number, i: number, arr: number[]) {
-    if (x < 100 && (i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57))
-      return `\\${x.toString()}`;
-    if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
-    if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
-    return `\\u{${x.toString(16)}}`;
+  escape,
+);
+const emitNimChar = emitTextFactory(
+  {
+    "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\'` },
   },
+  escape,
 );
 
 function precedence(expr: IR.Node): number {
@@ -236,7 +244,10 @@ export default function emitProgram(
         case "Identifier":
           return e.name;
         case "Text":
-          return emitNimText(e.value, context.options.codepointRange);
+          return (e.targetType === "char" ? emitNimChar : emitNimText)(
+            e.value,
+            context.options.codepointRange,
+          );
         case "Integer":
           return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
         case "FunctionCall":
