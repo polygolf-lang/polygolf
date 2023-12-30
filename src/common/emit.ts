@@ -1,4 +1,4 @@
-import { type IR, type Integer, type Node } from "IR";
+import type { If, IR, Integer, Node } from "IR";
 import { PolygolfError } from "./errors";
 import { type TokenTree } from "./Language";
 import { codepoints } from "./strings";
@@ -88,4 +88,23 @@ export function emitIntLiteral(
     ),
   );
   return isNegative ? `-${absEmit}` : absEmit;
+}
+
+/**
+ * Decomposes a nested chain of if conditions into a flat structure.
+ */
+export function getIfChain(node: If): {
+  ifs: { condition: Node; consequent: Node }[];
+  alternate: Node | undefined;
+} {
+  const ifs = [{ condition: node.condition, consequent: node.consequent }];
+  let alternate = node.alternate;
+  while (alternate !== undefined && alternate.kind === "If") {
+    ifs.push({
+      condition: alternate.condition,
+      consequent: alternate.consequent,
+    });
+    alternate = alternate.alternate;
+  }
+  return { ifs, alternate };
 }

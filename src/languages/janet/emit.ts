@@ -1,4 +1,9 @@
-import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
+import {
+  EmitError,
+  emitIntLiteral,
+  emitTextFactory,
+  getIfChain,
+} from "../../common/emit";
 import { isInt, type IR } from "../../IR";
 import { type TokenTree } from "../../common/Language";
 
@@ -68,15 +73,19 @@ export default function emitProgram(program: IR.Node): TokenTree {
               ")",
             ];
       }
-      case "If":
+      case "If": {
+        const { ifs, alternate } = getIfChain(e);
         return [
           "(",
-          "if",
-          emit(e.condition),
-          emitMultiNode(e.consequent, true),
-          e.alternate === undefined ? [] : emitMultiNode(e.alternate, true),
+          ifs.length > 1 ? "cond" : "if",
+          ifs.map((x) => [
+            emit(x.condition),
+            emitMultiNode(x.consequent, true),
+          ]),
+          alternate === undefined ? [] : emitMultiNode(alternate, true),
           ")",
         ];
+      }
       case "VarDeclarationWithAssignment": {
         const assignment = e.assignment;
         if (assignment.kind !== "Assignment") {

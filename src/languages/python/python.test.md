@@ -187,23 +187,6 @@ if a:print(a)
 a=1
 ```
 
-## Chained if
-
-```polygolf
-if true {
-    println "a";
-} {
-    if true {
-        println "b";
-    };
-};
-```
-
-```py
-if 1:print("a")
-elif 1:print("b")
-```
-
 ## Multireplace
 
 ```polygolf
