@@ -27,6 +27,7 @@ import {
   isVariadic,
   type NullaryOpCode,
   builtin,
+  type OpCodeArgValues,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -73,14 +74,8 @@ export type OpMapper<T> = (
 ) => Node | undefined;
 
 export const generalOpMapper: OpMapper<
-  | Node
-  | ((
-      opArgs: readonly Node[],
-      s: Spine,
-      c: CompilationContext,
-    ) => Node | undefined)
-> = (arg, opArgs, opCode, s, c) =>
-  typeof arg === "function" ? arg(opArgs, s, c) : arg;
+  (...opArgs: readonly Node[]) => Node | undefined
+> = (arg, opArgs) => arg(...opArgs);
 export const funcOpMapper: OpMapper<string> = (arg, opArgs) =>
   functionCall(arg, ...opArgs);
 export const methodOpMapper: OpMapper<string> = (arg, [first, ...rest]) =>
@@ -326,7 +321,12 @@ export function mapMutationUsing<
   };
 }
 
-export const mapOps = mapOpsUsing(generalOpMapper, "variadic");
+export const mapOps: (
+  a: Partial<{
+    [O in OpCode]: (...x: OpCodeArgValues<O>) => Node | undefined;
+  }>,
+) => Plugin = mapOpsUsing(generalOpMapper, "variadic");
+
 export const mapOpsTo = {
   func: mapOpsUsing(funcOpMapper, "variadic"),
   method: mapOpsUsing(methodOpMapper, "variadic"),
@@ -391,8 +391,8 @@ export const methodsAsFunctions: Plugin = {
 };
 
 export const printIntToPrint: Plugin = mapOps({
-  "print[Int]": (x) => op["print[Text]"](op.int_to_dec(x[0])),
-  "println[Int]": (x) => op["println[Text]"](op.int_to_dec(x[0])),
+  "print[Int]": (a) => op["print[Text]"](op.int_to_dec(a)),
+  "println[Int]": (a) => op["println[Text]"](op.int_to_dec(a)),
 });
 
 export const arraysToLists: Plugin = {

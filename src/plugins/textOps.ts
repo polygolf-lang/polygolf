@@ -18,36 +18,33 @@ export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
 }
 
 export const textGetToIntToTextGet: Plugin = mapOps({
-  "ord_at[Ascii]": (x) => op["ord[Ascii]"](op["at[Ascii]"](x[0], x[1])),
-  "ord_at[byte]": (x) => op["ord[byte]"](op["at[byte]"](x[0], x[1])),
-  "ord_at[codepoint]": (x) =>
-    op["ord[codepoint]"](op["at[codepoint]"](x[0], x[1])),
-  "ord_at_back[Ascii]": (x) =>
-    op["ord[Ascii]"](op["at_back[Ascii]"](x[0], x[1])),
-  "ord_at_back[byte]": (x) => op["ord[byte]"](op["at_back[byte]"](x[0], x[1])),
-  "ord_at_back[codepoint]": (x) =>
-    op["ord[codepoint]"](op["at_back[codepoint]"](x[0], x[1])),
+  "ord_at[Ascii]": (a, b) => op["ord[Ascii]"](op["at[Ascii]"](a, b)),
+  "ord_at[byte]": (a, b) => op["ord[byte]"](op["at[byte]"](a, b)),
+  "ord_at[codepoint]": (a, b) =>
+    op["ord[codepoint]"](op["at[codepoint]"](a, b)),
+  "ord_at_back[Ascii]": (a, b) => op["ord[Ascii]"](op["at_back[Ascii]"](a, b)),
+  "ord_at_back[byte]": (a, b) => op["ord[byte]"](op["at_back[byte]"](a, b)),
+  "ord_at_back[codepoint]": (a, b) =>
+    op["ord[codepoint]"](op["at_back[codepoint]"](a, b)),
 });
 
 export const textToIntToTextGetToInt: Plugin = mapOps({
-  "ord[byte]": (x) =>
-    isOp("at[byte]")(x[0]) ? op["ord_at[byte]"](...x[0].args) : undefined,
-  "ord[codepoint]": (x) =>
-    isOp("at[codepoint]")(x[0])
-      ? op["ord_at[codepoint]"](...x[0].args)
-      : undefined,
+  "ord[byte]": (a) =>
+    isOp("at[byte]")(a) ? op["ord_at[byte]"](...a.args) : undefined,
+  "ord[codepoint]": (a) =>
+    isOp("at[codepoint]")(a) ? op["ord_at[codepoint]"](...a.args) : undefined,
 });
 
 export const textGetToTextGetToIntToText: Plugin = mapOps({
-  "at[byte]": (x) => op["char[byte]"](op["ord_at[byte]"](x[0], x[1])),
-  "at[codepoint]": (x) =>
-    op["char[codepoint]"](op["ord_at[codepoint]"](x[0], x[1])),
+  "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
+  "at[codepoint]": (a, b) =>
+    op["char[codepoint]"](op["ord_at[codepoint]"](a, b)),
 });
 
 export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps({
-  "ord[Ascii]": (x) => op["ord_at[Ascii]"](x[0], int(0n)),
-  "ord[byte]": (x) => op["ord_at[byte]"](x[0], int(0n)),
-  "ord[codepoint]": (x) => op["ord_at[codepoint]"](x[0], int(0n)),
+  "ord[Ascii]": (a) => op["ord_at[Ascii]"](a, int(0n)),
+  "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
+  "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
 });
 
 /**
@@ -92,7 +89,7 @@ export function useMultireplace(singleCharInputsOnly = false): Plugin {
 }
 
 export const replaceToSplitAndJoin: Plugin = mapOps({
-  replace: ([x, y, z]) => op.join(op.split(x, y), z),
+  replace: (x, y, z) => op.join(op.split(x, y), z),
 });
 
 export function startsWithEndsWithToSliceEquality(

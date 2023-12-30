@@ -88,15 +88,12 @@ const luaLanguage: Language = {
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       mapOps({
-        dec_to_int: (x) =>
-          op.add(int(0n), implicitConversion("dec_to_int", x[0])),
-        "at[argv]": (x) =>
-          op["at[List]"]({ ...builtin("arg"), type: textType() }, x[0]),
-
-        "ord_at[byte]": (x) => method(x[0], "byte", succ(x[1])),
-        "at[byte]": (x) => method(x[0], "sub", succ(x[1]), succ(x[1])),
-        "slice[byte]": (x) =>
-          method(x[0], "sub", succ(x[1]), op.add(x[1], x[2])),
+        dec_to_int: (a) => op.add(int(0n), implicitConversion("dec_to_int", a)),
+        "at[argv]": (a) =>
+          op["at[List]"]({ ...builtin("arg"), type: textType() }, a),
+        "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
+        "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
+        "slice[byte]": (a, b, c) => method(a, "sub", succ(b), op.add(b, c)),
       }),
       decomposeIntLiteral(true, true, true),
     ),
@@ -108,16 +105,14 @@ const luaLanguage: Language = {
       textToIntToFirstIndexTextGetToInt,
       startsWithEndsWithToSliceEquality("byte"),
       mapOps({
-        dec_to_int: (x) =>
-          op.mul(int(1n), implicitConversion("dec_to_int", x[0])),
-        "at[argv]": (x) =>
-          op["at[List]"]({ ...builtin("arg"), type: textType() }, x[0]),
-        "ord_at[byte]": (x) => method(x[0], "byte", succ(x[1])),
-        "ord_at_back[byte]": (x) => method(x[0], "byte", x[1]),
-        "at[byte]": (x) => method(x[0], "sub", succ(x[1]), succ(x[1])),
-        "at_back[byte]": (x) => method(x[0], "sub", x[1], x[1]),
-        "slice[byte]": (x) =>
-          method(x[0], "sub", succ(x[1]), op.add(x[1], x[2])),
+        dec_to_int: (a) => op.mul(int(1n), implicitConversion("dec_to_int", a)),
+        "at[argv]": (a) =>
+          op["at[List]"]({ ...builtin("arg"), type: textType() }, a),
+        "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
+        "ord_at_back[byte]": (a, b) => method(a, "byte", b),
+        "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
+        "at_back[byte]": (a, b) => method(a, "sub", b, b),
+        "slice[byte]": (a, b, c) => method(a, "sub", succ(b), op.add(b, c)),
       }),
       conditionalOpToAndOr(
         (n, s) => !["boolean", "void"].includes(getType(n, s).kind),
@@ -148,12 +143,12 @@ const luaLanguage: Language = {
     search(shiftRangeOneUp),
     required(
       mapOps({
-        int_to_dec: (x) =>
-          op["concat[Text]"](text(""), implicitConversion("int_to_dec", x[0])),
-        join: (x) => func("table.concat", isText("")(x[1]) ? [x[0]] : x),
+        int_to_dec: (a) =>
+          op["concat[Text]"](text(""), implicitConversion("int_to_dec", a)),
+        join: (a, b) => func("table.concat", isText("")(b) ? [a] : [a, b]),
         "char[byte]": (x) => func("string.char", x),
 
-        replace: ([a, b, c]) =>
+        replace: (a, b, c) =>
           method(
             a,
             "gsub",

@@ -121,12 +121,12 @@ const pythonLanguage: Language = {
       removeUnusedForVar,
       putcToPrintChar,
       mapOps({
-        argv: builtin("sys.argv[1:]"),
+        argv: () => builtin("sys.argv[1:]"),
 
-        "at[argv]": (x) =>
+        "at[argv]": (a) =>
           op["at[List]"](
             { ...builtin("sys.argv"), type: listType(textType()) },
-            succ(x[0]),
+            succ(a),
           ),
       }),
 
@@ -158,21 +158,21 @@ const pythonLanguage: Language = {
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps({
-        true: int(1),
-        false: int(0),
-        "find[byte]": (x) =>
+        true: () => int(1),
+        false: () => int(0),
+        "find[byte]": (a, b) =>
           method(
-            func("bytes", x[0], text("u8")),
+            func("bytes", a, text("u8")),
             "find",
-            func("bytes", x[1], text("u8")),
+            func("bytes", b, text("u8")),
           ),
-        "size[byte]": (x) => func("len", func("bytes", x[0], text("u8"))),
-        "reversed[codepoint]": (x) =>
-          rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
-        "reversed[byte]": (x) =>
+        "size[byte]": (a) => func("len", func("bytes", a, text("u8"))),
+        "reversed[codepoint]": (a) =>
+          rangeIndexCall(a, builtin(""), builtin(""), int(-1)),
+        "reversed[byte]": (a) =>
           method(
             rangeIndexCall(
-              func("bytes", x[0], text("u8")),
+              func("bytes", a, text("u8")),
               builtin(""),
               builtin(""),
               int(-1),
@@ -180,44 +180,43 @@ const pythonLanguage: Language = {
             "decode",
             text("u8"),
           ),
-        "reversed[List]": (x) =>
-          rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
-        "at[codepoint]": (x) => indexCall(x[0], x[1]),
-        "at[byte]": (x) => op["char[byte]"](op["ord_at[byte]"](x[0], x[1])),
-        "ord_at[byte]": (x) => indexCall(func("bytes", x[0], text("u8")), x[1]),
-        "ord_at_back[byte]": (x) =>
-          indexCall(func("bytes", x[0], text("u8")), x[1]),
-        "slice[codepoint]": (x) =>
-          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1)),
-        "slice[byte]": (x) =>
+        "reversed[List]": (a) =>
+          rangeIndexCall(a, builtin(""), builtin(""), int(-1)),
+        "at[codepoint]": (a, b) => indexCall(a, b),
+        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
+        "ord_at[byte]": (a, b) => indexCall(func("bytes", a, text("u8")), b),
+        "ord_at_back[byte]": (a, b) =>
+          indexCall(func("bytes", a, text("u8")), b),
+        "slice[codepoint]": (a, b, c) =>
+          rangeIndexCall(a, b, op.add(b, c), int(1)),
+        "slice[byte]": (a, b, c) =>
           method(
             rangeIndexCall(
-              func("bytes", x[0], text("u8")),
-              x[1],
-              op.add(x[1], x[2]),
+              func("bytes", a, text("u8")),
+              b,
+              op.add(b, c),
               int(1),
             ),
             "decode",
             text("u8"),
           ),
-        "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1)),
+        "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
 
-        "print[Text]": (x) =>
+        "print[Text]": (a) =>
           func(
             "print",
-            x[0].kind !== "ImplicitConversion"
-              ? [namedArg("end", x[0])]
-              : [x[0], namedArg("end", text(""))],
+            a.kind !== "ImplicitConversion"
+              ? [namedArg("end", a)]
+              : [a, namedArg("end", text(""))],
           ),
 
-        text_multireplace: (x) =>
+        text_multireplace: (a, ...x) =>
           method(
-            x[0],
+            a,
             "translate",
             table(
               (x as Text[]).flatMap((_, i, x) =>
-                i % 2 > 0
+                i % 2 === 0
                   ? [
                       keyValue(
                         int(x[i].value.codePointAt(0)!),
@@ -231,37 +230,37 @@ const pythonLanguage: Language = {
               ),
             ),
           ),
-        append: (x) => op["concat[List]"](x[0], list([x[1]])),
-        right_align: (x) =>
+        append: (a, b) => op["concat[List]"](a, list([b])),
+        right_align: (a, b) =>
           infix(
             "%",
-            op["concat[Text]"](text("%"), intToDecOpOrText(x[1]), text("s")),
-            x[0],
+            op["concat[Text]"](text("%"), intToDecOpOrText(b), text("s")),
+            a,
           ),
-        int_to_bin: (x) => func("format", x[0], text("b")),
-        int_to_bin_aligned: (x) =>
+        int_to_bin: (a) => func("format", a, text("b")),
+        int_to_bin_aligned: (a, b) =>
           func(
             "format",
-            x[0],
-            op["concat[Text]"](text("0"), intToDecOpOrText(x[1]), text("b")),
+            a,
+            op["concat[Text]"](text("0"), intToDecOpOrText(b), text("b")),
           ),
-        int_to_hex: (x) => infix("%", text("%x"), x[0]),
-        int_to_Hex: (x) => infix("%", text("%X"), x[0]),
-        int_to_hex_aligned: (x) =>
+        int_to_hex: (a) => infix("%", text("%x"), a),
+        int_to_Hex: (a) => infix("%", text("%X"), a),
+        int_to_hex_aligned: (a, b) =>
           infix(
             "%",
-            op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("x")),
-            x[0],
+            op["concat[Text]"](text("%0"), intToDecOpOrText(b), text("x")),
+            a,
           ),
-        int_to_Hex_aligned: (x) =>
+        int_to_Hex_aligned: (a, b) =>
           infix(
             "%",
-            op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("X")),
-            x[0],
+            op["concat[Text]"](text("%0"), intToDecOpOrText(b), text("X")),
+            a,
           ),
-        int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
-        bool_to_int: (x) =>
-          op.mul(int(1n), implicitConversion("bool_to_int", x[0])),
+        int_to_bool: (a) => implicitConversion("int_to_bool", a),
+        bool_to_int: (a) =>
+          op.mul(int(1n), implicitConversion("bool_to_int", a)),
       }),
       mapOpsTo.method({
         "find[List]": "index",

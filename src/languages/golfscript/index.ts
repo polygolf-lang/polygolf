@@ -119,63 +119,47 @@ const golfscriptLanguage: Language = {
     ),
     required(
       mapOps({
-        "at[argv]": (x) => op["at[List]"](op.argv, x[0]),
-        argv: builtin("a"),
-        true: int(1),
-        false: int(0),
+        "at[argv]": (a) => op["at[List]"](op.argv, a),
+        "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
+        "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
+        max: (...x) => op["at[List]"](op["sorted[Int]"](list(x)), int(1)),
+        min: (...x) => op["at[List]"](op["sorted[Int]"](list(x)), int(0)),
 
-        "slice[byte]": (x) =>
-          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1)),
-        "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1)),
-        max: (x) => op["at[List]"](op["sorted[Int]"](list(x)), int(1)),
-        min: (x) => op["at[List]"](op["sorted[Int]"](list(x)), int(0)),
+        leq: (a, b) => (isInt()(a) ? op.lt(pred(a), b) : op.lt(a, succ(b))),
 
-        leq: (x) =>
-          isInt()(x[0]) ? op.lt(pred(x[0]), x[1]) : op.lt(x[0], succ(x[1])),
-
-        geq: (x) =>
-          isInt()(x[0]) ? op.gt(succ(x[0]), x[1]) : op.gt(x[0], pred(x[1])),
-        int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
-        bool_to_int: (x) => implicitConversion("bool_to_int", x[0]),
-        append: (x) => op["concat[List]"](x[0], list([x[1]])),
-        "contains[Text]": (x) =>
+        geq: (a, b) => (isInt()(a) ? op.gt(succ(a), b) : op.gt(a, pred(b))),
+        int_to_bool: (a) => implicitConversion("int_to_bool", a),
+        bool_to_int: (a) => implicitConversion("bool_to_int", a),
+        append: (a, b) => op["concat[List]"](a, list([b])),
+        "contains[Text]": (a, b) =>
           implicitConversion(
             "int_to_bool",
-            op.add(op["find[byte]"](x[0], x[1]), int(1n)),
+            op.add(op["find[byte]"](a, b), int(1n)),
           ),
-        "contains[List]": (x) =>
+        "contains[List]": (a, b) =>
           implicitConversion(
             "int_to_bool",
-            op.add(op["find[List]"](x[0], x[1]), int(1n)),
+            op.add(op["find[List]"](a, b), int(1n)),
           ),
-        int_to_bin: (x) => func("*", func("base", x[0], int(2n)), text("")),
+        int_to_bin: (a) => func("*", func("base", a, int(2n)), text("")),
 
         // TO-DO: less hacky implementations for these:
-        int_to_hex: (x) =>
-          func(
-            "+",
-            func("{.9>39*+48+}%", func("base", x[0], int(16n))),
-            text(""),
-          ),
-        int_to_Hex: (x) =>
-          func(
-            "+",
-            func("{.9>7*+48+}%", func("base", x[0], int(16n))),
-            text(""),
-          ),
-        gcd: (x) => func("{.}{.@@%}while;", x[0], x[1]),
-        split_whitespace: (x) =>
-          op.split(func("{...9<\\13>+*\\32if}%", x[0]), text(" ")),
-        right_align: (x) => func('1$,-.0>*" "*\\+', x[0], x[1]),
-        int_to_hex_aligned: (x) =>
-          func('16base{.9>39*+48+}%""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
-        int_to_Hex_aligned: (x) =>
-          func('16base{.9>7*+48+}%""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
-        int_to_bin_aligned: (x) =>
-          func('2base""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
-        bit_count: (x) => func("2base 0+{+}*", x[0]),
+        int_to_hex: (a) =>
+          func("+", func("{.9>39*+48+}%", func("base", a, int(16n))), text("")),
+        int_to_Hex: (a) =>
+          func("+", func("{.9>7*+48+}%", func("base", a, int(16n))), text("")),
+        gcd: (a, b) => func("{.}{.@@%}while;", a, b),
+        split_whitespace: (a) =>
+          op.split(func("{...9<\\13>+*\\32if}%", a), text(" ")),
+        right_align: (a, b) => func('1$,-.0>*" "*\\+', a, b),
+        int_to_hex_aligned: (a, b) =>
+          func('16base{.9>39*+48+}%""+\\1$,-.0>*"0"*\\+', a, b),
+        int_to_Hex_aligned: (a, b) =>
+          func('16base{.9>7*+48+}%""+\\1$,-.0>*"0"*\\+', a, b),
+        int_to_bin_aligned: (a, b) => func('2base""+\\1$,-.0>*"0"*\\+', a, b),
+        bit_count: (a) => func("2base 0+{+}*", a),
       }),
+      mapOpsTo.builtin({ argv: "a", true: "1", false: "0" }),
       mapBackwardsIndexToForwards({
         "at_back[Ascii]": 0,
         "at_back[byte]": 0,
@@ -240,11 +224,11 @@ const golfscriptLanguage: Language = {
         "leftChain",
       ),
       mapOps({
-        "neq[Int]": (x) => func("!", func("=", x[0], x[1])),
-        "neq[Text]": (x) => func("!", func("=", x[0], x[1])),
-        "reversed[byte]": (x) => func("%", x[0], int(-1)),
-        "reversed[List]": (x) => func("%", x[0], int(-1)),
-        "char[byte]": (x) => func("+", list(x), text("")),
+        "neq[Int]": (a, b) => func("!", func("=", a, b)),
+        "neq[Text]": (a, b) => func("!", func("=", a, b)),
+        "reversed[byte]": (a) => func("%", a, int(-1)),
+        "reversed[List]": (a) => func("%", a, int(-1)),
+        "char[byte]": (...x) => func("+", list(x), text("")),
       }),
     ),
     required(

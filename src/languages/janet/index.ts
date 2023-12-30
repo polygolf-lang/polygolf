@@ -9,6 +9,7 @@ import emitProgram from "./emit";
 import {
   arraysToLists,
   flipBinaryOps,
+  flipped,
   mapBackwardsIndexToForwards,
   mapMutationTo,
   mapOps,
@@ -70,42 +71,42 @@ const janetLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       mapOps({
-        right_align: (x) =>
+        right_align: (a, b) =>
           func(
             "string/format",
-            op["concat[Text]"](text("%"), intToDecOpOrText(x[1]), text("s")),
-            x[0],
+            op["concat[Text]"](text("%"), intToDecOpOrText(b), text("s")),
+            a,
           ),
-        int_to_hex_aligned: (x) =>
+        int_to_hex_aligned: (a, b) =>
           func(
             "string/format",
-            op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("x")),
-            x[0],
+            op["concat[Text]"](text("%0"), intToDecOpOrText(b), text("x")),
+            a,
           ),
-        int_to_Hex_aligned: (x) =>
+        int_to_Hex_aligned: (a, b) =>
           func(
             "string/format",
-            op["concat[Text]"](text("%0"), intToDecOpOrText(x[1]), text("X")),
-            x[0],
+            op["concat[Text]"](text("%0"), intToDecOpOrText(b), text("X")),
+            a,
           ),
       }),
     ),
     simplegolf(implicitlyConvertConcatArg),
     required(
       mapOps({
-        argv: func("slice", func("dyn", builtin(":args")), int(1n)),
+        argv: () => func("slice", func("dyn", builtin(":args")), int(1n)),
 
-        append: (x) => op["concat[List]"](x[0], list([x[1]])),
+        append: (a, b) => op["concat[List]"](a, list([b])),
 
-        "at[argv]": (x) =>
-          op["at[List]"](func("dyn", builtin(":args")), succ(x[0])),
-        "at[byte]": (x) => op["slice[byte]"](x[0], x[1], int(1n)),
-        "contains[Text]": (x) => func("int?", op["find[byte]"](x[0], x[1])),
-        "contains[Table]": (x) =>
-          op.not(func("nil?", op["at[Table]"](x[0], x[1]))),
+        "at[argv]": (a) =>
+          op["at[List]"](func("dyn", builtin(":args")), succ(a)),
+        "at[byte]": (a, b) => op["slice[byte]"](a, b, int(1n)),
+        "contains[Text]": (a, b) => func("int?", op["find[byte]"](a, b)),
+        "contains[Table]": (a, b) =>
+          op.not(func("nil?", op["at[Table]"](a, b))),
       }),
       mapOps({
-        "at_back[List]": ([a, b]) =>
+        "at_back[List]": (a, b) =>
           isInt(-1n)(b) ? func("last", a) : undefined,
       }),
       mapBackwardsIndexToForwards({
@@ -116,20 +117,16 @@ const janetLanguage: Language = {
         "with_at_back[List]": "size[List]",
       }),
       mapOps({
-        bool_to_int: (x) => conditional(x[0], int(1n), int(0n)),
-        int_to_bool: (x) => op["neq[Int]"](x[0], int(0n)),
-        int_to_hex: (x) => func("string/format", text("%x"), x[0]),
-        int_to_Hex: (x) => func("string/format", text("%X"), x[0]),
-        split: (x) => func("string/split", x[1], x[0]),
+        bool_to_int: (a) => conditional(a, int(1n), int(0n)),
+        int_to_bool: (a) => op["neq[Int]"](a, int(0n)),
+        int_to_hex: (a) => func("string/format", text("%x"), a),
+        int_to_Hex: (a) => func("string/format", text("%X"), a),
 
-        "char[byte]": (x) => func("string/format", text("%c"), x[0]),
-        "concat[List]": (x) => func("array/concat", list([]), ...x),
-        "find[byte]": (x) => func("string/find", x[1], x[0]),
-        "ord[byte]": (x) => op["ord_at[byte]"](x[0], int(0n)),
-        "slice[byte]": (x) =>
-          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1n)),
-        "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1n)),
+        "char[byte]": (a) => func("string/format", text("%c"), a),
+        "concat[List]": (...x) => func("array/concat", list([]), ...x),
+        "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
+        "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
+        "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
       }),
       mapOpsTo.builtin({ true: "true", false: "false" }),
       mapOpsTo.func({
@@ -150,6 +147,8 @@ const janetLanguage: Language = {
       }),
       mapOpsTo.func({ gcd: "math/gcd" }, "leftChain"),
       mapOpsTo.func({
+        split: flipped`string/split`,
+        "find[byte]": flipped`string/find`,
         replace: "string/replace-all",
         "concat[Text]": "string",
         abs: "math/abs",

@@ -13,6 +13,9 @@ import {
   tableType,
   textType,
   integerType,
+  isOp,
+  infix,
+  functionCall,
 } from "../../IR";
 
 export function propertyCallToIndexCall(node: Node) {
@@ -80,5 +83,15 @@ export function forRangeToForEachKey(node: Node) {
       ),
       block([assignment(node.variable, op.dec_to_int(loopVar)), node.body]),
     );
+  }
+}
+
+export function numberDivisionToSlash(node: Node) {
+  // TODO - this looks sus
+  if (isOp("div")(node) && node.targetType !== "bigint") {
+    return functionCall("Math.floor", infix("/", ...node.args));
+  }
+  if (isOp("trunc_div")(node) && node.targetType !== "bigint") {
+    return functionCall("Math.floor", infix("/", ...node.args));
   }
 }
