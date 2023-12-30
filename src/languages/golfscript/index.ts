@@ -166,6 +166,7 @@ const golfscriptLanguage: Language = {
           func('16base{.9>7*+48+}%""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
         int_to_bin_aligned: (x) =>
           func('2base""+\\1$,-.0>*"0"*\\+', x[0], x[1]),
+        bit_count: (x) => func("2base 0+{+}*", x[0]),
       }),
       mapBackwardsIndexToForwards({
         "at_back[Ascii]": 0,
