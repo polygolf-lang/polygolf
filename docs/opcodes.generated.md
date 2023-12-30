@@ -79,8 +79,8 @@ Hover opcode name to see a description.
 | starts_with | [starts_with](## "Checks whether the second argument is a prefix of the first.") | [Text, Text] | Bool |
 | ends_with | [ends_with](## "Checks whether the second argument is a suffix of the first.") | [Text, Text] | Bool |
 | int_to_bin_aligned | [int_to_bin_aligned](## "Converts the integer to a 2-base text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
-| int_to_hex_aligned | [int_to_hex_aligned](## "Converts the integer to a 16-base lowercase text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
-| int_to_Hex_aligned | [int_to_Hex_aligned](## "Converts the integer to a 16-base uppercase text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
+| int_to_hex_aligned | [int_to_hex_aligned](## "Converts the integer to a 16-base lowercase text and aligns to a minimum length.") | [0..oo, 0..oo] | Ascii |
+| int_to_Hex_aligned | [int_to_Hex_aligned](## "Converts the integer to a 16-base uppercase text and aligns to a minimum length.") | [0..oo, 0..oo] | Ascii |
 | int_to_dec | [int_to_dec](## "Converts the integer to a 10-base text.") | [Int] | (Ascii 1..oo) |
 | int_to_bin | [int_to_bin](## "Converts the integer to a 2-base text.") | [0..oo] | (Ascii 1..oo) |
 | int_to_hex | [int_to_hex](## "Converts the integer to a 16-base lowercase text.") | [0..oo] | (Ascii 1..oo) |
