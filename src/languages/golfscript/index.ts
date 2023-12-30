@@ -157,6 +157,12 @@ const golfscriptLanguage: Language = {
         int_to_hex: (x) =>
           func(
             "+",
+            func("{.9>39*+48+}%", func("base", x[0], int(16n))),
+            text(""),
+          ),
+        int_to_Hex: (x) =>
+          func(
+            "+",
             func("{.9>7*+48+}%", func("base", x[0], int(16n))),
             text(""),
           ),
