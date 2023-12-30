@@ -15,6 +15,7 @@ import {
   isOfKind,
   prefix,
   op,
+  BinaryOpCodes,
 } from "../../IR";
 import type { Plugin } from "../../common/Language";
 
@@ -75,6 +76,7 @@ export function limitSetOp(max: number): Plugin {
 export const decomposeExpressions: Plugin = {
   name: "decomposeExpressions",
   visit(node) {
+    // TODO variadic!
     if (
       node.kind === "Assignment" &&
       node.variable.kind === "Identifier" &&
@@ -82,8 +84,8 @@ export const decomposeExpressions: Plugin = {
       node.expr.args.length === 2
     ) {
       const expr = node.expr;
-      let left = expr.args[0];
-      let right = expr.args[1];
+      let left = expr.args[0]!;
+      let right = expr.args[1]!;
       const pre = [];
       if (left.kind !== "Identifier") {
         pre.push(assignment(node.variable.name + "L", left));
@@ -96,7 +98,7 @@ export const decomposeExpressions: Plugin = {
       if (pre.length > 0) {
         return block([
           ...pre,
-          assignment(node.variable, op(expr.op, left, right)),
+          assignment(node.variable, op.unsafe(expr.op, left, right)),
         ]);
       }
     }
@@ -122,7 +124,7 @@ export const powerToForRange: Plugin = {
           int(0n),
           exponent,
           int(1n),
-          assignment(res, op("mul", res, base)),
+          assignment(res, op.mul(res, base)),
         ),
       ]);
     }
@@ -134,44 +136,44 @@ export const extractConditions: Plugin = {
   visit(node) {
     if (
       isOfKind("If", "While")(node) &&
-      isOp()(node.condition) &&
+      isOp(...BinaryOpCodes)(node.condition) &&
       (!isOp("gt", "leq")(node.condition) ||
         node.condition.args[0].kind !== "Identifier" ||
         !isInt(0n)(node.condition.args[1]))
     ) {
       let condValue: Node;
       let conditionOp: "gt" | "leq";
-      const args = node.condition.args;
+      const [a, b] = node.condition.args;
       switch (node.condition.op) {
         case "gt":
-          condValue = op("sub", ...args);
+          condValue = op.sub(a, b);
           conditionOp = "gt";
           break;
         case "leq":
-          condValue = op("sub", ...args);
+          condValue = op.sub(a, b);
           conditionOp = "leq";
           break;
         case "lt":
-          condValue = op("sub", args[1], args[0]);
+          condValue = op.sub(b, a);
           conditionOp = "gt";
           break;
         case "geq":
-          condValue = op("sub", args[1], args[0]);
+          condValue = op.sub(b, a);
           conditionOp = "leq";
           break;
         case "neq[Int]":
-          condValue = op("pow", op("sub", ...args), int(2n));
+          condValue = op.pow(op.sub(a, b), int(2n));
           conditionOp = "gt";
           break;
         case "eq[Int]":
-          condValue = op("pow", op("sub", ...args), int(2n));
+          condValue = op.pow(op.sub(a, b), int(2n));
           conditionOp = "leq";
           break;
         default:
           return;
       }
       const newVar = id("condValue");
-      const condition = op(conditionOp, newVar, int(0n));
+      const condition = op[conditionOp](newVar, int(0n));
       return block([
         assignment(newVar, condValue),
         node.kind === "If"
@@ -211,12 +213,12 @@ export const printTextLiteral: Plugin = {
             decimal = "";
             if (value !== prev) res.push(assignment(newVar, int(value)));
             prev = value;
-            res.push(op("print[Int]", newVar));
+            res.push(op["print[Int]"](newVar));
           }
           if (x !== prev)
             res.push(assignment(newVar, int(isSpecialValue(x) ? 256 + x : x)));
           prev = x;
-          res.push(op("putc[byte]", newVar));
+          res.push(op["putc[byte]"](newVar));
         }
       });
       if (decimal !== "") {
@@ -224,7 +226,7 @@ export const printTextLiteral: Plugin = {
         decimal = "";
         if (value !== prev) res.push(assignment(newVar, int(value)));
         prev = value;
-        res.push(op("print[Int]", newVar));
+        res.push(op["print[Int]"](newVar));
       }
       return block(res);
     }
@@ -234,28 +236,27 @@ export const printTextLiteral: Plugin = {
 export const mapOpsToConditionals: Plugin = {
   name: "mapOpsToConditionals",
   visit(node) {
-    if (isOp()(node)) {
-      if (node.op === "abs") {
-        return conditional(
-          op("gt", node.args[0], int(0n)),
-          node.args[0],
-          op("neg", node.args[0]),
-        );
-      }
-      if (node.op === "min") {
-        return conditional(
-          op("gt", node.args[0], node.args[1]),
-          node.args[1],
-          node.args[0],
-        );
-      }
-      if (node.op === "max") {
-        return conditional(
-          op("gt", node.args[0], node.args[1]),
-          node.args[0],
-          node.args[1],
-        );
-      }
+    if (isOp("abs")(node)) {
+      return conditional(
+        op.gt(node.args[0], int(0n)),
+        node.args[0],
+        op.neg(node.args[0]),
+      );
+    }
+    if (isOp("min")(node)) {
+      // TODO min & max are variadic!
+      return conditional(
+        op.gt(node.args[0], node.args[1]),
+        node.args[1],
+        node.args[0],
+      );
+    }
+    if (isOp("max")(node)) {
+      return conditional(
+        op.gt(node.args[0], node.args[1]),
+        node.args[0],
+        node.args[1],
+      );
     }
   },
 };

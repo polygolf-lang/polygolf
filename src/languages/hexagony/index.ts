@@ -1,4 +1,4 @@
-import { mapUnaryAndBinary } from "../../plugins/ops";
+import { mapOpsTo } from "../../plugins/ops";
 import { printLnToPrint } from "../../plugins/print";
 import {
   type Language,
@@ -23,10 +23,10 @@ import {
 1. Transforming the input AST to an equivalent AST using only low level constructs. The only allowed variable types are ints and only allowed nodes are
 
 - `Block`
-- `UnaryOp` - one of `0123456789()~,;?!` applied to an `Identifier`
+- Unary `FunctionCall` - one of `0123456789()~,;?!` applied to an `Identifier`
 - `Assignment` of an `IntegerLiteral` (with a value that can directly be emitted) to an `Identifier`
 - `Assignment` of an `Identifier` to a different `Identifier`
-- `Assignment` of a `BinaryOp` to an `Identifier` where the `BinaryOp`'s op is one of `+-*:%` and both args are `Identifiers`
+- `Assignment` of a binary `FunctionCall` to an `Identifier` where the `FunctionaCall`'s name is one of `+-*:%` and both args are `Identifiers`
 - `WhileStatement` where condition is of the form `($id > 0)` and body is allowed node
 - `IfStatement` where condition is of the form `($id > 0)` and both branches are allowed nodes
 
@@ -56,7 +56,7 @@ const hexagonyLanguage: Language = {
       extractConditions,
       decomposeExpressions,
       powerToForRange,
-      mapUnaryAndBinary({
+      mapOpsTo.func({
         add: "+",
         sub: "-",
         neg: "~",
@@ -67,7 +67,7 @@ const hexagonyLanguage: Language = {
       printLnToPrint,
       printTextLiteral,
       limitSetOp(99999),
-      mapUnaryAndBinary({ "putc[byte]": ";", "print[Int]": "!" }),
+      mapOpsTo.func({ "putc[byte]": ";", "print[Int]": "!" }),
     ),
   ],
 };
