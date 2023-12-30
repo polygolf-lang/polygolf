@@ -49,6 +49,7 @@ import {
   OpCodeFrontNamesToOpCodes,
   integerType,
   type Rest,
+  lengthToArrayIndexType,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -128,8 +129,6 @@ export function calcTypeAndResolveOpCode(
     }
     case "Op":
       return getOpCodeType(expr, program);
-    case "MutatingInfix":
-      return voidType;
     case "FunctionCall": {
       const fType = type(expr.func);
       if (fType.kind !== "Function") {
@@ -161,16 +160,16 @@ export function calcTypeAndResolveOpCode(
     case "Array":
       return array(
         expr.exprs.map(type).reduce((a, b) => union(a, b)),
-        expr.exprs.length,
+        lengthToArrayIndexType(expr.exprs.length),
       );
     case "List":
       return expr.exprs.length > 0
         ? list(expr.exprs.map(type).reduce((a, b) => union(a, b)))
-        : list("void");
+        : list(voidType);
     case "Set":
       return expr.exprs.length > 0
         ? set(expr.exprs.map(type).reduce((a, b) => union(a, b)))
-        : set("void");
+        : set(voidType);
     case "KeyValue": {
       const k = type(expr.key);
       const v = type(expr.value);
@@ -192,7 +191,7 @@ export function calcTypeAndResolveOpCode(
               kTypes.reduce((a, b) => union(a, b) as any),
               vTypes.reduce((a, b) => union(a, b)),
             )
-          : table(int(), "void");
+          : table(int(), voidType);
       }
       throw new Error(
         "Programming error. Type of KeyValue nodes should always be KeyValue.",
@@ -389,7 +388,6 @@ export function getOpCodeTypeFromTypes(
     case "at[argv]":
       return text();
     // other
-    case "push":
     case "include":
       return voidType;
     case "append":
@@ -445,7 +443,8 @@ export function getOpCodeTypeFromTypes(
     case "right_align":
       return text(int(0, "oo"), (got[0] as TextType).isAscii);
     case "int_to_bin_aligned":
-    case "int_to_hex_aligned": {
+    case "int_to_hex_aligned":
+    case "int_to_Hex_aligned": {
       const t1 = got[0] as IntegerType;
       const t2 = got[1] as IntegerType;
       if (isFiniteType(t1) && isFiniteType(t2)) {
@@ -472,17 +471,35 @@ export function getOpCodeTypeFromTypes(
       const t = got[0] as IntegerType;
       return getTypeBitNot(t);
     }
+    case "bit_count":
+      return int(0, BigInt((got[0] as IntegerType).high.toString(2).length));
     case "neg": {
       const t = got[0] as IntegerType;
       return int(neg(t.high), neg(t.low));
     }
+    case "is_even":
+    case "is_odd":
+      return booleanType;
+    case "succ":
+      return getArithmeticType(
+        "add",
+        got[0] as IntegerType,
+        integerType(1n, 1n),
+      );
+    case "pred":
+      return getArithmeticType(
+        "sub",
+        got[0] as IntegerType,
+        integerType(1n, 1n),
+      );
     case "not":
       return booleanType;
     case "int_to_bool":
       return booleanType;
     case "int_to_dec":
     case "int_to_bin":
-    case "int_to_hex": {
+    case "int_to_hex":
+    case "int_to_Hex": {
       const t = got[0] as IntegerType;
       if (isFiniteType(t))
         return text(
@@ -492,9 +509,9 @@ export function getOpCodeTypeFromTypes(
                 x.toString(
                   opCode === "int_to_bin"
                     ? 2
-                    : opCode === "int_to_hex"
-                    ? 16
-                    : 10,
+                    : opCode === "int_to_dec"
+                    ? 10
+                    : 16,
                 ).length,
               ),
             ),
@@ -640,11 +657,11 @@ export function getOpCodeTypeFromTypes(
     case "ord[byte]":
     case "ord[Ascii]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 255);
-    case "set_at[Array]":
-    case "set_at[List]":
-    case "set_at_back[List]":
-    case "set_at[Table]":
-      return voidType;
+    case "with_at[Array]":
+    case "with_at[List]":
+    case "with_at_back[List]":
+    case "with_at[Table]":
+      return got[0];
   }
 }
 

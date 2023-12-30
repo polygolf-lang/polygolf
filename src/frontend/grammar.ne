@@ -46,11 +46,11 @@ expr_inner ->
 
 sexpr ->
   "(" callee expr:* ")" {% ([start, callee, exprs, ]) => refSource(sexpr(callee, exprs), start) %}
-  | "(" expr opalias expr ")" {% ([start, expr1, op, expr2]) => refSource(sexpr(op, [expr1, expr2]), start) %}
+  | "(" expr opalias expr:+ ")" {% ([start, expr1, op, expr2]) => refSource(sexpr(op, [expr1, ...expr2]), start) %}
 
 stmt ->
   callee expr:+ ";" {% ([callee, exprs, ]) => refSource(sexpr(callee, exprs), callee) %}
-  | expr opalias expr ";" {% ([expr1, op, expr2, ]) => refSource(sexpr(op, [expr1, expr2]), expr1) %}
+  | expr opalias expr:+ ";" {% ([expr1, op, expr2, ]) => refSource(sexpr(op, [expr1, ...expr2]), expr1) %}
 
 callee -> builtin {% id %}
   | opalias {% id %}

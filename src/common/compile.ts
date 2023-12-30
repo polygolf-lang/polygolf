@@ -1,4 +1,4 @@
-import { isOp, op, isOpCode, type Type, type Node } from "../IR";
+import { isOp, op, isOpCode, type Type, type Node, isText, text } from "../IR";
 import { expandVariants } from "./expandVariants";
 import {
   defaultDetokenizer,
@@ -228,15 +228,61 @@ export default function compile(
   const variantsByInput = getVariantsByInputMethod(errorlessVariants);
   for (const language of languages) {
     if (options.getAllVariants) {
-      const outputs = errorlessVariants.map((x) =>
-        compileVariant(x, options, language),
-      );
+      const outputs = errorlessVariants.flatMap((x) => {
+        const res = [compileVariant(x, options, language)];
+        if (!isOp("print[Text]")(x) || !isText()(x.args[0])) {
+          try {
+            const output = getOutput(x);
+            if (output !== "") {
+              const hardcoded = compileVariant(
+                op["print[Text]"](text(output)),
+                options,
+                language,
+              );
+              if (
+                isError(res[0].result) ||
+                (!isError(hardcoded.result) &&
+                  options.level !== "nogolf" &&
+                  !options.skipPlugins.includes("hardcode") &&
+                  obj(hardcoded.result) < obj(res[0].result))
+              ) {
+                res.push(hardcoded);
+              }
+            }
+          } catch {}
+        }
+        return res;
+      });
       result.push(...outputs);
     } else {
       const outputs = variantsByInput
         .get(language.readsFromStdinOnCodeDotGolf === true)!
         .map((x) => compileVariant(x, options, language));
-      const res = outputs.reduce(shorterBy(obj));
+      let res = outputs.reduce(shorterBy(obj));
+      if (
+        isError(res.result) ||
+        (options.level !== "nogolf" &&
+          !options.skipPlugins.includes("hardcode"))
+      ) {
+        res = [
+          res,
+          ...variantsByInput
+            .get(language.readsFromStdinOnCodeDotGolf === true)!
+            .map((x) => {
+              if (!isOp("print[Text]")(x) || !isText()(x.args[0])) {
+                try {
+                  const output = getOutput(x);
+                  if (output !== "") {
+                    return op["print[Text]"](text(output));
+                  }
+                } catch {}
+              }
+              return undefined;
+            })
+            .filter((x) => x !== undefined)
+            .map((x) => compileVariant(x!, options, language)),
+        ].reduce(shorterBy(obj));
+      }
       if (isError(res.result) && variants.length > 1)
         res.result.message =
           "No variant could be compiled: " + res.result.message;
@@ -290,10 +336,6 @@ export function compileVariant(
   language: Language,
 ): CompilationResult {
   const options = defaultCompilationOptions(partialOptions);
-  if (options.level !== "nogolf")
-    try {
-      getOutput(program); // precompute output
-    } catch {}
   const obj = getObjectiveFunc(options);
   let best = compileVariantNoPacking(program, options, language);
   const packers = language.packers ?? [];

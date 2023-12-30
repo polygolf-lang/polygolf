@@ -46,6 +46,8 @@ int_to_bin 3;
 int_to_bin_aligned 3 5;
 int_to_hex 3;
 int_to_hex_aligned 3 5;
+int_to_Hex 3;
+int_to_Hex_aligned 3 5;
 $n ^ 3;
 $n * $m;
 -3 trunc_div $n;
@@ -114,9 +116,11 @@ not b
 -n
 $n
 toBin(3)
-align(toBin(3),5,"0")
+align(toBin(3),5,'0')
+toLowerAscii(toHex(3))
+align(toLowerAscii(toHex(3)),5,'0')
 toHex(3)
-align(toHex(3),5,"0")
+align(toHex(3),5,'0')
 n^3
 n*m
 -3 div n

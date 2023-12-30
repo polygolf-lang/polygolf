@@ -146,7 +146,9 @@ join $d "";
 repeat $b 3;
 text_replace "a+b+c" "+" "*";
 at[Table] (table ("X" => "Y") ) "X";
+int_to_Hex_aligned 50 7;
 int_to_hex_aligned 50 7;
+int_to_Hex 50;
 int_to_hex 50;
 int_to_bin_aligned 50 7;
 int_to_bin 50;
@@ -225,8 +227,10 @@ d.joined()
 String(repeating:b,count:3)
 "a+b+c".replacingOccurrences(of:"+",with:"*")
 ["X":"Y"]["X"]!
-String(format:"%0"+String(7)+"X",50)
+String(format:"%07X",50)
+String(format:"%07x",50)
 String(50,radix:16,uppercase:true)
+String(50,radix:16,uppercase:false)
 (String(repeating:"0",count:7)+String(50,radix:2)).suffix(7)
 String(50,radix:2)
 (String(repeating:" ",count:20)+"text").suffix(20)

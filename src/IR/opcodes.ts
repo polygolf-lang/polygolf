@@ -32,13 +32,18 @@ function rest<T extends Type>(rest: T): Rest<T> {
 const T1 = typeArg("T1");
 const T2 = typeArg("T2");
 
-const int2OrMore = [int(), int(), rest(int())] as const;
-const bool2OrMore = [bool, bool, rest(bool)] as const;
+function atLeast2<T extends Type>(type: T): [T, T, Rest<T>] {
+  return [type, type, rest(type)];
+}
 export const opCodeDefinitions = {
   // Arithmetic
-  add: { args: int2OrMore, front: "+", assoc: true, commutes: true },
+  is_even: { args: [int()], front: true },
+  is_odd: { args: [int()], front: true },
+  succ: { args: [int()], front: true },
+  pred: { args: [int()], front: true },
+  add: { args: atLeast2(int()), front: "+", assoc: true, commutes: true },
   sub: { args: [int(), int()], front: "-" },
-  mul: { args: int2OrMore, front: "*", assoc: true, commutes: true },
+  mul: { args: atLeast2(int()), front: "*", assoc: true, commutes: true },
   div: { args: [int(), int()], front: "div" },
   trunc_div: { args: [int(), int()] },
   unsigned_trunc_div: { args: [int(), int()] },
@@ -46,17 +51,18 @@ export const opCodeDefinitions = {
   mod: { args: [int(), int()], front: "mod" },
   rem: { args: [int(), int()] },
   unsigned_rem: { args: [int(), int()] },
-  bit_and: { args: int2OrMore, front: "&", assoc: true, commutes: true },
-  bit_or: { args: int2OrMore, front: "|", assoc: true, commutes: true },
-  bit_xor: { args: int2OrMore, front: "~", assoc: true, commutes: true },
+  bit_and: { args: atLeast2(int()), front: "&", assoc: true, commutes: true },
+  bit_or: { args: atLeast2(int()), front: "|", assoc: true, commutes: true },
+  bit_xor: { args: atLeast2(int()), front: "~", assoc: true, commutes: true },
   bit_shift_left: { args: [int(), int(0)], front: "<<" },
   bit_shift_right: { args: [int(), int(0)], front: ">>" },
-  gcd: { args: int2OrMore, front: true, assoc: true, commutes: true },
-  min: { args: int2OrMore, front: true, assoc: true, commutes: true },
-  max: { args: int2OrMore, front: true, assoc: true, commutes: true },
+  gcd: { args: atLeast2(int()), front: true, assoc: true, commutes: true },
+  min: { args: atLeast2(int()), front: true, assoc: true, commutes: true },
+  max: { args: atLeast2(int()), front: true, assoc: true, commutes: true },
   neg: { args: [int()], front: "-" },
   abs: { args: [int()], front: true },
   bit_not: { args: [int()], front: "~" },
+  bit_count: { args: [int(0)], front: true },
 
   // Input
   "read[codepoint]": { args: [] },
@@ -79,8 +85,8 @@ export const opCodeDefinitions = {
   "putc[Ascii]": { args: [int(0, 127)], front: "putc" },
 
   // Bool arithmetic
-  or: { args: bool2OrMore, front: true, assoc: true, commutes: true },
-  and: { args: bool2OrMore, front: true, assoc: true, commutes: true },
+  or: { args: atLeast2(bool), front: true, assoc: true, commutes: true },
+  and: { args: atLeast2(bool), front: true, assoc: true, commutes: true },
   unsafe_or: { args: [bool, bool], front: true, assoc: true },
   unsafe_and: { args: [bool, bool], front: true },
   not: { args: [bool], front: true },
@@ -108,13 +114,10 @@ export const opCodeDefinitions = {
   "at_back[byte]": { args: [text(), int("-oo", -1)], front: true },
   "at[codepoint]": { args: [text(), int(0)], front: true },
   "at_back[codepoint]": { args: [text(), int("-oo", -1)], front: true },
-  "set_at[Array]": { args: [array(T1, T2), T2, T1], front: "set_at" },
-  "set_at[List]": { args: [list(T1), int(0), T1], front: "set_at" },
-  "set_at_back[List]": {
-    args: [list(T1), int("-oo", -1), T1],
-    front: "set_at",
-  },
-  "set_at[Table]": { args: [table(T1, T2), T1, T2], front: "set_at" },
+  "with_at[Array]": { args: [array(T1, T2), T2, T1], front: "@" },
+  "with_at[List]": { args: [list(T1), int(0), T1], front: "@" },
+  "with_at_back[List]": { args: [list(T1), int("-oo", -1), T1], front: "@" },
+  "with_at[Table]": { args: [table(T1, T2), T1, T2], front: "@" },
 
   // Slice
   "slice[codepoint]": { args: [text(), int(0), int(0)], front: true },
@@ -178,10 +181,9 @@ export const opCodeDefinitions = {
 
   // Adding items
   include: { args: [set(T1), T1], front: true },
-  push: { args: [list(T1), T1], front: true },
   append: { args: [list(T1), T1], front: ".." },
-  "concat[List]": { args: [rest(list(T1))], front: "..", assoc: true },
-  "concat[Text]": { args: [rest(text())], front: "..", assoc: true },
+  "concat[List]": { args: atLeast2(list(T1)), front: "..", assoc: true },
+  "concat[Text]": { args: atLeast2(text()), front: "..", assoc: true },
 
   // Text ops
   repeat: { args: [text(), int(0)], front: true },
@@ -190,16 +192,18 @@ export const opCodeDefinitions = {
   join: { args: [list(text()), text()], front: true },
   right_align: { args: [text(), int(0)], front: true },
   replace: { args: [text(), text(int(1)), text()], front: true },
-  text_multireplace: { args: [text(), text(), rest(text())] },
+  text_multireplace: { args: [text(), text(), text(), rest(text())] },
   starts_with: { args: [text(), text()], front: true },
   ends_with: { args: [text(), text()], front: true },
 
   // Text / Bool <-> Int
   int_to_bin_aligned: { args: [int(0), int(0)], front: true },
   int_to_hex_aligned: { args: [int(0), int(0)], front: true },
+  int_to_Hex_aligned: { args: [int(0), int(0)], front: true },
   int_to_dec: { args: [int()], front: true },
   int_to_bin: { args: [int(0)], front: true },
   int_to_hex: { args: [int(0)], front: true },
+  int_to_Hex: { args: [int(0)], front: true },
   int_to_bool: { args: [int(0, 1)], front: true },
   dec_to_int: { args: [ascii], front: true },
   bool_to_int: { args: [bool], front: true },
@@ -222,6 +226,10 @@ export type OpCodeArgValues<
   : ValuesOfLengthOf<Types>;
 
 export const opCodeDescriptions: Record<AnyOpCode, string> = {
+  is_even: "Evenness predicate.",
+  is_odd: "Oddness predicate.",
+  succ: "Integer successor.",
+  pred: "Integer predecessor.",
   add: "Integer addition.",
   sub: "Integer subtraction.",
   mul: "Integer multiplication.",
@@ -245,6 +253,7 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   neg: "Integer negation.",
   abs: "Integer absolute value.",
   bit_not: "Integer bitwise not.",
+  bit_count: "Number of set bits in the integer.",
 
   // Input
   "read[codepoint]": "Reads single codepoint from the stdin.",
@@ -303,10 +312,13 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
     "Gets the codepoint (as text) at the 0-based index (counting codepoints).",
   "at_back[codepoint]":
     "Gets the codepoint (as text) at the -1-based backwards index (counting codepoints).",
-  "set_at[Array]": "Sets the item at the 0-based index.",
-  "set_at[List]": "Sets the item at the 0-based index.",
-  "set_at_back[List]": "Sets the item at the -1-based backwards index.",
-  "set_at[Table]": "Sets the item at the key.",
+  "with_at[Array]":
+    "Returns an array with item at the given 0-based index replaced.",
+  "with_at[List]":
+    "Returns a list with item at the given 0-based index replaced.",
+  "with_at_back[List]":
+    "Returns a list with item at the given -1-based backwards index replaced.",
+  "with_at[Table]": "Returns an array with item at the given key replaced.",
 
   // Slice
   "slice[codepoint]":
@@ -383,7 +395,6 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
 
   // Adding items
   include: "Modifies the set by including the given item.",
-  push: "Modifies the list by pushing the given item at the end.",
   append: "Returns a new list with the given item appended at the end.",
   "concat[List]": "Returns a new list formed by concatenation of the inputs.",
   "concat[Text]": "Returns a new text formed by concatenation of the inputs.",
@@ -404,10 +415,13 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   int_to_bin_aligned:
     "Converts the integer to a 2-base text and alignes to a minimum length.",
   int_to_hex_aligned:
-    "Converts the integer to a 16-base text and alignes to a minimum length.",
+    "Converts the integer to a 16-base lowercase text and aligns to a minimum length.",
+  int_to_Hex_aligned:
+    "Converts the integer to a 16-base uppercase text and aligns to a minimum length.",
   int_to_dec: "Converts the integer to a 10-base text.",
   int_to_bin: "Converts the integer to a 2-base text.",
-  int_to_hex: "Converts the integer to a 16-base text.",
+  int_to_hex: "Converts the integer to a 16-base lowercase text.",
+  int_to_Hex: "Converts the integer to a 16-base uppercase text.",
   int_to_bool: "Converts 0 to false and 1 to true.",
   dec_to_int: "Parses a integer from a 10-base text.",
   bool_to_int: "Converts false to 0 and true to 1.",

@@ -25,14 +25,13 @@ import {
 
 import emitProgram from "./emit";
 import {
-  mapOps,
-  mapUnaryAndBinary,
-  useIndexCalls,
   flipBinaryOps,
   removeImplicitConversions,
   printIntToPrint,
-  mapTo,
-  backwardsIndexToForwards,
+  mapOps,
+  mapOpsTo,
+  mapBackwardsIndexToForwards,
+  mapMutationTo,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -60,7 +59,7 @@ import {
   pickAnyInt,
   useIntegerTruthiness,
 } from "../../plugins/arithmetic";
-import { hardcode, listOpsToTextOps } from "../../plugins/static";
+import { listOpsToTextOps } from "../../plugins/static";
 import { base10DecompositionToFloatLiteralAsBuiltin } from "./plugins";
 import { getType } from "../../common/getType";
 import { conditionalOpToAndOr } from "../../plugins/conditions";
@@ -70,7 +69,6 @@ const luaLanguage: Language = {
   extension: "lua",
   emitter: emitProgram,
   phases: [
-    search(hardcode()),
     required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint()),
     search(
@@ -79,7 +77,6 @@ const luaLanguage: Language = {
       listOpsToTextOps("find[byte]", "at[byte]"),
       tempVarToMultipleAssignment,
       equalityToInequality,
-      shiftRangeOneUp,
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -91,17 +88,13 @@ const luaLanguage: Language = {
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       mapOps({
-        dec_to_int: (x) =>
-          op.add(int(0n), implicitConversion("dec_to_int", x[0])),
-        "at[argv]": (x) =>
-          op["at[List]"]({ ...builtin("arg"), type: textType() }, x[0]),
-
-        "ord_at[byte]": (x) => method(x[0], "byte", succ(x[1])),
-        "at[byte]": (x) => method(x[0], "sub", succ(x[1]), succ(x[1])),
-        "slice[byte]": (x) =>
-          method(x[0], "sub", succ(x[1]), op.add(x[1], x[2])),
+        dec_to_int: (a) => op.add(int(0n), implicitConversion("dec_to_int", a)),
+        "at[argv]": (a) =>
+          op["at[List]"]({ ...builtin("arg"), type: textType() }, a),
+        "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
+        "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
+        "slice[byte]": (a, b, c) => method(a, "sub", succ(b), op.add(b, c)),
       }),
-      useIndexCalls(true),
       decomposeIntLiteral(true, true, true),
     ),
     required(
@@ -112,35 +105,50 @@ const luaLanguage: Language = {
       textToIntToFirstIndexTextGetToInt,
       startsWithEndsWithToSliceEquality("byte"),
       mapOps({
-        dec_to_int: (x) =>
-          op.mul(int(1n), implicitConversion("dec_to_int", x[0])),
-        "at[argv]": (x) =>
-          op["at[List]"]({ ...builtin("arg"), type: textType() }, x[0]),
-        "ord_at[byte]": (x) => method(x[0], "byte", succ(x[1])),
-        "ord_at_back[byte]": (x) => method(x[0], "byte", x[1]),
-        "at[byte]": (x) => method(x[0], "sub", succ(x[1]), succ(x[1])),
-        "at_back[byte]": (x) => method(x[0], "sub", x[1], x[1]),
-        "slice[byte]": (x) =>
-          method(x[0], "sub", succ(x[1]), op.add(x[1], x[2])),
+        dec_to_int: (a) => op.mul(int(1n), implicitConversion("dec_to_int", a)),
+        "at[argv]": (a) =>
+          op["at[List]"]({ ...builtin("arg"), type: textType() }, a),
+        "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
+        "ord_at_back[byte]": (a, b) => method(a, "byte", b),
+        "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
+        "at_back[byte]": (a, b) => method(a, "sub", b, b),
+        "slice[byte]": (a, b, c) => method(a, "sub", succ(b), op.add(b, c)),
       }),
       conditionalOpToAndOr(
         (n, s) => !["boolean", "void"].includes(getType(n, s).kind),
         "List",
       ),
-      backwardsIndexToForwards(),
-      useIndexCalls(true),
+      mapBackwardsIndexToForwards({
+        "at_back[Ascii]": "size[Ascii]",
+        "at_back[byte]": "size[byte]",
+        "at_back[codepoint]": "size[codepoint]",
+        "at_back[List]": "size[List]",
+        "slice_back[Ascii]": "size[Ascii]",
+        "slice_back[byte]": "size[byte]",
+        "slice_back[codepoint]": "size[codepoint]",
+        "slice_back[List]": "size[List]",
+        "with_at_back[List]": "size[List]",
+      }),
+      mapMutationTo.index({
+        "with_at[Array]": 1,
+        "with_at[List]": 1,
+        "with_at[Table]": 0,
+      }),
+      mapOpsTo.index({
+        "at[Array]": 1,
+        "at[List]": 1,
+        "at[Table]": 0,
+      }),
+    ),
+    search(shiftRangeOneUp),
+    required(
       mapOps({
-        int_to_dec: (x) =>
-          op["concat[Text]"](text(""), implicitConversion("int_to_dec", x[0])),
-        join: (x) => func("table.concat", isText("")(x[1]) ? [x[0]] : x),
-        "size[byte]": (x) => method(x[0], "len"),
-        true: builtin("true"),
-        false: builtin("false"),
-        repeat: (x) => method(x[0], "rep", x[1]),
-        argv: builtin("arg"),
+        int_to_dec: (a) =>
+          op["concat[Text]"](text(""), implicitConversion("int_to_dec", a)),
+        join: (a, b) => func("table.concat", isText("")(b) ? [a] : [a, b]),
         "char[byte]": (x) => func("string.char", x),
 
-        replace: ([a, b, c]) =>
+        replace: (a, b, c) =>
           method(
             a,
             "gsub",
@@ -157,7 +165,16 @@ const luaLanguage: Language = {
               : method(c, "gsub", text("%%"), text("%%%%")),
           ),
       }),
-      mapTo(func)({
+      mapOpsTo.method({
+        "size[byte]": "len",
+        repeat: "rep",
+      }),
+      mapOpsTo.builtin({
+        argv: "arg",
+        true: "true",
+        false: "false",
+      }),
+      mapOpsTo.func({
         "read[line]": "io.read",
         "print[Text]": "io.write",
         "println[Text]": "print",
@@ -170,15 +187,8 @@ const luaLanguage: Language = {
 
     simplegolf(base10DecompositionToFloatLiteralAsBuiltin),
     required(
-      mapUnaryAndBinary({
+      mapOpsTo.infix({
         pow: "^",
-        not: "not",
-        neg: "-",
-        "size[List]": "#",
-        "size[Table]": "#",
-        "size[byte]": "#",
-        bit_not: "~",
-        mul: "*",
         div: "//",
         mod: "%",
         add: "+",
@@ -200,6 +210,15 @@ const luaLanguage: Language = {
         and: "and",
         or: "or",
       }),
+      mapOpsTo.prefix({
+        not: "not",
+        neg: "-",
+        "size[List]": "#",
+        "size[Table]": "#",
+        "size[byte]": "#",
+        bit_not: "~",
+      }),
+      mapOpsTo.infix({ mul: "*" }),
     ),
     simplegolf(
       alias({

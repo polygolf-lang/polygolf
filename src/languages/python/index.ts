@@ -18,6 +18,7 @@ import {
   implicitConversion,
   infix,
   list,
+  intToDecOpOrText,
 } from "../../IR";
 import {
   type Language,
@@ -28,15 +29,15 @@ import {
 
 import emitProgram, { emitPythonText } from "./emit";
 import {
-  mapOps,
-  mapUnaryAndBinary,
-  useIndexCalls,
   removeImplicitConversions,
   methodsAsFunctions,
   printIntToPrint,
-  mapTo,
   arraysToLists,
-  backwardsIndexToForwards,
+  mapOps,
+  mapBackwardsIndexToForwards,
+  mapMutationTo,
+  mapOpsTo,
+  flipped,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -45,11 +46,7 @@ import {
   forRangeToForRangeOneStep,
   removeUnusedForVar,
 } from "../../plugins/loops";
-import {
-  golfStringListLiteral,
-  hardcode,
-  listOpsToTextOps,
-} from "../../plugins/static";
+import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
@@ -94,7 +91,6 @@ const pythonLanguage: Language = {
   extension: "py",
   emitter: emitProgram,
   phases: [
-    search(hardcode()),
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint()),
     search(
@@ -125,42 +121,58 @@ const pythonLanguage: Language = {
       removeUnusedForVar,
       putcToPrintChar,
       mapOps({
-        argv: builtin("sys.argv[1:]"),
+        argv: () => builtin("sys.argv[1:]"),
 
-        "at[argv]": (x) =>
+        "at[argv]": (a) =>
           op["at[List]"](
             { ...builtin("sys.argv"), type: listType(textType()) },
-            succ(x[0]),
+            succ(a),
           ),
       }),
 
       useImplicitBoolToInt,
-      backwardsIndexToForwards(false),
-      useIndexCalls(),
+      mapBackwardsIndexToForwards({
+        "at_back[Ascii]": 0,
+        "at_back[byte]": 0,
+        "at_back[codepoint]": 0,
+        "at_back[List]": 0,
+        "slice_back[Ascii]": 0,
+        "slice_back[byte]": 0,
+        "slice_back[codepoint]": 0,
+        "slice_back[List]": 0,
+        "with_at_back[List]": 0,
+      }),
+      mapMutationTo.index({
+        "with_at[Array]": 0,
+        "with_at[List]": 0,
+        "with_at[Table]": 0,
+      }),
+      mapOpsTo.index({
+        "at[Array]": 0,
+        "at[List]": 0,
+        "at[Table]": 0,
+      }),
     ),
     simplegolf(golfTextListLiteralIndex),
     required(
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps({
-        true: int(1),
-        false: int(0),
-        "find[List]": (x) => method(x[0], "index", x[1]),
-        "find[codepoint]": (x) => method(x[0], "find", x[1]),
-        "find[byte]": (x) =>
+        true: () => int(1),
+        false: () => int(0),
+        "find[byte]": (a, b) =>
           method(
-            func("bytes", x[0], text("u8")),
+            func("bytes", a, text("u8")),
             "find",
-            func("bytes", x[1], text("u8")),
+            func("bytes", b, text("u8")),
           ),
-        join: (x) => method(x[1], "join", x[0]),
-        "size[byte]": (x) => func("len", func("bytes", x[0], text("u8"))),
-        "reversed[codepoint]": (x) =>
-          rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
-        "reversed[byte]": (x) =>
+        "size[byte]": (a) => func("len", func("bytes", a, text("u8"))),
+        "reversed[codepoint]": (a) =>
+          rangeIndexCall(a, builtin(""), builtin(""), int(-1)),
+        "reversed[byte]": (a) =>
           method(
             rangeIndexCall(
-              func("bytes", x[0], text("u8")),
+              func("bytes", a, text("u8")),
               builtin(""),
               builtin(""),
               int(-1),
@@ -168,47 +180,43 @@ const pythonLanguage: Language = {
             "decode",
             text("u8"),
           ),
-        "reversed[List]": (x) =>
-          rangeIndexCall(x[0], builtin(""), builtin(""), int(-1)),
-        "at[codepoint]": (x) => indexCall(x[0], x[1]),
-        "at[byte]": (x) => op["char[byte]"](op["ord_at[byte]"](x[0], x[1])),
-        "ord_at[byte]": (x) => indexCall(func("bytes", x[0], text("u8")), x[1]),
-        "ord_at_back[byte]": (x) =>
-          indexCall(func("bytes", x[0], text("u8")), x[1]),
-        "slice[codepoint]": (x) =>
-          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1)),
-        "slice[byte]": (x) =>
+        "reversed[List]": (a) =>
+          rangeIndexCall(a, builtin(""), builtin(""), int(-1)),
+        "at[codepoint]": (a, b) => indexCall(a, b),
+        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
+        "ord_at[byte]": (a, b) => indexCall(func("bytes", a, text("u8")), b),
+        "ord_at_back[byte]": (a, b) =>
+          indexCall(func("bytes", a, text("u8")), b),
+        "slice[codepoint]": (a, b, c) =>
+          rangeIndexCall(a, b, op.add(b, c), int(1)),
+        "slice[byte]": (a, b, c) =>
           method(
             rangeIndexCall(
-              func("bytes", x[0], text("u8")),
-              x[1],
-              op.add(x[1], x[2]),
+              func("bytes", a, text("u8")),
+              b,
+              op.add(b, c),
               int(1),
             ),
             "decode",
             text("u8"),
           ),
-        "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], op.add(x[1], x[2]), int(1)),
-        split: (x) => method(x[0], "split", x[1]),
-        split_whitespace: (x) => method(x[0], "split"),
+        "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
 
-        "print[Text]": (x) =>
+        "print[Text]": (a) =>
           func(
             "print",
-            x[0].kind !== "ImplicitConversion"
-              ? [namedArg("end", x[0])]
-              : [x[0], namedArg("end", text(""))],
+            a.kind !== "ImplicitConversion"
+              ? [namedArg("end", a)]
+              : [a, namedArg("end", text(""))],
           ),
-        replace: (x) => method(x[0], "replace", x[1], x[2]),
 
-        text_multireplace: (x) =>
+        text_multireplace: (a, ...x) =>
           method(
-            x[0],
+            a,
             "translate",
             table(
               (x as Text[]).flatMap((_, i, x) =>
-                i % 2 > 0
+                i % 2 === 0
                   ? [
                       keyValue(
                         int(x[i].value.codePointAt(0)!),
@@ -222,37 +230,50 @@ const pythonLanguage: Language = {
               ),
             ),
           ),
-
-        push: (x) => method(x[0], "append", x[1]),
-        append: (x) => op["concat[List]"](x[0], list([x[1]])),
-        right_align: (x) =>
+        append: (a, b) => op["concat[List]"](a, list([b])),
+        right_align: (a, b) =>
           infix(
             "%",
-            op["concat[Text]"](text("%"), op.int_to_dec(x[1]), text("s")),
-            x[0],
+            op["concat[Text]"](text("%"), intToDecOpOrText(b), text("s")),
+            a,
           ),
-        int_to_bin: (x) => func("format", x[0], text("b")),
-        int_to_bin_aligned: (x) =>
+        int_to_bin: (a) => func("format", a, text("b")),
+        int_to_bin_aligned: (a, b) =>
           func(
             "format",
-            x[0],
-            op["concat[Text]"](text("0"), op.int_to_dec(x[1]), text("b")),
+            a,
+            op["concat[Text]"](text("0"), intToDecOpOrText(b), text("b")),
           ),
-        int_to_hex: (x) => infix("%", text("%X"), x[0]),
-        int_to_hex_aligned: (x) =>
+        int_to_hex: (a) => infix("%", text("%x"), a),
+        int_to_Hex: (a) => infix("%", text("%X"), a),
+        int_to_hex_aligned: (a, b) =>
           infix(
             "%",
-            op["concat[Text]"](text("%0"), op.int_to_dec(x[1]), text("X")),
-            x[0],
+            op["concat[Text]"](text("%0"), intToDecOpOrText(b), text("x")),
+            a,
           ),
-        int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
-        bool_to_int: (x) =>
-          op.mul(int(1n), implicitConversion("bool_to_int", x[0])),
-        include: (x) => method(x[0], "add", x[1]),
-        starts_with: (x) => method(x[0], "startsWith", x[1]),
-        ends_with: (x) => method(x[0], "endsWith", x[1]),
+        int_to_Hex_aligned: (a, b) =>
+          infix(
+            "%",
+            op["concat[Text]"](text("%0"), intToDecOpOrText(b), text("X")),
+            a,
+          ),
+        int_to_bool: (a) => implicitConversion("int_to_bool", a),
+        bool_to_int: (a) =>
+          op.mul(int(1n), implicitConversion("bool_to_int", a)),
       }),
-      mapTo(func)({
+      mapOpsTo.method({
+        "find[List]": "index",
+        "find[codepoint]": "find",
+        split: "split",
+        split_whitespace: "split",
+        replace: "replace",
+        join: flipped`join`,
+        starts_with: "startsWith",
+        ends_with: "endsWith",
+        bit_count: "bit_count",
+      }),
+      mapOpsTo.func({
         "read[line]": "input",
         abs: "abs",
         "size[List]": "len",
@@ -272,44 +293,57 @@ const pythonLanguage: Language = {
         "println[Text]": "print",
         gcd: "math.gcd",
       }),
-      mapTo((x: string, [right, left]) => infix(x, left, right))({
-        "contains[List]": "in",
-        "contains[Table]": "in",
-        "contains[Set]": "in",
-        "contains[Text]": "in",
+      mapMutationTo.method({
+        append: "append",
       }),
-      mapUnaryAndBinary(
-        {
-          pow: "**",
-          neg: "-",
-          bit_not: "~",
-          mul: "*",
-          repeat: "*",
-          div: "//",
-          mod: "%",
-          add: "+",
-          "concat[Text]": "+",
-          "concat[List]": "+",
-          sub: "-",
-          bit_shift_left: "<<",
-          bit_shift_right: ">>",
-          bit_and: "&",
-          bit_xor: "^",
-          bit_or: "|",
-          lt: "<",
-          leq: "<=",
-          "eq[Int]": "==",
-          "eq[Text]": "==",
-          "neq[Int]": "!=",
-          "neq[Text]": "!=",
-          geq: ">=",
-          gt: ">",
-          not: "not",
-          and: "and",
-          or: "or",
-        },
-        ["+", "-", "*", "//", "%", "**", "&", "^", "|", "<<", ">>"],
-      ),
+      mapMutationTo.infix({
+        add: "+=",
+        sub: "-=",
+        mul: "*=",
+        div: "//=",
+        mod: "%=",
+        pow: "**=",
+        bit_and: "&=",
+        bit_xor: "^=",
+        bit_or: "|=",
+        bit_shift_left: "<<=",
+        bit_shift_right: ">>=",
+      }),
+      mapOpsTo.infix({
+        "contains[List]": flipped`in`,
+        "contains[Table]": flipped`in`,
+        "contains[Set]": flipped`in`,
+        "contains[Text]": flipped`in`,
+        pow: "**",
+        repeat: "*",
+        div: "//",
+        mod: "%",
+        add: "+",
+        "concat[Text]": "+",
+        "concat[List]": "+",
+        sub: "-",
+        bit_shift_left: "<<",
+        bit_shift_right: ">>",
+        bit_and: "&",
+        bit_xor: "^",
+        bit_or: "|",
+        lt: "<",
+        leq: "<=",
+        "eq[Int]": "==",
+        "eq[Text]": "==",
+        "neq[Int]": "!=",
+        "neq[Text]": "!=",
+        geq: ">=",
+        gt: ">",
+        and: "and",
+        or: "or",
+      }),
+      mapOpsTo.prefix({
+        neg: "-",
+        bit_not: "~",
+        not: "not",
+      }),
+      mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
       addOneToManyAssignments(),
     ),

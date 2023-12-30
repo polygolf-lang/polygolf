@@ -31,6 +31,7 @@ function precedence(expr: IR.Node): number {
       return binaryPrecedence(expr.name);
     case "Text":
     case "Array":
+    case "List":
     case "Table":
       return 1000;
   }

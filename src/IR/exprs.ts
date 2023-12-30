@@ -11,7 +11,6 @@ import {
   type OpCode,
   type Node,
   type Integer,
-  type MutatingInfix,
   int,
   isAssociative,
   text,
@@ -45,8 +44,9 @@ export interface ImplicitConversion extends BaseNode {
  
 * Polygolf ensures that in the IR, there will never be:
 
- * - Op(neg)
- * - Op(sub)
+ * - Op(neg), Op(sub)
+ * - Op(pred), Op(succ)
+ * - Op(is_even), Op(is_odd)
  * - Op as a direct child of a Op with the same associative OpCode
  * - Integer as a nonfirst child of a commutative Op
  * - Boolean negation of a boolean negation
@@ -194,7 +194,7 @@ function _op(op: OpCode, ...args: Node[]): Op {
   return {
     kind: "Op",
     op,
-    args,
+    args: args as any,
   };
 }
 
@@ -204,6 +204,12 @@ function _op(op: OpCode, ...args: Node[]): Op {
  */
 function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   if (!isOpCode(opCode)) return _op(opCode, ...args);
+  if (opCode === "pred") return op.add(args[0], int(-1n));
+  if (opCode === "succ") return op.add(args[0], int(1n));
+  if (opCode === "is_even")
+    return op["eq[Int]"](int(0), op.mod(args[0], int(2)));
+  if (opCode === "is_odd")
+    return op["eq[Int]"](int(1), op.mod(args[0], int(2)));
   if (isUnary(opCode)) {
     const value = evalUnary(opCode, args[0]);
     if (value !== null) return value;
@@ -242,6 +248,7 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   }
   if (isAssociative(opCode)) {
     args = args.flatMap((x) => (isOp(opCode)(x) ? x.args : [x]));
+    if (args.length === 1) return args[0];
     if (opCode === "add") args = simplifyPolynomial(args);
     else {
       if (isCommutative(opCode)) {
@@ -249,7 +256,8 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
           .filter((x) => isInt()(x))
           .concat(args.filter((x) => !isInt()(x)));
       } else {
-        args = args.filter((x) => !isText("")(x));
+        if (opCode === "concat[Text]")
+          args = args.filter((x) => !isText("")(x));
         if (
           args.length === 0 ||
           (args.length === 1 && args[0].kind === "ImplicitConversion")
@@ -386,8 +394,12 @@ function simplifyPolynomial(terms: Node[]): Node[] {
   return result;
 }
 
-export const succ = (expr: Node) => op.add(expr, int(1n));
-export const prec = (expr: Node) => op.add(expr, int(-1n));
+export function intToDecOpOrText(x: Node) {
+  return isInt()(x) ? text(x.value.toString()) : op.int_to_dec(x);
+}
+
+export const succ = op.succ;
+export const pred = op.pred;
 
 export function functionCall(
   func: string | Node,
@@ -511,7 +523,6 @@ export function getArgs(
   node:
     | Op
     | Infix
-    | MutatingInfix
     | Prefix
     | FunctionCall
     | MethodCall
@@ -521,8 +532,6 @@ export function getArgs(
   switch (node.kind) {
     case "Infix":
       return [node.left, node.right];
-    case "MutatingInfix":
-      return [node.variable, node.right];
     case "Prefix":
       return [node.arg];
     case "FunctionCall":

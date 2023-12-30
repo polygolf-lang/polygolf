@@ -6,9 +6,8 @@ import {
   listType,
   textType,
   builtin,
-  infix,
   int,
-  propertyCall,
+  propertyCall as property,
   isText,
   text,
   implicitConversion,
@@ -26,14 +25,13 @@ import {
 
 import emitProgram from "./emit";
 import {
-  mapOps,
-  mapUnaryAndBinary,
-  useIndexCalls,
   removeImplicitConversions,
   printIntToPrint,
-  mapTo,
-  addIncAndDec,
   methodsAsFunctions,
+  mapOps,
+  mapOpsTo,
+  mapMutationTo,
+  flipped,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -41,7 +39,7 @@ import {
   forRangeToForCLike,
   forRangeToForEach,
 } from "../../plugins/loops";
-import { golfStringListLiteral, hardcode } from "../../plugins/static";
+import { golfStringListLiteral } from "../../plugins/static";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
@@ -70,14 +68,17 @@ import {
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
 import { floodBigints, mapVarsThatNeedBigint } from "../../plugins/types";
-import { forRangeToForEachKey, propertyCallToIndexCall } from "./plugins";
+import {
+  forRangeToForEachKey,
+  numberDivisionToSlash,
+  propertyCallToIndexCall,
+} from "./plugins";
 
 const javascriptLanguage: Language = {
   name: "Javascript",
   extension: "js",
   emitter: emitProgram,
   phases: [
-    search(hardcode()),
     required(printIntToPrint),
     simplegolf(golfLastPrint()),
     search(
@@ -95,7 +96,6 @@ const javascriptLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       replaceToSplitAndJoin,
-      useIndexCalls(),
       decomposeIntLiteral(),
       forRangeToForEachKey,
     ),
@@ -127,133 +127,163 @@ const javascriptLanguage: Language = {
     ),
     required(
       forRangeToForCLike,
+      mapOpsTo.builtin({
+        true: "true",
+        false: "false",
+        argv: "arguments",
+      }),
       mapOps({
-        argv: builtin("arguments"),
-
-        "at[argv]": (x) =>
+        "at[argv]": (a) =>
           op["at[List]"](
             { ...builtin("arguments"), type: listType(textType()) },
-            x[0],
+            a,
           ),
       }),
-      useIndexCalls(),
+      mapMutationTo.index({
+        "with_at[Array]": 0,
+        "with_at[List]": 0,
+        "with_at[Table]": 0,
+      }),
+      mapOpsTo.index({
+        "at[Array]": 0,
+        "at[List]": 0,
+        "at[Table]": 0,
+      }),
 
       ...truncatingOpsPlugins,
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
-      mapOps({
-        true: builtin("true"),
-        false: builtin("false"),
-        "at[Ascii]": (x) => indexCall(x[0], x[1]),
-        "slice[List]": (x) => method(x[0], "slice", x[1], op.add(x[1], x[2])),
-        "slice[Ascii]": (x) => method(x[0], "slice", x[1], op.add(x[1], x[2])),
-        "char[Ascii]": (x) => func("String.fromCharCode", x),
-        "char[byte]": (x) => func("String.fromCharCode", x),
-        "sorted[Ascii]": (x) =>
-          method(
-            x[0].kind === "List" ? x[0] : list([prefix("...", x[0])]),
-            "sort",
-          ),
-        div: (x, s) =>
-          s.node.targetType !== "bigint"
-            ? func("Math.floor", infix("/", x[0], x[1]))
-            : undefined,
-        trunc_div: (x, s) =>
-          s.node.targetType !== "bigint"
-            ? func("Math.floor", infix("/", x[0], x[1]))
-            : undefined,
-        int_to_bin: (x) => method(x[0], "toString", int(2n)),
-        int_to_bin_aligned: (x) =>
-          method(method(x[0], "toString", int(2n)), "padStart", x[1], int(0n)),
-        int_to_hex: (x) => method(x[0], "toString", int(16n)),
-        int_to_hex_aligned: (x) =>
-          method(method(x[0], "toString", int(16n)), "padStart", x[1], int(0n)),
-        "size[List]": (x) => propertyCall(x[0], "length"),
-        "size[Ascii]": (x) => propertyCall(x[0], "length"),
-        "size[Table]": (x) => propertyCall(func("Object.keys", x[0]), "length"),
-        right_align: (x) => method(x[0], "padStart", x[1]),
-        join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
-        int_to_dec: (x) =>
-          op["concat[Text]"](text(""), implicitConversion("int_to_dec", x[0])),
-        dec_to_int: (x) =>
-          op.bit_not(op.bit_not(implicitConversion("dec_to_int", x[0]))),
-        "reversed[List]": (x) => method(x[0], "reverse"),
-        "reversed[Ascii]": (x) =>
-          method(
-            method(list([prefix("...", x[0])]), "reverse"),
-            "join",
-            text(""),
-          ),
-        "reversed[codepoint]": (x) =>
-          method(
-            method(list([prefix("...", x[0])]), "reverse"),
-            "join",
-            text(""),
-          ),
-        append: (x) => op["concat[List]"](x[0], list([x[1]])),
-        bool_to_int: (x) => implicitConversion("bool_to_int", x[0]),
-        int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
-        "contains[Table]": (x) => infix("in", x[1], x[0]),
+      mapMutationTo.method({
+        append: "push",
       }),
-      mapTo((name: string, [obj, ...args]) => method(obj, name, ...args))({
+      numberDivisionToSlash,
+      mapOps({
+        "at[Ascii]": (a, b) => indexCall(a, b),
+        "slice[List]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
+        "slice[Ascii]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
+        "sorted[Ascii]": (a) =>
+          method(a.kind === "List" ? a : list([prefix("...", a)]), "sort"),
+
+        int_to_bin: (a) => method(a, "toString", int(2n)),
+        int_to_bin_aligned: (a, b) =>
+          method(method(a, "toString", int(2n)), "padStart", b, int(0n)),
+        int_to_hex: (a) => method(a, "toString", int(16n)),
+        int_to_Hex: (a) =>
+          method(method(a, "toString", int(16n)), "toUpperCase"),
+        int_to_hex_aligned: (a, b) =>
+          method(method(a, "toString", int(16n)), "padStart", b, int(0n)),
+        int_to_Hex_aligned: (a, b) =>
+          method(
+            method(method(a, "toString", int(16n)), "toUpperCase"),
+            "padStart",
+            b,
+            int(0n),
+          ),
+        "size[List]": (a) => property(a, "length"),
+        "size[Ascii]": (a) => property(a, "length"),
+        "size[Table]": (a) => property(func("Object.keys", a), "length"),
+        right_align: (a, b) => method(a, "padStart", b),
+        join: (a, b) => method(a, "join", ...(isText(",")(b) ? [] : [b])),
+        int_to_dec: (a) =>
+          op["concat[Text]"](text(""), implicitConversion("int_to_dec", a)),
+        dec_to_int: (a) =>
+          op.bit_not(op.bit_not(implicitConversion("dec_to_int", a))),
+        "reversed[List]": (a) => method(a, "reverse"),
+        "reversed[Ascii]": (a) =>
+          method(method(list([prefix("...", a)]), "reverse"), "join", text("")),
+        "reversed[codepoint]": (a) =>
+          method(method(list([prefix("...", a)]), "reverse"), "join", text("")),
+        append: (a, b) => op["concat[List]"](a, list([b])),
+        bool_to_int: (a) => implicitConversion("bool_to_int", a),
+        int_to_bool: (a) => implicitConversion("int_to_bool", a),
+        bit_count: (a) =>
+          property(
+            method(op.int_to_bin(a), "replace", builtin("/0/g,``")),
+            "length",
+          ),
+      }),
+      mapMutationTo.prefix({
+        succ: "++",
+        pred: "--",
+      }),
+      mapMutationTo.infix({
+        pow: "**=",
+        mul: "*=",
+        div: "/=",
+        trunc_div: "/=",
+        mod: "%=",
+        rem: "%=",
+        add: "+=",
+        "concat[Text]": "+=",
+        sub: "-=",
+        bit_shift_left: "<<=",
+        bit_shift_right: ">>=",
+        bit_and: "&=",
+        bit_xor: "^=",
+        bit_or: "|=",
+        and: "&&=",
+        or: "||=",
+      }),
+      mapOpsTo.method({
         "ord_at[Ascii]": "charCodeAt",
         "contains[List]": "includes",
         "contains[Array]": "includes",
         "contains[Text]": "includes",
-        push: "push",
         include: "add",
         "find[List]": "indexOf",
         "find[Ascii]": "indexOf",
+        "concat[List]": "concatenate",
         split: "split",
         replace: "replaceAll",
         repeat: "repeat",
         starts_with: "startsWith",
         ends_with: "endsWith",
       }),
-      mapTo(func)({
+      mapOpsTo.func({
+        "char[Ascii]": "String.fromCharCode",
+        "char[byte]": "String.fromCharCode",
         abs: "abs",
         max: "Math.max",
         min: "Math.min",
         "println[Text]": "print",
         "print[Text]": "write",
       }),
-      mapUnaryAndBinary(
-        {
-          pow: "**",
-          neg: "-",
-          bit_not: "~",
-          mul: "*",
-          div: "/",
-          trunc_div: "/",
-          mod: "%",
-          rem: "%",
-          add: "+",
-          "concat[Text]": "+",
-          "concat[List]": "+",
-          sub: "-",
-          bit_shift_left: "<<",
-          bit_shift_right: ">>",
-          bit_and: "&",
-          bit_xor: "^",
-          bit_or: "|",
-          lt: "<",
-          leq: "<=",
-          "eq[Int]": "==",
-          "eq[Text]": "==",
-          "neq[Int]": "!=",
-          "neq[Text]": "!=",
-          geq: ">=",
-          gt: ">",
-          not: "!",
-          and: "&&",
-          or: "||",
-        },
-        ["**", "*", "/", "%", "+", "-", "<<", ">>", "&", "^", "|", "&&", "||"],
-      ),
+      mapOpsTo.infix({
+        "contains[Table]": flipped`in`,
+        pow: "**",
+        div: "/",
+        trunc_div: "/",
+        mod: "%",
+        rem: "%",
+        add: "+",
+        "concat[Text]": "+",
+        sub: "-",
+        bit_shift_left: "<<",
+        bit_shift_right: ">>",
+        bit_and: "&",
+        bit_xor: "^",
+        bit_or: "|",
+        lt: "<",
+        leq: "<=",
+        "eq[Int]": "==",
+        "eq[Text]": "==",
+        "neq[Int]": "!=",
+        "neq[Text]": "!=",
+        geq: ">=",
+        gt: ">",
+        and: "&&",
+        or: "||",
+      }),
+      mapOpsTo.prefix({
+        neg: "-",
+        bit_not: "~",
+        not: "!",
+      }),
+      mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
     ),
-    simplegolf(addIncAndDec(), addOneToManyAssignments()),
+    simplegolf(addOneToManyAssignments()),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({

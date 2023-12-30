@@ -3,6 +3,10 @@ Hover opcode name to see a description.
 
 | Alias | Full name | Input | Output |
 |-------|-----------|-------|--------|
+| is_even | [is_even](## "Evenness predicate.") | [Int] | Bool |
+| is_odd | [is_odd](## "Oddness predicate.") | [Int] | Bool |
+| succ | [succ](## "Integer successor.") | [Int] | Int |
+| pred | [pred](## "Integer predecessor.") | [Int] | Int |
 | + | [add](## "Integer addition.") | [Int, Int, ...Int] | Int |
 | - | [sub](## "Integer subtraction.")<br>[neg](## "Integer negation.") | [Int, Int]<br>[Int] | Int<br>Int |
 | * | [mul](## "Integer multiplication.") | [Int, Int, ...Int] | Int |
@@ -18,8 +22,9 @@ Hover opcode name to see a description.
 | min | [min](## "Integer minimum.") | [Int, Int, ...Int] | Int |
 | max | [max](## "Integer maximum.") | [Int, Int, ...Int] | Int |
 | abs | [abs](## "Integer absolute value.") | [Int] | 0..oo |
+| bit_count | [bit_count](## "Number of set bits in the integer.") | [0..oo] | 0..2 |
 | read[line] | [read[line]](## "Reads single line from the stdin.") | [] | Text |
-| @ | [at[argv]](## "Gets argv at the 0-based `n`th position, where `n` is an integer literal.")<br>[at[Array]](## "Gets the item at the 0-based index.")<br>[at[List]](## "Gets the item at the 0-based index.")<br>[at_back[List]](## "Gets the item at the -1-based backwards index.")<br>[at[Table]](## "Gets the item at the key.")<br>[at[Ascii]](## "Gets the character at the 0-based index.")<br>[at_back[Ascii]](## "Gets the character at the -1-based backwards index.") | [0..oo]<br>[(Array T1 T2), T2]<br>[(List T1), 0..oo]<br>[(List T1), -oo..-1]<br>[(Table T1 T2), T1]<br>[Ascii, 0..oo]<br>[Ascii, -oo..-1] | Text<br>T1<br>T1<br>T1<br>T2<br>(Ascii 1..1)<br>(Ascii 1..1) |
+| @ | [at[argv]](## "Gets argv at the 0-based `n`th position, where `n` is an integer literal.")<br>[at[Array]](## "Gets the item at the 0-based index.")<br>[at[List]](## "Gets the item at the 0-based index.")<br>[at_back[List]](## "Gets the item at the -1-based backwards index.")<br>[at[Table]](## "Gets the item at the key.")<br>[at[Ascii]](## "Gets the character at the 0-based index.")<br>[at_back[Ascii]](## "Gets the character at the -1-based backwards index.")<br>[with_at[Array]](## "Returns an array with item at the given 0-based index replaced.")<br>[with_at[List]](## "Returns a list with item at the given 0-based index replaced.")<br>[with_at_back[List]](## "Returns a list with item at the given -1-based backwards index replaced.")<br>[with_at[Table]](## "Returns an array with item at the given key replaced.") | [0..oo]<br>[(Array T1 T2), T2]<br>[(List T1), 0..oo]<br>[(List T1), -oo..-1]<br>[(Table T1 T2), T1]<br>[Ascii, 0..oo]<br>[Ascii, -oo..-1]<br>[(Array T1 T2), T2, T1]<br>[(List T1), 0..oo, T1]<br>[(List T1), -oo..-1, T1]<br>[(Table T1 T2), T1, T2] | Text<br>T1<br>T1<br>T1<br>T2<br>(Ascii 1..1)<br>(Ascii 1..1)<br>(Array T1 T2)<br>(List T1)<br>(List T1)<br>(Table T1 T2) |
 | print | [print[Text]](## "Prints the provided argument.")<br>[print[Int]](## "Converts the provided argument to base 10 text and prints it.") | [Text]<br>[Int] | Void<br>Void |
 | println | [println[Text]](## "Prints the provided argument followed by a \\n.")<br>[println[Int]](## "Converts the provided argument to base 10 text and prints it followed by a \\n.") | [Text]<br>[Int] | Void<br>Void |
 | putc[byte] | [putc[byte]](## "Creates a single byte text and prints it.") | [0..255] | Void |
@@ -42,7 +47,6 @@ Hover opcode name to see a description.
 | at_back[byte] | [at_back[byte]](## "Gets the byte (as text) at the -1-based backwards index (counting bytes).") | [Text, -oo..-1] | (Text 1..1) |
 | at[codepoint] | [at[codepoint]](## "Gets the codepoint (as text) at the 0-based index (counting codepoints).") | [Text, 0..oo] | (Text 1..1) |
 | at_back[codepoint] | [at_back[codepoint]](## "Gets the codepoint (as text) at the -1-based backwards index (counting codepoints).") | [Text, -oo..-1] | (Text 1..1) |
-| set_at | [set_at[Array]](## "Sets the item at the 0-based index.")<br>[set_at[List]](## "Sets the item at the 0-based index.")<br>[set_at_back[List]](## "Sets the item at the -1-based backwards index.")<br>[set_at[Table]](## "Sets the item at the key.") | [(Array T1 T2), T2, T1]<br>[(List T1), 0..oo, T1]<br>[(List T1), -oo..-1, T1]<br>[(Table T1 T2), T1, T2] | Void<br>Void<br>Void<br>Void |
 | slice[codepoint] | [slice[codepoint]](## "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in codepoints.") | [Text, 0..oo, 0..oo] | Text |
 | slice_back[codepoint] | [slice_back[codepoint]](## "Returns a text slice that starts at the given -1-based backwards index and has given length. Start and length are measured in codepoints.") | [Text, -oo..-1, 0..oo] | Text |
 | slice[byte] | [slice[byte]](## "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in bytes.") | [Text, 0..oo, 0..oo] | Text |
@@ -66,8 +70,7 @@ Hover opcode name to see a description.
 | size[codepoint] | [size[codepoint]](## "Returns the length of the text in codepoints.") | [Text] | 0..oo |
 | size[byte] | [size[byte]](## "Returns the length of the text in bytes.") | [Text] | 0..2147483648 |
 | include | [include](## "Modifies the set by including the given item.") | [(Set T1), T1] | Void |
-| push | [push](## "Modifies the list by pushing the given item at the end.") | [(List T1), T1] | Void |
-| .. | [append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.") | [(List T1), T1]<br>[...(List T1)]<br>[...Text] | (List T1)<br>?<br>? |
+| .. | [append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.") | [(List T1), T1]<br>[(List T1), (List T1), ...(List T1)]<br>[Text, Text, ...Text] | (List T1)<br>(List T1)<br>Text |
 | repeat | [repeat](## "Repeats the text a given amount of times.") | [Text, 0..oo] | Text |
 | split | [split](## "Splits the text by the delimiter.") | [Text, Text] | (List Text) |
 | split_whitespace | [split_whitespace](## "Splits the text by any whitespace.") | [Text] | (List Text) |
@@ -77,10 +80,12 @@ Hover opcode name to see a description.
 | starts_with | [starts_with](## "Checks whether the second argument is a prefix of the first.") | [Text, Text] | Bool |
 | ends_with | [ends_with](## "Checks whether the second argument is a suffix of the first.") | [Text, Text] | Bool |
 | int_to_bin_aligned | [int_to_bin_aligned](## "Converts the integer to a 2-base text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
-| int_to_hex_aligned | [int_to_hex_aligned](## "Converts the integer to a 16-base text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
+| int_to_hex_aligned | [int_to_hex_aligned](## "Converts the integer to a 16-base lowercase text and aligns to a minimum length.") | [0..oo, 0..oo] | Ascii |
+| int_to_Hex_aligned | [int_to_Hex_aligned](## "Converts the integer to a 16-base uppercase text and aligns to a minimum length.") | [0..oo, 0..oo] | Ascii |
 | int_to_dec | [int_to_dec](## "Converts the integer to a 10-base text.") | [Int] | (Ascii 1..oo) |
 | int_to_bin | [int_to_bin](## "Converts the integer to a 2-base text.") | [0..oo] | (Ascii 1..oo) |
-| int_to_hex | [int_to_hex](## "Converts the integer to a 16-base text.") | [0..oo] | (Ascii 1..oo) |
+| int_to_hex | [int_to_hex](## "Converts the integer to a 16-base lowercase text.") | [0..oo] | (Ascii 1..oo) |
+| int_to_Hex | [int_to_Hex](## "Converts the integer to a 16-base uppercase text.") | [0..oo] | (Ascii 1..oo) |
 | int_to_bool | [int_to_bool](## "Converts 0 to false and 1 to true.") | [0..1] | Bool |
 | dec_to_int | [dec_to_int](## "Parses a integer from a 10-base text.") | [Ascii] | Int |
 | bool_to_int | [bool_to_int](## "Converts false to 0 and true to 1.") | [Bool] | 0..1 |

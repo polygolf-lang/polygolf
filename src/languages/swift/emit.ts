@@ -101,6 +101,7 @@ function binaryPrecedence(opname: string): number {
     case "||":
       return 1;
   }
+  if (opname.endsWith("=")) return 0;
   throw new Error(
     `Programming error - unknown Swift binary operator '${opname}.'`,
   );
@@ -191,8 +192,6 @@ export default function emitProgram(
           throw new EmitError(e);
         case "Assignment":
           return [emit(e.variable), "=", emit(e.expr)];
-        case "MutatingInfix":
-          return [emit(e.variable), e.name + "=", emit(e.right)];
         case "NamedArg":
           return [e.name, ":", emit(e.value)];
         case "Identifier":
