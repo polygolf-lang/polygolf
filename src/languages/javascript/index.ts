@@ -6,7 +6,6 @@ import {
   listType,
   textType,
   builtin,
-  infix,
   int,
   propertyCall as property,
   isText,
@@ -32,6 +31,7 @@ import {
   mapOps,
   mapOpsTo,
   mapMutationTo,
+  flipped,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -68,7 +68,11 @@ import {
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
 import { floodBigints, mapVarsThatNeedBigint } from "../../plugins/types";
-import { forRangeToForEachKey, propertyCallToIndexCall } from "./plugins";
+import {
+  forRangeToForEachKey,
+  numberDivisionToSlash,
+  propertyCallToIndexCall,
+} from "./plugins";
 
 const javascriptLanguage: Language = {
   name: "Javascript",
@@ -129,10 +133,10 @@ const javascriptLanguage: Language = {
         argv: "arguments",
       }),
       mapOps({
-        "at[argv]": (x) =>
+        "at[argv]": (a) =>
           op["at[List]"](
             { ...builtin("arguments"), type: listType(textType()) },
-            x[0],
+            a,
           ),
       }),
       mapMutationTo.index({
@@ -153,69 +157,49 @@ const javascriptLanguage: Language = {
       mapMutationTo.method({
         append: "push",
       }),
+      numberDivisionToSlash,
       mapOps({
-        "at[Ascii]": (x) => indexCall(x[0], x[1]),
-        "slice[List]": (x) => method(x[0], "slice", x[1], op.add(x[1], x[2])),
-        "slice[Ascii]": (x) => method(x[0], "slice", x[1], op.add(x[1], x[2])),
-        "char[Ascii]": (x) => func("String.fromCharCode", x),
-        "char[byte]": (x) => func("String.fromCharCode", x),
-        "sorted[Ascii]": (x) =>
+        "at[Ascii]": (a, b) => indexCall(a, b),
+        "slice[List]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
+        "slice[Ascii]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
+        "sorted[Ascii]": (a) =>
+          method(a.kind === "List" ? a : list([prefix("...", a)]), "sort"),
+
+        int_to_bin: (a) => method(a, "toString", int(2n)),
+        int_to_bin_aligned: (a, b) =>
+          method(method(a, "toString", int(2n)), "padStart", b, int(0n)),
+        int_to_hex: (a) => method(a, "toString", int(16n)),
+        int_to_Hex: (a) =>
+          method(method(a, "toString", int(16n)), "toUpperCase"),
+        int_to_hex_aligned: (a, b) =>
+          method(method(a, "toString", int(16n)), "padStart", b, int(0n)),
+        int_to_Hex_aligned: (a, b) =>
           method(
-            x[0].kind === "List" ? x[0] : list([prefix("...", x[0])]),
-            "sort",
-          ),
-        div: (x, s) =>
-          s.node.targetType !== "bigint"
-            ? func("Math.floor", infix("/", x[0], x[1]))
-            : undefined,
-        trunc_div: (x, s) =>
-          s.node.targetType !== "bigint"
-            ? func("Math.floor", infix("/", x[0], x[1]))
-            : undefined,
-        int_to_bin: (x) => method(x[0], "toString", int(2n)),
-        int_to_bin_aligned: (x) =>
-          method(method(x[0], "toString", int(2n)), "padStart", x[1], int(0n)),
-        int_to_hex: (x) => method(x[0], "toString", int(16n)),
-        int_to_Hex: (x) =>
-          method(method(x[0], "toString", int(16n)), "toUpperCase"),
-        int_to_hex_aligned: (x) =>
-          method(method(x[0], "toString", int(16n)), "padStart", x[1], int(0n)),
-        int_to_Hex_aligned: (x) =>
-          method(
-            method(method(x[0], "toString", int(16n)), "toUpperCase"),
+            method(method(a, "toString", int(16n)), "toUpperCase"),
             "padStart",
-            x[1],
+            b,
             int(0n),
           ),
-        "size[List]": (x) => property(x[0], "length"),
-        "size[Ascii]": (x) => property(x[0], "length"),
-        "size[Table]": (x) => property(func("Object.keys", x[0]), "length"),
-        right_align: (x) => method(x[0], "padStart", x[1]),
-        join: (x) => method(x[0], "join", ...(isText(",")(x[1]) ? [] : [x[1]])),
-        int_to_dec: (x) =>
-          op["concat[Text]"](text(""), implicitConversion("int_to_dec", x[0])),
-        dec_to_int: (x) =>
-          op.bit_not(op.bit_not(implicitConversion("dec_to_int", x[0]))),
-        "reversed[List]": (x) => method(x[0], "reverse"),
-        "reversed[Ascii]": (x) =>
-          method(
-            method(list([prefix("...", x[0])]), "reverse"),
-            "join",
-            text(""),
-          ),
-        "reversed[codepoint]": (x) =>
-          method(
-            method(list([prefix("...", x[0])]), "reverse"),
-            "join",
-            text(""),
-          ),
-        append: (x) => op["concat[List]"](x[0], list([x[1]])),
-        bool_to_int: (x) => implicitConversion("bool_to_int", x[0]),
-        int_to_bool: (x) => implicitConversion("int_to_bool", x[0]),
-        "contains[Table]": (x) => infix("in", x[1], x[0]),
-        bit_count: (x) =>
+        "size[List]": (a) => property(a, "length"),
+        "size[Ascii]": (a) => property(a, "length"),
+        "size[Table]": (a) => property(func("Object.keys", a), "length"),
+        right_align: (a, b) => method(a, "padStart", b),
+        join: (a, b) => method(a, "join", ...(isText(",")(b) ? [] : [b])),
+        int_to_dec: (a) =>
+          op["concat[Text]"](text(""), implicitConversion("int_to_dec", a)),
+        dec_to_int: (a) =>
+          op.bit_not(op.bit_not(implicitConversion("dec_to_int", a))),
+        "reversed[List]": (a) => method(a, "reverse"),
+        "reversed[Ascii]": (a) =>
+          method(method(list([prefix("...", a)]), "reverse"), "join", text("")),
+        "reversed[codepoint]": (a) =>
+          method(method(list([prefix("...", a)]), "reverse"), "join", text("")),
+        append: (a, b) => op["concat[List]"](a, list([b])),
+        bool_to_int: (a) => implicitConversion("bool_to_int", a),
+        int_to_bool: (a) => implicitConversion("int_to_bool", a),
+        bit_count: (a) =>
           property(
-            method(op.int_to_bin(x[0]), "replace", builtin("/0/g,``")),
+            method(op.int_to_bin(a), "replace", builtin("/0/g,``")),
             "length",
           ),
       }),
@@ -257,6 +241,8 @@ const javascriptLanguage: Language = {
         ends_with: "endsWith",
       }),
       mapOpsTo.func({
+        "char[Ascii]": "String.fromCharCode",
+        "char[byte]": "String.fromCharCode",
         abs: "abs",
         max: "Math.max",
         min: "Math.min",
@@ -264,6 +250,7 @@ const javascriptLanguage: Language = {
         "print[Text]": "write",
       }),
       mapOpsTo.infix({
+        "contains[Table]": flipped`in`,
         pow: "**",
         div: "/",
         trunc_div: "/",

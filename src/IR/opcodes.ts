@@ -192,7 +192,7 @@ export const opCodeDefinitions = {
   join: { args: [list(text()), text()], front: true },
   right_align: { args: [text(), int(0)], front: true },
   replace: { args: [text(), text(int(1)), text()], front: true },
-  text_multireplace: { args: [text(), text(), rest(text())] },
+  text_multireplace: { args: [text(), text(), text(), rest(text())] },
   starts_with: { args: [text(), text()], front: true },
   ends_with: { args: [text(), text()], front: true },
 

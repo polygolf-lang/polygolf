@@ -23,8 +23,7 @@ import type { VisitorContext } from "../common/compile";
 import { getWrites } from "../common/symbols";
 
 export const printLnToPrint = mapOps({
-  "println[Text]": (x) =>
-    op["print[Text]"](op["concat[Text]"](x[0], text("\n"))),
+  "println[Text]": (a) => op["print[Text]"](op["concat[Text]"](a, text("\n"))),
 });
 
 /**
@@ -92,7 +91,7 @@ export function implicitlyConvertPrintArg(node: Node, spine: Spine) {
 }
 
 export const printToImplicitOutput = mapOps({
-  "print[Text]": (x) => x[0],
+  "print[Text]": (a) => a,
 });
 
 export function printConcatToMultiPrint(node: Node, spine: Spine) {
@@ -102,9 +101,9 @@ export function printConcatToMultiPrint(node: Node, spine: Spine) {
 }
 
 export const putcToPrintChar = mapOps({
-  "putc[Ascii]": (x) => op["print[Text]"](op["char[Ascii]"](x[0])),
-  "putc[byte]": (x) => op["print[Text]"](op["char[byte]"](x[0])),
-  "putc[codepoint]": (x) => op["print[Text]"](op["char[codepoint]"](x[0])),
+  "putc[Ascii]": (a) => op["print[Text]"](op["char[Ascii]"](a)),
+  "putc[byte]": (a) => op["print[Text]"](op["char[byte]"](a)),
+  "putc[codepoint]": (a) => op["print[Text]"](op["char[codepoint]"](a)),
 });
 
 export function mergePrint(

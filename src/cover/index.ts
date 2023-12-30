@@ -40,7 +40,8 @@ const options = yargs()
   .options({
     all: {
       alias: "a",
-      description: "Print rows that are all true & backend only opcodes",
+      description:
+        "Print rows that are all true or all false & backend only opcodes",
       type: "boolean",
     },
   })

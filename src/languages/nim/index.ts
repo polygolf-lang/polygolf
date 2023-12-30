@@ -91,7 +91,7 @@ import {
 } from "../../plugins/arithmetic";
 import { safeConditionalOpToAt } from "../../plugins/conditions";
 
-const char48: Text = { ...text("0"), targetType: "char" };
+const c48: Text = { ...text("0"), targetType: "char" };
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -133,7 +133,7 @@ const nimLanguage: Language = {
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps({
-        "at[argv]": (x) => func("paramStr", succ(x[0])),
+        "at[argv]": (a) => func("paramStr", succ(a)),
       }),
       removeUnusedForVar,
       forRangeToForRangeInclusive(true),
@@ -163,48 +163,45 @@ const nimLanguage: Language = {
         "at[Table]": 0,
       }),
       mapOps({
-        "reversed[codepoint]": (x) =>
-          op.join(func("reversed", func("toRunes", x)), text("")),
-        "reversed[byte]": (x) => op.join(func("reversed", x[0]), text("")),
+        "reversed[codepoint]": (a) =>
+          op.join(func("reversed", func("toRunes", a)), text("")),
+        "reversed[byte]": (a) => op.join(func("reversed", a), text("")),
       }),
       mapOps({
         "char[codepoint]": (x) => prefix("$", func("Rune", x)),
-        "ord_at[byte]": (x) => func("ord", op["at[byte]"](x[0], x[1])),
-        "ord_at[codepoint]": (x) =>
-          func("ord", op["at[codepoint]"](x[0], x[1])),
-        "read[line]": func("readLine", builtin("stdin")),
-        join: (x) => func("join", isText("")(x[1]) ? [x[0]] : x),
-        "at[byte]": (x) => indexCall(x[0], x[1]),
-        "at[codepoint]": (x) =>
-          prefix("$", indexCall(func("toRunes", x[0]), x[1])),
-        "slice[byte]": (x) =>
-          rangeIndexCall(x[0], x[1], getEndIndex(x[1], x[2]), int(1n)),
-        "slice[List]": (x) =>
-          rangeIndexCall(x[0], x[1], getEndIndex(x[1], x[2]), int(1n)),
-        "print[Text]": (x) => func("write", builtin("stdout"), x),
-        replace: (x) => func("replace", isText("")(x[2]) ? [x[0], x[1]] : x),
-        text_multireplace: (x) =>
+        "ord_at[byte]": (a, b) => func("ord", op["at[byte]"](a, b)),
+        "ord_at[codepoint]": (a, b) => func("ord", op["at[codepoint]"](a, b)),
+        "read[line]": () => func("readLine", builtin("stdin")),
+        join: (a, b) => func("join", isText("")(b) ? [a] : [a, b]),
+        "at[byte]": (a, b) => indexCall(a, b),
+        "at[codepoint]": (a, b) =>
+          prefix("$", indexCall(func("toRunes", a), b)),
+        "slice[byte]": (a, b, c) =>
+          rangeIndexCall(a, b, getEndIndex(b, c), int(1n)),
+        "slice[List]": (a, b, c) =>
+          rangeIndexCall(a, b, getEndIndex(b, c), int(1n)),
+        "print[Text]": (a) => func("write", builtin("stdout"), a),
+        replace: (a, b, c) =>
+          func("replace", isText("")(c) ? [a, b] : [a, b, c]),
+        text_multireplace: (a, ...x) =>
           func(
             "multireplace",
-            x[0],
+            a,
             array(
               x.flatMap((_, i) =>
-                i % 2 > 0 ? [array(x.slice(i, i + 2))] : [],
+                i % 2 === 0 ? [array(x.slice(i, i + 2))] : [],
               ), // Polygolf doesn't have array of tuples, so we use array of arrays instead
             ),
           ),
-        "size[codepoint]": (x) => op["size[List]"](func("toRunes", x)),
-        int_to_bool: (x) => op["eq[Int]"](x[0], int(0n)),
-        int_to_bin_aligned: (x) =>
-          func("align", op.int_to_bin(x[0]), x[1], char48),
-        int_to_hex_aligned: (x) =>
-          func("align", op.int_to_hex(x[0]), x[1], char48),
-        int_to_Hex_aligned: (x) =>
-          func("align", op.int_to_Hex(x[0]), x[1], char48),
+        "size[codepoint]": (a) => op["size[List]"](func("toRunes", a)),
+        int_to_bool: (a) => op["eq[Int]"](a, int(0n)),
+        int_to_bin_aligned: (a, b) => func("align", op.int_to_bin(a), b, c48),
+        int_to_hex_aligned: (a, b) => func("align", op.int_to_hex(a), b, c48),
+        int_to_Hex_aligned: (a, b) => func("align", op.int_to_Hex(a), b, c48),
       }),
       mapOpsTo.builtin({ true: "true", false: "false" }),
       mapOps({
-        int_to_hex: (x) => func("toLowerAscii", op.int_to_Hex(x[0])),
+        int_to_hex: (a) => func("toLowerAscii", op.int_to_Hex(a)),
       }),
       mapOpsTo.func(
         {
