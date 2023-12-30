@@ -5,7 +5,7 @@ import {
   int,
   isOpCode,
   isSubtype,
-  Node,
+  type Node,
   integerType,
   textType,
   annotate,
@@ -14,7 +14,7 @@ import {
 import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";
 import { charLength } from "../common/strings";
-import { Spine } from "../common/Spine";
+import type { Spine } from "../common/Spine";
 import { getType } from "../common/getType";
 
 /** Implements ascii text op by either byte / codepoint text ops. */
