@@ -125,15 +125,16 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return isInt(0n)(e.low)
           ? ["(", "take", emit(e.high), emit(e.collection), ")"]
           : ["(", "slice", emit(e.collection), emit(e.low), emit(e.high), ")"];
-      case "ConditionalOp":
+      case "ConditionalOp": {
+        const { ifs, alternate } = getIfChain(e);
         return [
           "(",
-          "if",
-          emit(e.condition),
-          emit(e.consequent),
-          emit(e.alternate),
+          ifs.length > 1 ? "cond" : "if",
+          ifs.map((x) => [emit(x.condition), emit(x.consequent)]),
+          emit(alternate!),
           ")",
         ];
+      }
       case "List":
         return ["@[", e.exprs.map((x) => emit(x)), "]"];
       case "Table":
