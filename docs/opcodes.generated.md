@@ -70,7 +70,7 @@ Hover opcode name to see a description.
 | size[codepoint] | [size[codepoint]](## "Returns the length of the text in codepoints.") | [Text] | 0..oo |
 | size[byte] | [size[byte]](## "Returns the length of the text in bytes.") | [Text] | 0..2147483648 |
 | include | [include](## "Modifies the set by including the given item.") | [(Set T1), T1] | Void |
-| .. | [append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.") | [(List T1), T1]<br>[(List T1), (List T1), ...(List T1)]<br>[Text, Text, ...Text] | (List T1)<br>(List T1)<br>Text |
+| .. | [append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.")<br>[range_incl](## "List of integers between given inclusive bounds, with given step.") | [(List T1), T1]<br>[(List T1), (List T1), ...(List T1)]<br>[Text, Text, ...Text]<br>[Int, Int, 1..oo] | (List T1)<br>(List T1)<br>Text<br>Int |
 | repeat | [repeat](## "Repeats the text a given amount of times.") | [Text, 0..oo] | Text |
 | split | [split](## "Splits the text by the delimiter.") | [Text, Text] | (List Text) |
 | split_whitespace | [split_whitespace](## "Splits the text by any whitespace.") | [Text] | (List Text) |
@@ -89,3 +89,4 @@ Hover opcode name to see a description.
 | int_to_bool | [int_to_bool](## "Converts 0 to false and 1 to true.") | [0..1] | Bool |
 | dec_to_int | [dec_to_int](## "Parses a integer from a 10-base text.") | [Ascii] | Int |
 | bool_to_int | [bool_to_int](## "Converts false to 0 and true to 1.") | [Bool] | 0..1 |
+| ..< | [range_excl](## "List of integers between given inclusive lower, exclusive upper bound,  with given step.") | [Int, Int, 1..oo] | Int |

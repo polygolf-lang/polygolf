@@ -1,4 +1,4 @@
-import type { Node } from "./IR";
+import { type Node } from "./IR";
 import {
   type Type,
   typeArg,
@@ -207,6 +207,16 @@ export const opCodeDefinitions = {
   int_to_bool: { args: [int(0, 1)], front: true },
   dec_to_int: { args: [ascii], front: true },
   bool_to_int: { args: [bool], front: true },
+
+  // Ranges
+  range_incl: {
+    args: [int(), int(), int(1)],
+    front: "..",
+  },
+  range_excl: {
+    args: [int(), int(), int(1)],
+    front: "..<",
+  },
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
@@ -425,6 +435,19 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   int_to_bool: "Converts 0 to false and 1 to true.",
   dec_to_int: "Parses a integer from a 10-base text.",
   bool_to_int: "Converts false to 0 and true to 1.",
+
+  range_incl:
+    "List of integers between given inclusive bounds, with given step.",
+  range_excl:
+    "List of integers between given inclusive lower, exclusive upper bound,  with given step.",
+};
+
+const int0 = { kind: "Integer", value: 0n } as const;
+const int1 = { kind: "Integer", value: 1n } as const;
+
+export const defaults: Partial<Record<OpCode, Record<number, Node>>> = {
+  range_incl: { 2: int1, 0: int0 },
+  range_excl: { 2: int1, 0: int0 },
 };
 
 export type OpCodeFrontName =

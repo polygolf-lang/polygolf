@@ -662,6 +662,16 @@ export function getOpCodeTypeFromTypes(
     case "with_at_back[List]":
     case "with_at[Table]":
       return got[0];
+    case "range_incl":
+      return integerType(
+        (got[0] as IntegerType).low,
+        (got[1] as IntegerType).high,
+      );
+    case "range_excl":
+      return integerType(
+        (got[0] as IntegerType).low,
+        sub((got[1] as IntegerType).high, 1n),
+      );
   }
 }
 
