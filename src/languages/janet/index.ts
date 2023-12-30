@@ -150,7 +150,7 @@ const janetLanguage: Language = {
       }),
       mapOpsTo.func({ gcd: "math/gcd" }, "leftChain"),
       mapOpsTo.func({
-        replace: "string/replace-all",
+        replace: "peg/replace-all",
         "concat[Text]": "string",
         abs: "math/abs",
         add: "+",
