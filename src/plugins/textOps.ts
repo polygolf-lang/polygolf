@@ -170,8 +170,7 @@ export function ordToDecToInt(node: Node, spine: Spine) {
     isOp("ord[Ascii]", "ord[byte]", "ord[codepoint]")(node.args[1]) &&
     isSubtype(getType(node, spine), integerType(0, 9))
   ) {
-    const x = node.args[1];
-    return annotate(op.dec_to_int(x), integerType(0, 9));
+    return annotate(op.dec_to_int(node.args[1].args[0]), integerType(0, 9));
   }
 }
 
