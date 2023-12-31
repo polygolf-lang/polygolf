@@ -46,8 +46,7 @@ import {
   type TableType,
   opCodeDefinitions,
   type AnyOpCodeArgTypes,
-  OpCodeFrontNamesToOpCodes,
-  integerType,
+  type OpCodeFrontNamesToOpCodes,
   type Rest,
   lengthToArrayIndexType,
 } from "../IR";
@@ -472,17 +471,9 @@ export function getOpCodeTypeFromTypes(
     case "is_odd":
       return booleanType;
     case "succ":
-      return getArithmeticType(
-        "add",
-        got[0] as IntegerType,
-        integerType(1n, 1n),
-      );
+      return getArithmeticType("add", got[0] as IntegerType, int(1n, 1n));
     case "pred":
-      return getArithmeticType(
-        "sub",
-        got[0] as IntegerType,
-        integerType(1n, 1n),
-      );
+      return getArithmeticType("sub", got[0] as IntegerType, int(1n, 1n));
     case "not":
       return booleanType;
     case "int_to_bool":
@@ -528,7 +519,7 @@ export function getOpCodeTypeFromTypes(
     case "text_to_list[Ascii]":
     case "text_to_list[byte]":
     case "text_to_list[codepoint]":
-      return list(text(integerType(1, 1), opCode === "text_to_list[Ascii]"));
+      return list(text(int(1, 1), opCode === "text_to_list[Ascii]"));
     case "size[List]":
     case "size[Set]":
     case "size[Table]":
@@ -610,7 +601,7 @@ export function getOpCodeTypeFromTypes(
       if (
         skipAdditionalChecks ||
         !opCode.includes("back") ||
-        isSubtype(startPlusLength, integerType(-Infinity, 0))
+        isSubtype(startPlusLength, int(-Infinity, 0))
       )
         return text(
           int(0n, min(t.codepointLength.high, length.high)),
@@ -628,10 +619,7 @@ export function getOpCodeTypeFromTypes(
       const start = got[1] as IntegerType;
       const length = got[2] as IntegerType;
       const startPlusLength = getArithmeticType("add", start, length);
-      if (
-        skipAdditionalChecks ||
-        isSubtype(startPlusLength, integerType(-Infinity, 0))
-      )
+      if (skipAdditionalChecks || isSubtype(startPlusLength, int(-Infinity, 0)))
         return got[0];
       throw new Error(
         `Type error. start index + length must be nonpositive, but got ${toString(
@@ -658,14 +646,12 @@ export function getOpCodeTypeFromTypes(
     case "with_at[Table]":
       return got[0];
     case "range_incl":
-      return integerType(
-        (got[0] as IntegerType).low,
-        (got[1] as IntegerType).high,
+      return list(
+        int((got[0] as IntegerType).low, (got[1] as IntegerType).high),
       );
     case "range_excl":
-      return integerType(
-        (got[0] as IntegerType).low,
-        sub((got[1] as IntegerType).high, 1n),
+      return list(
+        int((got[0] as IntegerType).low, sub((got[1] as IntegerType).high, 1n)),
       );
   }
 }
