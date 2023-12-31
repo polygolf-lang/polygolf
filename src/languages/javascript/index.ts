@@ -50,6 +50,8 @@ import {
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import {
+  charToIntToDec,
+  ordToDecToInt,
   replaceToSplitAndJoin,
   textGetToIntToTextGet,
   textToIntToFirstIndexTextGetToInt,
@@ -60,6 +62,7 @@ import {
   applyDeMorgans,
   bitnotPlugins,
   decomposeIntLiteral,
+  divisionToComparisonAndBack,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
@@ -80,7 +83,7 @@ const javascriptLanguage: Language = {
   emitter: emitProgram,
   phases: [
     required(printIntToPrint),
-    simplegolf(golfLastPrint()),
+    simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       golfStringListLiteral(),
       forRangeToForEach("at[Array]", "at[List]", "at[codepoint]"),
@@ -98,6 +101,7 @@ const javascriptLanguage: Language = {
       replaceToSplitAndJoin,
       decomposeIntLiteral(),
       forRangeToForEachKey,
+      ...divisionToComparisonAndBack,
     ),
     required(
       pickAnyInt,

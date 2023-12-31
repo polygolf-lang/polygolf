@@ -136,7 +136,7 @@ export function startsWithEndsWithToSliceEquality(
   };
 }
 
-export function intToDecToChr(node: Node, spine: Spine) {
+export function intToDecToChar(node: Node, spine: Spine) {
   if (isOp.int_to_dec(node)) {
     const [x] = node.args;
     if (isSubtype(getType(x, spine), integerType(0, 9)))
@@ -144,7 +144,7 @@ export function intToDecToChr(node: Node, spine: Spine) {
   }
 }
 
-export function chrToIntToDec(node: Node, spine: Spine) {
+export function charToIntToDec(node: Node, spine: Spine) {
   if (isOp("char[byte]", "char[codepoint]", "char[Ascii]")(node)) {
     const [x] = node.args;
     if (isSubtype(getType(x, spine), integerType(48, 57))) {
@@ -175,8 +175,8 @@ export function ordToDecToInt(node: Node, spine: Spine) {
 }
 
 export const singleDigitTextConversions = [
-  intToDecToChr,
-  chrToIntToDec,
+  intToDecToChar,
+  charToIntToDec,
   decToIntToOrd,
   ordToDecToInt,
 ];

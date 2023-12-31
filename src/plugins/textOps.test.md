@@ -55,7 +55,7 @@ $x: 0..9 <- 0;
 int_to_dec $x;
 ```
 
-```polygolf textOps.intToDecToChr
+```polygolf textOps.intToDecToChar
 $x: 0..9 <- 0;
 char[Ascii] ($x + 48);
 ```
@@ -65,7 +65,7 @@ $x: 48..57 <- 48;
 char[Ascii] $x;
 ```
 
-```polygolf textOps.chrToIntToDec
+```polygolf textOps.charToIntToDec
 $x: 48..57 <- 48;
 int_to_dec ($x - 48);
 ```

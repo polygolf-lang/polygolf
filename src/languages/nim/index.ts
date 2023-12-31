@@ -68,6 +68,9 @@ import {
   usePrimaryTextOps,
   useMultireplace,
   startsWithEndsWithToSliceEquality,
+  charToIntToDec,
+  ordToDecToInt,
+  decToIntToOrd,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -88,6 +91,7 @@ import {
   decomposeIntLiteral,
   pickAnyInt,
   lowBitsPlugins,
+  comparisonToDivision,
 } from "../../plugins/arithmetic";
 import { safeConditionalOpToAt } from "../../plugins/conditions";
 
@@ -99,7 +103,7 @@ const nimLanguage: Language = {
   emitter: emitProgram,
   phases: [
     required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
-    simplegolf(golfLastPrint()),
+    simplegolf(golfLastPrint(), charToIntToDec),
     search(
       mergePrint,
       flipBinaryOps,
@@ -126,6 +130,9 @@ const nimLanguage: Language = {
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
       startsWithEndsWithToSliceEquality("byte"),
+      ordToDecToInt,
+      decToIntToOrd,
+      comparisonToDivision,
     ),
     simplegolf(safeConditionalOpToAt("Array")),
     required(
