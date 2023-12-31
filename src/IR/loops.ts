@@ -24,10 +24,10 @@ export interface While extends BaseNode {
  *
  * Python: for variable in collection:body.
  */
-export interface ForEach extends BaseNode {
+export interface ForEach<T extends Node = Node> extends BaseNode {
   readonly kind: "ForEach";
-  readonly variable: Identifier;
-  readonly collection: Node;
+  readonly variable?: Identifier;
+  readonly collection: T;
   readonly body: Node;
 }
 
@@ -147,7 +147,7 @@ export function forRangeCommon(
 }
 
 export function forEach(
-  variable: Identifier | string,
+  variable: Identifier | string | undefined,
   collection: Node,
   body: Node,
 ): ForEach {

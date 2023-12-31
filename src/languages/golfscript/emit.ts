@@ -13,7 +13,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
     const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
     if (
       parent === null ||
-      ["ForRange", "ForDifferenceRange", "ForEach"].includes(parent.kind)
+      ["ForDifferenceRange", "ForEach"].includes(parent.kind)
     ) {
       return children.map((stmt) => emitStatement(stmt, BaseNode));
     }

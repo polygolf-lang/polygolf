@@ -2,7 +2,6 @@ import { type Spine } from "../common/Spine";
 import { getType } from "../common/getType";
 import { type Plugin } from "../common/Language";
 import {
-  forRange,
   int,
   assignment,
   whileLoop,
@@ -19,7 +18,6 @@ import {
   type OpCode,
   type Text,
   type List,
-  type ForRange,
   forDifferenceRange,
   isOp,
   isSubtype,
@@ -29,9 +27,16 @@ import {
   isText,
   isIdent,
   isUserIdent,
+  type ForEach,
+  Op,
 } from "../IR";
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
+
+const isRangeOp = isOp("range_excl", "range_incl");
+function isForRange(x: Node): x is ForEach<Op<"range_incl" | "range_excl">> {
+  return x.kind === "ForEach" && isRangeOp(x.collection);
+}
 
 export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
   return {
@@ -267,17 +272,18 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
           assignment(node.variable, op["at[argv]"](indexVar)),
           node.body,
         ]);
-        return forRange(
+        return forEach(
           indexVar,
-          int(0),
-          overshoot
-            ? inclusive
-              ? pred(int(node.argcUpperBound))
-              : int(node.argcUpperBound)
-            : op.argc,
-          int(1),
+          op[inclusive ? "range_incl" : "range_excl"](
+            int(0),
+            overshoot
+              ? inclusive
+                ? pred(int(node.argcUpperBound))
+                : int(node.argcUpperBound)
+              : op.argc,
+            int(1),
+          ),
           newBody,
-          inclusive,
         );
       }
     },
@@ -315,56 +321,53 @@ export function assertForArgvTopLevel(node: Node, spine: Spine) {
 }
 
 export function shiftRangeOneUp(node: Node, spine: Spine) {
-  if (
-    node.kind === "ForRange" &&
-    node.variable !== undefined &&
-    isInt(1n)(node.increment) &&
-    spine.someNode(
-      (x) =>
-        isOp.add(x) &&
-        isInt(1n)(x.args[0]) &&
-        isIdent(node.variable!)(x.args[1]),
-    )
-  ) {
-    const bodySpine = spine.getChild("body");
-    const newVar = id(node.variable.name + "+shift");
-    const newBodySpine = bodySpine.withReplacer((x) =>
-      newVar !== undefined && isIdent(node.variable!)(x)
-        ? pred(newVar)
-        : undefined,
-    );
-    return forRange(
-      newVar,
-      succ(node.start),
-      succ(node.end),
-      int(1n),
-      newBodySpine.node,
-      node.inclusive,
-    );
+  if (isForRange(node) && node.variable !== undefined) {
+    const [low, high, step] = node.collection.args;
+    if (
+      isInt(1n)(step) &&
+      spine.someNode(
+        (x) =>
+          isOp.add(x) &&
+          isInt(1n)(x.args[0]) &&
+          isIdent(node.variable!)(x.args[1]),
+      )
+    ) {
+      const bodySpine = spine.getChild("body");
+      const newVar = id(node.variable.name + "+shift");
+      const newBodySpine = bodySpine.withReplacer((x) =>
+        newVar !== undefined && isIdent(node.variable!)(x)
+          ? pred(newVar)
+          : undefined,
+      );
+      return forEach(
+        newVar,
+        op[node.collection.op](succ(low), succ(high), step),
+        newBodySpine.node,
+      );
+    }
   }
 }
 
 export function forRangeToForDifferenceRange(
-  transformPredicate: (
-    expr: ForRange,
-    spine: Spine<ForRange>,
-  ) => boolean = () => true,
+  transformPredicate: (expr: ForEach, spine: Spine<ForEach>) => boolean = () =>
+    true,
 ): Plugin {
   return {
     name: "forRangeToForDifferenceRange",
     visit(node, spine) {
       if (
-        node.kind === "ForRange" &&
+        isForRange(node) &&
         node.variable !== undefined &&
-        transformPredicate(node, spine as Spine<ForRange>)
+        transformPredicate(node, spine as Spine<ForEach>)
       ) {
+        const [low, high, step] = node.collection.args;
         return forDifferenceRange(
           node.variable,
-          node.start,
-          op.sub(node.end, node.start),
-          node.increment,
+          low,
+          op.sub(high, low),
+          step,
           node.body,
-          node.inclusive,
+          node.collection.op === "range_incl",
         );
       }
     },
@@ -372,43 +375,33 @@ export function forRangeToForDifferenceRange(
 }
 
 export function forRangeToForRangeOneStep(node: Node, spine: Spine) {
-  if (
-    node.kind === "ForRange" &&
-    node.variable !== undefined &&
-    isSubtype(getType(node.increment, spine.root.node), integerType(2n))
-  ) {
-    const newVar = id(node.variable.name + "+1step");
-    return forRange(
-      newVar,
-      int(0n),
-      node.inclusive
-        ? op.div(op.sub(node.end, node.start), node.increment)
-        : succ(op.div(op.sub(pred(node.end), node.start), node.increment)),
-      int(1n),
-      block([
-        assignment(
-          node.variable,
-          op.add(op.mul(newVar, node.increment), node.start),
+  if (isForRange(node) && node.variable !== undefined) {
+    const [low, high, step] = node.collection.args;
+    if (isSubtype(getType(step, spine), integerType(2n))) {
+      const newVar = id(node.variable.name + "+1step");
+      return forEach(
+        newVar,
+        op[node.collection.op](
+          int(0n),
+          node.collection.op === "range_incl"
+            ? op.div(op.sub(high, low), step)
+            : succ(op.div(op.sub(pred(high), low), step)),
+          int(1n),
         ),
-        node.body,
-      ]),
-      node.inclusive,
-    );
+        block([
+          assignment(node.variable, op.add(op.mul(newVar, step), low)),
+          node.body,
+        ]),
+      );
+    }
   }
 }
 
 export function removeUnusedForVar(node: Node, spine: Spine) {
-  if (node.kind === "ForRange" && node.variable !== undefined) {
+  if (node.kind === "ForEach" && node.variable !== undefined) {
     const variable = node.variable;
     if (!spine.getChild("body").someNode(isUserIdent(variable))) {
-      return forRange(
-        undefined,
-        node.start,
-        node.end,
-        node.increment,
-        node.body,
-        node.inclusive,
-      );
+      return forEach(undefined, node.collection, node.body);
     }
   }
 }

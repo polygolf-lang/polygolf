@@ -217,15 +217,6 @@ export function calcTypeAndResolveOpCode(
       return voidType;
     case "OneToManyAssignment":
       return type(expr.expr);
-    case "ForRange": {
-      const incType = type(expr.increment);
-      if (!isSubtype(incType, integerType(1, Infinity))) {
-        throw new Error(
-          `Type error. Increment must be positive (got ${toString(incType)}).`,
-        );
-      }
-      return voidType;
-    }
     case "If":
     case "While":
     case "ForArgv":

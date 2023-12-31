@@ -25,7 +25,6 @@ import {
   type Postfix,
 } from "./exprs";
 import {
-  type ForRange,
   type ForEach,
   type ForEachKey,
   type ForEachPair,
@@ -84,8 +83,8 @@ export type Node =
   | Set
   | Table
   | ConditionalOp
+  | ForEach
   | While
-  | ForRange
   | ForArgv
   | If
   // Other nodes
@@ -104,7 +103,6 @@ export type Node =
   | Postfix
   | Import
   | ForDifferenceRange
-  | ForEach
   | ForEachKey
   | ForEachPair
   | ForCLike
