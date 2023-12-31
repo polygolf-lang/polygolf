@@ -11,7 +11,6 @@ import {
   id,
   func,
   ifStatement,
-  forRange,
   whileLoop,
   forArgv,
   conditional,
@@ -29,6 +28,7 @@ import {
   OpCodesUser,
   isSubtype,
   type OpCode,
+  forRangeCommon,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
@@ -151,19 +151,23 @@ const features: CoverTableRecipe = {
   bigint: (lang) => lang.stmt(int(10n ** 40n)),
   if: (lang) => ifStatement(lang.expr(booleanType), lang.stmt(), lang.stmt()),
   for: (lang) =>
-    forRange(
-      id("x"),
-      lang.expr(integerType(4, 4)),
-      lang.expr(integerType(10, 10)),
-      int(1),
+    forRangeCommon(
+      [
+        "x",
+        lang.expr(integerType(4, 4)),
+        lang.expr(integerType(10, 10)),
+        int(1),
+      ],
       lang.stmt(),
     ),
   "for with step": (lang) =>
-    forRange(
-      id("x"),
-      lang.expr(integerType(4, 4)),
-      lang.expr(integerType(10, 10)),
-      lang.expr(integerType(3, 3)),
+    forRangeCommon(
+      [
+        "x",
+        lang.expr(integerType(4, 4)),
+        lang.expr(integerType(10, 10)),
+        lang.expr(integerType(3, 3)),
+      ],
       lang.stmt(),
     ),
   while: (lang) => whileLoop(lang.expr(booleanType), lang.stmt()),

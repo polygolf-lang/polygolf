@@ -5,6 +5,7 @@ import {
   int,
   block,
   type BaseNode,
+  op,
 } from "./IR";
 
 /**
@@ -19,27 +20,21 @@ export interface While extends BaseNode {
 }
 
 /**
- * A loop over the integer interval [low, high) or [low, high] with increment.
+ * A loop over the items in a collection.
  *
- * Increment is required but should default to 1 or -1 in most cases, allowing
- * the emitter to golf some output space
- *
- * Python: for variable in range(low, high, increment):body.
+ * Python: for variable in collection:body.
  */
-export interface ForRange extends BaseNode {
-  readonly kind: "ForRange";
-  readonly inclusive: boolean;
-  readonly variable: Identifier | undefined;
-  readonly start: Node;
-  readonly end: Node;
-  readonly increment: Node;
+export interface ForEach extends BaseNode {
+  readonly kind: "ForEach";
+  readonly variable: Identifier;
+  readonly collection: Node;
   readonly body: Node;
 }
 
 /**
  * A loop over the integer interval [low, low+difference) or [low, low+difference] with increment.
  *
- * Increment is required but should default to 1 or -1 in most cases, allowing
+ * Increment is required but should default to 1 in most cases, allowing
  * the emitter to golf some output space
  *
  * Python: for variable in range(low, low+difference, increment):body.
@@ -51,18 +46,6 @@ export interface ForDifferenceRange extends BaseNode {
   readonly start: Node;
   readonly difference: Node;
   readonly increment: Node;
-  readonly body: Node;
-}
-
-/**
- * A loop over the items in a collection.
- *
- * Python: for variable in collection:body.
- */
-export interface ForEach extends BaseNode {
-  readonly kind: "ForEach";
-  readonly variable: Identifier;
-  readonly collection: Node;
   readonly body: Node;
 }
 
@@ -119,25 +102,6 @@ export function whileLoop(condition: Node, body: Node): While {
   return { kind: "While", condition, body };
 }
 
-export function forRange(
-  variable: Identifier | string | undefined,
-  start: Node,
-  end: Node,
-  increment: Node,
-  body: Node,
-  inclusive: boolean = false,
-): ForRange {
-  return {
-    kind: "ForRange",
-    variable: typeof variable === "string" ? id(variable) : variable,
-    start,
-    end,
-    increment,
-    body,
-    inclusive,
-  };
-}
-
 export function forDifferenceRange(
   variable: Identifier | string,
   start: Node,
@@ -158,20 +122,27 @@ export function forDifferenceRange(
 }
 
 export function forRangeCommon(
-  bounds: [string, Node | number, Node | number, (Node | number)?, boolean?],
+  [variable, start, end, step, inclusive]: [
+    string,
+    Node | number,
+    Node | number,
+    (Node | number)?,
+    boolean?,
+  ],
   ...body: readonly Node[]
-): ForRange {
-  return forRange(
-    bounds[0],
-    typeof bounds[1] === "number" ? int(BigInt(bounds[1])) : bounds[1],
-    typeof bounds[2] === "number" ? int(BigInt(bounds[2])) : bounds[2],
-    bounds[3] === undefined
-      ? int(1n)
-      : typeof bounds[3] === "number"
-      ? int(BigInt(bounds[3]))
-      : bounds[3],
+): ForEach {
+  return forEach(
+    variable,
+    op[inclusive ? "range_incl" : "range_excl"](
+      typeof start === "number" ? int(BigInt(start)) : start,
+      typeof end === "number" ? int(BigInt(end)) : end,
+      step === undefined
+        ? int(1n)
+        : typeof step === "number"
+        ? int(BigInt(step))
+        : step,
+    ),
     body.length > 1 ? block(body) : body[0],
-    bounds[4],
   );
 }
 

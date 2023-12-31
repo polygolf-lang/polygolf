@@ -151,6 +151,9 @@ export const opCodeDefinitions = {
   "char[byte]": { args: [int(0, 255)], front: true },
   "char[codepoint]": { args: [int(0, 0x10ffff)], front: true },
   "char[Ascii]": { args: [int(0, 127)], front: "char" },
+  "text_to_list[byte]": { args: [text()], front: true },
+  "text_to_list[codepoint]": { args: [text()], front: true },
+  "text_to_list[Ascii]": { args: [ascii], front: "text_to_list" },
 
   // Order
   "sorted[Int]": { args: [list(int())], front: "sorted" },
@@ -367,6 +370,11 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   "char[codepoint]":
     "Returns a codepoint (as text) corresponding to the integer.",
   "char[Ascii]": "Returns a character corresponding to the integer.",
+  "text_to_list[byte]": "Converts given text to a list of single byte texts.",
+  "text_to_list[codepoint]":
+    "Converts given text to a list of single codepoint texts.",
+  "text_to_list[Ascii]":
+    "Converts given text to a list of single character texts.",
 
   // Order
   "sorted[Int]": "Returns a sorted copy of the input.",

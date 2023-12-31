@@ -203,6 +203,12 @@ export function sexpr(
     case "while":
       expectArity(2);
       return whileLoop(args[0], args[1]);
+    case "for_each": {
+      expectArity(3);
+      const [variable, collection, body] = args;
+      assertIdentifier(variable);
+      return forEach(variable, collection, body);
+    }
     case "for": {
       expectArity(2, 5);
       let variable: Node = id("_");
@@ -331,12 +337,6 @@ export function sexpr(
           body,
           true,
         );
-      }
-      case "for_each": {
-        expectArity(3);
-        const [variable, collection, body] = args;
-        assertIdentifier(variable);
-        return forEach(variable, collection, body);
       }
       case "for_each_key": {
         expectArity(3);
