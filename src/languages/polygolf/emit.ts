@@ -15,6 +15,8 @@ import {
   isOpCode,
   isNullary,
   infixableOpCodeNames,
+  isForRange,
+  isOp,
 } from "../../IR";
 
 /*
@@ -200,26 +202,6 @@ export function emitNodeWithoutAnnotation(
         expr.condition,
         emitNode(expr.body, false, true),
       );
-    case "ForRange": {
-      if (expr.inclusive) {
-        return emitSexpr(
-          "for_range_inclusive",
-          expr.variable ?? id("_"),
-          expr.start,
-          expr.end,
-          expr.increment,
-          emitNode(expr.body, false, true),
-        );
-      }
-      let args: Node[] = [];
-      if (!isInt(1n)(expr.increment)) args = [expr.increment, ...args];
-      args = [expr.end, ...args];
-      if (!isInt(0n)(expr.start) || args.length > 1)
-        args = [expr.start, ...args];
-      if (expr.variable !== undefined || args.length > 1)
-        args = [expr.variable ?? id("_"), ...args];
-      return emitSexpr("for", ...args, emitNode(expr.body, false, true));
-    }
     case "ForArgv":
       return emitSexpr(
         "for_argv",
@@ -271,19 +253,37 @@ export function emitNodeWithoutAnnotation(
         "@",
         ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x)),
       );
-    case "ForDifferenceRange":
-      return emitSexpr(
-        "@",
-        expr.variable,
-        expr.start,
-        expr.difference,
-        expr.increment,
-        emitNode(expr.body, false, true),
-      );
     case "ForEach":
+      if (isOp("range_excl")(expr.collection)) {
+        const [low, high, step] = expr.collection.args;
+        if (isInt(0n)(low) && isInt(1n)(step)) {
+          if (expr.variable === undefined) {
+            return emitSexpr("for", high, emitNode(expr.body, false, true));
+          }
+          return emitSexpr(
+            "for",
+            expr.variable,
+            high,
+            emitNode(expr.body, false, true),
+          );
+        }
+      } else if (
+        isOp(
+          "text_to_list[Ascii]",
+          "text_to_list[byte]",
+          "text_to_list[codepoint]",
+        )(expr.collection)
+      ) {
+        return emitSexpr(
+          expr.collection.op.replace("text_to_list", "for"),
+          expr.variable ?? "_",
+          expr.collection.args[0],
+          emitNode(expr.body, false, true),
+        );
+      }
       return emitSexpr(
-        "@",
-        expr.variable,
+        "for",
+        expr.variable ?? "_",
         expr.collection,
         emitNode(expr.body, false, true),
       );

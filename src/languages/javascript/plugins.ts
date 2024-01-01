@@ -16,6 +16,7 @@ import {
   isOp,
   infix,
   functionCall,
+  isForRange,
 } from "../../IR";
 
 export function propertyCallToIndexCall(node: Node) {
@@ -25,18 +26,15 @@ export function propertyCallToIndexCall(node: Node) {
 }
 
 export function forRangeToForEachKey(node: Node) {
-  if (
-    node.kind === "ForEach" &&
-    node.variable !== undefined &&
-    isOp("range_incl", "range_excl")(node.collection)
-  ) {
+  if (isForRange(node) && node.variable !== undefined) {
+    const [low, high, step] = node.collection.args;
     if (
-      isInt(0n)(node.start) &&
-      isInt()(node.end) &&
-      2 <= node.end.value &&
-      node.end.value <= 37
+      isInt(0n)(low) &&
+      isInt()(high) &&
+      2 <= high.value &&
+      high.value <= 37
     ) {
-      const end = Number(node.end.value);
+      const end = Number(high.value);
       const loopVar = id(node.variable.name + id().name);
       return forEachKey(
         loopVar,

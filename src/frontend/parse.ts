@@ -4,7 +4,6 @@ import nearley from "nearley";
 import {
   functionCall,
   type Identifier,
-  forRange,
   ifStatement,
   list,
   op,
@@ -44,7 +43,6 @@ import {
   rangeIndexCall,
   infix,
   importStatement,
-  forDifferenceRange,
   forEach,
   forEachPair,
   forEachKey,
@@ -68,6 +66,7 @@ import {
   userName,
   isOpCode,
   lengthToArrayIndexType,
+  int as intNode,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -80,7 +79,7 @@ export function sexpr(
   callee: string = calleeIdent.name,
 ): Node {
   if (!calleeIdent.builtin) {
-    return functionCall(calleeIdent, args);
+    return functionCall(calleeIdent, ...args);
   }
   if (callee in deprecatedAliases) {
     const alias0 = deprecatedAliases[callee];
@@ -184,7 +183,7 @@ export function sexpr(
     case "function_call": {
       expectArity(1, Infinity);
       if (restrictedFrontend) assertIdentifier(args[0]);
-      return functionCall(args[0], args.slice(1));
+      return functionCall(args[0], ...args.slice(1));
     }
     case "array":
       expectArity(1, Infinity);
@@ -211,26 +210,52 @@ export function sexpr(
     }
     case "for": {
       expectArity(2, 5);
-      let variable: Node = id("_");
-      let start: Node = integer(0n);
-      let step: Node = integer(1n);
-      let end, body: Node;
+      let variable: Node | undefined;
+      let colllection: Node;
+      let body: Node;
       if (args.length === 5) {
-        [variable, start, end, step, body] = args;
+        const [variable0, low, high, step, body0] = args;
+        variable = variable0;
+        colllection = op.range_excl(low, high, step);
+        body = body0;
+        warnings.push(
+          new PolygolfError(
+            "Deprecated form of `for` used. Iterate over a range using `(low ..< high step)` instead.",
+            calleeIdent.source,
+          ),
+        );
       } else if (args.length === 4) {
-        [variable, start, end, body] = args;
+        const [variable0, low, high, body0] = args;
+        variable = variable0;
+        colllection = op.range_excl(low, high, intNode(1n));
+        body = body0;
+        warnings.push(
+          new PolygolfError(
+            "Deprecated form of `for` used. Iterate over a range using `(low ..< high)` instead.",
+            calleeIdent.source,
+          ),
+        );
       } else if (args.length === 3) {
-        [variable, end, body] = args;
+        [variable, colllection, body] = args;
       } else {
         // args.length === 2
-        [end, body] = args;
+        const [end, body0] = args;
+        variable = undefined;
+        colllection = op.range_excl(intNode(0n), end, intNode(1n));
+        body = body0;
       }
+      if (variable !== undefined) assertIdentifier(variable);
+      return forEach(variable, colllection, body);
+    }
+    case "for[Ascii]":
+    case "for[byte]":
+    case "for[codepoint]": {
+      expectArity(3);
+      const [variable, text, body] = args;
       assertIdentifier(variable);
-      return forRange(
-        variable.name === "_" ? undefined : variable,
-        start,
-        end,
-        step,
+      return forEach(
+        variable,
+        op.unsafe(callee.replace("for", "text_to_list") as OpCode, text),
         body,
       );
     }
