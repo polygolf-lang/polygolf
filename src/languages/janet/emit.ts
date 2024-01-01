@@ -1,5 +1,5 @@
 import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
-import { isInt, type IR } from "../../IR";
+import { isInt, type IR, isForRange, Node } from "../../IR";
 import { type TokenTree } from "../../common/Language";
 
 const emitJanetText = emitTextFactory({
@@ -12,10 +12,19 @@ const emitJanetText = emitTextFactory({
 });
 
 export default function emitProgram(program: IR.Node): TokenTree {
-  function emitMultiNode(BaseNode: IR.Node, blockNeedsDo = false): TokenTree {
+  function list(name: string, ...args: (TokenTree | Node)[]) {
+    return [
+      "(",
+      name,
+      ...args.map((x) => (typeof x === "object" && "kind" in x ? emit(x) : x)),
+      ")",
+    ];
+  }
+
+  function multiNode(BaseNode: IR.Node, blockNeedsDo = false): TokenTree {
     const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
     if (BaseNode.kind === "Block" && blockNeedsDo) {
-      return ["(", "do", children.map((x) => emit(x)), ")"];
+      return list("do", ...children);
     }
     return children.map((x) => emit(x));
   }
@@ -28,55 +37,36 @@ export default function emitProgram(program: IR.Node): TokenTree {
   function emit(e: IR.Node): TokenTree {
     switch (e.kind) {
       case "Block":
-        return emitMultiNode(e);
+        return multiNode(e);
       case "While":
-        return ["(", "while", emit(e.condition), emitMultiNode(e.body), ")"];
+        return list("while", e.condition, multiNode(e.body));
       case "ForEach":
-        return [
-          "(",
-          "each",
-          emit(e.variable),
-          emit(e.collection),
-          emitMultiNode(e.body),
-          ")",
-        ];
-      case "ForRange": {
-        const varName = e.variable === undefined ? "_" : emit(e.variable);
-        return isInt(1n)(e.increment)
-          ? [
-              "(",
-              "for",
-              varName,
-              emit(e.start),
-              emit(e.end),
-              emitMultiNode(e.body),
-              ")",
-            ]
-          : [
-              "(",
-              "loop",
-              "[",
-              varName,
-              ":range",
-              "[",
-              emit(e.start),
-              emit(e.end),
-              emit(e.increment),
-              "]",
-              "]",
-              emitMultiNode(e.body),
-              ")",
-            ];
-      }
+        if (isForRange(e)) {
+          const [low, high, step] = e.collection.args;
+          return isInt(1n)(step)
+            ? list("for", e.variable ?? "_", low, high, multiNode(e.body))
+            : list(
+                "loop",
+                "[",
+                e.variable ?? "_",
+                ":range",
+                "[",
+                low,
+                high,
+                step,
+                "]",
+                "]",
+                multiNode(e.body),
+              );
+        }
+        return list("each", e.variable ?? "_", e.collection, multiNode(e.body));
       case "If":
-        return [
-          "(",
+        return list(
           "if",
           emit(e.condition),
-          emitMultiNode(e.consequent, true),
-          e.alternate === undefined ? [] : emitMultiNode(e.alternate, true),
-          ")",
-        ];
+          multiNode(e.consequent, true),
+          e.alternate === undefined ? [] : multiNode(e.alternate, true),
+        );
       case "VarDeclarationWithAssignment": {
         const assignment = e.assignment;
         if (assignment.kind !== "Assignment") {
@@ -89,16 +79,10 @@ export default function emitProgram(program: IR.Node): TokenTree {
           assignment.expr.kind === "Identifier" && assignment.expr.builtin
             ? "def"
             : "var";
-        return [
-          "(",
-          assignKeyword,
-          emit(assignment.variable),
-          emit(assignment.expr),
-          ")",
-        ];
+        return list(assignKeyword, assignment.variable, assignment.expr);
       }
       case "Assignment":
-        return ["(", "set", emit(e.variable), emit(e.expr), ")"];
+        return list("set", e.variable, e.expr);
       case "Identifier":
         return e.name;
       case "Text":
@@ -110,21 +94,14 @@ export default function emitProgram(program: IR.Node): TokenTree {
           36: ["36r", ""],
         });
       case "FunctionCall":
-        return ["(", emit(e.func), e.args.map((x) => emit(x)), ")"];
+        return list(e.func as any, ...e.args);
       case "RangeIndexCall":
         if (!isInt(1n)(e.step)) throw new EmitError(e, "step not equal one");
         return isInt(0n)(e.low)
-          ? ["(", "take", emit(e.high), emit(e.collection), ")"]
-          : ["(", "slice", emit(e.collection), emit(e.low), emit(e.high), ")"];
+          ? list("take", e.high, e.collection)
+          : list("slice", e.collection, e.low, e.high);
       case "ConditionalOp":
-        return [
-          "(",
-          "if",
-          emit(e.condition),
-          emit(e.consequent),
-          emit(e.alternate),
-          ")",
-        ];
+        return list("if", e.condition, e.consequent, e.alternate);
       case "List":
         return ["@[", e.value.map((x) => emit(x)), "]"];
       case "Table":
@@ -134,5 +111,5 @@ export default function emitProgram(program: IR.Node): TokenTree {
     }
   }
 
-  return emitMultiNode(program);
+  return multiNode(program);
 }

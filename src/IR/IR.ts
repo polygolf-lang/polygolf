@@ -102,7 +102,6 @@ export type Node =
   | Prefix
   | Postfix
   | Import
-  | ForDifferenceRange
   | ForEachKey
   | ForEachPair
   | ForCLike

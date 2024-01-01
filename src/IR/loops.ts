@@ -34,24 +34,6 @@ export interface ForEach<T extends Node = Node> extends BaseNode {
 }
 
 /**
- * A loop over the integer interval [low, low+difference) or [low, low+difference] with increment.
- *
- * Increment is required but should default to 1 in most cases, allowing
- * the emitter to golf some output space
- *
- * Python: for variable in range(low, low+difference, increment):body.
- */
-export interface ForDifferenceRange extends BaseNode {
-  readonly kind: "ForDifferenceRange";
-  readonly inclusive: boolean;
-  readonly variable: Identifier;
-  readonly start: Node;
-  readonly difference: Node;
-  readonly increment: Node;
-  readonly body: Node;
-}
-
-/**
  * A loop over the keys in an table.
  *
  * Python: for variable in array:body.
@@ -102,25 +84,6 @@ export interface ForArgv extends BaseNode {
 
 export function whileLoop(condition: Node, body: Node): While {
   return { kind: "While", condition, body };
-}
-
-export function forDifferenceRange(
-  variable: Identifier | string,
-  start: Node,
-  difference: Node,
-  increment: Node,
-  body: Node,
-  inclusive: boolean = false,
-): ForDifferenceRange {
-  return {
-    kind: "ForDifferenceRange",
-    variable: typeof variable === "string" ? id(variable) : variable,
-    start,
-    difference,
-    increment,
-    body,
-    inclusive,
-  };
 }
 
 export function forRangeCommon(

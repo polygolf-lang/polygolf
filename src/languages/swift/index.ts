@@ -16,6 +16,7 @@ import {
   conditional,
   rangeIndexCall,
   intToDecOpOrText,
+  infix,
 } from "../../IR";
 import {
   type Language,
@@ -257,6 +258,24 @@ const swiftLanguage: Language = {
             method(op.int_to_bin(a), "filter", builtin(`{$0>"0"}`)),
             "count",
           ),
+        range_excl: (a, b, c) =>
+          isInt(1n)(c)
+            ? infix("..<", a, b)
+            : func(
+                "string",
+                namedArg("from", a),
+                namedArg("to", b),
+                namedArg("by", c),
+              ),
+        range_incl: (a, b, c) =>
+          isInt(1n)(c)
+            ? infix("...", a, b)
+            : func(
+                "string",
+                namedArg("from", a),
+                namedArg("to", succ(b)),
+                namedArg("by", c),
+              ),
       }),
       mapOpsTo.func({
         max: "max",

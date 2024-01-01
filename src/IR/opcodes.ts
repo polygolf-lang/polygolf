@@ -212,14 +212,9 @@ export const opCodeDefinitions = {
   bool_to_int: { args: [bool], front: true },
 
   // Ranges
-  range_incl: {
-    args: [int(), int(), int(1)],
-    front: "..",
-  },
-  range_excl: {
-    args: [int(), int(), int(1)],
-    front: "..<",
-  },
+  range_incl: { args: [int(), int(), int(1)], front: ".." },
+  range_excl: { args: [int(), int(), int(1)], front: "..<" },
+  range_diff_excl: { args: [int(), int(0), int(1)] },
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
@@ -448,6 +443,8 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
     "List of integers between given inclusive bounds, with given step.",
   range_excl:
     "List of integers between given inclusive lower, exclusive upper bound,  with given step.",
+  range_diff_excl:
+    "List of integers between given inclusive lower, exclusive upper bound expressed usign a difference between the lower bound, with given step.",
 };
 
 const int0 = { kind: "Integer", value: 0n } as const;

@@ -1,6 +1,14 @@
 import { type TokenTree } from "../../common/Language";
 import { EmitError, emitTextFactory } from "../../common/emit";
-import { int, integerType, type IR, isInt, isSubtype } from "../../IR";
+import {
+  int,
+  integerType,
+  type IR,
+  isInt,
+  isSubtype,
+  isOp,
+  Node,
+} from "../../IR";
 import { getType } from "../../common/getType";
 
 const emitGolfscriptText = emitTextFactory({
@@ -31,54 +39,40 @@ export default function emitProgram(program: IR.Node): TokenTree {
           emitMultiNode(stmt.body, stmt),
           "while",
         ];
-      case "ForRange": {
-        if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
-        if (!isSubtype(getType(stmt.start, program), integerType(0)))
-          throw new EmitError(stmt, "potentially negative low");
+      case "ForEach": {
+        let collection: TokenTree;
+        if (
+          isOp("range_incl", "range_excl", "range_diff_excl")(stmt.collection)
+        ) {
+          // Consider moving this to a plugin
+          const [a, b, c] = stmt.collection.args;
+          if (stmt.collection.op === "range_excl") {
+            collection = [
+              emitNode(b),
+              ",",
+              isInt(0n)(a) ? [] : [emitNode(a), ">"],
+              isInt(1n)(c) ? [] : [emitNode(c), "%"],
+            ];
+          } else if (stmt.collection.op === "range_diff_excl") {
+            collection = [
+              emitNode(b),
+              ",",
+              isInt(1n)(c) ? [] : [emitNode(c), "%"],
+            ];
+          } else throw new EmitError(stmt, "inclusive");
+        } else {
+          collection = emitNode(stmt.collection);
+        }
         return [
-          emitNode(stmt.end),
-          ",",
-          isInt(0n)(stmt.start) ? [] : [emitNode(stmt.start), ">"],
-          isInt(1n)(stmt.increment) ? [] : [emitNode(stmt.increment), "%"],
+          collection,
           "{",
-          ...(stmt.variable === undefined
-            ? []
-            : [":", emitNode(stmt.variable)]),
+          stmt.variable === undefined ? [] : [":", emitNode(stmt.variable)],
           ";",
           emitMultiNode(stmt.body, stmt),
           "}",
           "%",
         ];
       }
-      case "ForDifferenceRange": {
-        if (stmt.inclusive) throw new EmitError(stmt, "inclusive");
-        return [
-          emitNode(stmt.difference),
-          ",",
-          isInt(1n)(stmt.increment) ? [] : [emitNode(stmt.increment), "%"],
-          "{",
-          isInt()(stmt.start) && stmt.start.value < 0n
-            ? [emitNode(int(-stmt.start.value)), "-"]
-            : [emitNode(stmt.start), "+"],
-          ":",
-          emitNode(stmt.variable),
-          ";",
-          emitMultiNode(stmt.body, stmt),
-          "}",
-          "%",
-        ];
-      }
-      case "ForEach":
-        return [
-          emitNode(stmt.collection),
-          "{",
-          ":",
-          emitNode(stmt.variable),
-          ";",
-          emitMultiNode(stmt.body, stmt),
-          "}",
-          "%",
-        ];
       case "If":
         return [
           emitNode(stmt.condition),

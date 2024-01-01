@@ -5,7 +5,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isInt } from "../../IR";
+import { type IR, isInt, id } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 const unicode01to09repls = {
@@ -149,33 +149,11 @@ export default function emitProgram(
         case "ForEach":
           return [
             `for`,
-            emit(e.variable),
+            emit(e.variable ?? id("_")),
             "in",
             emit(e.collection),
             emitMultiNode(e.body),
           ];
-        case "ForRange": {
-          const start = emit(e.start);
-          const end = emit(e.end);
-          return [
-            "for",
-            e.variable === undefined ? "_" : emit(e.variable),
-            "in",
-            isInt(1n)(e.increment)
-              ? [start, e.inclusive ? "..." : "..<", end]
-              : [
-                  "stride",
-                  "(",
-                  joinTrees(",", [
-                    ["from:", start],
-                    ["to:", end],
-                    ["by:", emit(e.increment)],
-                  ]),
-                  ")",
-                ],
-            emitMultiNode(e.body),
-          ];
-        }
         case "If":
           return [
             "if",

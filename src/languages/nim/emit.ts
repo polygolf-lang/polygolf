@@ -161,47 +161,12 @@ export default function emitProgram(
         case "ForEach":
           return [
             `for`,
-            emit(e.variable),
+            e.variable === undefined ? "()" : emit(e.variable),
             "in",
             emit(e.collection),
             ":",
             emitMultiNode(e.body),
           ];
-        case "ForRange": {
-          const start = isInt(0n)(e.start) ? [] : emit(e.start);
-          if (isInt(1n)(e.increment)) {
-            return [
-              "for",
-              e.variable === undefined ? "()" : emit(e.variable),
-              "in",
-              start,
-              "$GLUE$",
-              e.inclusive ? ".." : "..<",
-              emit(e.end),
-              ":",
-              emitMultiNode(e.body),
-            ];
-          }
-          if (!e.inclusive) {
-            throw new EmitError(e, "exlusive+step");
-          }
-          return [
-            "for",
-            e.variable === undefined ? "()" : emit(e.variable),
-            "in",
-            "countup",
-            "$GLUE$",
-            "(",
-            emit(e.start),
-            ",",
-            emit(e.end),
-            ",",
-            emit(e.increment),
-            ")",
-            ":",
-            emitMultiNode(e.body),
-          ];
-        }
         case "If":
           return [
             "if",

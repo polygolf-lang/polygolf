@@ -5,7 +5,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isText, isOfKind } from "../../IR";
+import { type IR, isText, isOfKind, id } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 function codepointMap(x: number) {
@@ -208,7 +208,7 @@ export default function emitProgram(
           return [
             `for`,
             "(",
-            emit(e.variable),
+            emit(e.variable ?? id()),
             "of",
             emit(e.collection),
             ")",

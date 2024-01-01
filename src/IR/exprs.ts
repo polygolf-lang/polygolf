@@ -404,12 +404,12 @@ export const pred = op.pred;
 
 export function functionCall(
   func: string | Node,
-  ...args: readonly (Node | readonly Node[])[]
+  ...args: readonly Node[]
 ): FunctionCall {
   return {
     kind: "FunctionCall",
     func: typeof func === "string" ? id(func, true) : func,
-    args: args.flat(),
+    args,
   };
 }
 
