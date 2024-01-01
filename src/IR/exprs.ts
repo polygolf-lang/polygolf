@@ -403,25 +403,33 @@ export const pred = op.pred;
 
 export function functionCall(
   func: string | Node,
-  ...args: readonly (Node | readonly Node[])[]
+  ...args: readonly (Node | Record<string, Node> | readonly Node[])[]
 ): FunctionCall {
   return {
     kind: "FunctionCall",
     func: typeof func === "string" ? id(func, true) : func,
-    args: args.flat(),
+    args: args.flatMap((x) =>
+      Array.isArray(x) || "kind" in x
+        ? x
+        : Object.entries(x).map((x) => namedArg(...x)),
+    ),
   };
 }
 
 export function methodCall(
   object: Node,
   ident: string | Identifier,
-  ...args: readonly Node[]
+  ...args: readonly (Node | Record<string, Node> | readonly Node[])[]
 ): MethodCall {
   return {
     kind: "MethodCall",
     ident: typeof ident === "string" ? id(ident, true) : ident,
     object,
-    args,
+    args: args.flatMap((x) =>
+      Array.isArray(x) || "kind" in x
+        ? x
+        : Object.entries(x).map((x) => namedArg(...x)),
+    ),
   };
 }
 
