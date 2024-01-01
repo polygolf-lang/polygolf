@@ -29,7 +29,7 @@ println $t;
 bool_to_int $b;
 int_to_text_byte 48;
 int_to_codepoint 48;
-$t .. "x";
+$t + "x";
 $t @ -1;
 text_replace "a+b+c" "+" "*";
 text_replace "a*b*c" "*" "";
@@ -150,7 +150,7 @@ endsWith(t,T)
 ## Misc
 
 ```polygolf
-println ((int_to_text 1) .. "x");
+println ((int_to_text 1) + "x");
 ```
 
 ```nim no:hardcode

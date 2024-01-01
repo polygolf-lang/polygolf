@@ -49,6 +49,7 @@ import {
   OpCodeFrontNamesToOpCodes,
   type Rest,
   lengthToArrayIndexType,
+  isOpCode,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -96,7 +97,12 @@ export function calcTypeAndResolveOpCode(
   program: Node,
 ): Type | TypeAndOpCode {
   // user-annotated node
-  if (expr.type !== undefined) return expr.type;
+  if (expr.type !== undefined) {
+    if (expr.kind === "Op" && !isOpCode(expr.op)) {
+      return { type: expr.type, opCode: getOpCodeType(expr, program).opCode };
+    }
+    return expr.type;
+  }
   // type inference
   const type = (e: Node) => getType(e, program);
   switch (expr.kind) {

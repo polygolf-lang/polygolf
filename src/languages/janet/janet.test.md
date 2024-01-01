@@ -196,7 +196,7 @@ $a <- (- $a 1):-10..10;
 ## implicitlyConvertConcatArg
 
 ```polygolf
-(.. "he" (int_to_dec 11) "o");
+(+ "he" (int_to_dec 11) "o");
 ```
 
 ```janet implicitlyConvertConcatArg

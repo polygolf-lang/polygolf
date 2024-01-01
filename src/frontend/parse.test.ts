@@ -73,7 +73,7 @@ describe("Parse s-expressions", () => {
   expectExprParse("list", "(list 1 2 3)", list([int(1n), int(2n), int(3n)]));
   expectExprParse(
     "+",
-    "(+ $x $y $z $w)",
+    "(add $x $y $z $w)",
     op.add(id("x"), id("y"), id("z"), id("w")),
   );
   expectExprParse(

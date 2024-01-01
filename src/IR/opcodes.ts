@@ -184,9 +184,9 @@ export const opCodeDefinitions = {
 
   // Adding items
   include: { args: [set(T1), T1], front: true },
-  append: { args: [list(T1), T1], front: ".." },
-  "concat[List]": { args: atLeast2(list(T1)), front: "..", assoc: true },
-  "concat[Text]": { args: atLeast2(text()), front: "..", assoc: true },
+  append: { args: [list(T1), T1], front: "+" },
+  "concat[List]": { args: atLeast2(list(T1)), front: "+", assoc: true },
+  "concat[Text]": { args: atLeast2(text()), front: "+", assoc: true },
 
   // Text ops
   repeat: { args: [text(), int(0)], front: true },

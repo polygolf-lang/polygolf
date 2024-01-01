@@ -60,9 +60,9 @@ print "y";
 ```polygolf print.mergePrint
 (id "unique#0") <- "";
 for $i 10 (
-    (id "unique#0") <- ((id "unique#0") .. "x")
+    (id "unique#0") <- ((id "unique#0") + "x")
 );
-(id "unique#0") <- ((id "unique#0") .. "y");
+(id "unique#0") <- ((id "unique#0") + "y");
 print (id "unique#0");
 ```
 
@@ -70,9 +70,9 @@ print (id "unique#0");
 if true {
     $x <- "";
     for $i 10 {
-        $x <- ($x .. "x");
+        $x <- ($x + "x");
     };
-    $x <- ($x .. "--");
+    $x <- ($x + "--");
     print $x;
 };
 ```
