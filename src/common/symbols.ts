@@ -91,7 +91,6 @@ function introducedSymbols(
 ): string[] | undefined {
   const node = spine.node;
   switch (node.kind) {
-    case "ForDifferenceRange":
     case "ForEach":
     case "ForEachKey":
     case "ForArgv":
@@ -122,36 +121,6 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
   const node = spine.node;
   const program = spine.root.node;
   switch (node.kind) {
-    case "ForDifferenceRange": {
-      const start = getType(node.start, program);
-      const diff = getType(node.difference, program);
-      const step = getType(node.increment, program);
-      if (
-        start.kind !== "integer" ||
-        diff.kind !== "integer" ||
-        step.kind !== "integer"
-      ) {
-        throw new PolygolfError(
-          `Unexpected for difference range type (${start.kind},${diff.kind},${step.kind})`,
-          node.source,
-        );
-      }
-      const end = integerType(
-        add(start.low, diff.low),
-        add(start.high, diff.high),
-      );
-      if (lt(0n, step.low))
-        return integerType(
-          start.low,
-          node.inclusive ? end.high : sub(end.high, 1n),
-        );
-      if (lt(step.high, 0n))
-        return integerType(
-          node.inclusive ? end.low : add(end.low, 1n),
-          start.high,
-        );
-      return integerTypeIncludingAll(start.low, start.high, end.low, end.high);
-    }
     case "ForEach":
       return getCollectionTypes(node.collection, program)[0];
     case "ForArgv":
@@ -240,8 +209,6 @@ function getDirectReadFragments(node: Node): PathFragment[] {
       return ["body"];
     case "ForCLike":
       return ["condition"];
-    case "ForDifferenceRange":
-      return ["start", "difference", "increment"];
     case "ForEach":
       return ["collection"];
     case "ForEachPair":

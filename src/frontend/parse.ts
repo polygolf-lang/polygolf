@@ -337,32 +337,6 @@ export function sexpr(
       case "import":
         expectArity(2, Infinity);
         return importStatement(asString(args[0]), args.slice(1).map(asString));
-      case "for_range_inclusive": {
-        expectArity(5);
-        const [variable, start, end, step, body] = args;
-        assertIdentifier(variable);
-        return forRange(
-          variable.name === "_" ? undefined : variable,
-          start,
-          end,
-          step,
-          body,
-          true,
-        );
-      }
-      case "for_difference_range": {
-        expectArity(5);
-        const [variable, start, difference, step, body] = args;
-        assertIdentifier(variable);
-        return forDifferenceRange(
-          variable,
-          start,
-          difference,
-          step,
-          body,
-          true,
-        );
-      }
       case "for_each_key": {
         expectArity(3);
         const [variable, collection, body] = args;
@@ -380,17 +354,6 @@ export function sexpr(
         expectArity(4);
         const [init, condition, append, body] = args;
         return forCLike(init, condition, append, body);
-      }
-      case "for_no_index": {
-        expectArity(3, 4);
-        let start, end, step, body: Node;
-        if (args.length === 4) {
-          [start, end, step, body] = args;
-        } else {
-          [start, end, body] = args;
-          step = integer(1n);
-        }
-        return forRange(undefined, start, end, step, body);
       }
       case "named_arg":
         expectArity(2);

@@ -28,7 +28,6 @@ import {
   type IntegerType,
   isAssociative,
   forRangeCommon,
-  forDifferenceRange,
   type Node,
   asciiType,
   lengthToArrayIndexType as length,

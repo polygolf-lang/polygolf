@@ -224,7 +224,6 @@ export function calcTypeAndResolveOpCode(
     case "ForEach":
     case "ForEachKey":
     case "ForEachPair":
-    case "ForDifferenceRange":
       return voidType;
     case "ImplicitConversion": {
       return type(op.unsafe(expr.behavesLike, expr.expr));
@@ -659,6 +658,16 @@ export function getOpCodeTypeFromTypes(
     case "range_excl":
       return list(
         int((got[0] as IntegerType).low, sub((got[1] as IntegerType).high, 1n)),
+      );
+    case "range_diff_excl":
+      return list(
+        int(
+          (got[0] as IntegerType).low,
+          sub(
+            add((got[0] as IntegerType).high, (got[1] as IntegerType).high),
+            1n,
+          ),
+        ),
       );
   }
 }

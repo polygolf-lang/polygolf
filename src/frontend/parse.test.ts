@@ -10,7 +10,6 @@ import {
   op,
   block,
   ifStatement,
-  forRange,
   integerType,
   variants,
   annotate,
@@ -21,6 +20,7 @@ import {
   booleanType,
   type Type,
   lengthToArrayIndexType,
+  forEach,
 } from "../IR";
 import parse from "./parse";
 
@@ -119,9 +119,9 @@ describe("Parse statements", () => {
     ifStatement(id("x"), print(id("y"), true)),
   );
   testStmtParse(
-    "forRange",
-    "for $x 1 20 1 (println[Text] $x);",
-    forRange(id("x"), int(1n), int(20n), int(1n), print(id("x"), true)),
+    "for",
+    "for $x $list (println[Text] $x);",
+    forEach(id("x"), id("list"), print(id("x"))),
   );
 });
 

@@ -31,7 +31,6 @@ import {
   type ForCLike,
   type While,
   type ForArgv,
-  type ForDifferenceRange,
 } from "./loops";
 import {
   type AnyInteger,
