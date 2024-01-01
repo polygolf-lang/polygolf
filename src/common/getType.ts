@@ -55,7 +55,6 @@ import { PolygolfError } from "./errors";
 import { type Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
 import { stringify } from "./stringify";
-import { debugEmit } from "../common/compile";
 
 interface TypeAndOpCode {
   type: Type;
@@ -247,18 +246,10 @@ export function getGenericOpCodeArgTypes(op: OpCode): Type[] {
   return type.filter((x) => !("rest" in x)) as Type[];
 }
 
-export function expectedTypesToString(
-  expectedTypes: AnyOpCodeArgTypes,
-  defaults: (Node | undefined)[] = [],
-): string {
-  return `[${expectedTypes
-    .map((x, i) =>
-      "rest" in x
-        ? `...${toString(x.rest)}`
-        : toString(x) +
-          (defaults[i] !== undefined ? ` ${debugEmit(defaults[i]!)}` : ""),
-    )
-    .join(", ")}]`;
+export function expectedTypesAsStrings(opCode: OpCode): string[] {
+  return opCodeDefinitions[opCode].args.map((x) =>
+    "rest" in x ? `...${toString(x.rest)}` : toString(x),
+  );
 }
 
 /**
@@ -683,7 +674,7 @@ function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
   if (opCode === undefined) {
     throw new Error(
       `Type error. Operator '${expr.op}' type error. Expected ${opCodes
-        .map((x) => expectedTypesToString(opCodeDefinitions[x].args))
+        .map((x) => expectedTypesAsStrings(x))
         .join(" or ")} but got [${got.map(toString).join(", ")}].`,
     );
   }
