@@ -75,11 +75,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
             `Declaration cannot contain ${assignment.kind}`,
           );
         }
-        const assignKeyword =
-          assignment.expr.kind === "Identifier" && assignment.expr.builtin
-            ? "def"
-            : "var";
-        return list(assignKeyword, assignment.variable, assignment.expr);
+        return list("var", assignment.variable, assignment.expr);
       }
       case "Assignment":
         return list("set", e.variable, e.expr);
