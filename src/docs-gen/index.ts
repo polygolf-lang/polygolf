@@ -11,6 +11,7 @@ import {
   toString,
   userName,
   opCodeDescriptions,
+  defaults,
 } from "../IR";
 import fs from "fs";
 import path from "path";
@@ -36,7 +37,7 @@ for (const [alias, opCodes] of groupby(OpCodesUser, userName).entries()) {
   result += `| ${alias.replace("|", "\\|")} | ${opCodes
     .map((x) => `[${x}](## ${JSON.stringify(opCodeDescriptions[x])})`)
     .join("<br>")} | ${opCodes
-    .map((x) => expectedTypesToString(opCodeDefinitions[x].args))
+    .map((x) => expectedTypesToString(opCodeDefinitions[x].args, defaults[x]))
     .join("<br>")} | ${opCodes.map(getOpCodeOutputType).join("<br>")} |\n`;
 }
 

@@ -28,15 +28,10 @@ import {
   isIdent,
   isUserIdent,
   type ForEach,
-  Op,
+  isForRange,
 } from "../IR";
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
-
-const isRangeOp = isOp("range_excl", "range_incl");
-function isForRange(x: Node): x is ForEach<Op<"range_incl" | "range_excl">> {
-  return x.kind === "ForEach" && isRangeOp(x.collection);
-}
 
 export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
   return {
@@ -252,7 +247,7 @@ function getIndexedCollection(
 }
 
 function literalLength(expr: Text | List, countTextBytes: boolean): number {
-  if (expr.kind === "List") return expr.exprs.length;
+  if (expr.kind === "List") return expr.value.length;
   return (countTextBytes ? byteLength : charLength)(expr.value);
 }
 

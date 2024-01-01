@@ -28,6 +28,9 @@ import {
   type NullaryOpCode,
   builtin,
   type OpCodeArgValues,
+  defaults,
+  isOfKind,
+  isEqualToLiteral,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -47,7 +50,7 @@ function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
 
 interface WithPreprocess<T> {
   value: T;
-  preprocess: (x: readonly Node[]) => readonly Node[];
+  preprocess: (x: readonly Node[], opCode: OpCode) => readonly Node[];
 }
 
 function isWithPreprocess<T>(x: T | WithPreprocess<T>): x is WithPreprocess<T> {
@@ -62,6 +65,24 @@ export function flipped<T>(
   return {
     value: Array.isArray(value) && "raw" in value ? value[0] : value,
     preprocess: (x) => [...x].reverse(),
+  };
+}
+
+export function withDefaults<T>(
+  value: T,
+): WithPreprocess<T extends TemplateStringsArray ? string : T> {
+  return {
+    value: Array.isArray(value) && "raw" in value ? value[0] : value,
+    preprocess: (x, opCode) => {
+      let res = [...x];
+      for (let i = x.length - 1; i >= 0; i--) {
+        const def = (defaults[opCode] ?? [])[i];
+        if (def !== undefined && isEqualToLiteral(res[i], def)) {
+          res.splice(i, 1);
+        }
+      }
+      return res;
+    },
   };
 }
 
@@ -114,7 +135,7 @@ export function mapOpsUsing<
           let arg = opCodeMap[opCode as TOpCode];
           if (arg !== undefined) {
             if (isWithPreprocess(arg)) {
-              exprs = arg.preprocess(exprs);
+              exprs = arg.preprocess(exprs, opCode);
               arg = arg.value;
             }
             exprs =
@@ -400,7 +421,7 @@ export const arraysToLists: Plugin = {
   bakeType: true,
   visit(node) {
     if (node.kind === "Array") {
-      return list(node.exprs);
+      return list(node.value);
     }
     if (node.kind === "Op") {
       if (isOp("at[Array]")(node)) return op["at[List]"](...node.args);

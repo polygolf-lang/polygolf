@@ -229,15 +229,15 @@ export default function emitProgram(
         case "Postfix":
           return [emit(e.arg, prec), e.name];
         case "List":
-          return ["[", joinNodes(",", e.exprs), "]"];
+          return ["[", joinNodes(",", e.value), "]"];
         case "Set":
-          return ["Set([", joinNodes(",", e.exprs), "])"];
+          return ["Set([", joinNodes(",", e.value), "])"];
         case "Table":
           return [
             "[",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
+              e.value.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "]",
           ];

@@ -5,7 +5,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isInt } from "../../IR";
+import { type IR, isInt, isRangeOp, isOp } from "../../IR";
 import { type TokenTree } from "@/common/Language";
 
 const emitLuaText = emitTextFactory(
@@ -110,20 +110,20 @@ export default function emitProgram(
           return [joinNodes(",", e.variables), "=", emit(e.expr)];
         case "ManyToManyAssignment":
           return [joinNodes(",", e.variables), "=", joinNodes(",", e.exprs)];
-        case "ForRange": {
-          if (!e.inclusive) throw new EmitError(e, "exclusive");
-          return [
-            "for",
-            e.variable === undefined ? "_" : emit(e.variable),
-            "=",
-            emit(e.start),
-            ",",
-            emit(e.end),
-            isInt(1n)(e.increment) ? [] : [",", emit(e.increment)],
-            "do",
-            emit(e.body),
-            "end",
-          ];
+        case "ForEach": {
+          if (isOp("range_incl")(e.collection)) {
+            const [low, high, step] = e.collection.args;
+            return [
+              "for",
+              e.variable === undefined ? "_" : emit(e.variable),
+              "=",
+              joinNodes(",", isInt(1n)(step) ? [low, high] : [low, high, step]),
+              "do",
+              emit(e.body),
+              "end",
+            ];
+          }
+          break;
         }
         case "If":
           return [
@@ -135,7 +135,6 @@ export default function emitProgram(
             "end",
           ];
         case "Variants":
-        case "ForEach":
         case "ForEachKey":
         case "ForEachPair":
         case "ForCLike":
@@ -173,15 +172,13 @@ export default function emitProgram(
           return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
         case "List":
         case "Array":
-          return ["{", joinNodes(",", e.exprs), "}"];
+          return ["{", joinNodes(",", e.value), "}"];
         case "Table":
-          return ["{", joinNodes(",", e.kvPairs), "}"];
+          return ["{", joinNodes(",", e.value), "}"];
         case "KeyValue":
           return [emit(e.key), "=", emit(e.value)];
-
-        default:
-          throw new EmitError(e);
       }
+      throw new EmitError(e);
     }
 
     const inner = emitNoParens(expr);

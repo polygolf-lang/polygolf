@@ -17,9 +17,9 @@ export const golfTextListLiteralIndex: Plugin = {
     if (
       node.kind === "IndexCall" &&
       node.collection.kind === "List" &&
-      node.collection.exprs.every(isText())
+      node.collection.value.every(isText())
     ) {
-      const values = node.collection.exprs.map((x) => ({
+      const values = node.collection.value.map((x) => ({
         chars: chars(x.value),
         targetLength: 0,
       }));

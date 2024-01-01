@@ -46,7 +46,7 @@ import {
   type TableType,
   opCodeDefinitions,
   type AnyOpCodeArgTypes,
-  type OpCodeFrontNamesToOpCodes,
+  OpCodeFrontNamesToOpCodes,
   type Rest,
   lengthToArrayIndexType,
 } from "../IR";
@@ -55,6 +55,7 @@ import { PolygolfError } from "./errors";
 import { type Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
 import { stringify } from "./stringify";
+import { debugEmit } from "../common/compile";
 
 interface TypeAndOpCode {
   type: Type;
@@ -158,16 +159,16 @@ export function calcTypeAndResolveOpCode(
       return int(expr.value, expr.value);
     case "Array":
       return array(
-        expr.exprs.map(type).reduce((a, b) => union(a, b)),
-        lengthToArrayIndexType(expr.exprs.length),
+        expr.value.map(type).reduce((a, b) => union(a, b)),
+        lengthToArrayIndexType(expr.value.length),
       );
     case "List":
-      return expr.exprs.length > 0
-        ? list(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+      return expr.value.length > 0
+        ? list(expr.value.map(type).reduce((a, b) => union(a, b)))
         : list(voidType);
     case "Set":
-      return expr.exprs.length > 0
-        ? set(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+      return expr.value.length > 0
+        ? set(expr.value.map(type).reduce((a, b) => union(a, b)))
         : set(voidType);
     case "KeyValue": {
       const k = type(expr.key);
@@ -180,12 +181,12 @@ export function calcTypeAndResolveOpCode(
       );
     }
     case "Table": {
-      const types = expr.kvPairs.map(type);
+      const types = expr.value.map(type);
       if (types.every((x) => x.kind === "KeyValue")) {
         const kvTypes = types as KeyValueType[];
         const kTypes = kvTypes.map((x) => x.key);
         const vTypes = kvTypes.map((x) => x.value);
-        return expr.kvPairs.length > 0
+        return expr.value.length > 0
           ? table(
               kTypes.reduce((a, b) => union(a, b) as any),
               vTypes.reduce((a, b) => union(a, b)),
@@ -249,9 +250,15 @@ export function getGenericOpCodeArgTypes(op: OpCode): Type[] {
 
 export function expectedTypesToString(
   expectedTypes: AnyOpCodeArgTypes,
+  defaults: (Node | undefined)[] = [],
 ): string {
   return `[${expectedTypes
-    .map((x) => ("rest" in x ? `...${toString(x.rest)}` : toString(x)))
+    .map((x, i) =>
+      "rest" in x
+        ? `...${toString(x.rest)}`
+        : toString(x) +
+          (defaults[i] !== undefined ? ` ${debugEmit(defaults[i]!)}` : ""),
+    )
     .join(", ")}]`;
 }
 

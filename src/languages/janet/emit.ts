@@ -126,9 +126,9 @@ export default function emitProgram(program: IR.Node): TokenTree {
           ")",
         ];
       case "List":
-        return ["@[", e.exprs.map((x) => emit(x)), "]"];
+        return ["@[", e.value.map((x) => emit(x)), "]"];
       case "Table":
-        return ["@{", e.kvPairs.map((x) => [emit(x.key), emit(x.value)]), "}"];
+        return ["@{", e.value.map((x) => [emit(x.key), emit(x.value)]), "}"];
       default:
         throw new EmitError(e);
     }

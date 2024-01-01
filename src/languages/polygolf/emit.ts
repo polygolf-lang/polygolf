@@ -89,7 +89,7 @@ export function emitNode(
   return res;
 }
 
-function emitNodeWithoutAnnotation(
+export function emitNodeWithoutAnnotation(
   expr: Node,
   asStatement = false,
   indent = false,
@@ -180,13 +180,13 @@ function emitNodeWithoutAnnotation(
     case "Integer":
       return expr.value.toString();
     case "Array":
-      return emitSexpr("array", ...expr.exprs);
+      return emitSexpr("array", ...expr.value);
     case "List":
-      return emitSexpr("list", ...expr.exprs);
+      return emitSexpr("list", ...expr.value);
     case "Set":
-      return emitSexpr("set", ...expr.exprs);
+      return emitSexpr("set", ...expr.value);
     case "Table":
-      return emitSexpr("table", ...expr.kvPairs);
+      return emitSexpr("table", ...expr.value);
     case "ConditionalOp":
       return emitSexpr(
         expr.isSafe ? "conditional" : "unsafe_conditional",

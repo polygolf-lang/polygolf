@@ -19,6 +19,7 @@ import {
   infix,
   list,
   intToDecOpOrText,
+  isInt,
 } from "../../IR";
 import {
   type Language,
@@ -38,6 +39,7 @@ import {
   mapMutationTo,
   mapOpsTo,
   flipped,
+  withDefaults,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
@@ -292,6 +294,7 @@ const pythonLanguage: Language = {
         dec_to_int: "int",
         "println[Text]": "print",
         gcd: "math.gcd",
+        range_excl: withDefaults`range`,
       }),
       mapMutationTo.method({
         append: "append",

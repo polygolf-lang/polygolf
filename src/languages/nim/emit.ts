@@ -284,30 +284,30 @@ export default function emitProgram(
         case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "List":
-          return ["@", "[", joinNodes(",", e.exprs), "]"];
+          return ["@", "[", joinNodes(",", e.value), "]"];
         case "Array":
           if (
-            e.exprs.every((x) => x.kind === "Array" && x.exprs.length === 2)
+            e.value.every((x) => x.kind === "Array" && x.value.length === 2)
           ) {
-            const pairs = e.exprs as readonly Array[];
+            const pairs = e.value as readonly Array[];
             return [
               "{",
               joinTrees(
                 ",",
-                pairs.map((x) => [emit(x.exprs[0]), ":", emit(x.exprs[1])]),
+                pairs.map((x) => [emit(x.value[0]), ":", emit(x.value[1])]),
               ),
               "}",
             ];
           }
-          return ["[", joinNodes(",", e.exprs), "]"];
+          return ["[", joinNodes(",", e.value), "]"];
         case "Set":
-          return ["[", joinNodes(",", e.exprs), "]", ".", "toSet"];
+          return ["[", joinNodes(",", e.value), "]", ".", "toSet"];
         case "Table":
           return [
             "{",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
+              e.value.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "}",
             ".",

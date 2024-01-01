@@ -1,4 +1,4 @@
-import { type Node } from "./IR";
+import { Text, type Node, Integer, Literal } from "./IR";
 import {
   type Type,
   typeArg,
@@ -452,10 +452,13 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
 
 const int0 = { kind: "Integer", value: 0n } as const;
 const int1 = { kind: "Integer", value: 1n } as const;
+const empty = { kind: "Text", value: "" } as const;
 
-export const defaults: Partial<Record<OpCode, Record<number, Node>>> = {
-  range_incl: { 2: int1, 0: int0 },
-  range_excl: { 2: int1, 0: int0 },
+export const defaults: Partial<Record<OpCode, (Literal | undefined)[]>> = {
+  range_incl: [int0, undefined, int1],
+  range_excl: [int0, undefined, int1],
+  join: [undefined, empty],
+  replace: [undefined, undefined, empty],
 };
 
 export type OpCodeFrontName =

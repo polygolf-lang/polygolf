@@ -6,6 +6,8 @@ import {
   block,
   type BaseNode,
   op,
+  isOp,
+  Op,
 } from "./IR";
 
 /**
@@ -215,4 +217,11 @@ export function forArgv(
     argcUpperBound,
     body,
   };
+}
+
+export const isRangeOp = isOp("range_excl", "range_incl");
+export function isForRange(
+  x: Node,
+): x is ForEach<Op<"range_incl" | "range_excl">> {
+  return x.kind === "ForEach" && isRangeOp(x.collection);
 }

@@ -137,7 +137,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
       case "FunctionCall":
         return [...expr.args, expr.func].map(emitNode);
       case "List":
-        return ["[", expr.exprs.map(emitNode), "]"];
+        return ["[", expr.value.map(emitNode), "]"];
       case "ConditionalOp":
         return [
           emitNode(expr.condition),

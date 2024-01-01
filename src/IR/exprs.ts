@@ -60,10 +60,11 @@ export interface Op<Op extends OpCode = OpCode> extends BaseNode {
   readonly args: OpCodeArgValues<Op>;
 }
 
-export interface KeyValue extends BaseNode {
+export interface KeyValue<Key extends Node = Node, Value extends Node = Node>
+  extends BaseNode {
   readonly kind: "KeyValue";
-  readonly key: Node;
-  readonly value: Node;
+  readonly key: Key;
+  readonly value: Value;
 }
 
 export interface FunctionCall extends BaseNode {

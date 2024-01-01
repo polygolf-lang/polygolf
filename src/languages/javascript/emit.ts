@@ -151,13 +151,13 @@ export default function emitProgram(
           );
         case "List":
         case "Array":
-          return ["[", joinNodes(",", e.exprs), "]"];
+          return ["[", joinNodes(",", e.value), "]"];
         case "Table":
           return [
             "{",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [
+              e.value.map((x) => [
                 isText()(x.key) && /\w*/.test(x.key.value)
                   ? x.key.value
                   : ["[", emit(x), "]"],

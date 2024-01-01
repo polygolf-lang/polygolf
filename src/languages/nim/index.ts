@@ -30,6 +30,7 @@ import {
   mapBackwardsIndexToForwards,
   mapMutationTo,
   flipped,
+  withDefaults,
 } from "../../plugins/ops";
 import {
   addNimImports,
@@ -172,7 +173,6 @@ const nimLanguage: Language = {
         "ord_at[byte]": (a, b) => func("ord", op["at[byte]"](a, b)),
         "ord_at[codepoint]": (a, b) => func("ord", op["at[codepoint]"](a, b)),
         "read[line]": () => func("readLine", builtin("stdin")),
-        join: (a, b) => func("join", isText("")(b) ? [a] : [a, b]),
         "at[byte]": (a, b) => indexCall(a, b),
         "at[codepoint]": (a, b) =>
           prefix("$", indexCall(func("toRunes", a), b)),
@@ -181,8 +181,6 @@ const nimLanguage: Language = {
         "slice[List]": (a, b, c) =>
           rangeIndexCall(a, b, getEndIndex(b, c), int(1n)),
         "print[Text]": (a) => func("write", builtin("stdout"), a),
-        replace: (a, b, c) =>
-          func("replace", isText("")(c) ? [a, b] : [a, b, c]),
         text_multireplace: (a, ...x) =>
           func(
             "multireplace",
@@ -231,6 +229,8 @@ const nimLanguage: Language = {
           starts_with: "startsWith",
           ends_with: "endsWith",
           bit_count: "popcount",
+          join: withDefaults`join`,
+          replace: withDefaults`replace`,
         },
         "leftChain",
       ),

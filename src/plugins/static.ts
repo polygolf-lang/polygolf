@@ -6,8 +6,8 @@ export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
   return {
     name: "golfStringListLiteral",
     visit(node) {
-      if (node.kind === "List" && node.exprs.every(isText())) {
-        const strings = node.exprs.map((x) => x.value);
+      if (node.kind === "List" && node.value.every(isText())) {
+        const strings = node.value.map((x) => x.value);
         const delim = getDelim(strings, useTextSplitWhitespace);
         return delim === true
           ? op.split_whitespace(text(strings.join(" ")))
@@ -49,9 +49,9 @@ export function listOpsToTextOps(
       if (
         isOp("at[List]", "find[List]")(node) &&
         node.args[0].kind === "List" &&
-        node.args[0].exprs.every(isText())
+        node.args[0].value.every(isText())
       ) {
-        const texts = node.args[0].exprs.map((x) => x.value);
+        const texts = node.args[0].value.map((x) => x.value);
         if (texts.every((x) => charLength(x) === 1)) {
           const joined = text(texts.join(""));
           if (texts.every((x) => byteLength(x) === 1)) {
