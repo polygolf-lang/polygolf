@@ -18,7 +18,6 @@ import {
   type OpCode,
   type Text,
   type List,
-  forDifferenceRange,
   isOp,
   isSubtype,
   integerType,
@@ -29,46 +28,35 @@ import {
   isUserIdent,
   type ForEach,
   isForRange,
+  type Op,
 } from "../IR";
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
+import { mapOps } from "./ops";
 
-export function forRangeToForRangeInclusive(skip1Step = false): Plugin {
-  return {
-    name: `forRangeToForRangeInclusive(${skip1Step ? "true" : "false"})`,
-    visit(node) {
-      if (
-        node.kind === "ForRange" &&
-        !node.inclusive &&
-        (!skip1Step || !isInt(1n)(node.increment))
-      )
-        return forRange(
-          node.variable,
-          node.start,
-          pred(node.end),
-          node.increment,
-          node.body,
-          true,
-        );
-    },
-  };
+export function rangeExclusiveToInclusive(skip1Step = false): Plugin {
+  return mapOps({
+    range_excl: (a, b, c) =>
+      skip1Step && isInt(1n)(c) ? undefined : op.range_incl(a, succ(b), c),
+  });
 }
 
 export function forRangeToWhile(node: Node, spine: Spine) {
-  if (node.kind === "ForRange" && node.variable !== undefined) {
-    const low = getType(node.start, spine);
-    const high = getType(node.end, spine);
+  if (isForRange(node) && node.variable !== undefined) {
+    const [start, end, step] = node.collection.args;
+    const low = getType(start, spine);
+    const high = getType(end, spine);
     if (low.kind !== "integer" || high.kind !== "integer") {
       throw new Error(`Unexpected type (${low.kind},${high.kind})`);
     }
-    const increment = assignment(
-      node.variable,
-      op.add(node.variable, node.increment),
-    );
+    const increment = assignment(node.variable, op.add(node.variable, step));
     return block([
-      assignment(node.variable, node.start),
+      assignment(node.variable, start),
       whileLoop(
-        op[node.inclusive ? "leq" : "lt"](node.variable, node.end),
+        op[node.collection.op === "range_incl" ? "leq" : "lt"](
+          node.variable,
+          end,
+        ),
         block([node.body, increment]),
       ),
     ]);
@@ -76,17 +64,18 @@ export function forRangeToWhile(node: Node, spine: Spine) {
 }
 
 export function forRangeToForCLike(node: Node, spine: Spine) {
-  if (node.kind === "ForRange") {
-    const low = getType(node.start, spine);
-    const high = getType(node.end, spine);
+  if (isForRange(node)) {
+    const [start, end, step] = node.collection.args;
+    const low = getType(start, spine);
+    const high = getType(end, spine);
     if (low.kind !== "integer" || high.kind !== "integer") {
       throw new Error(`Unexpected type (${low.kind},${high.kind})`);
     }
     const variable = node.variable ?? id();
     return forCLike(
-      assignment(variable, node.start),
-      op[node.inclusive ? "leq" : "lt"](variable, node.end),
-      assignment(variable, op.add(variable, node.increment)),
+      assignment(variable, start),
+      op[node.collection.op === "range_incl" ? "leq" : "lt"](variable, end),
+      assignment(variable, op.add(variable, step)),
       node.body,
     );
   }
@@ -104,21 +93,26 @@ export function forRangeToForCLike(node: Node, spine: Spine) {
 // TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
 export function forRangeToForEachPair(node: Node, spine: Spine) {
   if (
-    node.kind === "ForRange" &&
-    node.variable !== undefined &&
-    !node.inclusive &&
-    isInt(0n)(node.start) &&
-    isOp("size[List]")(node.end) &&
-    isIdent()(node.end.args[0])
+    isForRange(node) &&
+    node.collection.op === "range_excl" &&
+    node.variable !== undefined
   ) {
-    const variable = node.variable;
-    const collection = node.end.args[0];
-    const elementIdentifier = id(variable.name + "+each");
-    const newBody = spine.getChild("body").withReplacer((innerNode) => {
-      if (isListGet(innerNode, collection.name, variable.name))
-        return elementIdentifier;
-    }).node;
-    return forEachPair(variable, elementIdentifier, collection, newBody);
+    const [start, end, step] = node.collection.args;
+    if (
+      isInt(0n)(start) &&
+      isInt(1n)(step) &&
+      isOp("size[List]")(end) &&
+      isIdent()(end.args[0])
+    ) {
+      const variable = node.variable;
+      const collection = end.args[0];
+      const elementIdentifier = id(variable.name + "+each");
+      const newBody = spine.getChild("body").withReplacer((innerNode) => {
+        if (isListGet(innerNode, collection.name, variable.name))
+          return elementIdentifier;
+      }).node;
+      return forEachPair(variable, elementIdentifier, collection, newBody);
+    }
   }
 }
 
@@ -155,44 +149,47 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
     name: "forRangeToForEach",
     visit(node, spine) {
       if (
-        node.kind === "ForRange" &&
-        node.variable !== undefined &&
-        !node.inclusive &&
-        isInt(0n)(node.start) &&
-        ((isOp()(node.end) &&
-          ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
-          isIdent()(node.end.args[0]!)) ||
-          isInt()(node.end))
+        isForRange(node) &&
+        node.collection.op === "range_excl" &&
+        node.variable !== undefined
       ) {
-        const indexVar = node.variable;
-        const bodySpine = spine.getChild("body");
-        const knownLength = isInt()(node.end)
-          ? Number(node.end.value)
-          : undefined;
-        const allowedOps = isInt()(node.end)
-          ? ops
-          : [lengthOpToGetOp.get(node.end.op) as GetOp];
-        const collectionVar = isInt()(node.end)
-          ? undefined
-          : (node.end.args[0] as Identifier);
-        const indexedCollection = getIndexedCollection(
-          bodySpine,
-          indexVar,
-          allowedOps,
-          knownLength,
-          collectionVar,
-        );
-        if (indexedCollection !== null) {
-          const elementIdentifier = id(node.variable.name + "+each");
-          const newBody = bodySpine.withReplacer((n) => {
-            if (
-              isOp()(n) &&
-              n.args[0] === indexedCollection &&
-              isUserIdent(indexVar.name)(n.args[1]!)
-            )
-              return elementIdentifier;
-          }).node;
-          return forEach(elementIdentifier, indexedCollection, newBody);
+        const [start, end, step] = node.collection.args;
+        if (
+          isInt(0n)(start) &&
+          isInt(1n)(step) &&
+          ((isOp()(end) &&
+            ops.includes(lengthOpToGetOp.get(end.op) as any) &&
+            isIdent()(end.args[0]!)) ||
+            isInt()(end))
+        ) {
+          const indexVar = node.variable;
+          const bodySpine = spine.getChild("body");
+          const knownLength = isInt()(end) ? Number(end.value) : undefined;
+          const allowedOps = isInt()(end)
+            ? ops
+            : [lengthOpToGetOp.get(end.op) as GetOp];
+          const collectionVar = isInt()(end)
+            ? undefined
+            : (end.args[0] as Identifier);
+          const indexedCollection = getIndexedCollection(
+            bodySpine,
+            indexVar,
+            allowedOps,
+            knownLength,
+            collectionVar,
+          );
+          if (indexedCollection !== null) {
+            const elementIdentifier = id(node.variable.name + "+each");
+            const newBody = bodySpine.withReplacer((n) => {
+              if (
+                isOp()(n) &&
+                n.args[0] === indexedCollection &&
+                isUserIdent(indexVar.name)(n.args[1]!)
+              )
+                return elementIdentifier;
+            }).node;
+            return forEach(elementIdentifier, indexedCollection, newBody);
+          }
         }
       }
     },
@@ -344,25 +341,25 @@ export function shiftRangeOneUp(node: Node, spine: Spine) {
 }
 
 export function forRangeToForDifferenceRange(
-  transformPredicate: (expr: ForEach, spine: Spine<ForEach>) => boolean = () =>
-    true,
+  transformPredicate: (
+    expr: ForEach<Op<"range_excl">>,
+    spine: Spine<ForEach<Op<"range_excl">>>,
+  ) => boolean = () => true,
 ): Plugin {
   return {
     name: "forRangeToForDifferenceRange",
     visit(node, spine) {
       if (
         isForRange(node) &&
+        node.collection.op === "range_excl" &&
         node.variable !== undefined &&
-        transformPredicate(node, spine as Spine<ForEach>)
+        transformPredicate(node as any, spine as any)
       ) {
         const [low, high, step] = node.collection.args;
-        return forDifferenceRange(
+        return forEach(
           node.variable,
-          low,
-          op.sub(high, low),
-          step,
+          op.range_diff_excl(low, op.sub(high, low), step),
           node.body,
-          node.collection.op === "range_incl",
         );
       }
     },

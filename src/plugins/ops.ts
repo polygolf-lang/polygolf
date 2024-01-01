@@ -29,7 +29,6 @@ import {
   builtin,
   type OpCodeArgValues,
   defaults,
-  isOfKind,
   isEqualToLiteral,
 } from "../IR";
 import { type Spine } from "../common/Spine";
@@ -74,7 +73,7 @@ export function withDefaults<T>(
   return {
     value: Array.isArray(value) && "raw" in value ? value[0] : value,
     preprocess: (x, opCode) => {
-      let res = [...x];
+      const res = [...x];
       for (let i = x.length - 1; i >= 0; i--) {
         const def = (defaults[opCode] ?? [])[i];
         if (def !== undefined && isEqualToLiteral(res[i], def)) {

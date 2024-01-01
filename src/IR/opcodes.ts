@@ -1,4 +1,4 @@
-import { Text, type Node, Integer, Literal } from "./IR";
+import type { Node, Literal } from "./IR";
 import {
   type Type,
   typeArg,
@@ -600,27 +600,3 @@ export const inverseOpCode = {
   not: "not",
   bit_not: "bit_not",
 } as const satisfies Partial<Record<UnaryOpCode, UnaryOpCode>>;
-
-export const infixableOpCodeNames = [
-  "+",
-  "-",
-  "*",
-  "^",
-  "&",
-  "|",
-  "~",
-  ">>",
-  "<<",
-  "==",
-  "!=",
-  "<=",
-  "<",
-  ">=",
-  ">",
-  "#",
-  "@",
-  "mod",
-  "rem",
-  "div",
-  "trunc_div",
-] as const satisfies readonly OpCodeFrontName[];

@@ -1,14 +1,6 @@
 import { type TokenTree } from "../../common/Language";
 import { EmitError, emitTextFactory } from "../../common/emit";
-import {
-  int,
-  integerType,
-  type IR,
-  isInt,
-  isSubtype,
-  isOp,
-  Node,
-} from "../../IR";
+import { integerType, type IR, isInt, isSubtype, isOp } from "../../IR";
 import { getType } from "../../common/getType";
 
 const emitGolfscriptText = emitTextFactory({

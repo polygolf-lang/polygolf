@@ -1,16 +1,12 @@
 import {
-  add,
   type Identifier,
   integerType,
-  integerTypeIncludingAll,
   type IR,
   isIdent,
   isOp,
   isSubtype,
-  lt,
   type Node,
   type Op,
-  sub,
   textType,
   type Type,
 } from "../IR";

@@ -18,7 +18,6 @@ import {
   infix,
   list,
   intToDecOpOrText,
-  isInt,
 } from "../../IR";
 import {
   type Language,

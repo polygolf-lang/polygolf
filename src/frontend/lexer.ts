@@ -1,5 +1,29 @@
-import { NullaryOpCodes, infixableOpCodeNames } from "../IR";
+import { NullaryOpCodes, type OpCodeFrontName } from "../IR";
 import moo from "moo";
+
+export const infixableOpCodeNames = [
+  "+",
+  "-",
+  "*",
+  "^",
+  "&",
+  "|",
+  "~",
+  ">>",
+  "<<",
+  "==",
+  "!=",
+  "<=",
+  "<",
+  ">=",
+  ">",
+  "#",
+  "@",
+  "mod",
+  "rem",
+  "div",
+  "trunc_div",
+] as const satisfies readonly OpCodeFrontName[];
 
 const tokenTable = {
   integer:

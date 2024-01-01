@@ -5,7 +5,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isInt, isRangeOp, isOp } from "../../IR";
+import { type IR, isInt, isOp } from "../../IR";
 import { type TokenTree } from "@/common/Language";
 
 const emitLuaText = emitTextFactory(

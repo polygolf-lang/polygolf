@@ -7,7 +7,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isInt, text, isText, id, infix } from "../../IR";
+import { type IR, isInt, text, isText, id } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 export const emitPythonText = emitTextFactory(

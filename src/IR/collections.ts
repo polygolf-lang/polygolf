@@ -2,8 +2,8 @@ import {
   type BaseNode,
   type Node,
   type KeyValue,
-  Integer,
-  Text,
+  type Integer,
+  type Text,
   isOfKind,
 } from "./IR";
 

@@ -1,5 +1,5 @@
 import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
-import { isInt, type IR, isForRange, Node } from "../../IR";
+import { isInt, type IR, isForRange, type Node } from "../../IR";
 import { type TokenTree } from "../../common/Language";
 
 const emitJanetText = emitTextFactory({

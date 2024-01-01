@@ -102,7 +102,7 @@ const golfscriptLanguage: Language = {
       removeUnusedForVar,
       forRangeToForDifferenceRange(
         (node, spine) =>
-          !isSubtype(getType(node.start, spine.root.node), integerType(0)),
+          !isSubtype(getType(node.collection.args[0], spine), integerType(0)),
       ),
       replaceToSplitAndJoin,
       implicitlyConvertPrintArg,

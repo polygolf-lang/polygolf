@@ -30,6 +30,7 @@ export function forRangeToForEachKey(node: Node) {
     const [low, high, step] = node.collection.args;
     if (
       isInt(0n)(low) &&
+      isInt(1n)(step) &&
       isInt()(high) &&
       2 <= high.value &&
       high.value <= 37

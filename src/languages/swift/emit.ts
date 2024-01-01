@@ -5,7 +5,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isInt, id } from "../../IR";
+import { type IR, id } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 const unicode01to09repls = {

@@ -3,7 +3,6 @@ import { joinTrees } from "../../common/emit";
 import {
   block,
   type Node,
-  id,
   type IR,
   isInt,
   text,
@@ -14,10 +13,9 @@ import {
   type OpCode,
   isOpCode,
   isNullary,
-  infixableOpCodeNames,
-  isForRange,
   isOp,
 } from "../../IR";
+import { infixableOpCodeNames } from "../../frontend/lexer";
 
 /*
 How Polygolf nodes should be emitted to strings.

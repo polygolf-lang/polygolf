@@ -54,7 +54,7 @@ import {
 } from "../../plugins/block";
 import {
   forArgvToForEach,
-  forRangeToForRangeInclusive,
+  rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
 } from "../../plugins/loops";
 import {
@@ -86,7 +86,7 @@ const swiftLanguage: Language = {
       golfStringListLiteral(false),
       listOpsToTextOps(),
       equalityToInequality,
-      forRangeToForRangeInclusive(),
+      rangeExclusiveToInclusive(),
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,

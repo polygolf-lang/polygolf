@@ -7,7 +7,7 @@ import {
   type BaseNode,
   op,
   isOp,
-  Op,
+  type Op,
 } from "./IR";
 
 /**
@@ -98,7 +98,7 @@ export function forRangeCommon(
 ): ForEach {
   return forEach(
     variable,
-    op[inclusive ? "range_incl" : "range_excl"](
+    op[inclusive === true ? "range_incl" : "range_excl"](
       typeof start === "number" ? int(BigInt(start)) : start,
       typeof end === "number" ? int(BigInt(end)) : end,
       step === undefined

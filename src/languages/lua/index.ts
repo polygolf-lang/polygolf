@@ -18,7 +18,7 @@ import {
 } from "../../common/Language";
 import {
   forArgvToForRange,
-  forRangeToForRangeInclusive,
+  rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
   shiftRangeOneUp,
 } from "../../plugins/loops";
@@ -84,7 +84,7 @@ const luaLanguage: Language = {
       forRangeToForRangeOneStep,
       inlineVariables,
       forArgvToForRange(),
-      forRangeToForRangeInclusive(),
+      rangeExclusiveToInclusive(),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       mapOps({
@@ -100,7 +100,7 @@ const luaLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForRange(),
-      forRangeToForRangeInclusive(),
+      rangeExclusiveToInclusive(),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       startsWithEndsWithToSliceEquality("byte"),

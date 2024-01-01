@@ -8,7 +8,7 @@ for $i 0 10 {
 };
 ```
 
-```polygolf loops.forRangeToForRangeInclusive()
+```polygolf loops.rangeExclusiveToInclusive()
 for_range_inclusive $i 0 9 1 (
   print_int $i
 );

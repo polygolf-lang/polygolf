@@ -128,12 +128,6 @@ describe("Bindings", () => {
       empty,
     ),
   );
-  testNode(
-    "for difference range",
-    id("i"),
-    int(10, 14),
-    forDifferenceRange("i", intNode(10), intNode(5), intNode(1), empty),
-  );
 });
 
 describe("Block", () => {
