@@ -131,7 +131,12 @@ Each variable must be first used in an assignment. Variable type is determined b
 - `key_value`, `=>` - this can only be used as a part of a table literal.
 - `func` - anonymous function literal - last argument is the body, all others are its arguments.
 - `if` - if statement - expects a boolean condition and 1-2 bodies - a consequent and an optional alternate.
-- `for` - a loop over an integer range - expects a loop variable, inclusive lower bound, exclusive upper bound, step and a body. If step is 1, it can be omitted, if in addition start is 0, it can be omitted, if in addition the loop variable is not needed, it can be omitted.
+- `for` - a for each loop. Expects an optional loop variable, a list to iterate over and a body. To iterate over an integer range, construct a list using `..` or `..<`. Has the following syntactic sugars:
+  - `for $i $n body;` for `for $i (..<$n) body;`,
+  - `for $n body;` for `for (..<$n) body;`,
+  - `for[Ascii] $c $text body;` for `for $c (text_to_list[Ascii] $text) body`,
+  - `for[byte] $c $text body;` for `for $c (text_to_list[byte] $text) body`,
+  - `for[codepoint] $c $text body;` for `for $c (text_to_list[codepoint] $text) body`,
 - `while` - a while loop. Expects a boolean condition and a body.
 - `for_argv` - a loop over input arguments. Expects a loop variable and a static integer literal representing the upper bound on the number of arguments.
 - `conditional` - a ternary conditional expression. Expects a boolean condition, a consequent and an alternate.
@@ -146,9 +151,6 @@ All other expressions are Polygolf operators. Most of them return values, but so
 
 One can reference on opcode be either its name or its alias. Some opcodes share the alias - this is resolved by the used arity / types of inputs.
 Symbolic aliases and `div`, `mod` can also be used in an infix manner: `(+ 2 3)` is the same as `(2 + 3)` and in mutating manner: `$x <- ($x + 1);` is the same as `$x +<- 1;`.
-
-There's an alternative syntax for indexing assignment:
-`($collection @ $index) <- value;` is the same as `set_at $collection $index $value;`.
 
 Many text opcodes have `...[byte]`, `...[codepoint]`, `...[Ascii]` variants. Use the ascii one where possible, as that will allow target langs to choose any implementation. The other two will force implementations that are valid outside of the ascii range.
 

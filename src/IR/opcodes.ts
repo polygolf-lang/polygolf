@@ -365,11 +365,12 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   "char[codepoint]":
     "Returns a codepoint (as text) corresponding to the integer.",
   "char[Ascii]": "Returns a character corresponding to the integer.",
-  "text_to_list[byte]": "Converts given text to a list of single byte texts.",
+  "text_to_list[byte]":
+    "Converts given text to a list of single byte texts. Use for[byte] to iterate over bytes in a text.",
   "text_to_list[codepoint]":
-    "Converts given text to a list of single codepoint texts.",
+    "Converts given text to a list of single codepoint texts. Use for[codepoint] to iterate over codepoints in a text.",
   "text_to_list[Ascii]":
-    "Converts given text to a list of single character texts.",
+    "Converts given text to a list of single character texts. Use for[Ascii] to iterate over characters in a text.",
 
   // Order
   "sorted[Int]": "Returns a sorted copy of the input.",
@@ -444,7 +445,7 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   range_excl:
     "List of integers between given inclusive lower, exclusive upper bound,  with given step.",
   range_diff_excl:
-    "List of integers between given inclusive lower, exclusive upper bound expressed usign a difference between the lower bound, with given step.",
+    "List of integers between given inclusive lower, exclusive upper bound expressed using a difference between the lower bound, with given step.",
 };
 
 const int0 = { kind: "Integer", value: 0n } as const;
