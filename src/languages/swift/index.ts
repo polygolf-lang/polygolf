@@ -2,7 +2,6 @@ import {
   functionCall as func,
   indexCall,
   methodCall as method,
-  namedArg,
   op,
   text,
   succ,
@@ -136,11 +135,7 @@ const swiftLanguage: Language = {
       implicitlyConvertPrintArg,
       mapOps({
         join: (a, b) =>
-          method(
-            a,
-            "joined",
-            ...(isText("")(b) ? [] : [namedArg("separator", b)]),
-          ),
+          method(a, "joined", isText("")(b) ? [] : { separator: b }),
         "ord_at[byte]": (a, b) =>
           func("Int", indexCall(func("Array", prop(a, "utf8")), b)),
         "at[codepoint]": (a, b) =>
@@ -167,19 +162,16 @@ const swiftLanguage: Language = {
         "sorted[Ascii]": (a) => method(a, "sorted"),
         int_to_dec: (x) => func("String", x),
         split: (a, b) =>
-          method(
-            a,
-            "split",
-            namedArg("separator", b),
-            namedArg("omittingEmptySubsequences", op.false),
-          ),
-        repeat: (a, b) =>
-          func("String", namedArg("repeating", a), namedArg("count", b)),
+          method(a, "split", {
+            separator: b,
+            omittingEmptySubsequences: op.false,
+          }),
+        repeat: (a, b) => func("String", { repeating: a, count: b }),
         "contains[Text]": (a, b) => method(a, "contains", b),
         "contains[List]": (a, b) => method(a, "contains", b),
         "contains[Set]": (a, b) => method(a, "contains", b),
         "contains[Table]": (a, b) => method(prop(a, "keys"), "contains", b),
-        "find[List]": (a, b) => method(a, "index", namedArg("of", b)),
+        "find[List]": (a, b) => method(a, "index", { of: b }),
         "find[codepoint]": (a, b) =>
           conditional(
             op["contains[Text]"](a, b),
@@ -195,44 +187,39 @@ const swiftLanguage: Language = {
         pow: (a, b) =>
           func("Int", func("pow", func("Double", a), func("Double", b))),
         "println[Text]": (a) => func("print", a),
-        "print[Text]": (a) =>
-          func("print", a, namedArg("terminator", text(""))),
+        "print[Text]": (a) => func("print", a, { terminator: text("") }),
         dec_to_int: (a) => postfix("!", func("Int", a)),
         append: (a, b) => op["concat[List]"](a, list([b])),
         include: (a, b) => method(a, "insert", b),
         bool_to_int: (a) => conditional(a, int(1n), int(0n)),
         int_to_bool: (a) => op["neq[Int]"](a, int(0n)),
         int_to_hex: (a) =>
-          func(
-            "String",
-            a,
-            namedArg("radix", int(16n)),
-            namedArg("uppercase", op.false),
-          ),
+          func("String", a, { radix: int(16n), uppercase: op.false }),
         int_to_Hex: (a) =>
-          func(
-            "String",
-            a,
-            namedArg("radix", int(16n)),
-            namedArg("uppercase", op.true),
-          ),
-        int_to_bin: (a) => func("String", a, namedArg("radix", int(2n))),
+          func("String", a, { radix: int(16n), uppercase: op.true }),
+        int_to_bin: (a) => func("String", a, { radix: int(2n) }),
         int_to_hex_aligned: (a, b) =>
           func(
             "String",
-            namedArg(
-              "format",
-              op["concat[Text]"](text("%0"), intToDecOpOrText(b), text("x")),
-            ),
+            {
+              format: op["concat[Text]"](
+                text("%0"),
+                intToDecOpOrText(b),
+                text("x"),
+              ),
+            },
             a,
           ),
         int_to_Hex_aligned: (a, b) =>
           func(
             "String",
-            namedArg(
-              "format",
-              op["concat[Text]"](text("%0"), intToDecOpOrText(b), text("X")),
-            ),
+            {
+              format: op["concat[Text]"](
+                text("%0"),
+                intToDecOpOrText(b),
+                text("X"),
+              ),
+            },
             a,
           ),
         int_to_bin_aligned: (a, b) =>
@@ -245,12 +232,7 @@ const swiftLanguage: Language = {
           method(op["concat[Text]"](op.repeat(text(" "), b), a), "suffix", b),
 
         replace: (a, b, c) =>
-          method(
-            a,
-            "replacingOccurrences",
-            namedArg("of", b),
-            namedArg("with", c),
-          ),
+          method(a, "replacingOccurrences", { of: b, with: c }),
         starts_with: (a, b) => method(a, "hasPrefix", b),
         ends_with: (a, b) => method(a, "hasSuffix", b),
         bit_count: (a) =>
@@ -261,21 +243,11 @@ const swiftLanguage: Language = {
         range_excl: (a, b, c) =>
           isInt(1n)(c)
             ? infix("..<", a, b)
-            : func(
-                "string",
-                namedArg("from", a),
-                namedArg("to", b),
-                namedArg("by", c),
-              ),
+            : func("stride", { from: a, to: b, by: c }),
         range_incl: (a, b, c) =>
           isInt(1n)(c)
             ? infix("...", a, b)
-            : func(
-                "string",
-                namedArg("from", a),
-                namedArg("to", succ(b)),
-                namedArg("by", c),
-              ),
+            : func("stride", { from: a, to: succ(b), by: c }),
       }),
       mapOpsTo.func({
         max: "max",
