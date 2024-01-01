@@ -37,7 +37,7 @@ import { mapOps } from "./ops";
 export function rangeExclusiveToInclusive(skip1Step = false): Plugin {
   return mapOps({
     range_excl: (a, b, c) =>
-      skip1Step && isInt(1n)(c) ? undefined : op.range_incl(a, succ(b), c),
+      skip1Step && isInt(1n)(c) ? undefined : op.range_incl(a, pred(b), c),
   });
 }
 

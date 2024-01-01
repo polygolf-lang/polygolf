@@ -200,7 +200,11 @@ const nimLanguage: Language = {
         range_excl: (a, b, c) =>
           isInt(1n)(c) ? infix("..<", a, b) : func("countup", a, b, c),
         range_incl: (a, b, c) =>
-          isInt(1n)(c) ? infix("..", a, b) : func("countup", a, succ(b), c),
+          isInt(1n)(c)
+            ? isInt(0n)(a)
+              ? prefix("..", b)
+              : infix("..", a, b)
+            : func("countup", a, succ(b), c),
       }),
       mapOpsTo.builtin({ true: "true", false: "false" }),
       mapOps({

@@ -84,7 +84,6 @@ const luaLanguage: Language = {
       forRangeToForRangeOneStep,
       inlineVariables,
       forArgvToForRange(),
-      rangeExclusiveToInclusive(),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       mapOps({

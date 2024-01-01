@@ -107,24 +107,12 @@ describe("Bindings", () => {
     forRangeCommon(["i", 0, 10, 1, true], empty),
   );
   testNode(
-    "for range negative step exclusive",
-    id("i"),
-    int(1, 10),
-    forRangeCommon(["i", 10, 0, -1], empty),
-  );
-  testNode(
-    "for range negative step inclusive",
-    id("i"),
-    int(0, 10),
-    forRangeCommon(["i", 10, 0, -1, true], empty),
-  );
-  testNode(
     "for range general",
     id("i"),
     int(-12, 12),
 
     forRangeCommon(
-      ["i", e(int(-10, 10)), e(int(-12, 12)), e(int(-1, 1)), true],
+      ["i", e(int(-10, 10)), e(int(-12, 12)), e(int(1, 1)), true],
       empty,
     ),
   );

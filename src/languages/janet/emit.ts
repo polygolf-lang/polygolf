@@ -90,7 +90,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
           36: ["36r", ""],
         });
       case "FunctionCall":
-        return list(e.func as any, ...e.args);
+        return list(emit(e.func) as any, ...e.args);
       case "RangeIndexCall":
         if (!isInt(1n)(e.step)) throw new EmitError(e, "step not equal one");
         return isInt(0n)(e.low)

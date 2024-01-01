@@ -3,13 +3,13 @@
 ## For range to others
 
 ```polygolf
-for $i 0 10 {
+for $i (0 ..< 10) {
   print_int $i;
 };
 ```
 
 ```polygolf loops.rangeExclusiveToInclusive()
-for_range_inclusive $i 0 9 1 (
+for $i (0 .. 9) (
   print_int $i
 );
 ```

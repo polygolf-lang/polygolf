@@ -1,4 +1,16 @@
-import { isOp, op, isOpCode, type Type, type Node, isText, text } from "../IR";
+import {
+  isOp,
+  op,
+  isOpCode,
+  type Type,
+  type Node,
+  isText,
+  text,
+  isSubtype,
+  integerType,
+  int,
+  forEach,
+} from "../IR";
 import { expandVariants } from "./expandVariants";
 import {
   defaultDetokenizer,
@@ -614,11 +626,21 @@ function annotate<T extends Node | undefined>(
   };
 }
 
-/** Typecheck a program and return a program with resolved opcodes.
+/** Typecheck a program and return a program with resolved opcodes
+ * and a collection arg to for.
  * If everyNode is false, typechecks only nodes neccesary to resolve opcodes, otherwise, typechecks every node. */
 export function typecheck(program: Node, everyNode = true): Node {
   const spine = programToSpine(program);
   return spine.withReplacer(function (node, spine) {
+    if (node.kind === "ForEach" && !isOp.range_excl(node.collection)) {
+      if (isSubtype(getType(node.collection, spine), integerType())) {
+        return forEach(
+          node.variable,
+          op.range_excl(int(0n), node.collection, int(1n)),
+          node.body,
+        );
+      }
+    }
     if (everyNode || (node.kind === "Op" && !isOpCode(node.op))) {
       const t = getTypeAndResolveOpCode(node, spine);
       if (isOp()(node) && t.opCode !== undefined) {

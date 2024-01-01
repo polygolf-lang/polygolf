@@ -65,6 +65,7 @@ function binaryPrecedence(opname: string): number {
     case "&":
       return 7;
     case "..":
+    case "..<":
       return 6;
     case "<":
     case "<=":

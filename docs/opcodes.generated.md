@@ -58,9 +58,9 @@ Hover opcode name to see a description.
 | char[byte] | [char[byte]](## "Returns a byte (as text) corresponding to the integer.") | [0..255] | (Text 1..1) |
 | char[codepoint] | [char[codepoint]](## "Returns a codepoint (as text) corresponding to the integer.") | [0..1114111] | (Text 1..1) |
 | char | [char[Ascii]](## "Returns a character corresponding to the integer.") | [0..127] | (Ascii 1..1) |
-| text_to_list[byte] | [text_to_list[byte]](## "Converts given text to a list of single byte texts.") | [Text] | (List (Text 1..1)) |
-| text_to_list[codepoint] | [text_to_list[codepoint]](## "Converts given text to a list of single codepoint texts.") | [Text] | (List (Text 1..1)) |
-| text_to_list | [text_to_list[Ascii]](## "Converts given text to a list of single character texts.") | [Ascii] | (List (Ascii 1..1)) |
+| text_to_list[byte] | [text_to_list[byte]](## "Converts given text to a list of single byte texts. Use for[byte] to iterate over bytes in a text.") | [Text] | (List (Text 1..1)) |
+| text_to_list[codepoint] | [text_to_list[codepoint]](## "Converts given text to a list of single codepoint texts. Use for[codepoint] to iterate over codepoints in a text.") | [Text] | (List (Text 1..1)) |
+| text_to_list | [text_to_list[Ascii]](## "Converts given text to a list of single character texts. Use for[Ascii] to iterate over characters in a text.") | [Ascii] | (List (Ascii 1..1)) |
 | sorted | [sorted[Int]](## "Returns a sorted copy of the input.")<br>[sorted[Ascii]](## "Returns a lexicographically sorted copy of the input.") | [(List Int)]<br>[(List Ascii)] | (List Int)<br>(List Ascii) |
 | reversed[byte] | [reversed[byte]](## "Returns a text in which the bytes are in reversed order.") | [Text] | Text |
 | reversed[codepoint] | [reversed[codepoint]](## "Returns a text in which the codepoints are in reversed order.") | [Text] | Text |
