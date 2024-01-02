@@ -3,12 +3,14 @@ import fs from "fs";
 import path from "path";
 import { emitTextFactory } from "../common/emit";
 import { keywords } from ".";
+import { groupby } from "../common/arrays";
 
 interface Test {
   input: string;
   language: string;
   args: string[];
   output: string;
+  visibleTitle: string;
 }
 
 interface Describe {
@@ -25,6 +27,7 @@ interface Header {
 }
 interface CodeBlock {
   kind: "CodeBlock";
+  visibleTitle: string;
   language: string;
   args: string[];
   content: string;
@@ -69,6 +72,7 @@ function parseSuite(markdown: string): Describe {
         }
         currentDescribe.children.push({
           input: lastInput.content,
+          visibleTitle: tag.visibleTitle,
           language: lang.name,
           args: tag.args,
           output: tag.content,
@@ -76,17 +80,42 @@ function parseSuite(markdown: string): Describe {
       }
     }
   }
-  function removeEmptyDescribes(describe: Describe) {
+  function processDescribes(describe: Describe) {
     for (const child of describe.children) {
       if ("children" in child) {
-        removeEmptyDescribes(child);
+        processDescribes(child);
       }
     }
     describe.children = describe.children.filter(
       (x) => "input" in x || x.children.length > 0,
     );
+    const langTests = describe.children.filter(
+      (x) => "input" in x && findLang(x.language)!.name !== "Polygolf",
+    ) as Test[];
+    for (const group of groupby(langTests, (x) => x.input)) {
+      const langNames = group[1].map((x) => x.language);
+      if ([...new Set(langNames)].length > 1) {
+        const actualOrder = langNames.join(", ");
+        const expectedOrder = langNames.sort().join(", ");
+        if (expectedOrder !== actualOrder) {
+          throw new Error(
+            `Expected language order ${expectedOrder} but got ${actualOrder}.`,
+          );
+        }
+        for (const test of group[1]) {
+          const expectedVisibleTitle = new RegExp(
+            `_${findLang(test.language)?.name}.*_.*`,
+          );
+          if (!expectedVisibleTitle.test(test.visibleTitle)) {
+            throw new Error(
+              `Expected ${expectedVisibleTitle} above the lang test fence block, but got '${test.visibleTitle}' (${test.language}).`,
+            );
+          }
+        }
+      }
+    }
   }
-  removeEmptyDescribes(result);
+  processDescribes(result);
   if (result.children.length === 1 && "children" in result.children[0])
     return result.children[0];
   return result;
@@ -97,7 +126,8 @@ function parseSuite(markdown: string): Describe {
  */
 function extractTags(markdown: string): (Header | CodeBlock)[] {
   const result: (Header | CodeBlock)[] = [];
-  const regex = /\n(#+)([^\n]+)\n|```([^`\n]*)\n((.(?!```))*)\n```/gs;
+  const regex =
+    /\n(#+)([^\n]+)\n|(\n[^\n]*\n+)?```([^`\n]*)\n((.(?!```))*)\n```/gs;
   for (const m of ("\n" + markdown).matchAll(regex)) {
     if (m[1] !== undefined) {
       result.push({
@@ -106,17 +136,19 @@ function extractTags(markdown: string): (Header | CodeBlock)[] {
         title: m[2].trim(),
       });
     } else {
-      const title = m[3].trim().split(" ");
-      if (m[3].trim().length === 0) {
+      const visibleTitle = (m[3] ?? "").trim();
+      const title = m[4].trim().split(" ");
+      if (m[4].trim().length === 0) {
         throw new Error(
           "Codeblocks are required to have language annotation. If a codeblock should not be included in testing, use `skip` command: `python skip`.",
         );
       }
       result.push({
         kind: "CodeBlock",
+        visibleTitle,
         language: title[0],
         args: title.slice(1),
-        content: m[4].trim(),
+        content: m[5].trim(),
       });
     }
   }
@@ -221,9 +253,16 @@ for (const file of readdirSyncRecursive(process.cwd())) {
 
 for (const file of readdirSyncRecursive(process.cwd())) {
   if (file.endsWith(".test.md")) {
-    const suite = compileSuite(fs.readFileSync(file).toString());
-    if (suite !== "") {
-      fs.writeFileSync(file + ".ts", suite);
+    try {
+      const suite = compileSuite(fs.readFileSync(file).toString());
+      if (suite !== "") {
+        fs.writeFileSync(file + ".ts", suite);
+      }
+    } catch (e) {
+      if (e instanceof Error) {
+        e.message += `(${file})`;
+      }
+      throw e;
     }
   }
 }
