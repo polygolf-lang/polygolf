@@ -1,6 +1,5 @@
-import type { Spine } from "../common/Spine";
+import type { PluginVisitor, Spine } from "../common/Spine";
 import { replaceAtIndex } from "../common/arrays";
-import { type Plugin } from "../common/Language";
 import {
   block,
   implicitConversion,
@@ -30,53 +29,47 @@ export const printLnToPrint = mapOps({
  * Since code.golf strips output whitespace, for the last print,
  * it doesn't matter if print or println is used, so the shorter one should be used.
  */
-export function golfLastPrint(toPrintln = true): Plugin {
-  return {
-    name: "golfLastPrint",
-    visit(program, spine, context) {
-      context.skipChildren();
-      const statements = block([program]).children;
-      const newOp = toPrintln ? "println[Text]" : "print[Text]";
-      const oldOp = toPrintln ? "print[Text]" : "println[Text]";
-      const lastStatement = statements[statements.length - 1];
-      if (isOp(oldOp, newOp)(lastStatement)) {
-        let arg = lastStatement.args[0];
-        if (isText()(arg)) {
-          const value = arg.value.trimEnd();
-          if (value !== arg.value) arg = text(value);
-        }
-        if (arg !== lastStatement.args[0] || lastStatement.op !== newOp) {
-          return blockOrSingle(
-            replaceAtIndex(statements, statements.length - 1, op[newOp](arg)),
-          );
-        }
+export function golfLastPrint(toPrintln = true): PluginVisitor {
+  return function golfLastPrint(program, spine, context) {
+    context.skipChildren();
+    const statements = block([program]).children;
+    const newOp = toPrintln ? "println[Text]" : "print[Text]";
+    const oldOp = toPrintln ? "print[Text]" : "println[Text]";
+    const lastStatement = statements[statements.length - 1];
+    if (isOp(oldOp, newOp)(lastStatement)) {
+      let arg = lastStatement.args[0];
+      if (isText()(arg)) {
+        const value = arg.value.trimEnd();
+        if (value !== arg.value) arg = text(value);
       }
-    },
+      if (arg !== lastStatement.args[0] || lastStatement.op !== newOp) {
+        return blockOrSingle(
+          replaceAtIndex(statements, statements.length - 1, op[newOp](arg)),
+        );
+      }
+    }
   };
 }
 
 /**
  * Like golfLastPrint but for print[Int] instead of print[Text]
  */
-export function golfLastPrintInt(toPrintlnInt = true): Plugin {
-  return {
-    name: "golfLastPrintInt",
-    visit(program, spine, context) {
-      context.skipChildren();
-      const statements = block([program]).children;
-      const newOp = toPrintlnInt ? "println[Int]" : "print[Int]";
-      const oldOp = toPrintlnInt ? "print[Int]" : "println[Int]";
-      const lastStatement = statements[statements.length - 1];
-      if (isOp(oldOp)(lastStatement)) {
-        return blockOrSingle(
-          replaceAtIndex(
-            statements,
-            statements.length - 1,
-            op[newOp](lastStatement.args[0]),
-          ),
-        );
-      }
-    },
+export function golfLastPrintInt(toPrintlnInt = true): PluginVisitor {
+  return function golfLastPrintInt(program, spine, context) {
+    context.skipChildren();
+    const statements = block([program]).children;
+    const newOp = toPrintlnInt ? "println[Int]" : "print[Int]";
+    const oldOp = toPrintlnInt ? "print[Int]" : "println[Int]";
+    const lastStatement = statements[statements.length - 1];
+    if (isOp(oldOp)(lastStatement)) {
+      return blockOrSingle(
+        replaceAtIndex(
+          statements,
+          statements.length - 1,
+          op[newOp](lastStatement.args[0]),
+        ),
+      );
+    }
   };
 }
 

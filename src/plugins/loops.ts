@@ -1,4 +1,4 @@
-import { type Spine } from "../common/Spine";
+import type { PluginVisitor, Spine } from "../common/Spine";
 import { getType } from "../common/getType";
 import { type Plugin } from "../common/Language";
 import {
@@ -140,7 +140,7 @@ function isListGet(node: IR.Node, collection: string, index: string) {
  *     commands(x)
  */
 type GetOp = OpCode & ("at[Array]" | "at[List]" | "at[byte]" | "at[codepoint]");
-export function forRangeToForEach(...ops: GetOp[]): Plugin {
+export function forRangeToForEach(...ops: GetOp[]): PluginVisitor {
   if (ops.includes("at[byte]") && ops.includes("at[codepoint]"))
     throw new Error(
       "Programming error. Choose only one of 'at[byte]' && 'at[codepoint]'.",
@@ -151,51 +151,48 @@ export function forRangeToForEach(...ops: GetOp[]): Plugin {
     ["size[byte]", "at[byte]"],
     ["size[codepoint]", "at[codepoint]"],
   ]);
-  return {
-    name: "forRangeToForEach",
-    visit(node, spine) {
-      if (
-        node.kind === "ForRange" &&
-        node.variable !== undefined &&
-        !node.inclusive &&
-        isInt(0n)(node.start) &&
-        ((isOp()(node.end) &&
-          ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
-          isIdent()(node.end.args[0]!)) ||
-          isInt()(node.end))
-      ) {
-        const indexVar = node.variable;
-        const bodySpine = spine.getChild("body");
-        const knownLength = isInt()(node.end)
-          ? Number(node.end.value)
-          : undefined;
-        const allowedOps = isInt()(node.end)
-          ? ops
-          : [lengthOpToGetOp.get(node.end.op) as GetOp];
-        const collectionVar = isInt()(node.end)
-          ? undefined
-          : (node.end.args[0] as Identifier);
-        const indexedCollection = getIndexedCollection(
-          bodySpine,
-          indexVar,
-          allowedOps,
-          knownLength,
-          collectionVar,
-        );
-        if (indexedCollection !== null) {
-          const elementIdentifier = id(node.variable.name + "+each");
-          const newBody = bodySpine.withReplacer((n) => {
-            if (
-              isOp()(n) &&
-              n.args[0] === indexedCollection &&
-              isUserIdent(indexVar.name)(n.args[1]!)
-            )
-              return elementIdentifier;
-          }).node;
-          return forEach(elementIdentifier, indexedCollection, newBody);
-        }
+  return function forRangeToForEach(node, spine) {
+    if (
+      node.kind === "ForRange" &&
+      node.variable !== undefined &&
+      !node.inclusive &&
+      isInt(0n)(node.start) &&
+      ((isOp()(node.end) &&
+        ops.includes(lengthOpToGetOp.get(node.end.op) as any) &&
+        isIdent()(node.end.args[0]!)) ||
+        isInt()(node.end))
+    ) {
+      const indexVar = node.variable;
+      const bodySpine = spine.getChild("body");
+      const knownLength = isInt()(node.end)
+        ? Number(node.end.value)
+        : undefined;
+      const allowedOps = isInt()(node.end)
+        ? ops
+        : [lengthOpToGetOp.get(node.end.op) as GetOp];
+      const collectionVar = isInt()(node.end)
+        ? undefined
+        : (node.end.args[0] as Identifier);
+      const indexedCollection = getIndexedCollection(
+        bodySpine,
+        indexVar,
+        allowedOps,
+        knownLength,
+        collectionVar,
+      );
+      if (indexedCollection !== null) {
+        const elementIdentifier = id(node.variable.name + "+each");
+        const newBody = bodySpine.withReplacer((n) => {
+          if (
+            isOp()(n) &&
+            n.args[0] === indexedCollection &&
+            isUserIdent(indexVar.name)(n.args[1]!)
+          )
+            return elementIdentifier;
+        }).node;
+        return forEach(elementIdentifier, indexedCollection, newBody);
       }
-    },
+    }
   };
 }
 
@@ -349,25 +346,22 @@ export function forRangeToForDifferenceRange(
     expr: ForRange,
     spine: Spine<ForRange>,
   ) => boolean = () => true,
-): Plugin {
-  return {
-    name: "forRangeToForDifferenceRange",
-    visit(node, spine) {
-      if (
-        node.kind === "ForRange" &&
-        node.variable !== undefined &&
-        transformPredicate(node, spine as Spine<ForRange>)
-      ) {
-        return forDifferenceRange(
-          node.variable,
-          node.start,
-          op.sub(node.end, node.start),
-          node.increment,
-          node.body,
-          node.inclusive,
-        );
-      }
-    },
+): PluginVisitor {
+  return function forRangeToForDifferenceRange(node, spine) {
+    if (
+      node.kind === "ForRange" &&
+      node.variable !== undefined &&
+      transformPredicate(node, spine as Spine<ForRange>)
+    ) {
+      return forDifferenceRange(
+        node.variable,
+        node.start,
+        op.sub(node.end, node.start),
+        node.increment,
+        node.body,
+        node.inclusive,
+      );
+    }
   };
 }
 

@@ -1,23 +1,20 @@
-import { variants } from "../../IR";
+import type { Spine } from "../../common/Spine";
+import { type Node, variants } from "../../IR";
 import {
   defaultDetokenizer,
-  type Plugin,
   type Language,
   required,
 } from "../../common/Language";
 import emitProgram from "./emit";
 
-const blocksAsVariants: Plugin = {
-  name: "blocksAsVariants",
-  visit(node, spine) {
-    if (
-      node.kind === "Block" &&
-      !spine.isRoot &&
-      spine.parent!.node.kind !== "Variants"
-    )
-      return variants([node]);
-  },
-};
+function blocksAsVariants(node: Node, spine: Spine) {
+  if (
+    node.kind === "Block" &&
+    !spine.isRoot &&
+    spine.parent!.node.kind !== "Variants"
+  )
+    return variants([node]);
+}
 
 const polygolfLanguage: Language = {
   name: "Polygolf",

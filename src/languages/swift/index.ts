@@ -300,11 +300,7 @@ const swiftLanguage: Language = {
         "at[List]": 0,
         "at[Table]": 0,
       }),
-      addImports({
-        pow: "Foundation",
-        replacingOccurrences: "Foundation",
-        format: "Foundation",
-      }),
+      addImports({ Foundation: ["pow", "replacingOccurrences", "format"] }),
     ),
     simplegolf(
       alias({

@@ -1,6 +1,7 @@
-import type { Visitor } from "@/common/Spine";
+import type { PluginVisitor, Visitor } from "@/common/Spine";
 import type { Plugin } from "../common/Language";
 import {
+  type Node,
   array,
   conditional,
   ifStatement,
@@ -13,33 +14,30 @@ import {
 
 export function safeConditionalOpToAt(
   type: "Array" | "List" | "Table",
-): Plugin {
-  return {
-    name: "safeConditionalOpToAt",
-    visit(node) {
-      if (node.kind === "ConditionalOp" && node.isSafe) {
-        switch (type) {
-          case "Array":
-            return op["at[Array]"](
-              array([node.alternate, node.consequent]),
-              op.bool_to_int(node.condition),
-            );
-          case "List":
-            return op["at[List]"](
-              list([node.alternate, node.consequent]),
-              op.bool_to_int(node.condition),
-            );
-          case "Table":
-            return op["at[Table]"](
-              table([
-                keyValue(op.true, node.consequent),
-                keyValue(op.false, node.alternate),
-              ]),
-              node.condition,
-            );
-        }
+): PluginVisitor {
+  return function safeConditionalOpToAt(node) {
+    if (node.kind === "ConditionalOp" && node.isSafe) {
+      switch (type) {
+        case "Array":
+          return op["at[Array]"](
+            array([node.alternate, node.consequent]),
+            op.bool_to_int(node.condition),
+          );
+        case "List":
+          return op["at[List]"](
+            list([node.alternate, node.consequent]),
+            op.bool_to_int(node.condition),
+          );
+        case "Table":
+          return op["at[Table]"](
+            table([
+              keyValue(op.true, node.consequent),
+              keyValue(op.false, node.alternate),
+            ]),
+            node.condition,
+          );
       }
-    },
+    }
   };
 }
 
@@ -79,29 +77,19 @@ export function conditionalOpToAndOr(
   };
 }
 
-export const flipConditionalOp: Plugin = {
-  name: "flipConditionalOp",
-  visit(node) {
-    if (node.kind === "ConditionalOp" && node.isSafe) {
-      return conditional(
-        op.not(node.condition),
-        node.alternate,
-        node.consequent,
-        true,
-      );
-    }
-  },
-};
+export function flipConditionalOp(node: Node) {
+  if (node.kind === "ConditionalOp" && node.isSafe) {
+    return conditional(
+      op.not(node.condition),
+      node.alternate,
+      node.consequent,
+      true,
+    );
+  }
+}
 
-export const flipIfStatement: Plugin = {
-  name: "flipIfStatement",
-  visit(node) {
-    if (node.kind === "If" && node.alternate !== undefined) {
-      return ifStatement(
-        op.not(node.condition),
-        node.alternate,
-        node.consequent,
-      );
-    }
-  },
-};
+export function flipIfStatement(node: Node) {
+  if (node.kind === "If" && node.alternate !== undefined) {
+    return ifStatement(op.not(node.condition), node.alternate, node.consequent);
+  }
+}
