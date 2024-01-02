@@ -108,7 +108,7 @@ function parseSuite(markdown: string): Describe {
           );
           if (!expectedVisibleTitle.test(test.visibleTitle)) {
             throw new Error(
-              `Expected ${expectedVisibleTitle} above the lang test fence block, but got '${test.visibleTitle}' (${test.language}).`,
+              `Expected ${expectedVisibleTitle} above the lang test fence block, but got '${test.visibleTitle}'.`,
             );
           }
         }
