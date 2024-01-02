@@ -1,7 +1,6 @@
 import {
   type Node,
   builtin,
-  forEachKey,
   indexCall,
   isInt,
   text,
@@ -9,14 +8,14 @@ import {
   block,
   assignment,
   op,
-  annotate,
-  tableType,
   textType,
   integerType,
   isOp,
   infix,
   functionCall,
   isForRange,
+  forEach,
+  listType,
 } from "../../IR";
 
 export function propertyCallToIndexCall(node: Node) {
@@ -37,10 +36,10 @@ export function forRangeToForEachKey(node: Node) {
     ) {
       const end = Number(high.value);
       const loopVar = id(node.variable.name + id().name);
-      return forEachKey(
+      return forEach(
         loopVar,
-        annotate(
-          builtin(
+        {
+          ...builtin(
             [
               "'??'",
               "'???'",
@@ -81,8 +80,9 @@ export function forRangeToForEachKey(node: Node) {
               "{}+Map",
             ][end - 2],
           ),
-          tableType(textType(integerType(1, 2), true), textType()),
-        ),
+          type: listType(textType(integerType(1, 2), true)),
+          targetType: "object",
+        },
         block([assignment(node.variable, op.dec_to_int(loopVar)), node.body]),
       );
     }

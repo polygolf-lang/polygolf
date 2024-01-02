@@ -75,8 +75,6 @@ export default function emitProgram(program: IR.Node): TokenTree {
           "if",
         ];
       case "Variants":
-      case "ForEachKey":
-      case "ForEachPair":
       case "ForCLike":
         throw new EmitError(stmt);
       default:

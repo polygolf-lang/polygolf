@@ -227,8 +227,6 @@ export function calcTypeAndResolveOpCode(
     case "ForArgv":
     case "ForCLike":
     case "ForEach":
-    case "ForEachKey":
-    case "ForEachPair":
       return voidType;
     case "ImplicitConversion": {
       return type(op.unsafe(expr.behavesLike, expr.expr));

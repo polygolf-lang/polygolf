@@ -209,18 +209,8 @@ export default function emitProgram(
             `for`,
             "(",
             emit(e.variable ?? id()),
-            "of",
+            e.collection.targetType === "object" ? "in" : "of",
             emit(e.collection),
-            ")",
-            emit(e.body),
-          ];
-        case "ForEachKey":
-          return [
-            `for`,
-            "(",
-            emit(e.variable),
-            "in",
-            emit(e.table),
             ")",
             emit(e.body),
           ];

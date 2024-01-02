@@ -44,8 +44,6 @@ import {
   infix,
   importStatement,
   forEach,
-  forEachPair,
-  forEachKey,
   forCLike,
   namedArg,
   methodCall,
@@ -337,19 +335,6 @@ export function sexpr(
       case "import":
         expectArity(2, Infinity);
         return importStatement(asString(args[0]), args.slice(1).map(asString));
-      case "for_each_key": {
-        expectArity(3);
-        const [variable, collection, body] = args;
-        assertIdentifier(variable);
-        return forEachKey(variable, collection, body);
-      }
-      case "for_each_pair": {
-        expectArity(4);
-        const [keyVariable, valueVariable, collection, body] = args;
-        assertIdentifier(keyVariable);
-        assertIdentifier(valueVariable);
-        return forEachPair(keyVariable, valueVariable, collection, body);
-      }
       case "for_c_like": {
         expectArity(4);
         const [init, condition, append, body] = args;

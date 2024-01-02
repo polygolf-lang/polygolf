@@ -1,6 +1,5 @@
 import {
   type Identifier,
-  integerType,
   type IR,
   isIdent,
   isOp,
@@ -88,11 +87,8 @@ function introducedSymbols(
   const node = spine.node;
   switch (node.kind) {
     case "ForEach":
-    case "ForEachKey":
     case "ForArgv":
       return node.variable === undefined ? [] : [node.variable.name];
-    case "ForEachPair":
-      return [node.keyVariable.name, node.valueVariable.name];
     case "Assignment":
       if (
         isIdent()(node.variable) &&
@@ -121,13 +117,6 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
       return getCollectionTypes(node.collection, program)[0];
     case "ForArgv":
       return textType();
-    case "ForEachKey":
-      return getCollectionTypes(node.table, program)[0];
-    case "ForEachPair": {
-      const _types = getCollectionTypes(node.table, program);
-      const types = _types.length === 1 ? [integerType(), _types[0]] : _types;
-      return name === node.keyVariable.name ? types[0] : types[1];
-    }
     case "Assignment": {
       const assignedType = getType(node.expr, program);
       if (
@@ -207,8 +196,6 @@ function getDirectReadFragments(node: Node): PathFragment[] {
       return ["condition"];
     case "ForEach":
       return ["collection"];
-    case "ForEachPair":
-      return ["table"];
     case "If":
       return ["condition"];
     case "ManyToManyAssignment":

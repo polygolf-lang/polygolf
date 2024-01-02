@@ -24,7 +24,7 @@ const javascriptForInterpreting = {
         if (
           parent !== undefined &&
           spine.pathFragment === "body" &&
-          isOfKind("While", "ForEach", "ForEachKey", "ForCLike")(parent) &&
+          isOfKind("While", "ForEach", "ForCLike")(parent) &&
           (node.kind !== "Block" ||
             node.children[0].kind !== "FunctionCall" ||
             !isBuiltinIdent("instrument")(node.children[0].func))

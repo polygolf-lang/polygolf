@@ -24,14 +24,7 @@ import {
   type PropertyCall,
   type Postfix,
 } from "./exprs";
-import {
-  type ForEach,
-  type ForEachKey,
-  type ForEachPair,
-  type ForCLike,
-  type While,
-  type ForArgv,
-} from "./loops";
+import { type ForEach, type ForCLike, type While, type ForArgv } from "./loops";
 import {
   type AnyInteger,
   type Identifier,
@@ -101,8 +94,6 @@ export type Node =
   | Prefix
   | Postfix
   | Import
-  | ForEachKey
-  | ForEachPair
   | ForCLike
   | NamedArg;
 

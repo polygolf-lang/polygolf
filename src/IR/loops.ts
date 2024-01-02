@@ -34,18 +34,6 @@ export interface ForEach<T extends Node = Node> extends BaseNode {
 }
 
 /**
- * A loop over the keys in an table.
- *
- * Python: for variable in array:body.
- */
-export interface ForEachKey extends BaseNode {
-  readonly kind: "ForEachKey";
-  readonly variable: Identifier;
-  readonly table: Node;
-  readonly body: Node;
-}
-
-/**
  * A C like for loop.
  *
  * C: for(init;condition;append){body}.
@@ -55,19 +43,6 @@ export interface ForCLike extends BaseNode {
   readonly init: Node;
   readonly condition: Node;
   readonly append: Node;
-  readonly body: Node;
-}
-
-/**
- * A loop over the (key,value) pairs in a table (or (index, value) pairs in an array).
- *
- * Python: for variable in array:body.
- */
-export interface ForEachPair extends BaseNode {
-  readonly kind: "ForEachPair";
-  readonly keyVariable: Identifier;
-  readonly valueVariable: Identifier;
-  readonly table: Node;
   readonly body: Node;
 }
 
@@ -124,19 +99,6 @@ export function forEach(
   };
 }
 
-export function forEachKey(
-  variable: Identifier | string,
-  table: Node,
-  body: Node,
-): ForEachKey {
-  return {
-    kind: "ForEachKey",
-    variable: typeof variable === "string" ? id(variable) : variable,
-    table,
-    body,
-  };
-}
-
 export function forCLike(
   init: Node,
   condition: Node,
@@ -148,23 +110,6 @@ export function forCLike(
     init,
     condition,
     append,
-    body,
-  };
-}
-
-export function forEachPair(
-  keyVariable: Identifier | string,
-  valueVariable: Identifier | string,
-  table: Node,
-  body: Node,
-): ForEachPair {
-  return {
-    kind: "ForEachPair",
-    keyVariable:
-      typeof keyVariable === "string" ? id(keyVariable) : keyVariable,
-    valueVariable:
-      typeof valueVariable === "string" ? id(valueVariable) : valueVariable,
-    table,
     body,
   };
 }

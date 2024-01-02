@@ -134,7 +134,7 @@ Each variable must be first used in an assignment. Variable type is determined b
 - `for` - a for each loop. Expects an optional loop variable, a list to iterate over and a body. To iterate over an integer range, construct a list using `..` or `..<`. Has the following syntactic sugars:
   - `for $i $n body;` for `for $i (..<$n) body;`,
   - `for $n body;` for `for (..<$n) body;`,
-  - `for[Ascii] $c $text body;` for `for $c (text_to_list[Ascii] $text) body`,
+  - `for $c $text body;` for `for $c (text_to_list[Ascii] $text) body`,
   - `for[byte] $c $text body;` for `for $c (text_to_list[byte] $text) body`,
   - `for[codepoint] $c $text body;` for `for $c (text_to_list[codepoint] $text) body`,
 - `while` - a while loop. Expects a boolean condition and a body.

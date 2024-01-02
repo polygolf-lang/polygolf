@@ -7,10 +7,8 @@ import {
   whileLoop,
   forCLike,
   block,
-  forEachPair,
   forEach,
   id,
-  type IR,
   op,
   type Node,
   type Identifier,
@@ -79,49 +77,6 @@ export function forRangeToForCLike(node: Node, spine: Spine) {
       node.body,
     );
   }
-}
-
-/**
- * Python:
- * for i in range(len(collection)):
- *     commands(i, collection[i])
- *           |
- *           V
- * for i,x in enumerate(collection):
- *     commands(i, x)
- */
-// TODO: Handle inclusive like Lua's `for i=1,#L do commands(i, L[i]) end
-export function forRangeToForEachPair(node: Node, spine: Spine) {
-  if (
-    isForRange(node) &&
-    node.collection.op === "range_excl" &&
-    node.variable !== undefined
-  ) {
-    const [start, end, step] = node.collection.args;
-    if (
-      isInt(0n)(start) &&
-      isInt(1n)(step) &&
-      isOp("size[List]")(end) &&
-      isIdent()(end.args[0])
-    ) {
-      const variable = node.variable;
-      const collection = end.args[0];
-      const elementIdentifier = id(variable.name + "+each");
-      const newBody = spine.getChild("body").withReplacer((innerNode) => {
-        if (isListGet(innerNode, collection.name, variable.name))
-          return elementIdentifier;
-      }).node;
-      return forEachPair(variable, elementIdentifier, collection, newBody);
-    }
-  }
-}
-
-function isListGet(node: IR.Node, collection: string, index: string) {
-  return (
-    isOp("at[List]")(node) &&
-    isIdent(collection)(node.args[0]) &&
-    isIdent(index)(node.args[1])
-  );
 }
 
 /**

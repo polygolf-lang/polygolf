@@ -273,7 +273,9 @@ export function emitNodeWithoutAnnotation(
         )(expr.collection)
       ) {
         return emitSexpr(
-          expr.collection.op.replace("text_to_list", "for"),
+          expr.collection.op
+            .replace("text_to_list", "for")
+            .replace("[Ascii]", ""),
           expr.variable ?? "_",
           expr.collection.args[0],
           emitNode(expr.body, false, true),
@@ -283,21 +285,6 @@ export function emitNodeWithoutAnnotation(
         "for",
         expr.variable ?? "_",
         expr.collection,
-        emitNode(expr.body, false, true),
-      );
-    case "ForEachKey":
-      return emitSexpr(
-        "@",
-        expr.variable,
-        expr.table,
-        emitNode(expr.body, false, true),
-      );
-    case "ForEachPair":
-      return emitSexpr(
-        "@",
-        expr.keyVariable,
-        expr.valueVariable,
-        expr.table,
         emitNode(expr.body, false, true),
       );
     case "ForCLike":

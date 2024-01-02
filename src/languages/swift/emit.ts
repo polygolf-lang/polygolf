@@ -167,8 +167,6 @@ export default function emitProgram(
               : [],
           ];
         case "Variants":
-        case "ForEachKey":
-        case "ForEachPair":
         case "ForCLike":
           throw new EmitError(e);
         case "Assignment":

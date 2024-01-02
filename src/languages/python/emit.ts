@@ -152,8 +152,6 @@ export default function emitProgram(
               : ["\n", "else", ":", emitMultiNode(e.alternate)],
           ];
         case "Variants":
-        case "ForEachKey":
-        case "ForEachPair":
         case "ForCLike":
           throw new EmitError(expr);
         case "Assignment":
