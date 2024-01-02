@@ -363,11 +363,7 @@ const pythonLanguage: Language = {
     ),
     required(
       renameIdents(),
-      addImports({
-        "sys.argv[1:]": "sys",
-        "sys.argv": "sys",
-        "math.gcd": "math",
-      }),
+      addImports({ sys: ["sys.argv[1:]", "sys.argv"], math: ["math.gcd"] }),
       removeImplicitConversions,
     ),
   ],

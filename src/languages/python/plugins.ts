@@ -1,5 +1,6 @@
 import { getType } from "../../common/getType";
 import {
+  type Node,
   annotate,
   builtin,
   int,
@@ -8,48 +9,45 @@ import {
   rangeIndexCall,
   text,
 } from "../../IR";
-import { type Plugin } from "../../common/Language";
 import { chars } from "../../common/strings";
+import type { Spine } from "../../common/Spine";
 
-export const golfTextListLiteralIndex: Plugin = {
-  name: "golfTextListLiteralIndex",
-  visit(node, spine) {
+export function golfTextListLiteralIndex(node: Node, spine: Spine) {
+  if (
+    node.kind === "IndexCall" &&
+    node.collection.kind === "List" &&
+    node.collection.value.every(isText())
+  ) {
+    const values = node.collection.value.map((x) => ({
+      chars: chars(x.value),
+      targetLength: 0,
+    }));
+    // the length can never increase and it can only decrease by one
+    values.forEach((x, i) => {
+      x.targetLength = Math.max(
+        ...values.map((y, j) => y.chars.length - Number(j < i)),
+      );
+    });
     if (
-      node.kind === "IndexCall" &&
-      node.collection.kind === "List" &&
-      node.collection.value.every(isText())
+      values.every((x) => x.chars.length === x.targetLength) ||
+      isOp("println[Text]")(spine.parent!.node)
     ) {
-      const values = node.collection.value.map((x) => ({
-        chars: chars(x.value),
-        targetLength: 0,
-      }));
-      // the length can never increase and it can only decrease by one
-      values.forEach((x, i) => {
-        x.targetLength = Math.max(
-          ...values.map((y, j) => y.chars.length - Number(j < i)),
-        );
+      values.forEach((x) => {
+        while (x.chars.length < x.targetLength) x.chars.push(" ");
       });
-      if (
-        values.every((x) => x.chars.length === x.targetLength) ||
-        isOp("println[Text]")(spine.parent!.node)
-      ) {
-        values.forEach((x) => {
-          while (x.chars.length < x.targetLength) x.chars.push(" ");
-        });
-        const combined = values[0].chars
-          .flatMap((_, i) => values.map((x) => x.chars[i]))
-          .filter((x) => x !== undefined)
-          .join("");
-        return annotate(
-          rangeIndexCall(
-            text(combined),
-            node.index,
-            builtin(""),
-            int(values.length),
-          ),
-          getType(node, spine),
-        );
-      }
+      const combined = values[0].chars
+        .flatMap((_, i) => values.map((x) => x.chars[i]))
+        .filter((x) => x !== undefined)
+        .join("");
+      return annotate(
+        rangeIndexCall(
+          text(combined),
+          node.index,
+          builtin(""),
+          int(values.length),
+        ),
+        getType(node, spine),
+      );
     }
-  },
-};
+  }
+}

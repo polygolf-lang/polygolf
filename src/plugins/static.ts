@@ -1,19 +1,19 @@
+import type { PluginVisitor } from "@/common/Spine";
 import { isOp, op, text, isText } from "../IR";
 import { type Plugin } from "../common/Language";
 import { byteLength, charLength } from "../common/strings";
 
-export function golfStringListLiteral(useTextSplitWhitespace = true): Plugin {
-  return {
-    name: "golfStringListLiteral",
-    visit(node) {
-      if (node.kind === "List" && node.value.every(isText())) {
-        const strings = node.value.map((x) => x.value);
-        const delim = getDelim(strings, useTextSplitWhitespace);
-        return delim === true
-          ? op.split_whitespace(text(strings.join(" ")))
-          : op.split(text(strings.join(delim)), text(delim));
-      }
-    },
+export function golfStringListLiteral(
+  useTextSplitWhitespace = true,
+): PluginVisitor {
+  return function golfStringListLiteral(node) {
+    if (node.kind === "List" && node.value.every(isText())) {
+      const strings = node.value.map((x) => x.value);
+      const delim = getDelim(strings, useTextSplitWhitespace);
+      return delim === true
+        ? op.split_whitespace(text(strings.join(" ")))
+        : op.split(text(strings.join(delim)), text(delim));
+    }
   };
 }
 

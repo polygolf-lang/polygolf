@@ -1,5 +1,4 @@
-import { type Spine } from "../common/Spine";
-import { type Plugin } from "../common/Language";
+import type { PluginVisitor, Spine } from "../common/Spine";
 import { block, type Node, importStatement, isUserIdent } from "../IR";
 
 /**
@@ -8,13 +7,17 @@ import { block, type Node, importStatement, isUserIdent } from "../IR";
  * @returns The import adding plugin.
  */
 export function addImports( // TODO caching
-  rules: Record<string, string> | ((n: Node, s: Spine) => string | undefined),
+  rules: Record<string, string[]> | ((n: Node, s: Spine) => string | undefined),
   output: string | ((modules: string[]) => Node | undefined) = "import",
-): Plugin {
+): PluginVisitor {
   let rulesFunc: (n: Node, s: Spine) => string | undefined;
   if (typeof rules === "object") {
     rulesFunc = (x) =>
-      rules[x.kind] ?? (isUserIdent()(x) ? undefined : rules[(x as any).name]);
+      Object.entries(rules).find(
+        ([_, names]) =>
+          names.includes(x.kind) ||
+          (!isUserIdent()(x) && names.includes((x as any).name)),
+      )?.[0];
   } else rulesFunc = rules;
 
   const outputFunc =
@@ -22,15 +25,12 @@ export function addImports( // TODO caching
       ? (x: string[]) => (x.length > 0 ? importStatement(output, x) : undefined)
       : output;
 
-  return {
-    name: "addImports(...)",
-    visit(node, spine, context) {
-      context.skipChildren();
-      const modules = spine.compactMap(rulesFunc);
-      const outputNode = outputFunc([...new Set(modules)]);
-      if (outputNode !== undefined) {
-        return block([outputNode, node]);
-      }
-    },
+  return function addImports(node, spine, context) {
+    context.skipChildren();
+    const modules = spine.compactMap(rulesFunc);
+    const outputNode = outputFunc([...new Set(modules)]);
+    if (outputNode !== undefined) {
+      return block([outputNode, node]);
+    }
   };
 }

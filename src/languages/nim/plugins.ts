@@ -13,9 +13,8 @@ import {
   type OpCode,
 } from "../../IR";
 import { getType } from "../../common/getType";
-import type { Plugin } from "../../common/Language";
 import { addImports } from "../../plugins/imports";
-import type { Spine } from "../../common/Spine";
+import type { PluginVisitor, Spine } from "../../common/Spine";
 import { replaceAtIndex } from "../../common/arrays";
 
 const includes: [string, string[]][] = [
@@ -40,32 +39,28 @@ const includes: [string, string[]][] = [
   ],
 ];
 
-export const addNimImports: Plugin = addImports(
+export const addNimImports: PluginVisitor = addImports(
   {
-    "^": "math",
-    gcd: "math",
-    repeat: "strutils",
-    replace: "strutils",
-    multireplace: "strutils",
-    join: "strutils",
-    find: "strutils",
-    in: "strutils",
-    toBin: "strutils",
-    toHex: "strutils",
-    align: "strutils",
-    paramStr: "os",
-    commandLineParams: "os",
-    split: "strutils",
-    hash: "hashes",
-    Table: "tables",
-    Set: "sets",
-    toRunes: "unicode",
-    Rune: "unicode",
-    sorted: "algorithm",
-    reversed: "algorithm",
-    startsWith: "strutils",
-    endsWith: "strutils",
-    popcount: "bitops",
+    math: ["^", "gcd"],
+    strutils: [
+      "repeat",
+      "replace",
+      "join",
+      "split",
+      "find",
+      "toBin",
+      "toHex",
+      "align",
+      "startsWith",
+      "endsWith",
+    ],
+    os: ["paramStr", "commandLineParams"],
+    hashes: ["hashes"],
+    tables: ["Table"],
+    sets: ["Sets"],
+    unicode: ["toRunes", "Rune"],
+    algorithm: ["sorted", "reversed"],
+    bitops: ["popcount"],
   },
   (modules: string[]) => {
     if (modules.length < 1) return;
