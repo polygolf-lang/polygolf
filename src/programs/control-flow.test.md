@@ -12,17 +12,25 @@ if true {
 };
 ```
 
+_Janet_
+
 ```janet nogolf
 (cond true(print"a")true(print"b"))
 ```
+
+_Javascript_
 
 ```js nogolf
 if(true)print`a`else if(true)print`b`
 ```
 
+_Nim_
+
 ```nim nogolf
 if true:echo("a")elif true:echo("b")
 ```
+
+_Python_
 
 ```py nogolf
 if 1:print("a")
@@ -41,17 +49,25 @@ if true {
 };
 ```
 
+_Janet_
+
 ```janet nogolf
 (cond true(print"a")true(print"b")(print"c"))
 ```
+
+_Javascript_
 
 ```js nogolf
 if(true)print`a`else if(true)print`b`else print`c`
 ```
 
+_Nim_
+
 ```nim nogolf
 if true:echo("a")elif true:echo("b")else:echo("c")
 ```
+
+_Python_
 
 ```py nogolf
 if 1:print("a")
