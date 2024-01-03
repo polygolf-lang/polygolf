@@ -266,7 +266,7 @@ c=j(["5","6"])
 for 10 (println "Hi");
 ```
 
-```py nogolf
+```py
 for _ in"X"*10:print("Hi")
 ```
 

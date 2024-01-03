@@ -44,7 +44,7 @@ import {
   forArgvToForEach,
   forRangeToForEach,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
@@ -83,7 +83,10 @@ import {
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
 import { charLength } from "../../common/strings";
-import { golfTextListLiteralIndex } from "./plugins";
+import {
+  golfTextListLiteralIndex,
+  indexlessForRangeToForAscii,
+} from "./plugins";
 import { safeConditionalOpToAt } from "../../plugins/conditions";
 
 const pythonLanguage: Language = {
@@ -118,7 +121,6 @@ const pythonLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      removeUnusedForVar,
       putcToPrintChar,
       mapOps({
         argv: () => builtin("sys.argv[1:]"),
@@ -153,7 +155,11 @@ const pythonLanguage: Language = {
         "at[Table]": 0,
       }),
     ),
-    simplegolf(golfTextListLiteralIndex),
+    simplegolf(
+      golfTextListLiteralIndex,
+      removeUnusedLoopVar,
+      indexlessForRangeToForAscii,
+    ),
     required(
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,

@@ -51,7 +51,7 @@ import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
@@ -99,7 +99,7 @@ const golfscriptLanguage: Language = {
       forArgvToForEach,
       putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
-      removeUnusedForVar,
+      removeUnusedLoopVar,
       forRangeToForDifferenceRange(
         (node, spine) =>
           !isSubtype(getType(node.collection.args[0], spine), integerType(0)),

@@ -383,7 +383,7 @@ export function forEachToForRange(node: Node) {
   }
 }
 
-export function removeUnusedForVar(node: Node, spine: Spine) {
+export function removeUnusedLoopVar(node: Node, spine: Spine) {
   if (node.kind === "ForEach" && node.variable !== undefined) {
     const variable = node.variable;
     if (!spine.getChild("body").someNode(isUserIdent(variable))) {

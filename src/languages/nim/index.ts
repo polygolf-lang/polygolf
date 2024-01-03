@@ -48,7 +48,7 @@ import {
   forRangeToForEach,
   rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
   shiftRangeOneUp,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
@@ -137,7 +137,7 @@ const nimLanguage: Language = {
       mapOps({
         "at[argv]": (a) => func("paramStr", succ(a)),
       }),
-      removeUnusedForVar,
+      removeUnusedLoopVar,
       rangeExclusiveToInclusive(true),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
