@@ -3,8 +3,6 @@ import {
   indexCall,
   methodCall as method,
   op,
-  listType,
-  textType,
   builtin,
   int,
   propertyCall as property,
@@ -129,6 +127,7 @@ const javascriptLanguage: Language = {
       putcToPrintChar,
     ),
     required(
+      useImplicitForEachChar("Ascii"),
       forRangeToForCLike,
       mapOpsTo.builtin({
         true: "true",
@@ -136,11 +135,7 @@ const javascriptLanguage: Language = {
         argv: "arguments",
       }),
       mapOps({
-        "at[argv]": (a) =>
-          op["at[List]"](
-            { ...builtin("arguments"), type: listType(textType()) },
-            a,
-          ),
+        "at[argv]": (a) => op["at[List]"](op.argv, a),
       }),
       mapMutationTo.index({
         "with_at[Array]": 0,
@@ -286,7 +281,7 @@ const javascriptLanguage: Language = {
       mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
     ),
-    simplegolf(addOneToManyAssignments(), useImplicitForEachChar("Ascii")),
+    simplegolf(addOneToManyAssignments()),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({

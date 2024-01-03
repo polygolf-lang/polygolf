@@ -68,7 +68,7 @@ TODO
 _Javascript_
 
 ```js nogolf
-t="asdfgh";
+t="asdfgh"
 for(x of t)print(x)
 ```
 
