@@ -1,6 +1,6 @@
 import { type TokenTree } from "../../common/Language";
 import { EmitError, emitTextFactory } from "../../common/emit";
-import { integerType, type IR, isInt, isSubtype, isOp } from "../../IR";
+import { integerType, type IR, isInt, isSubtype, isOp, int } from "../../IR";
 import { getType } from "../../common/getType";
 
 const emitGolfscriptText = emitTextFactory({
@@ -33,6 +33,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
         ];
       case "ForEach": {
         let collection: TokenTree;
+        let shift: TokenTree = [];
         if (
           isOp("range_incl", "range_excl", "range_diff_excl")(stmt.collection)
         ) {
@@ -51,6 +52,10 @@ export default function emitProgram(program: IR.Node): TokenTree {
               ",",
               isInt(1n)(c) ? [] : [emitNode(c), "%"],
             ];
+            shift =
+              isInt()(a) && a.value < 0n
+                ? [emitNode(int(-a.value)), "-"]
+                : [emitNode(a), "+"];
           } else throw new EmitError(stmt, "inclusive");
         } else {
           collection = emitNode(stmt.collection);
@@ -58,6 +63,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
         return [
           collection,
           "{",
+          shift,
           stmt.variable === undefined ? [] : [":", emitNode(stmt.variable)],
           ";",
           emitMultiNode(stmt.body, stmt),

@@ -176,7 +176,7 @@ for $x ($a..<$n $k) {
 _Golfscript_
 
 ```gs nogolf
--20:A;20:N;3:k;N A-,k%{:x;x"
+-20:A;20:N;3:k;N A-,k%{A+:x;x"
 "+}%
 ```
 
