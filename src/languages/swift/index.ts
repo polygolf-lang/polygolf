@@ -56,6 +56,7 @@ import {
   forArgvToForEach,
   rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import {
   usePrimaryTextOps,
@@ -312,6 +313,7 @@ const swiftLanguage: Language = {
         "at[Table]": 0,
       }),
       addImports({ Foundation: ["pow", "replacingOccurrences", "format"] }),
+      useImplicitForEachChar("codepoint"),
     ),
     simplegolf(
       alias({

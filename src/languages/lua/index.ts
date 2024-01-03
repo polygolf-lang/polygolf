@@ -92,10 +92,10 @@ const luaLanguage: Language = {
       decomposeIntLiteral(true, true, true),
     ),
     required(
-      atTextToListToAtText,
       pickAnyInt,
       forArgvToForRange(),
       forEachToForRange,
+      atTextToListToAtText,
       rangeExclusiveToInclusive(),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,

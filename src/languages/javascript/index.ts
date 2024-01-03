@@ -38,6 +38,7 @@ import {
   forArgvToForEach,
   forRangeToForCLike,
   forRangeToForEach,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
 import {
@@ -285,7 +286,7 @@ const javascriptLanguage: Language = {
       mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
     ),
-    simplegolf(addOneToManyAssignments()),
+    simplegolf(addOneToManyAssignments(), useImplicitForEachChar("Ascii")),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({

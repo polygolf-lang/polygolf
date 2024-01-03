@@ -395,7 +395,7 @@ export function removeUnusedLoopVar(node: Node, spine: Spine) {
   }
 }
 
-export function useImplicitForEachChar(char: "byte" | "codepoint") {
+export function useImplicitForEachChar(char: "byte" | "codepoint" | "Ascii") {
   return function useImplicitForEachChar(node: Node, spine: Spine) {
     if (
       isOp(`text_to_list[${char}]`)(node) &&

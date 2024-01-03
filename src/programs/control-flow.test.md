@@ -59,12 +59,6 @@ for[Ascii] $x $text {
 };
 ```
 
-Golfscript\_
-
-```gs nogolf
-TODO
-```
-
 _Janet_
 
 ```janet nogolf
@@ -101,7 +95,8 @@ for x in t:print(x)
 _Swift_
 
 ```swift nogolf
-TODO
+var t="asdfgh"
+for x in t{print(x)}
 ```
 
 ## Loop over a 1-step range
