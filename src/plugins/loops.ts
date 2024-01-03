@@ -27,6 +27,8 @@ import {
   type ForEach,
   isForRange,
   type Op,
+  type UnaryOpCode,
+  type BinaryOpCode,
 } from "../IR";
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
@@ -335,6 +337,49 @@ export function forRangeToForRangeOneStep(node: Node, spine: Spine) {
         ]),
       );
     }
+  }
+}
+
+export function forEachToForRange(node: Node) {
+  if (
+    node.kind === "ForEach" &&
+    node.variable !== undefined &&
+    !isOp("range_incl", "range_excl", "range_diff_excl")(node.collection)
+  ) {
+    const variable = id(node.variable.name + "+index");
+    if (
+      isOp(
+        "text_to_list[byte]",
+        "text_to_list[codepoint]",
+        "text_to_list[Ascii]",
+      )(node.collection)
+    ) {
+      return forEach(
+        variable,
+        op.range_excl(
+          int(0n),
+          op[node.collection.op.replace("text_to_list", "size") as UnaryOpCode](
+            node.collection.args[0],
+          ),
+          int(1n),
+        ),
+        block([
+          assignment(
+            node.variable,
+            op[
+              node.collection.op.replace("text_to_list", "at") as BinaryOpCode
+            ](node.collection, variable),
+          ),
+        ]),
+      );
+    }
+    return forEach(
+      variable,
+      op.range_excl(int(0n), op["size[List]"](node.collection), int(1n)),
+      block([
+        assignment(node.variable, op["at[List]"](node.collection, variable)),
+      ]),
+    );
   }
 }
 

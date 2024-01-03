@@ -52,7 +52,7 @@ while ($j < 11) {
 };
 ```
 
-## For each
+## For range to for each
 
 ```polygolf
 for $i 0 (size[List] $collection) {
@@ -130,26 +130,35 @@ for_each (id "i+each") (list 5 4 3 2 1) (
 );
 ```
 
-## For each pair
+## For each to for range
 
 ```polygolf
-for $i 0 (size[List] $collection) {
-  print_int $i;
-  print_int (list_get $collection $i);
+$collection <- (list "aaa" "bb" "cc");
+for $x $collection {
+  println $x;
 };
 ```
 
-```polygolf loops.forRangeToForEach("at[List]")
-for $i 0 (# $collection) {
-  print_int $i;
-  print_int (list_get $collection $i);
+```polygolf loops.forEachToForRange
+$collection <- (list "aaa" "bb" "cc");
+for $i (# $collection) {
+  $x <- ($collection @ $i);
+  println $x;
 };
 ```
 
-```polygolf loops.forRangeToForEachPair
-for_each_pair $i (id "i+each") $collection {
-  print_int $i;
-  print_int (id "i+each");
+```polygolf
+$text <- "abrakadabra";
+for $x $text {
+  println $x;
+};
+```
+
+```polygolf loops.forEachToForRange
+$text <- "abrakadabra";
+for $i (# $text) {
+  $x <- ($text @ $i);
+  println $x;
 };
 ```
 
