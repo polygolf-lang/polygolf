@@ -217,6 +217,8 @@ export function emitNodeWithoutAnnotation(
           : emitNode(expr.alternate, false, true)),
       );
 
+    case "Cast":
+      return emitSexpr("@", expr.expr);
     case "ImplicitConversion":
       return emitSexpr("@", text(expr.behavesLike), expr.expr);
     case "VarDeclaration":

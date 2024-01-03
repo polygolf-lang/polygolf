@@ -65,6 +65,7 @@ import {
   int as intNode,
   minArity,
   maxArity,
+  cast,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -299,6 +300,9 @@ export function sexpr(
   }
   if (!restrictedFrontend)
     switch (callee) {
+      case "cast":
+        expectArity(1);
+        return cast(args[0]);
       case "implicit_conversion":
         expectArity(2);
         return implicitConversion(asString(args[0]) as any, args[1]);

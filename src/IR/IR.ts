@@ -23,6 +23,7 @@ import {
   type ImplicitConversion,
   type PropertyCall,
   type Postfix,
+  Cast,
 } from "./exprs";
 import { type ForEach, type ForCLike, type While, type ForArgv } from "./loops";
 import {
@@ -95,7 +96,8 @@ export type Node =
   | Postfix
   | Import
   | ForCLike
-  | NamedArg;
+  | NamedArg
+  | Cast;
 
 export type NodeFuncRecord<Tout, Tin extends Node = Node> = Tin extends Node
   ? Record<Tin["kind"], (n: Tin, s: Spine<Tin>) => Tout>

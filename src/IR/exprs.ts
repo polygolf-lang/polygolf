@@ -38,6 +38,11 @@ export interface ImplicitConversion extends BaseNode {
   behavesLike: UnaryOpCode & `${string}_to_${string}`;
 }
 
+export interface Cast extends BaseNode {
+  readonly kind: "Cast";
+  expr: Node;
+}
+
 /**
  * All expressions start as a `Op` node.
  * This node is used to represent an abstract operation.
@@ -156,6 +161,10 @@ export function implicitConversion(
     expr,
     behavesLike,
   };
+}
+
+export function cast(expr: Node, targetType?: string): Cast {
+  return { kind: "Cast", expr, targetType };
 }
 
 export function keyValue(key: Node, value: Node): KeyValue {
