@@ -10,6 +10,7 @@ import {
   integerType,
   int,
   forEach,
+  asciiType,
 } from "../IR";
 import { expandVariants } from "./expandVariants";
 import {
@@ -632,11 +633,22 @@ function annotate<T extends Node | undefined>(
 export function typecheck(program: Node, everyNode = true): Node {
   const spine = programToSpine(program);
   return spine.withReplacer(function (node, spine) {
-    if (node.kind === "ForEach" && !isOp.range_excl(node.collection)) {
-      if (isSubtype(getType(node.collection, spine), integerType())) {
+    if (
+      node.kind === "ForEach" &&
+      !isOp("range_excl", "text_to_list[Ascii]")(node.collection)
+    ) {
+      const t = getType(node.collection, spine);
+      if (isSubtype(t, integerType())) {
         return forEach(
           node.variable,
           op.range_excl(int(0n), node.collection, int(1n)),
+          node.body,
+        );
+      }
+      if (isSubtype(t, asciiType)) {
+        return forEach(
+          node.variable,
+          op["text_to_list[Ascii]"](node.collection),
           node.body,
         );
       }
