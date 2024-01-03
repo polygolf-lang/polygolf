@@ -70,3 +70,13 @@ export function indexlessForRangeToForAscii(node: Node) {
     );
   }
 }
+
+export function useImplicitForCast(node: Node, spine: Spine) {
+  if (
+    node.kind === "Cast" &&
+    spine.parent?.node.kind === "ForEach" &&
+    spine.pathFragment === "collection"
+  ) {
+    return node.expr;
+  }
+}

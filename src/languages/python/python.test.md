@@ -361,3 +361,13 @@ for i in r(10):
  for j in r(i):print(j)
 for a in r(10):print(a)
 ```
+
+## Naked range
+
+```polygolf
+$r <- (10 ..< 40 2);
+```
+
+```py
+r=[*range(10,40,2)]
+```
