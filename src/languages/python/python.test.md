@@ -339,3 +339,25 @@ conditional true 3 4;
 ```python
 [4,3][1]
 ```
+
+## Aliasing range
+
+Range can now be aliased, yay!
+
+```polygolf
+for $i 10 {
+    for $j $i {
+        println $j;
+    };
+};
+for $a 10 {
+    println $a;
+};
+```
+
+```py
+r=range
+for i in r(10):
+ for j in r(i):print(j)
+for a in r(10):print(a)
+```
