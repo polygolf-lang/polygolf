@@ -109,10 +109,10 @@ describe("Bindings", () => {
   testNode(
     "for range general",
     id("i"),
-    int(-12, 12),
+    int(-10, 40),
 
     forRangeCommon(
-      ["i", e(int(-10, 10)), e(int(-12, 12)), e(int(1, 1)), true],
+      ["i", e(int(-10, 10)), e(int(20, 40)), e(int(1, 1)), true],
       empty,
     ),
   );

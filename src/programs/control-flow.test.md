@@ -31,10 +31,9 @@ for(x of l)print(x)
 
 _Lua_
 
-```lua nogolf
+```lua no:hardcode
 l={"aaa","bb","c"}
-for i=1,#l do
-print(l[i])end
+for x=1,#l do print(l[x])end
 ```
 
 _Nim_

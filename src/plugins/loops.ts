@@ -370,6 +370,7 @@ export function forEachToForRange(node: Node) {
               node.collection.op.replace("text_to_list", "at") as BinaryOpCode
             ](node.collection, variable),
           ),
+          node.body,
         ]),
       );
     }
@@ -378,6 +379,7 @@ export function forEachToForRange(node: Node) {
       op.range_excl(int(0n), op["size[List]"](node.collection), int(1n)),
       block([
         assignment(node.variable, op["at[List]"](node.collection, variable)),
+        node.body,
       ]),
     );
   }

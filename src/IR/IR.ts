@@ -8,21 +8,21 @@ import {
   type VarDeclarationBlock,
 } from "./assignments";
 import { type Array, type List, type Table, type Set } from "./collections";
-import {
-  type Op,
-  type Infix,
-  type ConditionalOp,
-  type FunctionCall,
-  type MethodCall,
-  type Prefix,
-  type IndexCall,
-  type KeyValue,
-  type RangeIndexCall,
-  type Function,
-  type NamedArg,
-  type ImplicitConversion,
-  type PropertyCall,
-  type Postfix,
+import type {
+  Op,
+  Infix,
+  ConditionalOp,
+  FunctionCall,
+  MethodCall,
+  Prefix,
+  IndexCall,
+  KeyValue,
+  RangeIndexCall,
+  Function,
+  NamedArg,
+  ImplicitConversion,
+  PropertyCall,
+  Postfix,
   Cast,
 } from "./exprs";
 import { type ForEach, type ForCLike, type While, type ForArgv } from "./loops";

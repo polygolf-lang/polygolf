@@ -76,9 +76,6 @@ function precedence(expr: IR.Node): number {
 
 function binaryPrecedence(opname: string): number {
   switch (opname) {
-    case "..<":
-    case "...":
-      return 7;
     case "<<":
     case ">>":
       return 6;
@@ -92,6 +89,9 @@ function binaryPrecedence(opname: string): number {
     case "|":
     case "^":
       return 4;
+    case "..<":
+    case "...":
+      return 3.5;
     case "<":
     case "<=":
     case "==":

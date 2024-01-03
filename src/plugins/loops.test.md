@@ -3,13 +3,13 @@
 ## For range to others
 
 ```polygolf
-for $i (0 ..< 10) {
+for $i (..< 10) {
   print_int $i;
 };
 ```
 
 ```polygolf loops.rangeExclusiveToInclusive()
-for $i (0 .. 9):(List 0..9) (
+for $i (.. 9):(List 0..9) (
   print_int $i
 );
 ```
@@ -141,8 +141,8 @@ for $x $collection {
 
 ```polygolf loops.forEachToForRange
 $collection <- (list "aaa" "bb" "cc");
-for $i (# $collection) {
-  $x <- ($collection @ $i);
+for (id "x+index") (# $collection) {
+  $x <- ($collection @ (id "x+index"));
   println $x;
 };
 ```
@@ -156,8 +156,8 @@ for $x $text {
 
 ```polygolf loops.forEachToForRange
 $text <- "abrakadabra";
-for $i (# $text) {
-  $x <- ($text @ $i);
+for (id "x+index") (# $text) {
+  $x <- ((text_to_list[Ascii] $text) @ (id "x+index"));
   println $x;
 };
 ```
