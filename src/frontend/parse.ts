@@ -370,6 +370,10 @@ export function sexpr(
       OpCodesUser.includes(opCode),
     );
   }
+  if (callee === "..") {
+    // We special case .. here for backwards compat.
+    matchingOpCodes.push("concat[List]", "concat[Text]", "append");
+  }
   if (matchingOpCodes.length < 1) {
     throw new PolygolfError(
       `Syntax error. Unrecognized builtin: ${callee}`,

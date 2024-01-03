@@ -69,6 +69,7 @@ const currentlyFinding = new WeakSet<Node>();
 export function getTypeAndResolveOpCode(
   expr: Node,
   context: Node | Spine,
+  addWarning = (x: Error) => {},
 ): TypeAndOpCode {
   const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
@@ -77,7 +78,7 @@ export function getTypeAndResolveOpCode(
 
   currentlyFinding.add(expr);
   try {
-    let t = calcTypeAndResolveOpCode(expr, program);
+    let t = calcTypeAndResolveOpCode(expr, program, addWarning);
     if ("kind" in t) t = { type: t };
     currentlyFinding.delete(expr);
     cachedType.set(expr, t);
@@ -90,6 +91,7 @@ export function getTypeAndResolveOpCode(
     throw e;
   }
 }
+
 export function getType(expr: Node, context: Node | Spine) {
   return getTypeAndResolveOpCode(expr, context).type;
 }
@@ -97,10 +99,11 @@ export function getType(expr: Node, context: Node | Spine) {
 export function calcTypeAndResolveOpCode(
   expr: Node,
   program: Node,
+  addWarning = (x: Error) => {},
 ): Type | TypeAndOpCode {
   // Resolve unresolved ops
   if (expr.kind === "Op" && !isOpCode(expr.op)) {
-    const inferred = getUnresolvedOpCodeType(expr, program);
+    const inferred = resolveUnresolvedOpCode(expr, program, addWarning);
     return { type: expr.type ?? inferred.type, opCode: inferred.opCode };
   }
   // user-annotated node
@@ -687,8 +690,18 @@ function getOpCodeType(expr: Op, program: Node): Type {
   return getOpCodeTypeFromTypes(expr.op, got);
 }
 
-function getUnresolvedOpCodeType(expr: Op, program: Node): TypeAndOpCode {
-  const arityMatchingOpCodes = OpCodeFrontNamesToOpCodes[expr.op].filter(
+function resolveUnresolvedOpCode(
+  expr: Op,
+  program: Node,
+  addWarning = (x: Error) => {},
+): TypeAndOpCode {
+  const matchingOpCodes = OpCodeFrontNamesToOpCodes[expr.op];
+  const legacyDotDot: OpCode[] = ["concat[List]", "concat[Text]", "append"];
+  if (expr.op === (".." as any)) {
+    // we special case .. here for backwards compat
+    matchingOpCodes.push(...legacyDotDot);
+  }
+  const arityMatchingOpCodes = matchingOpCodes.filter(
     (opCode) =>
       minArity(opCode) <= expr.args.length &&
       expr.args.length <= maxArity(opCode),
@@ -715,6 +728,13 @@ function getUnresolvedOpCodeType(expr: Op, program: Node): TypeAndOpCode {
     );
   }
 
+  if (expr.op === (".." as any) && legacyDotDot.includes(opCode)) {
+    addWarning(
+      new PolygolfError(
+        `Deprecated alias .. used. Use ${opCode} or + instead.`,
+      ),
+    );
+  }
   const got = opArgsWithDefaults(opCode, expr.args).map((x) =>
     getType(x, program),
   );
