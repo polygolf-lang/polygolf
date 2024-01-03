@@ -124,6 +124,11 @@ export default function emitProgram(
     const prec = precedence(expr);
     function emitNoParens(e: IR.Node): TokenTree {
       switch (e.kind) {
+        case "Cast":
+          if (e.targetType === "list") {
+            return ["[*", emit(e.expr), "]"];
+          }
+          throw new EmitError(e, "unsuported cast target type");
         case "Block":
           return emitMultiNode(expr);
         case "Import":

@@ -234,6 +234,7 @@ ord[Ascii] "g";
 ord_at[Ascii] "ijk" 1;
 size[Ascii] $t;
 char[Ascii] 99;
+text_to_list $t;
 ```
 
 ```py nogolf
@@ -243,6 +244,7 @@ ord("g")
 ord("ijk"[1])
 len(t)
 chr(99)
+[*t]
 ```
 
 ## Aliasing partially applied methods
