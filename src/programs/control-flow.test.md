@@ -9,13 +9,6 @@ for $x $list {
 };
 ```
 
-_Golfscript_
-
-```gs nogolf
-["aaa""bb""c"]:l;l{:x;x"
-"+}%
-```
-
 _Janet_
 
 ```janet nogolf
@@ -102,7 +95,7 @@ _Python_
 
 ```py nogolf
 t="asdfgh"
-for x in t:echo(x)
+for x in t:print(x)
 ```
 
 _Swift_

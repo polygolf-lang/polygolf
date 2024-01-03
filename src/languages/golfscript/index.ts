@@ -70,6 +70,7 @@ import {
   textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
   startsWithEndsWithToSliceEquality,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
 
@@ -118,6 +119,7 @@ const golfscriptLanguage: Language = {
       }),
     ),
     required(
+      atTextToListToAtText,
       mapOps({
         "at[argv]": (a) => op["at[List]"](op.argv, a),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),

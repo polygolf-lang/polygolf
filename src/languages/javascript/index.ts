@@ -50,6 +50,7 @@ import {
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import {
+  atTextToListToAtText,
   replaceToSplitAndJoin,
   textGetToIntToTextGet,
   textToIntToFirstIndexTextGetToInt,
@@ -100,6 +101,7 @@ const javascriptLanguage: Language = {
       forRangeToForEachKey,
     ),
     required(
+      atTextToListToAtText,
       pickAnyInt,
       floodBigints("int53", {
         Assignment: "bigint",

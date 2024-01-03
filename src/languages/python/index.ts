@@ -18,6 +18,7 @@ import {
   infix,
   list,
   intToDecOpOrText,
+  cast,
 } from "../../IR";
 import {
   type Language,
@@ -45,6 +46,7 @@ import {
   forRangeToForEach,
   forRangeToForRangeOneStep,
   removeUnusedLoopVar,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
@@ -64,6 +66,7 @@ import {
   usePrimaryTextOps,
   useMultireplace,
   startsWithEndsWithToSliceEquality,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
@@ -161,6 +164,7 @@ const pythonLanguage: Language = {
       indexlessForRangeToForAscii,
     ),
     required(
+      atTextToListToAtText,
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps({
@@ -350,6 +354,8 @@ const pythonLanguage: Language = {
       mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
       addOneToManyAssignments(),
+      useImplicitForEachChar("codepoint"),
+      mapOps({ "text_to_list[codepoint]": (x) => cast(x, "list") }),
     ),
     simplegolf(
       alias({

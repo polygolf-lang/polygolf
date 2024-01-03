@@ -29,6 +29,7 @@ import {
   type Op,
   type UnaryOpCode,
   type BinaryOpCode,
+  implicitConversion,
 } from "../IR";
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
@@ -392,4 +393,16 @@ export function removeUnusedLoopVar(node: Node, spine: Spine) {
       return forEach(undefined, node.collection, node.body);
     }
   }
+}
+
+export function useImplicitForEachChar(char: "byte" | "codepoint") {
+  return function useImplicitForEachChar(node: Node, spine: Spine) {
+    if (
+      isOp(`text_to_list[${char}]`)(node) &&
+      spine.parent?.node.kind === "ForEach" &&
+      spine.pathFragment === "collection"
+    ) {
+      return implicitConversion(node.op, node.args[0]);
+    }
+  };
 }

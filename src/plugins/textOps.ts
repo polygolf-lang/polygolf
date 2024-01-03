@@ -1,4 +1,12 @@
-import { isOp, isText, op, int, isOpCode } from "../IR";
+import {
+  isOp,
+  isText,
+  op,
+  int,
+  isOpCode,
+  type BinaryOpCode,
+  type Node,
+} from "../IR";
 import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";
 import { charLength } from "../common/strings";
@@ -47,6 +55,24 @@ export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps({
   "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
   "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
 });
+
+export function atTextToListToAtText(node: Node) {
+  if (
+    isOp("at[List]", "at_back[List]")(node) &&
+    isOp(
+      "text_to_list[Ascii]",
+      "text_to_list[byte]",
+      "text_to_list[codepoint]",
+    )(node.args[0])
+  ) {
+    return op[
+      node.args[0].op.replace(
+        "text_to_list",
+        node.op.replace("[List]", ""),
+      ) as BinaryOpCode
+    ](...node.args);
+  }
+}
 
 /**
  * Converts nested text_replace to a text_multireplace provided the arguments are

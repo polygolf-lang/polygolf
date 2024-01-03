@@ -61,6 +61,7 @@ import {
   usePrimaryTextOps,
   textToIntToTextGetToInt,
   replaceToSplitAndJoin,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
@@ -108,6 +109,7 @@ const swiftLanguage: Language = {
       decomposeIntLiteral(),
     ),
     required(
+      atTextToListToAtText,
       mapBackwardsIndexToForwards({
         "at_back[Ascii]": "size[Ascii]",
         "at_back[byte]": "size[byte]",

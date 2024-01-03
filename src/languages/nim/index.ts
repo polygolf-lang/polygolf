@@ -50,6 +50,7 @@ import {
   forRangeToForRangeOneStep,
   removeUnusedLoopVar,
   shiftRangeOneUp,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
@@ -70,6 +71,7 @@ import {
   usePrimaryTextOps,
   useMultireplace,
   startsWithEndsWithToSliceEquality,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -131,6 +133,7 @@ const nimLanguage: Language = {
     ),
     simplegolf(safeConditionalOpToAt("Array")),
     required(
+      atTextToListToAtText,
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
@@ -311,6 +314,8 @@ const nimLanguage: Language = {
       assertInt64,
       removeImplicitConversions,
       removeSystemNamespace,
+      useImplicitForEachChar("byte"),
+      removeImplicitConversions,
     ),
     search(useUFCS),
   ],

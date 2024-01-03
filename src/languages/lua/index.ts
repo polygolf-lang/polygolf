@@ -44,6 +44,7 @@ import {
   mergePrint,
 } from "../../plugins/print";
 import {
+  atTextToListToAtText,
   startsWithEndsWithToSliceEquality,
   textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
@@ -91,6 +92,7 @@ const luaLanguage: Language = {
       decomposeIntLiteral(true, true, true),
     ),
     required(
+      atTextToListToAtText,
       pickAnyInt,
       forArgvToForRange(),
       forEachToForRange,

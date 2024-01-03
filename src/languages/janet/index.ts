@@ -35,7 +35,7 @@ import {
   golfLastPrintInt,
   putcToPrintChar,
 } from "../../plugins/print";
-import { usePrimaryTextOps } from "../../plugins/textOps";
+import { atTextToListToAtText, usePrimaryTextOps } from "../../plugins/textOps";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   applyDeMorgans,
@@ -93,6 +93,7 @@ const janetLanguage: Language = {
     ),
     simplegolf(implicitlyConvertConcatArg),
     required(
+      atTextToListToAtText,
       mapOps({
         argv: () => func("slice", func("dyn", builtin(":args")), int(1n)),
 
