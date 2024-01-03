@@ -19,8 +19,6 @@ describe("Restricted nodes: parse - emit match", () => {
     `import "name" "x" "y";`,
     `for $i $e $body;`,
     `for $e $body;`,
-    `for_each_key $x $col $body;`,
-    `for_each_pair $k $v $col $body;`,
     `for_c_like $i $c $a $body;`,
     `named_arg "name" $x;`,
     `1:1..1:"int";`,

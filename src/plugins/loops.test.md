@@ -9,7 +9,7 @@ for $i (0 ..< 10) {
 ```
 
 ```polygolf loops.rangeExclusiveToInclusive()
-for $i (0 .. 9) (
+for $i (0 .. 9):(List 0..9) (
   print_int $i
 );
 ```
@@ -194,10 +194,10 @@ for (id "x+index") 0 argc {
 
 ```polygolf
 for $i 0 80 {
-  println_int ($i + 1);
-  println_int (1 + $i);
+  println_int (add $i 1);
+  println_int (add 1 $i);
   println_int (3 * $i);
-  println_int ($i + 2);
+  println_int (add $i 2);
   println_int ($i - 1);
   println_int ($i - 2);
   println_int (1 - $i);
@@ -210,7 +210,7 @@ for (id "i+shift") 1 81 {
   println_int (id "i+shift");
   println_int (id "i+shift");
   println_int (3 * ((id "i+shift") - 1));
-  println_int ((id "i+shift") + 1);
+  println_int (add (id "i+shift") 1);
   println_int ((id "i+shift") - 2);
   println_int ((id "i+shift") - 3);
   println_int (2 - (id "i+shift"));

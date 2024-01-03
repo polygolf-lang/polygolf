@@ -63,7 +63,7 @@ describe("Parse s-expressions", () => {
     functionCall(id("f"), id("x"), id("y")),
   );
   expectExprParse("add", "(add $x $y)", op.add(id("x"), id("y")));
-  expectExprParse("add infix", "($x + $y)", op.add(id("x"), id("y")));
+  expectExprParse("mul infix", "($x * $y)", op.mul(id("x"), id("y")));
   expectExprParse("mod infix", "($x mod $y)", op.mod(id("x"), id("y")));
   expectExprParse("or", "(or $x $y)", op.or(id("x"), id("y")));
   expectExprParse("println[Text]", "(println[Text] $x)", print(id("x"), true));
