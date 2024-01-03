@@ -485,19 +485,19 @@ export type CommutativeOpCode = OpCode<{ commutes: true }>;
 export type ConversionOpCode = UnaryOpCode & `${string}_${string}`;
 
 export function isNullary(op: OpCode): op is NullaryOpCode {
-  return arity(op) === 0;
+  return maxArity(op) === 0;
 }
 export function isUnary(op: OpCode): op is UnaryOpCode {
-  return arity(op) === 1;
+  return maxArity(op) === 1;
 }
 export function isBinary(op: OpCode): op is BinaryOpCode {
-  return arity(op) === 2;
+  return maxArity(op) === 2;
 }
 export function isTernary(op: OpCode): op is TernaryOpCode {
-  return arity(op) === 3;
+  return maxArity(op) === 3;
 }
 export function isVariadic(op: OpCode): op is VariadicOpCode {
-  return arity(op) === -1;
+  return maxArity(op) === Infinity;
 }
 export function isAssociative(op: OpCode): op is AssociativeOpCode {
   return (opCodeDefinitions[op] as any)?.assoc === true;
@@ -551,25 +551,20 @@ export function userName(opCode: OpCode) {
 }
 
 /**
- * Returns parity of an op, -1 denotes variadic.
+ * Returns maximum arity of an op.
  */
-export function arity(op: OpCode): number {
-  try {
-    const args = opCodeDefinitions[op].args;
-    if (args.length > 0 && "rest" in args.at(-1)!) return -1;
-    return args.length;
-  } catch (e) {
-    console.log("arity of", op);
-    throw e;
-  }
+export function maxArity(op: OpCode): number {
+  const args = opCodeDefinitions[op].args;
+  if (args.length > 0 && "rest" in args.at(-1)!) return Infinity;
+  return args.length;
 }
 
-export function matchesOpCodeArity(op: OpCode, arity: number) {
-  const expectedTypes = opCodeDefinitions[op].args;
-  if (expectedTypes.length > 0 && "rest" in expectedTypes.at(-1)!) {
-    return arity >= expectedTypes.length - 1;
-  }
-  return expectedTypes.length === arity;
+export function minArity(op: OpCode): number {
+  const args = opCodeDefinitions[op].args;
+  if (maxArity(op) === Infinity) return args.length - 1;
+  return (
+    args.length - (defaults[op] ?? []).filter((x) => x !== undefined).length
+  );
 }
 
 /**

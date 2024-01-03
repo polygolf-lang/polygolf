@@ -45,3 +45,28 @@ export function mapObjectValues<T1 extends string, T2, T3>(
     Object.entries(obj).map(([k, v]) => [k as T1, f(v as T2, k as T1)]),
   );
 }
+
+export function useDefaults<T>(
+  targetArity: number,
+  defaults: readonly (T | undefined)[],
+  args: readonly T[],
+): T[] {
+  const res: T[] = new Array(targetArity).fill(undefined);
+  let actualIndex = 0;
+  let howManyDefaultsToOverride =
+    defaults.filter((x) => x !== undefined).length -
+    (targetArity - args.length);
+  for (let resultIndex = 0; resultIndex < res.length; resultIndex++) {
+    if (defaults[resultIndex] === undefined) {
+      res[resultIndex] = args[actualIndex++];
+    } else {
+      if (howManyDefaultsToOverride > 0) {
+        howManyDefaultsToOverride--;
+        res[resultIndex] = args[actualIndex++];
+      } else {
+        res[resultIndex] = defaults[resultIndex]!;
+      }
+    }
+  }
+  return res;
+}

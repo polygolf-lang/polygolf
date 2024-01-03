@@ -19,7 +19,6 @@ import {
   type OpCode,
   type KeyValueType,
   keyValueType,
-  getArgs,
   functionType,
   type IntegerBound,
   max,
@@ -50,6 +49,9 @@ import {
   type Rest,
   lengthToArrayIndexType,
   isOpCode,
+  opArgsWithDefaults,
+  minArity,
+  maxArity,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -96,11 +98,13 @@ export function calcTypeAndResolveOpCode(
   expr: Node,
   program: Node,
 ): Type | TypeAndOpCode {
+  // Resolve unresolved ops
+  if (expr.kind === "Op" && !isOpCode(expr.op)) {
+    const inferred = getUnresolvedOpCodeType(expr, program);
+    return { type: expr.type ?? inferred.type, opCode: inferred.opCode };
+  }
   // user-annotated node
   if (expr.type !== undefined) {
-    if (expr.kind === "Op" && !isOpCode(expr.op)) {
-      return { type: expr.type, opCode: getOpCodeType(expr, program).opCode };
-    }
     return expr.type;
   }
   // type inference
@@ -229,7 +233,7 @@ export function calcTypeAndResolveOpCode(
     case "ForEach":
       return voidType;
     case "ImplicitConversion": {
-      return type(op.unsafe(expr.behavesLike, expr.expr));
+      return type(op[expr.behavesLike](expr.expr));
     }
   }
   throw new Error(`Type error. Unexpected node ${stringify(expr)}.`);
@@ -667,21 +671,53 @@ export function getOpCodeTypeFromTypes(
   }
 }
 
-function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
-  const got = getArgs(expr).map((x) => getType(x, program));
-  const opCodes = OpCodeFrontNamesToOpCodes[expr.op];
+function getOpCodeType(expr: Op, program: Node): Type {
+  const got = expr.args.map((x) => getType(x, program));
 
-  const opCode = opCodes.find((opCode) =>
-    isTypeMatch(got, opCodeDefinitions[opCode].args),
+  if (!isTypeMatch(got, opCodeDefinitions[expr.op].args)) {
+    throw new Error(
+      `Type error. Operator '${
+        expr.op
+      }' type error. Expected ${expectedTypesAsStrings(expr.op).join(
+        ", ",
+      )} but got [${got.map(toString).join(", ")}].`,
+    );
+  }
+
+  return getOpCodeTypeFromTypes(expr.op, got);
+}
+
+function getUnresolvedOpCodeType(expr: Op, program: Node): TypeAndOpCode {
+  const arityMatchingOpCodes = OpCodeFrontNamesToOpCodes[expr.op].filter(
+    (opCode) =>
+      minArity(opCode) <= expr.args.length &&
+      expr.args.length <= maxArity(opCode),
   );
+
+  const opCode = arityMatchingOpCodes
+    .filter((opCode) => minArity(opCode))
+    .find((opCode) =>
+      isTypeMatch(
+        opArgsWithDefaults(opCode, expr.args).map((x) => getType(x, program)),
+        opCodeDefinitions[opCode].args,
+      ),
+    );
 
   if (opCode === undefined) {
     throw new Error(
-      `Type error. Operator '${expr.op}' type error. Expected ${opCodes
-        .map((x) => expectedTypesAsStrings(x))
-        .join(" or ")} but got [${got.map(toString).join(", ")}].`,
+      `Type error. Operator '${
+        expr.op
+      }' type error. Expected ${arityMatchingOpCodes
+        .map((x) => expectedTypesAsStrings(x).join(", "))
+        .join(" or ")} but got [${expr.args
+        .map((x) => toString(getType(x, program)))
+        .join(", ")}].`,
     );
   }
+
+  const got = opArgsWithDefaults(opCode, expr.args).map((x) =>
+    getType(x, program),
+  );
 
   return { type: getOpCodeTypeFromTypes(opCode, got), opCode };
 }

@@ -59,17 +59,35 @@ import {
   OpCodesUser,
   OpCodeFrontNamesToOpCodes,
   OpCodeFrontNames,
-  opCodeDefinitions,
-  matchesOpCodeArity,
   userName,
   isOpCode,
   lengthToArrayIndexType,
   int as intNode,
+  minArity,
+  maxArity,
 } from "../IR";
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
 let warnings: Error[] = [];
+
+/**
+ * Returns a distinct union of ranges.
+ *
+ */
+function normalizeRangeUnion(ranges: [number, number][]): [number, number][] {
+  if (ranges.length < 1) return [];
+  ranges.sort((a, b) => b[0] - a[0]);
+  const res: [number, number][] = [ranges[0]];
+  for (const [a, b] of ranges.slice(1)) {
+    if (a > res.at(-1)![1]) {
+      res.push([a, b]);
+    } else if (b > res.at(-1)![1]) {
+      res.at(-1)![1] = b;
+    }
+  }
+  return res;
+}
 
 export function sexpr(
   calleeIdent: Identifier,
@@ -253,7 +271,7 @@ export function sexpr(
       assertIdentifier(variable);
       return forEach(
         variable,
-        op.unsafe(callee.replace("for", "text_to_list") as OpCode, text),
+        op.unsafe(callee.replace("for", "text_to_list") as OpCode)(text),
         body,
       );
     }
@@ -359,18 +377,20 @@ export function sexpr(
     );
   }
 
-  const arityMatchingOpCodes = matchingOpCodes.filter((opCode) =>
-    matchesOpCodeArity(opCode, args.length),
+  const arityMatchingOpCodes = matchingOpCodes.filter(
+    (opCode) =>
+      minArity(opCode) <= args.length && args.length <= maxArity(opCode),
   );
   if (arityMatchingOpCodes.length < 1) {
+    const expectedArities = normalizeRangeUnion(
+      matchingOpCodes.map((opCode) => [minArity(opCode), maxArity(opCode)]),
+    );
     throw new PolygolfError(
       `Syntax error. Invalid argument count in application of ${callee}: ` +
-        `Expected ${matchingOpCodes
-          .map((opCode) => opCodeDefinitions[opCode].args)
-          .map((args) =>
-            args.length > 0 && "rest" in args.at(-1)!
-              ? `${args.length - 1}..oo`
-              : `${args.length}`,
+        `Expected ${expectedArities
+          .map(
+            ([x, y]) =>
+              `${x}${y === x ? "" : ".." + (y === Infinity ? "oo" : y)}`,
           )
           .join(", ")} but got ${args.length}.`,
       calleeIdent.source,
@@ -380,10 +400,10 @@ export function sexpr(
   if (arityMatchingOpCodes.length > 1) {
     // Hack! We temporarily assign the front name to the opCode field.
     // It will be resolved during typecheck.
-    return op.unsafe(callee as OpCode, ...args);
+    return op.unsafe(callee as OpCode)(...args);
   }
 
-  return op.unsafe(arityMatchingOpCodes[0], ...args);
+  return op.unsafe(arityMatchingOpCodes[0], true)(...args);
 }
 
 function intValue(x: string): bigint {

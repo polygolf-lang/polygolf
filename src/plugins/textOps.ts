@@ -12,7 +12,7 @@ export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
       if (!isOp()(node) || !node.op.includes("[Ascii]")) return;
       const replacement = node.op.replace("[Ascii]", `[${char}]`);
       if (isOpCode(replacement)) {
-        return op.unsafe(replacement, ...node.args);
+        return op.unsafe(replacement)(...node.args);
       }
     },
   };
@@ -79,7 +79,7 @@ export function useMultireplace(singleCharInputsOnly = false): PluginVisitor {
           ![...bInSet].some((x) => aOutSet.has(x)) &&
           ![...aInSet].some((x) => bOutSet.has(x))
         ) {
-          return op.unsafe("text_multireplace", ...node.args[0].args, ...b);
+          return op.unsafe("text_multireplace")(...node.args[0].args, ...b);
         }
       }
     }

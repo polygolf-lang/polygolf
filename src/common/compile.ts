@@ -656,7 +656,7 @@ export function typecheck(program: Node, everyNode = true): Node {
     if (everyNode || (node.kind === "Op" && !isOpCode(node.op))) {
       const t = getTypeAndResolveOpCode(node, spine);
       if (isOp()(node) && t.opCode !== undefined) {
-        return op.unsafe(t.opCode, ...node.args);
+        return op.unsafe(t.opCode, true)(...node.args);
       }
     }
   }).node;

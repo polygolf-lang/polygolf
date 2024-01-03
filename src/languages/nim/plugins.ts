@@ -105,8 +105,7 @@ export function useBackwardsIndex(node: Node, spine: Spine) {
     isOp()(node) &&
     (node.op.includes("at_back") || node.op.includes("slice_back"))
   ) {
-    return op.unsafe(
-      node.op,
+    return op.unsafe(node.op)(
       ...replaceAtIndex(
         node.args,
         1,

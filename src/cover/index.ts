@@ -204,8 +204,7 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
                 const variable = { ...id(undefined, true), type: types[0] };
                 return assignment(
                   variable,
-                  op.unsafe(
-                    opCode,
+                  op.unsafe(opCode)(
                     ...types.map((x, i) => (i < 1 ? variable : lang.expr(x))),
                   ),
                 );
@@ -215,8 +214,7 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
               opCode,
               (lang) =>
                 lang.stmt(
-                  op.unsafe(
-                    opCode,
+                  op.unsafe(opCode)(
                     ...getInstantiatedOpCodeArgTypes(opCode).map(lang.expr),
                   ),
                 ),
@@ -237,8 +235,7 @@ if (options.all === true) {
           opCode,
           (lang) =>
             lang.stmt(
-              op.unsafe(
-                opCode,
+              op.unsafe(opCode)(
                 ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
                   lang.expr(x),
                 ),

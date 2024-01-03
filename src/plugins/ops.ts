@@ -245,8 +245,7 @@ export const mapBackwardsIndexToForwards = mapOpsUsing<
   OpCode & `${string}${"at" | "slice"}_back${string}`
 >((arg, opArgs, opCode) => {
   const newOpCode = opCode.replaceAll("_back", "") as OpCode;
-  return op.unsafe(
-    newOpCode,
+  return op.unsafe(newOpCode)(
     ...(arg === 0
       ? opArgs
       : replaceAtIndex(opArgs, 1, op.add(opArgs[1], op[arg](opArgs[0])))),
@@ -314,7 +313,7 @@ export function mapMutationUsing<
             ) {
               return mapper(
                 opMap["sub" as TOpCode] as Targ,
-                [node.variable, op.neg(op.unsafe(opCode, ...newArgs))],
+                [node.variable, op.neg(op.unsafe(opCode)(...newArgs))],
                 opCode,
                 spine,
                 context,
@@ -326,7 +325,7 @@ export function mapMutationUsing<
                 [
                   node.variable,
                   ...(keepRestAsOp && newArgs.length > 1
-                    ? [op.unsafe(opCode, ...newArgs)]
+                    ? [op.unsafe(opCode)(...newArgs)]
                     : newArgs),
                 ],
                 opCode,
@@ -374,8 +373,7 @@ export const mapMutationTo = {
 export function flipBinaryOps(node: Node) {
   if (isOp(...BinaryOpCodes)(node)) {
     if (node.op in flippedOpCode) {
-      return op.unsafe(
-        flippedOpCode[node.op as keyof typeof flippedOpCode],
+      return op.unsafe(flippedOpCode[node.op as keyof typeof flippedOpCode])(
         node.args[1],
         node.args[0],
       );
