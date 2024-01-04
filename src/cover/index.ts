@@ -215,7 +215,13 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
               (lang) =>
                 lang.stmt(
                   op.unsafe(opCode)(
-                    ...getInstantiatedOpCodeArgTypes(opCode).map(lang.expr),
+                    ...getInstantiatedOpCodeArgTypes(opCode).map((t, i) =>
+                      lang.expr(
+                        opCode === "range_excl" && i === 1
+                          ? integerType(10, 10)
+                          : t,
+                      ),
+                    ),
                   ),
                 ),
             ],
