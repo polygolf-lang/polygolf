@@ -1,5 +1,5 @@
 import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
-import { isInt, type IR, isForRange, type Node } from "../../IR";
+import { isInt, type IR, isForEachRange, type Node } from "../../IR";
 import { type TokenTree } from "../../common/Language";
 
 const emitJanetText = emitTextFactory({
@@ -41,7 +41,7 @@ export default function emitProgram(program: IR.Node): TokenTree {
       case "While":
         return list("while", e.condition, multiNode(e.body));
       case "ForEach":
-        if (isForRange(e)) {
+        if (isForEachRange(e)) {
           const [low, high, step] = e.collection.args;
           return isInt(1n)(step)
             ? list("for", e.variable ?? "_", low, high, multiNode(e.body))

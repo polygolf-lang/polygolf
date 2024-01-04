@@ -47,3 +47,13 @@ $a <- (@0);
 $b <- (@1);
 (slice_back[codepoint] $a (- (size[codepoint] $b)) (size[codepoint] $b)) == $b;
 ```
+
+## atTextToListToAtText
+
+```polygolf
+at[List] (text_to_list[Ascii] $text) $i;
+```
+
+```polygolf textOps.atTextToListToAtText
+at[Ascii] $text $i;
+```

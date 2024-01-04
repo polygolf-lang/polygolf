@@ -25,11 +25,12 @@ import {
   isIdent,
   isUserIdent,
   type ForEach,
-  isForRange,
+  isForEachRange,
   type Op,
   type UnaryOpCode,
   type BinaryOpCode,
   implicitConversion,
+  isForEachChar,
 } from "../IR";
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
@@ -43,7 +44,7 @@ export function rangeExclusiveToInclusive(skip1Step = false): Plugin {
 }
 
 export function forRangeToWhile(node: Node, spine: Spine) {
-  if (isForRange(node) && node.variable !== undefined) {
+  if (isForEachRange(node) && node.variable !== undefined) {
     const [start, end, step] = node.collection.args;
     const low = getType(start, spine);
     const high = getType(end, spine);
@@ -65,7 +66,7 @@ export function forRangeToWhile(node: Node, spine: Spine) {
 }
 
 export function forRangeToForCLike(node: Node, spine: Spine) {
-  if (isForRange(node)) {
+  if (isForEachRange(node)) {
     const [start, end, step] = node.collection.args;
     const low = getType(start, spine);
     const high = getType(end, spine);
@@ -105,7 +106,7 @@ export function forRangeToForEach(...ops: GetOp[]): PluginVisitor {
   ]);
   return function forRangeToForEach(node, spine) {
     if (
-      isForRange(node) &&
+      isForEachRange(node) &&
       node.collection.op === "range_excl" &&
       node.variable !== undefined
     ) {
@@ -268,7 +269,7 @@ export function assertForArgvTopLevel(node: Node, spine: Spine) {
 }
 
 export function shiftRangeOneUp(node: Node, spine: Spine) {
-  if (isForRange(node) && node.variable !== undefined) {
+  if (isForEachRange(node) && node.variable !== undefined) {
     const [low, high, step] = node.collection.args;
     if (
       isInt(1n)(step) &&
@@ -303,7 +304,7 @@ export function forRangeToForDifferenceRange(
 ): PluginVisitor {
   return function forRangeToForDifferenceRange(node, spine) {
     if (
-      isForRange(node) &&
+      isForEachRange(node) &&
       node.collection.op === "range_excl" &&
       node.variable !== undefined &&
       transformPredicate(node as any, spine as any)
@@ -319,7 +320,7 @@ export function forRangeToForDifferenceRange(
 }
 
 export function forRangeToForRangeOneStep(node: Node, spine: Spine) {
-  if (isForRange(node) && node.variable !== undefined) {
+  if (isForEachRange(node) && node.variable !== undefined) {
     const [low, high, step] = node.collection.args;
     if (isSubtype(getType(step, spine), integerType(2n))) {
       const newVar = id(node.variable.name + "+1step");
@@ -348,13 +349,7 @@ export function forEachToForRange(node: Node) {
     !isOp("range_incl", "range_excl", "range_diff_excl")(node.collection)
   ) {
     const variable = id(node.variable.name + "+index");
-    if (
-      isOp(
-        "text_to_list[byte]",
-        "text_to_list[codepoint]",
-        "text_to_list[Ascii]",
-      )(node.collection)
-    ) {
+    if (isForEachChar(node)) {
       return forEach(
         variable,
         op.range_excl(
@@ -369,7 +364,7 @@ export function forEachToForRange(node: Node) {
             node.variable,
             op[
               node.collection.op.replace("text_to_list", "at") as BinaryOpCode
-            ](node.collection, variable),
+            ](node.collection.args[0], variable),
           ),
           node.body,
         ]),

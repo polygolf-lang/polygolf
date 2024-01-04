@@ -13,7 +13,7 @@ import {
   isOp,
   infix,
   functionCall,
-  isForRange,
+  isForEachRange,
   forEach,
   listType,
 } from "../../IR";
@@ -25,7 +25,7 @@ export function propertyCallToIndexCall(node: Node) {
 }
 
 export function forRangeToForEachKey(node: Node) {
-  if (isForRange(node) && node.variable !== undefined) {
+  if (isForEachRange(node) && node.variable !== undefined) {
     const [low, high, step] = node.collection.args;
     if (
       isInt(0n)(low) &&

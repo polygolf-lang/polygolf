@@ -62,7 +62,7 @@ for[Ascii] $x $text {
 _Janet_
 
 ```janet nogolf
-TODO
+(var t"asdfgh")(for x 0(length t)(var X(slice t x(+ 1 x)))(print X))
 ```
 
 _Javascript_
@@ -75,7 +75,15 @@ for(x of t)print(x)
 _Lua_
 
 ```lua nogolf
-TODO
+t="asdfgh"
+for x=0,t:len()-1 do X=t:sub(1+x,1+x)
+print(X)end
+```
+
+_Lua - golfed_
+
+```lua no:hardcode
+for x=1,6 do print(("asdfgh"):sub(x,x))end
 ```
 
 _Nim_

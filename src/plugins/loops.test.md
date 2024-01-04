@@ -142,7 +142,7 @@ for $x $collection {
 ```polygolf loops.forEachToForRange
 $collection <- (list "aaa" "bb" "cc");
 for (id "x+index") (# $collection) {
-  $x <- ($collection @ (id "x+index"));
+  $x <- (at[List] $collection (id "x+index"));
   println $x;
 };
 ```
@@ -157,7 +157,7 @@ for $x $text {
 ```polygolf loops.forEachToForRange
 $text <- "abrakadabra";
 for (id "x+index") (# $text) {
-  $x <- ((text_to_list[Ascii] $text) @ (id "x+index"));
+  $x <- (at[Ascii] $text (id "x+index"));
   println $x;
 };
 ```

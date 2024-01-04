@@ -70,7 +70,7 @@ export function atTextToListToAtText(node: Node) {
         "text_to_list",
         node.op.replace("[List]", ""),
       ) as BinaryOpCode
-    ](...node.args);
+    ](node.args[0].args[0], node.args[1]);
   }
 }
 
