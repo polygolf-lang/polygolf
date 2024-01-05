@@ -65,24 +65,31 @@ export const opCodeDefinitions = {
   bit_count: { args: [int(0)], front: true },
 
   // Input
-  "read[codepoint]": { args: [] },
-  "read[byte]": { args: [] },
-  "read[Int]": { args: [] },
-  "read[line]": { args: [], front: true },
-  "at[argv]": { args: [int(0)], front: "@" },
+  read: {
+    codepoint: { args: [] },
+    byte: { args: [] },
+    Int: { args: [] },
+    line: { args: [], front: true },
+  },
   argv: { args: [] },
   argc: { args: [] },
 
   // Output
-  "print[Text]": { args: [text()], front: "print" },
-  "print[Int]": { args: [int()], front: "print" },
-  "println[Text]": { args: [text()], front: "println" },
-  "println[Int]": { args: [int()], front: "println" },
+  print: {
+    Text: { args: [text()], front: "print" },
+    Int: { args: [text()], front: "print" },
+  },
+  println: {
+    Text: { args: [text()], front: "println" },
+    Int: { args: [text()], front: "println" },
+  },
   println_list_joined: { args: [list(text()), text()] },
   println_many_joined: { args: [text(), text(), rest(text())] },
-  "putc[byte]": { args: [int(0, 255)], front: true },
-  "putc[codepoint]": { args: [int(0, 0x10ffff)], front: true },
-  "putc[Ascii]": { args: [int(0, 127)], front: "putc" },
+  putc: {
+    byte: { args: [int(0, 255)], front: true },
+    codepoint: { args: [int(0, 0x10ffff)], front: true },
+    Ascii: { args: [int(0, 127)], front: "putc" },
+  },
 
   // Bool arithmetic
   or: { args: atLeast2(bool), front: true, assoc: true, commutes: true },
@@ -98,92 +105,135 @@ export const opCodeDefinitions = {
   leq: { args: [int(), int()], front: "<=" },
   geq: { args: [int(), int()], front: ">=" },
   gt: { args: [int(), int()], front: ">" },
-  "eq[Int]": { args: [int(), int()], front: "==", commutes: true },
-  "eq[Text]": { args: [text(), text()], front: "==", commutes: true },
-  "neq[Int]": { args: [int(), int()], front: "!=", commutes: true },
-  "neq[Text]": { args: [text(), text()], front: "!=", commutes: true },
+  eq: {
+    Int: { args: [int(), int()], front: "==", commutes: true },
+    Text: { args: [text(), text()], front: "==", commutes: true },
+  },
+  neq: {
+    Int: { args: [int(), int()], front: "!=", commutes: true },
+    Text: { args: [text(), text()], front: "!=", commutes: true },
+  },
 
   // Access members
-  "at[Array]": { args: [array(T1, T2), T2], front: "@" },
-  "at[List]": { args: [list(T1), int(0)], front: "@" },
-  "at_back[List]": { args: [list(T1), int("-oo", -1)], front: "@" },
-  "at[Table]": { args: [table(T1, T2), T1], front: "@" },
-  "at[Ascii]": { args: [ascii, int(0)], front: "@" },
-  "at_back[Ascii]": { args: [ascii, int("-oo", -1)], front: "@" },
-  "at[byte]": { args: [text(), int(0)], front: true },
-  "at_back[byte]": { args: [text(), int("-oo", -1)], front: true },
-  "at[codepoint]": { args: [text(), int(0)], front: true },
-  "at_back[codepoint]": { args: [text(), int("-oo", -1)], front: true },
-  "with_at[Array]": { args: [array(T1, T2), T2, T1], front: "@" },
-  "with_at[List]": { args: [list(T1), int(0), T1], front: "@" },
-  "with_at_back[List]": { args: [list(T1), int("-oo", -1), T1], front: "@" },
-  "with_at[Table]": { args: [table(T1, T2), T1, T2], front: "@" },
+  at: {
+    argv: { args: [int(0)], front: "@" },
+    Array: { args: [array(T1, T2), T2], front: "@" },
+    List: { args: [list(T1), int(0)], front: "@" },
+    Table: { args: [table(T1, T2), T1], front: "@" },
+    Ascii: { args: [ascii, int(0)], front: "@" },
+    byte: { args: [text(), int(0)], front: true },
+    codepoint: { args: [text(), int(0)], front: true },
+  },
+  at_back: {
+    List: { args: [list(T1), int("-oo", -1)], front: "@" },
+    Ascii: { args: [ascii, int("-oo", -1)], front: "@" },
+    byte: { args: [text(), int("-oo", -1)], front: true },
+    codepoint: { args: [text(), int("-oo", -1)], front: true },
+  },
+  with_at: {
+    Array: { args: [array(T1, T2), T2, T1], front: "@" },
+    List: { args: [list(T1), int(0), T1], front: "@" },
+    Table: { args: [table(T1, T2), T1, T2], front: "@" },
+  },
+  with_at_back: {
+    List: { args: [list(T1), int("-oo", -1), T1], front: "@" },
+  },
 
   // Slice
-  "slice[codepoint]": { args: [text(), int(0), int(0)], front: true },
-  "slice_back[codepoint]": {
-    args: [text(), int("-oo", -1), int(0)],
-    front: true,
+  slice: {
+    codepoint: { args: [text(), int(0), int(0)], front: true },
+    byte: { args: [text(), int(0), int(0)], front: true },
+    Ascii: { args: [ascii, int(0), int(0)], front: "slice" },
+    List: { args: [list(T1), int(0), int(0)], front: "slice" },
   },
-  "slice[byte]": { args: [text(), int(0), int(0)], front: true },
-  "slice_back[byte]": { args: [text(), int("-oo", -1), int(0)], front: true },
-  "slice[Ascii]": { args: [ascii, int(0), int(0)], front: "slice" },
-  "slice_back[Ascii]": {
-    args: [ascii, int("-oo", -1), int(0)],
-    front: "slice",
-  },
-  "slice[List]": { args: [list(T1), int(0), int(0)], front: "slice" },
-  "slice_back[List]": {
-    args: [list(T1), int("-oo", -1), int(0)],
-    front: "slice",
+  slice_back: {
+    codepoint: {
+      args: [text(), int("-oo", -1), int(0)],
+      front: true,
+    },
+    byte: { args: [text(), int("-oo", -1), int(0)], front: true },
+    Ascii: {
+      args: [ascii, int("-oo", -1), int(0)],
+      front: "slice",
+    },
+    List: {
+      args: [list(T1), int("-oo", -1), int(0)],
+      front: "slice",
+    },
   },
 
   // Chars
-  "ord_at[byte]": { args: [text(), int(0)] },
-  "ord_at_back[byte]": { args: [text(), int("-oo", -1)] },
-  "ord_at[codepoint]": { args: [text(), int(0)] },
-  "ord_at_back[codepoint]": { args: [text(), int("-oo", -1)] },
-  "ord_at[Ascii]": { args: [ascii, int(0)] },
-  "ord_at_back[Ascii]": { args: [ascii, int("-oo", -1)] },
-  "ord[byte]": { args: [text(int(1, 1))], front: true },
-  "ord[codepoint]": { args: [text(int(1, 1))], front: true },
-  "ord[Ascii]": { args: [text(int(1, 1), true)], front: "ord" },
-  "char[byte]": { args: [int(0, 255)], front: true },
-  "char[codepoint]": { args: [int(0, 0x10ffff)], front: true },
-  "char[Ascii]": { args: [int(0, 127)], front: "char" },
+  ord_at: {
+    byte: { args: [text(), int(0)] },
+    codepoint: { args: [text(), int(0)] },
+    Ascii: { args: [ascii, int(0)] },
+  },
+  ord_at_back: {
+    byte: { args: [text(), int("-oo", -1)] },
+    codepoint: { args: [text(), int("-oo", -1)] },
+    Ascii: { args: [ascii, int("-oo", -1)] },
+  },
+  ord: {
+    byte: { args: [text(int(1, 1))], front: true },
+    codepoint: { args: [text(int(1, 1))], front: true },
+    Ascii: { args: [text(int(1, 1), true)], front: "ord" },
+  },
+  char: {
+    byte: { args: [int(0, 255)], front: true },
+    codepoint: { args: [int(0, 0x10ffff)], front: true },
+    Ascii: { args: [int(0, 127)], front: "char" },
+  },
+  text_to_list: {
+    byte: { args: [text()], front: true },
+    codepoint: { args: [text()], front: true },
+    Ascii: { args: [ascii], front: "text_to_list" },
+  },
 
   // Order
-  "sorted[Int]": { args: [list(int())], front: "sorted" },
-  "sorted[Ascii]": { args: [list(ascii)], front: "sorted" },
-  "reversed[byte]": { args: [text()], front: true },
-  "reversed[codepoint]": { args: [text()], front: true },
-  "reversed[Ascii]": { args: [ascii], front: "reversed" },
-  "reversed[List]": { args: [list(T1)], front: "reversed" },
-  "find[codepoint]": { args: [text(), text(int(1))], front: true },
-  "find[byte]": { args: [text(), text(int(1))], front: true },
-  "find[Ascii]": { args: [ascii, ascii], front: "find" },
-  "find[List]": { args: [list(T1), T1], front: "find" },
+  sorted: {
+    Int: { args: [list(int())], front: "sorted" },
+    Ascii: { args: [list(ascii)], front: "sorted" },
+  },
+  reversed: {
+    byte: { args: [text()], front: true },
+    codepoint: { args: [text()], front: true },
+    Ascii: { args: [ascii], front: "reversed" },
+    List: { args: [list(T1)], front: "reversed" },
+  },
+
+  find: {
+    codepoint: { args: [text(), text(int(1))], front: true },
+    byte: { args: [text(), text(int(1))], front: true },
+    Ascii: { args: [ascii, ascii], front: "find" },
+    List: { args: [list(T1), T1], front: "find" },
+  },
 
   // Membership
-  "contains[Array]": { args: [array(T1, T2), T1], front: "contains" },
-  "contains[List]": { args: [list(T1), T1], front: "contains" },
-  "contains[Table]": { args: [table(T1, T2), T1], front: "contains" },
-  "contains[Set]": { args: [set(T1), T1], front: "contains" },
-  "contains[Text]": { args: [text(), text()], front: "contains" },
+  contains: {
+    Array: { args: [array(T1, T2), T1], front: "contains" },
+    List: { args: [list(T1), T1], front: "contains" },
+    Table: { args: [table(T1, T2), T1], front: "contains" },
+    Set: { args: [set(T1), T1], front: "contains" },
+    Text: { args: [text(), text()], front: "contains" },
+  },
 
   // Size
-  "size[List]": { args: [list(T1)], front: "#" },
-  "size[Set]": { args: [set(T1)], front: "#" },
-  "size[Table]": { args: [table(T1, T2)], front: "#" },
-  "size[Ascii]": { args: [ascii], front: "#" },
-  "size[codepoint]": { args: [text()], front: true },
-  "size[byte]": { args: [text()], front: true },
+  size: {
+    List: { args: [list(T1)], front: "#" },
+    Set: { args: [set(T1)], front: "#" },
+    Table: { args: [table(T1, T2)], front: "#" },
+    Ascii: { args: [ascii], front: "#" },
+    codepoint: { args: [text()], front: true },
+    byte: { args: [text()], front: true },
+  },
 
   // Adding items
   include: { args: [set(T1), T1], front: true },
-  append: { args: [list(T1), T1], front: ".." },
-  "concat[List]": { args: atLeast2(list(T1)), front: "..", assoc: true },
-  "concat[Text]": { args: atLeast2(text()), front: "..", assoc: true },
+  append: { args: [list(T1), T1], front: "+" },
+  concat: {
+    List: { args: atLeast2(list(T1)), front: "+", assoc: true },
+    Text: { args: atLeast2(text()), front: "+", assoc: true },
+  },
 
   // Text ops
   repeat: { args: [text(), int(0)], front: true },
@@ -207,7 +257,15 @@ export const opCodeDefinitions = {
   int_to_bool: { args: [int(0, 1)], front: true },
   dec_to_int: { args: [ascii], front: true },
   bool_to_int: { args: [bool], front: true },
-} as const satisfies Record<string, OpCodeDefinition>;
+
+  // Ranges
+  range_incl: { args: [int(), int(), int(1)], front: ".." },
+  range_excl: { args: [int(), int(), int(1)], front: "..<" },
+  range_diff_excl: { args: [int(), int(0), int(1)] },
+} as const satisfies Record<
+  string,
+  OpCodeDefinition | Record<string, OpCodeDefinition>
+>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
 
