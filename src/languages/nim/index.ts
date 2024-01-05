@@ -37,6 +37,7 @@ import {
   addNimImports,
   getEndIndex,
   removeSystemNamespace,
+  removeToSeqFromFor,
   useBackwardsIndex,
   useUFCS,
   useUnsignedDivision,
@@ -201,13 +202,19 @@ const nimLanguage: Language = {
         int_to_hex_aligned: (a, b) => func("align", op.int_to_hex(a), b, c48),
         int_to_Hex_aligned: (a, b) => func("align", op.int_to_Hex(a), b, c48),
         range_excl: (a, b, c) =>
-          isInt(1n)(c) ? infix("..<", a, b) : func("countup", a, b, c),
+          func(
+            "toSeq",
+            isInt(1n)(c) ? infix("..<", a, b) : func("countup", a, b, c),
+          ),
         range_incl: (a, b, c) =>
-          isInt(1n)(c)
-            ? isInt(0n)(a)
-              ? prefix("..", b)
-              : infix("..", a, b)
-            : func("countup", a, succ(b), c),
+          func(
+            "toSeq",
+            isInt(1n)(c)
+              ? isInt(0n)(a)
+                ? prefix("..", b)
+                : infix("..", a, b)
+              : func("countup", a, succ(b), c),
+          ),
       }),
       mapOpsTo.builtin({ true: "true", false: "false" }),
       mapOps({
@@ -292,6 +299,7 @@ const nimLanguage: Language = {
         int_to_dec: "$",
       }),
       mapOpsTo.infix({ mul: "*" }),
+      removeToSeqFromFor,
       addNimImports,
     ),
     simplegolf(

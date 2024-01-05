@@ -11,6 +11,7 @@ import {
   prefix,
   type Op,
   type OpCode,
+  isBuiltinIdent,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { addImports } from "../../plugins/imports";
@@ -54,6 +55,7 @@ export const addNimImports: PluginVisitor = addImports(
       "startsWith",
       "endsWith",
     ],
+    sequtils: ["toSeq"],
     os: ["paramStr", "commandLineParams"],
     hashes: ["hashes"],
     tables: ["Table"],
@@ -128,5 +130,16 @@ export function getEndIndex(start: Node, length: Node) {
 export function removeSystemNamespace(node: Node, spine: Spine) {
   if ("name" in node && node.name.startsWith("system.")) {
     return { ...node, name: node.name.slice("system.".length) };
+  }
+}
+
+export function removeToSeqFromFor(node: Node, spine: Spine) {
+  if (
+    node.kind === "FunctionCall" &&
+    isBuiltinIdent("toSeq")(node.func) &&
+    spine.parent?.node.kind === "ForEach" &&
+    spine.pathFragment === "collection"
+  ) {
+    return node.args[0];
   }
 }

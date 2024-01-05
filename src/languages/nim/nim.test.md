@@ -403,3 +403,14 @@ x.f y
 f x
 "x".f" "[1]
 ```
+
+## Naked range
+
+```polygolf
+$r <- (10 ..< 40 2);
+```
+
+```nim nogolf
+include prelude
+var r=toSeq(countup(10,40,2))
+```
