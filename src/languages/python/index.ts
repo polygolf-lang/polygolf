@@ -8,7 +8,6 @@ import {
   op,
   listType,
   textType,
-  namedArg,
   succ,
   table,
   keyValue,
@@ -203,12 +202,9 @@ const pythonLanguage: Language = {
         "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
 
         "print[Text]": (a) =>
-          func(
-            "print",
-            a.kind !== "ImplicitConversion"
-              ? [namedArg("end", a)]
-              : [a, namedArg("end", text(""))],
-          ),
+          a.kind !== "ImplicitConversion"
+            ? func("print", { end: a })
+            : func("print", a, { end: text("") }),
 
         text_multireplace: (a, ...x) =>
           method(
@@ -365,11 +361,7 @@ const pythonLanguage: Language = {
     ),
     required(
       renameIdents(),
-      addImports({
-        "sys.argv[1:]": "sys",
-        "sys.argv": "sys",
-        "math.gcd": "math",
-      }),
+      addImports({ sys: ["sys.argv[1:]", "sys.argv"], math: ["math.gcd"] }),
       removeImplicitConversions,
     ),
   ],

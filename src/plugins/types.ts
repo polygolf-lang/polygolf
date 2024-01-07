@@ -1,7 +1,6 @@
-import type { Spine } from "../common/Spine";
+import type { PluginVisitor, Spine } from "../common/Spine";
 import { PolygolfError } from "../common/errors";
 import { getType } from "../common/getType";
-import { type Plugin } from "../common/Language";
 import {
   int64Type,
   type IntegerType,
@@ -80,35 +79,29 @@ function needsBigint(
 export function floodBigints(
   primitiveIntType0: "int64" | "int53" | IntegerType,
   allowed: Partial<Record<OpCode | Assignment["kind"], "bigint" | "int">>,
-): Plugin {
+): PluginVisitor {
   const primitiveIntType = type(primitiveIntType0) as IntegerType;
-  return {
-    name: "floodBigints",
-    visit(node, spine) {
-      if (
-        needsBigint(primitiveIntType, allowed, node, spine) &&
-        node.targetType !== "bigint"
-      ) {
-        return { ...node, targetType: "bigint" };
-      }
-    },
+  return function floodBigints(node, spine) {
+    if (
+      needsBigint(primitiveIntType, allowed, node, spine) &&
+      node.targetType !== "bigint"
+    ) {
+      return { ...node, targetType: "bigint" };
+    }
   };
 }
 
 export function mapVarsThatNeedBigint(
   primitiveIntType0: "int64" | "int53" | IntegerType,
   f: (x: Identifier) => Node,
-): Plugin {
+): PluginVisitor {
   const primitiveIntType = type(primitiveIntType0) as IntegerType;
-  return {
-    name: "mapVarsThatNeedBigint(...)",
-    visit(node, spine) {
-      if (isUserIdent()(node) && node.targetType === "bigint") {
-        const type = getType(node, spine);
-        if (isSubtype(type, primitiveIntType)) {
-          return annotate(f({ ...node, targetType: "int" }), type);
-        }
+  return function mapVarsThatNeedBigint(node, spine) {
+    if (isUserIdent()(node) && node.targetType === "bigint") {
+      const type = getType(node, spine);
+      if (isSubtype(type, primitiveIntType)) {
+        return annotate(f({ ...node, targetType: "int" }), type);
       }
-    },
+    }
   };
 }

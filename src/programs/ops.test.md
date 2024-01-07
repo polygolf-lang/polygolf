@@ -42,7 +42,7 @@ or $x $y $z;
 ```
 
 ```janet nogolf
-(var a 0)(var b 0)(var c 0)(def x true)(def y true)(def z true)(min a b c)(* a b c)(or x y z)
+(var a 0)(var b 0)(var c 0)(var x true)(var y true)(var z true)(min a b c)(* a b c)(or x y z)
 ```
 
 ```js nogolf

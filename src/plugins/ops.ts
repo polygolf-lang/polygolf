@@ -144,7 +144,7 @@ export function mapOpsUsing<
             if (isInt(0n, 1n)(b)) {
               [a, b] = [b, a];
             }
-            if (isInt(0n, 1n)(a) && isOp("mod")(b) && isInt(2n)(b.args[1])) {
+            if (isInt(0n, 1n)(a) && isOp.mod(b) && isInt(2n)(b.args[1])) {
               let parity: undefined | 0 | 1;
               if (a.value === 0n) {
                 if (isOp("neq[Int]", "gt")(node)) parity = 1;
@@ -174,7 +174,7 @@ export function mapOpsUsing<
             }
           }
           if (
-            isOp("mul")(node) &&
+            isOp.mul(node) &&
             isInt(-1n)(node.args[0]) &&
             "neg" in opCodeMap
           ) {

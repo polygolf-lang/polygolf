@@ -21,7 +21,7 @@ import { type Spine } from "@/common/Spine";
 import { filterInplace } from "../common/arrays";
 
 export function modToRem(node: Node, spine: Spine) {
-  if (isOp("mod")(node)) {
+  if (isOp.mod(node)) {
     return isSubtype(getType(node.args[1], spine), integerType(0))
       ? op.rem(...node.args)
       : op.rem(op.add(op.rem(...node.args), node.args[1]), node.args[1]);
@@ -29,7 +29,7 @@ export function modToRem(node: Node, spine: Spine) {
 }
 
 export function divToTruncdiv(node: Node, spine: Spine) {
-  if (isOp("div")(node)) {
+  if (isOp.div(node)) {
     return isSubtype(getType(node.args[1], spine), integerType(0))
       ? op.trunc_div(...node.args)
       : undefined; // TODO
@@ -79,7 +79,7 @@ export const removeBitnot: Plugin = mapOps({
 });
 
 export function addBitnot(node: Node) {
-  if (isOp("add")(node) && node.args.length === 2 && isInt()(node.args[0])) {
+  if (isOp.add(node) && node.args.length === 2 && isInt()(node.args[0])) {
     if (node.args[0].value === 1n) return op.neg(op.bit_not(node.args[1]));
     if (node.args[0].value === -1n) return op.bit_not(op.neg(node.args[1]));
   }
@@ -161,7 +161,7 @@ function isPowerOfTwo(n: Node, s: Spine): boolean {
 }
 
 export function modToBitand(node: Node, spine: Spine) {
-  if (isOp("mod")(node)) {
+  if (isOp.mod(node)) {
     const n = node.args[1];
     if (isPowerOfTwo(n, spine)) {
       return op.bit_and(node.args[0], pred(n));
@@ -170,7 +170,7 @@ export function modToBitand(node: Node, spine: Spine) {
 }
 
 export function bitandToMod(node: Node, spine: Spine) {
-  if (isOp("bit_and")(node)) {
+  if (isOp.bit_and(node)) {
     for (const i of [0, 1]) {
       const n = succ(node.args[i]);
       if (isPowerOfTwo(n, spine)) {
@@ -186,7 +186,7 @@ export function powToMul(limit: number = 2): Plugin {
   return {
     name: `powToMul(${limit})`,
     visit(node) {
-      if (isOp("pow")(node)) {
+      if (isOp.pow(node)) {
         const [a, b] = node.args;
         if (isInt()(b) && 1 < b.value && b.value <= limit) {
           return op.mul(a, a, ...Array(Number(b.value) - 2).fill(a));
@@ -197,7 +197,7 @@ export function powToMul(limit: number = 2): Plugin {
 }
 
 export function mulToPow(node: Node, spine: Spine) {
-  if (isOp("mul")(node)) {
+  if (isOp.mul(node)) {
     const factors = new Map<string, [Node, number]>();
     for (const e of node.args) {
       const stringified = stringify(e);
@@ -260,7 +260,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
       .map((x) => (x ? "true" : "false"))
       .toString()})`,
     visit(node) {
-      if (isOp("div")(node) && fromDiv) {
+      if (isOp.div(node) && fromDiv) {
         const [a, b] = node.args;
         if (isInt()(b)) {
           const [n, exp] = getOddAnd2Exp(b.value);
@@ -268,11 +268,11 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
             return op.bit_shift_right(a, int(exp));
           }
         }
-        if (isOp("pow")(b) && isInt(2n)(b.args[0])) {
+        if (isOp.pow(b) && isInt(2n)(b.args[0])) {
           return op.bit_shift_right(a, b.args[1]);
         }
       }
-      if (isOp("mul")(node) && fromMul) {
+      if (isOp.mul(node) && fromMul) {
         if (isInt()(node.args[0])) {
           const [n, exp] = getOddAnd2Exp(node.args[0].value);
           if (exp > 1) {
@@ -283,7 +283,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
           }
         }
         const powNode = node.args.find(
-          (x) => isOp("pow")(x) && isInt(2n)(x.args[0]),
+          (x) => isOp.pow(x) && isInt(2n)(x.args[0]),
         ) as Op<"pow"> | undefined;
         if (powNode !== undefined) {
           return op.bit_shift_left(
@@ -459,7 +459,7 @@ export function pickAnyInt(node: Node) {
 
 export function useImplicitBoolToInt(node: Node, spine: Spine) {
   if (
-    isOp("bool_to_int")(node) &&
+    isOp.bool_to_int(node) &&
     !spine.isRoot &&
     isOp("at[Array]", "at[List]")(spine.parent!.node) // This can be extend to other ops, like "mul".
   ) {
