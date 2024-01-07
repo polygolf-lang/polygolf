@@ -4,11 +4,9 @@ import { type TokenTree } from "../../common/Language";
 
 const emitJanetText = emitTextFactory({
   '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
-  "`\nTEXT\n`": { "`": null },
-  "``\nTEXT\n``": { "``": null },
-  /* TO-DO: Introduce "`TEXT`" string literal:
-     Cannot be empty or begin/end with a newline
-   */
+  "`\nTEXT\n`": { cantMatch: /`/ },
+  "``\nTEXT\n``": { cantMatch: /``/ },
+  "`TEXT`": { cantMatch: /|^$|^\n|\n$/ },
 });
 
 export default function emitProgram(program: IR.Node): TokenTree {

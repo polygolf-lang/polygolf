@@ -17,7 +17,11 @@ export function joinTrees(
  * Each resulting codepoint is mapped using `codepointMap`, if provided.
  */
 export function emitTextFactory(
-  options: Record<`${string}TEXT${string}`, Record<string, string | null>>,
+  options: Record<
+    `${string}TEXT${string}`,
+    | Record<string, string>
+    | { cantMatch: RegExp; subs?: Record<string, string> }
+  >,
   codepointMap?: (x: number, i: number, arr: number[]) => string,
 ) {
   return function (
@@ -25,11 +29,17 @@ export function emitTextFactory(
     [low, high]: [number, number] = [1, Infinity],
   ) {
     let result = "";
-    for (const [template, escapes0] of Object.entries(options)) {
-      const escapes = Object.entries(escapes0);
-      if (escapes.some((x) => x[1] === null && value.includes(x[0]))) continue;
+    for (const [template, behaviour] of Object.entries(options)) {
+      const [cantMatch, subs] =
+        "cantMatch" in behaviour
+          ? [
+              behaviour.cantMatch as RegExp,
+              Object.entries(behaviour.subs ?? {}),
+            ]
+          : [undefined, Object.entries(behaviour)];
+      if (cantMatch?.test(value) === true) continue;
       let current = value;
-      for (const [c, d] of escapes) {
+      for (const [c, d] of subs) {
         if (d === null) continue;
         current = current.replaceAll(c, d);
       }

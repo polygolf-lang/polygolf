@@ -12,7 +12,7 @@ const emitLuaText = emitTextFactory(
   {
     '"TEXT"': { "\\": "\\\\", "\n": "\\n", "\r": "\\r", '"': `\\"` },
     "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\'` },
-    "[[TEXT]]": { "[[": null, "]]": null },
+    "[[TEXT]]": { cantMatch: /[[||]]/ },
   },
   function (x: number, i: number, arr: number[]) {
     if (x < 100)
