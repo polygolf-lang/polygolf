@@ -1,4 +1,9 @@
-import { type TokenTree } from "../../common/Language";
+import {
+  defaultDetokenizer,
+  DetokenizingEmitter,
+  flattenTree,
+  type TokenTree,
+} from "../../common/Language";
 import { joinTrees } from "../../common/emit";
 import {
   block,
@@ -31,8 +36,22 @@ If the last child is an array of Nodes argument, it should be emitted as individ
 instead of as a block.
 */
 
-export default function emitProgram(program: IR.Node): TokenTree {
-  return emitNode(program, true);
+export class PolygolfEmitter extends DetokenizingEmitter {
+  detokenize = defaultDetokenizer(
+    (a, b) =>
+      a !== "(" &&
+      b !== ")" &&
+      b !== ";" &&
+      b !== ":" &&
+      a !== ":" &&
+      a !== "\n" &&
+      b !== "\n",
+    2,
+  );
+
+  emitTokens(program: IR.Node) {
+    return flattenTree(emitNode(program, true));
+  }
 }
 
 function emitVariants(expr: Variants, indent = false): TokenTree {

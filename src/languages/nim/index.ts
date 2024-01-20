@@ -14,14 +14,13 @@ import {
   infix,
 } from "../../IR";
 import {
-  defaultDetokenizer,
   type Language,
   required,
   search,
   simplegolf,
 } from "../../common/Language";
 
-import emitProgram from "./emit";
+import { NimEmitter } from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
@@ -101,7 +100,7 @@ const c48: Text = { ...text("0"), targetType: "char" };
 const nimLanguage: Language = {
   name: "Nim",
   extension: "nim",
-  emitter: emitProgram,
+  emitter: new NimEmitter(),
   phases: [
     required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint()),
@@ -327,26 +326,6 @@ const nimLanguage: Language = {
     ),
     search(useUFCS),
   ],
-  detokenizer: defaultDetokenizer((a, b) => {
-    const left = a[a.length - 1];
-    const right = b[0];
-
-    if (/[A-Za-z0-9_]/.test(left) && /[A-Za-z0-9_]/.test(right)) return true; // alphanums meeting
-
-    const symbols = "=+-*/<>@$~&%|!?^.:\\";
-    if (symbols.includes(left) && symbols.includes(right)) return true; // symbols meeting
-
-    if (
-      /[A-Za-z]/.test(left) &&
-      ((!["var", "in", "else", "if", "while", "for"].includes(a) &&
-        (symbols + `"({[`).includes(right)) ||
-        right === `"`) &&
-      !["=", ":", ".", "::"].includes(b)
-    )
-      return true; // identifier meeting an operator or string literal or opening paren
-
-    return false;
-  }),
 };
 
 export default nimLanguage;

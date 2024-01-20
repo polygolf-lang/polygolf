@@ -19,14 +19,11 @@ import {
 } from "../../IR";
 import {
   type Language,
-  type TokenTree,
-  flattenTree,
   required,
   search,
   simplegolf,
 } from "../../common/Language";
 
-import emitProgram from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
@@ -74,11 +71,12 @@ import {
   decomposeIntLiteral,
   pickAnyInt,
 } from "../../plugins/arithmetic";
+import { SwiftEmitter } from "./emit";
 
 const swiftLanguage: Language = {
   name: "Swift",
   extension: "swift",
-  emitter: emitProgram,
+  emitter: new SwiftEmitter(),
   phases: [
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint()),
@@ -330,50 +328,6 @@ const swiftLanguage: Language = {
       removeImplicitConversions,
     ),
   ],
-  // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
-  detokenizer: function (tokenTree: TokenTree): string {
-    function isAlphaNum(s: string): boolean {
-      return /[A-Za-z0-9]/.test(s);
-    }
-
-    // Tokens that need whitespace on both sides:
-    //   A binary op followed by a unary op
-    //   `!=`
-    //   `&` followed by any of `*+-` (without space they are interpreted together as an overflow operator)
-    function needsWhiteSpaceOnBothSides(
-      token: string,
-      nextToken: string,
-    ): boolean {
-      return (
-        (/^[-+*%/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
-        (token === `&` && /[*+-]/.test(nextToken[0])) ||
-        token === `!=`
-      );
-    }
-
-    function needsWhiteSpace(prevToken: string, token: string): boolean {
-      return (
-        (isAlphaNum(prevToken[prevToken.length - 1]) && isAlphaNum(token[0])) ||
-        ([`if`, `in`, `while`].includes(prevToken) && token[0] !== `(`) ||
-        token[0] === `?` ||
-        needsWhiteSpaceOnBothSides(prevToken, token)
-      );
-    }
-
-    const tokens: string[] = flattenTree(tokenTree);
-
-    let result = tokens[0];
-    for (let i = 1; i < tokens.length; i++) {
-      if (
-        needsWhiteSpace(tokens[i - 1], tokens[i]) ||
-        (i + 1 < tokens.length &&
-          needsWhiteSpaceOnBothSides(tokens[i], tokens[i + 1]))
-      )
-        result += " ";
-      result += tokens[i];
-    }
-    return result.trim();
-  },
 };
 
 export default swiftLanguage;

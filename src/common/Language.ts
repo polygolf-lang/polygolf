@@ -1,6 +1,62 @@
-import { type IR } from "IR";
-import { type PluginVisitor } from "./Spine";
+import { type Node } from "IR";
+import { type Spine, type PluginVisitor, programToSpine } from "./Spine";
 import { type CompilationContext } from "./compile";
+import type { PathFragment } from "./fragments";
+
+export interface Emitter {
+  emit: (program: Node, context: CompilationContext) => string;
+}
+
+export type Token = "\n" | "$GLUE$" | "$INDENT$" | "$DEDENT$" | (string & {});
+type TokenTreeArray = Array<Token | TokenTreeArray>;
+export type TokenTree = Token | TokenTreeArray;
+export function flattenTree(tokenTree: TokenTree): string[] {
+  const flattened: string[] = [];
+
+  function stepTree(t: TokenTree) {
+    if (typeof t === "string") flattened.push(t);
+    else t.map(stepTree);
+  }
+  stepTree(tokenTree);
+  return flattened;
+}
+
+export abstract class DetokenizingEmitter implements Emitter {
+  abstract emitTokens(program: Node, context: CompilationContext): Token[];
+  abstract detokenize(tokens: Token[], context: CompilationContext): string;
+  emit(program: Node, context: CompilationContext) {
+    return this.detokenize(this.emitTokens(program, context), context);
+  }
+}
+
+export type EmitterVisitResult = (string | PathFragment | EmitterVisitResult)[];
+
+export abstract class VisitorEmitter extends DetokenizingEmitter {
+  abstract detokenize(tokens: Token[]): string;
+  abstract visit(
+    node: Node,
+    spine: Spine,
+    context: CompilationContext,
+  ): EmitterVisitResult;
+  emit(program: Node, context: CompilationContext) {
+    const tokens: Token[] = [];
+    const collect = (item: EmitterVisitResult, spine: Spine) => {
+      for (const o of item) {
+        if (typeof o === "string") {
+          tokens.push(o);
+        } else if (Array.isArray(o)) {
+          collect(o, spine);
+        } else {
+          const childSpine = spine.getChild(o);
+          collect(this.visit(childSpine.node, childSpine, context), childSpine);
+        }
+      }
+    };
+    const programSpine = programToSpine(program);
+    collect(this.visit(program, programSpine, context), programSpine);
+    return this.detokenize(tokens);
+  }
+}
 
 export interface Packer {
   codepointRange: [number, number];
@@ -25,7 +81,6 @@ export interface Language {
   emitter: Emitter;
   noEmitter?: Emitter; // emitter used with the `noEmit` flag
   packers?: Packer[];
-  detokenizer?: Detokenizer;
   readsFromStdinOnCodeDotGolf?: boolean;
 }
 
@@ -74,23 +129,7 @@ export interface Plugin {
   visit: PluginVisitor;
 }
 
-export type Token = "\n" | "$GLUE$" | "$INDENT$" | "$DEDENT$" | (string & {});
-
-type TokenTreeArray = Array<Token | TokenTreeArray>;
-export type TokenTree = Token | TokenTreeArray;
-export type Detokenizer = (tokens: TokenTree) => string;
 export type WhitespaceInsertLogic = (a: string, b: string) => boolean;
-
-export function flattenTree(tokenTree: TokenTree): string[] {
-  const flattened: string[] = [];
-
-  function stepTree(t: TokenTree) {
-    if (typeof t === "string") flattened.push(t);
-    else t.map(stepTree);
-  }
-  stepTree(tokenTree);
-  return flattened;
-}
 
 export interface IdentifierGenerator {
   preferred: (original: string) => string[];
@@ -98,11 +137,6 @@ export interface IdentifierGenerator {
   general: (i: number) => string;
   reserved: string[];
 }
-
-export type Emitter = (
-  program: IR.Node,
-  context: CompilationContext,
-) => TokenTree;
 
 function isWord(a: string, i: number): boolean {
   return /\w/.test(a[i]);
@@ -115,9 +149,8 @@ export function defaultWhitespaceInsertLogic(a: string, b: string): boolean {
 export function defaultDetokenizer(
   whitespace: WhitespaceInsertLogic = defaultWhitespaceInsertLogic,
   indent = 1,
-): Detokenizer {
-  return function (tokenTree: TokenTree): string {
-    const tokens: string[] = flattenTree(tokenTree);
+): (x: Token[]) => string {
+  return function (tokens: Token[]): string {
     let indentLevel = 0;
     let result = tokens[0];
     for (let i = 1; i < tokens.length; i++) {

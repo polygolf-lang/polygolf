@@ -1,11 +1,10 @@
 import {
   type Language,
   required,
-  defaultDetokenizer,
   simplegolf,
   search,
 } from "../../common/Language";
-import emitProgram from "./emit";
+import { JanetEmitter } from "./emit";
 import {
   arraysToLists,
   flipBinaryOps,
@@ -55,7 +54,7 @@ import { applyIf } from "../../plugins/helpers";
 const janetLanguage: Language = {
   name: "Janet",
   extension: "janet",
-  emitter: emitProgram,
+  emitter: new JanetEmitter(),
   phases: [
     required(arraysToLists, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false), golfLastPrintInt(true)),
@@ -206,7 +205,7 @@ const janetLanguage: Language = {
     simplegolf(
       alias({
         Identifier: (n, s) =>
-          n.builtin && s.pathFragment !== "ident" ? n.name : undefined,
+          n.builtin && s.pathFragment?.prop !== "ident" ? n.name : undefined,
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
       }),
@@ -218,13 +217,6 @@ const janetLanguage: Language = {
       assertInt64,
     ),
   ],
-  detokenizer: defaultDetokenizer(
-    (a, b) =>
-      a !== "" &&
-      b !== "" &&
-      /[^(){}[\]`'"]/.test(a[a.length - 1]) &&
-      /[^(){}[\]`'"]/.test(b[0]),
-  ),
 };
 
 export default janetLanguage;

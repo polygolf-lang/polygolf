@@ -138,7 +138,7 @@ export function removeToSeqFromFor(node: Node, spine: Spine) {
     node.kind === "FunctionCall" &&
     isBuiltinIdent("toSeq")(node.func) &&
     spine.parent?.node.kind === "ForEach" &&
-    spine.pathFragment === "collection"
+    spine.pathFragment?.prop === "collection"
   ) {
     return node.args[0];
   }

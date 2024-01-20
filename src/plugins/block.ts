@@ -271,8 +271,8 @@ export function inlineVariables(
         spine.someNode(
           (n) => n !== variable && isUserIdent(variable)(n), // in tests variables are often never read from and we don't want to make those disappear
         ) &&
-        !write.getChild("expr").someNode(isUserIdent(variable)) &&
-        !hasSideEffect(write.getChild("expr"))
+        !write.getChild({ prop: "expr" }).someNode(isUserIdent(variable)) &&
+        !hasSideEffect(write.getChild({ prop: "expr" }))
       ) {
         const assignmentToInlineSpine = write as Spine<Assignment<Identifier>>;
         const assignment = assignmentToInlineSpine.node;

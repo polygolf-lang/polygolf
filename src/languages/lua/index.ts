@@ -22,7 +22,7 @@ import {
   forEachToForRange,
 } from "../../plugins/loops";
 
-import emitProgram from "./emit";
+import { LuaEmitter } from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
@@ -67,7 +67,7 @@ import { conditionalOpToAndOr } from "../../plugins/conditions";
 const luaLanguage: Language = {
   name: "Lua",
   extension: "lua",
-  emitter: emitProgram,
+  emitter: new LuaEmitter(),
   phases: [
     required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint()),
@@ -219,7 +219,8 @@ const luaLanguage: Language = {
       alias({
         Identifier: (n, s) =>
           n.builtin &&
-          (s.parent?.node.kind !== "MethodCall" || s.pathFragment !== "ident")
+          (s.parent?.node.kind !== "MethodCall" ||
+            s.pathFragment?.prop !== "ident")
             ? n.name
             : undefined,
         Integer: (x) => x.value.toString(),

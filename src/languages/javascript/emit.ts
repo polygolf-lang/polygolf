@@ -1,4 +1,10 @@
-import { type TokenTree } from "@/common/Language";
+import {
+  defaultWhitespaceInsertLogic,
+  DetokenizingEmitter,
+  flattenTree,
+  type Token,
+  type TokenTree,
+} from "../../common/Language";
 import {
   EmitError,
   emitIntLiteral,
@@ -91,146 +97,166 @@ function binaryPrecedence(opname: string): number {
   );
 }
 
-export default function emitProgram(
-  program: IR.Node,
-  context: CompilationContext,
-): TokenTree {
-  function joinNodes(
-    delim: TokenTree,
-    exprs: readonly IR.Node[],
-    minPrec = -Infinity,
-  ) {
-    return joinTrees(
-      delim,
-      exprs.map((x) => emit(x, minPrec)),
-    );
+export class JavascriptEmitter extends DetokenizingEmitter {
+  detokenize(tokens: Token[]) {
+    let result = "";
+    tokens.forEach((token, i) => {
+      if (i === tokens.length - 1) result += token;
+      else {
+        const nextToken = tokens[i + 1];
+        if (token === "\n" && "([`+-/".includes(nextToken[0])) {
+          token = ";";
+        }
+        result += token;
+        if (defaultWhitespaceInsertLogic(token, nextToken)) {
+          result += " ";
+        }
+      }
+    });
+    return result;
   }
 
-  /**
-   * Emits the expression.
-   * @param expr The expression to be emited.
-   * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
-   * @returns Token tree corresponding to the expression.
-   */
-  function emit(expr: IR.Node, minimumPrec: number = -Infinity): TokenTree {
-    const prec = precedence(expr);
-    function emitNoParens(e: IR.Node): TokenTree {
-      switch (e.kind) {
-        case "VarDeclarationWithAssignment":
-          return ["let", emit(e.assignment)];
-        case "Block":
-          return expr === program
-            ? joinNodes("\n", e.children)
-            : e.children.some(
-                isOfKind(
-                  "If",
-                  "While",
-                  "ForEach",
-                  "ForCLike",
-                  "VarDeclarationWithAssignment",
-                ),
-              )
-            ? ["{", joinNodes("\n", e.children), "}"]
-            : joinNodes(",", e.children);
-        case "Function":
-          return ["(", joinNodes(",", e.args), ")", "=>", emit(e.expr)];
-        case "Assignment":
-          return [emit(e.variable), "=", emit(e.expr)];
-        case "FunctionCall":
-          if (e.args.length === 1 && isText()(e.args[0]))
-            return [emit(e.func), emitJavascriptTextBackticks(e.args[0].value)];
-          return [emit(e.func), "(", joinNodes(",", e.args), ")"];
-        case "Identifier":
-          return [e.name];
-        case "Text":
-          return emitJavascriptText(e.value, context.options.codepointRange);
-        case "Integer":
-          return (
-            emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] }) +
-            (e.targetType === "bigint" ? "n" : "")
-          );
-        case "List":
-        case "Array":
-          return ["[", joinNodes(",", e.value), "]"];
-        case "Table":
-          return [
-            "{",
-            joinTrees(
-              ",",
-              e.value.map((x) => [
-                isText()(x.key) && /\w*/.test(x.key.value)
-                  ? x.key.value
-                  : ["[", emit(x), "]"],
-                ":",
-                emit(x.value),
-              ]),
-            ),
-            "}",
-          ];
-        case "ConditionalOp":
-          return [
-            emit(e.condition, prec + 1),
-            "?",
-            emit(e.consequent),
-            ":",
-            emit(e.alternate, prec),
-          ];
-        case "While":
-          return [`while`, "(", emit(e.condition), ")", emit(e.body)];
-        case "If":
-          return [
-            "if",
-            "(",
-            emit(e.condition),
-            ")",
-            emit(e.consequent),
-            e.alternate !== undefined ? ["else", emit(e.alternate)] : [],
-          ];
-        case "OneToManyAssignment":
-          return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
-        case "IndexCall":
-          return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
-        case "PropertyCall":
-          return [emit(e.object, prec), ".", emit(e.ident)];
-        case "Infix": {
-          const rightAssoc = e.name === "**";
-          return [
-            emit(e.left, prec + (rightAssoc ? 1 : 0)),
-            e.name,
-            emit(e.right, prec + (rightAssoc ? 0 : 1)),
-          ];
-        }
-        case "Prefix":
-          return [e.name, emit(e.arg, prec)];
-        case "Postfix":
-          return [emit(e.arg, prec), e.name];
-        case "ForEach":
-          return [
-            `for`,
-            "(",
-            emit(e.variable ?? id()),
-            e.collection.targetType === "object" ? "in" : "of",
-            emit(e.collection),
-            ")",
-            emit(e.body),
-          ];
-        case "ForCLike":
-          return [
-            "for",
-            "(",
-            joinNodes(";", [e.init, e.condition, e.append]),
-            ")",
-            emit(e.body),
-          ];
-
-        default:
-          throw new EmitError(e);
-      }
+  emitTokens(program: IR.Node, context: CompilationContext) {
+    function joinNodes(
+      delim: TokenTree,
+      exprs: readonly IR.Node[],
+      minPrec = -Infinity,
+    ) {
+      return joinTrees(
+        delim,
+        exprs.map((x) => emit(x, minPrec)),
+      );
     }
 
-    const inner = emitNoParens(expr);
-    if (prec >= minimumPrec) return inner;
-    return ["(", inner, ")"];
+    /**
+     * Emits the expression.
+     * @param expr The expression to be emited.
+     * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
+     * @returns Token tree corresponding to the expression.
+     */
+    function emit(expr: IR.Node, minimumPrec: number = -Infinity): TokenTree {
+      const prec = precedence(expr);
+      function emitNoParens(e: IR.Node): TokenTree {
+        switch (e.kind) {
+          case "VarDeclarationWithAssignment":
+            return ["let", emit(e.assignment)];
+          case "Block":
+            return expr === program
+              ? joinNodes("\n", e.children)
+              : e.children.some(
+                  isOfKind(
+                    "If",
+                    "While",
+                    "ForEach",
+                    "ForCLike",
+                    "VarDeclarationWithAssignment",
+                  ),
+                )
+              ? ["{", joinNodes("\n", e.children), "}"]
+              : joinNodes(",", e.children);
+          case "Function":
+            return ["(", joinNodes(",", e.args), ")", "=>", emit(e.expr)];
+          case "Assignment":
+            return [emit(e.variable), "=", emit(e.expr)];
+          case "FunctionCall":
+            if (e.args.length === 1 && isText()(e.args[0]))
+              return [
+                emit(e.func),
+                emitJavascriptTextBackticks(e.args[0].value),
+              ];
+            return [emit(e.func), "(", joinNodes(",", e.args), ")"];
+          case "Identifier":
+            return [e.name];
+          case "Text":
+            return emitJavascriptText(e.value, context.options.codepointRange);
+          case "Integer":
+            return (
+              emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] }) +
+              (e.targetType === "bigint" ? "n" : "")
+            );
+          case "List":
+          case "Array":
+            return ["[", joinNodes(",", e.value), "]"];
+          case "Table":
+            return [
+              "{",
+              joinTrees(
+                ",",
+                e.value.map((x) => [
+                  isText()(x.key) && /\w*/.test(x.key.value)
+                    ? x.key.value
+                    : ["[", emit(x), "]"],
+                  ":",
+                  emit(x.value),
+                ]),
+              ),
+              "}",
+            ];
+          case "ConditionalOp":
+            return [
+              emit(e.condition, prec + 1),
+              "?",
+              emit(e.consequent),
+              ":",
+              emit(e.alternate, prec),
+            ];
+          case "While":
+            return [`while`, "(", emit(e.condition), ")", emit(e.body)];
+          case "If":
+            return [
+              "if",
+              "(",
+              emit(e.condition),
+              ")",
+              emit(e.consequent),
+              e.alternate !== undefined ? ["else", emit(e.alternate)] : [],
+            ];
+          case "OneToManyAssignment":
+            return [e.variables.map((v) => [emit(v), "="]), emit(e.expr)];
+          case "IndexCall":
+            return [emit(e.collection, Infinity), "[", emit(e.index), "]"];
+          case "PropertyCall":
+            return [emit(e.object, prec), ".", emit(e.ident)];
+          case "Infix": {
+            const rightAssoc = e.name === "**";
+            return [
+              emit(e.left, prec + (rightAssoc ? 1 : 0)),
+              e.name,
+              emit(e.right, prec + (rightAssoc ? 0 : 1)),
+            ];
+          }
+          case "Prefix":
+            return [e.name, emit(e.arg, prec)];
+          case "Postfix":
+            return [emit(e.arg, prec), e.name];
+          case "ForEach":
+            return [
+              `for`,
+              "(",
+              emit(e.variable ?? id()),
+              e.collection.targetType === "object" ? "in" : "of",
+              emit(e.collection),
+              ")",
+              emit(e.body),
+            ];
+          case "ForCLike":
+            return [
+              "for",
+              "(",
+              joinNodes(";", [e.init, e.condition, e.append]),
+              ")",
+              emit(e.body),
+            ];
+
+          default:
+            throw new EmitError(e);
+        }
+      }
+
+      const inner = emitNoParens(expr);
+      if (prec >= minimumPrec) return inner;
+      return ["(", inner, ")"];
+    }
+    return flattenTree(emit(program));
   }
-  return emit(program);
 }

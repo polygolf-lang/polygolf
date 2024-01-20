@@ -53,7 +53,7 @@ export function conditionalOpToAndOr(
         if (
           isProvablyThruthy(
             node.consequent,
-            spine.getChild("consequent"),
+            spine.getChild({ prop: "consequent" }),
             context,
           )
         )

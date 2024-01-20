@@ -17,11 +17,9 @@ import {
   required,
   search,
   simplegolf,
-  flattenTree,
-  defaultWhitespaceInsertLogic,
 } from "../../common/Language";
 
-import emitProgram from "./emit";
+import { JavascriptEmitter } from "./emit";
 import {
   removeImplicitConversions,
   printIntToPrint,
@@ -77,7 +75,7 @@ import {
 const javascriptLanguage: Language = {
   name: "Javascript",
   extension: "js",
-  emitter: emitProgram,
+  emitter: new JavascriptEmitter(),
   phases: [
     required(printIntToPrint),
     simplegolf(golfLastPrint()),
@@ -287,7 +285,8 @@ const javascriptLanguage: Language = {
       alias({
         Identifier: (n, s) =>
           n.builtin &&
-          (s.parent?.node.kind !== "PropertyCall" || s.pathFragment !== "ident")
+          (s.parent?.node.kind !== "PropertyCall" ||
+            s.pathFragment?.prop !== "ident")
             ? n.name
             : undefined,
         Integer: (x) => x.value.toString(),
@@ -296,23 +295,6 @@ const javascriptLanguage: Language = {
     ),
     required(renameIdents(), removeImplicitConversions),
   ],
-  detokenizer(tree) {
-    let result = "";
-    flattenTree(tree).forEach((token, i, tokens) => {
-      if (i === tokens.length - 1) result += token;
-      else {
-        const nextToken = tokens[i + 1];
-        if (token === "\n" && "([`+-/".includes(nextToken[0])) {
-          token = ";";
-        }
-        result += token;
-        if (defaultWhitespaceInsertLogic(token, nextToken)) {
-          result += " ";
-        }
-      }
-    });
-    return result;
-  },
 };
 
 export default javascriptLanguage;

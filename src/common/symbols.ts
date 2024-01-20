@@ -189,19 +189,19 @@ export function getDirectWrites(
 function getDirectReadFragments(node: Node): PathFragment[] {
   switch (node.kind) {
     case "Assignment":
-      return ["expr"];
+      return [{ prop: "expr" }];
     case "ForArgv":
-      return ["body"];
+      return [{ prop: "body" }];
     case "ForCLike":
-      return ["condition"];
+      return [{ prop: "condition" }];
     case "ForEach":
-      return ["collection"];
+      return [{ prop: "collection" }];
     case "If":
-      return ["condition"];
+      return [{ prop: "condition" }];
     case "ManyToManyAssignment":
       return node.exprs.map((x, index) => ({ prop: "exprs", index }));
     case "OneToManyAssignment":
-      return ["expr"];
+      return [{ prop: "expr" }];
     case "Op":
       return getDirectPolygolfReadFragments(node).map((index) => ({
         prop: "args",
@@ -212,7 +212,7 @@ function getDirectReadFragments(node: Node): PathFragment[] {
     case "VarDeclarationBlock":
       return [];
     case "While":
-      return ["condition"];
+      return [{ prop: "condition" }];
   }
   return [...getChildFragments(node)];
 }
@@ -226,7 +226,7 @@ function getDirectPolygolfReadFragments(node: Op): number[] {
 function getDirectWriteFragments(node: Node): PathFragment[] {
   switch (node.kind) {
     case "Assignment":
-      return ["variable"];
+      return [{ prop: "variable" }];
     case "ManyToManyAssignment":
     case "OneToManyAssignment":
       return node.variables.map((x, index) => ({ prop: "variables", index }));
