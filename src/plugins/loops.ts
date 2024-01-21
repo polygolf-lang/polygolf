@@ -35,6 +35,7 @@ import {
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
 import { mapOps } from "./ops";
+import { $ } from "../common/fragments";
 
 export function rangeExclusiveToInclusive(skip1Step = false): Plugin {
   return mapOps({
@@ -120,7 +121,7 @@ export function forRangeToForEach(...ops: GetOp[]): PluginVisitor {
           isInt()(end))
       ) {
         const indexVar = node.variable;
-        const bodySpine = spine.getChild({ prop: "body" });
+        const bodySpine = spine.getChild($.body);
         const knownLength = isInt()(end) ? Number(end.value) : undefined;
         const allowedOps = isInt()(end)
           ? ops
@@ -280,7 +281,7 @@ export function shiftRangeOneUp(node: Node, spine: Spine) {
           isIdent(node.variable!)(x.args[1]),
       )
     ) {
-      const bodySpine = spine.getChild({ prop: "body" });
+      const bodySpine = spine.getChild($.body);
       const newVar = id(node.variable.name + "+shift");
       const newBodySpine = bodySpine.withReplacer((x) =>
         newVar !== undefined && isIdent(node.variable!)(x)
@@ -384,7 +385,7 @@ export function forEachToForRange(node: Node) {
 export function removeUnusedLoopVar(node: Node, spine: Spine) {
   if (node.kind === "ForEach" && node.variable !== undefined) {
     const variable = node.variable;
-    if (!spine.getChild({ prop: "body" }).someNode(isUserIdent(variable))) {
+    if (!spine.getChild($.body).someNode(isUserIdent(variable))) {
       return forEach(undefined, node.collection, node.body);
     }
   }

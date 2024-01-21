@@ -223,10 +223,10 @@ function getDirectPolygolfReadFragments(node: Op): number[] {
 function getDirectWriteFragments(node: Node): PathFragment[] {
   switch (node.kind) {
     case "Assignment":
-      return [{ prop: "variable" }];
+      return [$.variable];
     case "ManyToManyAssignment":
     case "OneToManyAssignment":
-      return node.variables.map((x, index) => ({ prop: "variables", index }));
+      return node.variables.map((x, i) => $.variables.at(i));
   }
   return [];
 }

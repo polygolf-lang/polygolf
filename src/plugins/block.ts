@@ -22,6 +22,7 @@ import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 import { getWrites, hasSideEffect } from "../common/symbols";
 import type { CompilationContext } from "../common/compile";
+import { $ } from "../common/fragments";
 
 /**
  * Collects neighbouring block children matching a predicate and replaces them with a different set of children.
@@ -271,8 +272,8 @@ export function inlineVariables(
         spine.someNode(
           (n) => n !== variable && isUserIdent(variable)(n), // in tests variables are often never read from and we don't want to make those disappear
         ) &&
-        !write.getChild({ prop: "expr" }).someNode(isUserIdent(variable)) &&
-        !hasSideEffect(write.getChild({ prop: "expr" }))
+        !write.getChild($.expr).someNode(isUserIdent(variable)) &&
+        !hasSideEffect(write.getChild($.expr))
       ) {
         const assignmentToInlineSpine = write as Spine<Assignment<Identifier>>;
         const assignment = assignmentToInlineSpine.node;
