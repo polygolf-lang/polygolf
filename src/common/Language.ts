@@ -64,7 +64,8 @@ export abstract class VisitorEmitter extends DetokenizingEmitter {
             prop: item.prop as ChildrenProp,
             index,
           });
-          if (index > 0) tokens.push(item.delimiter);
+          if (index > 0 && item.delimiter !== undefined)
+            tokens.push(item.delimiter);
           collect(this.visit(childSpine.node, childSpine, context), childSpine);
         });
       } else if (item instanceof Spine) {

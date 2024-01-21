@@ -34,7 +34,7 @@ export type PathFragment =
 
 export interface ChildrenPropWithDelimiter {
   readonly prop: ChildrenProp;
-  readonly delimiter: string;
+  readonly delimiter: string | undefined;
 }
 
 export function getChild(node: IR.Node, pathFragment: PathFragment): IR.Node {
@@ -147,7 +147,7 @@ const childrenProps = [
 
 export const $: { [K in ChildProp]: { prop: K } } & {
   [K in ChildrenProp]: {
-    join: (delimiter: string) => { prop: K; delimiter: string };
+    join: (delimiter?: string) => { prop: K; delimiter: string | undefined };
     at: (index: number) => { prop: K; index: number };
   };
 } = {
@@ -162,6 +162,7 @@ export const $: { [K in ChildProp]: { prop: K } } & {
         at(index: number) {
           return { prop, index };
         },
+        prop,
       },
     ]),
   ),

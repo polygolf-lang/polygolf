@@ -95,6 +95,8 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
   }
 
   visitNoParens(e: IR.Node, spine: Spine, context: CompilationContext) {
+    if (e === undefined) return "_";
+
     switch (e.kind) {
       case "Block":
         return $.children.join("\n");
@@ -111,7 +113,7 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
           );
           return [
             "for",
-            e.variable === undefined ? "_" : $.variable,
+            $.variable,
             "=",
             [low, ",", high],
             isInt(1n)(e.collection.args[2]) ? [] : [",", step],
