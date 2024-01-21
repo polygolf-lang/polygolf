@@ -1,6 +1,6 @@
 import { type CompilationContext } from "../../common/compile";
 import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
-import { type IR, isInt, isOp } from "../../IR";
+import { isInt, isOp, type Node } from "../../IR";
 import {
   defaultDetokenizer,
   PrecedenceVisitorEmitter,
@@ -65,7 +65,7 @@ function binaryPrecedence(opname: string): number {
 export class LuaEmitter extends PrecedenceVisitorEmitter {
   detokenize = defaultDetokenizer();
 
-  minPrecForNoParens(parent: IR.Node, fragment: PathFragment) {
+  minPrecForNoParens(parent: Node, fragment: PathFragment) {
     const kind = parent.kind;
     const prop = fragment.prop;
     return kind === "MethodCall" && prop === "object"
@@ -81,7 +81,7 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
       : -Infinity;
   }
 
-  prec(expr: IR.Node): number {
+  prec(expr: Node): number {
     switch (expr.kind) {
       case "Prefix":
         return 11;
@@ -96,7 +96,7 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
     return Infinity;
   }
 
-  visitNoParens(e: IR.Node, spine: Spine, context: CompilationContext) {
+  visitNoParens(e: Node, spine: Spine, context: CompilationContext) {
     if (e === undefined) return "_";
 
     switch (e.kind) {

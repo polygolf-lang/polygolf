@@ -5,7 +5,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, type Node } from "../../IR";
+import { type Node } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
 import { $, type PathFragment } from "../../common/fragments";
 import type { Spine } from "../../common/Spine";
@@ -105,7 +105,7 @@ function unaryPrecedence(opname: string): number {
 }
 
 export class SwiftEmitter extends PrecedenceVisitorEmitter {
-  prec(expr: IR.Node): number {
+  prec(expr: Node): number {
     switch (expr.kind) {
       case "Prefix":
         return unaryPrecedence(expr.name);

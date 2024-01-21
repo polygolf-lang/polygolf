@@ -1,5 +1,5 @@
 import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
-import { isInt, type IR, isForEachRange } from "../../IR";
+import { isInt, isForEachRange, type Node } from "../../IR";
 import {
   defaultDetokenizer,
   VisitorEmitter,
@@ -27,7 +27,7 @@ export class JanetEmitter extends VisitorEmitter {
       /[^(){}[\]`'"]/.test(b[0]),
   );
 
-  visit(n: IR.Node, spine: Spine<IR.Node>, context: CompilationContext) {
+  visit(n: Node, spine: Spine<Node>, context: CompilationContext) {
     function list(...args: EmitterVisitResult[]) {
       return ["(", ...args, ")"];
     }

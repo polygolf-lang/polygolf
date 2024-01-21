@@ -8,7 +8,7 @@ import {
   EmitError,
   emitIntLiteral,
 } from "../../common/emit";
-import { type Array, type IR, isInt, type Node, type Text } from "../../IR";
+import { type Array, isInt, type Node, type Text } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
 import type { Spine } from "../../common/Spine";
 import { $, type PathFragment } from "../../common/fragments";
@@ -104,7 +104,7 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
     return false;
   });
 
-  prec(expr: IR.Node): number {
+  prec(expr: Node): number {
     switch (expr.kind) {
       case "FunctionCall":
         return 12;
