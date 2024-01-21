@@ -38,6 +38,7 @@ import {
   removeSystemNamespace,
   removeToSeqFromFor,
   useBackwardsIndex,
+  useRawStringLiteral,
   useUFCS,
   useUnsignedDivision,
 } from "./plugins";
@@ -325,6 +326,7 @@ const nimLanguage: Language = {
       removeImplicitConversions,
     ),
     search(useUFCS),
+    simplegolf(useRawStringLiteral),
   ],
 };
 

@@ -1,8 +1,6 @@
 import {
   defaultDetokenizer,
-  DetokenizingEmitter,
-  flattenTree,
-  type TokenTree,
+  PrecedenceVisitorEmitter,
 } from "../../common/Language";
 import {
   emitTextFactory,
@@ -10,8 +8,10 @@ import {
   EmitError,
   emitIntLiteral,
 } from "../../common/emit";
-import { type Array, type IR, isIdent, isInt, isText } from "../../IR";
-import { type CompilationContext } from "@/common/compile";
+import { type Array, type IR, isInt, type Node, type Text } from "../../IR";
+import { type CompilationContext } from "../../common/compile";
+import type { Spine } from "../../common/Spine";
+import { $, type PathFragment } from "../../common/fragments";
 
 function escape(x: number, i: number, arr: number[]) {
   if (x < 100 && (i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57))
@@ -36,22 +36,10 @@ const emitNimChar = emitTextFactory(
   escape,
 );
 
-function precedence(expr: IR.Node): number {
-  switch (expr.kind) {
-    case "FunctionCall":
-      return 12;
-    case "Prefix":
-      return 11;
-    case "Infix":
-      return binaryPrecedence(expr.name);
-    case "ConditionalOp":
-      return -Infinity;
-  }
-  return Infinity;
-}
-
 function binaryPrecedence(opname: string): number {
   switch (opname) {
+    case "":
+      return 12;
     case ".":
       return 12;
     case "^":
@@ -94,7 +82,7 @@ function binaryPrecedence(opname: string): number {
   );
 }
 
-export class NimEmitter extends DetokenizingEmitter {
+export class NimEmitter extends PrecedenceVisitorEmitter {
   detokenize = defaultDetokenizer((a, b) => {
     const left = a[a.length - 1];
     const right = b[0];
@@ -116,25 +104,57 @@ export class NimEmitter extends DetokenizingEmitter {
     return false;
   });
 
-  emitTokens(program: IR.Node, context: CompilationContext) {
-    function emitMultiNode(expr: IR.Node, isRoot = false): TokenTree {
-      const children = expr.kind === "Block" ? expr.children : [expr];
-      // Prefer newlines over semicolons at top level for aesthetics
-      if (isRoot) {
-        return joinNodes("\n", children);
-      }
+  prec(expr: IR.Node): number {
+    switch (expr.kind) {
+      case "FunctionCall":
+        return 12;
+      case "Prefix":
+        return 11;
+      case "Infix":
+        return binaryPrecedence(expr.name);
+      case "ConditionalOp":
+        return -Infinity;
+    }
+    return Infinity;
+  }
+
+  minPrecForNoParens(parent: Node, fragment: PathFragment) {
+    const kind = parent.kind;
+    const prop = fragment.prop;
+    return kind === "ConditionalOp"
+      ? 0
+      : kind === "Infix"
+      ? this.prec(parent) +
+        Number(
+          (parent.name === "^" || parent.name === " ") === (prop === "left"),
+        )
+      : kind === "Prefix" || kind === "Postfix"
+      ? this.prec(parent)
+      : prop === "collection" &&
+        (kind === "IndexCall" || kind === "RangeIndexCall")
+      ? 12
+      : -Infinity;
+  }
+
+  visitNoParens(n: Node, spine: Spine, context: CompilationContext) {
+    function multiNode(fragment: PathFragment) {
+      const child = spine.getChild(fragment);
+      const children =
+        child.node.kind === "Block" ? child.getChildSpines() : [child];
       let inner = [];
       let needsBlock = false;
       for (const child of children) {
         const needsNewline =
-          "consequent" in child ||
-          ("children" in child &&
-            (child.kind !== "VarDeclarationBlock" ||
-              child.children.length > 1)) ||
-          "body" in child;
+          "consequent" in child.node ||
+          ("children" in child.node &&
+            (child.node.kind !== "VarDeclarationBlock" ||
+              child.node.children.length > 1)) ||
+          "body" in child.node;
         needsBlock =
-          needsBlock || needsNewline || child.kind.startsWith("VarDeclaration");
-        inner.push(emit(child));
+          needsBlock ||
+          needsNewline ||
+          child.node.kind.startsWith("VarDeclaration");
+        inner.push(child);
         inner.push(needsNewline ? "\n" : ";");
       }
       inner = inner.slice(0, -1);
@@ -143,191 +163,107 @@ export class NimEmitter extends DetokenizingEmitter {
       }
       return inner;
     }
-
-    function joinNodes(
-      delim: TokenTree,
-      exprs: readonly IR.Node[],
-      minPrec = -Infinity,
-    ) {
-      return joinTrees(
-        delim,
-        exprs.map((x) => emit(x, minPrec)),
-      );
-    }
-
-    /**
-     * Emits the expression.
-     * @param expr The expression to be emited.
-     * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
-     * @returns Token tree corresponding to the expression.
-     */
-    function emit(expr: IR.Node, minimumPrec = -Infinity): TokenTree {
-      let prec = precedence(expr);
-      const e = expr;
-      function emitNoParens(): TokenTree {
-        switch (e.kind) {
-          case "Block":
-            return emitMultiNode(e);
-          case "VarDeclarationWithAssignment":
-            return emit(e.assignment);
-          case "VarDeclarationBlock":
-            if (e.children.length > 1)
-              return [
-                "var",
-                "$INDENT$",
-                e.children.map((x) => ["\n", emit(x)]),
-                "$DEDENT$",
-              ];
-            return ["var", emit(e.children[0])];
-          case "Import":
-            return [e.name, joinTrees(",", e.modules)];
-          case "While":
-            return [`while`, emit(e.condition), ":", emitMultiNode(e.body)];
-          case "ForEach":
-            return [
-              `for`,
-              e.variable === undefined ? "()" : emit(e.variable),
-              "in",
-              emit(e.collection),
-              ":",
-              emitMultiNode(e.body),
-            ];
-          case "If":
-            return [
-              "if",
-              emit(e.condition),
-              ":",
-              emitMultiNode(e.consequent),
-              e.alternate !== undefined
-                ? ["else", ":", emitMultiNode(e.alternate)]
-                : [],
-            ];
-          case "Variants":
-          case "ForCLike":
-            throw new EmitError(e);
-          case "Assignment":
-            return [emit(e.variable), "=", emit(e.expr)];
-          case "ManyToManyAssignment":
-            return [
-              "(",
-              joinNodes(",", e.variables),
-              ")",
-              "=",
-              "(",
-              joinNodes(",", e.exprs),
-              ")",
-            ];
-          case "OneToManyAssignment":
-            return [joinNodes(",", e.variables), "=", emit(e.expr)];
-          case "ConditionalOp":
-            return [
-              "if",
-              emit(e.condition, 0),
-              ":",
-              emit(e.consequent, 0),
-              "else",
-              ":",
-              emit(e.alternate, 0),
-            ];
-          case "Identifier":
-            return e.name;
-          case "Text":
-            return (e.targetType === "char" ? emitNimChar : emitNimText)(
-              e.value,
-              context.options.codepointRange,
-            );
-          case "Integer":
-            return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
-          case "FunctionCall":
-            return [emit(e.func), "$GLUE$", "(", joinNodes(",", e.args), ")"];
-          case "Infix": {
-            const rightAssoc = e.name === "^" || e.name === " ";
-            if (
-              e.name === " " &&
-              isText()(e.right) &&
-              (isIdent()(e.left) ||
-                (e.left.kind === "Infix" && e.left.name === "."))
-            ) {
-              const [low, high] = context.options.codepointRange;
-              if (low === 1 && high === Infinity) {
-                const raw = emitAsRawText(e.right.value, "");
-                if (raw !== null) {
-                  const res = [
-                    emit(e.left, prec + (rightAssoc ? 1 : 0)),
-                    "$GLUE$",
-                    raw,
-                  ];
-                  prec = Infinity;
-                  return res;
-                }
-              }
-            }
-            return [
-              emit(e.left, prec + (rightAssoc ? 1 : 0)),
-              /[A-Za-z]/.test(e.name[0]) ? [] : "$GLUE$",
-              e.name,
-              emit(e.right, prec + (rightAssoc ? 0 : 1)),
-            ];
-          }
-          case "Prefix":
-            return [e.name, emit(e.arg, prec)];
-          case "List":
-            return ["@", "[", joinNodes(",", e.value), "]"];
-          case "Array":
-            if (
-              e.value.every((x) => x.kind === "Array" && x.value.length === 2)
-            ) {
-              const pairs = e.value as readonly Array[];
-              return [
-                "{",
-                joinTrees(
-                  ",",
-                  pairs.map((x) => [emit(x.value[0]), ":", emit(x.value[1])]),
-                ),
-                "}",
-              ];
-            }
-            return ["[", joinNodes(",", e.value), "]"];
-          case "Set":
-            return ["[", joinNodes(",", e.value), "]", ".", "toSet"];
-          case "Table":
-            return [
-              "{",
-              joinTrees(
-                ",",
-                e.value.map((x) => [emit(x.key), ":", emit(x.value)]),
-              ),
-              "}",
-              ".",
-              "toTable",
-            ];
-          case "IndexCall":
-            return [emit(e.collection, 12), "$GLUE$", "[", emit(e.index), "]"];
-          case "RangeIndexCall":
-            if (!isInt(1n)(e.step)) throw new EmitError(expr, "step");
-            return [
-              emit(e.collection, 12),
-              "$GLUE$",
-              "[",
-              emit(e.low),
-              "..<",
-              emit(e.high),
-              "]",
-            ];
-          default:
-            throw new EmitError(expr);
+    switch (n.kind) {
+      case "Block":
+        return $.children.join("\n");
+      case "VarDeclarationWithAssignment":
+        return $.assignment;
+      case "VarDeclarationBlock":
+        if (n.children.length > 1)
+          return ["var", "$INDENT$", "\n", $.children.join("\n"), "$DEDENT$"];
+        return ["var", $.children.at(0)];
+      case "Import":
+        return [n.name, joinTrees(",", n.modules)];
+      case "While":
+        return [`while`, $.condition, ":", $.body];
+      case "ForEach":
+        return [
+          `for`,
+          n.variable === undefined ? "()" : $.variable,
+          "in",
+          $.collection,
+          ":",
+          multiNode($.body),
+        ];
+      case "If":
+        return [
+          "if",
+          $.condition,
+          ":",
+          multiNode($.consequent),
+          n.alternate !== undefined
+            ? ["else", ":", multiNode($.alternate)]
+            : [],
+        ];
+      case "Variants":
+      case "ForCLike":
+        throw new EmitError(n);
+      case "Assignment":
+        return [$.variable, "=", $.expr];
+      case "ManyToManyAssignment":
+        return ["(", $.variables.join(","), ")=(", $.exprs.join(","), ")"];
+      case "OneToManyAssignment":
+        return [$.variables.join(","), "=", $.expr];
+      case "ConditionalOp":
+        return ["if", $.condition, ":", $.consequent, "else", ":", $.alternate];
+      case "Identifier":
+        return n.name;
+      case "Text":
+        return (n.targetType === "char" ? emitNimChar : emitNimText)(
+          n.value,
+          context.options.codepointRange,
+        );
+      case "Integer":
+        return emitIntLiteral(n, { 10: ["", ""], 16: ["0x", ""] });
+      case "FunctionCall":
+        return [$.func, "$GLUE$", "(", $.args.join(","), ")"];
+      case "Infix": {
+        if (n.name === "") {
+          return [$.left, "$GLUE$", emitAsRawText((n.right as Text).value)];
         }
+        return [
+          $.left,
+          /[A-Za-z]/.test(n.name[0]) ? [] : "$GLUE$",
+          n.name,
+          $.right,
+        ];
       }
-
-      const inner = emitNoParens();
-      if (prec >= minimumPrec) return inner;
-      return ["(", inner, ")"];
+      case "Prefix":
+        return [n.name, $.arg];
+      case "List":
+        return ["@", "[", $.value.join(","), "]"];
+      case "Array":
+        if (n.value.every((x) => x.kind === "Array" && x.value.length === 2)) {
+          const pairs = n.value as readonly Array[];
+          return [
+            "{",
+            pairs.map((x, i) => [
+              i > 0 ? "," : [],
+              spine.getChild($.value.at(i), $.value.at(0)),
+              ":",
+              spine.getChild($.value.at(i), $.value.at(1)),
+            ]),
+            "}",
+          ];
+        }
+        return ["[", $.value.join(","), "]"];
+      case "Set":
+        return ["[", $.value.join(","), "]", ".", "toSet"];
+      case "Table":
+        return ["{", $.value.join(","), "}", ".", "toTable"];
+      case "KeyValue":
+        return [$.key, ":", $.value];
+      case "IndexCall":
+        return [$.collection, "$GLUE$", "[", $.index, "]"];
+      case "RangeIndexCall":
+        if (!isInt(1n)(n.step)) throw new EmitError(n, "step");
+        return [$.collection, "$GLUE$", "[", $.low, "..<", $.high, "]"];
+      default:
+        throw new EmitError(n);
     }
-    return flattenTree(emitMultiNode(program, true));
   }
 }
 
-function emitAsRawText(value: string, prefix: string = "r"): string | null {
-  if (value.includes("\n") || value.includes("\r")) return null;
-  return `${prefix}"${value.replaceAll(`"`, `""`)}"`;
+function emitAsRawText(value: string): string {
+  return `"${value.replaceAll(`"`, `""`)}"`;
 }

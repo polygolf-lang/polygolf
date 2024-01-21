@@ -12,11 +12,13 @@ import {
   type Op,
   type OpCode,
   isBuiltinIdent,
+  isText,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { addImports } from "../../plugins/imports";
 import type { PluginVisitor, Spine } from "../../common/Spine";
 import { replaceAtIndex } from "../../common/arrays";
+import type { CompilationContext } from "../../common/compile";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -141,5 +143,29 @@ export function removeToSeqFromFor(node: Node, spine: Spine) {
     spine.pathFragment?.prop === "collection"
   ) {
     return node.args[0];
+  }
+}
+
+export function useRawStringLiteral(
+  node: Node,
+  spine: Spine,
+  context: CompilationContext,
+) {
+  if (
+    node.kind === "Infix" &&
+    node.name === " " &&
+    isText()(node.right) &&
+    (isIdent()(node.left) ||
+      (node.left.kind === "Infix" && node.left.name === "."))
+  ) {
+    const [low, high] = context.options.codepointRange;
+    if (low === 1 && high === Infinity) {
+      if (
+        !node.right.value.includes("\n") &&
+        !node.right.value.includes("\r")
+      ) {
+        return infix("", node.left, node.right);
+      }
+    }
   }
 }
