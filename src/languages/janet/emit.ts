@@ -28,8 +28,8 @@ export class JanetEmitter extends VisitorEmitter {
   );
 
   visit(n: IR.Node, spine: Spine<IR.Node>, context: CompilationContext) {
-    function list(name: string, ...args: EmitterVisitResult[]) {
-      return ["(", name, ...args, ")"];
+    function list(...args: EmitterVisitResult[]) {
+      return ["(", ...args, ")"];
     }
 
     if (n === undefined) return "_";
@@ -95,7 +95,7 @@ export class JanetEmitter extends VisitorEmitter {
           36: ["36r", ""],
         });
       case "FunctionCall":
-        return ["(", $.func, $.args.join(), ")"];
+        return list($.func, $.args.join());
       case "RangeIndexCall":
         if (!isInt(1n)(n.step)) throw new EmitError(n, "step not equal one");
         return isInt(0n)(n.low)
