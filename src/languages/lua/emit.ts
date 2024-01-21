@@ -66,15 +66,17 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
   detokenize = defaultDetokenizer();
 
   minPrecForNoParens(parent: IR.Node, fragment: PathFragment) {
-    return parent.kind === "MethodCall" && fragment.prop === "object"
+    const kind = parent.kind;
+    const prop = fragment.prop;
+    return kind === "MethodCall" && prop === "object"
       ? Infinity
-      : parent.kind === "IndexCall" && fragment.prop === "collection"
+      : kind === "IndexCall" && prop === "collection"
       ? Infinity
-      : parent.kind === "Infix"
-      ? fragment.prop === "left"
+      : kind === "Infix"
+      ? prop === "left"
         ? this.prec(parent) + (parent.name === "^" ? 1 : 0)
         : this.prec(parent) + (parent.name === "^" ? 0 : 1)
-      : parent.kind === "Prefix"
+      : kind === "Prefix"
       ? this.prec(parent)
       : -Infinity;
   }
