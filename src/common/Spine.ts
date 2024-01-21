@@ -32,8 +32,10 @@ export class Spine<N extends IR.Node = IR.Node> {
   }
 
   /** Get one particular child spine. */
-  getChild(pathFragment: PathFragment): Spine {
-    return new Spine(getChild(this.node, pathFragment), this, pathFragment);
+  getChild(...pathFragments: PathFragment[]): Spine {
+    if (pathFragments.length === 0) return this;
+    const [first, ...rest] = pathFragments;
+    return new Spine(getChild(this.node, first), this, first).getChild(...rest);
   }
 
   /** Return the spine (pointing to this node) determined from replacing a child

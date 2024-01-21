@@ -1,7 +1,11 @@
 import { type Node } from "IR";
-import { type Spine, type PluginVisitor, programToSpine } from "./Spine";
+import { Spine, type PluginVisitor, programToSpine } from "./Spine";
 import { type CompilationContext } from "./compile";
-import type { PathFragment } from "./fragments";
+import type {
+  ChildrenProp,
+  ChildrenPropWithDelimiter,
+  PathFragment,
+} from "./fragments";
 
 export interface Emitter {
   emit: (program: Node, context: CompilationContext) => string;
@@ -29,7 +33,12 @@ export abstract class DetokenizingEmitter implements Emitter {
   }
 }
 
-export type EmitterVisitResult = (string | PathFragment | EmitterVisitResult)[];
+export type EmitterVisitResult =
+  | string
+  | PathFragment
+  | ChildrenPropWithDelimiter
+  | Spine
+  | EmitterVisitResult[];
 
 export abstract class VisitorEmitter extends DetokenizingEmitter {
   abstract detokenize(tokens: Token[]): string;
@@ -38,23 +47,64 @@ export abstract class VisitorEmitter extends DetokenizingEmitter {
     spine: Spine,
     context: CompilationContext,
   ): EmitterVisitResult;
-  emit(program: Node, context: CompilationContext) {
+  emitTokens(program: Node, context: CompilationContext) {
     const tokens: Token[] = [];
     const collect = (item: EmitterVisitResult, spine: Spine) => {
-      for (const o of item) {
-        if (typeof o === "string") {
-          tokens.push(o);
-        } else if (Array.isArray(o)) {
+      if (typeof item === "string") {
+        tokens.push(item);
+      } else if (Array.isArray(item)) {
+        item.forEach((o) => {
           collect(o, spine);
-        } else {
-          const childSpine = spine.getChild(o);
+        });
+      } else if ("delimiter" in item) {
+        (
+          spine.node[item.prop as keyof typeof spine.node] as any as Node[]
+        ).forEach((x, index) => {
+          const childSpine = spine.getChild({
+            prop: item.prop as ChildrenProp,
+            index,
+          });
+          if (index > 0) tokens.push(item.delimiter);
           collect(this.visit(childSpine.node, childSpine, context), childSpine);
-        }
+        });
+      } else if (item instanceof Spine) {
+        collect(this.visit(item.node, item, context), item);
+      } else {
+        const childSpine = spine.getChild(item);
+        collect(this.visit(childSpine.node, childSpine, context), childSpine);
       }
     };
     const programSpine = programToSpine(program);
     collect(this.visit(program, programSpine, context), programSpine);
-    return this.detokenize(tokens);
+    return tokens;
+  }
+}
+
+export abstract class PrecedenceVisitorEmitter extends VisitorEmitter {
+  abstract minPrecForNoParens(
+    parent: Node,
+    fragment: PathFragment,
+    spine: Spine,
+  ): number;
+  abstract prec(node: Node): number;
+  abstract visitNoParens(
+    node: Node,
+    spine: Spine,
+    context: CompilationContext,
+  ): EmitterVisitResult;
+  visit(node: Node, spine: Spine, context: CompilationContext) {
+    const res = this.visitNoParens(node, spine, context);
+    const minPrec =
+      spine.parent === null
+        ? -Infinity
+        : this.minPrecForNoParens(
+            spine.parent?.node,
+            spine.pathFragment!,
+            spine,
+          );
+    return minPrec === -Infinity || this.prec(node) >= minPrec
+      ? res
+      : ["(", res, ")"];
   }
 }
 

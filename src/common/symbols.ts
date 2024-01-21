@@ -10,7 +10,7 @@ import {
   type Type,
 } from "../IR";
 import { PolygolfError } from "./errors";
-import { getChildFragments, type PathFragment } from "./fragments";
+import { $, getChildFragments, type PathFragment } from "./fragments";
 import { getCollectionTypes, getType } from "./getType";
 import { programToSpine, type Spine } from "./Spine";
 
@@ -189,30 +189,27 @@ export function getDirectWrites(
 function getDirectReadFragments(node: Node): PathFragment[] {
   switch (node.kind) {
     case "Assignment":
-      return [{ prop: "expr" }];
+      return [$.expr];
     case "ForArgv":
-      return [{ prop: "body" }];
+      return [$.body];
     case "ForCLike":
-      return [{ prop: "condition" }];
+      return [$.condition];
     case "ForEach":
-      return [{ prop: "collection" }];
+      return [$.collection];
     case "If":
-      return [{ prop: "condition" }];
+      return [$.condition];
     case "ManyToManyAssignment":
-      return node.exprs.map((x, index) => ({ prop: "exprs", index }));
+      return node.exprs.map((x, i) => $.exprs.at(i));
     case "OneToManyAssignment":
-      return [{ prop: "expr" }];
+      return [$.expr];
     case "Op":
-      return getDirectPolygolfReadFragments(node).map((index) => ({
-        prop: "args",
-        index,
-      }));
+      return getDirectPolygolfReadFragments(node).map((i) => $.args.at(i));
     case "VarDeclaration":
       return [];
     case "VarDeclarationBlock":
       return [];
     case "While":
-      return [{ prop: "condition" }];
+      return [$.condition];
   }
   return [...getChildFragments(node)];
 }
