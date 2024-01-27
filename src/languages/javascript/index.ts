@@ -129,13 +129,13 @@ const javascriptLanguage: Language = {
     required(
       useImplicitForEachChar("Ascii"),
       forRangeToForCLike,
+      mapOps({
+        "at[argv]": (a) => op["at[List]"](op.argv, a),
+      }),
       mapOpsTo.builtin({
         true: "true",
         false: "false",
         argv: "arguments",
-      }),
-      mapOps({
-        "at[argv]": (a) => op["at[List]"](op.argv, a),
       }),
       mapMutationTo.index({
         "with_at[Array]": 0,
