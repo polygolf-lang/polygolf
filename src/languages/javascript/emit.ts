@@ -9,6 +9,11 @@ import { type CompilationContext } from "../../common/compile";
 import { $, type PathFragment } from "../../common/fragments";
 import type { Spine } from "../../common/Spine";
 
+function escapeRegExp(string: string) {
+  // https://stackoverflow.com/a/6969486/14611638
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+}
+
 function codepointMap(x: number) {
   if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
   if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
@@ -162,7 +167,9 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
       case "Identifier":
         return n.name;
       case "Text":
-        return emitJavascriptText(n.value, context.options.codepointRange);
+        return n.targetType?.startsWith("regex") === true
+          ? `/${escapeRegExp(n.value)}/${n.targetType.split(" ")[1]}`
+          : emitJavascriptText(n.value, context.options.codepointRange);
       case "Integer":
         return (
           emitIntLiteral(n, { 10: ["", ""], 16: ["0x", ""] }) +

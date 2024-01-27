@@ -1,3 +1,4 @@
+import type { Spine } from "../../common/Spine";
 import {
   type Node,
   builtin,
@@ -16,7 +17,9 @@ import {
   isForEachRange,
   forEach,
   listType,
+  isText,
 } from "../../IR";
+import type { CompilationContext } from "../../common/compile";
 
 export function propertyCallToIndexCall(node: Node) {
   if (node.kind === "PropertyCall") {
@@ -96,5 +99,28 @@ export function numberDivisionToSlash(node: Node) {
   }
   if (isOp.trunc_div(node) && node.targetType !== "bigint") {
     return functionCall("Math.floor", infix("/", ...node.args));
+  }
+}
+
+export function useRegexAsReplacePattern(
+  node: Node,
+  spine: Spine,
+  context: CompilationContext,
+) {
+  if (isOp.replace(node)) {
+    const [a, b, c] = node.args;
+    if (
+      isText()(b) &&
+      b.targetType !== "regex g" &&
+      [...b.value]
+        .map((x, i) => b.value.charCodeAt(i))
+        .every(
+          (x) =>
+            context.options.codepointRange[0] <= x &&
+            x <= context.options.codepointRange[1],
+        )
+    ) {
+      return op.replace(a, { ...b, targetType: "regex g" }, c);
+    }
   }
 }

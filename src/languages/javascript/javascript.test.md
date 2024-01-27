@@ -102,12 +102,28 @@ m.toString(16)
 ```
 
 ```polygolf
-text_replace "" " " "-";
-
+$x <- (@0);
+$y <- (@1);
+$z <- (@2);
+text_replace $x " " "-";
+text_replace $x " " $y;
+text_replace $x $y:(Text 1..oo) $z;
+$x <- (@3);
+$y <- (@4);
+$z <- (@5);
 ```
 
 ```js
-"".split` `.join`-`
+a=arguments
+x=a[0]
+y=a[1]
+z=a[2]
+x.split` `.join`-`
+x.replace(/ /g,y)
+x.replaceAll(y,z)
+x=a[3]
+y=a[4]
+z=a[5]
 ```
 
 ```polygolf

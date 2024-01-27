@@ -70,6 +70,7 @@ import {
   forRangeToForEachKey,
   numberDivisionToSlash,
   propertyCallToIndexCall,
+  useRegexAsReplacePattern,
 } from "./plugins";
 
 const javascriptLanguage: Language = {
@@ -94,6 +95,7 @@ const javascriptLanguage: Language = {
       inlineVariables,
       forArgvToForEach,
       replaceToSplitAndJoin,
+      useRegexAsReplacePattern,
       decomposeIntLiteral(),
       forRangeToForEachKey,
     ),
@@ -198,6 +200,13 @@ const javascriptLanguage: Language = {
             method(op.int_to_bin(a), "replace", builtin("/0/g,``")),
             "length",
           ),
+        replace: (a, b, c) =>
+          method(
+            a,
+            b.targetType === "regex g" ? "replace" : "replaceAll",
+            b,
+            c,
+          ),
       }),
       mapMutationTo.prefix({
         succ: "++",
@@ -231,7 +240,6 @@ const javascriptLanguage: Language = {
         "find[Ascii]": "indexOf",
         "concat[List]": "concatenate",
         split: "split",
-        replace: "replaceAll",
         repeat: "repeat",
         starts_with: "startsWith",
         ends_with: "endsWith",
