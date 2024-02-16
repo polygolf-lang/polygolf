@@ -1,6 +1,11 @@
-import { type IR, isOp, op, isOfKind, block, type Node } from "../IR";
+import { type IR, isOp, op, block, isOfKind, type Node } from "../IR";
 import type { VisitorContext, CompilationContext } from "./compile";
-import { getChild, getChildFragments, type PathFragment } from "./fragments";
+import {
+  getChild,
+  getChildFragments,
+  getPathProp,
+  type PathFragment,
+} from "./fragments";
 import { replaceAtIndex } from "./arrays";
 
 /** A Spine points to one node and keeps track of all of its ancestors up to
@@ -22,6 +27,10 @@ export class Spine<N extends IR.Node = IR.Node> {
 
   get isRoot() {
     return this.parent === null;
+  }
+
+  getPathProp() {
+    return this.pathFragment !== null ? getPathProp(this.pathFragment) : null;
   }
 
   /** Get a list of all child spines. */

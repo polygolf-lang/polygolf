@@ -116,6 +116,18 @@ function introducedSymbols(
         .filter(isIdent())
         .filter((x) => !existing.has(x.name))
         .map((x) => x.name);
+    // TODO: I may have broken some other languages with VarDeclaration change.
+    case "VarDeclaration":
+      return [node.variable.name];
+    case "FunctionDefinition":
+      return [node.name.name];
+    case "Identifier":
+      if (
+        spine.parent?.node.kind === "FunctionDefinition" &&
+        spine.getPathProp() === "args"
+      )
+        return [node.name];
+      return undefined;
   }
 }
 
@@ -180,11 +192,21 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
         );
       return node.variable.type ?? assignedType;
     }
-    default:
-      throw new Error(
-        `Programming error: node of type ${node.kind} does not bind any symbol`,
-      );
+    case "Identifier":
+      if (
+        spine.parent?.node.kind === "FunctionDefinition" &&
+        spine.getPathProp() === "args"
+      ) {
+        if (node.type !== undefined) return node.type;
+        throw new PolygolfError(
+          `Programming error: function parameter '${node.name}' missing annotated type.`,
+        );
+      }
+      break;
   }
+  throw new PolygolfError(
+    `Programming error: node of type ${node.kind} does not bind any symbol`,
+  );
 }
 
 export interface VarAccess {

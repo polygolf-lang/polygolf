@@ -4,6 +4,7 @@ describe("Restricted nodes: parse - emit match", () => {
   for (const t of [
     `implicit_conversion "dec_to_int" "1";`,
     `var_declaration $x:Int;`,
+    `func $x $x;`,
     `var_declaration_with_assignment ($x:Int <- 0);`,
     `var_declaration_block (var_declaration $x:Int) (var_declaration $y:Int);`,
     `many_to_many_assignment {$x; $y} {"x"; "y"};`,
@@ -31,6 +32,11 @@ describe("Restricted nodes: parse - emit match", () => {
     `for_c_like $i $c $a $body;`,
     `named_arg "name" $x;`,
     `1:1..1:"int";`,
+    `def_fn $f $x $y $body;`,
+    `def_fn_global $f $x $y $body;`,
+    `def_fn_expanded $f $x;`,
+    `def_fn_expanded_global $f $x;`,
+    // `scanning_macro_call $advance $x $y;`,
   ]) {
     test(t.split(" ")[0], () => {
       const normalized = normalize(t);

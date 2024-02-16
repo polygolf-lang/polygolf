@@ -45,6 +45,13 @@ export interface Text<Value extends string = string> extends BaseNode {
   readonly value: Value;
 }
 
+export type IDCastable = string | Identifier;
+
+export function castID(name: IDCastable) {
+  if (typeof name === "string") return id(name);
+  return name;
+}
+
 let unique = 0;
 export function id(name?: string, builtin: boolean = false): Identifier {
   return { kind: "Identifier", name: name ?? `unique#${unique++}`, builtin };

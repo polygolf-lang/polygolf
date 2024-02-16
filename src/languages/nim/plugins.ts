@@ -127,7 +127,11 @@ export function getEndIndex(start: Node, length: Node) {
 }
 
 export function removeSystemNamespace(node: Node, spine: Spine) {
-  if ("name" in node && node.name.startsWith("system.")) {
+  if (
+    "name" in node &&
+    node.kind !== "FunctionDefinition" &&
+    node.name.startsWith("system.")
+  ) {
     return { ...node, name: node.name.slice("system.".length) };
   }
 }

@@ -59,6 +59,8 @@ import {
   isIdent,
   postfix,
   type Text,
+  functionDefinition,
+  scanningMacroCall,
   type OpCodeFrontName,
   OpCodesUser,
   OpCodeFrontNamesToOpCodes,
@@ -172,7 +174,7 @@ export function sexpr(
       return keyValue(args[0], args[1]);
     case "func": {
       expectArity(1, Infinity);
-      const idents = args.slice(0, args.length);
+      const idents = args.slice(0, -1);
       const expr = args[args.length - 1];
       assertIdentifiers(idents);
       return func(idents, expr);
@@ -370,6 +372,27 @@ export function sexpr(
       case "named_arg":
         expectArity(2);
         return namedArg(asString(args[0]), args[1]);
+      case "def_fn":
+      case "def_fn_global":
+      case "def_fn_expanded":
+      case "def_fn_expanded_global": {
+        expectArity(2, Infinity);
+        const name = args[0];
+        assertIdentifier(name);
+        const idents = args.slice(1, -1);
+        const body = args[args.length - 1];
+        assertIdentifiers(idents);
+        const opts = {
+          isGlobal: callee.includes("global"),
+          isExpanded: callee.includes("expanded"),
+        };
+        return functionDefinition(name, idents, body, opts);
+      }
+      case "scanning_macro_call": {
+        expectArity(1, Infinity);
+        assertIdentifier(args[0]);
+        return scanningMacroCall(args[0], ...args.slice(1));
+      }
     }
   let matchingOpCodes = OpCodeFrontNames.includes(callee)
     ? OpCodeFrontNamesToOpCodes[callee as OpCodeFrontName]

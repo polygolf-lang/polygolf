@@ -29,6 +29,9 @@ import {
   isText,
   isIdent,
   isUserIdent,
+  functionDefinition,
+  ifStatement,
+  functionCall,
 } from "../IR";
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
@@ -405,4 +408,26 @@ export function removeUnusedForVar(node: Node, spine: Spine) {
       );
     }
   }
+}
+
+export const whileToRecursion: Plugin = {
+  name: "whileToRecursion",
+  visit(_node) {
+    return whileToRecursionVisitor(_node);
+  },
+};
+
+function whileToRecursionVisitor(node: IR.Node) {
+  if (node.kind !== "While") return;
+  const name = id();
+  return [
+    // Create a function to perform the while
+    functionDefinition(
+      name,
+      [],
+      ifStatement(node.condition, block([node.body, functionCall(name)])),
+    ),
+    // Call that function
+    functionCall(name),
+  ];
 }

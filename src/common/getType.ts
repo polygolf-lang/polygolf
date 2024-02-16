@@ -103,6 +103,8 @@ export function calcTypeAndResolveOpCode(
   switch (expr.kind) {
     case "Function":
       return functionType(expr.args.map(type), type(expr.expr));
+    case "FunctionDefinition":
+      return functionType(expr.args.map(type), type(expr.body));
     case "Block":
     case "VarDeclaration":
       return voidType;

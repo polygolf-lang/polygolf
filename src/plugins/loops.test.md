@@ -52,6 +52,24 @@ while ($j < 11) {
 };
 ```
 
+## For range to while, not at root
+
+```polygolf
+$a <- 0;
+for $i 0 10 {
+  print_int $x;
+};
+```
+
+```polygolf loops.forRangeToWhile
+$a <- 0;
+$i <- 0;
+while ($i < 10) {
+  print_int $x;
+  $i <- (1 + $i);
+};
+```
+
 ## For each
 
 ```polygolf

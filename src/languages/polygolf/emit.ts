@@ -314,5 +314,14 @@ function emitNodeWithoutAnnotation(
       return emitSexpr("@", text(expr.name), expr.value);
     case "AnyInteger":
       return emitSexpr("@", expr.low.toString(), expr.high.toString());
+    case "FunctionDefinition": {
+      const def =
+        "def_fn" +
+        (expr.isExpanded ? "_expanded" : "") +
+        (expr.isGlobal ? "_global" : "");
+      return emitSexpr(def, expr.name, ...expr.args, expr.body);
+    }
+    case "ScanningMacroCall":
+      return emitSexpr("@", expr.func, ...expr.args);
   }
 }

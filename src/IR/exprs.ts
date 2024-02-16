@@ -18,6 +18,8 @@ import {
   isBinary,
   booleanNotOpCode,
   type Text,
+  type IDCastable,
+  castID,
   type VariadicOpCode,
   isCommutative,
   isOpCode,
@@ -68,6 +70,20 @@ export interface KeyValue extends BaseNode {
 
 export interface FunctionCall extends BaseNode {
   readonly kind: "FunctionCall";
+  readonly func: Node;
+  readonly args: readonly Node[];
+}
+
+/**
+ * ScanningMacroCall is currently necessary to represent (TeX)
+ *  \newcount\x  \x123
+ * since a regular FunctionCall would require curly braces since 123 is three tokens.
+ *  \def\f#1{(#1)} \f{123}
+ * This is a correctness issue (not just golfing) since curly braces does not work for counter:
+ *  \newcount\x  \x{123}  % Missing number, treated as zero.
+ */
+export interface ScanningMacroCall extends BaseNode {
+  readonly kind: "ScanningMacroCall";
   readonly func: Node;
   readonly args: readonly Node[];
 }
@@ -413,6 +429,17 @@ export function functionCall(
         ? x
         : Object.entries(x).map((x) => namedArg(...x)),
     ),
+  };
+}
+
+export function scanningMacroCall(
+  func: IDCastable,
+  ...args: readonly Node[]
+): ScanningMacroCall {
+  return {
+    kind: "ScanningMacroCall",
+    func: castID(func),
+    args,
   };
 }
 
