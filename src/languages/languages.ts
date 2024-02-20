@@ -7,6 +7,7 @@ import swiftLanguage from "./swift";
 import golfscriptLanguage from "./golfscript";
 import javascriptLanguage from "./javascript";
 import janetLanguage from "./janet";
+import clojureLanguage from "./clojure";
 import textLanguage from "./text";
 
 const languages = [
@@ -18,6 +19,7 @@ const languages = [
   swiftLanguage,
   javascriptLanguage,
   janetLanguage,
+  clojureLanguage,
   textLanguage,
 ];
 
