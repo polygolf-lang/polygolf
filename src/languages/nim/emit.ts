@@ -20,8 +20,8 @@ function escape(x: number, i: number, arr: number[]) {
 const emitNimText = emitTextFactory(
   {
     '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
-    '"""TEXT"""': { '"""': null },
-    'r"TEXT"': { '"': `""`, "\n": null, "\r": null },
+    '"""TEXT"""': { cantMatch: /"""/ },
+    'r"TEXT"': { cantMatch: /\n|\r/, subs: { '"': `""` } },
   },
   escape,
 );
