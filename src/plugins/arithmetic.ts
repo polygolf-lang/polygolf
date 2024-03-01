@@ -14,6 +14,9 @@ import {
   type Node,
   pred,
   succ,
+  leq,
+  lt,
+  mul,
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
@@ -463,3 +466,45 @@ export function useImplicitBoolToInt(node: Node, spine: Spine) {
     return implicitConversion(node.op, node.args[0]);
   }
 }
+
+export function comparisonToDivision(node: Node, spine: Spine) {
+  if (isOp.bool_to_int(node)) {
+    if (isOp("lt", "gt")(node.args[0])) {
+      let [x, y] = node.args[0].args;
+      if (isOp.gt(node.args[0])) {
+        [x, y] = [y, x];
+      }
+      const xType = getType(x, spine) as IntegerType;
+      const a = xType.low;
+      const b = xType.high;
+      if (leq(0n, a)) {
+        const yType = getType(y, spine) as IntegerType;
+        const c = yType.low;
+        if (lt(b, mul(2n, c))) {
+          return op.div(x, y);
+        }
+      }
+    }
+  }
+}
+
+export function divisionToComparison(node: Node, spine: Spine) {
+  if (isOp.div(node)) {
+    const [x, y] = node.args;
+    const xType = getType(x, spine) as IntegerType;
+    const a = xType.low;
+    const b = xType.high;
+    if (leq(0n, a)) {
+      const yType = getType(y, spine) as IntegerType;
+      const c = yType.low;
+      if (lt(b, mul(2n, c))) {
+        return op.bool_to_int(op.lt(x, y));
+      }
+    }
+  }
+}
+
+export const divisionToComparisonAndBack = [
+  divisionToComparison,
+  comparisonToDivision,
+];

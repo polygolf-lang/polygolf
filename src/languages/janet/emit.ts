@@ -1,4 +1,9 @@
-import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
+import {
+  EmitError,
+  emitIntLiteral,
+  emitTextFactory,
+  getIfChain,
+} from "../../common/emit";
 import { isInt, type IR, isForEachRange, type Node } from "../../IR";
 import { type TokenTree } from "../../common/Language";
 
@@ -60,13 +65,14 @@ export default function emitProgram(program: IR.Node): TokenTree {
               );
         }
         return list("each", e.variable ?? "_", e.collection, multiNode(e.body));
-      case "If":
+      case "If": {
+        const { ifs, alternate } = getIfChain(e);
         return list(
-          "if",
-          emit(e.condition),
-          multiNode(e.consequent, true),
-          e.alternate === undefined ? [] : multiNode(e.alternate, true),
+          ifs.length > 1 ? "cond" : "if",
+          ifs.map((x) => [emit(x.condition), multiNode(x.consequent, true)]),
+          alternate === undefined ? [] : multiNode(alternate, true),
         );
+      }
       case "VarDeclarationWithAssignment": {
         const assignment = e.assignment;
         if (assignment.kind !== "Assignment") {
@@ -94,10 +100,16 @@ export default function emitProgram(program: IR.Node): TokenTree {
       case "RangeIndexCall":
         if (!isInt(1n)(e.step)) throw new EmitError(e, "step not equal one");
         return isInt(0n)(e.low)
-          ? list("take", e.high, e.collection)
-          : list("slice", e.collection, e.low, e.high);
-      case "ConditionalOp":
-        return list("if", e.condition, e.consequent, e.alternate);
+          ? list("take", emit(e.high), emit(e.collection))
+          : list("slice", emit(e.collection), emit(e.low), emit(e.high));
+      case "ConditionalOp": {
+        const { ifs, alternate } = getIfChain(e);
+        return list(
+          ifs.length > 1 ? "cond" : "if",
+          ifs.map((x) => [emit(x.condition), emit(x.consequent)]),
+          emit(alternate!),
+        );
+      }
       case "List":
         return ["@[", e.value.map((x) => emit(x)), "]"];
       case "Table":

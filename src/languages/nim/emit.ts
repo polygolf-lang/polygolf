@@ -4,6 +4,7 @@ import {
   joinTrees,
   EmitError,
   emitIntLiteral,
+  getIfChain,
 } from "../../common/emit";
 import { type Array, type IR, isIdent, isInt, isText } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
@@ -168,16 +169,20 @@ export default function emitProgram(
             ":",
             emitMultiNode(e.body),
           ];
-        case "If":
+        case "If": {
+          const { ifs, alternate } = getIfChain(e);
           return [
-            "if",
-            emit(e.condition),
-            ":",
-            emitMultiNode(e.consequent),
-            e.alternate !== undefined
-              ? ["else", ":", emitMultiNode(e.alternate)]
-              : [],
+            ifs.map((x, i) => [
+              i < 1 ? "if" : "elif",
+              emit(x.condition),
+              ":",
+              emitMultiNode(x.consequent),
+            ]),
+            alternate === undefined
+              ? []
+              : ["else", ":", emitMultiNode(alternate)],
           ];
+        }
         case "Variants":
         case "ForCLike":
           throw new EmitError(e);
