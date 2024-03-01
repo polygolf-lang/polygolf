@@ -45,11 +45,11 @@ export function tableHashing(
       if (
         tableType.kind === "Table" &&
         tableType.key.kind === "text" &&
-        table.kvPairs.every((x) => isText()(x.key))
+        table.value.every((x) => isText()(x.key))
       ) {
         const searchResult = findHash(
           hashFunc,
-          table.kvPairs.map((x) => [(x.key as Text).value, x.value]),
+          table.value.map((x) => [(x.key as Text).value, x.value]),
           maxMod,
         );
         if (searchResult === null) return undefined;
@@ -125,12 +125,12 @@ export function testTableHashing(maxMod: number): Plugin {
 
 export function tableToListLookup(node: Node) {
   if (isOp("at[Table]")(node) && node.args[0].kind === "Table") {
-    const keys = node.args[0].kvPairs.map((x) => x.key);
+    const keys = node.args[0].value.map((x) => x.key);
     if (
       keys.every(isOfKind("Integer", "Text")) &&
       new Set(keys.map((x) => x.value)).size === keys.length
     ) {
-      const values = node.args[0].kvPairs.map((x) => x.value);
+      const values = node.args[0].value.map((x) => x.value);
       const at = node.args[1];
       return op["at[List]"](list(values), op["find[List]"](list(keys), at));
     }

@@ -29,6 +29,7 @@ import {
   text,
   isInt,
   intToDecOpOrText,
+  isForEachChar,
 } from "../../IR";
 import {
   golfLastPrint,
@@ -38,6 +39,7 @@ import {
 import {
   charToIntToDec,
   decToIntToOrd,
+  atTextToListToAtText,
   usePrimaryTextOps,
 } from "../../plugins/textOps";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
@@ -50,10 +52,11 @@ import {
   pickAnyInt,
   truncatingOpsPlugins,
 } from "../../plugins/arithmetic";
-import { forArgvToForEach } from "../../plugins/loops";
+import { forArgvToForEach, forEachToForRange } from "../../plugins/loops";
 import { alias, renameIdents } from "../../plugins/idents";
 import { assertInt64 } from "../../plugins/types";
 import { implicitlyConvertConcatArg } from "./plugins";
+import { applyIf } from "../../plugins/helpers";
 
 const janetLanguage: Language = {
   name: "Janet",
@@ -76,6 +79,7 @@ const janetLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
+      applyIf(forEachToForRange, isForEachChar),
       mapOps({
         right_align: (a, b) =>
           func(
@@ -103,6 +107,7 @@ const janetLanguage: Language = {
       comparisonToDivision,
     ),
     required(
+      atTextToListToAtText,
       mapOps({
         argv: () => func("slice", func("dyn", builtin(":args")), int(1n)),
 

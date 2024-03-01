@@ -66,6 +66,7 @@ function binaryPrecedence(opname: string): number {
     case "&":
       return 7;
     case "..":
+    case "..<":
       return 6;
     case "<":
     case "<=":
@@ -162,47 +163,12 @@ export default function emitProgram(
         case "ForEach":
           return [
             `for`,
-            emit(e.variable),
+            e.variable === undefined ? "()" : emit(e.variable),
             "in",
             emit(e.collection),
             ":",
             emitMultiNode(e.body),
           ];
-        case "ForRange": {
-          const start = isInt(0n)(e.start) ? [] : emit(e.start);
-          if (isInt(1n)(e.increment)) {
-            return [
-              "for",
-              e.variable === undefined ? "()" : emit(e.variable),
-              "in",
-              start,
-              "$GLUE$",
-              e.inclusive ? ".." : "..<",
-              emit(e.end),
-              ":",
-              emitMultiNode(e.body),
-            ];
-          }
-          if (!e.inclusive) {
-            throw new EmitError(e, "exlusive+step");
-          }
-          return [
-            "for",
-            e.variable === undefined ? "()" : emit(e.variable),
-            "in",
-            "countup",
-            "$GLUE$",
-            "(",
-            emit(e.start),
-            ",",
-            emit(e.end),
-            ",",
-            emit(e.increment),
-            ")",
-            ":",
-            emitMultiNode(e.body),
-          ];
-        }
         case "If": {
           const { ifs, alternate } = getIfChain(e);
           return [
@@ -218,8 +184,6 @@ export default function emitProgram(
           ];
         }
         case "Variants":
-        case "ForEachKey":
-        case "ForEachPair":
         case "ForCLike":
           throw new EmitError(e);
         case "Assignment":
@@ -289,30 +253,30 @@ export default function emitProgram(
         case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "List":
-          return ["@", "[", joinNodes(",", e.exprs), "]"];
+          return ["@", "[", joinNodes(",", e.value), "]"];
         case "Array":
           if (
-            e.exprs.every((x) => x.kind === "Array" && x.exprs.length === 2)
+            e.value.every((x) => x.kind === "Array" && x.value.length === 2)
           ) {
-            const pairs = e.exprs as readonly Array[];
+            const pairs = e.value as readonly Array[];
             return [
               "{",
               joinTrees(
                 ",",
-                pairs.map((x) => [emit(x.exprs[0]), ":", emit(x.exprs[1])]),
+                pairs.map((x) => [emit(x.value[0]), ":", emit(x.value[1])]),
               ),
               "}",
             ];
           }
-          return ["[", joinNodes(",", e.exprs), "]"];
+          return ["[", joinNodes(",", e.value), "]"];
         case "Set":
-          return ["[", joinNodes(",", e.exprs), "]", ".", "toSet"];
+          return ["[", joinNodes(",", e.value), "]", ".", "toSet"];
         case "Table":
           return [
             "{",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
+              e.value.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "}",
             ".",

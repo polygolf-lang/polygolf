@@ -15,6 +15,7 @@ import {
   conditional,
   rangeIndexCall,
   intToDecOpOrText,
+  infix,
 } from "../../IR";
 import {
   type Language,
@@ -53,8 +54,9 @@ import {
 } from "../../plugins/block";
 import {
   forArgvToForEach,
-  forRangeToForRangeInclusive,
+  rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import {
   usePrimaryTextOps,
@@ -62,6 +64,7 @@ import {
   replaceToSplitAndJoin,
   ordToDecToInt,
   charToIntToDec,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
@@ -93,7 +96,7 @@ const swiftLanguage: Language = {
       golfStringListLiteral(false),
       listOpsToTextOps(),
       equalityToInequality,
-      forRangeToForRangeInclusive(),
+      rangeExclusiveToInclusive(),
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -115,6 +118,7 @@ const swiftLanguage: Language = {
       decomposeIntLiteral(),
     ),
     required(
+      atTextToListToAtText,
       mapBackwardsIndexToForwards({
         "at_back[Ascii]": "size[Ascii]",
         "at_back[byte]": "size[byte]",
@@ -247,6 +251,14 @@ const swiftLanguage: Language = {
             method(op.int_to_bin(a), "filter", builtin(`{$0>"0"}`)),
             "count",
           ),
+        range_excl: (a, b, c) =>
+          isInt(1n)(c)
+            ? infix("..<", a, b)
+            : func("stride", { from: a, to: b, by: c }),
+        range_incl: (a, b, c) =>
+          isInt(1n)(c)
+            ? infix("...", a, b)
+            : func("stride", { from: a, to: succ(b), by: c }),
       }),
       mapOpsTo.func({
         max: "max",
@@ -309,6 +321,7 @@ const swiftLanguage: Language = {
         "at[Table]": 0,
       }),
       addImports({ Foundation: ["pow", "replacingOccurrences", "format"] }),
+      useImplicitForEachChar("codepoint"),
     ),
     simplegolf(
       alias({

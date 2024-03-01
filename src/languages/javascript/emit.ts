@@ -5,7 +5,7 @@ import {
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isText, isOfKind } from "../../IR";
+import { type IR, isText, isOfKind, id } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 function escapeRegExp(string: string) {
@@ -158,13 +158,13 @@ export default function emitProgram(
           );
         case "List":
         case "Array":
-          return ["[", joinNodes(",", e.exprs), "]"];
+          return ["[", joinNodes(",", e.value), "]"];
         case "Table":
           return [
             "{",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [
+              e.value.map((x) => [
                 isText()(x.key) && /\w*/.test(x.key.value)
                   ? x.key.value
                   : ["[", emit(x), "]"],
@@ -215,19 +215,9 @@ export default function emitProgram(
           return [
             `for`,
             "(",
-            emit(e.variable),
-            "of",
+            emit(e.variable ?? id()),
+            e.collection.targetType === "object" ? "in" : "of",
             emit(e.collection),
-            ")",
-            emit(e.body),
-          ];
-        case "ForEachKey":
-          return [
-            `for`,
-            "(",
-            emit(e.variable),
-            "in",
-            emit(e.table),
             ")",
             emit(e.body),
           ];

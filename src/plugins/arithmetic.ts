@@ -111,20 +111,18 @@ export function applyDeMorgans(node: Node, spine: Spine) {
       getType(node, spine).kind === "void"
     ) {
       // If we are promised we won't read the result, we don't need to negate.
-      return op.unsafe(
-        complementaryBoolOp(node.op),
+      return op.unsafe(complementaryBoolOp(node.op))(
         op.not(node.args[0]),
         node.args[1],
       );
     }
     return op.not(
-      op.unsafe(complementaryBoolOp(node.op), ...node.args.map(op.not)),
+      op.unsafe(complementaryBoolOp(node.op))(...node.args.map(op.not)),
     );
   }
   if (isOp("bit_and", "bit_or")(node)) {
     return op.bit_not(
-      op.unsafe(
-        node.op === "bit_and" ? "bit_or" : "bit_and",
+      op.unsafe(node.op === "bit_and" ? "bit_or" : "bit_and")(
         ...(node.args.map(op.bit_not) as any),
       ),
     );
@@ -211,8 +209,7 @@ export function mulToPow(node: Node, spine: Spine) {
     }
     const pairs = [...factors.values()];
     if (pairs.some((pair) => pair[1] > 1)) {
-      return op.unsafe(
-        "mul",
+      return op.unsafe("mul")(
         ...pairs.map(([expr, exp]) =>
           exp > 1 ? op.pow(expr, int(exp)) : expr,
         ),
@@ -280,7 +277,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
           const [n, exp] = getOddAnd2Exp(node.args[0].value);
           if (exp > 1) {
             return op.bit_shift_left(
-              op.unsafe("mul", int(n), ...node.args.slice(1)),
+              op.unsafe("mul")(int(n), ...node.args.slice(1)),
               int(exp),
             );
           }
@@ -290,7 +287,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
         ) as Op<"pow"> | undefined;
         if (powNode !== undefined) {
           return op.bit_shift_left(
-            op.unsafe("mul", ...node.args.filter((x) => x !== powNode)),
+            op.unsafe("mul")(...node.args.filter((x) => x !== powNode)),
             powNode.args[1],
           );
         }

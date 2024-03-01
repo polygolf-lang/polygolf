@@ -5,12 +5,13 @@ import {
   rangeIndexCall,
   succ,
   array,
-  isText,
   builtin,
   op,
   prefix,
   text,
   type Text,
+  isInt,
+  infix,
 } from "../../IR";
 import {
   defaultDetokenizer,
@@ -30,11 +31,13 @@ import {
   mapBackwardsIndexToForwards,
   mapMutationTo,
   flipped,
+  withDefaults,
 } from "../../plugins/ops";
 import {
   addNimImports,
   getEndIndex,
   removeSystemNamespace,
+  removeToSeqFromFor,
   useBackwardsIndex,
   useUFCS,
   useUnsignedDivision,
@@ -44,10 +47,11 @@ import {
   forArgvToForEach,
   forArgvToForRange,
   forRangeToForEach,
-  forRangeToForRangeInclusive,
+  rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
   shiftRangeOneUp,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
@@ -71,6 +75,7 @@ import {
   charToIntToDec,
   ordToDecToInt,
   decToIntToOrd,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -117,7 +122,7 @@ const nimLanguage: Language = {
       tableToListLookup,
       equalityToInequality,
       shiftRangeOneUp,
-      forRangeToForRangeInclusive(),
+      rangeExclusiveToInclusive(),
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -136,14 +141,15 @@ const nimLanguage: Language = {
     ),
     simplegolf(safeConditionalOpToAt("Array")),
     required(
+      atTextToListToAtText,
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps({
         "at[argv]": (a) => func("paramStr", succ(a)),
       }),
-      removeUnusedForVar,
-      forRangeToForRangeInclusive(true),
+      removeUnusedLoopVar,
+      rangeExclusiveToInclusive(true),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       useUnsignedDivision,
@@ -179,7 +185,6 @@ const nimLanguage: Language = {
         "ord_at[byte]": (a, b) => func("ord", op["at[byte]"](a, b)),
         "ord_at[codepoint]": (a, b) => func("ord", op["at[codepoint]"](a, b)),
         "read[line]": () => func("readLine", builtin("stdin")),
-        join: (a, b) => func("join", isText("")(b) ? [a] : [a, b]),
         "at[byte]": (a, b) => indexCall(a, b),
         "at[codepoint]": (a, b) =>
           prefix("$", indexCall(func("toRunes", a), b)),
@@ -188,8 +193,6 @@ const nimLanguage: Language = {
         "slice[List]": (a, b, c) =>
           rangeIndexCall(a, b, getEndIndex(b, c), int(1n)),
         "print[Text]": (a) => func("write", builtin("stdout"), a),
-        replace: (a, b, c) =>
-          func("replace", isText("")(c) ? [a, b] : [a, b, c]),
         text_multireplace: (a, ...x) =>
           func(
             "multireplace",
@@ -205,6 +208,20 @@ const nimLanguage: Language = {
         int_to_bin_aligned: (a, b) => func("align", op.int_to_bin(a), b, c48),
         int_to_hex_aligned: (a, b) => func("align", op.int_to_hex(a), b, c48),
         int_to_Hex_aligned: (a, b) => func("align", op.int_to_Hex(a), b, c48),
+        range_excl: (a, b, c) =>
+          func(
+            "toSeq",
+            isInt(1n)(c) ? infix("..<", a, b) : func("countup", a, b, c),
+          ),
+        range_incl: (a, b, c) =>
+          func(
+            "toSeq",
+            isInt(1n)(c)
+              ? isInt(0n)(a)
+                ? prefix("..", b)
+                : infix("..", a, b)
+              : func("countup", a, succ(b), c),
+          ),
       }),
       mapOpsTo.builtin({ true: "true", false: "false" }),
       mapOps({
@@ -238,6 +255,8 @@ const nimLanguage: Language = {
           starts_with: "startsWith",
           ends_with: "endsWith",
           bit_count: "popcount",
+          join: withDefaults`join`,
+          replace: withDefaults`replace`,
         },
         "leftChain",
       ),
@@ -287,6 +306,7 @@ const nimLanguage: Language = {
         int_to_dec: "$",
       }),
       mapOpsTo.infix({ mul: "*" }),
+      removeToSeqFromFor,
       addNimImports,
     ),
     simplegolf(
@@ -309,6 +329,8 @@ const nimLanguage: Language = {
       assertInt64,
       removeImplicitConversions,
       removeSystemNamespace,
+      useImplicitForEachChar("byte"),
+      removeImplicitConversions,
     ),
     search(useUFCS),
   ],

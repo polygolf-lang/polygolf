@@ -182,7 +182,7 @@ print(X)end
 ```
 
 ```polygolf
-"x" .. (int_to_text 3);
+"x" + (int_to_text 3);
 ```
 
 ```lua
@@ -190,7 +190,7 @@ print(X)end
 ```
 
 ```polygolf
-(int_to_text 3) .. "x";
+(int_to_text 3) + "x";
 ```
 
 ```lua

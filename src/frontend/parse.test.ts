@@ -10,7 +10,6 @@ import {
   op,
   block,
   ifStatement,
-  forRange,
   integerType,
   variants,
   annotate,
@@ -21,6 +20,7 @@ import {
   booleanType,
   type Type,
   lengthToArrayIndexType,
+  forEach,
 } from "../IR";
 import parse from "./parse";
 
@@ -63,7 +63,7 @@ describe("Parse s-expressions", () => {
     functionCall(id("f"), id("x"), id("y")),
   );
   expectExprParse("add", "(add $x $y)", op.add(id("x"), id("y")));
-  expectExprParse("add infix", "($x + $y)", op.add(id("x"), id("y")));
+  expectExprParse("mul infix", "($x * $y)", op.mul(id("x"), id("y")));
   expectExprParse("mod infix", "($x mod $y)", op.mod(id("x"), id("y")));
   expectExprParse("or", "(or $x $y)", op.or(id("x"), id("y")));
   expectExprParse("println[Text]", "(println[Text] $x)", print(id("x"), true));
@@ -73,7 +73,7 @@ describe("Parse s-expressions", () => {
   expectExprParse("list", "(list 1 2 3)", list([int(1n), int(2n), int(3n)]));
   expectExprParse(
     "+",
-    "(+ $x $y $z $w)",
+    "(add $x $y $z $w)",
     op.add(id("x"), id("y"), id("z"), id("w")),
   );
   expectExprParse(
@@ -119,9 +119,9 @@ describe("Parse statements", () => {
     ifStatement(id("x"), print(id("y"), true)),
   );
   testStmtParse(
-    "forRange",
-    "for $x 1 20 1 (println[Text] $x);",
-    forRange(id("x"), int(1n), int(20n), int(1n), print(id("x"), true)),
+    "for",
+    "for $x $list (println[Text] $x);",
+    forEach(id("x"), id("list"), print(id("x"))),
   );
 });
 

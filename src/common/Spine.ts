@@ -78,8 +78,7 @@ export class Spine<N extends IR.Node = IR.Node> {
         ? this.parent.replacedWith(
             {
               ...(isOp()(parentNode)
-                ? op.unsafe(
-                    parentNode.op,
+                ? op.unsafe(parentNode.op)(
                     ...replaceAtIndex(
                       parentNode.args,
                       this.pathFragment.index,
@@ -183,7 +182,7 @@ export class Spine<N extends IR.Node = IR.Node> {
         if (someChildrenIsNew)
           curr = curr.replacedWith({
             ...(isOp()(this.node)
-              ? op.unsafe(this.node.op, ...newChildren)
+              ? op.unsafe(this.node.op)(...newChildren)
               : block(newChildren)),
             targetType: this.node.targetType,
           });

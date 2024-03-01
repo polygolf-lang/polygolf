@@ -62,8 +62,8 @@ b=" a\nbc  d".split()
 ```polygolf
 $a:0..10 <- 0;
 $b:0..10 <- 0;
-for $i 0 10 {
-    for $j 0 10 {
+for $i 10 {
+    for $j 10 {
         if ($i < $j) {
             if ($i < $j) {
                 $a <- $j;
@@ -217,6 +217,7 @@ ord[Ascii] "g";
 ord_at[Ascii] "ijk" 1;
 size[Ascii] $t;
 char[Ascii] 99;
+text_to_list $t;
 ```
 
 ```py nogolf
@@ -226,6 +227,7 @@ ord("g")
 ord("ijk"[1])
 len(t)
 chr(99)
+[*t]
 ```
 
 ## Aliasing partially applied methods
@@ -249,7 +251,7 @@ c=j(["5","6"])
 for 10 (println "Hi");
 ```
 
-```py nogolf
+```py
 for _ in"X"*10:print("Hi")
 ```
 
@@ -319,4 +321,36 @@ conditional true 3 4;
 
 ```python
 [4,3][1]
+```
+
+## Aliasing range
+
+Range can now be aliased, yay!
+
+```polygolf
+for $i 10 {
+    for $j $i {
+        println $j;
+    };
+};
+for $a 10 {
+    println $a;
+};
+```
+
+```py
+r=range
+for i in r(10):
+ for j in r(i):print(j)
+for a in r(10):print(a)
+```
+
+## Naked range
+
+```polygolf
+$r <- (10 ..< 40 2);
+```
+
+```py
+r=[*range(10,40,2)]
 ```

@@ -51,7 +51,7 @@ import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
@@ -70,6 +70,7 @@ import {
   textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
   startsWithEndsWithToSliceEquality,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
 
@@ -99,10 +100,10 @@ const golfscriptLanguage: Language = {
       forArgvToForEach,
       putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
-      removeUnusedForVar,
+      removeUnusedLoopVar,
       forRangeToForDifferenceRange(
         (node, spine) =>
-          !isSubtype(getType(node.start, spine.root.node), integerType(0)),
+          !isSubtype(getType(node.collection.args[0], spine), integerType(0)),
       ),
       replaceToSplitAndJoin,
       implicitlyConvertPrintArg,
@@ -118,6 +119,7 @@ const golfscriptLanguage: Language = {
       }),
     ),
     required(
+      atTextToListToAtText,
       mapOps({
         "at[argv]": (a) => op["at[List]"](op.argv, a),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),

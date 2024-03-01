@@ -18,6 +18,7 @@ import {
   infix,
   list,
   intToDecOpOrText,
+  cast,
 } from "../../IR";
 import {
   type Language,
@@ -37,13 +38,14 @@ import {
   mapMutationTo,
   mapOpsTo,
   flipped,
+  withDefaults,
 } from "../../plugins/ops";
 import { alias, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forRangeToForEach,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
@@ -65,6 +67,7 @@ import {
   startsWithEndsWithToSliceEquality,
   charToIntToDec,
   ordToDecToInt,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
@@ -85,7 +88,11 @@ import {
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
 import { charLength } from "../../common/strings";
-import { golfTextListLiteralIndex } from "./plugins";
+import {
+  golfTextListLiteralIndex,
+  indexlessForRangeToForAscii,
+  useImplicitForCast,
+} from "./plugins";
 import { safeConditionalOpToAt } from "../../plugins/conditions";
 
 const pythonLanguage: Language = {
@@ -121,7 +128,6 @@ const pythonLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      removeUnusedForVar,
       putcToPrintChar,
       mapOps({
         argv: () => builtin("sys.argv[1:]"),
@@ -156,8 +162,13 @@ const pythonLanguage: Language = {
         "at[Table]": 0,
       }),
     ),
-    simplegolf(golfTextListLiteralIndex),
+    simplegolf(
+      golfTextListLiteralIndex,
+      removeUnusedLoopVar,
+      indexlessForRangeToForAscii,
+    ),
     required(
+      atTextToListToAtText,
       textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps({
@@ -261,6 +272,7 @@ const pythonLanguage: Language = {
         int_to_bool: (a) => implicitConversion("int_to_bool", a),
         bool_to_int: (a) =>
           op.mul(int(1n), implicitConversion("bool_to_int", a)),
+        "text_to_list[codepoint]": (x) => cast(x, "list"),
       }),
       mapOpsTo.method({
         "find[List]": "index",
@@ -292,6 +304,16 @@ const pythonLanguage: Language = {
         dec_to_int: "int",
         "println[Text]": "print",
         gcd: "math.gcd",
+      }),
+      mapOps({
+        range_excl: (a, b, c) =>
+          cast(
+            func(
+              "range",
+              ...withDefaults(null).preprocess([a, b, c], "range_excl"),
+            ),
+            "list",
+          ),
       }),
       mapMutationTo.method({
         append: "append",
@@ -346,6 +368,7 @@ const pythonLanguage: Language = {
       mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
       addOneToManyAssignments(),
+      useImplicitForCast,
     ),
     simplegolf(
       alias({

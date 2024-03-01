@@ -1,4 +1,4 @@
-import type { Node } from "./IR";
+import type { Node, Literal } from "./IR";
 import {
   type Type,
   typeArg,
@@ -151,6 +151,9 @@ export const opCodeDefinitions = {
   "char[byte]": { args: [int(0, 255)], front: true },
   "char[codepoint]": { args: [int(0, 0x10ffff)], front: true },
   "char[Ascii]": { args: [int(0, 127)], front: "char" },
+  "text_to_list[byte]": { args: [text()], front: true },
+  "text_to_list[codepoint]": { args: [text()], front: true },
+  "text_to_list[Ascii]": { args: [ascii], front: "text_to_list" },
 
   // Order
   "sorted[Int]": { args: [list(int())], front: "sorted" },
@@ -181,9 +184,9 @@ export const opCodeDefinitions = {
 
   // Adding items
   include: { args: [set(T1), T1], front: true },
-  append: { args: [list(T1), T1], front: ".." },
-  "concat[List]": { args: atLeast2(list(T1)), front: "..", assoc: true },
-  "concat[Text]": { args: atLeast2(text()), front: "..", assoc: true },
+  append: { args: [list(T1), T1], front: "+" },
+  "concat[List]": { args: atLeast2(list(T1)), front: "+", assoc: true },
+  "concat[Text]": { args: atLeast2(text()), front: "+", assoc: true },
 
   // Text ops
   repeat: { args: [text(), int(0)], front: true },
@@ -207,6 +210,11 @@ export const opCodeDefinitions = {
   int_to_bool: { args: [int(0, 1)], front: true },
   dec_to_int: { args: [ascii], front: true },
   bool_to_int: { args: [bool], front: true },
+
+  // Ranges
+  range_incl: { args: [int(), int(), int(1)], front: ".." },
+  range_excl: { args: [int(), int(), int(1)], front: "..<" },
+  range_diff_excl: { args: [int(), int(0), int(1)] },
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
@@ -357,6 +365,12 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   "char[codepoint]":
     "Returns a codepoint (as text) corresponding to the integer.",
   "char[Ascii]": "Returns a character corresponding to the integer.",
+  "text_to_list[byte]":
+    "Converts given text to a list of single byte texts. Use for[byte] to iterate over bytes in a text.",
+  "text_to_list[codepoint]":
+    "Converts given text to a list of single codepoint texts. Use for[codepoint] to iterate over codepoints in a text.",
+  "text_to_list[Ascii]":
+    "Converts given text to a list of single character texts. Use for[Ascii] to iterate over characters in a text.",
 
   // Order
   "sorted[Int]": "Returns a sorted copy of the input.",
@@ -425,6 +439,24 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   int_to_bool: "Converts 0 to false and 1 to true.",
   dec_to_int: "Parses a integer from a 10-base text.",
   bool_to_int: "Converts false to 0 and true to 1.",
+
+  range_incl:
+    "List of integers between given inclusive bounds, with given step.",
+  range_excl:
+    "List of integers between given inclusive lower, exclusive upper bound,  with given step.",
+  range_diff_excl:
+    "List of integers between given inclusive lower, exclusive upper bound expressed using a difference between the lower bound, with given step.",
+};
+
+const int0 = { kind: "Integer", value: 0n } as const;
+const int1 = { kind: "Integer", value: 1n } as const;
+const empty = { kind: "Text", value: "" } as const;
+
+export const defaults: Partial<Record<OpCode, (Literal | undefined)[]>> = {
+  range_incl: [int0, undefined, int1],
+  range_excl: [int0, undefined, int1],
+  join: [undefined, empty],
+  replace: [undefined, undefined, empty],
 };
 
 export type OpCodeFrontName =
@@ -453,19 +485,19 @@ export type CommutativeOpCode = OpCode<{ commutes: true }>;
 export type ConversionOpCode = UnaryOpCode & `${string}_${string}`;
 
 export function isNullary(op: OpCode): op is NullaryOpCode {
-  return arity(op) === 0;
+  return maxArity(op) === 0;
 }
 export function isUnary(op: OpCode): op is UnaryOpCode {
-  return arity(op) === 1;
+  return maxArity(op) === 1;
 }
 export function isBinary(op: OpCode): op is BinaryOpCode {
-  return arity(op) === 2;
+  return maxArity(op) === 2;
 }
 export function isTernary(op: OpCode): op is TernaryOpCode {
-  return arity(op) === 3;
+  return maxArity(op) === 3;
 }
 export function isVariadic(op: OpCode): op is VariadicOpCode {
-  return arity(op) === -1;
+  return maxArity(op) === Infinity;
 }
 export function isAssociative(op: OpCode): op is AssociativeOpCode {
   return (opCodeDefinitions[op] as any)?.assoc === true;
@@ -519,25 +551,20 @@ export function userName(opCode: OpCode) {
 }
 
 /**
- * Returns parity of an op, -1 denotes variadic.
+ * Returns maximum arity of an op.
  */
-export function arity(op: OpCode): number {
-  try {
-    const args = opCodeDefinitions[op].args;
-    if (args.length > 0 && "rest" in args.at(-1)!) return -1;
-    return args.length;
-  } catch (e) {
-    console.log("arity of", op);
-    throw e;
-  }
+export function maxArity(op: OpCode): number {
+  const args = opCodeDefinitions[op].args;
+  if (args.length > 0 && "rest" in args.at(-1)!) return Infinity;
+  return args.length;
 }
 
-export function matchesOpCodeArity(op: OpCode, arity: number) {
-  const expectedTypes = opCodeDefinitions[op].args;
-  if (expectedTypes.length > 0 && "rest" in expectedTypes.at(-1)!) {
-    return arity >= expectedTypes.length - 1;
-  }
-  return expectedTypes.length === arity;
+export function minArity(op: OpCode): number {
+  const args = opCodeDefinitions[op].args;
+  if (maxArity(op) === Infinity) return args.length - 1;
+  return (
+    args.length - (defaults[op] ?? []).filter((x) => x !== undefined).length
+  );
 }
 
 /**
@@ -569,27 +596,3 @@ export const inverseOpCode = {
   not: "not",
   bit_not: "bit_not",
 } as const satisfies Partial<Record<UnaryOpCode, UnaryOpCode>>;
-
-export const infixableOpCodeNames = [
-  "+",
-  "-",
-  "*",
-  "^",
-  "&",
-  "|",
-  "~",
-  ">>",
-  "<<",
-  "==",
-  "!=",
-  "<=",
-  "<",
-  ">=",
-  ">",
-  "#",
-  "@",
-  "mod",
-  "rem",
-  "div",
-  "trunc_div",
-] as const satisfies readonly OpCodeFrontName[];

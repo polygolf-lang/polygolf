@@ -100,7 +100,7 @@ replace "abcbd" "b" "e";
 ## Looping
 
 ```polygolf
-for $i 0 31 {
+for $i 31 {
   println ((1 + $i) + ($i * $i));
 };
 ```
@@ -111,7 +111,7 @@ for $i 0 31 {
 
 ```polygolf
 $a:-10..10 <- -4;
-for $i $a ($a+6) {
+for $i ($a ..< ($a+6)) {
   println $i;
 };
 ```
@@ -196,7 +196,7 @@ $a <- (- $a 1):-10..10;
 ## implicitlyConvertConcatArg
 
 ```polygolf
-(.. "he" (int_to_dec 11) "o");
+(+ "he" (int_to_dec 11) "o");
 ```
 
 ```janet implicitlyConvertConcatArg

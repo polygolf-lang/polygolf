@@ -7,7 +7,7 @@ Hover opcode name to see a description.
 | is_odd | [is_odd](## "Oddness predicate.") | [Int] | Bool |
 | succ | [succ](## "Integer successor.") | [Int] | Int |
 | pred | [pred](## "Integer predecessor.") | [Int] | Int |
-| + | [add](## "Integer addition.") | [Int, Int, ...Int] | Int |
+| + | [add](## "Integer addition.")<br>[append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.") | [Int, Int, ...Int]<br>[(List T1), T1]<br>[(List T1), (List T1), ...(List T1)]<br>[Text, Text, ...Text] | Int<br>(List T1)<br>(List T1)<br>Text |
 | - | [sub](## "Integer subtraction.")<br>[neg](## "Integer negation.") | [Int, Int]<br>[Int] | Int<br>Int |
 | * | [mul](## "Integer multiplication.") | [Int, Int, ...Int] | Int |
 | div | [div](## "Integer floor division.") | [Int, Int] | Int |
@@ -58,6 +58,9 @@ Hover opcode name to see a description.
 | char[byte] | [char[byte]](## "Returns a byte (as text) corresponding to the integer.") | [0..255] | (Text 1..1) |
 | char[codepoint] | [char[codepoint]](## "Returns a codepoint (as text) corresponding to the integer.") | [0..1114111] | (Text 1..1) |
 | char | [char[Ascii]](## "Returns a character corresponding to the integer.") | [0..127] | (Ascii 1..1) |
+| text_to_list[byte] | [text_to_list[byte]](## "Converts given text to a list of single byte texts. Use for[byte] to iterate over bytes in a text.") | [Text] | (List (Text 1..1)) |
+| text_to_list[codepoint] | [text_to_list[codepoint]](## "Converts given text to a list of single codepoint texts. Use for[codepoint] to iterate over codepoints in a text.") | [Text] | (List (Text 1..1)) |
+| text_to_list | [text_to_list[Ascii]](## "Converts given text to a list of single character texts. Use for[Ascii] to iterate over characters in a text.") | [Ascii] | (List (Ascii 1..1)) |
 | sorted | [sorted[Int]](## "Returns a sorted copy of the input.")<br>[sorted[Ascii]](## "Returns a lexicographically sorted copy of the input.") | [(List Int)]<br>[(List Ascii)] | (List Int)<br>(List Ascii) |
 | reversed[byte] | [reversed[byte]](## "Returns a text in which the bytes are in reversed order.") | [Text] | Text |
 | reversed[codepoint] | [reversed[codepoint]](## "Returns a text in which the codepoints are in reversed order.") | [Text] | Text |
@@ -70,13 +73,12 @@ Hover opcode name to see a description.
 | size[codepoint] | [size[codepoint]](## "Returns the length of the text in codepoints.") | [Text] | 0..oo |
 | size[byte] | [size[byte]](## "Returns the length of the text in bytes.") | [Text] | 0..2147483648 |
 | include | [include](## "Modifies the set by including the given item.") | [(Set T1), T1] | Void |
-| .. | [append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.") | [(List T1), T1]<br>[(List T1), (List T1), ...(List T1)]<br>[Text, Text, ...Text] | (List T1)<br>(List T1)<br>Text |
 | repeat | [repeat](## "Repeats the text a given amount of times.") | [Text, 0..oo] | Text |
 | split | [split](## "Splits the text by the delimiter.") | [Text, Text] | (List Text) |
 | split_whitespace | [split_whitespace](## "Splits the text by any whitespace.") | [Text] | (List Text) |
-| join | [join](## "Joins the items using the delimiter.") | [(List Text), Text] | Text |
+| join | [join](## "Joins the items using the delimiter.") | [(List Text), Text = "";] | Text |
 | right_align | [right_align](## "Right-aligns the text using spaces to a minimum length.") | [Text, 0..oo] | Text |
-| replace | [replace](## "Replaces all occurences of a given text with another text.") | [Text, (Text 1..oo), Text] | Text |
+| replace | [replace](## "Replaces all occurences of a given text with another text.") | [Text, (Text 1..oo), Text = "";] | Text |
 | starts_with | [starts_with](## "Checks whether the second argument is a prefix of the first.") | [Text, Text] | Bool |
 | ends_with | [ends_with](## "Checks whether the second argument is a suffix of the first.") | [Text, Text] | Bool |
 | int_to_bin_aligned | [int_to_bin_aligned](## "Converts the integer to a 2-base text and alignes to a minimum length.") | [0..oo, 0..oo] | Ascii |
@@ -89,3 +91,5 @@ Hover opcode name to see a description.
 | int_to_bool | [int_to_bool](## "Converts 0 to false and 1 to true.") | [0..1] | Bool |
 | dec_to_int | [dec_to_int](## "Parses a integer from a 10-base text.") | [Ascii] | Int |
 | bool_to_int | [bool_to_int](## "Converts false to 0 and true to 1.") | [Bool] | 0..1 |
+| .. | [range_incl](## "List of integers between given inclusive bounds, with given step.") | [Int = 0;, Int, 1..oo = 1;] | (List Int) |
+| ..< | [range_excl](## "List of integers between given inclusive lower, exclusive upper bound,  with given step.") | [Int = 0;, Int, 1..oo = 1;] | (List Int) |

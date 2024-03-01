@@ -1,16 +1,11 @@
 import {
-  add,
   type Identifier,
-  integerType,
-  integerTypeIncludingAll,
   type IR,
   isIdent,
   isOp,
   isSubtype,
-  lt,
   type Node,
   type Op,
-  sub,
   textType,
   type Type,
   toString,
@@ -92,14 +87,9 @@ function introducedSymbols(
 ): string[] | undefined {
   const node = spine.node;
   switch (node.kind) {
-    case "ForRange":
-    case "ForDifferenceRange":
     case "ForEach":
-    case "ForEachKey":
     case "ForArgv":
       return node.variable === undefined ? [] : [node.variable.name];
-    case "ForEachPair":
-      return [node.keyVariable.name, node.valueVariable.name];
     case "Assignment":
       if (
         isIdent()(node.variable) &&
@@ -124,49 +114,10 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
   const node = spine.node;
   const program = spine.root.node;
   switch (node.kind) {
-    case "ForRange":
-    case "ForDifferenceRange": {
-      const start = getType(node.start, program);
-      let end = getType(
-        node.kind === "ForRange" ? node.end : node.difference,
-        program,
-      );
-      const step = getType(node.increment, program);
-      if (
-        start.kind !== "integer" ||
-        end.kind !== "integer" ||
-        step.kind !== "integer"
-      ) {
-        throw new PolygolfError(
-          `Unexpected for range type (${start.kind},${end.kind},${step.kind})`,
-          node.source,
-        );
-      }
-      if (node.kind === "ForDifferenceRange")
-        end = integerType(add(start.low, end.low), add(start.high, end.high)); // get the real end
-      if (lt(0n, step.low))
-        return integerType(
-          start.low,
-          node.inclusive ? end.high : sub(end.high, 1n),
-        );
-      if (lt(step.high, 0n))
-        return integerType(
-          node.inclusive ? end.low : add(end.low, 1n),
-          start.high,
-        );
-      return integerTypeIncludingAll(start.low, start.high, end.low, end.high);
-    }
     case "ForEach":
       return getCollectionTypes(node.collection, program)[0];
     case "ForArgv":
       return textType();
-    case "ForEachKey":
-      return getCollectionTypes(node.table, program)[0];
-    case "ForEachPair": {
-      const _types = getCollectionTypes(node.table, program);
-      const types = _types.length === 1 ? [integerType(), _types[0]] : _types;
-      return name === node.keyVariable.name ? types[0] : types[1];
-    }
     case "Assignment": {
       const assignedType = getType(node.expr, program);
       if (
@@ -244,14 +195,8 @@ function getDirectReadFragments(node: Node): PathFragment[] {
       return ["body"];
     case "ForCLike":
       return ["condition"];
-    case "ForDifferenceRange":
-      return ["start", "difference", "increment"];
     case "ForEach":
       return ["collection"];
-    case "ForEachPair":
-      return ["table"];
-    case "ForRange":
-      return ["start", "end", "increment"];
     case "If":
       return ["condition"];
     case "ManyToManyAssignment":

@@ -3,8 +3,6 @@ import {
   indexCall,
   methodCall as method,
   op,
-  listType,
-  textType,
   builtin,
   int,
   propertyCall as property,
@@ -38,6 +36,7 @@ import {
   forArgvToForEach,
   forRangeToForCLike,
   forRangeToForEach,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
 import {
@@ -52,6 +51,7 @@ import {
 import {
   charToIntToDec,
   ordToDecToInt,
+  atTextToListToAtText,
   replaceToSplitAndJoin,
   textGetToIntToTextGet,
   textToIntToFirstIndexTextGetToInt,
@@ -106,6 +106,7 @@ const javascriptLanguage: Language = {
       ...divisionToComparisonAndBack,
     ),
     required(
+      atTextToListToAtText,
       pickAnyInt,
       floodBigints("int53", {
         Assignment: "bigint",
@@ -132,18 +133,15 @@ const javascriptLanguage: Language = {
       putcToPrintChar,
     ),
     required(
+      useImplicitForEachChar("Ascii"),
       forRangeToForCLike,
+      mapOps({
+        "at[argv]": (a) => op["at[List]"](op.argv, a),
+      }),
       mapOpsTo.builtin({
         true: "true",
         false: "false",
         argv: "arguments",
-      }),
-      mapOps({
-        "at[argv]": (a) =>
-          op["at[List]"](
-            { ...builtin("arguments"), type: listType(textType()) },
-            a,
-          ),
       }),
       mapMutationTo.index({
         "with_at[Array]": 0,

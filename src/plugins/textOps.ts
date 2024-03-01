@@ -10,6 +10,7 @@ import {
   textType,
   annotate,
   isInt,
+  type BinaryOpCode,
 } from "../IR";
 import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";
@@ -25,7 +26,7 @@ export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
       if (!isOp()(node) || !node.op.includes("[Ascii]")) return;
       const replacement = node.op.replace("[Ascii]", `[${char}]`);
       if (isOpCode(replacement)) {
-        return op.unsafe(replacement, ...node.args);
+        return op.unsafe(replacement)(...node.args);
       }
     },
   };
@@ -61,6 +62,24 @@ export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps({
   "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
 });
 
+export function atTextToListToAtText(node: Node) {
+  if (
+    isOp("at[List]", "at_back[List]")(node) &&
+    isOp(
+      "text_to_list[Ascii]",
+      "text_to_list[byte]",
+      "text_to_list[codepoint]",
+    )(node.args[0])
+  ) {
+    return op[
+      node.args[0].op.replace(
+        "text_to_list",
+        node.op.replace("[List]", ""),
+      ) as BinaryOpCode
+    ](node.args[0].args[0], node.args[1]);
+  }
+}
+
 /**
  * Converts nested text_replace to a text_multireplace provided the arguments are
  * text literals with no overlap.
@@ -92,7 +111,7 @@ export function useMultireplace(singleCharInputsOnly = false): PluginVisitor {
           ![...bInSet].some((x) => aOutSet.has(x)) &&
           ![...aInSet].some((x) => bOutSet.has(x))
         ) {
-          return op.unsafe("text_multireplace", ...node.args[0].args, ...b);
+          return op.unsafe("text_multireplace")(...node.args[0].args, ...b);
         }
       }
     }

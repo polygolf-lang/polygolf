@@ -8,7 +8,7 @@ import {
   getIfChain,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isInt, text, isText, id, infix } from "../../IR";
+import { type IR, isInt, text, isText, id } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
 export const emitPythonText = emitTextFactory(
@@ -125,6 +125,11 @@ export default function emitProgram(
     const prec = precedence(expr);
     function emitNoParens(e: IR.Node): TokenTree {
       switch (e.kind) {
+        case "Cast":
+          if (e.targetType === "list") {
+            return ["[*", emit(e.expr), "]"];
+          }
+          throw new EmitError(e, "unsuported cast target type");
         case "Block":
           return emitMultiNode(expr);
         case "Import":
@@ -134,41 +139,12 @@ export default function emitProgram(
         case "ForEach":
           return [
             `for`,
-            emit(e.variable),
+            emit(e.variable ?? id("_")),
             "in",
             emit(e.collection),
             ":",
             emitMultiNode(e.body),
           ];
-        case "ForRange": {
-          const start = emit(e.start);
-          const start0 = isInt(0n)(e.start);
-          const end = emit(e.end);
-          const increment = emit(e.increment);
-          const increment1 = isInt(1n)(e.increment);
-          return e.variable === undefined && start0 && increment1
-            ? [
-                "for",
-                "_",
-                "in",
-                emit(infix("*", text("X"), e.end)),
-                ":",
-                emitMultiNode(e.body),
-              ]
-            : [
-                "for",
-                emit(e.variable ?? id("_")),
-                "in",
-                "range",
-                "(",
-                start0 && increment1 ? [] : [start, ","],
-                end,
-                increment1 ? [] : [",", increment],
-                ")",
-                ":",
-                emitMultiNode(e.body),
-              ];
-        }
         case "If": {
           const { ifs, alternate } = getIfChain(e);
           return [
@@ -184,8 +160,6 @@ export default function emitProgram(
           ];
         }
         case "Variants":
-        case "ForEachKey":
-        case "ForEachPair":
         case "ForCLike":
           throw new EmitError(expr);
         case "Assignment":
@@ -238,15 +212,15 @@ export default function emitProgram(
         case "Prefix":
           return [e.name, emit(e.arg, prec)];
         case "Set":
-          return ["{", joinNodes(",", e.exprs), "}"];
+          return ["{", joinNodes(",", e.value), "}"];
         case "List":
-          return ["[", joinNodes(",", e.exprs), "]"];
+          return ["[", joinNodes(",", e.value), "]"];
         case "Table":
           return [
             "{",
             joinTrees(
               ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
+              e.value.map((x) => [emit(x.key), ":", emit(x.value)]),
             ),
             "}",
           ];

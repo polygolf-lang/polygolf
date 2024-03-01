@@ -85,11 +85,11 @@ print_int 0;
 ```polygolf
 $a:Text <- "x";
 $b:Text <- "x";
-print (($a .. "abc") .. ("def" .. $b));
+print (($a + "abc") + ("def" + $b));
 ```
 
 ```polygolf nogolf
 $a:Text <- "x";
 $b:Text <- "x";
-print (.. $a "abcdef" $b);
+print (+ $a "abcdef" $b);
 ```
