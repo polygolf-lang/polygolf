@@ -5,6 +5,7 @@ import {
   EmitError,
   emitIntLiteral,
   emitTextFactory,
+  getIfChain,
   joinTrees,
 } from "../../common/emit";
 import { type IR, isInt, text, isText, id, infix } from "../../IR";
@@ -168,18 +169,20 @@ export default function emitProgram(
                 emitMultiNode(e.body),
               ];
         }
-        case "If":
+        case "If": {
+          const { ifs, alternate } = getIfChain(e);
           return [
-            "if",
-            emit(e.condition),
-            ":",
-            emitMultiNode(e.consequent),
-            e.alternate === undefined
+            ifs.map((x, i) => [
+              i < 1 ? "if" : ["\n", "elif"],
+              emit(x.condition),
+              ":",
+              emitMultiNode(x.consequent),
+            ]),
+            alternate === undefined
               ? []
-              : e.alternate.kind === "If"
-              ? ["\n", "el", "$GLUE$", emit(e.alternate)]
-              : ["\n", "else", ":", emitMultiNode(e.alternate)],
+              : ["\n", "else", ":", emitMultiNode(alternate)],
           ];
+        }
         case "Variants":
         case "ForEachKey":
         case "ForEachPair":
