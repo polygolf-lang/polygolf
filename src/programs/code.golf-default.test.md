@@ -9,7 +9,7 @@ _Polygolf_
 println "Hello, World!";
 
 % Looping
-for $i 0 10 {
+for $i 10 {
     println_int $i;
 };
 

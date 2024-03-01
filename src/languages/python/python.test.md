@@ -62,8 +62,8 @@ b=" a\nbc  d".split()
 ```polygolf
 $a:0..10 <- 0;
 $b:0..10 <- 0;
-for $i 0 10 {
-    for $j 0 10 {
+for $i 10 {
+    for $j 10 {
         if ($i < $j) {
             if ($i < $j) {
                 $a <- $j;
