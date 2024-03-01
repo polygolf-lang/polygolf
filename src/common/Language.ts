@@ -74,8 +74,10 @@ export interface Plugin {
   visit: PluginVisitor;
 }
 
-type TokenTreeArray = Array<string | TokenTreeArray>;
-export type TokenTree = string | TokenTreeArray;
+export type Token = "\n" | "$GLUE$" | "$INDENT$" | "$DEDENT$" | (string & {});
+
+type TokenTreeArray = Array<Token | TokenTreeArray>;
+export type TokenTree = Token | TokenTreeArray;
 export type Detokenizer = (tokens: TokenTree) => string;
 export type WhitespaceInsertLogic = (a: string, b: string) => boolean;
 

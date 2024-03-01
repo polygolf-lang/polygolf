@@ -1,6 +1,6 @@
-import { type Plugin, type IdentifierGenerator } from "common/Language";
+import { type IdentifierGenerator } from "common/Language";
 import { getDeclaredIdentifiers } from "../common/symbols";
-import { type Spine } from "../common/Spine";
+import type { PluginVisitor, Spine } from "../common/Spine";
 import {
   assignment,
   block,
@@ -64,26 +64,23 @@ function getIdentMap(
 
 export function renameIdents(
   identGen: IdentifierGenerator = defaultIdentGen(),
-): Plugin {
-  return {
-    name: "renameIdents(...)",
-    visit(program, spine, context) {
-      context.skipChildren();
-      const identMap = getIdentMap(spine.root, identGen);
-      return spine.withReplacer((node) => {
-        if (isUserIdent()(node)) {
-          const outputName = identMap.get(node.name);
-          if (outputName === undefined) {
-            throw new Error(
-              `Programming error. Incomplete identMap. Defined: ${JSON.stringify(
-                [...identMap.keys()],
-              )}, missing ${JSON.stringify(node.name)}`,
-            );
-          }
-          return id(outputName);
+): PluginVisitor {
+  return function renameIdents(program, spine, context) {
+    context.skipChildren();
+    const identMap = getIdentMap(spine.root, identGen);
+    return spine.withReplacer((node) => {
+      if (isUserIdent()(node)) {
+        const outputName = identMap.get(node.name);
+        if (outputName === undefined) {
+          throw new Error(
+            `Programming error. Incomplete identMap. Defined: ${JSON.stringify([
+              ...identMap.keys(),
+            ])}, missing ${JSON.stringify(node.name)}`,
+          );
         }
-      }).node;
-    },
+        return id(outputName);
+      }
+    }).node;
   };
 }
 
@@ -110,35 +107,32 @@ export function defaultIdentGen(...reserved: string[]): IdentifierGenerator {
 export function alias(
   getKeyRecord: NodeFuncRecord<string | undefined>,
   save: ((key: string, freq: number) => number) | [number, number] = [1, 3],
-): Plugin {
+): PluginVisitor {
   const getKey = getNodeFunc(getKeyRecord);
   const aliasingSave =
     typeof save === "function"
       ? save
       : (key: string, freq: number) =>
           (key.length - save[0]) * (freq - 1) - save[0] - save[1];
-  return {
-    name: "alias(...)",
-    visit(prog, spine, context) {
-      context.skipChildren();
-      // get frequency of expr
-      const timesUsed = new Map<string, number>();
-      for (const key of spine.compactMap(getKey)) {
-        timesUsed.set(key, (timesUsed.get(key) ?? 0) + 1);
+  return function alias(prog, spine, context) {
+    context.skipChildren();
+    // get frequency of expr
+    const timesUsed = new Map<string, number>();
+    for (const key of spine.compactMap(getKey)) {
+      timesUsed.set(key, (timesUsed.get(key) ?? 0) + 1);
+    }
+    // apply
+    const assignments: (IR.Assignment & { variable: Identifier })[] = [];
+    const replacedDeep = spine.withReplacer((node) => {
+      const key = getKey(node, spine);
+      if (key !== undefined && aliasingSave(key, timesUsed.get(key)!) > 0) {
+        const alias = id(key + "+alias");
+        if (assignments.every((x) => x.variable.name !== alias.name))
+          assignments.push(assignment(alias, node));
+        return alias;
       }
-      // apply
-      const assignments: (IR.Assignment & { variable: Identifier })[] = [];
-      const replacedDeep = spine.withReplacer((node) => {
-        const key = getKey(node, spine);
-        if (key !== undefined && aliasingSave(key, timesUsed.get(key)!) > 0) {
-          const alias = id(key + "+alias");
-          if (assignments.every((x) => x.variable.name !== alias.name))
-            assignments.push(assignment(alias, node));
-          return alias;
-        }
-      }, false).node;
-      return block([...assignments, replacedDeep]);
-    },
+    }, false).node;
+    return block([...assignments, replacedDeep]);
   };
 }
 

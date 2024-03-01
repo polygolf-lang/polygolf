@@ -8,6 +8,11 @@ import {
 import { type IR, isText, isOfKind } from "../../IR";
 import { type CompilationContext } from "@/common/compile";
 
+function escapeRegExp(string: string) {
+  // https://stackoverflow.com/a/6969486/14611638
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+}
+
 function codepointMap(x: number) {
   if (x < 128) return `\\x${x.toString(16).padStart(2, "0")}`;
   if (x < 1 << 16) return `\\u${x.toString(16).padStart(4, "0")}`;
@@ -143,7 +148,9 @@ export default function emitProgram(
         case "Identifier":
           return [e.name];
         case "Text":
-          return emitJavascriptText(e.value, context.options.codepointRange);
+          return e.targetType?.startsWith("regex") === true
+            ? `/${escapeRegExp(e.value)}/${e.targetType.split(" ")[1]}`
+            : emitJavascriptText(e.value, context.options.codepointRange);
         case "Integer":
           return (
             emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] }) +

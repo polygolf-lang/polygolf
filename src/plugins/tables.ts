@@ -1,3 +1,4 @@
+import type { PluginVisitor } from "@/common/Spine";
 import { getType } from "../common/getType";
 import { type Plugin } from "../common/Language";
 import {
@@ -26,7 +27,7 @@ export function tableHashing(
   hashFunc: (x: string) => number,
   hashNode: string | ((x: Node) => Node) = "hash",
   maxMod = 9999,
-): Plugin {
+): PluginVisitor {
   let hash: (x: Node) => Node;
   if (typeof hashNode === "string") {
     hash = (x: Node) => ({
@@ -36,44 +37,41 @@ export function tableHashing(
   } else {
     hash = hashNode;
   }
-  return {
-    name: "tableHashing(...)",
-    visit(node, spine) {
-      if (isOp("at[Table]")(node) && node.args[0].kind === "Table") {
-        const table = node.args[0];
-        const getKey = node.args[1];
-        const tableType = getType(table, spine);
-        if (
-          tableType.kind === "Table" &&
-          tableType.key.kind === "text" &&
-          table.kvPairs.every((x) => isText()(x.key))
-        ) {
-          const searchResult = findHash(
-            hashFunc,
-            table.kvPairs.map((x) => [(x.key as Text).value, x.value]),
-            maxMod,
-          );
-          if (searchResult === null) return undefined;
-          const [array, mod] = searchResult;
-          let lastUsed = array.length - 1;
-          while (array[lastUsed] === null) lastUsed--;
+  return function tableHashing(node, spine) {
+    if (isOp("at[Table]")(node) && node.args[0].kind === "Table") {
+      const table = node.args[0];
+      const getKey = node.args[1];
+      const tableType = getType(table, spine);
+      if (
+        tableType.kind === "Table" &&
+        tableType.key.kind === "text" &&
+        table.kvPairs.every((x) => isText()(x.key))
+      ) {
+        const searchResult = findHash(
+          hashFunc,
+          table.kvPairs.map((x) => [(x.key as Text).value, x.value]),
+          maxMod,
+        );
+        if (searchResult === null) return undefined;
+        const [array, mod] = searchResult;
+        let lastUsed = array.length - 1;
+        while (array[lastUsed] === null) lastUsed--;
 
-          return op["at[List]"](
-            list(
-              array
-                .slice(0, lastUsed + 1)
-                .map((x) => x ?? defaultValue(tableType.value)),
-            ),
-            op.mod(
-              mod === array.length
-                ? hash(getKey)
-                : op.mod(hash(getKey), int(mod)),
-              int(array.length),
-            ),
-          );
-        }
+        return op["at[List]"](
+          list(
+            array
+              .slice(0, lastUsed + 1)
+              .map((x) => x ?? defaultValue(tableType.value)),
+          ),
+          op.mod(
+            mod === array.length
+              ? hash(getKey)
+              : op.mod(hash(getKey), int(mod)),
+            int(array.length),
+          ),
+        );
       }
-    },
+    }
   };
 }
 
@@ -120,7 +118,7 @@ function javaHash(str: string): number {
 }
 export function testTableHashing(maxMod: number): Plugin {
   return {
-    ...tableHashing(javaHash, "hash", maxMod),
+    visit: tableHashing(javaHash, "hash", maxMod),
     name: `testTableHashing(${maxMod})`,
   };
 }
