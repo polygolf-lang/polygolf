@@ -13,6 +13,7 @@ import {
   sub,
   textType,
   type Type,
+  toString,
 } from "../IR";
 import { PolygolfError } from "./errors";
 import { getChildFragments, type PathFragment } from "./fragments";
@@ -173,9 +174,9 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
         !isSubtype(assignedType, node.variable.type)
       )
         throw new PolygolfError(
-          `Value of type ${assignedType.kind} cannot be assigned to ${
+          `Value of type ${toString(assignedType)} cannot be assigned to ${
             (node.variable as Identifier).name
-          } of type ${node.variable.type.kind}`,
+          } of type ${toString(node.variable.type)}`,
           node.source,
         );
       return node.variable.type ?? assignedType;

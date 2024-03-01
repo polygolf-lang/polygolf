@@ -63,6 +63,8 @@ import {
   usePrimaryTextOps,
   useMultireplace,
   startsWithEndsWithToSliceEquality,
+  charToIntToDec,
+  ordToDecToInt,
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
@@ -74,6 +76,7 @@ import {
   applyDeMorgans,
   bitnotPlugins,
   decomposeIntLiteral,
+  divisionToComparisonAndBack,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
@@ -112,8 +115,9 @@ const pythonLanguage: Language = {
       forArgvToForEach,
       decomposeIntLiteral(),
       startsWithEndsWithToSliceEquality("codepoint"),
+      ...divisionToComparisonAndBack,
     ),
-    simplegolf(safeConditionalOpToAt("List")),
+    simplegolf(safeConditionalOpToAt("List"), charToIntToDec, ordToDecToInt),
     required(
       pickAnyInt,
       forArgvToForEach,

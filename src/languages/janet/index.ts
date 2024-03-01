@@ -35,11 +35,16 @@ import {
   golfLastPrintInt,
   putcToPrintChar,
 } from "../../plugins/print";
-import { usePrimaryTextOps } from "../../plugins/textOps";
+import {
+  charToIntToDec,
+  decToIntToOrd,
+  usePrimaryTextOps,
+} from "../../plugins/textOps";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   applyDeMorgans,
   bitnotPlugins,
+  comparisonToDivision,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
@@ -65,6 +70,7 @@ const janetLanguage: Language = {
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
+      decToIntToOrd,
     ),
 
     required(
@@ -91,7 +97,11 @@ const janetLanguage: Language = {
           ),
       }),
     ),
-    simplegolf(implicitlyConvertConcatArg),
+    simplegolf(
+      implicitlyConvertConcatArg,
+      charToIntToDec,
+      comparisonToDivision,
+    ),
     required(
       mapOps({
         argv: () => func("slice", func("dyn", builtin(":args")), int(1n)),

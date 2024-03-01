@@ -1,8 +1,21 @@
-import { isOp, isText, op, int, isOpCode } from "../IR";
+import {
+  isOp,
+  isText,
+  op,
+  int,
+  isOpCode,
+  isSubtype,
+  type Node,
+  integerType,
+  textType,
+  annotate,
+  isInt,
+} from "../IR";
 import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";
 import { charLength } from "../common/strings";
-import type { PluginVisitor } from "@/common/Spine";
+import type { Spine, PluginVisitor } from "../common/Spine";
+import { getType } from "../common/getType";
 
 /** Implements ascii text op by either byte / codepoint text ops. */
 export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
@@ -119,3 +132,48 @@ export function startsWithEndsWithToSliceEquality(
     },
   };
 }
+
+export function intToDecToChar(node: Node, spine: Spine) {
+  if (isOp.int_to_dec(node)) {
+    const [x] = node.args;
+    if (isSubtype(getType(x, spine), integerType(0, 9)))
+      return op["char[Ascii]"](op.add(x, int(48)));
+  }
+}
+
+export function charToIntToDec(node: Node, spine: Spine) {
+  if (isOp("char[byte]", "char[codepoint]", "char[Ascii]")(node)) {
+    const [x] = node.args;
+    if (isSubtype(getType(x, spine), integerType(48, 57))) {
+      return op.int_to_dec(op.add(x, int(-48)));
+    }
+  }
+}
+
+export function decToIntToOrd(node: Node, spine: Spine) {
+  if (isOp.dec_to_int(node)) {
+    const [x] = node.args;
+    if (isSubtype(getType(x, spine), textType(integerType(1, 1), true))) {
+      return annotate(op.add(op["ord[Ascii]"](x), int(-48)), integerType(0, 9));
+    }
+  }
+}
+
+export function ordToDecToInt(node: Node, spine: Spine) {
+  if (
+    isOp.add(node) &&
+    node.args.length === 2 &&
+    isInt(-48n)(node.args[0]) &&
+    isOp("ord[Ascii]", "ord[byte]", "ord[codepoint]")(node.args[1]) &&
+    isSubtype(getType(node, spine), integerType(0, 9))
+  ) {
+    return annotate(op.dec_to_int(node.args[1].args[0]), integerType(0, 9));
+  }
+}
+
+export const singleDigitTextConversions = [
+  intToDecToChar,
+  charToIntToDec,
+  decToIntToOrd,
+  ordToDecToInt,
+];
