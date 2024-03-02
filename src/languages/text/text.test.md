@@ -5,7 +5,7 @@
 println "Hello, World!";
 
 % Looping
-for $i 0 10 {
+for $i 10 {
     println_int $i;
 };
 ```
@@ -27,7 +27,7 @@ Hello, World!
 ## Declaration needs block
 
 ```polygolf
-for $i 0 32 {
+for $i 32 {
   $t <- 0;
 };
 ```

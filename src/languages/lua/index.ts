@@ -44,6 +44,8 @@ import {
   mergePrint,
 } from "../../plugins/print";
 import {
+  charToIntToDec,
+  ordToDecToInt,
   atTextToListToAtText,
   startsWithEndsWithToSliceEquality,
   textToIntToFirstIndexTextGetToInt,
@@ -54,6 +56,7 @@ import {
   applyDeMorgans,
   bitnotPlugins,
   decomposeIntLiteral,
+  divisionToComparisonAndBack,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
@@ -70,7 +73,7 @@ const luaLanguage: Language = {
   emitter: new LuaEmitter(),
   phases: [
     required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
-    simplegolf(golfLastPrint()),
+    simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       mergePrint,
       flipBinaryOps,
@@ -90,6 +93,7 @@ const luaLanguage: Language = {
         dec_to_int: (a) => op.add(int(0n), implicitConversion("dec_to_int", a)),
       }),
       decomposeIntLiteral(true, true, true),
+      ...divisionToComparisonAndBack,
     ),
     required(
       pickAnyInt,

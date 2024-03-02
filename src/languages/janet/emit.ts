@@ -1,21 +1,30 @@
-import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
-import { isInt, isForEachRange, type Node } from "../../IR";
+import {
+  EmitError,
+  emitIntLiteral,
+  emitTextFactory,
+  getIfChain,
+} from "../../common/emit";
+import {
+  isInt,
+  isForEachRange,
+  type Node,
+  type If,
+  type ConditionalOp,
+} from "../../IR";
 import {
   defaultDetokenizer,
   VisitorEmitter,
   type EmitterVisitResult,
 } from "../../common/Language";
-import type { Spine } from "../../common/Spine";
+import { type Spine } from "../../common/Spine";
 import type { CompilationContext } from "../../common/compile";
 import { $ } from "../../common/fragments";
 
 const emitJanetText = emitTextFactory({
   '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
-  "`\nTEXT\n`": { "`": null },
-  "``\nTEXT\n``": { "``": null },
-  /* TO-DO: Introduce "`TEXT`" string literal:
-     Cannot be empty or begin/end with a newline
-   */
+  "`\nTEXT\n`": { cantMatch: /`/ },
+  "``\nTEXT\n``": { cantMatch: /``/ },
+  "`TEXT`": { cantMatch: /|^$|^\n|\n$/ },
 });
 
 export class JanetEmitter extends VisitorEmitter {
@@ -64,14 +73,20 @@ export class JanetEmitter extends VisitorEmitter {
                 $.body,
               );
         }
-        return list("each", $.variable, $.collection, $.body);
-      case "If":
         return list(
-          "if",
-          $.condition,
-          $.consequent,
-          n.alternate === undefined ? [] : $.alternate,
+          "each",
+          n.variable === undefined ? "_" : $.variable,
+          $.collection,
+          $.body,
         );
+      case "If": {
+        const { ifs, alternate } = getIfChain(spine as Spine<If>);
+        return list(
+          ifs.length > 1 ? "cond" : "if",
+          ifs.map((x) => [x.condition, x.consequent]),
+          alternate ?? [],
+        );
+      }
       case "VarDeclarationWithAssignment": {
         const assignment = n.assignment;
         if (assignment.kind !== "Assignment") {
@@ -101,8 +116,14 @@ export class JanetEmitter extends VisitorEmitter {
         return isInt(0n)(n.low)
           ? list("take", $.high, $.collection)
           : list("slice", $.collection, $.low, $.high);
-      case "ConditionalOp":
-        return list("if", $.condition, $.consequent, $.alternate);
+      case "ConditionalOp": {
+        const { ifs, alternate } = getIfChain(spine as Spine<ConditionalOp>);
+        return list(
+          ifs.length > 1 ? "cond" : "if",
+          ifs.map((x) => [x.condition, x.consequent]),
+          alternate!,
+        );
+      }
       case "List":
         return ["@[", $.value.join(), "]"];
       case "Table":

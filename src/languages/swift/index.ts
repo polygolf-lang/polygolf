@@ -59,6 +59,8 @@ import {
   usePrimaryTextOps,
   textToIntToTextGetToInt,
   replaceToSplitAndJoin,
+  ordToDecToInt,
+  charToIntToDec,
   atTextToListToAtText,
 } from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
@@ -70,6 +72,7 @@ import {
   lowBitsPlugins,
   decomposeIntLiteral,
   pickAnyInt,
+  comparisonToDivision,
 } from "../../plugins/arithmetic";
 import { SwiftEmitter } from "./emit";
 
@@ -79,7 +82,12 @@ const swiftLanguage: Language = {
   emitter: new SwiftEmitter(),
   phases: [
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
-    simplegolf(golfLastPrint()),
+    simplegolf(
+      golfLastPrint(),
+      comparisonToDivision,
+      charToIntToDec,
+      ordToDecToInt,
+    ),
     search(
       mergePrint,
       flipBinaryOps,

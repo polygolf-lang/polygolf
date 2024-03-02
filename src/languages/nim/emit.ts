@@ -7,10 +7,11 @@ import {
   joinTrees,
   EmitError,
   emitIntLiteral,
+  getIfChain,
 } from "../../common/emit";
-import { type Array, isInt, type Node, type Text } from "../../IR";
+import { type Array, isInt, type Node, type Text, type If } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
-import type { Spine } from "../../common/Spine";
+import { type Spine } from "../../common/Spine";
 import { $, type PathFragment } from "../../common/fragments";
 
 function escape(x: number, i: number, arr: number[]) {
@@ -24,8 +25,8 @@ function escape(x: number, i: number, arr: number[]) {
 const emitNimText = emitTextFactory(
   {
     '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
-    '"""TEXT"""': { '"""': null },
-    'r"TEXT"': { '"': `""`, "\n": null, "\r": null },
+    '"""TEXT"""': { cantMatch: /"""/ },
+    'r"TEXT"': { cantMatch: /\n|\r/, subs: { '"': `""` } },
   },
   escape,
 );
@@ -137,8 +138,8 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
   }
 
   visitNoParens(n: Node, spine: Spine, context: CompilationContext) {
-    function multiNode(fragment: PathFragment) {
-      const child = spine.getChild(fragment);
+    function multiNode(child: Spine | PathFragment) {
+      if ("prop" in child) child = spine.getChild(child);
       const children =
         child.node.kind === "Block" ? child.getChildSpines() : [child];
       let inner = [];
@@ -185,16 +186,18 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
           ":",
           multiNode($.body),
         ];
-      case "If":
+      case "If": {
+        const { ifs, alternate } = getIfChain(spine as Spine<If>);
         return [
-          "if",
-          $.condition,
-          ":",
-          multiNode($.consequent),
-          n.alternate !== undefined
-            ? ["else", ":", multiNode($.alternate)]
-            : [],
+          ifs.map((x, i) => [
+            i < 1 ? "if" : "elif",
+            x.condition,
+            ":",
+            multiNode(x.consequent),
+          ]),
+          alternate === undefined ? [] : ["else", ":", alternate],
         ];
+      }
       case "Variants":
       case "ForCLike":
         throw new EmitError(n);

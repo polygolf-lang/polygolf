@@ -8,12 +8,13 @@ import {
   EmitError,
   emitIntLiteral,
   emitTextFactory,
+  getIfChain,
   joinTrees,
 } from "../../common/emit";
-import { isInt, isText, id, type Node } from "../../IR";
+import { isInt, isText, id, type Node, type If } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
 import { $, type PathFragment } from "../../common/fragments";
-import type { Spine } from "../../common/Spine";
+import { type Spine } from "../../common/Spine";
 
 export const emitPythonText = emitTextFactory(
   {
@@ -115,12 +116,13 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
   }
 
   visitNoParens(n: Node, spine: Spine, context: CompilationContext) {
-    function multiNode(fragment: PathFragment) {
-      const child = spine.getChild(fragment).node;
-      const children = child.kind === "Block" ? child.children : [child];
+    function multiNode(child: Spine | PathFragment) {
+      if ("prop" in child) child = spine.getChild(child);
+      const children =
+        child.node.kind === "Block" ? child.node.children : [child.node];
       return containsMultiNode(children)
-        ? ["$INDENT$", "\n", fragment, "$DEDENT$"]
-        : fragment;
+        ? ["$INDENT$", "\n", child, "$DEDENT$"]
+        : child;
     }
     switch (n.kind) {
       case "Cast":
@@ -145,18 +147,20 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
           ":",
           multiNode($.body),
         ];
-      case "If":
+      case "If": {
+        const { ifs, alternate } = getIfChain(spine as Spine<If>);
         return [
-          "if",
-          $.condition,
-          ":",
-          multiNode($.consequent),
-          n.alternate === undefined
+          ifs.map((x, i) => [
+            i < 1 ? "if" : ["\n", "elif"],
+            x.condition,
+            ":",
+            multiNode(x.consequent),
+          ]),
+          alternate === undefined
             ? []
-            : n.alternate.kind === "If"
-            ? ["\n", "el", "$GLUE$", $.alternate]
-            : ["\n", "else", ":", multiNode($.alternate)],
+            : ["\n", "else", ":", multiNode(alternate)],
         ];
+      }
       case "Assignment":
         return [$.variable, "=", $.expr];
       case "ManyToManyAssignment":

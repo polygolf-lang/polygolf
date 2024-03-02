@@ -1,6 +1,15 @@
-import { type IR, type Integer, type Node } from "IR";
+import {
+  type If,
+  type IR,
+  type Integer,
+  type Node,
+  type ConditionalOp,
+  isOfKind,
+} from "../IR";
 import { PolygolfError } from "./errors";
-import { type TokenTree } from "./Language";
+import { $ } from "./fragments";
+import type { TokenTree } from "./Language";
+import type { Spine } from "./Spine";
 import { codepoints } from "./strings";
 
 export function joinTrees(
@@ -17,7 +26,11 @@ export function joinTrees(
  * Each resulting codepoint is mapped using `codepointMap`, if provided.
  */
 export function emitTextFactory(
-  options: Record<`${string}TEXT${string}`, Record<string, string | null>>,
+  options: Record<
+    `${string}TEXT${string}`,
+    | Record<string, string>
+    | { cantMatch: RegExp; subs?: Record<string, string> }
+  >,
   codepointMap?: (x: number, i: number, arr: number[]) => string,
 ) {
   return function (
@@ -25,11 +38,17 @@ export function emitTextFactory(
     [low, high]: [number, number] = [1, Infinity],
   ) {
     let result = "";
-    for (const [template, escapes0] of Object.entries(options)) {
-      const escapes = Object.entries(escapes0);
-      if (escapes.some((x) => x[1] === null && value.includes(x[0]))) continue;
+    for (const [template, behaviour] of Object.entries(options)) {
+      const [cantMatch, subs] =
+        "cantMatch" in behaviour
+          ? [
+              behaviour.cantMatch as RegExp,
+              Object.entries(behaviour.subs ?? {}),
+            ]
+          : [undefined, Object.entries(behaviour)];
+      if (cantMatch?.test(value) === true) continue;
       let current = value;
-      for (const [c, d] of escapes) {
+      for (const [c, d] of subs) {
         if (d === null) continue;
         current = current.replaceAll(c, d);
       }
@@ -88,4 +107,34 @@ export function emitIntLiteral(
     ),
   );
   return isNegative ? `-${absEmit}` : absEmit;
+}
+
+/**
+ * Decomposes a nested chain of if conditions into a flat structure.
+ */
+export function getIfChain(spine: Spine<If | ConditionalOp>): {
+  ifs: { condition: Spine; consequent: Spine }[];
+  alternate: Spine | undefined;
+} {
+  const ifs = [
+    {
+      condition: spine.getChild($.condition),
+      consequent: spine.getChild($.consequent),
+    },
+  ];
+  let alternate = spine.getChild($.alternate);
+  while (
+    alternate.node !== undefined &&
+    isOfKind(spine.node.kind)(alternate.node)
+  ) {
+    ifs.push({
+      condition: alternate.getChild($.condition),
+      consequent: alternate.getChild($.consequent),
+    });
+    alternate = alternate.getChild($.alternate);
+  }
+  return {
+    ifs,
+    alternate: alternate.node === undefined ? undefined : alternate,
+  };
 }

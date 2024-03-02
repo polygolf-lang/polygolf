@@ -9,7 +9,7 @@ _Polygolf_
 println "Hello, World!";
 
 % Looping
-for $i 0 10 {
+for $i 10 {
     println_int $i;
 };
 
@@ -24,6 +24,15 @@ _Golfscript_
 ```gs
 :a;"Hello, World!
 "10,{:i;i n}%a{:b;b n}%
+```
+
+_Javascript_
+
+```javascript
+p=print
+p`Hello, World!`
+for(i in''+1e9)p(i)
+for(a of arguments)p(a)
 ```
 
 _Lua_
@@ -60,13 +69,4 @@ _Swift_
 print("Hello, World!")
 for i in 0...9{print(i)}
 for a in CommandLine.arguments[1...]{print(a)}
-```
-
-_Javascript_
-
-```javascript
-p=print
-p`Hello, World!`
-for(i in''+1e9)p(i)
-for(a of arguments)p(a)
 ```
