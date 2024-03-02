@@ -1,5 +1,4 @@
 import type { PluginVisitor, Spine } from "../common/Spine";
-import { replaceAtIndex } from "../common/arrays";
 import {
   block,
   implicitConversion,
@@ -44,7 +43,7 @@ export function golfLastPrint(toPrintln = true): PluginVisitor {
       }
       if (arg !== lastStatement.args[0] || lastStatement.op !== newOp) {
         return blockOrSingle(
-          replaceAtIndex(statements, statements.length - 1, op[newOp](arg)),
+          statements.with(statements.length - 1, op[newOp](arg)),
         );
       }
     }
@@ -63,8 +62,7 @@ export function golfLastPrintInt(toPrintlnInt = true): PluginVisitor {
     const lastStatement = statements[statements.length - 1];
     if (isOp(oldOp)(lastStatement)) {
       return blockOrSingle(
-        replaceAtIndex(
-          statements,
+        statements.with(
           statements.length - 1,
           op[newOp](lastStatement.args[0]),
         ),
@@ -147,12 +145,12 @@ export function splitPrint(node: Node, spine: Spine) {
             x === node
               ? blockOrSingle(node.children.slice(0, -1))
               : x === assignments[0]
-              ? isText("")(x.expr)
-                ? block([])
-                : op["print[Text]"](x.expr)
-              : assignments.includes(x as any)
-              ? op["print[Text]"](((x as Assignment).expr as Op).args[1]!)
-              : undefined,
+                ? isText("")(x.expr)
+                  ? block([])
+                  : op["print[Text]"](x.expr)
+                : assignments.includes(x as any)
+                  ? op["print[Text]"](((x as Assignment).expr as Op).args[1]!)
+                  : undefined,
           ).node;
         }
       }

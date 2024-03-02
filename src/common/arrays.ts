@@ -1,13 +1,3 @@
-export function replaceAtIndex<T>(
-  arr: ReadonlyArray<T>,
-  index: number,
-  ...insert: T[]
-) {
-  const a = [...arr];
-  a.splice(index, 1, ...insert);
-  return a;
-}
-
 export function groupby<Item, By>(
   data: Item[],
   by: (x: Item) => By,

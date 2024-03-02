@@ -1,7 +1,6 @@
 import { type IR, isOp, op, isOfKind, block, type Node } from "../IR";
 import type { VisitorContext, CompilationContext } from "./compile";
 import { getChild, getChildFragments, type PathFragment } from "./fragments";
-import { replaceAtIndex } from "./arrays";
 
 /** A Spine points to one node and keeps track of all of its ancestors up to
  * the root program node. The main purpose of a Spine is for traversal. */
@@ -46,8 +45,7 @@ export class Spine<N extends IR.Node = IR.Node> {
         ? { ...this.node, [pathFragment]: newChild }
         : {
             ...this.node,
-            [pathFragment.prop]: replaceAtIndex(
-              (this.node as any)[pathFragment.prop],
+            [pathFragment.prop]: (this.node as any)[pathFragment.prop].with(
               pathFragment.index,
               newChild,
             ),
@@ -79,18 +77,13 @@ export class Spine<N extends IR.Node = IR.Node> {
             {
               ...(isOp()(parentNode)
                 ? op.unsafe(parentNode.op)(
-                    ...replaceAtIndex(
-                      parentNode.args,
+                    ...(parentNode.args as readonly Node[]).with(
                       this.pathFragment.index,
                       newNode,
                     ),
                   )
                 : block(
-                    replaceAtIndex(
-                      parentNode.children,
-                      this.pathFragment.index,
-                      newNode,
-                    ),
+                    parentNode.children.with(this.pathFragment.index, newNode),
                   )),
               targetType: parentNode.targetType,
             },

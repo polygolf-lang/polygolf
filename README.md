@@ -20,7 +20,7 @@ You can try Polygolf in your browser using the [Playground](https://polygolf-lan
 
 ## Local usage
 
-Requires npm and node 17.0+ installed.
+Requires npm and node 20.11.1+ installed.
 
 To get started, clone the repository, then run
 

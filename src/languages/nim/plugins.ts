@@ -16,7 +16,6 @@ import {
 import { getType } from "../../common/getType";
 import { addImports } from "../../plugins/imports";
 import type { PluginVisitor, Spine } from "../../common/Spine";
-import { replaceAtIndex } from "../../common/arrays";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -108,8 +107,7 @@ export function useBackwardsIndex(node: Node, spine: Spine) {
     (node.op.includes("at_back") || node.op.includes("slice_back"))
   ) {
     return op.unsafe(node.op)(
-      ...replaceAtIndex(
-        node.args,
+      ...(node.args as readonly Node[]).with(
         1,
         prefix(
           "system.^",

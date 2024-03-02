@@ -127,16 +127,16 @@ export default function emitProgram(
           return expr === program
             ? joinNodes("\n", e.children)
             : e.children.some(
-                isOfKind(
-                  "If",
-                  "While",
-                  "ForEach",
-                  "ForCLike",
-                  "VarDeclarationWithAssignment",
-                ),
-              )
-            ? ["{", joinNodes("\n", e.children), "}"]
-            : joinNodes(",", e.children);
+                  isOfKind(
+                    "If",
+                    "While",
+                    "ForEach",
+                    "ForCLike",
+                    "VarDeclarationWithAssignment",
+                  ),
+                )
+              ? ["{", joinNodes("\n", e.children), "}"]
+              : joinNodes(",", e.children);
         case "Function":
           return ["(", joinNodes(",", e.args), ")", "=>", emit(e.expr)];
         case "Assignment":

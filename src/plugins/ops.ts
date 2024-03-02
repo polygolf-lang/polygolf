@@ -33,7 +33,6 @@ import {
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
-import { replaceAtIndex } from "../common/arrays";
 import { type CompilationContext } from "@/common/compile";
 
 function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
@@ -143,8 +142,8 @@ export function mapOpsUsing<
               exprs.length < 3
                 ? exprs
                 : variadicMode === "leftChain"
-                ? [map(opCode, exprs.slice(0, -1))!, exprs.at(-1)!]
-                : [exprs[0], map(opCode, exprs.slice(1))!];
+                  ? [map(opCode, exprs.slice(0, -1))!, exprs.at(-1)!]
+                  : [exprs[0], map(opCode, exprs.slice(1))!];
             return mapper(
               arg as Targ,
               exprs,
@@ -248,7 +247,7 @@ export const mapBackwardsIndexToForwards = mapOpsUsing<
   return op.unsafe(newOpCode)(
     ...(arg === 0
       ? opArgs
-      : replaceAtIndex(opArgs, 1, op.add(opArgs[1], op[arg](opArgs[0])))),
+      : opArgs.with(1, op.add(opArgs[1], op[arg](opArgs[0])))),
   );
 }, "variadic");
 
@@ -274,7 +273,7 @@ export function mapMutationUsing<
         ) {
           const opCode = node.expr.op;
           const args = node.expr.args;
-          const name = opMap[opCode as TOpCode]!;
+          const name = opMap[opCode as TOpCode];
           const leftValueStringified = stringify(node.variable);
           const index = node.expr.args.findIndex(
             (x) => stringify(x) === leftValueStringified,
@@ -321,7 +320,7 @@ export function mapMutationUsing<
             }
             if (opCode in opMap) {
               return mapper(
-                name,
+                name as any as Targ,
                 [
                   node.variable,
                   ...(keepRestAsOp && newArgs.length > 1

@@ -282,13 +282,13 @@ export function inlineVariables(
             x === assignmentParent && x.kind === "Block"
               ? blockOrSingle(x.children.filter((y) => y !== assignment))
               : x.kind === "Identifier" &&
-                !x.builtin &&
-                x.name === assignment.variable.name
-              ? {
-                  ...assignment.expr,
-                  type: assignment.expr.type ?? assignment.variable.type,
-                }
-              : undefined,
+                  !x.builtin &&
+                  x.name === assignment.variable.name
+                ? {
+                    ...assignment.expr,
+                    type: assignment.expr.type ?? assignment.variable.type,
+                  }
+                : undefined,
           ).node,
         );
       }
