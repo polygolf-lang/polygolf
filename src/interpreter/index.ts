@@ -23,7 +23,7 @@ const javascriptForInterpreting = {
         const parent = spine.parent?.node;
         if (
           parent !== undefined &&
-          spine.pathFragment === "body" &&
+          spine.pathFragment?.prop === "body" &&
           isOfKind("While", "ForEach", "ForCLike")(parent) &&
           (node.kind !== "Block" ||
             node.children[0].kind !== "FunctionCall" ||

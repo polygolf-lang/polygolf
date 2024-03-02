@@ -1,11 +1,5 @@
 import { isOp, isText, text } from "@/IR";
-import {
-  type Language,
-  defaultDetokenizer,
-  type Plugin,
-  search,
-  required,
-} from "./Language";
+import { type Language, type Plugin, search, required } from "./Language";
 import { EmitError } from "./emit";
 import compile from "./compile";
 import { compilationOptionsFromKeywords } from "@/markdown-tests";
@@ -14,27 +8,28 @@ import { PolygolfError } from "./errors";
 const textLang: Language = {
   name: "text",
   extension: "txt",
-  emitter(program, context) {
-    return (program.kind === "Block" ? program.children : [program]).map(
-      (x) => {
-        if (isOp()(x) && x.args.length > 0 && isText()(x.args[0]!)) {
-          if (x.args[0].value.endsWith("X")) {
-            context.addWarning(new PolygolfError("global warning"), true);
+  emitter: {
+    emit(program, context) {
+      return (program.kind === "Block" ? program.children : [program])
+        .map((x) => {
+          if (isOp()(x) && x.args.length > 0 && isText()(x.args[0]!)) {
+            if (x.args[0].value.endsWith("X")) {
+              context.addWarning(new PolygolfError("global warning"), true);
+              context.addWarning(
+                new PolygolfError("local warning that should not be visible"),
+                false,
+              );
+            }
             context.addWarning(
-              new PolygolfError("local warning that should not be visible"),
+              new PolygolfError("local warning that should be visible"),
               false,
             );
-          }
-          context.addWarning(
-            new PolygolfError("local warning that should be visible"),
-            false,
-          );
-          return [x.args[0].value];
-        } else throw new EmitError(x);
-      },
-    );
+            return [x.args[0].value];
+          } else throw new EmitError(x);
+        })
+        .join("");
+    },
   },
-  detokenizer: defaultDetokenizer(() => false),
   phases: [
     search({
       name: "trimEnd",
@@ -106,10 +101,11 @@ function nopPlugin(name: string): Plugin {
 const randomLang: Language = {
   name: "random",
   extension: "random",
-  emitter() {
-    return "x".repeat(Math.floor(Math.random() * 100));
+  emitter: {
+    emit() {
+      return "x".repeat(Math.floor(Math.random() * 100));
+    },
   },
-  detokenizer: defaultDetokenizer(() => false),
   phases: [
     required(nopPlugin("a"), nopPlugin("b"), nopPlugin("c"), nopPlugin("d")),
     search(nopPlugin("e"), nopPlugin("f")),
