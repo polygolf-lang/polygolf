@@ -13,12 +13,7 @@ import {
   asciiType,
 } from "../IR";
 import { expandVariants } from "./expandVariants";
-import {
-  defaultDetokenizer,
-  type Plugin,
-  type Language,
-  type TokenTree,
-} from "./Language";
+import { type Plugin, type Language } from "./Language";
 import { programToSpine, type Spine } from "./Spine";
 import { getType, getTypeAndResolveOpCode } from "./getType";
 import { stringify } from "./stringify";
@@ -173,21 +168,19 @@ function emit(
   context: CompilationContext,
   noEmit: boolean,
 ) {
-  let tokenTree: TokenTree;
   if (noEmit) {
     if (language.noEmitter !== undefined) {
       try {
-        tokenTree = language.noEmitter(program, context);
+        return language.noEmitter.emit(program, context);
       } catch {
-        tokenTree = debugEmit(program);
+        return debugEmit(program);
       }
     } else {
-      tokenTree = debugEmit(program);
+      return debugEmit(program);
     }
   } else {
-    tokenTree = language.emitter(program, context);
+    return language.emitter.emit(program, context);
   }
-  return (language.detokenizer ?? defaultDetokenizer())(tokenTree);
 }
 
 function isError(x: any): x is Error {

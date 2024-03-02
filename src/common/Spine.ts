@@ -32,8 +32,10 @@ export class Spine<N extends IR.Node = IR.Node> {
   }
 
   /** Get one particular child spine. */
-  getChild(pathFragment: PathFragment): Spine {
-    return new Spine(getChild(this.node, pathFragment), this, pathFragment);
+  getChild(...pathFragments: PathFragment[]): Spine {
+    if (pathFragments.length === 0) return this;
+    const [first, ...rest] = pathFragments;
+    return new Spine(getChild(this.node, first), this, first).getChild(...rest);
   }
 
   /** Return the spine (pointing to this node) determined from replacing a child
@@ -42,8 +44,8 @@ export class Spine<N extends IR.Node = IR.Node> {
   withChildReplaced(newChild: IR.Node, pathFragment: PathFragment): Spine<N> {
     if (newChild === this.getChild(pathFragment).node) return this;
     const node =
-      typeof pathFragment === "string"
-        ? { ...this.node, [pathFragment]: newChild }
+      pathFragment.index === undefined
+        ? { ...this.node, [pathFragment.prop]: newChild }
         : {
             ...this.node,
             [pathFragment.prop]: replaceAtIndex(
@@ -81,14 +83,14 @@ export class Spine<N extends IR.Node = IR.Node> {
                 ? op.unsafe(parentNode.op)(
                     ...replaceAtIndex(
                       parentNode.args,
-                      this.pathFragment.index,
+                      this.pathFragment.index!,
                       newNode,
                     ),
                   )
                 : block(
                     replaceAtIndex(
                       parentNode.children,
-                      this.pathFragment.index,
+                      this.pathFragment.index!,
                       newNode,
                     ),
                   )),

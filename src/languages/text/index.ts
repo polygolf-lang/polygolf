@@ -5,7 +5,11 @@ const textLanguage: Language = {
   name: "Text",
   extension: "txt",
   phases: [],
-  emitter: getOutput,
+  emitter: {
+    emit(x) {
+      return getOutput(x).trimEnd();
+    },
+  },
 };
 
 export default textLanguage;

@@ -11,6 +11,7 @@ import {
   op,
   table,
 } from "../IR";
+import { $ } from "../common/fragments";
 
 export function safeConditionalOpToAt(
   type: "Array" | "List" | "Table",
@@ -53,7 +54,7 @@ export function conditionalOpToAndOr(
         if (
           isProvablyThruthy(
             node.consequent,
-            spine.getChild("consequent"),
+            spine.getChild($.consequent),
             context,
           )
         )

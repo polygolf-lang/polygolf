@@ -75,7 +75,7 @@ export function useImplicitForCast(node: Node, spine: Spine) {
   if (
     node.kind === "Cast" &&
     spine.parent?.node.kind === "ForEach" &&
-    spine.pathFragment === "collection"
+    spine.pathFragment?.prop === "collection"
   ) {
     return node.expr;
   }

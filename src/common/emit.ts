@@ -7,7 +7,9 @@ import {
   isOfKind,
 } from "../IR";
 import { PolygolfError } from "./errors";
-import { type TokenTree } from "./Language";
+import { $ } from "./fragments";
+import type { TokenTree } from "./Language";
+import type { Spine } from "./Spine";
 import { codepoints } from "./strings";
 
 export function joinTrees(
@@ -110,18 +112,29 @@ export function emitIntLiteral(
 /**
  * Decomposes a nested chain of if conditions into a flat structure.
  */
-export function getIfChain(node: If | ConditionalOp): {
-  ifs: { condition: Node; consequent: Node }[];
-  alternate: Node | undefined;
+export function getIfChain(spine: Spine<If | ConditionalOp>): {
+  ifs: { condition: Spine; consequent: Spine }[];
+  alternate: Spine | undefined;
 } {
-  const ifs = [{ condition: node.condition, consequent: node.consequent }];
-  let alternate = node.alternate;
-  while (alternate !== undefined && isOfKind(node.kind)(alternate)) {
+  const ifs = [
+    {
+      condition: spine.getChild($.condition),
+      consequent: spine.getChild($.consequent),
+    },
+  ];
+  let alternate = spine.getChild($.alternate);
+  while (
+    alternate.node !== undefined &&
+    isOfKind(spine.node.kind)(alternate.node)
+  ) {
     ifs.push({
-      condition: alternate.condition,
-      consequent: alternate.consequent,
+      condition: alternate.getChild($.condition),
+      consequent: alternate.getChild($.consequent),
     });
-    alternate = alternate.alternate;
+    alternate = alternate.getChild($.alternate);
   }
-  return { ifs, alternate };
+  return {
+    ifs,
+    alternate: alternate.node === undefined ? undefined : alternate,
+  };
 }

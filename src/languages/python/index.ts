@@ -27,7 +27,7 @@ import {
   simplegolf,
 } from "../../common/Language";
 
-import emitProgram, { emitPythonText } from "./emit";
+import { PythonEmitter, emitPythonText } from "./emit";
 import {
   removeImplicitConversions,
   methodsAsFunctions,
@@ -98,7 +98,7 @@ import { safeConditionalOpToAt } from "../../plugins/conditions";
 const pythonLanguage: Language = {
   name: "Python",
   extension: "py",
-  emitter: emitProgram,
+  emitter: new PythonEmitter(),
   phases: [
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint()),
@@ -374,7 +374,8 @@ const pythonLanguage: Language = {
       alias({
         Identifier: (n, s) =>
           n.builtin &&
-          (s.parent?.node.kind !== "PropertyCall" || s.pathFragment !== "ident")
+          (s.parent?.node.kind !== "PropertyCall" ||
+            s.pathFragment?.prop !== "ident")
             ? n.name
             : undefined,
         // TODO: handle more general cases

@@ -134,7 +134,7 @@ export function useIntegerTruthiness(node: Node, spine: Spine) {
     isOp("eq[Int]", "neq[Int]")(node) &&
     !spine.isRoot &&
     spine.parent!.node.kind === "If" &&
-    spine.pathFragment === "condition"
+    spine.pathFragment?.prop === "condition"
   ) {
     const res = isInt(0n)(node.args[1])
       ? implicitConversion("int_to_bool", node.args[0])
