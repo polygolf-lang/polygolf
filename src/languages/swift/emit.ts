@@ -123,17 +123,17 @@ export class SwiftEmitter extends PrecedenceVisitorEmitter {
     return prop === "object"
       ? Infinity
       : prop === "collection" &&
-        (kind === "IndexCall" || kind === "RangeIndexCall")
-      ? Infinity
-      : kind === "ConditionalOp"
-      ? prop === "condition"
-        ? this.prec(parent) + 1
-        : prop === "consequent"
-        ? -Infinity
-        : this.prec(parent)
-      : kind === "Infix" || kind === "Prefix" || kind === "Postfix"
-      ? this.prec(parent) + (prop === "right" ? 1 : 0)
-      : -Infinity;
+          (kind === "IndexCall" || kind === "RangeIndexCall")
+        ? Infinity
+        : kind === "ConditionalOp"
+          ? prop === "condition"
+            ? this.prec(parent) + 1
+            : prop === "consequent"
+              ? -Infinity
+              : this.prec(parent)
+          : kind === "Infix" || kind === "Prefix" || kind === "Postfix"
+            ? this.prec(parent) + (prop === "right" ? 1 : 0)
+            : -Infinity;
   }
 
   visitNoParens(n: Node, spine: Spine, context: CompilationContext) {

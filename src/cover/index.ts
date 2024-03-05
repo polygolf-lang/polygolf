@@ -123,10 +123,10 @@ function printTable(name: string, x: Table) {
               v2 === true
                 ? "✔️"
                 : v2 === false
-                ? "❌"
-                : v2 === undefined
-                ? ""
-                : v2,
+                  ? "❌"
+                  : v2 === undefined
+                    ? ""
+                    : v2,
             ),
           })),
       ]).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly

@@ -71,14 +71,14 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
     return kind === "MethodCall" && prop === "object"
       ? Infinity
       : kind === "IndexCall" && prop === "collection"
-      ? Infinity
-      : kind === "Infix"
-      ? prop === "left"
-        ? this.prec(parent) + (parent.name === "^" ? 1 : 0)
-        : this.prec(parent) + (parent.name === "^" ? 0 : 1)
-      : kind === "Prefix"
-      ? this.prec(parent)
-      : -Infinity;
+        ? Infinity
+        : kind === "Infix"
+          ? prop === "left"
+            ? this.prec(parent) + (parent.name === "^" ? 1 : 0)
+            : this.prec(parent) + (parent.name === "^" ? 0 : 1)
+          : kind === "Prefix"
+            ? this.prec(parent)
+            : -Infinity;
   }
 
   prec(expr: Node): number {

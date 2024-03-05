@@ -125,16 +125,16 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
     return kind === "ConditionalOp"
       ? 0
       : kind === "Infix"
-      ? this.prec(parent) +
-        Number(
-          (parent.name === "^" || parent.name === " ") === (prop === "left"),
-        )
-      : kind === "Prefix" || kind === "Postfix"
-      ? this.prec(parent)
-      : prop === "collection" &&
-        (kind === "IndexCall" || kind === "RangeIndexCall")
-      ? 12
-      : -Infinity;
+        ? this.prec(parent) +
+          Number(
+            (parent.name === "^" || parent.name === " ") === (prop === "left"),
+          )
+        : kind === "Prefix" || kind === "Postfix"
+          ? this.prec(parent)
+          : prop === "collection" &&
+              (kind === "IndexCall" || kind === "RangeIndexCall")
+            ? 12
+            : -Infinity;
   }
 
   visitNoParens(n: Node, spine: Spine, context: CompilationContext) {

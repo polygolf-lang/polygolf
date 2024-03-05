@@ -7,10 +7,10 @@ export function stringify(x: object, skipTargetType = false): string {
       key === "source"
         ? undefined
         : key === "targetType" && skipTargetType
-        ? undefined
-        : typeof value === "bigint"
-        ? value.toString() + "n"
-        : value,
+          ? undefined
+          : typeof value === "bigint"
+            ? value.toString() + "n"
+            : value,
     2,
   );
   cachedStringification.set(x, result);

@@ -122,20 +122,20 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
     return prop === "object"
       ? this.prec(parent)
       : prop === "collection" && kind === "IndexCall"
-      ? Infinity
-      : kind === "ConditionalOp"
-      ? prop === "condition"
-        ? this.prec(parent) + 1
-        : prop === "consequent"
-        ? -Infinity
-        : this.prec(parent)
-      : kind === "Infix"
-      ? prop === "left"
-        ? this.prec(parent) + (parent.name === "**" ? 1 : 0)
-        : this.prec(parent) + (parent.name === "**" ? 0 : 1)
-      : kind === "Prefix" || kind === "Postfix"
-      ? this.prec(parent)
-      : -Infinity;
+        ? Infinity
+        : kind === "ConditionalOp"
+          ? prop === "condition"
+            ? this.prec(parent) + 1
+            : prop === "consequent"
+              ? -Infinity
+              : this.prec(parent)
+          : kind === "Infix"
+            ? prop === "left"
+              ? this.prec(parent) + (parent.name === "**" ? 1 : 0)
+              : this.prec(parent) + (parent.name === "**" ? 0 : 1)
+            : kind === "Prefix" || kind === "Postfix"
+              ? this.prec(parent)
+              : -Infinity;
   }
 
   visitNoParens(n: Node, s: Spine, context: CompilationContext) {
@@ -146,16 +146,16 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
         return s.isRoot
           ? $.children.join("\n")
           : n.children.some(
-              isOfKind(
-                "If",
-                "While",
-                "ForEach",
-                "ForCLike",
-                "VarDeclarationWithAssignment",
-              ),
-            )
-          ? ["{", $.children.join("\n"), "}"]
-          : $.children.join(",");
+                isOfKind(
+                  "If",
+                  "While",
+                  "ForEach",
+                  "ForCLike",
+                  "VarDeclarationWithAssignment",
+                ),
+              )
+            ? ["{", $.children.join("\n"), "}"]
+            : $.children.join(",");
       case "Function":
         return ["(", $.args.join(","), ")", "=>", $.expr];
       case "Assignment":
