@@ -500,8 +500,8 @@ export function getOpCodeTypeFromTypes(
                   opCode === "int_to_bin"
                     ? 2
                     : opCode === "int_to_dec"
-                      ? 10
-                      : 16,
+                    ? 10
+                    : 16,
                 ).length,
               ),
             ),

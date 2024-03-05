@@ -145,12 +145,12 @@ export function splitPrint(node: Node, spine: Spine) {
             x === node
               ? blockOrSingle(node.children.slice(0, -1))
               : x === assignments[0]
-                ? isText("")(x.expr)
-                  ? block([])
-                  : op["print[Text]"](x.expr)
-                : assignments.includes(x as any)
-                  ? op["print[Text]"](((x as Assignment).expr as Op).args[1]!)
-                  : undefined,
+              ? isText("")(x.expr)
+                ? block([])
+                : op["print[Text]"](x.expr)
+              : assignments.includes(x as any)
+              ? op["print[Text]"](((x as Assignment).expr as Op).args[1]!)
+              : undefined,
           ).node;
         }
       }

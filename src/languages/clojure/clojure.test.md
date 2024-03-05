@@ -93,7 +93,7 @@ replace "abcbd" "b" "e";
 ```
 
 ```clj nogolf
-(def a 0)(def b"xy")(def c(= 0 0))(def d["q""r""s"])(and c c)(or c c)(not c)(bit-not a)(- a)(abs a)(+ 2 a)(- a 2)(* 2 a)(quot a 2)(int(Math/pow a 2))(rem a 2)(bit-and 2 a)(bit-or 2 a)(bit-xor 2 a)(max 2 a)(min 2 a)(bit-shift-left a 2)(bit-shift-right a 2)(< a 2)(<= a 2)(= a 2)(not= a 2)(>= a 2)(> a 2)(even? a)(odd? a)(int(nth"abc"1))(int(nth"g"0))(int(nth"ijk"1))(str(char 99))(subs"abcdefg"2 5)(subs"abcdefg"0 3)(="a""b")(not="a""b")({1 2}1)(nth d 1)(nth d(-(count d)2))(last d)(count d)(clojure.string/join"_"d)(sort d)(str b"xyz")(str 5)(format"%x"7)(read-string"5")(.split"xyz""y")(clojure.string/reverse b)(reverse d)(apply str(repeat 3 b))(format"%7s""he")(format"%07x"31)(clojure.string/replace"abcbd""b""e")
+(def a 0)(def b"xy")(def c(= 0 0))(def d["q""r""s"])(and c c)(or c c)(not c)(bit-not a)(- a)(abs a)(+ 2 a)(- a 2)(* 2 a)(quot a 2)(int(Math/pow a 2))(rem a 2)(bit-and 2 a)(bit-or 2 a)(bit-xor 2 a)(max 2 a)(min 2 a)(bit-shift-left a 2)(bit-shift-right a 2)(< a 2)(<= a 2)(= a 2)(not= a 2)(>= a 2)(> a 2)(even? a)(odd? a)(str(nth"abc"1))(int(nth"g"0))(int(nth"ijk"1))(str(char 99))(subs"abcdefg"2 5)(subs"abcdefg"0 3)(="a""b")(not="a""b")({1 2}1)(nth d 1)(nth d(-(count d)2))(last d)(count d)(clojure.string/join"_"d)(sort d)(str b"xyz")(str 5)(format"%x"7)(read-string"5")(.split"xyz""y")(clojure.string/reverse b)(reverse d)(apply str(repeat 3 b))(format"%7s""he")(format"%07x"31)(clojure.string/replace"abcbd""b""e")
 ```
 
 ## Looping

@@ -1,11 +1,10 @@
 import {
   type Language,
   required,
-  defaultDetokenizer,
   simplegolf,
   search,
 } from "../../common/Language";
-import emitProgram from "./emit";
+import { ClojureEmitter } from "./emit";
 import {
   arraysToLists,
   flipBinaryOps,
@@ -48,7 +47,7 @@ import { implicitlyConvertConcatArg } from "./plugins";
 const clojureLanguage: Language = {
   name: "Clojure",
   extension: "clj",
-  emitter: emitProgram,
+  emitter: new ClojureEmitter(),
   phases: [
     required(arraysToLists, putcToPrintChar, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint(false), golfLastPrintInt(false)),
@@ -95,7 +94,7 @@ const clojureLanguage: Language = {
         append: (a, b) => func("conj", a, b),
 
         "at[argv]": (a) => op["at[List]"](builtin("*command-line-args*"), a),
-        "at[codepoint]": (a, b) => func("int", func("nth", a, b)),
+        "at[codepoint]": (a, b) => func("str", func("nth", a, b)),
         "contains[Text]": (a, b) => func("clojure.string/includes?", a, b),
         "contains[Table]": (a, b) => func("contains?", a, b),
         "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
@@ -185,20 +184,13 @@ const clojureLanguage: Language = {
     simplegolf(
       alias({
         Identifier: (n, s) =>
-          n.builtin && s.pathFragment !== "ident" ? n.name : undefined,
+          n.builtin && s.pathFragment?.prop !== "ident" ? n.name : undefined,
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
       }),
     ),
     required(renameIdents(), removeImplicitConversions, assertInt64),
   ],
-  detokenizer: defaultDetokenizer(
-    (a, b) =>
-      a !== "" &&
-      b !== "" &&
-      /[^(){}[\]"]/.test(a[a.length - 1]) &&
-      /[^(){}[\]"]/.test(b[0]),
-  ),
 };
 
 export default clojureLanguage;

@@ -139,8 +139,8 @@ export function useIntegerTruthiness(node: Node, spine: Spine) {
     const res = isInt(0n)(node.args[1])
       ? implicitConversion("int_to_bool", node.args[0])
       : isInt(0n)(node.args[0])
-        ? implicitConversion("int_to_bool", node.args[1])
-        : undefined;
+      ? implicitConversion("int_to_bool", node.args[1])
+      : undefined;
     return res !== undefined && node.op === "eq[Int]" ? op.not(res) : res;
   }
 }
@@ -337,10 +337,10 @@ function lg(n: bigint): number {
   return n > 1000000000000
     ? 2 + n.toString(16).length
     : n > 99
-      ? n.toString().length
-      : n > 9
-        ? 2
-        : 1;
+    ? n.toString().length
+    : n > 9
+    ? 2
+    : 1;
 }
 
 function ceilDiv(a: bigint, b: bigint) {

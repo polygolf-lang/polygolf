@@ -1,112 +1,124 @@
-import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
-import { isInt, type IR } from "../../IR";
-import { type TokenTree } from "../../common/Language";
+import {
+  EmitError,
+  emitIntLiteral,
+  emitTextFactory,
+  getIfChain,
+} from "../../common/emit";
+import {
+  isInt,
+  isForEachRange,
+  type Node,
+  type If,
+  type ConditionalOp,
+} from "../../IR";
+import {
+  defaultDetokenizer,
+  VisitorEmitter,
+  type EmitterVisitResult,
+} from "../../common/Language";
+import { type Spine } from "../../common/Spine";
+import type { CompilationContext } from "../../common/compile";
+import { $ } from "../../common/fragments";
 
 const emitClojureText = emitTextFactory({
-  '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
+  '"TEXT"': { "\\": `\\\\`, "\r": `\\r`, '"': `\\"` },
 });
 
-export default function emitProgram(program: IR.Node): TokenTree {
-  function emitMultiNode(BaseNode: IR.Node, blockNeedsDo = false): TokenTree {
-    const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
-    if (BaseNode.kind === "Block" && blockNeedsDo) {
-      return ["(", "do", children.map((x) => emit(x)), ")"];
-    }
-    return children.map((x) => emit(x));
-  }
+export class ClojureEmitter extends VisitorEmitter {
+  detokenize = defaultDetokenizer(
+    (a, b) =>
+      a !== "" &&
+      b !== "" &&
+      /[^(){}[\]"]/.test(a[a.length - 1]) &&
+      /[^(){}[\]"]/.test(b[0]),
+  );
 
-  /**
-   * Emits the expression.
-   * @param expr The expression to be emited.
-   * @returns  Token tree corresponding to the expression.
-   */
-  function emit(e: IR.Node): TokenTree {
-    switch (e.kind) {
-      case "Block":
-        return emitMultiNode(e);
+  visit(n: Node, spine: Spine<Node>, context: CompilationContext) {
+    function list(...args: EmitterVisitResult[]) {
+      return ["(", ...args, ")"];
+    }
+
+    if (n === undefined) return "_";
+    const prop = spine.pathFragment?.prop;
+
+    switch (n.kind) {
+      case "Block": {
+        return prop === "consequent" || prop === "alternate"
+          ? list("do", $.children.join())
+          : $.children.join();
+      }
       case "While":
-        return ["(", "while", emit(e.condition), emitMultiNode(e.body), ")"];
+        return list("while", $.condition, $.body);
       case "ForEach":
-        return [
-          "(",
+        if (isForEachRange(n)) {
+          const [low, high, step] = n.collection.args.map((x, i) =>
+            spine.getChild($.collection, $.args.at(i)),
+          );
+          const stepIsOne = isInt(1n)(n.collection.args[2]);
+          return stepIsOne && isInt(0n)(n.collection.args[0])
+            ? list("dotimes", "[", $.variable, high, "]", $.body)
+            : list(
+                "doseq",
+                "[",
+                $.variable,
+                list("range", low, high, stepIsOne ? [] : step),
+                "]",
+                $.body,
+              );
+        }
+        return list(
           "doseq",
           "[",
-          emit(e.variable),
-          emit(e.collection),
+          n.variable === undefined ? "_" : $.variable,
+          $.collection,
           "]",
-          emitMultiNode(e.body),
-          ")",
-        ];
-      case "ForRange": {
-        const varName = e.variable === undefined ? "_" : emit(e.variable);
-        return isInt(0n)(e.start) && isInt(1n)(e.increment)
-          ? [
-              "(",
-              "dotimes",
-              "[",
-              varName,
-              emit(e.end),
-              "]",
-              emitMultiNode(e.body),
-              ")",
-            ]
-          : [
-              "(",
-              "doseq",
-              "[",
-              varName,
-              "(",
-              "range",
-              emit(e.start),
-              emit(e.end),
-              isInt(1n)(e.increment) ? [] : emit(e.increment),
-              ")",
-              "]",
-              emitMultiNode(e.body),
-              ")",
-            ];
+          $.body,
+        );
+      case "If": {
+        const { ifs, alternate } = getIfChain(spine as Spine<If>);
+        return list(
+          ifs.length > 1 ? "cond" : "if",
+          ifs.map((x) => [x.condition, x.consequent]),
+          ifs.length > 1 ? '""' : [],
+          alternate ?? [],
+        );
       }
-      case "If":
-        // TODO: use when when no alternate and multiple statements
-        return [
-          "(",
-          "if",
-          emit(e.condition),
-          emitMultiNode(e.consequent, true),
-          e.alternate === undefined ? [] : emitMultiNode(e.alternate, true),
-          ")",
-        ];
       case "Assignment":
-        return ["(", "def", emit(e.variable), emit(e.expr), ")"];
+        return list("def", $.variable, $.expr);
       case "Identifier":
-        return e.name;
+        return n.name;
       case "Text":
-        return emitClojureText(e.value);
+        return emitClojureText(n.value);
       case "Integer":
-        return emitIntLiteral(e, {
+        return emitIntLiteral(n, {
           10: ["", ""],
           16: ["0x", ""],
           36: ["36r", ""],
         });
       case "FunctionCall":
-        return ["(", emit(e.func), e.args.map((x) => emit(x)), ")"];
-      case "ConditionalOp":
-        return [
-          "(",
-          "if",
-          emit(e.condition),
-          emit(e.consequent),
-          emit(e.alternate),
-          ")",
-        ];
+        return list($.func, $.args.join());
+      case "RangeIndexCall":
+        if (!isInt(1n)(n.step)) throw new EmitError(n, "step not equal one");
+        return isInt(0n)(n.low)
+          ? list("take", $.high, $.collection)
+          : list("subvec", list("vec", $.collection), $.low, $.high);
+      case "ConditionalOp": {
+        const { ifs, alternate } = getIfChain(spine as Spine<ConditionalOp>);
+        return list(
+          ifs.length > 1 ? "cond" : "if",
+          ifs.map((x) => [x.condition, x.consequent]),
+          ifs.length > 1 ? '""' : [],
+          alternate!,
+        );
+      }
       case "List":
-        return ["[", e.exprs.map((x) => emit(x)), "]"];
+        return ["[", $.value.join(), "]"];
       case "Table":
-        return ["{", e.kvPairs.map((x) => [emit(x.key), emit(x.value)]), "}"];
+        return ["{", $.value.join(), "}"];
+      case "KeyValue":
+        return [$.key, $.value];
       default:
-        throw new EmitError(e);
+        throw new EmitError(n);
     }
   }
-
-  return emitMultiNode(program);
 }

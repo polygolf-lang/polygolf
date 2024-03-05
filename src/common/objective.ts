@@ -21,8 +21,8 @@ export function shorterBy(
     isError(a.result)
       ? b
       : isError(b.result)
-        ? a
-        : obj(a.result) < obj(b.result)
-          ? a
-          : b;
+      ? a
+      : obj(a.result) < obj(b.result)
+      ? a
+      : b;
 }

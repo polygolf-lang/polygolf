@@ -142,8 +142,8 @@ export function mapOpsUsing<
               exprs.length < 3
                 ? exprs
                 : variadicMode === "leftChain"
-                  ? [map(opCode, exprs.slice(0, -1))!, exprs.at(-1)!]
-                  : [exprs[0], map(opCode, exprs.slice(1))!];
+                ? [map(opCode, exprs.slice(0, -1))!, exprs.at(-1)!]
+                : [exprs[0], map(opCode, exprs.slice(1))!];
             return mapper(
               arg as Targ,
               exprs,

@@ -80,8 +80,8 @@ export function forRangeCommon(
       step === undefined
         ? int(1n)
         : typeof step === "number"
-          ? int(BigInt(step))
-          : step,
+        ? int(BigInt(step))
+        : step,
     ),
     body.length > 1 ? block(body) : body[0],
   );

@@ -299,8 +299,8 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
             isInt()(x)
               ? int(-x.value)
               : x === toNegate
-                ? op.unsafe("add")(...(x as Op).args.map(op.neg))
-                : x,
+              ? op.unsafe("add")(...(x as Op).args.map(op.neg))
+              : x,
           );
         }
       }

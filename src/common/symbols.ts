@@ -39,11 +39,12 @@ export function symbolTableRoot(program: IR.Node): SymbolTable {
   if (symbolTableCache.has(program)) return symbolTableCache.get(program)!;
   const existing = new Set<string>();
   const defs = [
-    ...programToSpine(program).compactMap((_, s) =>
-      introducedSymbols(s, existing)?.map((name) => {
-        existing.add(name);
-        return [name, s] as const;
-      }),
+    ...programToSpine(program).compactMap(
+      (_, s) =>
+        introducedSymbols(s, existing)?.map((name) => {
+          existing.add(name);
+          return [name, s] as const;
+        }),
     ),
   ].flat(1);
   const table = new SymbolTable(defs);

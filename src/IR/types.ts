@@ -597,8 +597,8 @@ export function getLiteralOfType(type: Type, nonEmpty = false): Node {
         leq(type.low, 1n) && leq(1n, type.high)
           ? 1n
           : type.low === "-oo"
-            ? (type.high as bigint)
-            : (type.low as bigint),
+          ? (type.high as bigint)
+          : (type.low as bigint),
       );
     case "boolean":
       return op.true;

@@ -38,8 +38,8 @@ export function compilationOptionsFromKeywords(
     codepointRange: is("1..127")
       ? [1, 127]
       : is("32..127")
-        ? [32, 127]
-        : [1, Infinity],
+      ? [32, 127]
+      : [1, Infinity],
     getAllVariants: is("allVariants"),
     restrictFrontend: is("restrictFrontend"),
     skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
