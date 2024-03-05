@@ -5,22 +5,22 @@ import {
   rangeIndexCall,
   succ,
   array,
-  isText,
   builtin,
   op,
   prefix,
   text,
   type Text,
+  isInt,
+  infix,
 } from "../../IR";
 import {
-  defaultDetokenizer,
   type Language,
   required,
   search,
   simplegolf,
 } from "../../common/Language";
 
-import emitProgram from "./emit";
+import { NimEmitter } from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
@@ -30,12 +30,15 @@ import {
   mapBackwardsIndexToForwards,
   mapMutationTo,
   flipped,
+  withDefaults,
 } from "../../plugins/ops";
 import {
   addNimImports,
   getEndIndex,
   removeSystemNamespace,
+  removeToSeqFromFor,
   useBackwardsIndex,
+  useRawStringLiteral,
   useUFCS,
   useUnsignedDivision,
 } from "./plugins";
@@ -44,10 +47,11 @@ import {
   forArgvToForEach,
   forArgvToForRange,
   forRangeToForEach,
-  forRangeToForRangeInclusive,
+  rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
   shiftRangeOneUp,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
@@ -68,6 +72,10 @@ import {
   usePrimaryTextOps,
   useMultireplace,
   startsWithEndsWithToSliceEquality,
+  charToIntToDec,
+  ordToDecToInt,
+  decToIntToOrd,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -88,6 +96,7 @@ import {
   decomposeIntLiteral,
   pickAnyInt,
   lowBitsPlugins,
+  comparisonToDivision,
 } from "../../plugins/arithmetic";
 import { safeConditionalOpToAt } from "../../plugins/conditions";
 
@@ -96,10 +105,10 @@ const c48: Text = { ...text("0"), targetType: "char" };
 const nimLanguage: Language = {
   name: "Nim",
   extension: "nim",
-  emitter: emitProgram,
+  emitter: new NimEmitter(),
   phases: [
     required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
-    simplegolf(golfLastPrint()),
+    simplegolf(golfLastPrint(), charToIntToDec),
     search(
       mergePrint,
       flipBinaryOps,
@@ -113,7 +122,7 @@ const nimLanguage: Language = {
       tableToListLookup,
       equalityToInequality,
       shiftRangeOneUp,
-      forRangeToForRangeInclusive(),
+      rangeExclusiveToInclusive(),
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -126,17 +135,21 @@ const nimLanguage: Language = {
       ...truncatingOpsPlugins,
       decomposeIntLiteral(),
       startsWithEndsWithToSliceEquality("byte"),
+      ordToDecToInt,
+      decToIntToOrd,
+      comparisonToDivision,
     ),
     simplegolf(safeConditionalOpToAt("Array")),
     required(
+      atTextToListToAtText,
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps({
         "at[argv]": (a) => func("paramStr", succ(a)),
       }),
-      removeUnusedForVar,
-      forRangeToForRangeInclusive(true),
+      removeUnusedLoopVar,
+      rangeExclusiveToInclusive(true),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       useUnsignedDivision,
@@ -172,7 +185,6 @@ const nimLanguage: Language = {
         "ord_at[byte]": (a, b) => func("ord", op["at[byte]"](a, b)),
         "ord_at[codepoint]": (a, b) => func("ord", op["at[codepoint]"](a, b)),
         "read[line]": () => func("readLine", builtin("stdin")),
-        join: (a, b) => func("join", isText("")(b) ? [a] : [a, b]),
         "at[byte]": (a, b) => indexCall(a, b),
         "at[codepoint]": (a, b) =>
           prefix("$", indexCall(func("toRunes", a), b)),
@@ -181,8 +193,6 @@ const nimLanguage: Language = {
         "slice[List]": (a, b, c) =>
           rangeIndexCall(a, b, getEndIndex(b, c), int(1n)),
         "print[Text]": (a) => func("write", builtin("stdout"), a),
-        replace: (a, b, c) =>
-          func("replace", isText("")(c) ? [a, b] : [a, b, c]),
         text_multireplace: (a, ...x) =>
           func(
             "multireplace",
@@ -198,6 +208,20 @@ const nimLanguage: Language = {
         int_to_bin_aligned: (a, b) => func("align", op.int_to_bin(a), b, c48),
         int_to_hex_aligned: (a, b) => func("align", op.int_to_hex(a), b, c48),
         int_to_Hex_aligned: (a, b) => func("align", op.int_to_Hex(a), b, c48),
+        range_excl: (a, b, c) =>
+          func(
+            "toSeq",
+            isInt(1n)(c) ? infix("..<", a, b) : func("countup", a, b, c),
+          ),
+        range_incl: (a, b, c) =>
+          func(
+            "toSeq",
+            isInt(1n)(c)
+              ? isInt(0n)(a)
+                ? prefix("..", b)
+                : infix("..", a, b)
+              : func("countup", a, succ(b), c),
+          ),
       }),
       mapOpsTo.builtin({ true: "true", false: "false" }),
       mapOps({
@@ -231,6 +255,8 @@ const nimLanguage: Language = {
           starts_with: "startsWith",
           ends_with: "endsWith",
           bit_count: "popcount",
+          join: withDefaults`join`,
+          replace: withDefaults`replace`,
         },
         "leftChain",
       ),
@@ -280,6 +306,7 @@ const nimLanguage: Language = {
         int_to_dec: "$",
       }),
       mapOpsTo.infix({ mul: "*" }),
+      removeToSeqFromFor,
       addNimImports,
     ),
     simplegolf(
@@ -302,29 +329,12 @@ const nimLanguage: Language = {
       assertInt64,
       removeImplicitConversions,
       removeSystemNamespace,
+      useImplicitForEachChar("byte"),
+      removeImplicitConversions,
     ),
     search(useUFCS),
+    simplegolf(useRawStringLiteral),
   ],
-  detokenizer: defaultDetokenizer((a, b) => {
-    const left = a[a.length - 1];
-    const right = b[0];
-
-    if (/[A-Za-z0-9_]/.test(left) && /[A-Za-z0-9_]/.test(right)) return true; // alphanums meeting
-
-    const symbols = "=+-*/<>@$~&%|!?^.:\\";
-    if (symbols.includes(left) && symbols.includes(right)) return true; // symbols meeting
-
-    if (
-      /[A-Za-z]/.test(left) &&
-      ((!["var", "in", "else", "if", "while", "for"].includes(a) &&
-        (symbols + `"({[`).includes(right)) ||
-        right === `"`) &&
-      !["=", ":", ".", "::"].includes(b)
-    )
-      return true; // identifier meeting an operator or string literal or opening paren
-
-    return false;
-  }),
 };
 
 export default nimLanguage;

@@ -28,7 +28,6 @@ import {
   type IntegerType,
   isAssociative,
   forRangeCommon,
-  forDifferenceRange,
   type Node,
   asciiType,
   lengthToArrayIndexType as length,
@@ -108,32 +107,14 @@ describe("Bindings", () => {
     forRangeCommon(["i", 0, 10, 1, true], empty),
   );
   testNode(
-    "for range negative step exclusive",
-    id("i"),
-    int(1, 10),
-    forRangeCommon(["i", 10, 0, -1], empty),
-  );
-  testNode(
-    "for range negative step inclusive",
-    id("i"),
-    int(0, 10),
-    forRangeCommon(["i", 10, 0, -1, true], empty),
-  );
-  testNode(
     "for range general",
     id("i"),
-    int(-12, 12),
+    int(-10, 40),
 
     forRangeCommon(
-      ["i", e(int(-10, 10)), e(int(-12, 12)), e(int(-1, 1)), true],
+      ["i", e(int(-10, 10)), e(int(20, 40)), e(int(1, 1)), true],
       empty,
     ),
-  );
-  testNode(
-    "for difference range",
-    id("i"),
-    int(10, 14),
-    forDifferenceRange("i", intNode(10), intNode(5), intNode(1), empty),
   );
 });
 

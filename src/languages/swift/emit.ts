@@ -1,12 +1,14 @@
-import { type TokenTree } from "../../common/Language";
+import { PrecedenceVisitorEmitter, type Token } from "../../common/Language";
 import {
   EmitError,
   emitIntLiteral,
   emitTextFactory,
   joinTrees,
 } from "../../common/emit";
-import { type IR, isInt } from "../../IR";
-import { type CompilationContext } from "@/common/compile";
+import { type Node } from "../../IR";
+import { type CompilationContext } from "../../common/compile";
+import { $, type PathFragment } from "../../common/fragments";
+import type { Spine } from "../../common/Spine";
 
 const unicode01to09repls = {
   "\u{1}": `\\u{1}`,
@@ -62,18 +64,6 @@ const emitSwiftText = emitTextFactory(
   (x) => `\\u{${x.toString(16)}}`,
 );
 
-function precedence(expr: IR.Node): number {
-  switch (expr.kind) {
-    case "Prefix":
-      return unaryPrecedence(expr.name);
-    case "Infix":
-      return binaryPrecedence(expr.name);
-    case "ConditionalOp":
-      return 0;
-  }
-  return Infinity;
-}
-
 function binaryPrecedence(opname: string): number {
   switch (opname) {
     case "<<":
@@ -89,6 +79,9 @@ function binaryPrecedence(opname: string): number {
     case "|":
     case "^":
       return 4;
+    case "..<":
+    case "...":
+      return 3.5;
     case "<":
     case "<=":
     case "==":
@@ -111,170 +104,153 @@ function unaryPrecedence(opname: string): number {
   return 7;
 }
 
-export default function emitProgram(
-  program: IR.Node,
-  context: CompilationContext,
-): TokenTree {
-  function joinNodes(
-    delim: TokenTree,
-    exprs: readonly IR.Node[],
-    minPrec = -Infinity,
-  ) {
-    return joinTrees(
-      delim,
-      exprs.map((x) => emit(x, minPrec)),
-    );
+export class SwiftEmitter extends PrecedenceVisitorEmitter {
+  prec(expr: Node): number {
+    switch (expr.kind) {
+      case "Prefix":
+        return unaryPrecedence(expr.name);
+      case "Infix":
+        return binaryPrecedence(expr.name);
+      case "ConditionalOp":
+        return 0;
+    }
+    return Infinity;
   }
 
-  /**
-   * Emits the expression.
-   * @param expr The expression to be emited.
-   * @param minimumPrec Minimum precedence this expression must be to not need parens around it.
-   * @returns Token tree corresponding to the expression.
-   */
-  function emit(expr: IR.Node, minimumPrec = -Infinity): TokenTree {
-    const prec = precedence(expr);
-    function emitNoParens(e: IR.Node): TokenTree {
-      switch (e.kind) {
-        case "VarDeclarationBlock":
-          return ["var", joinNodes(",", e.children)];
-        case "VarDeclarationWithAssignment":
-          return emit(e.assignment);
-        case "Block":
-          return emitMultiNode(e);
-        case "Import":
-          return [e.name, joinTrees(",", e.modules)];
-        case "While":
-          return [`while`, emit(e.condition), emitMultiNode(e.body)];
-        case "ForEach":
-          return [
-            `for`,
-            emit(e.variable),
-            "in",
-            emit(e.collection),
-            emitMultiNode(e.body),
-          ];
-        case "ForRange": {
-          const start = emit(e.start);
-          const end = emit(e.end);
-          return [
-            "for",
-            e.variable === undefined ? "_" : emit(e.variable),
-            "in",
-            isInt(1n)(e.increment)
-              ? [start, e.inclusive ? "..." : "..<", end]
-              : [
-                  "stride",
-                  "(",
-                  joinTrees(",", [
-                    ["from:", start],
-                    ["to:", end],
-                    ["by:", emit(e.increment)],
-                  ]),
-                  ")",
-                ],
-            emitMultiNode(e.body),
-          ];
-        }
-        case "If":
-          return [
-            "if",
-            emit(e.condition),
-            emitMultiNode(e.consequent),
-            e.alternate !== undefined
-              ? ["else", emitMultiNode(e.alternate)]
-              : [],
-          ];
-        case "Variants":
-        case "ForEachKey":
-        case "ForEachPair":
-        case "ForCLike":
-          throw new EmitError(e);
-        case "Assignment":
-          return [emit(e.variable), "=", emit(e.expr)];
-        case "NamedArg":
-          return [e.name, ":", emit(e.value)];
-        case "Identifier":
-          return e.name;
-        case "Text":
-          return emitSwiftText(e.value, context.options.codepointRange);
-        case "Integer":
-          return emitIntLiteral(e, { 10: ["", ""], 16: ["0x", ""] });
-        case "FunctionCall":
-          return [emit(e.func), "(", joinNodes(",", e.args), ")"];
-        case "PropertyCall":
-          return [emit(e.object, Infinity), ".", e.ident.name];
-        case "MethodCall":
-          return [
-            emit(e.object, Infinity),
-            ".",
-            e.ident.name,
-            "(",
-            joinNodes(",", e.args),
-            ")",
-          ];
-        case "ConditionalOp":
-          return [
-            emit(e.condition, prec + 1),
-            "?",
-            emit(e.consequent),
-            ":",
-            emit(e.alternate, prec),
-          ];
-        case "Infix": {
-          return [emit(e.left, prec), e.name, emit(e.right, prec + 1)];
-        }
-        case "Prefix":
-          return [e.name, emit(e.arg, prec)];
-        case "Postfix":
-          return [emit(e.arg, prec), e.name];
-        case "List":
-          return ["[", joinNodes(",", e.exprs), "]"];
-        case "Set":
-          return ["Set([", joinNodes(",", e.exprs), "])"];
-        case "Table":
-          return [
-            "[",
-            joinTrees(
-              ",",
-              e.kvPairs.map((x) => [emit(x.key), ":", emit(x.value)]),
-            ),
-            "]",
-          ];
-        case "IndexCall":
-          return [
-            emit(e.collection, Infinity),
-            "[",
-            emit(e.index),
-            "]",
-            e.collection.kind === "Table" ? "!" : "",
-          ];
-        case "RangeIndexCall":
-          return [
-            emit(e.collection, Infinity),
-            "[",
-            emit(e.low),
-            "..<",
-            emit(e.high),
-            "]",
-          ];
+  minPrecForNoParens(parent: Node, fragment: PathFragment) {
+    const kind = parent.kind;
+    const prop = fragment.prop;
+    return prop === "object"
+      ? Infinity
+      : prop === "collection" &&
+          (kind === "IndexCall" || kind === "RangeIndexCall")
+        ? Infinity
+        : kind === "ConditionalOp"
+          ? prop === "condition"
+            ? this.prec(parent) + 1
+            : prop === "consequent"
+              ? -Infinity
+              : this.prec(parent)
+          : kind === "Infix" || kind === "Prefix" || kind === "Postfix"
+            ? this.prec(parent) + (prop === "right" ? 1 : 0)
+            : -Infinity;
+  }
 
-        default:
-          throw new EmitError(expr);
+  visitNoParens(n: Node, spine: Spine, context: CompilationContext) {
+    if (n === undefined) return "_";
+    switch (n.kind) {
+      case "VarDeclarationBlock":
+        return ["var", $.children.join(",")];
+      case "VarDeclarationWithAssignment":
+        return $.assignment;
+      case "Block":
+        return $.children.join("\n");
+      case "Import":
+        return [n.name, joinTrees(",", n.modules)];
+      case "While":
+        return ["while", $.condition, "{", $.body, "}"];
+      case "ForEach":
+        return [`for`, $.variable, "in", $.collection, "{", $.body, "}"];
+      case "If":
+        return [
+          "if",
+          $.condition,
+          "{",
+          $.consequent,
+          "}",
+          n.alternate !== undefined ? ["else", "{", $.alternate, "}"] : [],
+        ];
+      case "Variants":
+      case "ForCLike":
+        throw new EmitError(n);
+      case "Assignment":
+        return [$.variable, "=", $.expr];
+      case "NamedArg":
+        return [n.name, ":", $.value];
+      case "Identifier":
+        return n.name;
+      case "Text":
+        return emitSwiftText(n.value, context.options.codepointRange);
+      case "Integer":
+        return emitIntLiteral(n, { 10: ["", ""], 16: ["0x", ""] });
+      case "FunctionCall":
+        return [$.func, "(", $.args.join(","), ")"];
+      case "PropertyCall":
+        return [$.object, ".", $.ident];
+      case "MethodCall":
+        return [$.object, ".", $.ident, "(", $.args.join(","), ")"];
+      case "ConditionalOp":
+        return [$.condition, "?", $.consequent, ":", $.alternate];
+      case "Infix": {
+        return [$.left, n.name, $.right];
       }
-    }
+      case "Prefix":
+        return [n.name, $.arg];
+      case "Postfix":
+        return [$.arg, n.name];
+      case "List":
+      case "Table":
+        return ["[", $.value.join(","), "]"];
+      case "Set":
+        return ["Set([", $.value.join(","), "])"];
+      case "KeyValue":
+        return [$.key, ":", $.value];
+      case "IndexCall":
+        return [
+          $.collection,
+          "[",
+          $.index,
+          "]",
+          n.collection.kind === "Table" ? "!" : "",
+        ];
+      case "RangeIndexCall":
+        return [$.collection, "[", $.low, "..<", $.high, "]"];
 
-    const inner = emitNoParens(expr);
-    if (prec >= minimumPrec) return inner;
-    return ["(", inner, ")"];
+      default:
+        throw new EmitError(n);
+    }
   }
 
-  function emitMultiNode(BaseNode: IR.Node, isRoot = false): TokenTree {
-    const children = BaseNode.kind === "Block" ? BaseNode.children : [BaseNode];
-    if (isRoot) {
-      return joinNodes("\n", children);
+  // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
+  detokenize(tokens: Token[]): string {
+    function isAlphaNum(s: string): boolean {
+      return /[A-Za-z0-9]/.test(s);
     }
-    return ["{", joinNodes("\n", children), "}"];
+
+    // Tokens that need whitespace on both sides:
+    //   A binary op followed by a unary op
+    //   `!=`
+    //   `&` followed by any of `*+-` (without space they are interpreted together as an overflow operator)
+    function needsWhiteSpaceOnBothSides(
+      token: string,
+      nextToken: string,
+    ): boolean {
+      return (
+        (/^[-+*%/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
+        (token === `&` && /[*+-]/.test(nextToken[0])) ||
+        token === `!=`
+      );
+    }
+
+    function needsWhiteSpace(prevToken: string, token: string): boolean {
+      return (
+        (isAlphaNum(prevToken[prevToken.length - 1]) && isAlphaNum(token[0])) ||
+        ([`if`, `in`, `while`].includes(prevToken) && token[0] !== `(`) ||
+        token[0] === `?` ||
+        needsWhiteSpaceOnBothSides(prevToken, token)
+      );
+    }
+
+    let result = tokens[0];
+    for (let i = 1; i < tokens.length; i++) {
+      if (
+        needsWhiteSpace(tokens[i - 1], tokens[i]) ||
+        (i + 1 < tokens.length &&
+          needsWhiteSpaceOnBothSides(tokens[i], tokens[i + 1]))
+      )
+        result += " ";
+      result += tokens[i];
+    }
+    return result.trim();
   }
-  return emitMultiNode(program, true);
 }

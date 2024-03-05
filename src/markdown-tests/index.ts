@@ -38,8 +38,8 @@ export function compilationOptionsFromKeywords(
     codepointRange: is("1..127")
       ? [1, 127]
       : is("32..127")
-      ? [32, 127]
-      : [1, Infinity],
+        ? [32, 127]
+        : [1, Infinity],
     getAllVariants: is("allVariants"),
     restrictFrontend: is("restrictFrontend"),
     skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
@@ -78,7 +78,7 @@ export function testPlugin(
       (() => {
         const options = compilationOptionsFromKeywords(args, false);
         let program = getOnlyVariant(parse(input, false).node);
-        program = typecheck(program, !options.skipTypecheck);
+        program = typecheck(program, !options.skipTypecheck, () => {});
         return debugEmit(
           applyAllToAllAndGetCounts(
             program,

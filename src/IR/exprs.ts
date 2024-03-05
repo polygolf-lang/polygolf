@@ -27,13 +27,20 @@ import {
   opCodeDefinitions,
   isNullary,
   OpCodes,
+  defaults,
+  maxArity,
 } from "./IR";
-import { mapObjectValues } from "../common/arrays";
+import { mapObjectValues, useDefaults } from "../common/arrays";
 
 export interface ImplicitConversion extends BaseNode {
   readonly kind: "ImplicitConversion";
   expr: Node;
   behavesLike: UnaryOpCode & `${string}_to_${string}`;
+}
+
+export interface Cast extends BaseNode {
+  readonly kind: "Cast";
+  expr: Node;
 }
 
 /**
@@ -60,10 +67,11 @@ export interface Op<Op extends OpCode = OpCode> extends BaseNode {
   readonly args: OpCodeArgValues<Op>;
 }
 
-export interface KeyValue extends BaseNode {
+export interface KeyValue<Key extends Node = Node, Value extends Node = Node>
+  extends BaseNode {
   readonly kind: "KeyValue";
-  readonly key: Node;
-  readonly value: Node;
+  readonly key: Key;
+  readonly value: Value;
 }
 
 export interface FunctionCall extends BaseNode {
@@ -155,6 +163,10 @@ export function implicitConversion(
   };
 }
 
+export function cast(expr: Node, targetType?: string): Cast {
+  return { kind: "Cast", expr, targetType };
+}
+
 export function keyValue(key: Node, value: Node): KeyValue {
   return {
     kind: "KeyValue",
@@ -183,7 +195,10 @@ export const op = {
       ? Op<O>
       : (...args: OpCodeArgValues<O>) => Op<O>;
   }),
-  unsafe: opUnsafe,
+  unsafe(op: OpCode, useDefaults = false) {
+    return (...args: Node[]) =>
+      (useDefaults ? opUnsafeWithDefaults : opUnsafe)(op, ...args);
+  },
 } as const;
 
 /**
@@ -223,9 +238,7 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
         if (arg.op in booleanNotOpCode) {
           return op.unsafe(
             booleanNotOpCode[arg.op as keyof typeof booleanNotOpCode],
-            arg.args[0]!,
-            arg.args[1]!,
-          );
+          )(arg.args[0]!, arg.args[1]!);
         }
       }
     }
@@ -286,8 +299,8 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
             isInt()(x)
               ? int(-x.value)
               : x === toNegate
-              ? op.unsafe("add", ...(x as Op).args.map(op.neg))
-              : x,
+                ? op.unsafe("add")(...(x as Op).args.map(op.neg))
+                : x,
           );
         }
       }
@@ -315,6 +328,21 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
     }
   }
   return _op(opCode, ...args);
+}
+
+export function opArgsWithDefaults(
+  opCode: OpCode,
+  args: readonly Node[],
+): readonly Node[] {
+  const targetArity = maxArity(opCode);
+  if (targetArity !== Infinity) {
+    return useDefaults(targetArity, defaults[opCode] ?? [], args);
+  }
+  return args;
+}
+
+function opUnsafeWithDefaults(opCode: OpCode, ...args: Node[]): Node {
+  return opUnsafe(opCode, ...opArgsWithDefaults(opCode, args));
 }
 
 function evalBinary(

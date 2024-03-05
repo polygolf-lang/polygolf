@@ -15,13 +15,11 @@ import {
   succ,
 } from "../../IR";
 import {
-  defaultDetokenizer,
   type Language,
   required,
   search,
   simplegolf,
 } from "../../common/Language";
-import emitProgram from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
@@ -51,7 +49,7 @@ import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
@@ -70,13 +68,15 @@ import {
   textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
   startsWithEndsWithToSliceEquality,
+  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
+import { GolfscriptEmitter } from "./emit";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
-  emitter: emitProgram,
+  emitter: new GolfscriptEmitter(),
   phases: [
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false)),
@@ -99,10 +99,10 @@ const golfscriptLanguage: Language = {
       forArgvToForEach,
       putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
-      removeUnusedForVar,
+      removeUnusedLoopVar,
       forRangeToForDifferenceRange(
         (node, spine) =>
-          !isSubtype(getType(node.start, spine.root.node), integerType(0)),
+          !isSubtype(getType(node.collection.args[0], spine), integerType(0)),
       ),
       replaceToSplitAndJoin,
       implicitlyConvertPrintArg,
@@ -118,6 +118,7 @@ const golfscriptLanguage: Language = {
       }),
     ),
     required(
+      atTextToListToAtText,
       mapOps({
         "at[argv]": (a) => op["at[List]"](op.argv, a),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
@@ -240,13 +241,6 @@ const golfscriptLanguage: Language = {
       removeImplicitConversions,
     ),
   ],
-  detokenizer: defaultDetokenizer(
-    (a, b) =>
-      a !== "" &&
-      b !== "" &&
-      ((/[A-Za-z0-9_]/.test(a[a.length - 1]) && /[A-Za-z0-9_]/.test(b[0])) ||
-        (a[a.length - 1] === "-" && /[0-9]/.test(b[0]))),
-  ),
 };
 
 export default golfscriptLanguage;

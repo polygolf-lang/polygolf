@@ -8,32 +8,24 @@ import {
   type VarDeclarationBlock,
 } from "./assignments";
 import { type Array, type List, type Table, type Set } from "./collections";
-import {
-  type Op,
-  type Infix,
-  type ConditionalOp,
-  type FunctionCall,
-  type MethodCall,
-  type Prefix,
-  type IndexCall,
-  type KeyValue,
-  type RangeIndexCall,
-  type Function,
-  type NamedArg,
-  type ImplicitConversion,
-  type PropertyCall,
-  type Postfix,
+import type {
+  Op,
+  Infix,
+  ConditionalOp,
+  FunctionCall,
+  MethodCall,
+  Prefix,
+  IndexCall,
+  KeyValue,
+  RangeIndexCall,
+  Function,
+  NamedArg,
+  ImplicitConversion,
+  PropertyCall,
+  Postfix,
+  Cast,
 } from "./exprs";
-import {
-  type ForRange,
-  type ForEach,
-  type ForEachKey,
-  type ForEachPair,
-  type ForCLike,
-  type While,
-  type ForArgv,
-  type ForDifferenceRange,
-} from "./loops";
+import { type ForEach, type ForCLike, type While, type ForArgv } from "./loops";
 import {
   type AnyInteger,
   type Identifier,
@@ -84,8 +76,8 @@ export type Node =
   | Set
   | Table
   | ConditionalOp
+  | ForEach
   | While
-  | ForRange
   | ForArgv
   | If
   // Other nodes
@@ -103,12 +95,9 @@ export type Node =
   | Prefix
   | Postfix
   | Import
-  | ForDifferenceRange
-  | ForEach
-  | ForEachKey
-  | ForEachPair
   | ForCLike
-  | NamedArg;
+  | NamedArg
+  | Cast;
 
 export type NodeFuncRecord<Tout, Tin extends Node = Node> = Tin extends Node
   ? Record<Tin["kind"], (n: Tin, s: Spine<Tin>) => Tout>

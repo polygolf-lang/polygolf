@@ -29,7 +29,7 @@ println $t;
 bool_to_int $b;
 int_to_text_byte 48;
 int_to_codepoint 48;
-$t .. "x";
+$t + "x";
 $t @ -1;
 text_replace "a+b+c" "+" "*";
 text_replace "a*b*c" "*" "";
@@ -150,7 +150,7 @@ endsWith(t,T)
 ## Misc
 
 ```polygolf
-println ((int_to_text 1) .. "x");
+println ((int_to_text 1) + "x");
 ```
 
 ```nim no:hardcode
@@ -159,8 +159,8 @@ echo $1&"x"
 
 ```polygolf
 $a:0..10 <- 0;
-for $i 0 10 {
-    for $j 0 10 {
+for $i 10 {
+    for $j 10 {
         if ($i < $j) {
             if ($i < $j) {
                 $a <- $j;
@@ -192,7 +192,7 @@ for i in..9:
 
 ```polygolf
 $e <- "abc";
-for $i 0 3 {
+for $i 3 {
   println (at[byte] $e $i);
 };
 ```
@@ -216,7 +216,7 @@ for x in..99:echo paramStr 1+x
 
 ```polygolf
 $b <- 0;
-for $i $b 16 {
+for $i ($b ..< 16) {
     println_int $i;
 };
 ```
@@ -402,4 +402,15 @@ index_call (infix " " (infix "." "x" (builtin "f")) " ") 1;
 x.f y
 f x
 "x".f" "[1]
+```
+
+## Naked range
+
+```polygolf
+$r <- (10 ..< 40 2);
+```
+
+```nim nogolf
+include prelude
+var r=toSeq(countup(10,40,2))
 ```

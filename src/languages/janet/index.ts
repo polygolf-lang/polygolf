@@ -1,11 +1,10 @@
 import {
   type Language,
   required,
-  defaultDetokenizer,
   simplegolf,
   search,
 } from "../../common/Language";
-import emitProgram from "./emit";
+import { JanetEmitter } from "./emit";
 import {
   arraysToLists,
   flipBinaryOps,
@@ -29,31 +28,39 @@ import {
   text,
   isInt,
   intToDecOpOrText,
+  isForEachChar,
 } from "../../IR";
 import {
   golfLastPrint,
   golfLastPrintInt,
   putcToPrintChar,
 } from "../../plugins/print";
-import { usePrimaryTextOps } from "../../plugins/textOps";
+import {
+  charToIntToDec,
+  decToIntToOrd,
+  atTextToListToAtText,
+  usePrimaryTextOps,
+} from "../../plugins/textOps";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   applyDeMorgans,
   bitnotPlugins,
+  comparisonToDivision,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
   truncatingOpsPlugins,
 } from "../../plugins/arithmetic";
-import { forArgvToForEach } from "../../plugins/loops";
+import { forArgvToForEach, forEachToForRange } from "../../plugins/loops";
 import { alias, renameIdents } from "../../plugins/idents";
 import { assertInt64 } from "../../plugins/types";
 import { implicitlyConvertConcatArg } from "./plugins";
+import { applyIf } from "../../plugins/helpers";
 
 const janetLanguage: Language = {
   name: "Janet",
   extension: "janet",
-  emitter: emitProgram,
+  emitter: new JanetEmitter(),
   phases: [
     required(arraysToLists, putcToPrintChar, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false), golfLastPrintInt(true)),
@@ -65,11 +72,13 @@ const janetLanguage: Language = {
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
+      decToIntToOrd,
     ),
 
     required(
       pickAnyInt,
       forArgvToForEach,
+      applyIf(forEachToForRange, isForEachChar),
       mapOps({
         right_align: (a, b) =>
           func(
@@ -91,8 +100,13 @@ const janetLanguage: Language = {
           ),
       }),
     ),
-    simplegolf(implicitlyConvertConcatArg),
+    simplegolf(
+      implicitlyConvertConcatArg,
+      charToIntToDec,
+      comparisonToDivision,
+    ),
     required(
+      atTextToListToAtText,
       mapOps({
         argv: () => func("slice", func("dyn", builtin(":args")), int(1n)),
 
@@ -202,7 +216,7 @@ const janetLanguage: Language = {
     simplegolf(
       alias({
         Identifier: (n, s) =>
-          n.builtin && s.pathFragment !== "ident" ? n.name : undefined,
+          n.builtin && s.pathFragment?.prop !== "ident" ? n.name : undefined,
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
       }),
@@ -214,13 +228,6 @@ const janetLanguage: Language = {
       assertInt64,
     ),
   ],
-  detokenizer: defaultDetokenizer(
-    (a, b) =>
-      a !== "" &&
-      b !== "" &&
-      /[^(){}[\]`'"]/.test(a[a.length - 1]) &&
-      /[^(){}[\]`'"]/.test(b[0]),
-  ),
 };
 
 export default janetLanguage;

@@ -3,8 +3,6 @@ import {
   indexCall,
   methodCall as method,
   op,
-  listType,
-  textType,
   builtin,
   int,
   propertyCall as property,
@@ -19,11 +17,9 @@ import {
   required,
   search,
   simplegolf,
-  flattenTree,
-  defaultWhitespaceInsertLogic,
 } from "../../common/Language";
 
-import emitProgram from "./emit";
+import { JavascriptEmitter } from "./emit";
 import {
   removeImplicitConversions,
   printIntToPrint,
@@ -38,6 +34,7 @@ import {
   forArgvToForEach,
   forRangeToForCLike,
   forRangeToForEach,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
 import {
@@ -50,6 +47,9 @@ import {
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import {
+  charToIntToDec,
+  ordToDecToInt,
+  atTextToListToAtText,
   replaceToSplitAndJoin,
   textGetToIntToTextGet,
   textToIntToFirstIndexTextGetToInt,
@@ -60,6 +60,7 @@ import {
   applyDeMorgans,
   bitnotPlugins,
   decomposeIntLiteral,
+  divisionToComparisonAndBack,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
@@ -78,10 +79,10 @@ import {
 const javascriptLanguage: Language = {
   name: "Javascript",
   extension: "js",
-  emitter: emitProgram,
+  emitter: new JavascriptEmitter(),
   phases: [
     required(printIntToPrint),
-    simplegolf(golfLastPrint()),
+    simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       golfStringListLiteral(),
       forRangeToForEach("at[Array]", "at[List]", "at[codepoint]"),
@@ -100,8 +101,10 @@ const javascriptLanguage: Language = {
       useRegexAsReplacePattern,
       decomposeIntLiteral(),
       forRangeToForEachKey,
+      ...divisionToComparisonAndBack,
     ),
     required(
+      atTextToListToAtText,
       pickAnyInt,
       floodBigints("int53", {
         Assignment: "bigint",
@@ -128,18 +131,15 @@ const javascriptLanguage: Language = {
       putcToPrintChar,
     ),
     required(
+      useImplicitForEachChar("Ascii"),
       forRangeToForCLike,
+      mapOps({
+        "at[argv]": (a) => op["at[List]"](op.argv, a),
+      }),
       mapOpsTo.builtin({
         true: "true",
         false: "false",
         argv: "arguments",
-      }),
-      mapOps({
-        "at[argv]": (a) =>
-          op["at[List]"](
-            { ...builtin("arguments"), type: listType(textType()) },
-            a,
-          ),
       }),
       mapMutationTo.index({
         "with_at[Array]": 0,
@@ -297,7 +297,8 @@ const javascriptLanguage: Language = {
       alias({
         Identifier: (n, s) =>
           n.builtin &&
-          (s.parent?.node.kind !== "PropertyCall" || s.pathFragment !== "ident")
+          (s.parent?.node.kind !== "PropertyCall" ||
+            s.pathFragment?.prop !== "ident")
             ? n.name
             : undefined,
         Integer: (x) => x.value.toString(),
@@ -306,23 +307,6 @@ const javascriptLanguage: Language = {
     ),
     required(renameIdents(), removeImplicitConversions),
   ],
-  detokenizer(tree) {
-    let result = "";
-    flattenTree(tree).forEach((token, i, tokens) => {
-      if (i === tokens.length - 1) result += token;
-      else {
-        const nextToken = tokens[i + 1];
-        if (token === "\n" && "([`+-/".includes(nextToken[0])) {
-          token = ";";
-        }
-        result += token;
-        if (defaultWhitespaceInsertLogic(token, nextToken)) {
-          result += " ";
-        }
-      }
-    });
-    return result;
-  },
 };
 
 export default javascriptLanguage;

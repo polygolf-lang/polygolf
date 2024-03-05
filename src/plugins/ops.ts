@@ -28,10 +28,11 @@ import {
   type NullaryOpCode,
   builtin,
   type OpCodeArgValues,
+  defaults,
+  isEqualToLiteral,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
-import { replaceAtIndex } from "../common/arrays";
 import { type CompilationContext } from "@/common/compile";
 
 function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
@@ -47,7 +48,7 @@ function enhanceOpMap<Op extends OpCode, T>(opMap: Partial<Record<Op, T>>) {
 
 interface WithPreprocess<T> {
   value: T;
-  preprocess: (x: readonly Node[]) => readonly Node[];
+  preprocess: (x: readonly Node[], opCode: OpCode) => readonly Node[];
 }
 
 function isWithPreprocess<T>(x: T | WithPreprocess<T>): x is WithPreprocess<T> {
@@ -62,6 +63,24 @@ export function flipped<T>(
   return {
     value: Array.isArray(value) && "raw" in value ? value[0] : value,
     preprocess: (x) => [...x].reverse(),
+  };
+}
+
+export function withDefaults<T>(
+  value: T,
+): WithPreprocess<T extends TemplateStringsArray ? string : T> {
+  return {
+    value: Array.isArray(value) && "raw" in value ? value[0] : value,
+    preprocess: (x, opCode) => {
+      const res = [...x];
+      for (let i = x.length - 1; i >= 0; i--) {
+        const def = (defaults[opCode] ?? [])[i];
+        if (def !== undefined && isEqualToLiteral(res[i], def)) {
+          res.splice(i, 1);
+        }
+      }
+      return res;
+    },
   };
 }
 
@@ -114,7 +133,7 @@ export function mapOpsUsing<
           let arg = opCodeMap[opCode as TOpCode];
           if (arg !== undefined) {
             if (isWithPreprocess(arg)) {
-              exprs = arg.preprocess(exprs);
+              exprs = arg.preprocess(exprs, opCode);
               arg = arg.value;
             }
             exprs =
@@ -123,8 +142,8 @@ export function mapOpsUsing<
               exprs.length < 3
                 ? exprs
                 : variadicMode === "leftChain"
-                ? [map(opCode, exprs.slice(0, -1))!, exprs.at(-1)!]
-                : [exprs[0], map(opCode, exprs.slice(1))!];
+                  ? [map(opCode, exprs.slice(0, -1))!, exprs.at(-1)!]
+                  : [exprs[0], map(opCode, exprs.slice(1))!];
             return mapper(
               arg as Targ,
               exprs,
@@ -225,11 +244,10 @@ export const mapBackwardsIndexToForwards = mapOpsUsing<
   OpCode & `${string}${"at" | "slice"}_back${string}`
 >((arg, opArgs, opCode) => {
   const newOpCode = opCode.replaceAll("_back", "") as OpCode;
-  return op.unsafe(
-    newOpCode,
+  return op.unsafe(newOpCode)(
     ...(arg === 0
       ? opArgs
-      : replaceAtIndex(opArgs, 1, op.add(opArgs[1], op[arg](opArgs[0])))),
+      : opArgs.with(1, op.add(opArgs[1], op[arg](opArgs[0])))),
   );
 }, "variadic");
 
@@ -255,7 +273,7 @@ export function mapMutationUsing<
         ) {
           const opCode = node.expr.op;
           const args = node.expr.args;
-          const name = opMap[opCode as TOpCode]!;
+          const name = opMap[opCode as TOpCode];
           const leftValueStringified = stringify(node.variable);
           const index = node.expr.args.findIndex(
             (x) => stringify(x) === leftValueStringified,
@@ -294,7 +312,7 @@ export function mapMutationUsing<
             ) {
               return mapper(
                 opMap["sub" as TOpCode] as Targ,
-                [node.variable, op.neg(op.unsafe(opCode, ...newArgs))],
+                [node.variable, op.neg(op.unsafe(opCode)(...newArgs))],
                 opCode,
                 spine,
                 context,
@@ -302,11 +320,11 @@ export function mapMutationUsing<
             }
             if (opCode in opMap) {
               return mapper(
-                name,
+                name as any as Targ,
                 [
                   node.variable,
                   ...(keepRestAsOp && newArgs.length > 1
-                    ? [op.unsafe(opCode, ...newArgs)]
+                    ? [op.unsafe(opCode)(...newArgs)]
                     : newArgs),
                 ],
                 opCode,
@@ -354,8 +372,7 @@ export const mapMutationTo = {
 export function flipBinaryOps(node: Node) {
   if (isOp(...BinaryOpCodes)(node)) {
     if (node.op in flippedOpCode) {
-      return op.unsafe(
-        flippedOpCode[node.op as keyof typeof flippedOpCode],
+      return op.unsafe(flippedOpCode[node.op as keyof typeof flippedOpCode])(
         node.args[1],
         node.args[0],
       );
@@ -400,7 +417,7 @@ export const arraysToLists: Plugin = {
   bakeType: true,
   visit(node) {
     if (node.kind === "Array") {
-      return list(node.exprs);
+      return list(node.value);
     }
     if (node.kind === "Op") {
       if (isOp("at[Array]")(node)) return op["at[List]"](...node.args);

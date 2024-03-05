@@ -19,7 +19,6 @@ import {
   type OpCode,
   type KeyValueType,
   keyValueType,
-  getArgs,
   functionType,
   type IntegerBound,
   max,
@@ -47,9 +46,12 @@ import {
   opCodeDefinitions,
   type AnyOpCodeArgTypes,
   OpCodeFrontNamesToOpCodes,
-  integerType,
   type Rest,
   lengthToArrayIndexType,
+  isOpCode,
+  opArgsWithDefaults,
+  minArity,
+  maxArity,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -67,6 +69,7 @@ const currentlyFinding = new WeakSet<Node>();
 export function getTypeAndResolveOpCode(
   expr: Node,
   context: Node | Spine,
+  addWarning = (x: Error) => {},
 ): TypeAndOpCode {
   const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
@@ -75,7 +78,7 @@ export function getTypeAndResolveOpCode(
 
   currentlyFinding.add(expr);
   try {
-    let t = calcTypeAndResolveOpCode(expr, program);
+    let t = calcTypeAndResolveOpCode(expr, program, addWarning);
     if ("kind" in t) t = { type: t };
     currentlyFinding.delete(expr);
     cachedType.set(expr, t);
@@ -88,6 +91,7 @@ export function getTypeAndResolveOpCode(
     throw e;
   }
 }
+
 export function getType(expr: Node, context: Node | Spine) {
   return getTypeAndResolveOpCode(expr, context).type;
 }
@@ -95,9 +99,17 @@ export function getType(expr: Node, context: Node | Spine) {
 export function calcTypeAndResolveOpCode(
   expr: Node,
   program: Node,
+  addWarning = (x: Error) => {},
 ): Type | TypeAndOpCode {
+  // Resolve unresolved ops
+  if (expr.kind === "Op" && !isOpCode(expr.op)) {
+    const inferred = resolveUnresolvedOpCode(expr, program, addWarning);
+    return { type: expr.type ?? inferred.type, opCode: inferred.opCode };
+  }
   // user-annotated node
-  if (expr.type !== undefined) return expr.type;
+  if (expr.type !== undefined) {
+    return expr.type;
+  }
   // type inference
   const type = (e: Node) => getType(e, program);
   switch (expr.kind) {
@@ -159,16 +171,16 @@ export function calcTypeAndResolveOpCode(
       return int(expr.value, expr.value);
     case "Array":
       return array(
-        expr.exprs.map(type).reduce((a, b) => union(a, b)),
-        lengthToArrayIndexType(expr.exprs.length),
+        expr.value.map(type).reduce((a, b) => union(a, b)),
+        lengthToArrayIndexType(expr.value.length),
       );
     case "List":
-      return expr.exprs.length > 0
-        ? list(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+      return expr.value.length > 0
+        ? list(expr.value.map(type).reduce((a, b) => union(a, b)))
         : list(voidType);
     case "Set":
-      return expr.exprs.length > 0
-        ? set(expr.exprs.map(type).reduce((a, b) => union(a, b)))
+      return expr.value.length > 0
+        ? set(expr.value.map(type).reduce((a, b) => union(a, b)))
         : set(voidType);
     case "KeyValue": {
       const k = type(expr.key);
@@ -181,12 +193,12 @@ export function calcTypeAndResolveOpCode(
       );
     }
     case "Table": {
-      const types = expr.kvPairs.map(type);
+      const types = expr.value.map(type);
       if (types.every((x) => x.kind === "KeyValue")) {
         const kvTypes = types as KeyValueType[];
         const kTypes = kvTypes.map((x) => x.key);
         const vTypes = kvTypes.map((x) => x.value);
-        return expr.kvPairs.length > 0
+        return expr.value.length > 0
           ? table(
               kTypes.reduce((a, b) => union(a, b) as any),
               vTypes.reduce((a, b) => union(a, b)),
@@ -217,26 +229,14 @@ export function calcTypeAndResolveOpCode(
       return voidType;
     case "OneToManyAssignment":
       return type(expr.expr);
-    case "ForRange": {
-      const incType = type(expr.increment);
-      if (!isSubtype(incType, integerType(1, Infinity))) {
-        throw new Error(
-          `Type error. Increment must be positive (got ${toString(incType)}).`,
-        );
-      }
-      return voidType;
-    }
     case "If":
     case "While":
     case "ForArgv":
     case "ForCLike":
     case "ForEach":
-    case "ForEachKey":
-    case "ForEachPair":
-    case "ForDifferenceRange":
       return voidType;
     case "ImplicitConversion": {
-      return type(op.unsafe(expr.behavesLike, expr.expr));
+      return type(op[expr.behavesLike](expr.expr));
     }
   }
   throw new Error(`Type error. Unexpected node ${stringify(expr)}.`);
@@ -257,12 +257,10 @@ export function getGenericOpCodeArgTypes(op: OpCode): Type[] {
   return type.filter((x) => !("rest" in x)) as Type[];
 }
 
-export function expectedTypesToString(
-  expectedTypes: AnyOpCodeArgTypes,
-): string {
-  return `[${expectedTypes
-    .map((x) => ("rest" in x ? `...${toString(x.rest)}` : toString(x)))
-    .join(", ")}]`;
+export function expectedTypesAsStrings(opCode: OpCode): string[] {
+  return opCodeDefinitions[opCode].args.map((x) =>
+    "rest" in x ? `...${toString(x.rest)}` : toString(x),
+  );
 }
 
 /**
@@ -481,17 +479,9 @@ export function getOpCodeTypeFromTypes(
     case "is_odd":
       return booleanType;
     case "succ":
-      return getArithmeticType(
-        "add",
-        got[0] as IntegerType,
-        integerType(1n, 1n),
-      );
+      return getArithmeticType("add", got[0] as IntegerType, int(1n, 1n));
     case "pred":
-      return getArithmeticType(
-        "sub",
-        got[0] as IntegerType,
-        integerType(1n, 1n),
-      );
+      return getArithmeticType("sub", got[0] as IntegerType, int(1n, 1n));
     case "not":
       return booleanType;
     case "int_to_bool":
@@ -510,8 +500,8 @@ export function getOpCodeTypeFromTypes(
                   opCode === "int_to_bin"
                     ? 2
                     : opCode === "int_to_dec"
-                    ? 10
-                    : 16,
+                      ? 10
+                      : 16,
                 ).length,
               ),
             ),
@@ -534,6 +524,10 @@ export function getOpCodeTypeFromTypes(
     case "char[codepoint]":
     case "char[Ascii]":
       return text(int(1n, 1n), lt((got[0] as IntegerType).high, 128n));
+    case "text_to_list[Ascii]":
+    case "text_to_list[byte]":
+    case "text_to_list[codepoint]":
+      return list(text(int(1, 1), opCode === "text_to_list[Ascii]"));
     case "size[List]":
     case "size[Set]":
     case "size[Table]":
@@ -615,7 +609,7 @@ export function getOpCodeTypeFromTypes(
       if (
         skipAdditionalChecks ||
         !opCode.includes("back") ||
-        isSubtype(startPlusLength, integerType(-Infinity, 0))
+        isSubtype(startPlusLength, int(-Infinity, 0))
       )
         return text(
           int(0n, min(t.codepointLength.high, length.high)),
@@ -633,10 +627,7 @@ export function getOpCodeTypeFromTypes(
       const start = got[1] as IntegerType;
       const length = got[2] as IntegerType;
       const startPlusLength = getArithmeticType("add", start, length);
-      if (
-        skipAdditionalChecks ||
-        isSubtype(startPlusLength, integerType(-Infinity, 0))
-      )
+      if (skipAdditionalChecks || isSubtype(startPlusLength, int(-Infinity, 0)))
         return got[0];
       throw new Error(
         `Type error. start index + length must be nonpositive, but got ${toString(
@@ -662,24 +653,91 @@ export function getOpCodeTypeFromTypes(
     case "with_at_back[List]":
     case "with_at[Table]":
       return got[0];
+    case "range_incl":
+      return list(
+        int((got[0] as IntegerType).low, (got[1] as IntegerType).high),
+      );
+    case "range_excl":
+      return list(
+        int((got[0] as IntegerType).low, sub((got[1] as IntegerType).high, 1n)),
+      );
+    case "range_diff_excl":
+      return list(
+        int(
+          (got[0] as IntegerType).low,
+          sub(
+            add((got[0] as IntegerType).high, (got[1] as IntegerType).high),
+            1n,
+          ),
+        ),
+      );
   }
 }
 
-function getOpCodeType(expr: Op, program: Node): TypeAndOpCode {
-  const got = getArgs(expr).map((x) => getType(x, program));
-  const opCodes = OpCodeFrontNamesToOpCodes[expr.op];
+function getOpCodeType(expr: Op, program: Node): Type {
+  const got = expr.args.map((x) => getType(x, program));
 
-  const opCode = opCodes.find((opCode) =>
-    isTypeMatch(got, opCodeDefinitions[opCode].args),
+  if (!isTypeMatch(got, opCodeDefinitions[expr.op].args)) {
+    throw new Error(
+      `Type error. Operator '${
+        expr.op
+      }' type error. Expected ${expectedTypesAsStrings(expr.op).join(
+        ", ",
+      )} but got [${got.map(toString).join(", ")}].`,
+    );
+  }
+
+  return getOpCodeTypeFromTypes(expr.op, got);
+}
+
+function resolveUnresolvedOpCode(
+  expr: Op,
+  program: Node,
+  addWarning = (x: Error) => {},
+): TypeAndOpCode {
+  const matchingOpCodes = OpCodeFrontNamesToOpCodes[expr.op];
+  const legacyDotDot: OpCode[] = ["concat[List]", "concat[Text]", "append"];
+  if (expr.op === (".." as any)) {
+    // we special case .. here for backwards compat
+    matchingOpCodes.push(...legacyDotDot);
+  }
+  const arityMatchingOpCodes = matchingOpCodes.filter(
+    (opCode) =>
+      minArity(opCode) <= expr.args.length &&
+      expr.args.length <= maxArity(opCode),
   );
+
+  const opCode = arityMatchingOpCodes
+    .filter((opCode) => minArity(opCode))
+    .find((opCode) =>
+      isTypeMatch(
+        opArgsWithDefaults(opCode, expr.args).map((x) => getType(x, program)),
+        opCodeDefinitions[opCode].args,
+      ),
+    );
 
   if (opCode === undefined) {
     throw new Error(
-      `Type error. Operator '${expr.op}' type error. Expected ${opCodes
-        .map((x) => expectedTypesToString(opCodeDefinitions[x].args))
-        .join(" or ")} but got [${got.map(toString).join(", ")}].`,
+      `Type error. Operator '${
+        expr.op
+      }' type error. Expected ${arityMatchingOpCodes
+        .map((x) => expectedTypesAsStrings(x).join(", "))
+        .join(" or ")} but got [${expr.args
+        .map((x) => toString(getType(x, program)))
+        .join(", ")}].`,
     );
   }
+
+  if (expr.op === (".." as any) && legacyDotDot.includes(opCode)) {
+    addWarning(
+      new PolygolfError(
+        `Deprecated alias .. used. Use ${opCode} or + instead.`,
+      ),
+    );
+  }
+  const got = opArgsWithDefaults(opCode, expr.args).map((x) =>
+    getType(x, program),
+  );
 
   return { type: getOpCodeTypeFromTypes(opCode, got), opCode };
 }

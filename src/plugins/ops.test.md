@@ -8,8 +8,8 @@ $a:-oo..oo <- 0;
 $n <- ($n + 3);
 $n <- (+ $a $n 3);
 $x:Text <- "hello";
-$x <- ($x .. " world");
-$x <- ("prepend" .. $x);
+$x <- ($x + " world");
+$x <- ("prepend" + $x);
 ```
 
 ```polygolf

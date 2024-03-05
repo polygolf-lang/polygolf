@@ -5,10 +5,8 @@ import {
   methodCall as method,
   op,
   text,
-  textType,
   succ,
   isText,
-  builtin,
 } from "../../IR";
 import {
   type Language,
@@ -18,12 +16,13 @@ import {
 } from "../../common/Language";
 import {
   forArgvToForRange,
-  forRangeToForRangeInclusive,
+  rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
   shiftRangeOneUp,
+  forEachToForRange,
 } from "../../plugins/loops";
 
-import emitProgram from "./emit";
+import { LuaEmitter } from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
@@ -45,6 +44,9 @@ import {
   mergePrint,
 } from "../../plugins/print";
 import {
+  charToIntToDec,
+  ordToDecToInt,
+  atTextToListToAtText,
   startsWithEndsWithToSliceEquality,
   textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
@@ -54,6 +56,7 @@ import {
   applyDeMorgans,
   bitnotPlugins,
   decomposeIntLiteral,
+  divisionToComparisonAndBack,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
@@ -67,10 +70,10 @@ import { conditionalOpToAndOr } from "../../plugins/conditions";
 const luaLanguage: Language = {
   name: "Lua",
   extension: "lua",
-  emitter: emitProgram,
+  emitter: new LuaEmitter(),
   phases: [
     required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
-    simplegolf(golfLastPrint()),
+    simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       mergePrint,
       flipBinaryOps,
@@ -84,30 +87,26 @@ const luaLanguage: Language = {
       forRangeToForRangeOneStep,
       inlineVariables,
       forArgvToForRange(),
-      forRangeToForRangeInclusive(),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       mapOps({
         dec_to_int: (a) => op.add(int(0n), implicitConversion("dec_to_int", a)),
-        "at[argv]": (a) =>
-          op["at[List]"]({ ...builtin("arg"), type: textType() }, a),
-        "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
-        "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
-        "slice[byte]": (a, b, c) => method(a, "sub", succ(b), op.add(b, c)),
       }),
       decomposeIntLiteral(true, true, true),
+      ...divisionToComparisonAndBack,
     ),
     required(
       pickAnyInt,
       forArgvToForRange(),
-      forRangeToForRangeInclusive(),
+      forEachToForRange,
+      atTextToListToAtText,
+      rangeExclusiveToInclusive(),
       implicitlyConvertPrintArg,
       textToIntToFirstIndexTextGetToInt,
       startsWithEndsWithToSliceEquality("byte"),
       mapOps({
         dec_to_int: (a) => op.mul(int(1n), implicitConversion("dec_to_int", a)),
-        "at[argv]": (a) =>
-          op["at[List]"]({ ...builtin("arg"), type: textType() }, a),
+        "at[argv]": (a) => op["at[List]"](op.argv, a),
         "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
         "ord_at_back[byte]": (a, b) => method(a, "byte", b),
         "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
@@ -140,7 +139,7 @@ const luaLanguage: Language = {
         "at[Table]": 0,
       }),
     ),
-    search(shiftRangeOneUp),
+    search(inlineVariables, shiftRangeOneUp),
     required(
       mapOps({
         int_to_dec: (a) =>
@@ -224,7 +223,8 @@ const luaLanguage: Language = {
       alias({
         Identifier: (n, s) =>
           n.builtin &&
-          (s.parent?.node.kind !== "MethodCall" || s.pathFragment !== "ident")
+          (s.parent?.node.kind !== "MethodCall" ||
+            s.pathFragment?.prop !== "ident")
             ? n.name
             : undefined,
         Integer: (x) => x.value.toString(),

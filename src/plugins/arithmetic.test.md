@@ -236,3 +236,29 @@ $a >> 6;
 $a:-oo..oo <- 0;
 $a div 64;
 ```
+
+## Comparison <-> division
+
+```polygolf
+$x: 0..199 <- 0;
+$y: 100..oo <- 100;
+bool_to_int ($x < $y);
+```
+
+```polygolf arithmetic.comparisonToDivision
+$x: 0..199 <- 0;
+$y: 100..oo <- 100;
+$x div $y;
+```
+
+```polygolf
+$x: 0..199 <- 0;
+$y: 100..oo <- 100;
+$x div $y;
+```
+
+```polygolf arithmetic.divisionToComparison
+$x: 0..199 <- 0;
+$y: 100..oo <- 100;
+bool_to_int ($x < $y);
+```

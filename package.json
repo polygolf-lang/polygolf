@@ -47,7 +47,7 @@
     "prettier": "^3.0.3",
     "prettier-check": "^2.0.0",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3"
   },
   "dependencies": {
     "@datastructures-js/priority-queue": "^6.3.0",

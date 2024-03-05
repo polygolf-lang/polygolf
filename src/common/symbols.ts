@@ -1,21 +1,17 @@
 import {
-  add,
   type Identifier,
-  integerType,
-  integerTypeIncludingAll,
   type IR,
   isIdent,
   isOp,
   isSubtype,
-  lt,
   type Node,
   type Op,
-  sub,
   textType,
   type Type,
+  toString,
 } from "../IR";
 import { PolygolfError } from "./errors";
-import { getChildFragments, type PathFragment } from "./fragments";
+import { $, getChildFragments, type PathFragment } from "./fragments";
 import { getCollectionTypes, getType } from "./getType";
 import { programToSpine, type Spine } from "./Spine";
 
@@ -43,12 +39,11 @@ export function symbolTableRoot(program: IR.Node): SymbolTable {
   if (symbolTableCache.has(program)) return symbolTableCache.get(program)!;
   const existing = new Set<string>();
   const defs = [
-    ...programToSpine(program).compactMap(
-      (_, s) =>
-        introducedSymbols(s, existing)?.map((name) => {
-          existing.add(name);
-          return [name, s] as const;
-        }),
+    ...programToSpine(program).compactMap((_, s) =>
+      introducedSymbols(s, existing)?.map((name) => {
+        existing.add(name);
+        return [name, s] as const;
+      }),
     ),
   ].flat(1);
   const table = new SymbolTable(defs);
@@ -91,14 +86,9 @@ function introducedSymbols(
 ): string[] | undefined {
   const node = spine.node;
   switch (node.kind) {
-    case "ForRange":
-    case "ForDifferenceRange":
     case "ForEach":
-    case "ForEachKey":
     case "ForArgv":
       return node.variable === undefined ? [] : [node.variable.name];
-    case "ForEachPair":
-      return [node.keyVariable.name, node.valueVariable.name];
     case "Assignment":
       if (
         isIdent()(node.variable) &&
@@ -123,49 +113,10 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
   const node = spine.node;
   const program = spine.root.node;
   switch (node.kind) {
-    case "ForRange":
-    case "ForDifferenceRange": {
-      const start = getType(node.start, program);
-      let end = getType(
-        node.kind === "ForRange" ? node.end : node.difference,
-        program,
-      );
-      const step = getType(node.increment, program);
-      if (
-        start.kind !== "integer" ||
-        end.kind !== "integer" ||
-        step.kind !== "integer"
-      ) {
-        throw new PolygolfError(
-          `Unexpected for range type (${start.kind},${end.kind},${step.kind})`,
-          node.source,
-        );
-      }
-      if (node.kind === "ForDifferenceRange")
-        end = integerType(add(start.low, end.low), add(start.high, end.high)); // get the real end
-      if (lt(0n, step.low))
-        return integerType(
-          start.low,
-          node.inclusive ? end.high : sub(end.high, 1n),
-        );
-      if (lt(step.high, 0n))
-        return integerType(
-          node.inclusive ? end.low : add(end.low, 1n),
-          start.high,
-        );
-      return integerTypeIncludingAll(start.low, start.high, end.low, end.high);
-    }
     case "ForEach":
       return getCollectionTypes(node.collection, program)[0];
     case "ForArgv":
       return textType();
-    case "ForEachKey":
-      return getCollectionTypes(node.table, program)[0];
-    case "ForEachPair": {
-      const _types = getCollectionTypes(node.table, program);
-      const types = _types.length === 1 ? [integerType(), _types[0]] : _types;
-      return name === node.keyVariable.name ? types[0] : types[1];
-    }
     case "Assignment": {
       const assignedType = getType(node.expr, program);
       if (
@@ -173,9 +124,9 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
         !isSubtype(assignedType, node.variable.type)
       )
         throw new PolygolfError(
-          `Value of type ${assignedType.kind} cannot be assigned to ${
+          `Value of type ${toString(assignedType)} cannot be assigned to ${
             (node.variable as Identifier).name
-          } of type ${node.variable.type.kind}`,
+          } of type ${toString(node.variable.type)}`,
           node.source,
         );
       return node.variable.type ?? assignedType;
@@ -238,36 +189,27 @@ export function getDirectWrites(
 function getDirectReadFragments(node: Node): PathFragment[] {
   switch (node.kind) {
     case "Assignment":
-      return ["expr"];
+      return [$.expr];
     case "ForArgv":
-      return ["body"];
+      return [$.body];
     case "ForCLike":
-      return ["condition"];
-    case "ForDifferenceRange":
-      return ["start", "difference", "increment"];
+      return [$.condition];
     case "ForEach":
-      return ["collection"];
-    case "ForEachPair":
-      return ["table"];
-    case "ForRange":
-      return ["start", "end", "increment"];
+      return [$.collection];
     case "If":
-      return ["condition"];
+      return [$.condition];
     case "ManyToManyAssignment":
-      return node.exprs.map((x, index) => ({ prop: "exprs", index }));
+      return node.exprs.map((x, i) => $.exprs.at(i));
     case "OneToManyAssignment":
-      return ["expr"];
+      return [$.expr];
     case "Op":
-      return getDirectPolygolfReadFragments(node).map((index) => ({
-        prop: "args",
-        index,
-      }));
+      return getDirectPolygolfReadFragments(node).map((i) => $.args.at(i));
     case "VarDeclaration":
       return [];
     case "VarDeclarationBlock":
       return [];
     case "While":
-      return ["condition"];
+      return [$.condition];
   }
   return [...getChildFragments(node)];
 }
@@ -281,10 +223,10 @@ function getDirectPolygolfReadFragments(node: Op): number[] {
 function getDirectWriteFragments(node: Node): PathFragment[] {
   switch (node.kind) {
     case "Assignment":
-      return ["variable"];
+      return [$.variable];
     case "ManyToManyAssignment":
     case "OneToManyAssignment":
-      return node.variables.map((x, index) => ({ prop: "variables", index }));
+      return node.variables.map((x, i) => $.variables.at(i));
   }
   return [];
 }

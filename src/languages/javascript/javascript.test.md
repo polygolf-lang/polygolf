@@ -243,7 +243,7 @@ z=x-1n
 ```
 
 ```polygolf
-for $a 1 100 {
+for $a (1 ..< 100) {
  println ((pow 2 $a) ~ 3);
  println ((pow 2 $a) | 3);
  println ((pow 2 $a) & 3);
@@ -268,7 +268,7 @@ for(i in{}+1e9)print(i)
 ```
 
 ```polygolf
-for $a 0 16 {
+for $a 16 {
     println (+ $a 20);
 };
 ```
