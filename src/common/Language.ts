@@ -41,7 +41,7 @@ export type EmitterVisitResult =
   | EmitterVisitResult[];
 
 export abstract class VisitorEmitter extends DetokenizingEmitter {
-  abstract detokenize(tokens: Token[]): string;
+  abstract detokenize(tokens: Token[], context: CompilationContext): string;
   abstract visit(
     node: Node,
     spine: Spine,
