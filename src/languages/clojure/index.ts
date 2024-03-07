@@ -34,10 +34,10 @@ import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   applyDeMorgans,
   bitnotPlugins,
+  divToTruncdiv,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
-  truncatingOpsPlugins,
 } from "../../plugins/arithmetic";
 import { forArgvToForEach } from "../../plugins/loops";
 import { alias, renameIdents } from "../../plugins/idents";
@@ -88,21 +88,18 @@ const clojureLanguage: Language = {
     simplegolf(implicitlyConvertConcatArg),
     required(
       mapOps({
-        argv: () => builtin("*command-line-args*"),
-
-        // TODO: vec not necessary if already a vec
-        append: (a, b) => func("conj", a, b),
-
-        "at[argv]": (a) => op["at[List]"](builtin("*command-line-args*"), a),
+        append: (a, b) => func("conj", func("vec", a), b),
+        "at[argv]": (a) => op["at[List]"](op.argv, a),
         "at[codepoint]": (a, b) => func("str", func("nth", a, b)),
-        "contains[Text]": (a, b) => func("clojure.string/includes?", a, b),
-        "contains[Table]": (a, b) => func("contains?", a, b),
+        "at_back[List]": (a, b) =>
+          isInt(-1n)(b) ? func("last", a) : undefined,
         "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
         pow: (a, b) => func("int", func("Math/pow", a, b)),
       }),
-      mapOps({
-        "at_back[List]": (a, b) =>
-          isInt(-1n)(b) ? func("last", a) : undefined,
+      mapOpsTo.builtin({
+        true: "true",
+        false: "false",
+        argv: "*command-line-args*",
       }),
       mapBackwardsIndexToForwards({
         "at_back[Ascii]": "size[Ascii]",
@@ -117,51 +114,59 @@ const clojureLanguage: Language = {
         int_to_Hex: (a) => func("format", text("%X"), a),
 
         "char[codepoint]": (a) => func("str", func("char", a)),
-        "concat[List]": (...x) => func("concat", ...x),
         "ord_at[codepoint]": (a, b) => func("int", func("nth", a, b)),
         "slice[codepoint]": (a, b, c) => func("subs", a, b, op.add(b, c)),
         "slice[List]": (a, b, c) =>
           func("subvec", func("vec", a), b, op.add(b, c)),
         repeat: (a, b) => func("apply", builtin("str"), func("repeat", b, a)),
       }),
-      mapOpsTo.builtin({ true: "true", false: "false" }),
       mapOpsTo.func({
         is_even: "even?",
         is_odd: "odd?",
       }),
-      ...truncatingOpsPlugins,
+      divToTruncdiv,
       mapOpsTo.func({
         split: ".split",
-        "find[byte]": "clojure.string/index-of",
         replace: "clojure.string/replace",
-        "concat[Text]": "str",
+
         abs: "abs",
+
         add: "+",
+        sub: "-",
+        mul: "*",
+        rem: "rem",
+        mod: "mod",
+        trunc_div: "quot",
+        neg: "-",
+
         and: "and",
+        not: "not",
+        or: "or",
+
         bit_and: "bit-and",
         bit_not: "bit-not",
         bit_or: "bit-or",
         bit_shift_left: "bit-shift-left",
         bit_shift_right: "bit-shift-right",
         bit_xor: "bit-xor",
+
         dec_to_int: "read-string",
-        geq: ">=",
-        gt: ">",
         int_to_dec: "str",
         join: flipped`clojure.string/join`,
+
+        geq: ">=",
+        gt: ">",
         leq: "<=",
         lt: "<",
+
         max: "max",
         min: "min",
-        mul: "*",
-        neg: "-",
-        not: "not",
-        or: "or",
-        rem: "rem",
-        mod: "mod",
-        sub: "-",
-        trunc_div: "quot",
 
+        "find[codepoint]": "clojure.string/index-of",
+        "concat[Text]": "str",
+        "concat[List]": "concat",
+        "contains[Text]": "clojure.string/includes?",
+        "contains[Table]": "contains?",
         "at[List]": "nth",
         "at[Table]": "",
         "eq[Int]": "=",
