@@ -185,6 +185,8 @@ const clojureLanguage: Language = {
         "reversed[List]": "reverse",
         "sorted[Ascii]": "sort",
         "sorted[Int]": "sort",
+        starts_with: "clojure.string/starts-with?",
+        ends_with: "clojure.string/ends-with?",
       }),
     ),
     simplegolf(

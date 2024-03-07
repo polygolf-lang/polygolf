@@ -46,10 +46,11 @@ $a | 2;
 $a ~ 2;
 max $a 2;
 min $a 2;
-
-% Comparison
 $a << 2;
 $a >> 2;
+bit_count 123;
+
+% Comparison
 $a < 2;
 $a <= 2;
 $a == 2;
@@ -91,10 +92,12 @@ repeat $b 3;
 right_align "he" 7;
 int_to_hex_aligned 31 7;
 replace "abcbd" "b" "e";
+starts_with "abcd" "ab";
+ends_with "abcd" "cd";
 ```
 
 ```clj nogolf
-(def a 0)(def b"xy")(def c(= 0 0))(def d["q""r""s"])(and c c)(or c c)(not c)(bit-not a)(- a)(abs a)(+ 2 a)(- a 2)(* 2 a)(quot a 2)(int(Math/pow a 2))(rem a 2)(mod a 2)(bit-and 2 a)(bit-or 2 a)(bit-xor 2 a)(max 2 a)(min 2 a)(bit-shift-left a 2)(bit-shift-right a 2)(< a 2)(<= a 2)(= a 2)(not= a 2)(>= a 2)(> a 2)(even? a)(odd? a)(str(nth"abc"1))(int(nth"g"0))(int(nth"ijk"1))(str(char 99))(subs"abcdefg"2 5)(subs"abcdefg"0 3)(="a""b")(not="a""b")({1 2}1)(nth d 1)(nth d(-(count d)2))(last d)(count d)(clojure.string/join"_"d)(sort d)(str b"xyz")(str 5)(format"%x"7)(read-string"5")(.split"xyz""y")(clojure.string/reverse b)(reverse d)(apply str(repeat 3 b))(format"%7s""he")(format"%07x"31)(clojure.string/replace"abcbd""b""e")
+(def a 0)(def b"xy")(def c(= 0 0))(def d["q""r""s"])(and c c)(or c c)(not c)(bit-not a)(- a)(abs a)(+ 2 a)(- a 2)(* 2 a)(quot a 2)(int(Math/pow a 2))(rem a 2)(mod a 2)(bit-and 2 a)(bit-or 2 a)(bit-xor 2 a)(max 2 a)(min 2 a)(bit-shift-left a 2)(bit-shift-right a 2)(Long/bitCount 123)(< a 2)(<= a 2)(= a 2)(not= a 2)(>= a 2)(> a 2)(even? a)(odd? a)(str(nth"abc"1))(int(nth"g"0))(int(nth"ijk"1))(str(char 99))(subs"abcdefg"2 5)(subs"abcdefg"0 3)(="a""b")(not="a""b")({1 2}1)(nth d 1)(nth d(-(count d)2))(last d)(count d)(clojure.string/join"_"d)(sort d)(str b"xyz")(str 5)(format"%x"7)(read-string"5")(.split"xyz""y")(clojure.string/reverse b)(reverse d)(apply str(repeat 3 b))(format"%7s""he")(format"%07x"31)(clojure.string/replace"abcbd""b""e")(clojure.string/starts-with?"abcd""ab")(clojure.string/ends-with?"abcd""cd")
 ```
 
 ## Looping
