@@ -8,6 +8,7 @@ import golfscriptLanguage from "./golfscript";
 import javascriptLanguage from "./javascript";
 import janetLanguage from "./janet";
 import textLanguage from "./text";
+import coconutLanguage from "./coconut";
 
 const languages = [
   polygolfLanguage,
@@ -15,6 +16,7 @@ const languages = [
   luaLanguage,
   nimLanguage,
   pythonLanguage,
+  coconutLanguage,
   swiftLanguage,
   javascriptLanguage,
   janetLanguage,
