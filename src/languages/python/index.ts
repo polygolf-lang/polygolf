@@ -370,10 +370,10 @@ const pythonLanguage: Language = {
       }),
       mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
-      addOneToManyAssignments(),
       useImplicitForCast,
     ),
     simplegolf(
+      addOneToManyAssignments(),
       alias({
         Identifier: (n, s) =>
           n.builtin &&

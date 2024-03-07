@@ -22,7 +22,7 @@ const coconutLanguage: Language = {
                   succ(a),
                 ),
             }),
-            name: "useSysArgv",
+            name: "useOsSysArgv",
           }
         : plugin,
     ),

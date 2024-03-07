@@ -2,6 +2,7 @@ import { charLength } from "../../common/strings";
 import {
   defaultDetokenizer,
   PrecedenceVisitorEmitter,
+  type Token,
 } from "../../common/Language";
 import {
   containsMultiNode,
@@ -82,7 +83,8 @@ function unaryPrecedence(opname: string): number {
 }
 
 export class PythonEmitter extends PrecedenceVisitorEmitter {
-  detokenize = defaultDetokenizer();
+  detokenize = (x: Token[], context: CompilationContext) =>
+    defaultDetokenizer()(x);
 
   prec(expr: Node): number {
     switch (expr.kind) {

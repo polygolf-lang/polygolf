@@ -19,3 +19,17 @@ print (at[argv] 0);
 ```coconut
 print(os.sys.argv[1])
 ```
+
+## Unicode ops
+
+```polygolf
+$x <- 0;
+$y <- 0;
+($x <= $y);
+```
+
+```coconut nogolf chars
+x=0
+y=0
+x≤y
+```
