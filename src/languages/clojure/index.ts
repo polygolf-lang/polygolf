@@ -149,6 +149,7 @@ const clojureLanguage: Language = {
         bit_shift_left: "bit-shift-left",
         bit_shift_right: "bit-shift-right",
         bit_xor: "bit-xor",
+        bit_count: "Long/bitCount",
 
         dec_to_int: "read-string",
         int_to_dec: "str",
