@@ -23,7 +23,10 @@ _Janet_
 _Python_
 
 ```py nogolf
-a=b=c=d=0
+a=0
+b=0
+c=0
+d=0
 -a
 a-b
 a+b-c-d
@@ -93,8 +96,12 @@ x or y or z
 _Python_
 
 ```py nogolf
-a=b=c=0
-x=y=z=1
+a=0
+b=0
+c=0
+x=1
+y=1
+z=1
 min(a,b,c)
 a*b*c
 x or y or z
@@ -134,7 +141,9 @@ _Python_
 
 ```py nogolf
 import math
-a=b=c=0
+a=0
+b=0
+c=0
 math.gcd(a,b,c)
 ```
 

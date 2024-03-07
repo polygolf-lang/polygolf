@@ -129,15 +129,18 @@ const pythonLanguage: Language = {
       pickAnyInt,
       forArgvToForEach,
       putcToPrintChar,
-      mapOps({
-        argv: () => builtin("sys.argv[1:]"),
+      {
+        ...mapOps({
+          argv: () => builtin("sys.argv[1:]"),
 
-        "at[argv]": (a) =>
-          op["at[List]"](
-            { ...builtin("sys.argv"), type: listType(textType()) },
-            succ(a),
-          ),
-      }),
+          "at[argv]": (a) =>
+            op["at[List]"](
+              { ...builtin("sys.argv"), type: listType(textType()) },
+              succ(a),
+            ),
+        }),
+        name: "useSysArgv",
+      },
 
       useImplicitBoolToInt,
       mapBackwardsIndexToForwards({
@@ -367,10 +370,10 @@ const pythonLanguage: Language = {
       }),
       mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
-      addOneToManyAssignments(),
       useImplicitForCast,
     ),
     simplegolf(
+      addOneToManyAssignments(),
       alias({
         Identifier: (n, s) =>
           n.builtin &&
