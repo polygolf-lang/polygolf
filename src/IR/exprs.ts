@@ -32,6 +32,8 @@ import {
   PhysicalOpCode,
   VirtualOpCodes,
   isPhysicalOpCode,
+  isVirtualOpCode,
+  virtualOpCodeDefinitions,
 } from "./IR";
 import { mapObjectValues, useDefaults } from "../common/arrays";
 
@@ -225,12 +227,12 @@ function _op(op: PhysicalOpCode, ...args: Node[]): Op {
  */
 function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   if (!isOpCode(opCode)) return _op(opCode, ...args);
-  if (opCode === "pred") return op.add(args[0], int(-1n));
-  if (opCode === "succ") return op.add(args[0], int(1n));
-  if (opCode === "is_even")
-    return op["eq[Int]"](int(0), op.mod(args[0], int(2)));
-  if (opCode === "is_odd")
-    return op["eq[Int]"](int(1), op.mod(args[0], int(2)));
+  if (isVirtualOpCode(opCode)) {
+    return (virtualOpCodeDefinitions[opCode].construct as any).apply(
+      null,
+      args,
+    );
+  }
   if (isUnary(opCode)) {
     const value = evalUnary(opCode, args[0]);
     if (value !== null) return value;
@@ -255,15 +257,6 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
     args[0].args[0].kind !== "ImplicitConversion"
   ) {
     return args[0].args[0];
-  }
-  if (opCode === "neg") {
-    if (isInt()(args[0])) {
-      return int(-args[0].value);
-    }
-    return op.mul(int(-1), args[0]);
-  }
-  if (opCode === "sub") {
-    return op.add(args[0], op.neg(args[1]));
   }
   if (isAssociative(opCode)) {
     args = args.flatMap((x) => (isOp(opCode)(x) ? x.args : [x]));
