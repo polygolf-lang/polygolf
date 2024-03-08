@@ -19,6 +19,21 @@ for_argv $arg 1000 {
 };
 ```
 
+_Clojure_
+
+```clojure
+(def p println)(p"Hello, World!")(dotimes[i 10](prn i))(doseq[a *command-line-args*](p a))
+```
+
+_Coconut_
+
+```coconut
+p=print
+p("Hello, World!")
+for i in range(10):p(i)
+for a in os.sys.argv[1:]:p(a)
+```
+
 _Golfscript_
 
 ```gs
