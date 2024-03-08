@@ -1,4 +1,14 @@
-import type { Node, Literal } from "./IR";
+import {
+  Node,
+  Literal,
+  Op,
+  op,
+  int as intNode,
+  isOp,
+  isInt,
+  isNegative,
+  getArgs,
+} from "./IR";
 import {
   type Type,
   typeArg,
@@ -17,6 +27,11 @@ interface OpCodeDefinition {
   front?: true | string;
   assoc?: true;
   commutes?: true;
+}
+
+interface VirtualOpCodeDefinition<T extends AnyOpCode> {
+  getArgs: (node: Op) => OpCodeArgValues<T> | undefined;
+  construct: (...args: OpCodeArgValues<T>) => Op;
 }
 
 export interface Rest<T extends Type = Type> {
@@ -218,6 +233,240 @@ export const opCodeDefinitions = {
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
+
+export const virtualOpCodeDefinitions = {
+  is_even: {
+    construct(x) {
+      return op["eq[Int]"](intNode(0), op.mod(x, intNode(2)));
+    },
+    getArgs(node) {
+      if (isOp("eq[Int]", "neq[Int]", "leq", "geq", "lt", "gt")(node)) {
+        let [a, b] = node.args;
+        if (isInt(0n, 1n)(b)) {
+          [a, b] = [b, a];
+        }
+        if (isInt(0n, 1n)(a) && isOp.mod(b) && isInt(2n)(b.args[1])) {
+          if (a.value === 0n) {
+            if (isOp("eq[Int]", "leq")(node)) return [b.args[0]];
+          } else {
+            if (isOp("neq[Int]", "lt")(node)) return [b.args[0]];
+          }
+        }
+      }
+    },
+  },
+  is_odd: {
+    construct(x) {
+      return op["eq[Int]"](intNode(1), op.mod(x, intNode(2)));
+    },
+    getArgs(node) {
+      if (isOp("eq[Int]", "neq[Int]", "leq", "geq", "lt", "gt")(node)) {
+        let [a, b] = node.args;
+        if (isInt(0n, 1n)(b)) {
+          [a, b] = [b, a];
+        }
+        if (isInt(0n, 1n)(a) && isOp.mod(b) && isInt(2n)(b.args[1])) {
+          if (a.value === 0n) {
+            if (isOp("neq[Int]", "gt")(node)) return [b.args[0]];
+          } else {
+            if (isOp("eq[Int]", "geq")(node)) return [b.args[0]];
+          }
+        }
+      }
+    },
+  },
+  succ: {
+    construct(x) {
+      return op.add(intNode(1), x);
+    },
+    getArgs(node) {
+      if (isOp.add(node) && node.args.length > 1 && isInt(1n)(node.args[0]!)) {
+        return [op.unsafe("add")(...node.args.slice(1))];
+      }
+    },
+  },
+  pred: {
+    construct(x) {
+      return op.add(intNode(1), x);
+    },
+    getArgs(node) {
+      if (
+        node.op === "add" &&
+        node.args.length > 1 &&
+        isInt(-1n)(node.args[0]!)
+      ) {
+        return [op.unsafe("add")(...node.args.slice(1))];
+      }
+    },
+  },
+  sub: {
+    construct(a, b) {
+      return op.add(a, op.mul(intNode(-1), b));
+    },
+    getArgs(node) {
+      if (node.op === "add") {
+        const exprs = node.args;
+        let positiveArgs = exprs.filter((x) => !isNegative(x));
+        let negativeArgs = exprs.filter((x) => isNegative(x));
+        if (positiveArgs.length < 1) {
+          positiveArgs = [negativeArgs[0]];
+          negativeArgs = negativeArgs.slice(1);
+        }
+        const positive =
+          positiveArgs.length > 1
+            ? op.unsafe("add")(...positiveArgs)
+            : positiveArgs[0];
+        if (negativeArgs.length > 0) {
+          return [
+            positive,
+            op.unsafe("add")(
+              ...negativeArgs.map(
+                (x) =>
+                  ({
+                    ...op.mul(intNode(-1), x),
+                    targetType: x.targetType,
+                  }) as any,
+              ),
+            ),
+          ];
+        }
+      }
+    },
+  },
+  neg: {
+    construct(x) {
+      return op.mul(intNode(-1), x);
+    },
+    getArgs(node) {
+      if (isOp.mul(node) && isInt(-1n)(node.args[0])) {
+        return [op.unsafe("mul")(...node.args.slice(1))];
+      }
+    },
+  },
+  "at[byte]": {
+    construct(data, index) {
+      return op["at[List]"](op["text_to_list[byte]"](data), index);
+    },
+    getArgs(node) {
+      if (isOp["at[List]"](node) && isOp["text_to_list[byte]"](node.args[0])) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at[codepoint]": {
+    construct(data, index) {
+      return op["at[List]"](op["text_to_list[codepoint]"](data), index);
+    },
+    getArgs(node) {
+      if (
+        isOp["at[List]"](node) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at[Ascii]": {
+    construct(data, index) {
+      return op["at[List]"](op["text_to_list[Ascii]"](data), index);
+    },
+    getArgs(node) {
+      if (isOp["at[List]"](node) && isOp["text_to_list[Ascii]"](node.args[0])) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at_back[byte]": {
+    construct(data, index) {
+      return op["at_back[List]"](op["text_to_list[byte]"](data), index);
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isOp["text_to_list[byte]"](node.args[0])
+      ) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at_back[codepoint]": {
+    construct(data, index) {
+      return op["at_back[List]"](op["text_to_list[codepoint]"](data), index);
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at_back[Ascii]": {
+    construct(data, index) {
+      return op["at_back[List]"](op["text_to_list[Ascii]"](data), index);
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isOp["text_to_list[Ascii]"](node.args[0])
+      ) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at[argv]": {
+    construct(index) {
+      return op["at[List]"](op.argv, index);
+    },
+    getArgs(node) {
+      if (isOp["at[List]"](node) && isOp.argv(node.args[0])) {
+        return [node.args[1]];
+      }
+    },
+  },
+  "size[byte]": {
+    construct(data) {
+      return op["size[List]"](op["text_to_list[byte]"](data));
+    },
+    getArgs(node) {
+      if (
+        isOp["size[List]"](node) &&
+        isOp["text_to_list[byte]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "size[codepoint]": {
+    construct(data) {
+      return op["size[List]"](op["text_to_list[codepoint]"](data));
+    },
+    getArgs(node) {
+      if (
+        isOp["size[List]"](node) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "size[Ascii]": {
+    construct(data) {
+      return op["size[List]"](op["text_to_list[Ascii]"](data));
+    },
+    getArgs(node) {
+      if (
+        isOp["size[List]"](node) &&
+        isOp["text_to_list[Ascii]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+} as const satisfies {
+  [T in AnyOpCode]?: VirtualOpCodeDefinition<T>;
+};
 
 export type OpCodeArgTypes<T extends OpCode = OpCode> =
   (typeof opCodeDefinitions)[T]["args"];
@@ -517,6 +766,23 @@ export const CommutativeOpCodes = OpCodes.filter(isCommutative);
 
 export function isOpCode(op: string): op is OpCode {
   return op in opCodeDefinitions;
+}
+
+export type VirtualOpCode = keyof typeof virtualOpCodeDefinitions;
+export type PhysicalOpCode = Exclude<AnyOpCode, VirtualOpCode>;
+
+export const VirtualOpCodes = Object.keys(
+  virtualOpCodeDefinitions,
+) as VirtualOpCode[];
+export const PhysicalOpCodes = OpCodes.filter(
+  (x) => !isVirtualOpCode(x),
+) as PhysicalOpCode[];
+
+export function isVirtualOpCode(op: string): op is VirtualOpCode {
+  return op in virtualOpCodeDefinitions;
+}
+export function isPhysicalOpCode(op: string): op is PhysicalOpCode {
+  return !isVirtualOpCode(op);
 }
 
 export const OpCodeFrontNames = [
