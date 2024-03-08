@@ -234,6 +234,26 @@ export const opCodeDefinitions = {
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
 
+export const VirtualOpCodes = [
+  "is_even",
+  "is_odd",
+  "succ",
+  "pred",
+  "sub",
+  "neg",
+  "at[byte]",
+  "at[codepoint]",
+  "at[Ascii]",
+  "at_back[byte]",
+  "at_back[codepoint]",
+  "at_back[Ascii]",
+  "at[argv]",
+  "size[byte]",
+  "size[codepoint]",
+  "size[Ascii]",
+] as const satisfies readonly AnyOpCode[];
+export type VirtualOpCode = (typeof VirtualOpCodes)[number];
+
 export const virtualOpCodeDefinitions = {
   is_even: {
     construct(x) {
@@ -465,7 +485,7 @@ export const virtualOpCodeDefinitions = {
     },
   },
 } as const satisfies {
-  [T in AnyOpCode]?: VirtualOpCodeDefinition<T>;
+  [T in VirtualOpCode]?: VirtualOpCodeDefinition<T>;
 };
 
 export type OpCodeArgTypes<T extends OpCode = OpCode> =
@@ -768,12 +788,8 @@ export function isOpCode(op: string): op is OpCode {
   return op in opCodeDefinitions;
 }
 
-export type VirtualOpCode = keyof typeof virtualOpCodeDefinitions;
 export type PhysicalOpCode = Exclude<AnyOpCode, VirtualOpCode>;
 
-export const VirtualOpCodes = Object.keys(
-  virtualOpCodeDefinitions,
-) as VirtualOpCode[];
 export const PhysicalOpCodes = OpCodes.filter(
   (x) => !isVirtualOpCode(x),
 ) as PhysicalOpCode[];

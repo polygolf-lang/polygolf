@@ -29,6 +29,9 @@ import {
   OpCodes,
   defaults,
   maxArity,
+  PhysicalOpCode,
+  VirtualOpCodes,
+  isPhysicalOpCode,
 } from "./IR";
 import { mapObjectValues, useDefaults } from "../common/arrays";
 
@@ -61,7 +64,8 @@ export interface Cast extends BaseNode {
  * 
  * This is ensured when using the op contructor function and the Spine API so avoid creating such nodes manually.
  */
-export interface Op<Op extends OpCode = OpCode> extends BaseNode {
+export interface Op<Op extends PhysicalOpCode = PhysicalOpCode>
+  extends BaseNode {
   readonly kind: "Op";
   readonly op: Op;
   readonly args: OpCodeArgValues<Op>;
@@ -192,8 +196,10 @@ export const op = {
             ), // allow unary opcodes to be used in map
   ) as {
     [O in OpCode]: OpCodeArgValues<O> extends readonly []
-      ? Op<O>
-      : (...args: OpCodeArgValues<O>) => Op<O>;
+      ? O extends PhysicalOpCode
+        ? Op<O>
+        : Op
+      : (...args: OpCodeArgValues<O>) => O extends PhysicalOpCode ? Op<O> : Op;
   }),
   unsafe(op: OpCode, useDefaults = false) {
     return (...args: Node[]) =>
@@ -205,7 +211,7 @@ export const op = {
  * This assumes that the construction will not break the invariants described
  * on `Op` interface and hence is made private.
  */
-function _op(op: OpCode, ...args: Node[]): Op {
+function _op(op: PhysicalOpCode, ...args: Node[]): Op {
   return {
     kind: "Op",
     op,
@@ -299,8 +305,8 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
             isInt()(x)
               ? int(-x.value)
               : x === toNegate
-                ? op.unsafe("add")(...(x as Op).args.map(op.neg))
-                : x,
+              ? op.unsafe("add")(...(x as Op).args.map(op.neg))
+              : x,
           );
         }
       }
@@ -654,15 +660,18 @@ export function isNegative(expr: Node) {
   );
 }
 
-function _isOp<O extends OpCode>(...ops: O[]): (x: Node) => x is Op<O> {
+function _isOp<O extends PhysicalOpCode>(...ops: O[]): (x: Node) => x is Op<O> {
   return ((x: Node) =>
     x.kind === "Op" && (ops.length === 0 || ops?.includes(x.op as any))) as any;
 }
 
 export const isOp: {
-  [O in OpCode]: (x: Node) => x is Op<O>;
-} & (<O extends OpCode>(...op: O[]) => (x: Node) => x is Op<O>) = _isOp as any;
+  [O in PhysicalOpCode]: (x: Node) => x is Op<O>;
+} & (<O extends PhysicalOpCode>(...op: O[]) => (x: Node) => x is Op<O>) =
+  _isOp as any;
 
 for (const opCode of OpCodes) {
-  isOp[opCode] = _isOp(opCode) as any;
+  if (isPhysicalOpCode(opCode)) {
+    isOp[opCode] = _isOp(opCode) as any;
+  }
 }
