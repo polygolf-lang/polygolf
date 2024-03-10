@@ -56,9 +56,6 @@ export interface Cast extends BaseNode {
  
 * Polygolf ensures that in the IR, there will never be:
 
- * - Op(neg), Op(sub)
- * - Op(pred), Op(succ)
- * - Op(is_even), Op(is_odd)
  * - Op as a direct child of a Op with the same associative OpCode
  * - Integer as a nonfirst child of a commutative Op
  * - Boolean negation of a boolean negation

@@ -19,6 +19,9 @@ import {
   isOpCode,
   isNullary,
   isOp,
+  VirtualOpCodes,
+  argsOf,
+  VirtualOpCode,
 } from "../../IR";
 import { infixableOpCodeNames } from "../../frontend/lexer";
 import { withDefaults } from "../../plugins/ops";
@@ -180,11 +183,20 @@ export function emitNodeWithoutAnnotation(
       return emitSexpr("=>", expr.key, expr.value);
     case "Function":
       return emitSexpr("func", ...expr.args, expr.expr);
-    case "Op":
+    case "Op": {
+      const skippingVirtualOpCodes: VirtualOpCode[] = ["succ", "pred"];
+      for (const virtualOpCode of VirtualOpCodes) {
+        if (skippingVirtualOpCodes.includes(virtualOpCode)) continue;
+        const args = argsOf(virtualOpCode)(expr);
+        if (args !== undefined) {
+          return emitSexpr(virtualOpCode, ...args);
+        }
+      }
       return emitSexpr(
         expr.op,
         ...withDefaults(null).preprocess(expr.args, expr.op),
       );
+    }
     case "Assignment":
       return emitSexpr("<-", expr.variable, expr.expr);
     case "FunctionCall": {
