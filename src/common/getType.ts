@@ -54,6 +54,9 @@ import {
   maxArity,
   type PhysicalOpCode,
   argsOf,
+  isVirtualOpCode,
+  annotate,
+  id,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -323,6 +326,18 @@ function isTypeMatch(gotTypes: Type[], expectedTypes: AnyOpCodeArgTypes) {
 }
 
 export function getOpCodeTypeFromTypes(
+  opCode: OpCode,
+  got: Type[],
+  skipAdditionalChecks = false,
+): Type {
+  if (isVirtualOpCode(opCode)) {
+    const x = op.unsafe(opCode)(...got.map((t) => annotate(id("x"), t)));
+    return getType(x, x);
+  }
+  return _getOpCodeTypeFromTypes(opCode, got, skipAdditionalChecks);
+}
+
+function _getOpCodeTypeFromTypes(
   opCode: PhysicalOpCode,
   got: Type[],
   skipAdditionalChecks = false,
@@ -679,7 +694,7 @@ function getOpCodeType(expr: Op, program: Node): Type {
       return (got[0] as TextType).codepointLength;
   }
 
-  return getOpCodeTypeFromTypes(expr.op, got);
+  return _getOpCodeTypeFromTypes(expr.op, got);
 }
 
 function resolveUnresolvedOpCode(
@@ -731,7 +746,7 @@ function resolveUnresolvedOpCode(
     getType(x, program),
   );
 
-  return { type: getOpCodeTypeFromTypes(opCode as any, got), opCode };
+  return { type: _getOpCodeTypeFromTypes(opCode as any, got), opCode };
 }
 
 export function getArithmeticType(
