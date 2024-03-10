@@ -29,12 +29,11 @@ import {
   OpCodes,
   defaults,
   maxArity,
-  PhysicalOpCode,
-  VirtualOpCodes,
+  type PhysicalOpCode,
   isPhysicalOpCode,
   isVirtualOpCode,
   virtualOpCodeDefinitions,
-  VirtualOpCode,
+  type VirtualOpCode,
 } from "./IR";
 import { mapObjectValues, useDefaults } from "../common/arrays";
 

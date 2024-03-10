@@ -107,7 +107,6 @@ const pythonLanguage: Language = {
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
-      textToIntToTextGetToInt,
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,

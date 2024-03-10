@@ -116,7 +116,6 @@ const golfscriptLanguage: Language = {
       }),
     ),
     required(
-      atTextToListToAtText,
       mapOps({
         "at[argv]": (a) => op["at[List]"](op.argv, a),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
@@ -170,7 +169,6 @@ const golfscriptLanguage: Language = {
         "slice_back[List]": 0,
         "with_at_back[List]": 0,
       }),
-      textGetToTextGetToIntToText,
       mapMutationTo.index({
         "with_at[Array]": 0,
         "with_at[List]": 0,

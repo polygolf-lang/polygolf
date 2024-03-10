@@ -10,10 +10,9 @@ import {
   op,
   prefix,
   type Op,
-  type OpCode,
   isBuiltinIdent,
   isText,
-  PhysicalOpCode,
+  type PhysicalOpCode,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { addImports } from "../../plugins/imports";

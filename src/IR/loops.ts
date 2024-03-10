@@ -8,8 +8,7 @@ import {
   op,
   isOp,
   type Op,
-  type OpCode,
-  PhysicalOpCode,
+  type PhysicalOpCode,
 } from "./IR";
 
 /**
@@ -140,6 +139,7 @@ export function isForEach<O extends PhysicalOpCode>(
 }
 
 export const isForEachRange = isForEach("range_incl", "range_excl");
+export const isForEachExclRange = isForEach("range_excl");
 export const isForEachChar = isForEach(
   "text_to_list[Ascii]",
   "text_to_list[byte]",

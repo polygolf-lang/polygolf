@@ -10,7 +10,6 @@ import {
   textType,
   annotate,
   isInt,
-  type BinaryOpCode,
 } from "../IR";
 import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";

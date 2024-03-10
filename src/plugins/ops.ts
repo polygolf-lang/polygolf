@@ -30,7 +30,7 @@ import {
   type OpCodeArgValues,
   defaults,
   isEqualToLiteral,
-  PhysicalOpCode,
+  type PhysicalOpCode,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";

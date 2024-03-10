@@ -11,17 +11,12 @@ import {
   id,
   op,
   type Node,
-  type Identifier,
   isInt,
-  type OpCode,
-  type Text,
-  type List,
   isOp,
   isSubtype,
   integerType,
   succ,
   pred,
-  isText,
   isIdent,
   isUserIdent,
   type ForEach,
@@ -31,9 +26,10 @@ import {
   type BinaryOpCode,
   implicitConversion,
   isForEachChar,
-  PhysicalOpCode,
+  isForEachExclRange,
+  type Identifier,
+  type List,
 } from "../IR";
-import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
 import { mapOps } from "./ops";
 import { $ } from "../common/fragments";
@@ -95,99 +91,48 @@ export function forRangeToForCLike(node: Node, spine: Spine) {
  *     commands(x)
  */
 export function forRangeToForEach(node: Node, spine: Spine) {
-  if (
-    isForEachRange(node) &&
-    node.collection.op === "range_excl" &&
-    node.variable !== undefined
-  ) {
+  if (isForEachExclRange(node) && node.variable !== undefined) {
     const [start, end, step] = node.collection.args;
     if (
       isInt(0n)(start) &&
       isInt(1n)(step) &&
-      ((isOp["size[List]"](end) && isIdent()(end.args[0]!)) || isInt()(end))
+      ((isOp["size[List]"](end) && isIdent()(end.args[0])) || isInt()(end))
     ) {
       const indexVar = node.variable;
       const bodySpine = spine.getChild($.body);
       const knownLength = isInt()(end) ? Number(end.value) : undefined;
-      const allowedOps = isInt()(end)
-        ? ops
-        : [lengthOpToGetOp.get(end.op) as GetOp];
-      const collectionVar = isInt()(end)
+      let indexedList: List | Identifier | undefined = isInt()(end)
         ? undefined
         : (end.args[0] as Identifier);
-      const indexedCollection = getIndexedCollection(
-        bodySpine,
-        indexVar,
-        allowedOps,
-        knownLength,
-        collectionVar,
-      );
-      if (indexedCollection !== null) {
+      indexedList ??= spine.firstNode((node) => {
+        if (isOp["at[List]"](node)) {
+          const collection = node.args[0];
+          return (
+            collection.kind === "List" &&
+            collection.value.length === knownLength!
+          );
+        }
+        return false;
+      }) as List | undefined;
+
+      if (indexedList !== undefined) {
         const elementIdentifier = id(node.variable.name + "+each");
         const newBody = bodySpine.withReplacer((n) => {
           if (
-            isOp()(n) &&
-            n.args[0] === indexedCollection &&
-            isUserIdent(indexVar.name)(n.args[1]!)
+            isOp["at[List]"](n) &&
+            ((indexedList!.kind === "List" && n.args[0] === indexedList) ||
+              (indexedList!.kind === "Identifier" &&
+                isUserIdent(indexedList!)(n.args[0]))) &&
+            isUserIdent(indexVar.name)(n.args[1])
           )
             return elementIdentifier;
-        }).node;
-        return forEach(elementIdentifier, indexedCollection, newBody);
+        });
+        if (!newBody.someNode(isUserIdent(indexVar))) {
+          return forEach(elementIdentifier, indexedList, newBody.node);
+        }
       }
     }
   }
-}
-
-/**
- * Returns a single collection descendant that is being indexed into or null.
- * @param spine Root spine.
- * @param indexVar Indexing variable.
- * @param allowedOps Indexing.
- * @param knownLength The allowed length of the collection if it is a literal or of an array type.
- * @param collectionVar The allowed collection variable to be indexed into.
- */
-function getIndexedCollection(
-  spine: Spine<Node>,
-  indexVar: Identifier,
-  allowedOps: GetOp[],
-  knownLength?: number,
-  collectionVar?: Identifier,
-): Node | null {
-  let result: Node | null = null;
-  for (const x of spine.compactMap((n, s) => {
-    const parent = s.parent!.node;
-    if (!isUserIdent(indexVar.name)(n)) return undefined;
-    if (!isOp(...allowedOps)(parent)) return null;
-    const collection = parent.args[0];
-    if (
-      (isText()(collection) || collection.kind === "List") &&
-      literalLength(collection, allowedOps.includes("at[byte]")) === knownLength
-    )
-      return collection;
-    if (
-      collectionVar !== undefined &&
-      isUserIdent(collectionVar.name)(collection)
-    )
-      return collection;
-    const collectionType = getType(collection, s.root.node);
-    if (
-      knownLength !== undefined &&
-      collectionType.kind === "Array" &&
-      collectionType.length.kind === "integer" &&
-      collectionType.length.high + 1n === BigInt(knownLength)
-    )
-      return collection;
-    return null;
-  })) {
-    if (x === null || result != null) return null;
-    if (result === null) result = x;
-  }
-  return result;
-}
-
-function literalLength(expr: Text | List, countTextBytes: boolean): number {
-  if (expr.kind === "List") return expr.value.length;
-  return (countTextBytes ? byteLength : charLength)(expr.value);
 }
 
 export function forArgvToForEach(node: Node) {
@@ -290,8 +235,7 @@ export function forRangeToForDifferenceRange(
 ): PluginVisitor {
   return function forRangeToForDifferenceRange(node, spine) {
     if (
-      isForEachRange(node) &&
-      node.collection.op === "range_excl" &&
+      isForEachExclRange(node) &&
       node.variable !== undefined &&
       transformPredicate(node as any, spine as any)
     ) {

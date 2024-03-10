@@ -1,13 +1,12 @@
 import {
-  Node,
-  Literal,
-  Op,
+  type Node,
+  type Literal,
+  type Op,
   op,
   int as intNode,
   isOp,
   isInt,
   isNegative,
-  getArgs,
 } from "./IR";
 import {
   type Type,
@@ -306,7 +305,7 @@ export const virtualOpCodeDefinitions = {
       return op.add(intNode(1), x);
     },
     getArgs(node) {
-      if (isOp.add(node) && node.args.length > 1 && isInt(1n)(node.args[0]!)) {
+      if (isOp.add(node) && node.args.length > 1 && isInt(1n)(node.args[0])) {
         return [op.unsafe("add")(...node.args.slice(1))];
       }
     },
