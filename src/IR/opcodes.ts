@@ -312,7 +312,7 @@ export const virtualOpCodeDefinitions = {
   },
   pred: {
     construct(x) {
-      return op.add(intNode(1), x);
+      return op.add(intNode(-1), x);
     },
     getArgs(node) {
       if (

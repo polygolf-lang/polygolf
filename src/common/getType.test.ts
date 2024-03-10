@@ -31,6 +31,7 @@ import {
   type Node,
   asciiType,
   lengthToArrayIndexType as length,
+  isPhysicalOpCode,
 } from "IR";
 import { PolygolfError } from "./errors";
 import { calcTypeAndResolveOpCode, getType } from "./getType";
@@ -61,7 +62,17 @@ function testOp(
   args: Type[],
   result: Type | "error",
 ) {
-  testNode(name, op.unsafe(opCode)(...args.map(e)), result);
+  testNode(
+    name,
+    isPhysicalOpCode(opCode)
+      ? ({
+          kind: "Op",
+          op: opCode,
+          args: args.map(e),
+        } as any)
+      : op.unsafe(opCode)(...args.map(e)),
+    result,
+  );
 }
 
 function describeOp(op: OpCode, tests: [Type[], Type | "error"][]) {
