@@ -3,12 +3,7 @@ Hover opcode name to see a description.
 
 | Alias | Full name | Input | Output |
 |-------|-----------|-------|--------|
-| is_even | [is_even](## "Evenness predicate.") | [Int] | Bool |
-| is_odd | [is_odd](## "Oddness predicate.") | [Int] | Bool |
-| succ | [succ](## "Integer successor.") | [Int] | Int |
-| pred | [pred](## "Integer predecessor.") | [Int] | Int |
 | + | [add](## "Integer addition.")<br>[append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.") | [Int, Int, ...Int]<br>[(List T1), T1]<br>[(List T1), (List T1), ...(List T1)]<br>[Text, Text, ...Text] | Int<br>(List T1)<br>(List T1)<br>Text |
-| - | [sub](## "Integer subtraction.")<br>[neg](## "Integer negation.") | [Int, Int]<br>[Int] | Int<br>Int |
 | * | [mul](## "Integer multiplication.") | [Int, Int, ...Int] | Int |
 | div | [div](## "Integer floor division.") | [Int, Int] | Int |
 | ^ | [pow](## "Integer exponentiation.") | [Int, 0..oo] | Int |
@@ -24,7 +19,6 @@ Hover opcode name to see a description.
 | abs | [abs](## "Integer absolute value.") | [Int] | 0..oo |
 | bit_count | [bit_count](## "Number of set bits in the integer.") | [0..oo] | 0..2 |
 | read[line] | [read[line]](## "Reads single line from the stdin.") | [] | Text |
-| @ | [at[argv]](## "Gets argv at the 0-based `n`th position, where `n` is an integer literal.")<br>[at[Array]](## "Gets the item at the 0-based index.")<br>[at[List]](## "Gets the item at the 0-based index.")<br>[at_back[List]](## "Gets the item at the -1-based backwards index.")<br>[at[Table]](## "Gets the item at the key.")<br>[at[Ascii]](## "Gets the character at the 0-based index.")<br>[at_back[Ascii]](## "Gets the character at the -1-based backwards index.")<br>[with_at[Array]](## "Returns an array with item at the given 0-based index replaced.")<br>[with_at[List]](## "Returns a list with item at the given 0-based index replaced.")<br>[with_at_back[List]](## "Returns a list with item at the given -1-based backwards index replaced.")<br>[with_at[Table]](## "Returns an array with item at the given key replaced.") | [0..oo]<br>[(Array T1 T2), T2]<br>[(List T1), 0..oo]<br>[(List T1), -oo..-1]<br>[(Table T1 T2), T1]<br>[Ascii, 0..oo]<br>[Ascii, -oo..-1]<br>[(Array T1 T2), T2, T1]<br>[(List T1), 0..oo, T1]<br>[(List T1), -oo..-1, T1]<br>[(Table T1 T2), T1, T2] | Text<br>T1<br>T1<br>T1<br>T2<br>(Ascii 1..1)<br>(Ascii 1..1)<br>(Array T1 T2)<br>(List T1)<br>(List T1)<br>(Table T1 T2) |
 | print | [print[Text]](## "Prints the provided argument.")<br>[print[Int]](## "Converts the provided argument to base 10 text and prints it.") | [Text]<br>[Int] | Void<br>Void |
 | println | [println[Text]](## "Prints the provided argument followed by a \\n.")<br>[println[Int]](## "Converts the provided argument to base 10 text and prints it followed by a \\n.") | [Text]<br>[Int] | Void<br>Void |
 | putc[byte] | [putc[byte]](## "Creates a single byte text and prints it.") | [0..255] | Void |
@@ -43,10 +37,7 @@ Hover opcode name to see a description.
 | > | [gt](## "Integer greater than.") | [Int, Int] | Bool |
 | == | [eq[Int]](## "Integer equality.")<br>[eq[Text]](## "Text equality.") | [Int, Int]<br>[Text, Text] | Bool<br>Bool |
 | != | [neq[Int]](## "Integer inequality.")<br>[neq[Text]](## "Text inequality.") | [Int, Int]<br>[Text, Text] | Bool<br>Bool |
-| at[byte] | [at[byte]](## "Gets the byte (as text) at the 0-based index (counting bytes).") | [Text, 0..oo] | (Text 1..1) |
-| at_back[byte] | [at_back[byte]](## "Gets the byte (as text) at the -1-based backwards index (counting bytes).") | [Text, -oo..-1] | (Text 1..1) |
-| at[codepoint] | [at[codepoint]](## "Gets the codepoint (as text) at the 0-based index (counting codepoints).") | [Text, 0..oo] | (Text 1..1) |
-| at_back[codepoint] | [at_back[codepoint]](## "Gets the codepoint (as text) at the -1-based backwards index (counting codepoints).") | [Text, -oo..-1] | (Text 1..1) |
+| @ | [at[Array]](## "Gets the item at the 0-based index.")<br>[at[List]](## "Gets the item at the 0-based index.")<br>[at_back[List]](## "Gets the item at the -1-based backwards index.")<br>[at[Table]](## "Gets the item at the key.")<br>[with_at[Array]](## "Returns an array with item at the given 0-based index replaced.")<br>[with_at[List]](## "Returns a list with item at the given 0-based index replaced.")<br>[with_at_back[List]](## "Returns a list with item at the given -1-based backwards index replaced.")<br>[with_at[Table]](## "Returns an array with item at the given key replaced.") | [(Array T1 T2), T2]<br>[(List T1), 0..oo]<br>[(List T1), -oo..-1]<br>[(Table T1 T2), T1]<br>[(Array T1 T2), T2, T1]<br>[(List T1), 0..oo, T1]<br>[(List T1), -oo..-1, T1]<br>[(Table T1 T2), T1, T2] | T1<br>T1<br>T1<br>T2<br>(Array T1 T2)<br>(List T1)<br>(List T1)<br>(Table T1 T2) |
 | slice[codepoint] | [slice[codepoint]](## "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in codepoints.") | [Text, 0..oo, 0..oo] | Text |
 | slice_back[codepoint] | [slice_back[codepoint]](## "Returns a text slice that starts at the given -1-based backwards index and has given length. Start and length are measured in codepoints.") | [Text, -oo..-1, 0..oo] | Text |
 | slice[byte] | [slice[byte]](## "Returns a text slice that starts at the given 0-based index and has given length. Start and length are measured in bytes.") | [Text, 0..oo, 0..oo] | Text |
@@ -69,9 +60,7 @@ Hover opcode name to see a description.
 | find[byte] | [find[byte]](## "Returns a 0-based index of the first byte at which the search text starts, provided it is included.") | [Text, (Text 1..oo)] | -1..oo |
 | find | [find[Ascii]](## "Returns a 0-based index of the first character at which the search text starts, provided it is included.")<br>[find[List]](## "Returns a 0-based index of the first occurence of the searched item, provided it is included.") | [Ascii, Ascii]<br>[(List T1), T1] | -1..oo<br>-1..2147483647 |
 | contains | [contains[Array]](## "Asserts whether an item is included in the array.")<br>[contains[List]](## "Asserts whether an item is included in the list.")<br>[contains[Table]](## "Asserts whether an item is included in the keys of the table.")<br>[contains[Set]](## "Asserts whether an item is included in the set.")<br>[contains[Text]](## "Asserts whether the 2nd argument is a substring of the 1st one.") | [(Array T1 T2), T1]<br>[(List T1), T1]<br>[(Table T1 T2), T1]<br>[(Set T1), T1]<br>[Text, Text] | Bool<br>Bool<br>Bool<br>Bool<br>Bool |
-| # | [size[List]](## "Returns the length of the list.")<br>[size[Set]](## "Returns the cardinality of the set.")<br>[size[Table]](## "Returns the number of keys in the table.")<br>[size[Ascii]](## "Returns the length of the text.") | [(List T1)]<br>[(Set T1)]<br>[(Table T1 T2)]<br>[Ascii] | 0..2147483647<br>0..2147483647<br>0..2147483647<br>0..oo |
-| size[codepoint] | [size[codepoint]](## "Returns the length of the text in codepoints.") | [Text] | 0..oo |
-| size[byte] | [size[byte]](## "Returns the length of the text in bytes.") | [Text] | 0..2147483648 |
+| # | [size[List]](## "Returns the length of the list.")<br>[size[Set]](## "Returns the cardinality of the set.")<br>[size[Table]](## "Returns the number of keys in the table.") | [(List T1)]<br>[(Set T1)]<br>[(Table T1 T2)] | 0..2147483647<br>0..2147483647<br>0..2147483647 |
 | include | [include](## "Modifies the set by including the given item.") | [(Set T1), T1] | Void |
 | repeat | [repeat](## "Repeats the text a given amount of times.") | [Text, 0..oo] | Text |
 | split | [split](## "Splits the text by the delimiter.") | [Text, Text] | (List Text) |

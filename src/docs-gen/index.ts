@@ -5,12 +5,12 @@ import {
   getOpCodeTypeFromTypes,
 } from "../common/getType";
 import {
-  type OpCode,
-  OpCodesUser,
+  PhysicalOpCodesUser,
   toString,
   userName,
   opCodeDescriptions,
   defaults,
+  type PhysicalOpCode,
 } from "../IR";
 import fs from "fs";
 import path from "path";
@@ -23,7 +23,7 @@ Hover opcode name to see a description.
 |-------|-----------|-------|--------|
 `;
 
-function getOpCodeOutputType(opCode: OpCode) {
+function getOpCodeOutputType(opCode: PhysicalOpCode) {
   try {
     return toString(
       getOpCodeTypeFromTypes(opCode, getGenericOpCodeArgTypes(opCode), true),
@@ -33,7 +33,10 @@ function getOpCodeOutputType(opCode: OpCode) {
   }
 }
 
-for (const [alias, opCodes] of groupby(OpCodesUser, userName).entries()) {
+for (const [alias, opCodes] of groupby(
+  PhysicalOpCodesUser,
+  userName,
+).entries()) {
   result += `| ${alias.replace("|", "\\|")} | ${opCodes
     .map((x) => `[${x}](## ${JSON.stringify(opCodeDescriptions[x])})`)
     .join("<br>")} | ${opCodes

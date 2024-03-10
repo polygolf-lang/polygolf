@@ -913,6 +913,10 @@ export const OpCodesUser = OpCodes.filter(
   (op) => "front" in opCodeDefinitions[op],
 );
 
+export const PhysicalOpCodesUser = PhysicalOpCodes.filter(
+  (op) => "front" in opCodeDefinitions[op],
+);
+
 export function userName(opCode: OpCode) {
   if ("front" in opCodeDefinitions[opCode]) {
     return typeof (opCodeDefinitions[opCode] as any).front === "string"
