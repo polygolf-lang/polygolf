@@ -550,12 +550,16 @@ describeArithmeticOp("bit_not", [
   [[int(-20, "oo")], int("-oo", 19)],
 ]);
 
-describeArithmeticOp("neg", [
-  [[int(), int()], "error"],
-  [[int()], int()],
-  [[int("-oo", 10)], int(-10)],
-  [[int(-20, "oo")], int("-oo", 20)],
-]);
+describeArithmeticOp(
+  "neg",
+  [
+    [[int(), int()], "error"],
+    [[int()], int()],
+    [[int("-oo", 10)], int(-10)],
+    [[int(-20, "oo")], int("-oo", 20)],
+  ],
+  true,
+);
 
 describeOp("not", [
   [[bool, bool], "error"],
