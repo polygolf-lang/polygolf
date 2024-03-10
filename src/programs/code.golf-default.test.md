@@ -26,6 +26,12 @@ _Golfscript_
 "10,{:i;i n}%a{:b;b n}%
 ```
 
+_Janet_
+
+```janet
+(print"Hello, World!")(for i 0 10(pp i))(each a(slice(dyn :args)1)(print a))
+```
+
 _Javascript_
 
 ```javascript
