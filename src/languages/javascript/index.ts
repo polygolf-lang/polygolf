@@ -103,7 +103,6 @@ const javascriptLanguage: Language = {
       floodBigints("int53", {
         Assignment: "bigint",
         add: "bigint",
-        sub: "bigint",
         mul: "bigint",
         mod: "bigint",
         pow: "bigint",
@@ -258,7 +257,7 @@ const javascriptLanguage: Language = {
         rem: "%",
         add: "+",
         "concat[Text]": "+",
-        sub: "-",
+        binarySub: "-",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         bit_and: "&",

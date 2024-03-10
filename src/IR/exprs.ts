@@ -342,7 +342,7 @@ function opUnsafeWithDefaults(opCode: OpCode, ...args: Node[]): Node {
 }
 
 function evalBinary(
-  op: BinaryOpCode | VariadicOpCode,
+  op: PhysicalOpCode & (BinaryOpCode | VariadicOpCode),
   left: Node,
   right: Node,
 ): Integer | Text | null {

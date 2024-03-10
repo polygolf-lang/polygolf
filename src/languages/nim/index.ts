@@ -275,7 +275,7 @@ const nimLanguage: Language = {
         bit_shift_left: "shl",
         bit_shift_right: "shr",
         add: "+",
-        sub: "-",
+        binarySub: "-",
         "concat[Text]": "&",
         "concat[List]": "&",
         append: "&",

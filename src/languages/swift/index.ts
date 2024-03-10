@@ -282,7 +282,7 @@ const swiftLanguage: Language = {
         rem: "%",
         bit_and: "&",
         add: "+",
-        sub: "-",
+        binarySub: "-",
         bit_or: "|",
         bit_xor: "^",
         "concat[Text]": "+",

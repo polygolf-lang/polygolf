@@ -8,7 +8,7 @@ Hover opcode name to see a description.
 | succ | [succ](## "Integer successor.") | [Int] | Int |
 | pred | [pred](## "Integer predecessor.") | [Int] | Int |
 | + | [add](## "Integer addition.")<br>[append](## "Returns a new list with the given item appended at the end.")<br>[concat[List]](## "Returns a new list formed by concatenation of the inputs.")<br>[concat[Text]](## "Returns a new text formed by concatenation of the inputs.") | [Int, Int, ...Int]<br>[(List T1), T1]<br>[(List T1), (List T1), ...(List T1)]<br>[Text, Text, ...Text] | Int<br>(List T1)<br>(List T1)<br>Text |
-| - | [sub](## "Integer subtraction.")<br>[neg](## "Integer negation.") | [Int, Int]<br>[Int] | 0..0<br>Int |
+| - | [sub](## "Integer subtraction.")<br>[neg](## "Integer negation.") | [Int, Int, ...Int]<br>[Int] | 0..0<br>Int |
 | * | [mul](## "Integer multiplication.") | [Int, Int, ...Int] | Int |
 | div | [div](## "Integer floor division.") | [Int, Int] | Int |
 | ^ | [pow](## "Integer exponentiation.") | [Int, 0..oo] | Int |

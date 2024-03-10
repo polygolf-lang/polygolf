@@ -340,7 +340,7 @@ const pythonLanguage: Language = {
         add: "+",
         "concat[Text]": "+",
         "concat[List]": "+",
-        sub: "-",
+        binarySub: "-",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         bit_and: "&",

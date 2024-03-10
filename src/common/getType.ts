@@ -90,9 +90,11 @@ export function getTypeAndResolveOpCode(
     return t;
   } catch (e) {
     currentlyFinding.delete(expr);
+    /*
     if (e instanceof Error && !(e instanceof PolygolfError)) {
       throw new PolygolfError(e.message, expr.source);
     }
+    */
     throw e;
   }
 }
@@ -750,7 +752,7 @@ function resolveUnresolvedOpCode(
 }
 
 export function getArithmeticType(
-  op: OpCode,
+  op: PhysicalOpCode,
   a: IntegerType, // left argument
   b: IntegerType, // right argument
 ): IntegerType {
@@ -761,8 +763,6 @@ export function getArithmeticType(
       return int(max(a.low, b.low), max(a.high, b.high));
     case "add":
       return int(add(a.low, b.low), add(a.high, b.high));
-    case "sub":
-      return int(sub(a.low, b.high), sub(a.high, b.low));
     case "mul": {
       // Extreme values of a product arise from multiplying the extremes of the inputs.
       // The single case were simple multiplication of the bounds is not defined, corresponds to multiplying

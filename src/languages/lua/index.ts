@@ -186,7 +186,7 @@ const luaLanguage: Language = {
         div: "//",
         mod: "%",
         add: "+",
-        sub: "-",
+        binarySub: "-",
         "concat[Text]": "..",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
