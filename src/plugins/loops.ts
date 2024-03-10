@@ -104,16 +104,18 @@ export function forRangeToForEach(node: Node, spine: Spine) {
       let indexedList: List | Identifier | undefined = isInt()(end)
         ? undefined
         : (end.args[0] as Identifier);
-      indexedList ??= spine.firstNode((node) => {
-        if (isOp["at[List]"](node)) {
-          const collection = node.args[0];
-          return (
-            collection.kind === "List" &&
-            collection.value.length === knownLength!
-          );
-        }
-        return false;
-      }) as List | undefined;
+      indexedList ??= (
+        spine.firstNode((node) => {
+          if (isOp["at[List]"](node)) {
+            const collection = node.args[0];
+            return (
+              collection.kind === "List" &&
+              collection.value.length === knownLength!
+            );
+          }
+          return false;
+        }) as Op<"at[List]"> | undefined
+      )?.args[0] as List | undefined;
 
       if (indexedList !== undefined) {
         const elementIdentifier = id(node.variable.name + "+each");

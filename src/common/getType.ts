@@ -508,7 +508,7 @@ export function getOpCodeTypeFromTypes(
     case "text_to_list[Ascii]":
     case "text_to_list[byte]":
     case "text_to_list[codepoint]":
-      return list(text(int(1, 1), opCode === "text_to_list[Ascii]"));
+      return list(text(int(1, 1), (got[0] as TextType).isAscii));
     case "size[List]":
     case "size[Set]":
     case "size[Table]":
