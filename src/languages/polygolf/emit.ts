@@ -21,7 +21,7 @@ import {
   isOp,
   VirtualOpCodes,
   argsOf,
-  VirtualOpCode,
+  type VirtualOpCode,
 } from "../../IR";
 import { infixableOpCodeNames } from "../../frontend/lexer";
 import { withDefaults } from "../../plugins/ops";
