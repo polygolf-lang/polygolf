@@ -46,9 +46,7 @@ import {
 import {
   charToIntToDec,
   ordToDecToInt,
-  atTextToListToAtText,
   startsWithEndsWithToSliceEquality,
-  textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
@@ -88,7 +86,6 @@ const luaLanguage: Language = {
       inlineVariables,
       forArgvToForRange(),
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       mapOps({
         dec_to_int: (a) => op.add(int(0n), implicitConversion("dec_to_int", a)),
       }),
@@ -99,10 +96,8 @@ const luaLanguage: Language = {
       pickAnyInt,
       forArgvToForRange(),
       forEachToForRange,
-      atTextToListToAtText,
       rangeExclusiveToInclusive(),
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       startsWithEndsWithToSliceEquality("byte"),
       mapOps({
         dec_to_int: (a) => op.mul(int(1n), implicitConversion("dec_to_int", a)),

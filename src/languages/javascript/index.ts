@@ -49,11 +49,7 @@ import {
 import {
   charToIntToDec,
   ordToDecToInt,
-  atTextToListToAtText,
   replaceToSplitAndJoin,
-  textGetToIntToTextGet,
-  textToIntToFirstIndexTextGetToInt,
-  textToIntToTextGetToInt,
 } from "../../plugins/textOps";
 import { addOneToManyAssignments, inlineVariables } from "../../plugins/block";
 import {
@@ -85,11 +81,10 @@ const javascriptLanguage: Language = {
     simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       golfStringListLiteral(),
-      forRangeToForEach("at[Array]", "at[List]", "at[codepoint]"),
+      forRangeToForEach,
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
-      textToIntToTextGetToInt,
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -104,7 +99,6 @@ const javascriptLanguage: Language = {
       ...divisionToComparisonAndBack,
     ),
     required(
-      atTextToListToAtText,
       pickAnyInt,
       floodBigints("int53", {
         Assignment: "bigint",
@@ -153,9 +147,7 @@ const javascriptLanguage: Language = {
       }),
 
       ...truncatingOpsPlugins,
-      textGetToIntToTextGet,
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       mapMutationTo.method({
         append: "push",
       }),

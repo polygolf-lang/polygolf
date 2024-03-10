@@ -34,6 +34,7 @@ import {
   isPhysicalOpCode,
   isVirtualOpCode,
   virtualOpCodeDefinitions,
+  VirtualOpCode,
 } from "./IR";
 import { mapObjectValues, useDefaults } from "../common/arrays";
 
@@ -298,8 +299,8 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
             isInt()(x)
               ? int(-x.value)
               : x === toNegate
-              ? op.unsafe("add")(...(x as Op).args.map(op.neg))
-              : x,
+                ? op.unsafe("add")(...(x as Op).args.map(op.neg))
+                : x,
           );
         }
       }
@@ -663,8 +664,22 @@ export const isOp: {
 } & (<O extends PhysicalOpCode>(...op: O[]) => (x: Node) => x is Op<O>) =
   _isOp as any;
 
+function _argsOf<O extends VirtualOpCode>(
+  op: O,
+): (x: Op) => OpCodeArgValues<O> | undefined {
+  return (node: Op) => virtualOpCodeDefinitions[op].getArgs(node) as any;
+}
+
+export const argsOf: {
+  [O in VirtualOpCode]: (x: Node) => OpCodeArgValues<O> | undefined;
+} & (<O extends VirtualOpCode>(
+  op: O,
+) => (x: Node) => OpCodeArgValues<O> | undefined) = _argsOf as any;
+
 for (const opCode of OpCodes) {
   if (isPhysicalOpCode(opCode)) {
     isOp[opCode] = _isOp(opCode) as any;
+  } else {
+    argsOf[opCode] = _argsOf(opCode) as any;
   }
 }

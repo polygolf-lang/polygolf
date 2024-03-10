@@ -38,7 +38,6 @@ import {
 import {
   charToIntToDec,
   decToIntToOrd,
-  atTextToListToAtText,
   usePrimaryTextOps,
 } from "../../plugins/textOps";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
@@ -106,7 +105,6 @@ const janetLanguage: Language = {
       comparisonToDivision,
     ),
     required(
-      atTextToListToAtText,
       mapOps({
         argv: () => func("slice", func("dyn", builtin(":args")), int(1n)),
 

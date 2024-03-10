@@ -60,14 +60,11 @@ import {
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import {
-  textGetToIntToTextGet,
-  textToIntToTextGetToInt,
   usePrimaryTextOps,
   useMultireplace,
   startsWithEndsWithToSliceEquality,
   charToIntToDec,
   ordToDecToInt,
-  atTextToListToAtText,
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
@@ -106,7 +103,7 @@ const pythonLanguage: Language = {
       golfStringListLiteral(),
       listOpsToTextOps("find[codepoint]", "at[codepoint]"),
       tempVarToMultipleAssignment,
-      forRangeToForEach("at[List]", "at[codepoint]"),
+      forRangeToForEach,
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
@@ -171,8 +168,6 @@ const pythonLanguage: Language = {
       indexlessForRangeToForAscii,
     ),
     required(
-      atTextToListToAtText,
-      textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps({
         true: () => int(1),

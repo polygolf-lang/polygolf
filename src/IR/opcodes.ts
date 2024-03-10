@@ -251,6 +251,12 @@ export const VirtualOpCodes = [
   "size[byte]",
   "size[codepoint]",
   "size[Ascii]",
+  "ord_at[byte]",
+  "ord_at[codepoint]",
+  "ord_at[Ascii]",
+  "ord_at_back[byte]",
+  "ord_at_back[codepoint]",
+  "ord_at_back[Ascii]",
 ] as const satisfies readonly AnyOpCode[];
 export type VirtualOpCode = (typeof VirtualOpCodes)[number];
 
@@ -481,6 +487,90 @@ export const virtualOpCodeDefinitions = {
         isOp["text_to_list[Ascii]"](node.args[0])
       ) {
         return [node.args[0].args[0]];
+      }
+    },
+  },
+  "ord_at[byte]": {
+    construct(text, index) {
+      return op["ord[byte]"](op["at[byte]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[byte]"](node) &&
+        isOp["at[List]"](node.args[0]) &&
+        isOp["text_to_list[byte]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at[codepoint]": {
+    construct(text, index) {
+      return op["ord[codepoint]"](op["at[codepoint]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[codepoint]"](node) &&
+        isOp["at[List]"](node.args[0]) &&
+        isOp["text_to_list[codepoint]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at[Ascii]": {
+    construct(text, index) {
+      return op["ord[Ascii]"](op["at[Ascii]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[Ascii]"](node) &&
+        isOp["at[List]"](node.args[0]) &&
+        isOp["text_to_list[Ascii]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at_back[byte]": {
+    construct(text, index) {
+      return op["ord[byte]"](op["at_back[byte]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[byte]"](node) &&
+        isOp["at_back[List]"](node.args[0]) &&
+        isOp["text_to_list[byte]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at_back[codepoint]": {
+    construct(text, index) {
+      return op["ord[codepoint]"](op["at_back[codepoint]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[codepoint]"](node) &&
+        isOp["at_back[List]"](node.args[0]) &&
+        isOp["text_to_list[codepoint]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at_back[Ascii]": {
+    construct(text, index) {
+      return op["ord[Ascii]"](op["at_back[Ascii]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[Ascii]"](node) &&
+        isOp["at_back[List]"](node.args[0]) &&
+        isOp["text_to_list[Ascii]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
       }
     },
   },

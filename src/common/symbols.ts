@@ -251,7 +251,7 @@ export function readsFromStdin(node: Node): boolean {
 }
 
 export function readsFromArgv(node: Node): boolean {
-  return node.kind === "ForArgv" || isOp("argv", "at[argv]")(node);
+  return node.kind === "ForArgv" || isOp("argv")(node);
 }
 
 export function readsFromInput(node: Node): boolean {

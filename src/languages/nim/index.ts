@@ -67,15 +67,12 @@ import {
 import { tableHashing, tableToListLookup } from "../../plugins/tables";
 import hash from "./hash";
 import {
-  textToIntToTextGetToInt,
-  textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
   useMultireplace,
   startsWithEndsWithToSliceEquality,
   charToIntToDec,
   ordToDecToInt,
   decToIntToOrd,
-  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
 import {
@@ -114,7 +111,7 @@ const nimLanguage: Language = {
       flipBinaryOps,
       golfStringListLiteral(),
       listOpsToTextOps("find[byte]", "at[byte]"),
-      forRangeToForEach("at[Array]", "at[List]", "at[byte]"),
+      forRangeToForEach,
       tempVarToMultipleAssignment,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
@@ -126,7 +123,6 @@ const nimLanguage: Language = {
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
-      textToIntToTextGetToInt,
       forRangeToForRangeOneStep,
       useMultireplace(),
       inlineVariables,
@@ -141,7 +137,6 @@ const nimLanguage: Language = {
     ),
     simplegolf(safeConditionalOpToAt("Array")),
     required(
-      atTextToListToAtText,
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
@@ -151,7 +146,6 @@ const nimLanguage: Language = {
       removeUnusedLoopVar,
       rangeExclusiveToInclusive(true),
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       useUnsignedDivision,
       useBackwardsIndex,
       mapBackwardsIndexToForwards({

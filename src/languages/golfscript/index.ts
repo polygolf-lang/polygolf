@@ -65,10 +65,8 @@ import {
 } from "../../plugins/arithmetic";
 import {
   usePrimaryTextOps,
-  textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
   startsWithEndsWithToSliceEquality,
-  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
 import { GolfscriptEmitter } from "./emit";

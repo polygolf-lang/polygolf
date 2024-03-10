@@ -31,6 +31,7 @@ import {
   type BinaryOpCode,
   implicitConversion,
   isForEachChar,
+  PhysicalOpCode,
 } from "../IR";
 import { byteLength, charLength } from "../common/strings";
 import { PolygolfError } from "../common/errors";
@@ -93,64 +94,48 @@ export function forRangeToForCLike(node: Node, spine: Spine) {
  * for x in collection:
  *     commands(x)
  */
-type GetOp = OpCode & ("at[Array]" | "at[List]" | "at[byte]" | "at[codepoint]");
-export function forRangeToForEach(...ops: GetOp[]): PluginVisitor {
-  if (ops.includes("at[byte]") && ops.includes("at[codepoint]"))
-    throw new Error(
-      "Programming error. Choose only one of 'at[byte]' && 'at[codepoint]'.",
-    );
-  const lengthOpToGetOp = new Map([
-    ["size[Array]", "at[Array]"],
-    ["size[List]", "at[List]"],
-    ["size[byte]", "at[byte]"],
-    ["size[codepoint]", "at[codepoint]"],
-  ]);
-  return function forRangeToForEach(node, spine) {
+export function forRangeToForEach(node: Node, spine: Spine) {
+  if (
+    isForEachRange(node) &&
+    node.collection.op === "range_excl" &&
+    node.variable !== undefined
+  ) {
+    const [start, end, step] = node.collection.args;
     if (
-      isForEachRange(node) &&
-      node.collection.op === "range_excl" &&
-      node.variable !== undefined
+      isInt(0n)(start) &&
+      isInt(1n)(step) &&
+      ((isOp["size[List]"](end) && isIdent()(end.args[0]!)) || isInt()(end))
     ) {
-      const [start, end, step] = node.collection.args;
-      if (
-        isInt(0n)(start) &&
-        isInt(1n)(step) &&
-        ((isOp()(end) &&
-          ops.includes(lengthOpToGetOp.get(end.op) as any) &&
-          isIdent()(end.args[0]!)) ||
-          isInt()(end))
-      ) {
-        const indexVar = node.variable;
-        const bodySpine = spine.getChild($.body);
-        const knownLength = isInt()(end) ? Number(end.value) : undefined;
-        const allowedOps = isInt()(end)
-          ? ops
-          : [lengthOpToGetOp.get(end.op) as GetOp];
-        const collectionVar = isInt()(end)
-          ? undefined
-          : (end.args[0] as Identifier);
-        const indexedCollection = getIndexedCollection(
-          bodySpine,
-          indexVar,
-          allowedOps,
-          knownLength,
-          collectionVar,
-        );
-        if (indexedCollection !== null) {
-          const elementIdentifier = id(node.variable.name + "+each");
-          const newBody = bodySpine.withReplacer((n) => {
-            if (
-              isOp()(n) &&
-              n.args[0] === indexedCollection &&
-              isUserIdent(indexVar.name)(n.args[1]!)
-            )
-              return elementIdentifier;
-          }).node;
-          return forEach(elementIdentifier, indexedCollection, newBody);
-        }
+      const indexVar = node.variable;
+      const bodySpine = spine.getChild($.body);
+      const knownLength = isInt()(end) ? Number(end.value) : undefined;
+      const allowedOps = isInt()(end)
+        ? ops
+        : [lengthOpToGetOp.get(end.op) as GetOp];
+      const collectionVar = isInt()(end)
+        ? undefined
+        : (end.args[0] as Identifier);
+      const indexedCollection = getIndexedCollection(
+        bodySpine,
+        indexVar,
+        allowedOps,
+        knownLength,
+        collectionVar,
+      );
+      if (indexedCollection !== null) {
+        const elementIdentifier = id(node.variable.name + "+each");
+        const newBody = bodySpine.withReplacer((n) => {
+          if (
+            isOp()(n) &&
+            n.args[0] === indexedCollection &&
+            isUserIdent(indexVar.name)(n.args[1]!)
+          )
+            return elementIdentifier;
+        }).node;
+        return forEach(elementIdentifier, indexedCollection, newBody);
       }
     }
-  };
+  }
 }
 
 /**

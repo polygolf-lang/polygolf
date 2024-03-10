@@ -30,6 +30,7 @@ import {
   type OpCodeArgValues,
   defaults,
   isEqualToLiteral,
+  PhysicalOpCode,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -370,7 +371,7 @@ export const mapMutationTo = {
 
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {
-  if (isOp(...BinaryOpCodes)(node)) {
+  if (isOp(...(BinaryOpCodes as (BinaryOpCode & PhysicalOpCode)[]))(node)) {
     if (node.op in flippedOpCode) {
       return op.unsafe(flippedOpCode[node.op as keyof typeof flippedOpCode])(
         node.args[1],

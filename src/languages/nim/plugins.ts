@@ -13,6 +13,7 @@ import {
   type OpCode,
   isBuiltinIdent,
   isText,
+  PhysicalOpCode,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { addImports } from "../../plugins/imports";
@@ -113,7 +114,9 @@ export function useBackwardsIndex(node: Node, spine: Spine) {
         1,
         prefix(
           "system.^",
-          op.neg((node as Op<`${string}at_back${string}` & OpCode>).args[1]),
+          op.neg(
+            (node as Op<`${string}at_back${string}` & PhysicalOpCode>).args[1],
+          ),
         ),
       ),
     );

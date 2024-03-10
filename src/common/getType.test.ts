@@ -57,11 +57,11 @@ function testNode(
 
 function testOp(
   name: string,
-  op: OpCode,
+  opCode: OpCode,
   args: Type[],
   result: Type | "error",
 ) {
-  testNode(name, { kind: "Op", op, args: args.map(e) as any }, result);
+  testNode(name, op.unsafe(opCode)(...args.map(e)), result);
 }
 
 function describeOp(op: OpCode, tests: [Type[], Type | "error"][]) {

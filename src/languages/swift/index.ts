@@ -57,11 +57,9 @@ import {
 } from "../../plugins/loops";
 import {
   usePrimaryTextOps,
-  textToIntToTextGetToInt,
   replaceToSplitAndJoin,
   ordToDecToInt,
   charToIntToDec,
-  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
@@ -101,7 +99,6 @@ const swiftLanguage: Language = {
       forRangeToForRangeOneStep,
       inlineVariables,
       replaceToSplitAndJoin,
-      textToIntToTextGetToInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps({
@@ -116,7 +113,6 @@ const swiftLanguage: Language = {
       decomposeIntLiteral(),
     ),
     required(
-      atTextToListToAtText,
       mapBackwardsIndexToForwards({
         "at_back[Ascii]": "size[Ascii]",
         "at_back[byte]": "size[byte]",
