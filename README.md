@@ -32,7 +32,7 @@ npm install . --location=global
 
 This will set up the `polygolf` command to point to the CLI script.
 
-Polygolf CLI supports the following options::
+Polygolf CLI supports the following options:
 
 - `--input`, `-i`: path to the input program
 - `--lang`, `-l`: target language name or its extension, if omitted, targets all supported languages

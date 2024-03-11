@@ -10,6 +10,7 @@ import {
   int,
   id,
   func,
+  ifStatement,
   whileLoop,
   forArgv,
   conditional,
@@ -152,7 +153,7 @@ const features: CoverTableRecipe = {
   builtin: (lang) => lang.stmt(nextBuiltin(integerType(0, 0))),
   discard: (lang) => lang.expr(),
   bigint: (lang) => lang.stmt(int(10n ** 40n)),
-  if: (lang) => lang.stmt(int(10n ** 40n)),
+  if: (lang) => ifStatement(lang.expr(booleanType), lang.stmt(), lang.stmt()),
   for: (lang) =>
     forRangeCommon(
       [
