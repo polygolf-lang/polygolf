@@ -10,7 +10,6 @@ import {
   int,
   id,
   func,
-  ifStatement,
   whileLoop,
   forArgv,
   conditional,
