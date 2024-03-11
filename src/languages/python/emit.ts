@@ -10,6 +10,7 @@ import {
   emitIntLiteral,
   emitTextFactory,
   getIfChain,
+  joinTrees,
 } from "../../common/emit";
 import { isInt, isText, id, type Node, type If } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
@@ -136,7 +137,7 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
           spine.isRoot || containsMultiNode(n.children) ? "\n" : ";",
         );
       case "Import":
-        throw new Error();
+        return [n.name, joinTrees(",", n.modules)];
       case "While":
         return [`while`, $.condition, ":", multiNode($.body)];
       case "ForEach":
