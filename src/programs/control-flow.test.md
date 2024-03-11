@@ -365,7 +365,7 @@ $b <- $a;
 _Janet_
 
 ```janet nogolf
-(var a @[1 2 3])(var b(array/slice a 0 -1))
+(var a @[1 2 3])(var b @[;a])
 ```
 
 _Javascript_
@@ -401,6 +401,12 @@ var a=[1,2,3],b=a
 ```polygolf
 $a <- (list (list 1 2 3) (list 4 5 6) (list 7 8 9));
 $b <- $a;
+```
+
+_Janet_
+
+```janet nogolf
+(var a @[@[1 2 3]@[4 5 6]@[7 8 9]])(var b(thaw a))
 ```
 
 _Javascript_

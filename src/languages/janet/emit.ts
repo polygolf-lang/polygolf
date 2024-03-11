@@ -45,6 +45,11 @@ export class JanetEmitter extends VisitorEmitter {
     const prop = spine.pathFragment?.prop;
 
     switch (n.kind) {
+      case "Cast":
+        if (n.targetType === "array") {
+          return ["@[;", "$GLUE$", $.expr, "]"];
+        }
+        throw new EmitError(n, "unsuported cast target type");
       case "Block": {
         return prop === "consequent" || prop === "alternate"
           ? list("do", $.children.join())

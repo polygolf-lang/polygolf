@@ -29,6 +29,7 @@ import {
   isInt,
   intToDecOpOrText,
   isForEachChar,
+  cast,
 } from "../../IR";
 import {
   golfLastPrint,
@@ -220,8 +221,9 @@ const janetLanguage: Language = {
           type.kind === "List" &&
           ["boolean", "integer", "text"].includes(type.member.kind)
         ) {
-          return func("array/slice", node, int(0), int(-1));
+          return cast(node, "array");
         }
+        return func("thaw", node);
       }),
     ),
     simplegolf(
