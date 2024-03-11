@@ -13,7 +13,13 @@ import {
   getNodeFunc,
   isText,
   builtin,
+  type Type,
+  toString,
 } from "../IR";
+import { getType } from "../common/getType";
+import { PolygolfError } from "../common/errors";
+import { $ } from "../common/fragments";
+import type { CompilationContext } from "@/common/compile";
 
 function getIdentMap(
   spine: Spine<IR.Node>,
@@ -140,6 +146,37 @@ export function useBuiltinAliases(builtins: Record<string, string>) {
   return function (node: Node) {
     if (isText()(node) && node.value in builtins) {
       return builtin(builtins[node.value]);
+    }
+  };
+}
+
+export function clone(
+  mapping: (n: Node, t: Type, s: Spine) => Node | undefined,
+) {
+  function isAliasing(spine: Spine): boolean {
+    return (
+      isUserIdent()(spine.node) ||
+      (spine.node.kind === "ConditionalOp" &&
+        [$.consequent, $.alternate].some((x) => isAliasing(spine.getChild(x))))
+    );
+  }
+  return function clone(node: Node, spine: Spine, context: CompilationContext) {
+    if (
+      !spine.isRoot &&
+      spine.parent!.node.kind === "Assignment" &&
+      spine.pathFragment?.prop === "expr" &&
+      isAliasing(spine)
+    ) {
+      const type = getType(node, spine);
+      const res = mapping(node, type, spine);
+      if (res === undefined) {
+        throw new PolygolfError(
+          `Could not clone an identifier of type ${toString(type)}`,
+          node.source,
+        );
+      }
+      context.skipChildren();
+      return res;
     }
   };
 }

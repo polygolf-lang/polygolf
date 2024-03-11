@@ -40,7 +40,7 @@ import {
   flipped,
   withDefaults,
 } from "../../plugins/ops";
-import { alias, renameIdents } from "../../plugins/idents";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forRangeToForEach,
@@ -371,6 +371,17 @@ const pythonLanguage: Language = {
       mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
       useImplicitForCast,
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+        if (type.kind === "List" || type.kind === "Set") {
+          if (["boolean", "integer", "text"].includes(type.member.kind)) {
+            return cast(node, type.kind.toLowerCase());
+          }
+          return func("copy.deepcopy", node);
+        }
+      }),
     ),
     simplegolf(
       addOneToManyAssignments(),
@@ -392,7 +403,11 @@ const pythonLanguage: Language = {
     ),
     required(
       renameIdents(),
-      addImports({ sys: ["sys.argv[1:]", "sys.argv"], math: ["math.gcd"] }),
+      addImports({
+        sys: ["sys.argv[1:]", "sys.argv"],
+        math: ["math.gcd"],
+        copy: ["copy.deepcopy"],
+      }),
       removeImplicitConversions,
     ),
   ],

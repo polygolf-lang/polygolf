@@ -312,3 +312,72 @@ _Swift_
 var a = -20,n=20,k=3
 for x in stride(from:a,to:n,by:k){print(x)}
 ```
+
+## Cloning a list of ints
+
+```polygolf
+$a <- (list 1 2 3);
+$b <- $a;
+```
+
+_Janet_
+
+```janet nogolf
+(var a @[1 2 3])(var b(array/slice a 0 -1))
+```
+
+_Javascript_
+
+```js nogolf
+a=[1,2,3]
+b=[...a]
+```
+
+_Nim_
+
+```nim nogolf
+var
+ a= @[1,2,3]
+ b=toSeq(a)
+```
+
+_Python_
+
+```py nogolf
+a=[1,2,3]
+b=[*a]
+```
+
+_Swift_
+
+```swift nogolf
+var a=[1,2,3],b=a
+```
+
+## Cloning a list of lists of ints
+
+```polygolf
+$a <- (list (list 1 2 3) (list 4 5 6) (list 7 8 9));
+$b <- $a;
+```
+
+_Javascript_
+
+```js nogolf
+a=[[1,2,3],[4,5,6],[7,8,9]]
+b=structuredClone(a)
+```
+
+_Python_
+
+```py nogolf
+import copy
+a=[[1,2,3],[4,5,6],[7,8,9]]
+b=copy.deepcopy(a)
+```
+
+_Swift_
+
+```swift nogolf
+var a=[[1,2,3],[4,5,6],[7,8,9]],b=a
+```

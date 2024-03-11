@@ -42,7 +42,7 @@ import {
   useUFCS,
   useUnsignedDivision,
 } from "./plugins";
-import { alias, renameIdents } from "../../plugins/idents";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forArgvToForRange,
@@ -320,6 +320,17 @@ const nimLanguage: Language = {
     ),
     required(
       renameIdents(),
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+        if (
+          type.kind === "List" &&
+          ["boolean", "integer", "text"].includes(type.member.kind)
+        ) {
+          return func("toSeq", node);
+        }
+      }),
       addVarDeclarations,
       addVarDeclarationOneToManyAssignments(),
       addVarDeclarationManyToManyAssignments((_, spine) => spine.depth > 1),

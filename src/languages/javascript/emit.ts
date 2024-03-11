@@ -140,6 +140,11 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
 
   visitNoParens(n: Node, s: Spine, context: CompilationContext) {
     switch (n.kind) {
+      case "Cast":
+        if (n.targetType === "array") {
+          return ["[...", $.expr, "]"];
+        }
+        throw new EmitError(n, "unsuported cast target type");
       case "VarDeclarationWithAssignment":
         return ["let", $.assignment];
       case "Block":

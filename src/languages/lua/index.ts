@@ -32,7 +32,7 @@ import {
   mapBackwardsIndexToForwards,
   mapMutationTo,
 } from "../../plugins/ops";
-import { alias, renameIdents } from "../../plugins/idents";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import {
   tempVarToMultipleAssignment,
   inlineVariables,
@@ -218,6 +218,11 @@ const luaLanguage: Language = {
         bit_not: "~",
       }),
       mapOpsTo.infix({ mul: "*" }),
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+      }),
     ),
     simplegolf(
       alias({

@@ -11,6 +11,7 @@ import {
   implicitConversion,
   list,
   prefix,
+  cast,
 } from "../../IR";
 import {
   type Language,
@@ -29,7 +30,7 @@ import {
   mapMutationTo,
   flipped,
 } from "../../plugins/ops";
-import { alias, renameIdents } from "../../plugins/idents";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forRangeToForCLike,
@@ -292,6 +293,20 @@ const javascriptLanguage: Language = {
       methodsAsFunctions,
     ),
     simplegolf(addOneToManyAssignments()),
+    required(
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+        if (
+          type.kind === "List" &&
+          ["boolean", "integer", "text"].includes(type.member.kind)
+        ) {
+          return cast(node, "array");
+        }
+        return func("structuredClone", node);
+      }),
+    ),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({
