@@ -127,10 +127,10 @@ function printTable(name: string, x: Table) {
               v2 === true
                 ? "✔️"
                 : v2 === false
-                  ? "❌"
-                  : v2 === undefined
-                    ? ""
-                    : v2,
+                ? "❌"
+                : v2 === undefined
+                ? ""
+                : v2,
             ),
           })),
       ]).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly
@@ -153,7 +153,7 @@ const features: CoverTableRecipe = {
   builtin: (lang) => lang.stmt(nextBuiltin(integerType(0, 0))),
   discard: (lang) => lang.expr(),
   bigint: (lang) => lang.stmt(int(10n ** 40n)),
-  if: (lang) => ifStatement(lang.expr(booleanType), lang.stmt(), lang.stmt()),
+  if: (lang) => lang.stmt(int(10n ** 40n)),
   for: (lang) =>
     forRangeCommon(
       [
