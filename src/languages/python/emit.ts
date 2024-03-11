@@ -10,7 +10,6 @@ import {
   emitIntLiteral,
   emitTextFactory,
   getIfChain,
-  joinTrees,
 } from "../../common/emit";
 import { isInt, isText, id, type Node, type If } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
