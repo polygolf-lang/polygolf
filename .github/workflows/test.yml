@@ -26,9 +26,9 @@ jobs:
         with:
           ref: main
           path: main-branch
-      run: |
-        cd main-branch
-        npm run cover-all
-      run: |
-        cd ..
-        npm run cover-all:compare -- --base main-branch/cover-all.json --compare cover-all.json
+      - run: |
+          cd main-branch
+          npm run cover-all
+      - run: |
+          cd ..
+          npm run cover-all:compare -- --base main-branch/cover-all.json --compare cover-all.json
