@@ -195,12 +195,15 @@ const clojureLanguage: Language = {
       }),
     ),
     simplegolf(
-      alias({
-        Identifier: (n, s) =>
-          n.builtin && s.pathFragment?.prop !== "ident" ? n.name : undefined,
-        Integer: (x) => x.value.toString(),
-        Text: (x) => `"${x.value}"`,
-      }),
+      alias(
+        {
+          Identifier: (n, s) =>
+            n.builtin && s.pathFragment?.prop !== "ident" ? n.name : undefined,
+          Integer: (x) => x.value.toString(),
+          Text: (x) => `"${x.value}"`,
+        },
+        [1, 7],
+      ),
     ),
     required(renameIdents(), removeImplicitConversions, assertInt64),
   ],
