@@ -22,3 +22,13 @@ jobs:
       - run: npm run test:build
       - run: npm run test:jest
       - run: npm run cover-all
+      - uses: actions/checkout@v2
+        with:
+          ref: main
+          path: main-branch
+      run: |
+        cd main-branch
+        npm run cover-all
+      run: |
+        cd ..
+        npm run cover-all:compare -- --base main-branch/cover-all.json --compare cover-all.json
