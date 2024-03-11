@@ -29,6 +29,7 @@ import {
   isSubtype,
   type OpCode,
   forRangeCommon,
+  block,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
@@ -148,6 +149,13 @@ const features: CoverTableRecipe = {
   assignment: (lang) => assignment(id("x"), lang.expr()),
   builtin: (lang) => lang.stmt(nextBuiltin(integerType(0, 0))),
   discard: (lang) => lang.expr(),
+  "list clone": (lang) =>
+    block([assignment("x", list([lang.expr()])), assignment("y", id("x"))]),
+  "list of list clone": (lang) =>
+    block([
+      assignment("x", list([list([lang.expr()])])),
+      assignment("y", id("x")),
+    ]),
   bigint: (lang) => lang.stmt(int(10n ** 40n)),
   if: (lang) => ifStatement(lang.expr(booleanType), lang.stmt(), lang.stmt()),
   for: (lang) =>
