@@ -104,17 +104,17 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
     return prop === "object"
       ? Infinity
       : prop === "collection" &&
-        (kind === "IndexCall" || kind === "RangeIndexCall")
-      ? Infinity
-      : kind === "ConditionalOp"
-      ? this.prec(parent) + (prop === "alternate" ? 0 : 1)
-      : kind === "Infix"
-      ? prop === "left"
-        ? this.prec(parent) + (parent.name === "**" ? 1 : 0)
-        : this.prec(parent) + (parent.name === "**" ? 0 : 1)
-      : kind === "Prefix" || kind === "Postfix"
-      ? this.prec(parent)
-      : -Infinity;
+          (kind === "IndexCall" || kind === "RangeIndexCall")
+        ? Infinity
+        : kind === "ConditionalOp"
+          ? this.prec(parent) + (prop === "alternate" ? 0 : 1)
+          : kind === "Infix"
+            ? prop === "left"
+              ? this.prec(parent) + (parent.name === "**" ? 1 : 0)
+              : this.prec(parent) + (parent.name === "**" ? 0 : 1)
+            : kind === "Prefix" || kind === "Postfix"
+              ? this.prec(parent)
+              : -Infinity;
   }
 
   visitNoParens(n: Node, spine: Spine, context: CompilationContext) {
