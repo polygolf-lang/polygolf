@@ -29,6 +29,4 @@ jobs:
       - run: |
           cd main-branch
           npm run cover-all
-      - run: |
-          cd ..
-          npm run cover-all:compare -- --base main-branch/cover-all.json --compare cover-all.json
+      - run: npm run cover-all:compare -- --base main-branch/cover-all.json --compare cover-all.json
