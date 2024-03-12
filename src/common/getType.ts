@@ -748,7 +748,7 @@ function resolveUnresolvedOpCode(
     getType(x, program),
   );
 
-  return { type: _getOpCodeTypeFromTypes(opCode as any, got), opCode };
+  return { type: getOpCodeTypeFromTypes(opCode, got), opCode };
 }
 
 export function getArithmeticType(
