@@ -39,7 +39,6 @@ import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
-  putcToPrintChar,
   mergePrint,
 } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
@@ -121,7 +120,6 @@ const swiftLanguage: Language = {
         "slice_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
-      putcToPrintChar,
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,

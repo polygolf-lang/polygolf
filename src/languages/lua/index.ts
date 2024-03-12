@@ -40,7 +40,6 @@ import {
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
-  putcToPrintChar,
   mergePrint,
 } from "../../plugins/print";
 import {
@@ -70,7 +69,7 @@ const luaLanguage: Language = {
   extension: "lua",
   emitter: new LuaEmitter(),
   phases: [
-    required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
+    required(printIntToPrint, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       mergePrint,

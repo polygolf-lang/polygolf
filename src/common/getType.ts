@@ -555,10 +555,6 @@ function _getOpCodeTypeFromTypes(
       return int(0, 2 ** 31 - 1);
     case "argv":
       return list(text());
-    case "putc[byte]":
-    case "putc[codepoint]":
-    case "putc[Ascii]":
-      return voidType;
     case "print[Text]":
     case "println[Text]":
       return voidType;

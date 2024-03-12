@@ -23,11 +23,7 @@ import {
   text,
   intToDecOpOrText,
 } from "../../IR";
-import {
-  golfLastPrint,
-  golfLastPrintInt,
-  putcToPrintChar,
-} from "../../plugins/print";
+import { golfLastPrint, golfLastPrintInt } from "../../plugins/print";
 import { usePrimaryTextOps } from "../../plugins/textOps";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
@@ -48,7 +44,7 @@ const clojureLanguage: Language = {
   extension: "clj",
   emitter: new ClojureEmitter(),
   phases: [
-    required(arraysToLists, putcToPrintChar, usePrimaryTextOps("codepoint")),
+    required(arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint(false), golfLastPrintInt(false)),
     search(
       flipBinaryOps,

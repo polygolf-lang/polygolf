@@ -36,11 +36,7 @@ import {
   useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
-import {
-  golfLastPrint,
-  implicitlyConvertPrintArg,
-  putcToPrintChar,
-} from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
@@ -120,7 +116,6 @@ const javascriptLanguage: Language = {
       }),
       mapVarsThatNeedBigint("int53", (x) => func("BigInt", x)),
       forArgvToForEach,
-      putcToPrintChar,
     ),
     required(
       useImplicitForEachChar("Ascii"),

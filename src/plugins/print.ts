@@ -91,12 +91,6 @@ export function printConcatToMultiPrint(node: Node, spine: Spine) {
   }
 }
 
-export const putcToPrintChar = mapOps({
-  "putc[Ascii]": (a) => op["print[Text]"](op["char[Ascii]"](a)),
-  "putc[byte]": (a) => op["print[Text]"](op["char[byte]"](a)),
-  "putc[codepoint]": (a) => op["print[Text]"](op["char[codepoint]"](a)),
-});
-
 export function mergePrint(
   program: Node,
   spine: Spine,

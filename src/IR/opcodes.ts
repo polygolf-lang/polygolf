@@ -274,6 +274,9 @@ export const VirtualOpCodes = [
   "last[byte]",
   "last[codepoint]",
   "last[List]",
+  "putc[Ascii]",
+  "putc[byte]",
+  "putc[codepoint]",
 ] as const satisfies readonly AnyOpCode[];
 export type VirtualOpCode = (typeof VirtualOpCodes)[number];
 
@@ -712,6 +715,37 @@ export const virtualOpCodeDefinitions = {
         isInt(-1n)(node.args[1]) &&
         isOp["text_to_list[codepoint]"](node.args[0])
       ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+
+  "putc[Ascii]": {
+    construct(a) {
+      return op["print[Text]"](op["char[Ascii]"](a));
+    },
+    getArgs(node) {
+      if (isOp["print[Text]"](node) && isOp["char[Ascii]"](node.args[0])) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "putc[byte]": {
+    construct(a) {
+      return op["print[Text]"](op["char[byte]"](a));
+    },
+    getArgs(node) {
+      if (isOp["print[Text]"](node) && isOp["char[byte]"](node.args[0])) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "putc[codepoint]": {
+    construct(a) {
+      return op["print[Text]"](op["char[codepoint]"](a));
+    },
+    getArgs(node) {
+      if (isOp["print[Text]"](node) && isOp["char[codepoint]"](node.args[0])) {
         return [node.args[0].args[0]];
       }
     },

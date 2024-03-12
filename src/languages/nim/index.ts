@@ -57,7 +57,6 @@ import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
-  putcToPrintChar,
   mergePrint,
 } from "../../plugins/print";
 import {
@@ -104,7 +103,7 @@ const nimLanguage: Language = {
   extension: "nim",
   emitter: new NimEmitter(),
   phases: [
-    required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
+    required(printIntToPrint, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(), charToIntToDec),
     search(
       mergePrint,

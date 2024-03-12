@@ -42,7 +42,6 @@ import {
   printConcatToMultiPrint,
   printLnToPrint,
   printToImplicitOutput,
-  putcToPrintChar,
   splitPrint,
 } from "../../plugins/print";
 import {
@@ -95,7 +94,6 @@ const golfscriptLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
       removeUnusedLoopVar,
       forRangeToForDifferenceRange(

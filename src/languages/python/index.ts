@@ -48,11 +48,7 @@ import {
   removeUnusedLoopVar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
-import {
-  golfLastPrint,
-  implicitlyConvertPrintArg,
-  putcToPrintChar,
-} from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   packSource2to1,
   packSource3to1,
@@ -124,7 +120,6 @@ const pythonLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      putcToPrintChar,
       {
         ...mapOps({
           argv: () => builtin("sys.argv[1:]"),

@@ -29,11 +29,7 @@ import {
   intToDecOpOrText,
   isForEachChar,
 } from "../../IR";
-import {
-  golfLastPrint,
-  golfLastPrintInt,
-  putcToPrintChar,
-} from "../../plugins/print";
+import { golfLastPrint, golfLastPrintInt } from "../../plugins/print";
 import {
   charToIntToDec,
   decToIntToOrd,
@@ -60,7 +56,7 @@ const janetLanguage: Language = {
   extension: "janet",
   emitter: new JanetEmitter(),
   phases: [
-    required(arraysToLists, putcToPrintChar, usePrimaryTextOps("byte")),
+    required(arraysToLists, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false), golfLastPrintInt(true)),
     search(
       flipBinaryOps,
