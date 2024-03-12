@@ -29,10 +29,12 @@ import {
   isForEachExclRange,
   type Identifier,
   type List,
+  isText,
 } from "../IR";
 import { PolygolfError } from "../common/errors";
 import { mapOps } from "./ops";
 import { $ } from "../common/fragments";
+import { byteLength, charLength } from "../common/strings";
 
 export function rangeExclusiveToInclusive(skip1Step = false): Plugin {
   return mapOps({
@@ -108,10 +110,7 @@ export function forRangeToForEach(node: Node, spine: Spine) {
         spine.firstNode((node) => {
           if (isOp["at[List]"](node)) {
             const collection = node.args[0];
-            return (
-              collection.kind === "List" &&
-              collection.value.length === knownLength!
-            );
+            return getKnownListLength(collection) === knownLength!;
           }
           return false;
         }) as Op<"at[List]"> | undefined
@@ -122,7 +121,7 @@ export function forRangeToForEach(node: Node, spine: Spine) {
         const newBody = bodySpine.withReplacer((n) => {
           if (
             isOp["at[List]"](n) &&
-            ((indexedList!.kind === "List" && n.args[0] === indexedList) ||
+            (n.args[0] === indexedList ||
               (indexedList!.kind === "Identifier" &&
                 isUserIdent(indexedList!)(n.args[0]))) &&
             isUserIdent(indexVar.name)(n.args[1])
@@ -134,6 +133,22 @@ export function forRangeToForEach(node: Node, spine: Spine) {
         }
       }
     }
+  }
+}
+
+function getKnownListLength(node: Node): number | undefined {
+  if (node.kind === "List") return node.value.length;
+  if (
+    isOp(
+      "text_to_list[Ascii]",
+      "text_to_list[byte]",
+      "text_to_list[codepoint]",
+    )(node) &&
+    isText()(node.args[0])
+  ) {
+    return (node.op === "text_to_list[codepoint]" ? charLength : byteLength)(
+      node.args[0].value,
+    );
   }
 }
 
