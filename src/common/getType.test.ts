@@ -2,6 +2,7 @@ import {
   assignment,
   block,
   id,
+  uniqueId,
   type Identifier,
   integerType as int,
   textType as text,
@@ -40,7 +41,7 @@ const ascii = (x: number | IntegerType = int(0)) => text(x, true);
 
 /** returns identifier expression of given type */
 function e(type: Type): Identifier {
-  return { ...id(), type };
+  return { ...uniqueId("getTypeTest"), type };
 }
 
 function testNode(

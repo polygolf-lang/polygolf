@@ -56,7 +56,7 @@ import {
   argsOf,
   isVirtualOpCode,
   annotate,
-  id,
+  uniqueId,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -333,7 +333,9 @@ export function getOpCodeTypeFromTypes(
   skipAdditionalChecks = false,
 ): Type {
   if (isVirtualOpCode(opCode)) {
-    const x = op.unsafe(opCode)(...got.map((t) => annotate(id(), t)));
+    const x = op.unsafe(opCode)(
+      ...got.map((t) => annotate(uniqueId("getType"), t)),
+    );
     return getType(x, x);
   }
   return _getOpCodeTypeFromTypes(opCode, got, skipAdditionalChecks);

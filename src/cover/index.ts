@@ -9,6 +9,7 @@ import {
   type Node,
   int,
   id,
+  uniqueId,
   func,
   ifStatement,
   whileLoop,
@@ -205,7 +206,7 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
               opCode + "<-",
               (lang) => {
                 const types = getInstantiatedOpCodeArgTypes(opCode);
-                const variable = { ...id(undefined, true), type: types[0] };
+                const variable = { ...uniqueId("cover", true), type: types[0] };
                 return assignment(
                   variable,
                   op.unsafe(opCode)(

@@ -6,7 +6,6 @@ import {
   type Node,
   op,
   text,
-  id,
   assignment,
   isUserIdent,
   isAssignmentToIdent,
@@ -16,6 +15,7 @@ import {
   type Op,
   isText,
   argsOf,
+  uniqueId,
 } from "../IR";
 import { mapOps } from "./ops";
 import type { VisitorContext } from "../common/compile";
@@ -96,7 +96,7 @@ export function mergePrint(
   context: VisitorContext,
 ) {
   context.skipChildren();
-  const variable = id();
+  const variable = uniqueId();
   if (spine.countNodes(isOp("print[Text]", "println[Text]")) > 1) {
     const newSpine = spine.withReplacer((node) =>
       isOp("print[Text]", "println[Text]")(node)

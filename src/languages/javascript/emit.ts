@@ -4,7 +4,7 @@ import {
   type Token,
 } from "../../common/Language";
 import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
-import { isText, isOfKind, id, type Node } from "../../IR";
+import { isText, isOfKind, type Node, uniqueId } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
 import { $, type PathFragment } from "../../common/fragments";
 import type { Spine } from "../../common/Spine";
@@ -225,7 +225,7 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
         return [
           `for`,
           "(",
-          (n.variable ?? id()).name,
+          (n.variable ?? uniqueId()).name,
           n.collection.targetType === "object" ? "in" : "of",
           $.collection,
           ")",

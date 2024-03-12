@@ -30,6 +30,7 @@ import {
   type Identifier,
   type List,
   isText,
+  uniqueId,
 } from "../IR";
 import { PolygolfError } from "../common/errors";
 import { mapOps } from "./ops";
@@ -73,7 +74,7 @@ export function forRangeToForCLike(node: Node, spine: Spine) {
     if (low.kind !== "integer" || high.kind !== "integer") {
       throw new Error(`Unexpected type (${low.kind},${high.kind})`);
     }
-    const variable = node.variable ?? id();
+    const variable = node.variable ?? uniqueId();
     return forCLike(
       assignment(variable, start),
       op[node.collection.op === "range_incl" ? "leq" : "lt"](variable, end),

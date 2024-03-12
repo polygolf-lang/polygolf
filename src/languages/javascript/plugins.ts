@@ -5,7 +5,6 @@ import {
   indexCall,
   isInt,
   text,
-  id,
   block,
   assignment,
   op,
@@ -18,6 +17,7 @@ import {
   forEach,
   listType,
   isText,
+  uniqueId,
 } from "../../IR";
 import type { CompilationContext } from "../../common/compile";
 
@@ -38,7 +38,7 @@ export function forRangeToForEachKey(node: Node) {
       high.value <= 37
     ) {
       const end = Number(high.value);
-      const loopVar = id(node.variable.name + id().name);
+      const loopVar = uniqueId(node.variable.name);
       return forEach(
         loopVar,
         {
