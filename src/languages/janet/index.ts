@@ -28,6 +28,7 @@ import {
   text,
   intToDecOpOrText,
   isForEachChar,
+  cast,
 } from "../../IR";
 import { golfLastPrint, golfLastPrintInt } from "../../plugins/print";
 import {
@@ -46,7 +47,7 @@ import {
   truncatingOpsPlugins,
 } from "../../plugins/arithmetic";
 import { forArgvToForEach, forEachToForRange } from "../../plugins/loops";
-import { alias, renameIdents } from "../../plugins/idents";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import { assertInt64 } from "../../plugins/types";
 import { implicitlyConvertConcatArg } from "./plugins";
 import { applyIf } from "../../plugins/helpers";
@@ -208,6 +209,18 @@ const janetLanguage: Language = {
         "reversed[List]": "reverse",
         "sorted[Ascii]": "sorted",
         "sorted[Int]": "sorted",
+      }),
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+        if (
+          type.kind === "List" &&
+          ["boolean", "integer", "text"].includes(type.member.kind)
+        ) {
+          return cast(node, "array");
+        }
+        return func("thaw", node);
       }),
     ),
     simplegolf(

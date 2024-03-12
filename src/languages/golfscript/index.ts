@@ -32,6 +32,7 @@ import {
 } from "../../plugins/ops";
 import {
   alias,
+  clone,
   defaultIdentGen,
   renameIdents,
   useBuiltinAliases,
@@ -232,6 +233,11 @@ const golfscriptLanguage: Language = {
       }),
     ),
     required(
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+      }),
       printToImplicitOutput,
       addImports({ a: ["a"] }, (x) =>
         x.length > 0 ? assignment(builtin("a"), builtin("")) : undefined,

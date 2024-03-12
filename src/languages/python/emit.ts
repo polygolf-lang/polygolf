@@ -131,6 +131,9 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
         if (n.targetType === "list") {
           return ["[*", $.expr, "]"];
         }
+        if (n.targetType === "set") {
+          return ["{*", $.expr, "}"];
+        }
         throw new EmitError(n, "unsuported cast target type");
       case "Block":
         return $.children.join(

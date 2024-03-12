@@ -35,7 +35,7 @@ import {
   pickAnyInt,
 } from "../../plugins/arithmetic";
 import { forArgvToForEach } from "../../plugins/loops";
-import { alias, renameIdents } from "../../plugins/idents";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import { assertInt64 } from "../../plugins/types";
 import { implicitlyConvertConcatArg } from "./plugins";
 
@@ -180,6 +180,11 @@ const clojureLanguage: Language = {
         "sorted[Int]": "sort",
         starts_with: "clojure.string/starts-with?",
         ends_with: "clojure.string/ends-with?",
+      }),
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
       }),
     ),
     simplegolf(
