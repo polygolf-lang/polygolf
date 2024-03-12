@@ -177,6 +177,7 @@ const nimLanguage: Language = {
         "at[Table]": 0,
       }),
       mapOps({
+        "ord[byte]": (a) => func("ord", indexCall(a, int(0))),
         "reversed[codepoint]": (a) =>
           op.join(func("reversed", func("toRunes", a)), text("")),
         "reversed[byte]": (a) => op.join(func("reversed", a), text("")),

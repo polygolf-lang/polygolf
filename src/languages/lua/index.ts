@@ -103,6 +103,7 @@ const luaLanguage: Language = {
         dec_to_int: (a) => op.mul(int(1n), implicitConversion("dec_to_int", a)),
         "at[argv]": (a) => op["at[List]"](op.argv, a),
         "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
+        "ord[byte]": (a) => method(a, "byte", int(1)),
         "ord_at_back[byte]": (a, b) => method(a, "byte", b),
         "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
         "at_back[byte]": (a, b) => method(a, "sub", b, b),

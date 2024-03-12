@@ -127,13 +127,13 @@ const janetLanguage: Language = {
         "at_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
+      mapOps({
+        "at[byte]": (a, b) => op["slice[byte]"](a, b, int(1n)),
+      }),
       mapOpsTo.func({
         "at[List]": "",
         "at[Table]": "",
         "ord_at[byte]": "",
-      }),
-      mapOps({
-        "at[byte]": (a, b) => op["slice[byte]"](a, b, int(1n)),
       }),
       mapOps({
         bool_to_int: (a) => conditional(a, int(1n), int(0n)),

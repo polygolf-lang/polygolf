@@ -8,6 +8,7 @@ import {
   VirtualOpCodes,
   argsOf,
 } from "../IR";
+import { debugEmit } from "./compile";
 import { PolygolfError } from "./errors";
 import { $ } from "./fragments";
 import type { TokenTree } from "./Language";
@@ -88,7 +89,8 @@ export class EmitError extends PolygolfError {
       ].join(", ");
     }
     detail = detail === undefined ? "" : ` (${detail})`;
-    const message = `emit error - ${expr.kind}${detail} not supported.`;
+    const message =
+      `emit error - ${expr.kind}${detail} not supported.\n` + debugEmit(expr);
     super(message, expr.source);
     this.name = "EmitError";
     this.expr = expr;
