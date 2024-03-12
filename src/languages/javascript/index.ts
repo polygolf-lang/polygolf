@@ -1,6 +1,5 @@
 import {
   functionCall as func,
-  indexCall,
   methodCall as method,
   op,
   builtin,
@@ -136,7 +135,12 @@ const javascriptLanguage: Language = {
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
+      mapOps({
+        "ord_at[Ascii]": (a, b) => method(a, "charCodeAt", b),
+        "ord[Ascii]": (a) => method(a, "charCodeAt", int(0)),
+      }),
       mapOpsTo.index({
+        "at[Ascii]": 0,
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
@@ -149,7 +153,6 @@ const javascriptLanguage: Language = {
       }),
       numberDivisionToSlash,
       mapOps({
-        "at[Ascii]": (a, b) => indexCall(a, b),
         "slice[List]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
         "slice[Ascii]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
         "sorted[Ascii]": (a) =>
@@ -223,7 +226,6 @@ const javascriptLanguage: Language = {
         or: "||=",
       }),
       mapOpsTo.method({
-        "ord_at[Ascii]": "charCodeAt",
         "contains[List]": "includes",
         "contains[Array]": "includes",
         "contains[Text]": "includes",

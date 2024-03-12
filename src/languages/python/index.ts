@@ -156,7 +156,8 @@ const pythonLanguage: Language = {
         "with_at[Table]": 0,
       }),
       mapOps({
-        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
+        "at[byte]": (a, b) =>
+          op["char[byte]"](indexCall(func("bytes", a, text("u8")), b)),
       }),
       mapOpsTo.index({
         "at[codepoint]": 0,

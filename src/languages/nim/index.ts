@@ -169,6 +169,7 @@ const nimLanguage: Language = {
           prefix("$", indexCall(func("toRunes", a), b)),
         "ord_at[byte]": (a, b) => func("ord", op["at[byte]"](a, b)),
         "ord_at[codepoint]": (a, b) => func("ord", op["at[codepoint]"](a, b)),
+        "ord[codepoint]": (a) => func("ord", op["at[codepoint]"](a, int(0))),
       }),
       mapOpsTo.index({
         "at[byte]": 0,
