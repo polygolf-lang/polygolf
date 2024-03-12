@@ -261,6 +261,10 @@ export const VirtualOpCodes = [
 ] as const satisfies readonly AnyOpCode[];
 export type VirtualOpCode = (typeof VirtualOpCodes)[number];
 
+export function getVirtualOpCodes() {
+  return VirtualOpCodes;
+}
+
 const negateAndKeepTargetType = (node: Node) => ({
   ...op.mul(intNode(-1), node),
   targetType: node.targetType,

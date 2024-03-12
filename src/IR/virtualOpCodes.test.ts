@@ -1,14 +1,14 @@
-import { VirtualOpCodes } from "./opcodes";
 import { getInstantiatedOpCodeArgTypes } from "../common/getType";
 import { argsOf, op } from "./exprs";
+import { getVirtualOpCodes } from "./opcodes";
 import { id } from "./terminals";
 import { annotate } from "./types";
 
 describe("Virtual opcodes consistency", () => {
-  for (const virtualOpCode of VirtualOpCodes) {
+  for (const virtualOpCode of getVirtualOpCodes()) {
     test(virtualOpCode, () => {
       const args = getInstantiatedOpCodeArgTypes(virtualOpCode).map((t) =>
-        annotate(id("x"), t),
+        annotate(id(), t),
       );
       const node = op.unsafe(virtualOpCode)(...args);
       const deconstructedArgs = argsOf(virtualOpCode)(node);
