@@ -241,9 +241,8 @@ describeArithmeticOp("add", [
 ]);
 
 describeArithmeticOp(
-  "sub",
+  "binarySub",
   [
-    [[int()], "error"],
     [[int(), int()], int()],
     [[int(), int(-10, 10)], int()],
     [[int(30, 200), int(-100, 10)], int(20, 300)],
@@ -553,7 +552,6 @@ describeArithmeticOp("bit_not", [
 describeArithmeticOp(
   "neg",
   [
-    [[int(), int()], "error"],
     [[int()], int()],
     [[int("-oo", 10)], int(-10)],
     [[int(-20, "oo")], int("-oo", 20)],

@@ -5,6 +5,8 @@ import {
   type Node,
   type ConditionalOp,
   isOfKind,
+  VirtualOpCodes,
+  argsOf,
 } from "../IR";
 import { PolygolfError } from "./errors";
 import { $ } from "./fragments";
@@ -79,8 +81,12 @@ export function containsMultiNode(exprs: readonly IR.Node[]): boolean {
 export class EmitError extends PolygolfError {
   expr: Node;
   constructor(expr: Node, detail?: string) {
-    if (detail === undefined && "op" in expr && expr.op !== null)
-      detail = expr.op;
+    if (detail === undefined && "op" in expr && expr.op !== null) {
+      detail = [
+        expr.op,
+        ...VirtualOpCodes.filter((x) => argsOf[x](expr) !== undefined),
+      ].join(", ");
+    }
     detail = detail === undefined ? "" : ` (${detail})`;
     const message = `emit error - ${expr.kind}${detail} not supported.`;
     super(message, expr.source);

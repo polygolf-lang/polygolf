@@ -97,7 +97,7 @@ import {
 } from "../../plugins/arithmetic";
 import { safeConditionalOpToAt } from "../../plugins/conditions";
 
-const c48: Text = { ...text("0"), targetType: "char" };
+const c48: Text<"0"> = { ...text("0"), targetType: "char" };
 
 const nimLanguage: Language = {
   name: "Nim",
@@ -164,7 +164,14 @@ const nimLanguage: Language = {
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
+      mapOps({
+        "at[codepoint]": (a, b) =>
+          prefix("$", indexCall(func("toRunes", a), b)),
+        "ord_at[byte]": (a, b) => func("ord", op["at[byte]"](a, b)),
+        "ord_at[codepoint]": (a, b) => func("ord", op["at[codepoint]"](a, b)),
+      }),
       mapOpsTo.index({
+        "at[byte]": 0,
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
@@ -176,12 +183,7 @@ const nimLanguage: Language = {
       }),
       mapOps({
         "char[codepoint]": (x) => prefix("$", func("Rune", x)),
-        "ord_at[byte]": (a, b) => func("ord", op["at[byte]"](a, b)),
-        "ord_at[codepoint]": (a, b) => func("ord", op["at[codepoint]"](a, b)),
         "read[line]": () => func("readLine", builtin("stdin")),
-        "at[byte]": (a, b) => indexCall(a, b),
-        "at[codepoint]": (a, b) =>
-          prefix("$", indexCall(func("toRunes", a), b)),
         "slice[byte]": (a, b, c) =>
           rangeIndexCall(a, b, getEndIndex(b, c), int(1n)),
         "slice[List]": (a, b, c) =>
