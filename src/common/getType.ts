@@ -333,7 +333,7 @@ export function getOpCodeTypeFromTypes(
   skipAdditionalChecks = false,
 ): Type {
   if (isVirtualOpCode(opCode)) {
-    const x = op.unsafe(opCode)(...got.map((t) => annotate(id("x"), t)));
+    const x = op.unsafe(opCode)(...got.map((t) => annotate(id(), t)));
     return getType(x, x);
   }
   return _getOpCodeTypeFromTypes(opCode, got, skipAdditionalChecks);
