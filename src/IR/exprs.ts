@@ -231,7 +231,7 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
     );
   }
   if (isUnary(opCode)) {
-    const value = evalUnary(opCode, args[0]);
+    const value = evalUnary({ kind: "Op", op: opCode, args: args as any });
     if (value !== null) return value;
   }
   if (opCode === "not" || opCode === "bit_not") {
@@ -342,7 +342,7 @@ function opUnsafeWithDefaults(opCode: OpCode, ...args: Node[]): Node {
 }
 
 function evalBinary(
-  op: BinaryOpCode | VariadicOpCode,
+  op: PhysicalOpCode & (BinaryOpCode | VariadicOpCode),
   left: Node,
   right: Node,
 ): Integer | Text | null {
@@ -364,15 +364,19 @@ function evalBinary(
   return null;
 }
 
-function evalUnary(op: UnaryOpCode, arg: Node): Integer | Text | null {
-  if (isText()(arg)) {
-    const value = arg.value;
-    switch (op) {
-      case "size[byte]":
-      case "size[Ascii]":
-        return int(byteLength(value));
-      case "size[codepoint]":
-        return int(charLength(value));
+function evalUnary(
+  op: Op<UnaryOpCode & PhysicalOpCode>,
+): Integer | Text | null {
+  for (const opCode of [
+    "size[byte]",
+    "size[Ascii]",
+    "size[codepoint]",
+  ] as const) {
+    const args = argsOf[opCode](op);
+    if (args !== undefined && isText()(args[0])) {
+      return int(
+        (opCode === "size[codepoint]" ? charLength : byteLength)(args[0].value),
+      );
     }
   }
   return null;

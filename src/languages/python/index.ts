@@ -155,7 +155,11 @@ const pythonLanguage: Language = {
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
+      mapOps({
+        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
+      }),
       mapOpsTo.index({
+        "at[codepoint]": 0,
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
@@ -193,8 +197,6 @@ const pythonLanguage: Language = {
           ),
         "reversed[List]": (a) =>
           rangeIndexCall(a, builtin(""), builtin(""), int(-1)),
-        "at[codepoint]": (a, b) => indexCall(a, b),
-        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
         "ord_at[byte]": (a, b) => indexCall(func("bytes", a, text("u8")), b),
         "ord_at_back[byte]": (a, b) =>
           indexCall(func("bytes", a, text("u8")), b),
@@ -269,7 +271,6 @@ const pythonLanguage: Language = {
         int_to_bool: (a) => implicitConversion("int_to_bool", a),
         bool_to_int: (a) =>
           op.mul(int(1n), implicitConversion("bool_to_int", a)),
-        "text_to_list[codepoint]": (x) => cast(x, "list"),
       }),
       mapOpsTo.method({
         "find[List]": "index",
@@ -311,6 +312,7 @@ const pythonLanguage: Language = {
             ),
             "list",
           ),
+        "text_to_list[codepoint]": (x) => cast(x, "list"),
       }),
       mapMutationTo.method({
         append: "append",
@@ -340,7 +342,7 @@ const pythonLanguage: Language = {
         add: "+",
         "concat[Text]": "+",
         "concat[List]": "+",
-        sub: "-",
+        binarySub: "-",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         bit_and: "&",

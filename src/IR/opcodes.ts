@@ -56,7 +56,8 @@ export const opCodeDefinitions = {
   succ: { args: [int()], front: true },
   pred: { args: [int()], front: true },
   add: { args: atLeast2(int()), front: "+", assoc: true, commutes: true },
-  sub: { args: [int(), int()], front: "-" },
+  sub: { args: atLeast2(int()), front: "-" },
+  binarySub: { args: [int(), int()] },
   mul: { args: atLeast2(int()), front: "*", assoc: true, commutes: true },
   div: { args: [int(), int()], front: "div" },
   trunc_div: { args: [int(), int()] },
@@ -239,6 +240,7 @@ export const VirtualOpCodes = [
   "succ",
   "pred",
   "sub",
+  "binarySub",
   "neg",
   "at[byte]",
   "at[codepoint]",
@@ -258,6 +260,11 @@ export const VirtualOpCodes = [
   "ord_at_back[Ascii]",
 ] as const satisfies readonly AnyOpCode[];
 export type VirtualOpCode = (typeof VirtualOpCodes)[number];
+
+const negateAndKeepTargetType = (node: Node) => ({
+  ...op.mul(intNode(-1), node),
+  targetType: node.targetType,
+});
 
 export const virtualOpCodeDefinitions = {
   is_even: {
@@ -324,12 +331,36 @@ export const virtualOpCodeDefinitions = {
       }
     },
   },
-  sub: {
+  binarySub: {
     construct(a, b) {
-      return op.add(a, op.mul(intNode(-1), b));
+      return op.add(a, op.neg(b));
     },
     getArgs(node) {
-      if (node.op === "add") {
+      // even without a finished alias resolution, it's reasonable to
+      // say this is a sub op, if at least 1 arg is negative int literal
+      // or multiplication with one since multiplication is not valid for text/list
+      if (node.op === "add" || node.op === ("+" as any)) {
+        const exprs = node.args;
+        const positiveArgs = exprs.filter((x) => !isNegative(x));
+        const negativeArgs = exprs.filter((x) => isNegative(x));
+        if (negativeArgs.length > 0) {
+          return [
+            op.unsafe("add")(
+              ...positiveArgs,
+              ...negativeArgs.slice(0, negativeArgs.length - 1),
+            ),
+            negateAndKeepTargetType(negativeArgs.at(-1)!),
+          ];
+        }
+      }
+    },
+  },
+  sub: {
+    construct(a, b, ...rest) {
+      return op.add(a, op.neg(b), ...rest.map(op.neg));
+    },
+    getArgs(node) {
+      if (node.op === "add" || node.op === ("+" as any)) {
         const exprs = node.args;
         let positiveArgs = exprs.filter((x) => !isNegative(x));
         let negativeArgs = exprs.filter((x) => isNegative(x));
@@ -337,22 +368,10 @@ export const virtualOpCodeDefinitions = {
           positiveArgs = [negativeArgs[0]];
           negativeArgs = negativeArgs.slice(1);
         }
-        const positive =
-          positiveArgs.length > 1
-            ? op.unsafe("add")(...positiveArgs)
-            : positiveArgs[0];
         if (negativeArgs.length > 0) {
           return [
-            positive,
-            op.unsafe("add")(
-              ...negativeArgs.map(
-                (x) =>
-                  ({
-                    ...op.mul(intNode(-1), x),
-                    targetType: x.targetType,
-                  }) as any,
-              ),
-            ),
+            op.unsafe("add")(...positiveArgs),
+            ...(negativeArgs.map(negateAndKeepTargetType) as [Node, ...Node[]]),
           ];
         }
       }
@@ -598,6 +617,7 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   pred: "Integer predecessor.",
   add: "Integer addition.",
   sub: "Integer subtraction.",
+  binarySub: "Integer subtraction.",
   mul: "Integer multiplication.",
   div: "Integer floor division.",
   trunc_div: "Integer truncating (towards zero) division.",
@@ -910,6 +930,10 @@ export const OpCodeFrontNamesToOpCodes = Object.fromEntries(
 ) as Record<OpCodeFrontName, OpCode[]>;
 
 export const OpCodesUser = OpCodes.filter(
+  (op) => "front" in opCodeDefinitions[op],
+);
+
+export const PhysicalOpCodesUser = PhysicalOpCodes.filter(
   (op) => "front" in opCodeDefinitions[op],
 );
 

@@ -80,6 +80,18 @@ for (id "i+each") (list 5 4 3 2 1) (
 );
 ```
 
+```polygolf
+for $i 3 {
+  println (at[byte] "abc" $i);
+};
+```
+
+```polygolf loops.forRangeToForEach
+for[byte] (id "i+each") "abc" (
+  println (id "i+each")
+);
+```
+
 ## For each to for range
 
 ```polygolf

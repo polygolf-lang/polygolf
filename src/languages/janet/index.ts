@@ -112,7 +112,6 @@ const janetLanguage: Language = {
 
         "at[argv]": (a) =>
           op["at[List]"](func("dyn", builtin(":args")), succ(a)),
-        "at[byte]": (a, b) => op["slice[byte]"](a, b, int(1n)),
         "contains[Text]": (a, b) => func("int?", op["find[byte]"](a, b)),
         "contains[Table]": (a, b) =>
           op.not(func("nil?", op["at[Table]"](a, b))),
@@ -128,15 +127,24 @@ const janetLanguage: Language = {
         "at_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
+      mapOpsTo.func({
+        "ord_at[byte]": "",
+      }),
+      mapOps({
+        "at[byte]": (a, b) => op["slice[byte]"](a, b, int(1n)),
+        "ord[byte]": (a) => func("", a, int(0)),
+      }),
+      mapOpsTo.func({
+        "at[List]": "",
+        "at[Table]": "",
+      }),
       mapOps({
         bool_to_int: (a) => conditional(a, int(1n), int(0n)),
         int_to_bool: (a) => op["neq[Int]"](a, int(0n)),
         int_to_hex: (a) => func("string/format", text("%x"), a),
         int_to_Hex: (a) => func("string/format", text("%X"), a),
-
         "char[byte]": (a) => func("string/format", text("%c"), a),
         "concat[List]": (...x) => func("array/concat", list([]), ...x),
-        "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
         "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
       }),
@@ -191,8 +199,6 @@ const janetLanguage: Language = {
         sub: "-",
         trunc_div: "div",
 
-        "at[List]": "",
-        "at[Table]": "",
         "eq[Int]": "=",
         "eq[Text]": "=",
         "size[byte]": "length",
@@ -200,7 +206,6 @@ const janetLanguage: Language = {
         "size[Table]": "length",
         "neq[Int]": "not=",
         "neq[Text]": "not=",
-        "ord_at[byte]": "",
         "println[Int]": "pp",
         "println[Text]": "print",
         "print[Int]": "prin",
@@ -212,12 +217,15 @@ const janetLanguage: Language = {
       }),
     ),
     simplegolf(
-      alias({
-        Identifier: (n, s) =>
-          n.builtin && s.pathFragment?.prop !== "ident" ? n.name : undefined,
-        Integer: (x) => x.value.toString(),
-        Text: (x) => `"${x.value}"`,
-      }),
+      alias(
+        {
+          Identifier: (n, s) =>
+            n.builtin && s.pathFragment?.prop !== "ident" ? n.name : undefined,
+          Integer: (x) => x.value.toString(),
+          Text: (x) => `"${x.value}"`,
+        },
+        [1, 7],
+      ),
     ),
     required(
       renameIdents(),

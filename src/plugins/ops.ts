@@ -140,7 +140,7 @@ export function mapOpsUsing<Targ = string, TOpCode extends OpCode = OpCode>(
             }
             exprs =
               variadicMode === "variadic" ||
-              (!isVariadic(opCode) && opCode !== "sub") ||
+              !isVariadic(opCode) ||
               exprs.length < 3
                 ? exprs
                 : variadicMode === "leftChain"

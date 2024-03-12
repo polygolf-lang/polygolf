@@ -14,6 +14,12 @@ $d <- 0;
 + $a (-$b) (-$c) (-$d);
 ```
 
+_Clojure_
+
+```clojure nogolf
+(def a 0)(def b 0)(def c 0)(def d 0)(- a)(- a b)(-(+ a b)c d)(-(+ a b c d))(- a b c d)
+```
+
 _Janet_
 
 ```janet nogolf
@@ -46,6 +52,12 @@ $z <- true;
 min $a $b $c;
 * $a $b $c;
 or $x $y $z;
+```
+
+_Clojure_
+
+```clojure nogolf
+(def a 0)(def b 0)(def c 0)(def x true)(def y true)(def z true)(min a b c)(* a b c)(or x y z)
 ```
 
 _Janet_
@@ -154,6 +166,12 @@ $t <- (list 1 2 3);
 $t @<- 2 1;
 ```
 
+_Clojure_
+
+```clojure nogolf skip
+Not implemented
+```
+
 _Golfscript_
 
 ```gs nogolf
@@ -205,6 +223,12 @@ t[2]=1
 
 ```polygolf
 bit_count 67;
+```
+
+_Clojure_
+
+```clojure nogolf
+(Long/bitCount 67)
 ```
 
 _Javascript_

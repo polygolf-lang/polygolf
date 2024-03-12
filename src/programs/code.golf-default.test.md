@@ -19,11 +19,32 @@ for_argv $arg 1000 {
 };
 ```
 
+_Clojure_
+
+```clojure
+(println"Hello, World!")(dotimes[i 10](prn i))(doseq[a *command-line-args*](println a))
+```
+
+_Coconut_
+
+```coconut
+p=print
+p("Hello, World!")
+for i in range(10):p(i)
+for a in os.sys.argv[1:]:p(a)
+```
+
 _Golfscript_
 
 ```gs
 :a;"Hello, World!
 "10,{:i;i n}%a{:b;b n}%
+```
+
+_Janet_
+
+```janet
+(print"Hello, World!")(for i 0 10(pp i))(each a(slice(dyn :args)1)(print a))
 ```
 
 _Javascript_

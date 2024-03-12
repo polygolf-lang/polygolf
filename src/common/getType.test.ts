@@ -40,7 +40,7 @@ const ascii = (x: number | IntegerType = int(0)) => text(x, true);
 
 /** returns identifier expression of given type */
 function e(type: Type): Identifier {
-  return { ...id(""), type };
+  return { ...id(), type };
 }
 
 function testNode(
@@ -91,16 +91,25 @@ function describeOp(op: OpCode, tests: [Type[], Type | "error"][]) {
   });
 }
 
-function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
-  describeOp(op, [
-    [[text(), text()], "error"],
-    [[int(), bool], "error"],
-    [[int(), text()], "error"],
-    isAssociative(op)
-      ? [[text(), int()], "error"]
-      : [[int(), int(), int()], "error"],
-    ...tests,
-  ]);
+function describeArithmeticOp(
+  op: OpCode,
+  tests: [Type[], Type | "error"][],
+  noAdditionalCases = false,
+) {
+  describeOp(
+    op,
+    noAdditionalCases
+      ? tests
+      : [
+          [[text(), text()], "error"],
+          [[int(), bool], "error"],
+          [[int(), text()], "error"],
+          isAssociative(op)
+            ? [[text(), int()], "error"]
+            : [[int(), int(), int()], "error"],
+          ...tests,
+        ],
+  );
 }
 
 describe("Bindings", () => {
@@ -231,13 +240,16 @@ describeArithmeticOp("add", [
   [[int(30, 30), int(-100, -100)], int(-70, -70)],
 ]);
 
-describeArithmeticOp("sub", [
-  [[int()], "error"],
-  [[int(), int()], int()],
-  [[int(), int(-10, 10)], int()],
-  [[int(30, 200), int(-100, 10)], int(20, 300)],
-  [[int(30, 30), int(-100, -100)], int(130, 130)],
-]);
+describeArithmeticOp(
+  "binarySub",
+  [
+    [[int(), int()], int()],
+    [[int(), int(-10, 10)], int()],
+    [[int(30, 200), int(-100, 10)], int(20, 300)],
+    [[int(30, 30), int(-100, -100)], int(130, 130)],
+  ],
+  true,
+);
 
 describeArithmeticOp("mul", [
   [[int()], "error"],
@@ -246,6 +258,8 @@ describeArithmeticOp("mul", [
   [[int(0), int(-10, 10)], int()],
   [[int(0), int(0, 10)], int(0)],
   [[int(0), int(-1, 1)], int()],
+  [[int(0, 20), int(-1, -1)], int(-20, 0)],
+  [[int(), int(-1, -1)], int()],
   [[int(3, 20), int(-10, 1)], int(-200, 20)],
   [[int(-3, 20), int(-10, 1)], int(-200, 30)],
   [[int(3, 3), int(-10, -10)], int(-30, -30)],
@@ -535,12 +549,15 @@ describeArithmeticOp("bit_not", [
   [[int(-20, "oo")], int("-oo", 19)],
 ]);
 
-describeArithmeticOp("neg", [
-  [[int(), int()], "error"],
-  [[int()], int()],
-  [[int("-oo", 10)], int(-10)],
-  [[int(-20, "oo")], int("-oo", 20)],
-]);
+describeArithmeticOp(
+  "neg",
+  [
+    [[int()], int()],
+    [[int("-oo", 10)], int(-10)],
+    [[int(-20, "oo")], int("-oo", 20)],
+  ],
+  true,
+);
 
 describeOp("not", [
   [[bool, bool], "error"],

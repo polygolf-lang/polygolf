@@ -62,7 +62,7 @@ export function anyInt(low: bigint, high: bigint): AnyInteger {
   return { kind: "AnyInteger", low, high };
 }
 
-export function text(value: string): Text {
+export function text<Value extends string>(value: Value): Text<Value> {
   return { kind: "Text", value };
 }
 

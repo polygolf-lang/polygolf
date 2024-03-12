@@ -5,12 +5,12 @@ import {
   getOpCodeTypeFromTypes,
 } from "../common/getType";
 import {
-  type OpCode,
   OpCodesUser,
   toString,
   userName,
   opCodeDescriptions,
   defaults,
+  type OpCode,
 } from "../IR";
 import fs from "fs";
 import path from "path";

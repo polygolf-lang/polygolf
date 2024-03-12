@@ -16,6 +16,7 @@ import {
   type Identifier,
   isUserIdent,
   annotate,
+  type PhysicalOpCode,
 } from "../IR";
 
 export function assertInt64(node: Node, spine: Spine) {
@@ -78,7 +79,9 @@ function needsBigint(
 
 export function floodBigints(
   primitiveIntType0: "int64" | "int53" | IntegerType,
-  allowed: Partial<Record<OpCode | Assignment["kind"], "bigint" | "int">>,
+  allowed: Partial<
+    Record<PhysicalOpCode | Assignment["kind"], "bigint" | "int">
+  >,
 ): PluginVisitor {
   const primitiveIntType = type(primitiveIntType0) as IntegerType;
   return function floodBigints(node, spine) {
