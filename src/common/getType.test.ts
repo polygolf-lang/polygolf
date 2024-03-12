@@ -349,20 +349,6 @@ describeOp("println[Text]", [
   [[text()], voidType],
 ]);
 
-describeOp("print[Int]", [
-  [[text()], "error"],
-  [[bool], "error"],
-  [[int(), int()], "error"],
-  [[int()], voidType],
-]);
-
-describeOp("println[Int]", [
-  [[text()], "error"],
-  [[bool], "error"],
-  [[int(), int()], "error"],
-  [[int()], voidType],
-]);
-
 describeOp("or", [
   [[bool, int()], "error"],
   [[bool], "error"],

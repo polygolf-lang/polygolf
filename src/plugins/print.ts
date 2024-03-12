@@ -15,6 +15,7 @@ import {
   blockOrSingle,
   type Op,
   isText,
+  argsOf,
 } from "../IR";
 import { mapOps } from "./ops";
 import type { VisitorContext } from "../common/compile";
@@ -60,12 +61,10 @@ export function golfLastPrintInt(toPrintlnInt = true): PluginVisitor {
     const newOp = toPrintlnInt ? "println[Int]" : "print[Int]";
     const oldOp = toPrintlnInt ? "print[Int]" : "println[Int]";
     const lastStatement = statements[statements.length - 1];
-    if (isOp(oldOp)(lastStatement)) {
+    const args = argsOf[oldOp](lastStatement);
+    if (args !== undefined) {
       return blockOrSingle(
-        statements.with(
-          statements.length - 1,
-          op[newOp](lastStatement.args[0]),
-        ),
+        statements.with(statements.length - 1, op[newOp](args[0])),
       );
     }
   };

@@ -277,6 +277,8 @@ export const VirtualOpCodes = [
   "putc[Ascii]",
   "putc[byte]",
   "putc[codepoint]",
+  "print[Int]",
+  "println[Int]",
 ] as const satisfies readonly AnyOpCode[];
 export type VirtualOpCode = (typeof VirtualOpCodes)[number];
 
@@ -747,6 +749,26 @@ export const virtualOpCodeDefinitions = {
     getArgs(node) {
       if (isOp["print[Text]"](node) && isOp["char[codepoint]"](node.args[0])) {
         return [node.args[0].args[0]];
+      }
+    },
+  },
+  "print[Int]": {
+    construct(a) {
+      return op["print[Text]"](op.int_to_dec(a));
+    },
+    getArgs(node) {
+      if (isOp["print[Text]"](node) && isOp.int_to_dec(node.args[0])) {
+        return node.args[0].args;
+      }
+    },
+  },
+  "println[Int]": {
+    construct(a) {
+      return op["println[Text]"](op.int_to_dec(a));
+    },
+    getArgs(node) {
+      if (isOp["println[Text]"](node) && isOp.int_to_dec(node.args[0])) {
+        return node.args[0].args;
       }
     },
   },

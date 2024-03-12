@@ -558,9 +558,6 @@ function _getOpCodeTypeFromTypes(
     case "print[Text]":
     case "println[Text]":
       return voidType;
-    case "print[Int]":
-    case "println[Int]":
-      return voidType;
     case "println_list_joined":
       return voidType;
     case "println_many_joined":
