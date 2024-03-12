@@ -50,7 +50,7 @@ function allVariantOptions(node: IR.Node): IR.Node[] {
 }
 
 function fragToString(f: PathFragment) {
-  return typeof f === "string" ? f : f.prop + ":" + f.index.toString();
+  return f.prop + (f.index === undefined ? "" : ":" + f.index.toString());
 }
 
 function cartesianProduct<T>(a: T[][]): T[][] {

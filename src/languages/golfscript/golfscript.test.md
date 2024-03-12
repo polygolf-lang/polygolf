@@ -105,7 +105,7 @@ b c"{...9<\13>+*\32if}%" "/b-1%d-1%b 3*
 ## Looping
 
 ```polygolf
-for $i 0 31 {
+for $i 31 {
   println ((1 + $i) + ($i * $i));
 };
 ```
@@ -115,7 +115,7 @@ for $i 0 31 {
 ```
 
 ```polygolf
-for $i 5 80 5 {
+for $i (5 ..< 80 5) {
   println[Int] $i;
 };
 ```
@@ -126,7 +126,7 @@ for $i 5 80 5 {
 ```
 
 ```polygolf
-for $i -5 31 {
+for $i (-5 ..< 31) {
   println $i;
 };
 ```
@@ -138,7 +138,7 @@ for $i -5 31 {
 
 ```polygolf
 $a:-10..10 <- -4;
-for $i $a ($a+6) {
+for $i ($a ..< ($a+6)) {
   println $i;
 };
 ```

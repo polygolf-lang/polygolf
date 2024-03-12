@@ -2,6 +2,7 @@ import {
   assignment,
   block,
   id,
+  uniqueId,
   type Identifier,
   integerType as int,
   textType as text,
@@ -28,10 +29,10 @@ import {
   type IntegerType,
   isAssociative,
   forRangeCommon,
-  forDifferenceRange,
   type Node,
   asciiType,
   lengthToArrayIndexType as length,
+  isPhysicalOpCode,
 } from "IR";
 import { PolygolfError } from "./errors";
 import { calcTypeAndResolveOpCode, getType } from "./getType";
@@ -40,7 +41,7 @@ const ascii = (x: number | IntegerType = int(0)) => text(x, true);
 
 /** returns identifier expression of given type */
 function e(type: Type): Identifier {
-  return { ...id(""), type };
+  return { ...uniqueId("getTypeTest"), type };
 }
 
 function testNode(
@@ -58,11 +59,21 @@ function testNode(
 
 function testOp(
   name: string,
-  op: OpCode,
+  opCode: OpCode,
   args: Type[],
   result: Type | "error",
 ) {
-  testNode(name, { kind: "Op", op, args: args.map(e) as any }, result);
+  testNode(
+    name,
+    isPhysicalOpCode(opCode)
+      ? ({
+          kind: "Op",
+          op: opCode,
+          args: args.map(e),
+        } as any)
+      : op.unsafe(opCode)(...args.map(e)),
+    result,
+  );
 }
 
 function describeOp(op: OpCode, tests: [Type[], Type | "error"][]) {
@@ -81,16 +92,25 @@ function describeOp(op: OpCode, tests: [Type[], Type | "error"][]) {
   });
 }
 
-function describeArithmeticOp(op: OpCode, tests: [Type[], Type | "error"][]) {
-  describeOp(op, [
-    [[text(), text()], "error"],
-    [[int(), bool], "error"],
-    [[int(), text()], "error"],
-    isAssociative(op)
-      ? [[text(), int()], "error"]
-      : [[int(), int(), int()], "error"],
-    ...tests,
-  ]);
+function describeArithmeticOp(
+  op: OpCode,
+  tests: [Type[], Type | "error"][],
+  noAdditionalCases = false,
+) {
+  describeOp(
+    op,
+    noAdditionalCases
+      ? tests
+      : [
+          [[text(), text()], "error"],
+          [[int(), bool], "error"],
+          [[int(), text()], "error"],
+          isAssociative(op)
+            ? [[text(), int()], "error"]
+            : [[int(), int(), int()], "error"],
+          ...tests,
+        ],
+  );
 }
 
 describe("Bindings", () => {
@@ -108,32 +128,14 @@ describe("Bindings", () => {
     forRangeCommon(["i", 0, 10, 1, true], empty),
   );
   testNode(
-    "for range negative step exclusive",
-    id("i"),
-    int(1, 10),
-    forRangeCommon(["i", 10, 0, -1], empty),
-  );
-  testNode(
-    "for range negative step inclusive",
-    id("i"),
-    int(0, 10),
-    forRangeCommon(["i", 10, 0, -1, true], empty),
-  );
-  testNode(
     "for range general",
     id("i"),
-    int(-12, 12),
+    int(-10, 40),
 
     forRangeCommon(
-      ["i", e(int(-10, 10)), e(int(-12, 12)), e(int(-1, 1)), true],
+      ["i", e(int(-10, 10)), e(int(20, 40)), e(int(1, 1)), true],
       empty,
     ),
-  );
-  testNode(
-    "for difference range",
-    id("i"),
-    int(10, 14),
-    forDifferenceRange("i", intNode(10), intNode(5), intNode(1), empty),
   );
 });
 
@@ -239,13 +241,16 @@ describeArithmeticOp("add", [
   [[int(30, 30), int(-100, -100)], int(-70, -70)],
 ]);
 
-describeArithmeticOp("sub", [
-  [[int()], "error"],
-  [[int(), int()], int()],
-  [[int(), int(-10, 10)], int()],
-  [[int(30, 200), int(-100, 10)], int(20, 300)],
-  [[int(30, 30), int(-100, -100)], int(130, 130)],
-]);
+describeArithmeticOp(
+  "binarySub",
+  [
+    [[int(), int()], int()],
+    [[int(), int(-10, 10)], int()],
+    [[int(30, 200), int(-100, 10)], int(20, 300)],
+    [[int(30, 30), int(-100, -100)], int(130, 130)],
+  ],
+  true,
+);
 
 describeArithmeticOp("mul", [
   [[int()], "error"],
@@ -254,6 +259,8 @@ describeArithmeticOp("mul", [
   [[int(0), int(-10, 10)], int()],
   [[int(0), int(0, 10)], int(0)],
   [[int(0), int(-1, 1)], int()],
+  [[int(0, 20), int(-1, -1)], int(-20, 0)],
+  [[int(), int(-1, -1)], int()],
   [[int(3, 20), int(-10, 1)], int(-200, 20)],
   [[int(-3, 20), int(-10, 1)], int(-200, 30)],
   [[int(3, 3), int(-10, -10)], int(-30, -30)],
@@ -341,20 +348,6 @@ describeOp("println[Text]", [
   [[bool], "error"],
   [[text(), text()], "error"],
   [[text()], voidType],
-]);
-
-describeOp("print[Int]", [
-  [[text()], "error"],
-  [[bool], "error"],
-  [[int(), int()], "error"],
-  [[int()], voidType],
-]);
-
-describeOp("println[Int]", [
-  [[text()], "error"],
-  [[bool], "error"],
-  [[int(), int()], "error"],
-  [[int()], voidType],
 ]);
 
 describeOp("or", [
@@ -543,12 +536,15 @@ describeArithmeticOp("bit_not", [
   [[int(-20, "oo")], int("-oo", 19)],
 ]);
 
-describeArithmeticOp("neg", [
-  [[int(), int()], "error"],
-  [[int()], int()],
-  [[int("-oo", 10)], int(-10)],
-  [[int(-20, "oo")], int("-oo", 20)],
-]);
+describeArithmeticOp(
+  "neg",
+  [
+    [[int()], int()],
+    [[int("-oo", 10)], int(-10)],
+    [[int(-20, "oo")], int("-oo", 20)],
+  ],
+  true,
+);
 
 describeOp("not", [
   [[bool, bool], "error"],

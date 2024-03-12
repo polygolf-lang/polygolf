@@ -45,9 +45,19 @@ export interface Text<Value extends string = string> extends BaseNode {
   readonly value: Value;
 }
 
-let unique = 0;
-export function id(name?: string, builtin: boolean = false): Identifier {
-  return { kind: "Identifier", name: name ?? `unique#${unique++}`, builtin };
+export function id(name: string, builtin: boolean = false): Identifier {
+  return { kind: "Identifier", name, builtin };
+}
+
+let unique: Record<string, number> = {};
+export function uniqueId(sequenceName = "unique", builtin = false): Identifier {
+  if (!(sequenceName in unique)) {
+    unique[sequenceName] = 0;
+  }
+  return id(`${sequenceName}#${unique[sequenceName]++}`, builtin);
+}
+export function clearUniqueSequences() {
+  unique = {};
 }
 
 export function builtin(name: string): Identifier {
@@ -62,7 +72,7 @@ export function anyInt(low: bigint, high: bigint): AnyInteger {
   return { kind: "AnyInteger", low, high };
 }
 
-export function text(value: string): Text {
+export function text<Value extends string>(value: Value): Text<Value> {
   return { kind: "Text", value };
 }
 

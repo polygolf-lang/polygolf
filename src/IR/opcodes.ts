@@ -1,4 +1,13 @@
-import type { Node } from "./IR";
+import {
+  type Node,
+  type Literal,
+  type Op,
+  op,
+  int as intNode,
+  isOp,
+  isInt,
+  isNegative,
+} from "./IR";
 import {
   type Type,
   typeArg,
@@ -17,6 +26,11 @@ interface OpCodeDefinition {
   front?: true | string;
   assoc?: true;
   commutes?: true;
+}
+
+interface VirtualOpCodeDefinition<T extends AnyOpCode> {
+  getArgs: (node: Op) => OpCodeArgValues<T> | undefined;
+  construct: (...args: OpCodeArgValues<T>) => Op;
 }
 
 export interface Rest<T extends Type = Type> {
@@ -42,7 +56,8 @@ export const opCodeDefinitions = {
   succ: { args: [int()], front: true },
   pred: { args: [int()], front: true },
   add: { args: atLeast2(int()), front: "+", assoc: true, commutes: true },
-  sub: { args: [int(), int()], front: "-" },
+  sub: { args: atLeast2(int()), front: "-" },
+  binarySub: { args: [int(), int()] },
   mul: { args: atLeast2(int()), front: "*", assoc: true, commutes: true },
   div: { args: [int(), int()], front: "div" },
   trunc_div: { args: [int(), int()] },
@@ -107,13 +122,21 @@ export const opCodeDefinitions = {
   "at[Array]": { args: [array(T1, T2), T2], front: "@" },
   "at[List]": { args: [list(T1), int(0)], front: "@" },
   "at_back[List]": { args: [list(T1), int("-oo", -1)], front: "@" },
+  "first[List]": { args: [list(T1)] },
+  "last[List]": { args: [list(T1)] },
   "at[Table]": { args: [table(T1, T2), T1], front: "@" },
   "at[Ascii]": { args: [ascii, int(0)], front: "@" },
   "at_back[Ascii]": { args: [ascii, int("-oo", -1)], front: "@" },
+  "first[Ascii]": { args: [ascii] },
+  "last[Ascii]": { args: [ascii] },
   "at[byte]": { args: [text(), int(0)], front: true },
   "at_back[byte]": { args: [text(), int("-oo", -1)], front: true },
+  "first[byte]": { args: [text()] },
+  "last[byte]": { args: [text()] },
   "at[codepoint]": { args: [text(), int(0)], front: true },
   "at_back[codepoint]": { args: [text(), int("-oo", -1)], front: true },
+  "first[codepoint]": { args: [text()] },
+  "last[codepoint]": { args: [text()] },
   "with_at[Array]": { args: [array(T1, T2), T2, T1], front: "@" },
   "with_at[List]": { args: [list(T1), int(0), T1], front: "@" },
   "with_at_back[List]": { args: [list(T1), int("-oo", -1), T1], front: "@" },
@@ -151,6 +174,9 @@ export const opCodeDefinitions = {
   "char[byte]": { args: [int(0, 255)], front: true },
   "char[codepoint]": { args: [int(0, 0x10ffff)], front: true },
   "char[Ascii]": { args: [int(0, 127)], front: "char" },
+  "text_to_list[byte]": { args: [text()], front: true },
+  "text_to_list[codepoint]": { args: [text()], front: true },
+  "text_to_list[Ascii]": { args: [ascii], front: "text_to_list" },
 
   // Order
   "sorted[Int]": { args: [list(int())], front: "sorted" },
@@ -181,9 +207,9 @@ export const opCodeDefinitions = {
 
   // Adding items
   include: { args: [set(T1), T1], front: true },
-  append: { args: [list(T1), T1], front: ".." },
-  "concat[List]": { args: atLeast2(list(T1)), front: "..", assoc: true },
-  "concat[Text]": { args: atLeast2(text()), front: "..", assoc: true },
+  append: { args: [list(T1), T1], front: "+" },
+  "concat[List]": { args: atLeast2(list(T1)), front: "+", assoc: true },
+  "concat[Text]": { args: atLeast2(text()), front: "+", assoc: true },
 
   // Text ops
   repeat: { args: [text(), int(0)], front: true },
@@ -207,9 +233,548 @@ export const opCodeDefinitions = {
   int_to_bool: { args: [int(0, 1)], front: true },
   dec_to_int: { args: [ascii], front: true },
   bool_to_int: { args: [bool], front: true },
+
+  // Ranges
+  range_incl: { args: [int(), int(), int(1)], front: ".." },
+  range_excl: { args: [int(), int(), int(1)], front: "..<" },
+  range_diff_excl: { args: [int(), int(0), int(1)] },
 } as const satisfies Record<string, OpCodeDefinition>;
 
 type AnyOpCode = keyof typeof opCodeDefinitions;
+
+export const VirtualOpCodes = [
+  "is_even",
+  "is_odd",
+  "succ",
+  "pred",
+  "sub",
+  "binarySub",
+  "neg",
+  "at[byte]",
+  "at[codepoint]",
+  "at[Ascii]",
+  "at_back[byte]",
+  "at_back[codepoint]",
+  "at_back[Ascii]",
+  "at[argv]",
+  "size[byte]",
+  "size[codepoint]",
+  "size[Ascii]",
+  "ord_at[byte]",
+  "ord_at[codepoint]",
+  "ord_at[Ascii]",
+  "ord_at_back[byte]",
+  "ord_at_back[codepoint]",
+  "ord_at_back[Ascii]",
+  "first[Ascii]",
+  "first[byte]",
+  "first[codepoint]",
+  "first[List]",
+  "last[Ascii]",
+  "last[byte]",
+  "last[codepoint]",
+  "last[List]",
+  "putc[Ascii]",
+  "putc[byte]",
+  "putc[codepoint]",
+  "print[Int]",
+  "println[Int]",
+] as const satisfies readonly AnyOpCode[];
+export type VirtualOpCode = (typeof VirtualOpCodes)[number];
+
+export function getVirtualOpCodes() {
+  return VirtualOpCodes;
+}
+
+const negateAndKeepTargetType = (node: Node) => ({
+  ...op.mul(intNode(-1), node),
+  targetType: node.targetType,
+});
+
+export const virtualOpCodeDefinitions = {
+  is_even: {
+    construct(x) {
+      return op["eq[Int]"](intNode(0), op.mod(x, intNode(2)));
+    },
+    getArgs(node) {
+      if (isOp("eq[Int]", "neq[Int]", "leq", "geq", "lt", "gt")(node)) {
+        let [a, b] = node.args;
+        if (isInt(0n, 1n)(b)) {
+          [a, b] = [b, a];
+        }
+        if (isInt(0n, 1n)(a) && isOp.mod(b) && isInt(2n)(b.args[1])) {
+          if (a.value === 0n) {
+            if (isOp("eq[Int]", "leq")(node)) return [b.args[0]];
+          } else {
+            if (isOp("neq[Int]", "lt")(node)) return [b.args[0]];
+          }
+        }
+      }
+    },
+  },
+  is_odd: {
+    construct(x) {
+      return op["eq[Int]"](intNode(1), op.mod(x, intNode(2)));
+    },
+    getArgs(node) {
+      if (isOp("eq[Int]", "neq[Int]", "leq", "geq", "lt", "gt")(node)) {
+        let [a, b] = node.args;
+        if (isInt(0n, 1n)(b)) {
+          [a, b] = [b, a];
+        }
+        if (isInt(0n, 1n)(a) && isOp.mod(b) && isInt(2n)(b.args[1])) {
+          if (a.value === 0n) {
+            if (isOp("neq[Int]", "gt")(node)) return [b.args[0]];
+          } else {
+            if (isOp("eq[Int]", "geq")(node)) return [b.args[0]];
+          }
+        }
+      }
+    },
+  },
+  succ: {
+    construct(x) {
+      return op.add(intNode(1), x);
+    },
+    getArgs(node) {
+      if (isOp.add(node) && node.args.length > 1 && isInt(1n)(node.args[0])) {
+        return [op.unsafe("add")(...node.args.slice(1))];
+      }
+    },
+  },
+  pred: {
+    construct(x) {
+      return op.add(intNode(-1), x);
+    },
+    getArgs(node) {
+      if (
+        node.op === "add" &&
+        node.args.length > 1 &&
+        isInt(-1n)(node.args[0]!)
+      ) {
+        return [op.unsafe("add")(...node.args.slice(1))];
+      }
+    },
+  },
+  binarySub: {
+    construct(a, b) {
+      return op.add(a, op.neg(b));
+    },
+    getArgs(node) {
+      // even without a finished alias resolution, it's reasonable to
+      // say this is a sub op, if at least 1 arg is negative int literal
+      // or multiplication with one since multiplication is not valid for text/list
+      if (node.op === "add" || node.op === ("+" as any)) {
+        const exprs = node.args;
+        const positiveArgs = exprs.filter((x) => !isNegative(x));
+        const negativeArgs = exprs.filter((x) => isNegative(x));
+        if (negativeArgs.length > 0) {
+          return [
+            op.unsafe("add")(
+              ...positiveArgs,
+              ...negativeArgs.slice(0, negativeArgs.length - 1),
+            ),
+            negateAndKeepTargetType(negativeArgs.at(-1)!),
+          ];
+        }
+      }
+    },
+  },
+  sub: {
+    construct(a, b, ...rest) {
+      return op.add(a, op.neg(b), ...rest.map(op.neg));
+    },
+    getArgs(node) {
+      if (node.op === "add" || node.op === ("+" as any)) {
+        const exprs = node.args;
+        let positiveArgs = exprs.filter((x) => !isNegative(x));
+        let negativeArgs = exprs.filter((x) => isNegative(x));
+        if (positiveArgs.length < 1) {
+          positiveArgs = [negativeArgs[0]];
+          negativeArgs = negativeArgs.slice(1);
+        }
+        if (negativeArgs.length > 0) {
+          return [
+            op.unsafe("add")(...positiveArgs),
+            ...(negativeArgs.map(negateAndKeepTargetType) as [Node, ...Node[]]),
+          ];
+        }
+      }
+    },
+  },
+  neg: {
+    construct(x) {
+      return op.mul(intNode(-1), x);
+    },
+    getArgs(node) {
+      if (isOp.mul(node) && isInt(-1n)(node.args[0])) {
+        return [op.unsafe("mul")(...node.args.slice(1))];
+      }
+    },
+  },
+  "at[byte]": {
+    construct(data, index) {
+      return op["at[List]"](op["text_to_list[byte]"](data), index);
+    },
+    getArgs(node) {
+      if (isOp["at[List]"](node) && isOp["text_to_list[byte]"](node.args[0])) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at[codepoint]": {
+    construct(data, index) {
+      return op["at[List]"](op["text_to_list[codepoint]"](data), index);
+    },
+    getArgs(node) {
+      if (
+        isOp["at[List]"](node) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at[Ascii]": {
+    construct(data, index) {
+      return op["at[List]"](op["text_to_list[Ascii]"](data), index);
+    },
+    getArgs(node) {
+      if (isOp["at[List]"](node) && isOp["text_to_list[Ascii]"](node.args[0])) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at_back[byte]": {
+    construct(data, index) {
+      return op["at_back[List]"](op["text_to_list[byte]"](data), index);
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isOp["text_to_list[byte]"](node.args[0])
+      ) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at_back[codepoint]": {
+    construct(data, index) {
+      return op["at_back[List]"](op["text_to_list[codepoint]"](data), index);
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at_back[Ascii]": {
+    construct(data, index) {
+      return op["at_back[List]"](op["text_to_list[Ascii]"](data), index);
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isOp["text_to_list[Ascii]"](node.args[0])
+      ) {
+        return [node.args[0].args[0], node.args[1]];
+      }
+    },
+  },
+  "at[argv]": {
+    construct(index) {
+      return op["at[List]"](op.argv, index);
+    },
+    getArgs(node) {
+      if (isOp["at[List]"](node) && isOp.argv(node.args[0])) {
+        return [node.args[1]];
+      }
+    },
+  },
+  "size[byte]": {
+    construct(data) {
+      return op["size[List]"](op["text_to_list[byte]"](data));
+    },
+    getArgs(node) {
+      if (
+        isOp["size[List]"](node) &&
+        isOp["text_to_list[byte]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "size[codepoint]": {
+    construct(data) {
+      return op["size[List]"](op["text_to_list[codepoint]"](data));
+    },
+    getArgs(node) {
+      if (
+        isOp["size[List]"](node) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "size[Ascii]": {
+    construct(data) {
+      return op["size[List]"](op["text_to_list[Ascii]"](data));
+    },
+    getArgs(node) {
+      if (
+        isOp["size[List]"](node) &&
+        isOp["text_to_list[Ascii]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "ord_at[byte]": {
+    construct(text, index) {
+      return op["ord[byte]"](op["at[byte]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[byte]"](node) &&
+        isOp["at[List]"](node.args[0]) &&
+        isOp["text_to_list[byte]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at[codepoint]": {
+    construct(text, index) {
+      return op["ord[codepoint]"](op["at[codepoint]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[codepoint]"](node) &&
+        isOp["at[List]"](node.args[0]) &&
+        isOp["text_to_list[codepoint]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at[Ascii]": {
+    construct(text, index) {
+      return op["ord[Ascii]"](op["at[Ascii]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[Ascii]"](node) &&
+        isOp["at[List]"](node.args[0]) &&
+        isOp["text_to_list[Ascii]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at_back[byte]": {
+    construct(text, index) {
+      return op["ord[byte]"](op["at_back[byte]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[byte]"](node) &&
+        isOp["at_back[List]"](node.args[0]) &&
+        isOp["text_to_list[byte]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at_back[codepoint]": {
+    construct(text, index) {
+      return op["ord[codepoint]"](op["at_back[codepoint]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[codepoint]"](node) &&
+        isOp["at_back[List]"](node.args[0]) &&
+        isOp["text_to_list[codepoint]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "ord_at_back[Ascii]": {
+    construct(text, index) {
+      return op["ord[Ascii]"](op["at_back[Ascii]"](text, index));
+    },
+    getArgs(node) {
+      if (
+        isOp["ord[Ascii]"](node) &&
+        isOp["at_back[List]"](node.args[0]) &&
+        isOp["text_to_list[Ascii]"](node.args[0].args[0])
+      ) {
+        return [node.args[0].args[0].args[0], node.args[0].args[1]];
+      }
+    },
+  },
+  "first[List]": {
+    construct(data) {
+      return op["at[List]"](data, intNode(0));
+    },
+    getArgs(node) {
+      if (isOp["at[List]"](node) && isInt(0n)(node.args[1])) {
+        return [node.args[0]];
+      }
+    },
+  },
+  "first[Ascii]": {
+    construct(data) {
+      return op["at[Ascii]"](data, intNode(0));
+    },
+    getArgs(node) {
+      if (
+        isOp["at[List]"](node) &&
+        isInt(0n)(node.args[1]) &&
+        isOp["text_to_list[Ascii]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "first[byte]": {
+    construct(data) {
+      return op["at[byte]"](data, intNode(0));
+    },
+    getArgs(node) {
+      if (
+        isOp["at[List]"](node) &&
+        isInt(0n)(node.args[1]) &&
+        isOp["text_to_list[byte]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "first[codepoint]": {
+    construct(data) {
+      return op["at[codepoint]"](data, intNode(0));
+    },
+    getArgs(node) {
+      if (
+        isOp["at[List]"](node) &&
+        isInt(0n)(node.args[1]) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "last[List]": {
+    construct(data) {
+      return op["at_back[List]"](data, intNode(-1));
+    },
+    getArgs(node) {
+      if (isOp["at_back[List]"](node) && isInt(-1n)(node.args[1])) {
+        return [node.args[0]];
+      }
+    },
+  },
+  "last[Ascii]": {
+    construct(data) {
+      return op["at_back[Ascii]"](data, intNode(-1));
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isInt(-1n)(node.args[1]) &&
+        isOp["text_to_list[Ascii]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "last[byte]": {
+    construct(data) {
+      return op["at_back[byte]"](data, intNode(-1));
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isInt(-1n)(node.args[1]) &&
+        isOp["text_to_list[byte]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "last[codepoint]": {
+    construct(data) {
+      return op["at_back[codepoint]"](data, intNode(-1));
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isInt(-1n)(node.args[1]) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+
+  "putc[Ascii]": {
+    construct(a) {
+      return op["print[Text]"](op["char[Ascii]"](a));
+    },
+    getArgs(node) {
+      if (isOp["print[Text]"](node) && isOp["char[Ascii]"](node.args[0])) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "putc[byte]": {
+    construct(a) {
+      return op["print[Text]"](op["char[byte]"](a));
+    },
+    getArgs(node) {
+      if (isOp["print[Text]"](node) && isOp["char[byte]"](node.args[0])) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "putc[codepoint]": {
+    construct(a) {
+      return op["print[Text]"](op["char[codepoint]"](a));
+    },
+    getArgs(node) {
+      if (isOp["print[Text]"](node) && isOp["char[codepoint]"](node.args[0])) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "print[Int]": {
+    construct(a) {
+      return op["print[Text]"](op.int_to_dec(a));
+    },
+    getArgs(node) {
+      if (isOp["print[Text]"](node) && isOp.int_to_dec(node.args[0])) {
+        return node.args[0].args;
+      }
+    },
+  },
+  "println[Int]": {
+    construct(a) {
+      return op["println[Text]"](op.int_to_dec(a));
+    },
+    getArgs(node) {
+      if (isOp["println[Text]"](node) && isOp.int_to_dec(node.args[0])) {
+        return node.args[0].args;
+      }
+    },
+  },
+} as const satisfies {
+  [T in VirtualOpCode]?: VirtualOpCodeDefinition<T>;
+};
 
 export type OpCodeArgTypes<T extends OpCode = OpCode> =
   (typeof opCodeDefinitions)[T]["args"];
@@ -232,6 +797,7 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   pred: "Integer predecessor.",
   add: "Integer addition.",
   sub: "Integer subtraction.",
+  binarySub: "Integer subtraction.",
   mul: "Integer multiplication.",
   div: "Integer floor division.",
   trunc_div: "Integer truncating (towards zero) division.",
@@ -302,16 +868,24 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   "at[Array]": "Gets the item at the 0-based index.",
   "at[List]": "Gets the item at the 0-based index.",
   "at_back[List]": "Gets the item at the -1-based backwards index.",
+  "first[List]": "Gets the first item.",
+  "last[List]": "Gets the last item.",
   "at[Table]": "Gets the item at the key.",
   "at[Ascii]": "Gets the character at the 0-based index.",
   "at_back[Ascii]": "Gets the character at the -1-based backwards index.",
+  "first[Ascii]": "Gets the first char.",
+  "last[Ascii]": "Gets the last char.",
   "at[byte]": "Gets the byte (as text) at the 0-based index (counting bytes).",
   "at_back[byte]":
     "Gets the byte (as text) at the -1-based backwards index (counting bytes).",
+  "first[byte]": "Gets the first byte.",
+  "last[byte]": "Gets the last byte.",
   "at[codepoint]":
     "Gets the codepoint (as text) at the 0-based index (counting codepoints).",
   "at_back[codepoint]":
     "Gets the codepoint (as text) at the -1-based backwards index (counting codepoints).",
+  "first[codepoint]": "Gets the first codepoint.",
+  "last[codepoint]": "Gets the last codepoint.",
   "with_at[Array]":
     "Returns an array with item at the given 0-based index replaced.",
   "with_at[List]":
@@ -357,6 +931,12 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   "char[codepoint]":
     "Returns a codepoint (as text) corresponding to the integer.",
   "char[Ascii]": "Returns a character corresponding to the integer.",
+  "text_to_list[byte]":
+    "Converts given text to a list of single byte texts. Use for[byte] to iterate over bytes in a text.",
+  "text_to_list[codepoint]":
+    "Converts given text to a list of single codepoint texts. Use for[codepoint] to iterate over codepoints in a text.",
+  "text_to_list[Ascii]":
+    "Converts given text to a list of single character texts. Use for[Ascii] to iterate over characters in a text.",
 
   // Order
   "sorted[Int]": "Returns a sorted copy of the input.",
@@ -425,6 +1005,24 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   int_to_bool: "Converts 0 to false and 1 to true.",
   dec_to_int: "Parses a integer from a 10-base text.",
   bool_to_int: "Converts false to 0 and true to 1.",
+
+  range_incl:
+    "List of integers between given inclusive bounds, with given step.",
+  range_excl:
+    "List of integers between given inclusive lower, exclusive upper bound,  with given step.",
+  range_diff_excl:
+    "List of integers between given inclusive lower, exclusive upper bound expressed using a difference between the lower bound, with given step.",
+};
+
+const int0 = { kind: "Integer", value: 0n } as const;
+const int1 = { kind: "Integer", value: 1n } as const;
+const empty = { kind: "Text", value: "" } as const;
+
+export const defaults: Partial<Record<OpCode, (Literal | undefined)[]>> = {
+  range_incl: [int0, undefined, int1],
+  range_excl: [int0, undefined, int1],
+  join: [undefined, empty],
+  replace: [undefined, undefined, empty],
 };
 
 export type OpCodeFrontName =
@@ -453,19 +1051,19 @@ export type CommutativeOpCode = OpCode<{ commutes: true }>;
 export type ConversionOpCode = UnaryOpCode & `${string}_${string}`;
 
 export function isNullary(op: OpCode): op is NullaryOpCode {
-  return arity(op) === 0;
+  return maxArity(op) === 0;
 }
 export function isUnary(op: OpCode): op is UnaryOpCode {
-  return arity(op) === 1;
+  return maxArity(op) === 1;
 }
 export function isBinary(op: OpCode): op is BinaryOpCode {
-  return arity(op) === 2;
+  return maxArity(op) === 2;
 }
 export function isTernary(op: OpCode): op is TernaryOpCode {
-  return arity(op) === 3;
+  return maxArity(op) === 3;
 }
 export function isVariadic(op: OpCode): op is VariadicOpCode {
-  return arity(op) === -1;
+  return maxArity(op) === Infinity;
 }
 export function isAssociative(op: OpCode): op is AssociativeOpCode {
   return (opCodeDefinitions[op] as any)?.assoc === true;
@@ -485,6 +1083,19 @@ export const CommutativeOpCodes = OpCodes.filter(isCommutative);
 
 export function isOpCode(op: string): op is OpCode {
   return op in opCodeDefinitions;
+}
+
+export type PhysicalOpCode = Exclude<AnyOpCode, VirtualOpCode>;
+
+export const PhysicalOpCodes = OpCodes.filter(
+  (x) => !isVirtualOpCode(x),
+) as PhysicalOpCode[];
+
+export function isVirtualOpCode(op: string): op is VirtualOpCode {
+  return op in virtualOpCodeDefinitions;
+}
+export function isPhysicalOpCode(op: string): op is PhysicalOpCode {
+  return !isVirtualOpCode(op);
 }
 
 export const OpCodeFrontNames = [
@@ -510,6 +1121,10 @@ export const OpCodesUser = OpCodes.filter(
   (op) => "front" in opCodeDefinitions[op],
 );
 
+export const PhysicalOpCodesUser = PhysicalOpCodes.filter(
+  (op) => "front" in opCodeDefinitions[op],
+);
+
 export function userName(opCode: OpCode) {
   if ("front" in opCodeDefinitions[opCode]) {
     return typeof (opCodeDefinitions[opCode] as any).front === "string"
@@ -519,25 +1134,20 @@ export function userName(opCode: OpCode) {
 }
 
 /**
- * Returns parity of an op, -1 denotes variadic.
+ * Returns maximum arity of an op.
  */
-export function arity(op: OpCode): number {
-  try {
-    const args = opCodeDefinitions[op].args;
-    if (args.length > 0 && "rest" in args.at(-1)!) return -1;
-    return args.length;
-  } catch (e) {
-    console.log("arity of", op);
-    throw e;
-  }
+export function maxArity(op: OpCode): number {
+  const args = opCodeDefinitions[op].args;
+  if (args.length > 0 && "rest" in args.at(-1)!) return Infinity;
+  return args.length;
 }
 
-export function matchesOpCodeArity(op: OpCode, arity: number) {
-  const expectedTypes = opCodeDefinitions[op].args;
-  if (expectedTypes.length > 0 && "rest" in expectedTypes.at(-1)!) {
-    return arity >= expectedTypes.length - 1;
-  }
-  return expectedTypes.length === arity;
+export function minArity(op: OpCode): number {
+  const args = opCodeDefinitions[op].args;
+  if (maxArity(op) === Infinity) return args.length - 1;
+  return (
+    args.length - (defaults[op] ?? []).filter((x) => x !== undefined).length
+  );
 }
 
 /**
@@ -569,27 +1179,3 @@ export const inverseOpCode = {
   not: "not",
   bit_not: "bit_not",
 } as const satisfies Partial<Record<UnaryOpCode, UnaryOpCode>>;
-
-export const infixableOpCodeNames = [
-  "+",
-  "-",
-  "*",
-  "^",
-  "&",
-  "|",
-  "~",
-  ">>",
-  "<<",
-  "==",
-  "!=",
-  "<=",
-  "<",
-  ">=",
-  ">",
-  "#",
-  "@",
-  "mod",
-  "rem",
-  "div",
-  "trunc_div",
-] as const satisfies readonly OpCodeFrontName[];

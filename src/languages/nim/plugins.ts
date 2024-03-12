@@ -10,12 +10,14 @@ import {
   op,
   prefix,
   type Op,
-  type OpCode,
+  isBuiltinIdent,
+  isText,
+  type PhysicalOpCode,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { addImports } from "../../plugins/imports";
 import type { PluginVisitor, Spine } from "../../common/Spine";
-import { replaceAtIndex } from "../../common/arrays";
+import type { CompilationContext } from "../../common/compile";
 
 const includes: [string, string[]][] = [
   ["re", ["strutils"]],
@@ -54,6 +56,7 @@ export const addNimImports: PluginVisitor = addImports(
       "startsWith",
       "endsWith",
     ],
+    sequtils: ["toSeq"],
     os: ["paramStr", "commandLineParams"],
     hashes: ["hashes"],
     tables: ["Table"],
@@ -105,14 +108,14 @@ export function useBackwardsIndex(node: Node, spine: Spine) {
     isOp()(node) &&
     (node.op.includes("at_back") || node.op.includes("slice_back"))
   ) {
-    return op.unsafe(
-      node.op,
-      ...replaceAtIndex(
-        node.args,
+    return op.unsafe(node.op)(
+      ...(node.args as readonly Node[]).with(
         1,
         prefix(
           "system.^",
-          op.neg((node as Op<`${string}at_back${string}` & OpCode>).args[1]),
+          op.neg(
+            (node as Op<`${string}at_back${string}` & PhysicalOpCode>).args[1],
+          ),
         ),
       ),
     );
@@ -129,5 +132,40 @@ export function getEndIndex(start: Node, length: Node) {
 export function removeSystemNamespace(node: Node, spine: Spine) {
   if ("name" in node && node.name.startsWith("system.")) {
     return { ...node, name: node.name.slice("system.".length) };
+  }
+}
+
+export function removeToSeqFromFor(node: Node, spine: Spine) {
+  if (
+    node.kind === "FunctionCall" &&
+    isBuiltinIdent("toSeq")(node.func) &&
+    spine.parent?.node.kind === "ForEach" &&
+    spine.pathFragment?.prop === "collection"
+  ) {
+    return node.args[0];
+  }
+}
+
+export function useRawStringLiteral(
+  node: Node,
+  spine: Spine,
+  context: CompilationContext,
+) {
+  if (
+    node.kind === "Infix" &&
+    node.name === " " &&
+    isText()(node.right) &&
+    (isIdent()(node.left) ||
+      (node.left.kind === "Infix" && node.left.name === "."))
+  ) {
+    const [low, high] = context.options.codepointRange;
+    if (low === 1 && high === Infinity) {
+      if (
+        !node.right.value.includes("\n") &&
+        !node.right.value.includes("\r")
+      ) {
+        return infix("", node.left, node.right);
+      }
+    }
   }
 }

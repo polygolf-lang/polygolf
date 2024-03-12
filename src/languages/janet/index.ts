@@ -1,11 +1,10 @@
 import {
   type Language,
   required,
-  defaultDetokenizer,
   simplegolf,
   search,
 } from "../../common/Language";
-import emitProgram from "./emit";
+import { JanetEmitter } from "./emit";
 import {
   arraysToLists,
   flipBinaryOps,
@@ -27,35 +26,38 @@ import {
   op,
   rangeIndexCall,
   text,
-  isInt,
   intToDecOpOrText,
+  isForEachChar,
+  cast,
 } from "../../IR";
+import { golfLastPrint, golfLastPrintInt } from "../../plugins/print";
 import {
-  golfLastPrint,
-  golfLastPrintInt,
-  putcToPrintChar,
-} from "../../plugins/print";
-import { usePrimaryTextOps } from "../../plugins/textOps";
+  charToIntToDec,
+  decToIntToOrd,
+  usePrimaryTextOps,
+} from "../../plugins/textOps";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   applyDeMorgans,
   bitnotPlugins,
+  comparisonToDivision,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
   truncatingOpsPlugins,
 } from "../../plugins/arithmetic";
-import { forArgvToForEach } from "../../plugins/loops";
-import { alias, renameIdents } from "../../plugins/idents";
+import { forArgvToForEach, forEachToForRange } from "../../plugins/loops";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import { assertInt64 } from "../../plugins/types";
 import { implicitlyConvertConcatArg } from "./plugins";
+import { applyIf } from "../../plugins/helpers";
 
 const janetLanguage: Language = {
   name: "Janet",
   extension: "janet",
-  emitter: emitProgram,
+  emitter: new JanetEmitter(),
   phases: [
-    required(arraysToLists, putcToPrintChar, usePrimaryTextOps("byte")),
+    required(arraysToLists, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false), golfLastPrintInt(true)),
     search(
       flipBinaryOps,
@@ -65,11 +67,13 @@ const janetLanguage: Language = {
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
+      decToIntToOrd,
     ),
 
     required(
       pickAnyInt,
       forArgvToForEach,
+      applyIf(forEachToForRange, isForEachChar),
       mapOps({
         right_align: (a, b) =>
           func(
@@ -91,7 +95,11 @@ const janetLanguage: Language = {
           ),
       }),
     ),
-    simplegolf(implicitlyConvertConcatArg),
+    simplegolf(
+      implicitlyConvertConcatArg,
+      charToIntToDec,
+      comparisonToDivision,
+    ),
     required(
       mapOps({
         argv: () => func("slice", func("dyn", builtin(":args")), int(1n)),
@@ -100,14 +108,12 @@ const janetLanguage: Language = {
 
         "at[argv]": (a) =>
           op["at[List]"](func("dyn", builtin(":args")), succ(a)),
-        "at[byte]": (a, b) => op["slice[byte]"](a, b, int(1n)),
         "contains[Text]": (a, b) => func("int?", op["find[byte]"](a, b)),
         "contains[Table]": (a, b) =>
           op.not(func("nil?", op["at[Table]"](a, b))),
       }),
-      mapOps({
-        "at_back[List]": (a, b) =>
-          isInt(-1n)(b) ? func("last", a) : undefined,
+      mapOpsTo.func({
+        "last[List]": "last",
       }),
       mapBackwardsIndexToForwards({
         "at_back[Ascii]": "size[Ascii]",
@@ -116,15 +122,24 @@ const janetLanguage: Language = {
         "at_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
+      mapOpsTo.func({
+        "ord_at[byte]": "",
+      }),
+      mapOps({
+        "at[byte]": (a, b) => op["slice[byte]"](a, b, int(1n)),
+        "ord[byte]": (a) => func("", a, int(0)),
+      }),
+      mapOpsTo.func({
+        "at[List]": "",
+        "at[Table]": "",
+      }),
       mapOps({
         bool_to_int: (a) => conditional(a, int(1n), int(0n)),
         int_to_bool: (a) => op["neq[Int]"](a, int(0n)),
         int_to_hex: (a) => func("string/format", text("%x"), a),
         int_to_Hex: (a) => func("string/format", text("%X"), a),
-
         "char[byte]": (a) => func("string/format", text("%c"), a),
         "concat[List]": (...x) => func("array/concat", list([]), ...x),
-        "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
         "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
       }),
@@ -179,8 +194,6 @@ const janetLanguage: Language = {
         sub: "-",
         trunc_div: "div",
 
-        "at[List]": "",
-        "at[Table]": "",
         "eq[Int]": "=",
         "eq[Text]": "=",
         "size[byte]": "length",
@@ -188,7 +201,6 @@ const janetLanguage: Language = {
         "size[Table]": "length",
         "neq[Int]": "not=",
         "neq[Text]": "not=",
-        "ord_at[byte]": "",
         "println[Int]": "pp",
         "println[Text]": "print",
         "print[Int]": "prin",
@@ -198,14 +210,29 @@ const janetLanguage: Language = {
         "sorted[Ascii]": "sorted",
         "sorted[Int]": "sorted",
       }),
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+        if (
+          type.kind === "List" &&
+          ["boolean", "integer", "text"].includes(type.member.kind)
+        ) {
+          return cast(node, "array");
+        }
+        return func("thaw", node);
+      }),
     ),
     simplegolf(
-      alias({
-        Identifier: (n, s) =>
-          n.builtin && s.pathFragment !== "ident" ? n.name : undefined,
-        Integer: (x) => x.value.toString(),
-        Text: (x) => `"${x.value}"`,
-      }),
+      alias(
+        {
+          Identifier: (n, s) =>
+            n.builtin && s.pathFragment?.prop !== "ident" ? n.name : undefined,
+          Integer: (x) => x.value.toString(),
+          Text: (x) => `"${x.value}"`,
+        },
+        [1, 7],
+      ),
     ),
     required(
       renameIdents(),
@@ -214,13 +241,6 @@ const janetLanguage: Language = {
       assertInt64,
     ),
   ],
-  detokenizer: defaultDetokenizer(
-    (a, b) =>
-      a !== "" &&
-      b !== "" &&
-      /[^(){}[\]`'"]/.test(a[a.length - 1]) &&
-      /[^(){}[\]`'"]/.test(b[0]),
-  ),
 };
 
 export default janetLanguage;

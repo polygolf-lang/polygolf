@@ -1,11 +1,20 @@
-import { isOp, op, isOpCode, type Type, type Node, isText, text } from "../IR";
-import { expandVariants } from "./expandVariants";
 import {
-  defaultDetokenizer,
-  type Plugin,
-  type Language,
-  type TokenTree,
-} from "./Language";
+  isOp,
+  op,
+  isOpCode,
+  type Type,
+  type Node,
+  isText,
+  text,
+  isSubtype,
+  integerType,
+  int,
+  forEach,
+  asciiType,
+  clearUniqueSequences,
+} from "../IR";
+import { expandVariants } from "./expandVariants";
+import { type Plugin, type Language } from "./Language";
 import { programToSpine, type Spine } from "./Spine";
 import { getType, getTypeAndResolveOpCode } from "./getType";
 import { stringify } from "./stringify";
@@ -160,21 +169,19 @@ function emit(
   context: CompilationContext,
   noEmit: boolean,
 ) {
-  let tokenTree: TokenTree;
   if (noEmit) {
     if (language.noEmitter !== undefined) {
       try {
-        tokenTree = language.noEmitter(program, context);
+        return language.noEmitter.emit(program, context);
       } catch {
-        tokenTree = debugEmit(program);
+        return debugEmit(program);
       }
     } else {
-      tokenTree = debugEmit(program);
+      return debugEmit(program);
     }
   } else {
-    tokenTree = language.emitter(program, context);
+    return language.emitter.emit(program, context);
   }
-  return (language.detokenizer ?? defaultDetokenizer())(tokenTree);
 }
 
 function isError(x: any): x is Error {
@@ -186,6 +193,7 @@ export default function compile(
   partialOptions: Partial<CompilationOptions>,
   ...languages: Language[]
 ): CompilationResult[] {
+  clearUniqueSequences();
   const options = defaultCompilationOptions(partialOptions);
   const obj = getObjectiveFunc(options);
   let parsed: ParseResult;
@@ -197,7 +205,9 @@ export default function compile(
   const program = parsed!.node;
   let variants = expandVariants(program).map((x) => {
     try {
-      x = typecheck(x, !options.skipTypecheck);
+      x = typecheck(x, !options.skipTypecheck, (x: Error) =>
+        parsed.warnings.push(x),
+      );
       return x;
     } catch (e) {
       if (isError(e)) return compilationResult("Polygolf", e, [e]);
@@ -614,15 +624,40 @@ function annotate<T extends Node | undefined>(
   };
 }
 
-/** Typecheck a program and return a program with resolved opcodes.
+/** Typecheck a program and return a program with resolved opcodes
+ * and a collection arg to for.
  * If everyNode is false, typechecks only nodes neccesary to resolve opcodes, otherwise, typechecks every node. */
-export function typecheck(program: Node, everyNode = true): Node {
+export function typecheck(
+  program: Node,
+  everyNode = true,
+  addWarning: (x: Error) => void,
+): Node {
   const spine = programToSpine(program);
   return spine.withReplacer(function (node, spine) {
+    if (
+      node.kind === "ForEach" &&
+      !isOp("range_excl", "text_to_list[Ascii]")(node.collection)
+    ) {
+      const t = getType(node.collection, spine);
+      if (isSubtype(t, integerType())) {
+        return forEach(
+          node.variable,
+          op.range_excl(int(0n), node.collection, int(1n)),
+          node.body,
+        );
+      }
+      if (isSubtype(t, asciiType)) {
+        return forEach(
+          node.variable,
+          op["text_to_list[Ascii]"](node.collection),
+          node.body,
+        );
+      }
+    }
     if (everyNode || (node.kind === "Op" && !isOpCode(node.op))) {
-      const t = getTypeAndResolveOpCode(node, spine);
+      const t = getTypeAndResolveOpCode(node, spine, addWarning);
       if (isOp()(node) && t.opCode !== undefined) {
-        return op.unsafe(t.opCode, ...node.args);
+        return op.unsafe(t.opCode, true)(...node.args);
       }
     }
   }).node;

@@ -7,7 +7,9 @@ import swiftLanguage from "./swift";
 import golfscriptLanguage from "./golfscript";
 import javascriptLanguage from "./javascript";
 import janetLanguage from "./janet";
+import clojureLanguage from "./clojure";
 import textLanguage from "./text";
+import coconutLanguage from "./coconut";
 import hexagonyLanguage from "./hexagony";
 
 const languages = [
@@ -16,10 +18,12 @@ const languages = [
   luaLanguage,
   nimLanguage,
   pythonLanguage,
+  coconutLanguage,
   swiftLanguage,
   hexagonyLanguage,
   javascriptLanguage,
   janetLanguage,
+  clojureLanguage,
   textLanguage,
 ];
 

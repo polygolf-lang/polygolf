@@ -4,7 +4,6 @@ import nearley from "nearley";
 import {
   functionCall,
   type Identifier,
-  forRange,
   ifStatement,
   list,
   op,
@@ -44,10 +43,7 @@ import {
   rangeIndexCall,
   infix,
   importStatement,
-  forDifferenceRange,
   forEach,
-  forEachPair,
-  forEachKey,
   forCLike,
   namedArg,
   methodCall,
@@ -61,19 +57,39 @@ import {
   postfix,
   type Text,
   type OpCodeFrontName,
-  OpCodesUser,
   OpCodeFrontNamesToOpCodes,
   OpCodeFrontNames,
-  opCodeDefinitions,
-  matchesOpCodeArity,
   userName,
   isOpCode,
   lengthToArrayIndexType,
+  int as intNode,
+  minArity,
+  maxArity,
+  cast,
+  OpCodesUser,
 } from "../IR";
 import grammar from "./grammar";
 
 let restrictedFrontend = true;
 let warnings: Error[] = [];
+
+/**
+ * Returns a distinct union of ranges.
+ *
+ */
+function normalizeRangeUnion(ranges: [number, number][]): [number, number][] {
+  if (ranges.length < 1) return [];
+  ranges.sort((a, b) => b[0] - a[0]);
+  const res: [number, number][] = [ranges[0]];
+  for (const [a, b] of ranges.slice(1)) {
+    if (a > res.at(-1)![1]) {
+      res.push([a, b]);
+    } else if (b > res.at(-1)![1]) {
+      res.at(-1)![1] = b;
+    }
+  }
+  return res;
+}
 
 export function sexpr(
   calleeIdent: Identifier | Text,
@@ -85,7 +101,7 @@ export function sexpr(
     return functionCall(builtin(calleeIdent.value), args);
   }
   if (!calleeIdent.builtin) {
-    return functionCall(calleeIdent, args);
+    return functionCall(calleeIdent, ...args);
   }
   if (callee in deprecatedAliases) {
     const alias0 = deprecatedAliases[callee];
@@ -189,7 +205,7 @@ export function sexpr(
     case "function_call": {
       expectArity(1, Infinity);
       if (restrictedFrontend) assertIdentifier(args[0]);
-      return functionCall(args[0], args.slice(1));
+      return functionCall(args[0], ...args.slice(1));
     }
     case "array":
       expectArity(1, Infinity);
@@ -210,26 +226,52 @@ export function sexpr(
       return whileLoop(args[0], args[1]);
     case "for": {
       expectArity(2, 5);
-      let variable: Node = id("_");
-      let start: Node = integer(0n);
-      let step: Node = integer(1n);
-      let end, body: Node;
+      let variable: Node | undefined;
+      let colllection: Node;
+      let body: Node;
       if (args.length === 5) {
-        [variable, start, end, step, body] = args;
+        const [variable0, low, high, step, body0] = args;
+        variable = variable0;
+        colllection = op.range_excl(low, high, step);
+        body = body0;
+        warnings.push(
+          new PolygolfError(
+            "Deprecated form of `for` used. Iterate over a range using `(low ..< high step)` instead.",
+            calleeIdent.source,
+          ),
+        );
       } else if (args.length === 4) {
-        [variable, start, end, body] = args;
+        const [variable0, low, high, body0] = args;
+        variable = variable0;
+        colllection = op.range_excl(low, high, intNode(1n));
+        body = body0;
+        warnings.push(
+          new PolygolfError(
+            "Deprecated form of `for` used. Iterate over a range using `(low ..< high)` instead.",
+            calleeIdent.source,
+          ),
+        );
       } else if (args.length === 3) {
-        [variable, end, body] = args;
+        [variable, colllection, body] = args;
       } else {
         // args.length === 2
-        [end, body] = args;
+        const [end, body0] = args;
+        variable = undefined;
+        colllection = op.range_excl(intNode(0n), end, intNode(1n));
+        body = body0;
       }
+      if (variable !== undefined) assertIdentifier(variable);
+      return forEach(variable, colllection, body);
+    }
+    case "for[Ascii]":
+    case "for[byte]":
+    case "for[codepoint]": {
+      expectArity(3);
+      const [variable, text, body] = args;
       assertIdentifier(variable);
-      return forRange(
-        variable.name === "_" ? undefined : variable,
-        start,
-        end,
-        step,
+      return forEach(
+        variable,
+        op.unsafe(callee.replace("for", "text_to_list") as OpCode)(text),
         body,
       );
     }
@@ -257,6 +299,9 @@ export function sexpr(
   }
   if (!restrictedFrontend)
     switch (callee) {
+      case "cast":
+        expectArity(1);
+        return cast(args[0]);
       case "implicit_conversion":
         expectArity(2);
         return implicitConversion(asString(args[0]) as any, args[1]);
@@ -311,66 +356,10 @@ export function sexpr(
       case "import":
         expectArity(2, Infinity);
         return importStatement(asString(args[0]), args.slice(1).map(asString));
-      case "for_range_inclusive": {
-        expectArity(5);
-        const [variable, start, end, step, body] = args;
-        assertIdentifier(variable);
-        return forRange(
-          variable.name === "_" ? undefined : variable,
-          start,
-          end,
-          step,
-          body,
-          true,
-        );
-      }
-      case "for_difference_range": {
-        expectArity(5);
-        const [variable, start, difference, step, body] = args;
-        assertIdentifier(variable);
-        return forDifferenceRange(
-          variable,
-          start,
-          difference,
-          step,
-          body,
-          true,
-        );
-      }
-      case "for_each": {
-        expectArity(3);
-        const [variable, collection, body] = args;
-        assertIdentifier(variable);
-        return forEach(variable, collection, body);
-      }
-      case "for_each_key": {
-        expectArity(3);
-        const [variable, collection, body] = args;
-        assertIdentifier(variable);
-        return forEachKey(variable, collection, body);
-      }
-      case "for_each_pair": {
-        expectArity(4);
-        const [keyVariable, valueVariable, collection, body] = args;
-        assertIdentifier(keyVariable);
-        assertIdentifier(valueVariable);
-        return forEachPair(keyVariable, valueVariable, collection, body);
-      }
       case "for_c_like": {
         expectArity(4);
         const [init, condition, append, body] = args;
         return forCLike(init, condition, append, body);
-      }
-      case "for_no_index": {
-        expectArity(3, 4);
-        let start, end, step, body: Node;
-        if (args.length === 4) {
-          [start, end, step, body] = args;
-        } else {
-          [start, end, body] = args;
-          step = integer(1n);
-        }
-        return forRange(undefined, start, end, step, body);
       }
       case "named_arg":
         expectArity(2);
@@ -384,6 +373,10 @@ export function sexpr(
       OpCodesUser.includes(opCode),
     );
   }
+  if (callee === "..") {
+    // We special case .. here for backwards compat.
+    matchingOpCodes.push("concat[List]", "concat[Text]", "append");
+  }
   if (matchingOpCodes.length < 1) {
     throw new PolygolfError(
       `Syntax error. Unrecognized builtin: ${callee}`,
@@ -391,18 +384,20 @@ export function sexpr(
     );
   }
 
-  const arityMatchingOpCodes = matchingOpCodes.filter((opCode) =>
-    matchesOpCodeArity(opCode, args.length),
+  const arityMatchingOpCodes = matchingOpCodes.filter(
+    (opCode) =>
+      minArity(opCode) <= args.length && args.length <= maxArity(opCode),
   );
   if (arityMatchingOpCodes.length < 1) {
+    const expectedArities = normalizeRangeUnion(
+      matchingOpCodes.map((opCode) => [minArity(opCode), maxArity(opCode)]),
+    );
     throw new PolygolfError(
       `Syntax error. Invalid argument count in application of ${callee}: ` +
-        `Expected ${matchingOpCodes
-          .map((opCode) => opCodeDefinitions[opCode].args)
-          .map((args) =>
-            args.length > 0 && "rest" in args.at(-1)!
-              ? `${args.length - 1}..oo`
-              : `${args.length}`,
+        `Expected ${expectedArities
+          .map(
+            ([x, y]) =>
+              `${x}${y === x ? "" : ".." + (y === Infinity ? "oo" : y)}`,
           )
           .join(", ")} but got ${args.length}.`,
       calleeIdent.source,
@@ -412,10 +407,10 @@ export function sexpr(
   if (arityMatchingOpCodes.length > 1) {
     // Hack! We temporarily assign the front name to the opCode field.
     // It will be resolved during typecheck.
-    return op.unsafe(callee as OpCode, ...args);
+    return op.unsafe(callee as OpCode)(...args);
   }
 
-  return op.unsafe(arityMatchingOpCodes[0], ...args);
+  return op.unsafe(arityMatchingOpCodes[0], true)(...args);
 }
 
 function intValue(x: string): bigint {

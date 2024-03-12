@@ -15,17 +15,15 @@ import {
   conditional,
   rangeIndexCall,
   intToDecOpOrText,
+  infix,
 } from "../../IR";
 import {
   type Language,
-  type TokenTree,
-  flattenTree,
   required,
   search,
   simplegolf,
 } from "../../common/Language";
 
-import emitProgram from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
@@ -41,7 +39,6 @@ import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
-  putcToPrintChar,
   mergePrint,
 } from "../../plugins/print";
 import { assertInt64 } from "../../plugins/types";
@@ -53,13 +50,15 @@ import {
 } from "../../plugins/block";
 import {
   forArgvToForEach,
-  forRangeToForRangeInclusive,
+  rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import {
   usePrimaryTextOps,
-  textToIntToTextGetToInt,
   replaceToSplitAndJoin,
+  ordToDecToInt,
+  charToIntToDec,
 } from "../../plugins/textOps";
 import { addImports } from "../../plugins/imports";
 import {
@@ -70,38 +69,41 @@ import {
   lowBitsPlugins,
   decomposeIntLiteral,
   pickAnyInt,
+  comparisonToDivision,
 } from "../../plugins/arithmetic";
+import { SwiftEmitter } from "./emit";
 
 const swiftLanguage: Language = {
   name: "Swift",
   extension: "swift",
-  emitter: emitProgram,
+  emitter: new SwiftEmitter(),
   phases: [
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
-    simplegolf(golfLastPrint()),
+    simplegolf(
+      golfLastPrint(),
+      comparisonToDivision,
+      charToIntToDec,
+      ordToDecToInt,
+    ),
     search(
       mergePrint,
       flipBinaryOps,
       golfStringListLiteral(false),
       listOpsToTextOps(),
       equalityToInequality,
-      forRangeToForRangeInclusive(),
+      rangeExclusiveToInclusive(),
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
       forRangeToForRangeOneStep,
       inlineVariables,
       replaceToSplitAndJoin,
-      textToIntToTextGetToInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
       mapOps({
         argv: () => builtin("CommandLine.arguments[1...]"),
         "at[argv]": (a) =>
           op["at[List]"](builtin("CommandLine.arguments"), succ(a)),
-        "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
-        "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
-        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
       }),
 
       decomposeIntLiteral(),
@@ -118,7 +120,6 @@ const swiftLanguage: Language = {
         "slice_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
-      putcToPrintChar,
       pickAnyInt,
       forArgvToForEach,
       ...truncatingOpsPlugins,
@@ -127,9 +128,6 @@ const swiftLanguage: Language = {
         argv: () => builtin("CommandLine.arguments[1...]"),
         "at[argv]": (a) =>
           op["at[List]"](builtin("CommandLine.arguments"), succ(a)),
-        "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
-        "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
-        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
       }),
       implicitlyConvertPrintArg,
       mapOps({
@@ -137,6 +135,8 @@ const swiftLanguage: Language = {
           method(a, "joined", isText("")(b) ? [] : { separator: b }),
         "ord_at[byte]": (a, b) =>
           func("Int", indexCall(func("Array", prop(a, "utf8")), b)),
+        "ord[byte]": (a) =>
+          func("Int", indexCall(func("Array", prop(a, "utf8")), int(0))),
         "at[codepoint]": (a, b) =>
           func("String", indexCall(func("Array", a), b)),
         "slice[codepoint]": (a, b, c) =>
@@ -146,6 +146,11 @@ const swiftLanguage: Language = {
         "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
         "ord_at[codepoint]": (a, b) =>
           prop(indexCall(func("Array", prop(a, "unicodeScalars")), b), "value"),
+        "ord[codepoint]": (a) =>
+          prop(
+            indexCall(func("Array", prop(a, "unicodeScalars")), int(0)),
+            "value",
+          ),
         "char[byte]": (a) =>
           func("String", postfix("!", func("UnicodeScalar", a))),
         "char[codepoint]": (a) =>
@@ -239,6 +244,14 @@ const swiftLanguage: Language = {
             method(op.int_to_bin(a), "filter", builtin(`{$0>"0"}`)),
             "count",
           ),
+        range_excl: (a, b, c) =>
+          isInt(1n)(c)
+            ? infix("..<", a, b)
+            : func("stride", { from: a, to: b, by: c }),
+        range_incl: (a, b, c) =>
+          isInt(1n)(c)
+            ? infix("...", a, b)
+            : func("stride", { from: a, to: succ(b), by: c }),
       }),
       mapOpsTo.func({
         max: "max",
@@ -268,7 +281,7 @@ const swiftLanguage: Language = {
         rem: "%",
         bit_and: "&",
         add: "+",
-        sub: "-",
+        binarySub: "-",
         bit_or: "|",
         bit_xor: "^",
         "concat[Text]": "+",
@@ -295,12 +308,26 @@ const swiftLanguage: Language = {
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
+      mapOps({
+        "at[byte]": (a, b) =>
+          func(
+            "String",
+            postfix(
+              "!",
+              func(
+                "UnicodeScalar",
+                func("Int", indexCall(func("Array", prop(a, "utf8")), b)),
+              ),
+            ),
+          ),
+      }),
       mapOpsTo.index({
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
       }),
       addImports({ Foundation: ["pow", "replacingOccurrences", "format"] }),
+      useImplicitForEachChar("codepoint"),
     ),
     simplegolf(
       alias({
@@ -317,50 +344,6 @@ const swiftLanguage: Language = {
       removeImplicitConversions,
     ),
   ],
-  // Custom detokenizer reflects Swift's whitespace rules, namely binary ops needing equal amount of whitespace on both sides
-  detokenizer: function (tokenTree: TokenTree): string {
-    function isAlphaNum(s: string): boolean {
-      return /[A-Za-z0-9]/.test(s);
-    }
-
-    // Tokens that need whitespace on both sides:
-    //   A binary op followed by a unary op
-    //   `!=`
-    //   `&` followed by any of `*+-` (without space they are interpreted together as an overflow operator)
-    function needsWhiteSpaceOnBothSides(
-      token: string,
-      nextToken: string,
-    ): boolean {
-      return (
-        (/^[-+*%/<>=^*|~]+$/.test(token) && /[-~]/.test(nextToken[0])) ||
-        (token === `&` && /[*+-]/.test(nextToken[0])) ||
-        token === `!=`
-      );
-    }
-
-    function needsWhiteSpace(prevToken: string, token: string): boolean {
-      return (
-        (isAlphaNum(prevToken[prevToken.length - 1]) && isAlphaNum(token[0])) ||
-        ([`if`, `in`, `while`].includes(prevToken) && token[0] !== `(`) ||
-        token[0] === `?` ||
-        needsWhiteSpaceOnBothSides(prevToken, token)
-      );
-    }
-
-    const tokens: string[] = flattenTree(tokenTree);
-
-    let result = tokens[0];
-    for (let i = 1; i < tokens.length; i++) {
-      if (
-        needsWhiteSpace(tokens[i - 1], tokens[i]) ||
-        (i + 1 < tokens.length &&
-          needsWhiteSpaceOnBothSides(tokens[i], tokens[i + 1]))
-      )
-        result += " ";
-      result += tokens[i];
-    }
-    return result.trim();
-  },
 };
 
 export default swiftLanguage;

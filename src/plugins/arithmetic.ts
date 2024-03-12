@@ -14,6 +14,9 @@ import {
   type Node,
   pred,
   succ,
+  leq,
+  lt,
+  mul,
 } from "../IR";
 import { getType } from "../common/getType";
 import { mapOps } from "./ops";
@@ -108,20 +111,18 @@ export function applyDeMorgans(node: Node, spine: Spine) {
       getType(node, spine).kind === "void"
     ) {
       // If we are promised we won't read the result, we don't need to negate.
-      return op.unsafe(
-        complementaryBoolOp(node.op),
+      return op.unsafe(complementaryBoolOp(node.op))(
         op.not(node.args[0]),
         node.args[1],
       );
     }
     return op.not(
-      op.unsafe(complementaryBoolOp(node.op), ...node.args.map(op.not)),
+      op.unsafe(complementaryBoolOp(node.op))(...node.args.map(op.not)),
     );
   }
   if (isOp("bit_and", "bit_or")(node)) {
     return op.bit_not(
-      op.unsafe(
-        node.op === "bit_and" ? "bit_or" : "bit_and",
+      op.unsafe(node.op === "bit_and" ? "bit_or" : "bit_and")(
         ...(node.args.map(op.bit_not) as any),
       ),
     );
@@ -133,13 +134,13 @@ export function useIntegerTruthiness(node: Node, spine: Spine) {
     isOp("eq[Int]", "neq[Int]")(node) &&
     !spine.isRoot &&
     spine.parent!.node.kind === "If" &&
-    spine.pathFragment === "condition"
+    spine.pathFragment?.prop === "condition"
   ) {
     const res = isInt(0n)(node.args[1])
       ? implicitConversion("int_to_bool", node.args[0])
       : isInt(0n)(node.args[0])
-      ? implicitConversion("int_to_bool", node.args[1])
-      : undefined;
+        ? implicitConversion("int_to_bool", node.args[1])
+        : undefined;
     return res !== undefined && node.op === "eq[Int]" ? op.not(res) : res;
   }
 }
@@ -208,8 +209,7 @@ export function mulToPow(node: Node, spine: Spine) {
     }
     const pairs = [...factors.values()];
     if (pairs.some((pair) => pair[1] > 1)) {
-      return op.unsafe(
-        "mul",
+      return op.unsafe("mul")(
         ...pairs.map(([expr, exp]) =>
           exp > 1 ? op.pow(expr, int(exp)) : expr,
         ),
@@ -277,7 +277,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
           const [n, exp] = getOddAnd2Exp(node.args[0].value);
           if (exp > 1) {
             return op.bit_shift_left(
-              op.unsafe("mul", int(n), ...node.args.slice(1)),
+              op.unsafe("mul")(int(n), ...node.args.slice(1)),
               int(exp),
             );
           }
@@ -287,7 +287,7 @@ export function mulOrDivToBitShift(fromMul = true, fromDiv = true): Plugin {
         ) as Op<"pow"> | undefined;
         if (powNode !== undefined) {
           return op.bit_shift_left(
-            op.unsafe("mul", ...node.args.filter((x) => x !== powNode)),
+            op.unsafe("mul")(...node.args.filter((x) => x !== powNode)),
             powNode.args[1],
           );
         }
@@ -337,10 +337,10 @@ function lg(n: bigint): number {
   return n > 1000000000000
     ? 2 + n.toString(16).length
     : n > 99
-    ? n.toString().length
-    : n > 9
-    ? 2
-    : 1;
+      ? n.toString().length
+      : n > 9
+        ? 2
+        : 1;
 }
 
 function ceilDiv(a: bigint, b: bigint) {
@@ -466,3 +466,45 @@ export function useImplicitBoolToInt(node: Node, spine: Spine) {
     return implicitConversion(node.op, node.args[0]);
   }
 }
+
+export function comparisonToDivision(node: Node, spine: Spine) {
+  if (isOp.bool_to_int(node)) {
+    if (isOp("lt", "gt")(node.args[0])) {
+      let [x, y] = node.args[0].args;
+      if (isOp.gt(node.args[0])) {
+        [x, y] = [y, x];
+      }
+      const xType = getType(x, spine) as IntegerType;
+      const a = xType.low;
+      const b = xType.high;
+      if (leq(0n, a)) {
+        const yType = getType(y, spine) as IntegerType;
+        const c = yType.low;
+        if (lt(b, mul(2n, c))) {
+          return op.div(x, y);
+        }
+      }
+    }
+  }
+}
+
+export function divisionToComparison(node: Node, spine: Spine) {
+  if (isOp.div(node)) {
+    const [x, y] = node.args;
+    const xType = getType(x, spine) as IntegerType;
+    const a = xType.low;
+    const b = xType.high;
+    if (leq(0n, a)) {
+      const yType = getType(y, spine) as IntegerType;
+      const c = yType.low;
+      if (lt(b, mul(2n, c))) {
+        return op.bool_to_int(op.lt(x, y));
+      }
+    }
+  }
+}
+
+export const divisionToComparisonAndBack = [
+  divisionToComparison,
+  comparisonToDivision,
+];

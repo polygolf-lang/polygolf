@@ -5,10 +5,8 @@ import {
   methodCall as method,
   op,
   text,
-  textType,
   succ,
   isText,
-  builtin,
 } from "../../IR";
 import {
   type Language,
@@ -18,12 +16,13 @@ import {
 } from "../../common/Language";
 import {
   forArgvToForRange,
-  forRangeToForRangeInclusive,
+  rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
   shiftRangeOneUp,
+  forEachToForRange,
 } from "../../plugins/loops";
 
-import emitProgram from "./emit";
+import { LuaEmitter } from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
@@ -33,7 +32,7 @@ import {
   mapBackwardsIndexToForwards,
   mapMutationTo,
 } from "../../plugins/ops";
-import { alias, renameIdents } from "../../plugins/idents";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import {
   tempVarToMultipleAssignment,
   inlineVariables,
@@ -41,12 +40,12 @@ import {
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
-  putcToPrintChar,
   mergePrint,
 } from "../../plugins/print";
 import {
+  charToIntToDec,
+  ordToDecToInt,
   startsWithEndsWithToSliceEquality,
-  textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
@@ -54,6 +53,7 @@ import {
   applyDeMorgans,
   bitnotPlugins,
   decomposeIntLiteral,
+  divisionToComparisonAndBack,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
@@ -67,10 +67,10 @@ import { conditionalOpToAndOr } from "../../plugins/conditions";
 const luaLanguage: Language = {
   name: "Lua",
   extension: "lua",
-  emitter: emitProgram,
+  emitter: new LuaEmitter(),
   phases: [
-    required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
-    simplegolf(golfLastPrint()),
+    required(printIntToPrint, usePrimaryTextOps("byte")),
+    simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       mergePrint,
       flipBinaryOps,
@@ -84,31 +84,24 @@ const luaLanguage: Language = {
       forRangeToForRangeOneStep,
       inlineVariables,
       forArgvToForRange(),
-      forRangeToForRangeInclusive(),
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       mapOps({
         dec_to_int: (a) => op.add(int(0n), implicitConversion("dec_to_int", a)),
-        "at[argv]": (a) =>
-          op["at[List]"]({ ...builtin("arg"), type: textType() }, a),
-        "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
-        "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
-        "slice[byte]": (a, b, c) => method(a, "sub", succ(b), op.add(b, c)),
       }),
       decomposeIntLiteral(true, true, true),
+      ...divisionToComparisonAndBack,
     ),
     required(
       pickAnyInt,
       forArgvToForRange(),
-      forRangeToForRangeInclusive(),
+      forEachToForRange,
+      rangeExclusiveToInclusive(),
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       startsWithEndsWithToSliceEquality("byte"),
       mapOps({
         dec_to_int: (a) => op.mul(int(1n), implicitConversion("dec_to_int", a)),
-        "at[argv]": (a) =>
-          op["at[List]"]({ ...builtin("arg"), type: textType() }, a),
         "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
+        "ord[byte]": (a) => method(a, "byte", int(1)),
         "ord_at_back[byte]": (a, b) => method(a, "byte", b),
         "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
         "at_back[byte]": (a, b) => method(a, "sub", b, b),
@@ -140,7 +133,7 @@ const luaLanguage: Language = {
         "at[Table]": 0,
       }),
     ),
-    search(shiftRangeOneUp),
+    search(inlineVariables, shiftRangeOneUp),
     required(
       mapOps({
         int_to_dec: (a) =>
@@ -192,7 +185,7 @@ const luaLanguage: Language = {
         div: "//",
         mod: "%",
         add: "+",
-        sub: "-",
+        binarySub: "-",
         "concat[Text]": "..",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
@@ -219,12 +212,18 @@ const luaLanguage: Language = {
         bit_not: "~",
       }),
       mapOpsTo.infix({ mul: "*" }),
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+      }),
     ),
     simplegolf(
       alias({
         Identifier: (n, s) =>
           n.builtin &&
-          (s.parent?.node.kind !== "MethodCall" || s.pathFragment !== "ident")
+          (s.parent?.node.kind !== "MethodCall" ||
+            s.pathFragment?.prop !== "ident")
             ? n.name
             : undefined,
         Integer: (x) => x.value.toString(),

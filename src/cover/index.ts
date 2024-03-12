@@ -9,9 +9,9 @@ import {
   type Node,
   int,
   id,
+  uniqueId,
   func,
   ifStatement,
-  forRange,
   whileLoop,
   forArgv,
   conditional,
@@ -26,15 +26,18 @@ import {
   text,
   getLiteralOfType,
   OpCodes,
-  OpCodesUser,
+  PhysicalOpCodesUser,
   isSubtype,
   type OpCode,
+  forRangeCommon,
+  block,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
 import asTable from "as-table";
 import { mapObjectValues } from "../common/arrays";
 import yargs from "yargs";
+import fs from "fs";
 
 const options = yargs()
   .options({
@@ -93,7 +96,10 @@ for (const lang of langs) {
 type Table = Record<string, Record<string, unknown>>;
 type CoverTableRecipe = Record<string, (x: LangCoverConfig) => Node>;
 
+let results: Table = {};
+
 function printTable(name: string, x: Table) {
+  results = { ...results, ...x };
   console.log(
     "\n" +
       asTable([
@@ -123,10 +129,10 @@ function printTable(name: string, x: Table) {
               v2 === true
                 ? "✔️"
                 : v2 === false
-                ? "❌"
-                : v2 === undefined
-                ? ""
-                : v2,
+                  ? "❌"
+                  : v2 === undefined
+                    ? ""
+                    : v2,
             ),
           })),
       ]).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly
@@ -148,22 +154,33 @@ const features: CoverTableRecipe = {
   assignment: (lang) => assignment(id("x"), lang.expr()),
   builtin: (lang) => lang.stmt(nextBuiltin(integerType(0, 0))),
   discard: (lang) => lang.expr(),
+  "list clone": (lang) =>
+    block([assignment("x", list([lang.expr()])), assignment("y", id("x"))]),
+  "list of list clone": (lang) =>
+    block([
+      assignment("x", list([list([lang.expr()])])),
+      assignment("y", id("x")),
+    ]),
   bigint: (lang) => lang.stmt(int(10n ** 40n)),
   if: (lang) => ifStatement(lang.expr(booleanType), lang.stmt(), lang.stmt()),
   for: (lang) =>
-    forRange(
-      id("x"),
-      lang.expr(integerType(4, 4)),
-      lang.expr(integerType(10, 10)),
-      int(1),
+    forRangeCommon(
+      [
+        "x",
+        lang.expr(integerType(4, 4)),
+        lang.expr(integerType(10, 10)),
+        int(1),
+      ],
       lang.stmt(),
     ),
   "for with step": (lang) =>
-    forRange(
-      id("x"),
-      lang.expr(integerType(4, 4)),
-      lang.expr(integerType(10, 10)),
-      lang.expr(integerType(3, 3)),
+    forRangeCommon(
+      [
+        "x",
+        lang.expr(integerType(4, 4)),
+        lang.expr(integerType(10, 10)),
+        lang.expr(integerType(3, 3)),
+      ],
       lang.stmt(),
     ),
   while: (lang) => whileLoop(lang.expr(booleanType), lang.stmt()),
@@ -189,7 +206,7 @@ const tryAsMutation: OpCode[] = [
 ];
 
 const opCodes: CoverTableRecipe = Object.fromEntries(
-  OpCodesUser.flatMap((opCode) =>
+  PhysicalOpCodesUser.flatMap((opCode) =>
     (tryAsMutation.includes(opCode) ? [false, true] : [false]).map(
       (asMutation) =>
         asMutation
@@ -197,11 +214,13 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
               opCode + "<-",
               (lang) => {
                 const types = getInstantiatedOpCodeArgTypes(opCode);
-                const variable = { ...id(undefined, true), type: types[0] };
+                const variable = {
+                  ...uniqueId("cover", true),
+                  type: types[0],
+                };
                 return assignment(
                   variable,
-                  op.unsafe(
-                    opCode,
+                  op.unsafe(opCode)(
                     ...types.map((x, i) => (i < 1 ? variable : lang.expr(x))),
                   ),
                 );
@@ -211,9 +230,14 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
               opCode,
               (lang) =>
                 lang.stmt(
-                  op.unsafe(
-                    opCode,
-                    ...getInstantiatedOpCodeArgTypes(opCode).map(lang.expr),
+                  op.unsafe(opCode)(
+                    ...getInstantiatedOpCodeArgTypes(opCode).map((t, i) =>
+                      lang.expr(
+                        opCode === "range_excl" && i === 1
+                          ? integerType(10, 10)
+                          : t,
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -229,19 +253,26 @@ if (options.all === true) {
     "Backend OpCodes",
     runCoverTableRecipe(
       Object.fromEntries(
-        OpCodes.filter((x) => !OpCodesUser.includes(x as any)).map((opCode) => [
-          opCode,
-          (lang) =>
-            lang.stmt(
-              op.unsafe(
-                opCode,
-                ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
-                  lang.expr(x),
+        OpCodes.filter((x) => !PhysicalOpCodesUser.includes(x as any)).map(
+          (opCode) => [
+            opCode,
+            (lang) =>
+              lang.stmt(
+                op.unsafe(opCode)(
+                  ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
+                    lang.expr(x),
+                  ),
                 ),
               ),
-            ),
-        ]),
+          ],
+        ),
       ),
     ),
   );
 }
+
+fs.writeFileSync(
+  `cover${options.all === true ? "-all" : ""}.json`,
+  JSON.stringify(results),
+  { encoding: "utf-8" },
+);

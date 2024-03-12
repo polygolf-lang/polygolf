@@ -1,7 +1,6 @@
 import { block, type IR, isOp, op, isOfKind, type Node } from "../IR";
 import type { VisitorContext, CompilationContext } from "./compile";
 import { getChild, getChildFragments, type PathFragment } from "./fragments";
-import { replaceAtIndex } from "./arrays";
 import { readsFromInput } from "./symbols";
 
 /** A Spine points to one node and keeps track of all of its ancestors up to
@@ -33,8 +32,10 @@ export class Spine<N extends IR.Node = IR.Node> {
   }
 
   /** Get one particular child spine. */
-  getChild(pathFragment: PathFragment): Spine {
-    return new Spine(getChild(this.node, pathFragment), this, pathFragment);
+  getChild(...pathFragments: PathFragment[]): Spine {
+    if (pathFragments.length === 0) return this;
+    const [first, ...rest] = pathFragments;
+    return new Spine(getChild(this.node, first), this, first).getChild(...rest);
   }
 
   /** Return the spine (pointing to this node) determined from replacing a child
@@ -43,12 +44,11 @@ export class Spine<N extends IR.Node = IR.Node> {
   withChildReplaced(newChild: IR.Node, pathFragment: PathFragment): Spine<N> {
     if (newChild === this.getChild(pathFragment).node) return this;
     const node =
-      typeof pathFragment === "string"
-        ? { ...this.node, [pathFragment]: newChild }
+      pathFragment.index === undefined
+        ? { ...this.node, [pathFragment.prop]: newChild }
         : {
             ...this.node,
-            [pathFragment.prop]: replaceAtIndex(
-              (this.node as any)[pathFragment.prop],
+            [pathFragment.prop]: (this.node as any)[pathFragment.prop].with(
               pathFragment.index,
               newChild,
             ),
@@ -79,20 +79,14 @@ export class Spine<N extends IR.Node = IR.Node> {
         ? this.parent.replacedWith(
             {
               ...(isOp()(parentNode)
-                ? op.unsafe(
-                    parentNode.op,
-                    ...replaceAtIndex(
-                      parentNode.args,
-                      this.pathFragment.index,
+                ? op.unsafe(parentNode.op)(
+                    ...(parentNode.args as readonly Node[]).with(
+                      this.pathFragment.index!,
                       newNode,
                     ),
                   )
                 : block(
-                    replaceAtIndex(
-                      parentNode.children,
-                      this.pathFragment.index,
-                      newNode,
-                    ),
+                    parentNode.children.with(this.pathFragment.index!, newNode),
                   )),
               targetType: parentNode.targetType,
             },
@@ -142,6 +136,15 @@ export class Spine<N extends IR.Node = IR.Node> {
     return [...this.filterNodes(cond)].length;
   }
 
+  /** Gets the first descendant node meeting the provided condition */
+  firstNode(cond: Visitor<boolean>) {
+    // eslint-disable-next-line no-unreachable-loop
+    for (const val of this.compactMap((node, spine, context) =>
+      cond(node, spine, context) ? node : undefined,
+    ))
+      return val;
+  }
+
   /** Return the spine (pointing to this node) determined from replacing this
    * node and all of its children with nodes given by the provided `replacer`
    * function. Replaces all of the ancestors of this node, up to the
@@ -184,7 +187,7 @@ export class Spine<N extends IR.Node = IR.Node> {
         if (someChildrenIsNew)
           curr = curr.replacedWith({
             ...(isOp()(this.node)
-              ? op.unsafe(this.node.op, ...newChildren)
+              ? op.unsafe(this.node.op)(...newChildren)
               : block(newChildren)),
             targetType: this.node.targetType,
           });

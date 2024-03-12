@@ -1,9 +1,13 @@
-import { type TokenTree } from "../../common/Language";
+import {
+  defaultDetokenizer,
+  DetokenizingEmitter,
+  flattenTree,
+  type TokenTree,
+} from "../../common/Language";
 import { joinTrees } from "../../common/emit";
 import {
   block,
   type Node,
-  id,
   type IR,
   isInt,
   text,
@@ -14,8 +18,13 @@ import {
   type OpCode,
   isOpCode,
   isNullary,
-  infixableOpCodeNames,
+  isOp,
+  VirtualOpCodes,
+  argsOf,
+  type VirtualOpCode,
 } from "../../IR";
+import { infixableOpCodeNames } from "../../frontend/lexer";
+import { withDefaults } from "../../plugins/ops";
 
 /*
 How Polygolf nodes should be emitted to strings.
@@ -30,8 +39,22 @@ If the last child is an array of Nodes argument, it should be emitted as individ
 instead of as a block.
 */
 
-export default function emitProgram(program: IR.Node): TokenTree {
-  return emitNode(program, true);
+export class PolygolfEmitter extends DetokenizingEmitter {
+  detokenize = defaultDetokenizer(
+    (a, b) =>
+      a !== "(" &&
+      b !== ")" &&
+      b !== ";" &&
+      b !== ":" &&
+      a !== ":" &&
+      a !== "\n" &&
+      b !== "\n",
+    2,
+  );
+
+  emitTokens(program: IR.Node) {
+    return flattenTree(emitNode(program, true));
+  }
 }
 
 function emitVariants(expr: Variants, indent = false): TokenTree {
@@ -89,14 +112,17 @@ export function emitNode(
   return res;
 }
 
-function emitNodeWithoutAnnotation(
+export function emitNodeWithoutAnnotation(
   expr: Node,
   asStatement = false,
   indent = false,
 ): TokenTree {
-  function emitSexpr(op: string, ...args: (TokenTree | Node)[]): TokenTree {
+  function emitSexpr(
+    op: string | null,
+    ...args: (TokenTree | Node)[]
+  ): TokenTree {
     let nullary = false;
-    if (op === "@") {
+    if (op === null) {
       op = expr.kind;
       op = op
         .split(/\.?(?=[A-Z])/)
@@ -125,11 +151,11 @@ function emitNodeWithoutAnnotation(
     ) {
       let a = args[0];
       result.push(typeof a === "string" || !("kind" in a) ? a : emitNode(a));
-      result.push(op);
+      result.push(op!);
       a = args[1];
       result.push(typeof a === "string" || !("kind" in a) ? a : emitNode(a));
     } else {
-      result.push(op);
+      result.push(op!);
       result.push(
         joinTrees(
           [],
@@ -157,8 +183,20 @@ function emitNodeWithoutAnnotation(
       return emitSexpr("=>", expr.key, expr.value);
     case "Function":
       return emitSexpr("func", ...expr.args, expr.expr);
-    case "Op":
-      return emitSexpr(expr.op, ...expr.args);
+    case "Op": {
+      const skippingVirtualOpCodes: VirtualOpCode[] = ["succ", "pred"];
+      for (const virtualOpCode of VirtualOpCodes) {
+        if (skippingVirtualOpCodes.includes(virtualOpCode)) continue;
+        const args = argsOf(virtualOpCode)(expr);
+        if (args !== undefined) {
+          return emitSexpr(virtualOpCode, ...args);
+        }
+      }
+      return emitSexpr(
+        expr.op,
+        ...withDefaults(null).preprocess(expr.args, expr.op),
+      );
+    }
     case "Assignment":
       return emitSexpr("<-", expr.variable, expr.expr);
     case "FunctionCall": {
@@ -166,7 +204,7 @@ function emitNodeWithoutAnnotation(
       if (typeof id === "string" && id.startsWith("$")) {
         return emitSexpr(id, ...expr.args);
       }
-      return emitSexpr("@", id, ...expr.args);
+      return emitSexpr(null, id, ...expr.args);
     }
     case "Identifier":
       if (expr.builtin) {
@@ -180,13 +218,13 @@ function emitNodeWithoutAnnotation(
     case "Integer":
       return expr.value.toString();
     case "Array":
-      return emitSexpr("array", ...expr.exprs);
+      return emitSexpr("array", ...expr.value);
     case "List":
-      return emitSexpr("list", ...expr.exprs);
+      return emitSexpr("list", ...expr.value);
     case "Set":
-      return emitSexpr("set", ...expr.exprs);
+      return emitSexpr("set", ...expr.value);
     case "Table":
-      return emitSexpr("table", ...expr.kvPairs);
+      return emitSexpr("table", ...expr.value);
     case "ConditionalOp":
       return emitSexpr(
         expr.isSafe ? "conditional" : "unsafe_conditional",
@@ -200,26 +238,6 @@ function emitNodeWithoutAnnotation(
         expr.condition,
         emitNode(expr.body, false, true),
       );
-    case "ForRange": {
-      if (expr.inclusive) {
-        return emitSexpr(
-          "for_range_inclusive",
-          expr.variable ?? id("_"),
-          expr.start,
-          expr.end,
-          expr.increment,
-          emitNode(expr.body, false, true),
-        );
-      }
-      let args: Node[] = [];
-      if (!isInt(1n)(expr.increment)) args = [expr.increment, ...args];
-      args = [expr.end, ...args];
-      if (!isInt(0n)(expr.start) || args.length > 1)
-        args = [expr.start, ...args];
-      if (expr.variable !== undefined || args.length > 1)
-        args = [expr.variable ?? id("_"), ...args];
-      return emitSexpr("for", ...args, emitNode(expr.body, false, true));
-    }
     case "ForArgv":
       return emitSexpr(
         "for_argv",
@@ -237,82 +255,89 @@ function emitNodeWithoutAnnotation(
           : emitNode(expr.alternate, false, true)),
       );
 
+    case "Cast":
+      return emitSexpr(null, expr.expr);
     case "ImplicitConversion":
-      return emitSexpr("@", text(expr.behavesLike), expr.expr);
+      return emitSexpr(null, text(expr.behavesLike), expr.expr);
     case "VarDeclaration":
-      return emitSexpr("@", { ...expr.variable, type: expr.variableType });
+      return emitSexpr(null, { ...expr.variable, type: expr.variableType });
     case "VarDeclarationWithAssignment":
-      return emitSexpr("@", expr.assignment);
+      return emitSexpr(null, expr.assignment);
     case "VarDeclarationBlock":
-      return emitSexpr("@", ...expr.children.map((x) => emitNode(x)));
+      return emitSexpr(null, ...expr.children.map((x) => emitNode(x)));
     case "ManyToManyAssignment":
       return emitSexpr(
-        "@",
+        null,
         emitArrayOfNodes(expr.variables),
         emitArrayOfNodes(expr.exprs),
       );
     case "OneToManyAssignment":
-      return emitSexpr("@", variants([block(expr.variables)]), expr.expr);
+      return emitSexpr(null, variants([block(expr.variables)]), expr.expr);
     case "IndexCall":
-      return emitSexpr("@", expr.collection, expr.index);
+      return emitSexpr(null, expr.collection, expr.index);
     case "RangeIndexCall":
-      return emitSexpr("@", expr.collection, expr.low, expr.high, expr.step);
+      return emitSexpr(null, expr.collection, expr.low, expr.high, expr.step);
     case "MethodCall":
-      return emitSexpr("@", expr.object, text(expr.ident.name), ...expr.args);
+      return emitSexpr(null, expr.object, text(expr.ident.name), ...expr.args);
     case "PropertyCall":
-      return emitSexpr("@", expr.object, text(expr.ident.name));
+      return emitSexpr(null, expr.object, text(expr.ident.name));
     case "Infix":
-      return emitSexpr("@", text(expr.name), expr.left, expr.right);
+      return emitSexpr(null, text(expr.name), expr.left, expr.right);
     case "Prefix":
     case "Postfix":
-      return emitSexpr("@", text(expr.name), expr.arg);
+      return emitSexpr(null, text(expr.name), expr.arg);
     case "Import":
       return emitSexpr(
-        "@",
+        null,
         ...[expr.name, ...expr.modules].map((x) => JSON.stringify(x)),
       );
-    case "ForDifferenceRange":
-      return emitSexpr(
-        "@",
-        expr.variable,
-        expr.start,
-        expr.difference,
-        expr.increment,
-        emitNode(expr.body, false, true),
-      );
     case "ForEach":
+      if (isOp("range_excl")(expr.collection)) {
+        const [low, high, step] = expr.collection.args;
+        if (isInt(0n)(low) && isInt(1n)(step)) {
+          if (expr.variable === undefined) {
+            return emitSexpr("for", high, emitNode(expr.body, false, true));
+          }
+          return emitSexpr(
+            "for",
+            expr.variable,
+            high,
+            emitNode(expr.body, false, true),
+          );
+        }
+      } else if (
+        isOp(
+          "text_to_list[Ascii]",
+          "text_to_list[byte]",
+          "text_to_list[codepoint]",
+        )(expr.collection)
+      ) {
+        return emitSexpr(
+          expr.collection.op
+            .replace("text_to_list", "for")
+            .replace("[Ascii]", ""),
+          expr.variable ?? "_",
+          expr.collection.args[0],
+          emitNode(expr.body, false, true),
+        );
+      }
       return emitSexpr(
-        "@",
-        expr.variable,
+        "for",
+        expr.variable ?? "_",
         expr.collection,
-        emitNode(expr.body, false, true),
-      );
-    case "ForEachKey":
-      return emitSexpr(
-        "@",
-        expr.variable,
-        expr.table,
-        emitNode(expr.body, false, true),
-      );
-    case "ForEachPair":
-      return emitSexpr(
-        "@",
-        expr.keyVariable,
-        expr.valueVariable,
-        expr.table,
         emitNode(expr.body, false, true),
       );
     case "ForCLike":
       return emitSexpr(
-        "@",
+        null,
         expr.init,
         expr.condition,
         expr.append,
         emitNode(expr.body, false, true),
       );
     case "NamedArg":
-      return emitSexpr("@", text(expr.name), expr.value);
+      return emitSexpr(null, text(expr.name), expr.value);
     case "AnyInteger":
-      return emitSexpr("@", expr.low.toString(), expr.high.toString());
+      return emitSexpr(null, expr.low.toString(), expr.high.toString());
   }
 }

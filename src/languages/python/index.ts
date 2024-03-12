@@ -18,6 +18,7 @@ import {
   infix,
   list,
   intToDecOpOrText,
+  cast,
 } from "../../IR";
 import {
   type Language,
@@ -26,7 +27,7 @@ import {
   simplegolf,
 } from "../../common/Language";
 
-import emitProgram, { emitPythonText } from "./emit";
+import { PythonEmitter, emitPythonText } from "./emit";
 import {
   removeImplicitConversions,
   methodsAsFunctions,
@@ -37,20 +38,17 @@ import {
   mapMutationTo,
   mapOpsTo,
   flipped,
+  withDefaults,
 } from "../../plugins/ops";
-import { alias, renameIdents } from "../../plugins/idents";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forRangeToForEach,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
-import {
-  golfLastPrint,
-  implicitlyConvertPrintArg,
-  putcToPrintChar,
-} from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   packSource2to1,
   packSource3to1,
@@ -58,11 +56,11 @@ import {
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import {
-  textGetToIntToTextGet,
-  textToIntToTextGetToInt,
   usePrimaryTextOps,
   useMultireplace,
   startsWithEndsWithToSliceEquality,
+  charToIntToDec,
+  ordToDecToInt,
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
@@ -74,6 +72,7 @@ import {
   applyDeMorgans,
   bitnotPlugins,
   decomposeIntLiteral,
+  divisionToComparisonAndBack,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
@@ -82,13 +81,17 @@ import {
 } from "../../plugins/arithmetic";
 import { tableToListLookup } from "../../plugins/tables";
 import { charLength } from "../../common/strings";
-import { golfTextListLiteralIndex } from "./plugins";
+import {
+  golfTextListLiteralIndex,
+  indexlessForRangeToForAscii,
+  useImplicitForCast,
+} from "./plugins";
 import { safeConditionalOpToAt } from "../../plugins/conditions";
 
 const pythonLanguage: Language = {
   name: "Python",
   extension: "py",
-  emitter: emitProgram,
+  emitter: new PythonEmitter(),
   phases: [
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint()),
@@ -96,11 +99,10 @@ const pythonLanguage: Language = {
       golfStringListLiteral(),
       listOpsToTextOps("find[codepoint]", "at[codepoint]"),
       tempVarToMultipleAssignment,
-      forRangeToForEach("at[List]", "at[codepoint]"),
+      forRangeToForEach,
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
-      textToIntToTextGetToInt,
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -112,22 +114,24 @@ const pythonLanguage: Language = {
       forArgvToForEach,
       decomposeIntLiteral(),
       startsWithEndsWithToSliceEquality("codepoint"),
+      ...divisionToComparisonAndBack,
     ),
-    simplegolf(safeConditionalOpToAt("List")),
+    simplegolf(safeConditionalOpToAt("List"), charToIntToDec, ordToDecToInt),
     required(
       pickAnyInt,
       forArgvToForEach,
-      removeUnusedForVar,
-      putcToPrintChar,
-      mapOps({
-        argv: () => builtin("sys.argv[1:]"),
+      {
+        ...mapOps({
+          argv: () => builtin("sys.argv[1:]"),
 
-        "at[argv]": (a) =>
-          op["at[List]"](
-            { ...builtin("sys.argv"), type: listType(textType()) },
-            succ(a),
-          ),
-      }),
+          "at[argv]": (a) =>
+            op["at[List]"](
+              { ...builtin("sys.argv"), type: listType(textType()) },
+              succ(a),
+            ),
+        }),
+        name: "useSysArgv",
+      },
 
       useImplicitBoolToInt,
       mapBackwardsIndexToForwards({
@@ -146,15 +150,23 @@ const pythonLanguage: Language = {
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
+      mapOps({
+        "at[byte]": (a, b) =>
+          op["char[byte]"](indexCall(func("bytes", a, text("u8")), b)),
+      }),
       mapOpsTo.index({
+        "at[codepoint]": 0,
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
       }),
     ),
-    simplegolf(golfTextListLiteralIndex),
+    simplegolf(
+      golfTextListLiteralIndex,
+      removeUnusedLoopVar,
+      indexlessForRangeToForAscii,
+    ),
     required(
-      textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps({
         true: () => int(1),
@@ -181,8 +193,6 @@ const pythonLanguage: Language = {
           ),
         "reversed[List]": (a) =>
           rangeIndexCall(a, builtin(""), builtin(""), int(-1)),
-        "at[codepoint]": (a, b) => indexCall(a, b),
-        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
         "ord_at[byte]": (a, b) => indexCall(func("bytes", a, text("u8")), b),
         "ord_at_back[byte]": (a, b) =>
           indexCall(func("bytes", a, text("u8")), b),
@@ -289,6 +299,17 @@ const pythonLanguage: Language = {
         "println[Text]": "print",
         gcd: "math.gcd",
       }),
+      mapOps({
+        range_excl: (a, b, c) =>
+          cast(
+            func(
+              "range",
+              ...withDefaults(null).preprocess([a, b, c], "range_excl"),
+            ),
+            "list",
+          ),
+        "text_to_list[codepoint]": (x) => cast(x, "list"),
+      }),
       mapMutationTo.method({
         append: "append",
       }),
@@ -317,7 +338,7 @@ const pythonLanguage: Language = {
         add: "+",
         "concat[Text]": "+",
         "concat[List]": "+",
-        sub: "-",
+        binarySub: "-",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         bit_and: "&",
@@ -341,13 +362,26 @@ const pythonLanguage: Language = {
       }),
       mapOpsTo.infix({ mul: "*" }),
       methodsAsFunctions,
-      addOneToManyAssignments(),
+      useImplicitForCast,
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+        if (type.kind === "List" || type.kind === "Set") {
+          if (["boolean", "integer", "text"].includes(type.member.kind)) {
+            return cast(node, type.kind.toLowerCase());
+          }
+          return func("copy.deepcopy", node);
+        }
+      }),
     ),
     simplegolf(
+      addOneToManyAssignments(),
       alias({
         Identifier: (n, s) =>
           n.builtin &&
-          (s.parent?.node.kind !== "PropertyCall" || s.pathFragment !== "ident")
+          (s.parent?.node.kind !== "PropertyCall" ||
+            s.pathFragment?.prop !== "ident")
             ? n.name
             : undefined,
         // TODO: handle more general cases
@@ -361,7 +395,11 @@ const pythonLanguage: Language = {
     ),
     required(
       renameIdents(),
-      addImports({ sys: ["sys.argv[1:]", "sys.argv"], math: ["math.gcd"] }),
+      addImports({
+        sys: ["sys.argv[1:]", "sys.argv"],
+        math: ["math.gcd"],
+        copy: ["copy.deepcopy"],
+      }),
       removeImplicitConversions,
     ),
   ],

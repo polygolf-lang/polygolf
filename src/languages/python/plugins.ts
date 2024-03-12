@@ -8,6 +8,9 @@ import {
   isText,
   rangeIndexCall,
   text,
+  isInt,
+  forEach,
+  op,
 } from "../../IR";
 import { chars } from "../../common/strings";
 import type { Spine } from "../../common/Spine";
@@ -16,9 +19,9 @@ export function golfTextListLiteralIndex(node: Node, spine: Spine) {
   if (
     node.kind === "IndexCall" &&
     node.collection.kind === "List" &&
-    node.collection.exprs.every(isText())
+    node.collection.value.every(isText())
   ) {
-    const values = node.collection.exprs.map((x) => ({
+    const values = node.collection.value.map((x) => ({
       chars: chars(x.value),
       targetLength: 0,
     }));
@@ -49,5 +52,31 @@ export function golfTextListLiteralIndex(node: Node, spine: Spine) {
         getType(node, spine),
       );
     }
+  }
+}
+
+export function indexlessForRangeToForAscii(node: Node) {
+  if (
+    node.kind === "ForEach" &&
+    isOp("range_excl")(node.collection) &&
+    isInt(0n)(node.collection.args[0]) &&
+    isInt(1n)(node.collection.args[2]) &&
+    node.variable === undefined
+  ) {
+    return forEach(
+      undefined,
+      op.repeat(text("X"), node.collection.args[1]),
+      node.body,
+    );
+  }
+}
+
+export function useImplicitForCast(node: Node, spine: Spine) {
+  if (
+    node.kind === "Cast" &&
+    spine.parent?.node.kind === "ForEach" &&
+    spine.pathFragment?.prop === "collection"
+  ) {
+    return node.expr;
   }
 }

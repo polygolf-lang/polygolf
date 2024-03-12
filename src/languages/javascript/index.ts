@@ -1,10 +1,7 @@
 import {
   functionCall as func,
-  indexCall,
   methodCall as method,
   op,
-  listType,
-  textType,
   builtin,
   int,
   propertyCall as property,
@@ -13,17 +10,16 @@ import {
   implicitConversion,
   list,
   prefix,
+  cast,
 } from "../../IR";
 import {
   type Language,
   required,
   search,
   simplegolf,
-  flattenTree,
-  defaultWhitespaceInsertLogic,
 } from "../../common/Language";
 
-import emitProgram from "./emit";
+import { JavascriptEmitter } from "./emit";
 import {
   removeImplicitConversions,
   printIntToPrint,
@@ -33,33 +29,30 @@ import {
   mapMutationTo,
   flipped,
 } from "../../plugins/ops";
-import { alias, renameIdents } from "../../plugins/idents";
+import { alias, clone, renameIdents } from "../../plugins/idents";
 import {
   forArgvToForEach,
   forRangeToForCLike,
   forRangeToForEach,
+  useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
-import {
-  golfLastPrint,
-  implicitlyConvertPrintArg,
-  putcToPrintChar,
-} from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import {
+  charToIntToDec,
+  ordToDecToInt,
   replaceToSplitAndJoin,
-  textGetToIntToTextGet,
-  textToIntToFirstIndexTextGetToInt,
-  textToIntToTextGetToInt,
 } from "../../plugins/textOps";
 import { addOneToManyAssignments, inlineVariables } from "../../plugins/block";
 import {
   applyDeMorgans,
   bitnotPlugins,
   decomposeIntLiteral,
+  divisionToComparisonAndBack,
   equalityToInequality,
   lowBitsPlugins,
   pickAnyInt,
@@ -78,17 +71,16 @@ import {
 const javascriptLanguage: Language = {
   name: "Javascript",
   extension: "js",
-  emitter: emitProgram,
+  emitter: new JavascriptEmitter(),
   phases: [
     required(printIntToPrint),
-    simplegolf(golfLastPrint()),
+    simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       golfStringListLiteral(),
-      forRangeToForEach("at[Array]", "at[List]", "at[codepoint]"),
+      forRangeToForEach,
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
-      textToIntToTextGetToInt,
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -100,13 +92,13 @@ const javascriptLanguage: Language = {
       useRegexAsReplacePattern,
       decomposeIntLiteral(),
       forRangeToForEachKey,
+      ...divisionToComparisonAndBack,
     ),
     required(
       pickAnyInt,
       floodBigints("int53", {
         Assignment: "bigint",
         add: "bigint",
-        sub: "bigint",
         mul: "bigint",
         mod: "bigint",
         pow: "bigint",
@@ -125,43 +117,38 @@ const javascriptLanguage: Language = {
       }),
       mapVarsThatNeedBigint("int53", (x) => func("BigInt", x)),
       forArgvToForEach,
-      putcToPrintChar,
     ),
     required(
+      useImplicitForEachChar("Ascii"),
       forRangeToForCLike,
       mapOpsTo.builtin({
         true: "true",
         false: "false",
         argv: "arguments",
       }),
-      mapOps({
-        "at[argv]": (a) =>
-          op["at[List]"](
-            { ...builtin("arguments"), type: listType(textType()) },
-            a,
-          ),
-      }),
       mapMutationTo.index({
         "with_at[Array]": 0,
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
+      mapOps({
+        "ord_at[Ascii]": (a, b) => method(a, "charCodeAt", b),
+        "ord[Ascii]": (a) => method(a, "charCodeAt", int(0)),
+      }),
       mapOpsTo.index({
+        "at[Ascii]": 0,
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
       }),
 
       ...truncatingOpsPlugins,
-      textGetToIntToTextGet,
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       mapMutationTo.method({
         append: "push",
       }),
       numberDivisionToSlash,
       mapOps({
-        "at[Ascii]": (a, b) => indexCall(a, b),
         "slice[List]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
         "slice[Ascii]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
         "sorted[Ascii]": (a) =>
@@ -235,7 +222,6 @@ const javascriptLanguage: Language = {
         or: "||=",
       }),
       mapOpsTo.method({
-        "ord_at[Ascii]": "charCodeAt",
         "contains[List]": "includes",
         "contains[Array]": "includes",
         "contains[Text]": "includes",
@@ -266,7 +252,7 @@ const javascriptLanguage: Language = {
         rem: "%",
         add: "+",
         "concat[Text]": "+",
-        sub: "-",
+        binarySub: "-",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         bit_and: "&",
@@ -292,12 +278,27 @@ const javascriptLanguage: Language = {
       methodsAsFunctions,
     ),
     simplegolf(addOneToManyAssignments()),
+    required(
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+        if (
+          type.kind === "List" &&
+          ["boolean", "integer", "text"].includes(type.member.kind)
+        ) {
+          return cast(node, "array");
+        }
+        return func("structuredClone", node);
+      }),
+    ),
     search(propertyCallToIndexCall),
     simplegolf(
       alias({
         Identifier: (n, s) =>
           n.builtin &&
-          (s.parent?.node.kind !== "PropertyCall" || s.pathFragment !== "ident")
+          (s.parent?.node.kind !== "PropertyCall" ||
+            s.pathFragment?.prop !== "ident")
             ? n.name
             : undefined,
         Integer: (x) => x.value.toString(),
@@ -306,23 +307,6 @@ const javascriptLanguage: Language = {
     ),
     required(renameIdents(), removeImplicitConversions),
   ],
-  detokenizer(tree) {
-    let result = "";
-    flattenTree(tree).forEach((token, i, tokens) => {
-      if (i === tokens.length - 1) result += token;
-      else {
-        const nextToken = tokens[i + 1];
-        if (token === "\n" && "([`+-/".includes(nextToken[0])) {
-          token = ";";
-        }
-        result += token;
-        if (defaultWhitespaceInsertLogic(token, nextToken)) {
-          result += " ";
-        }
-      }
-    });
-    return result;
-  },
 };
 
 export default javascriptLanguage;

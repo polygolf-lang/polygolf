@@ -15,13 +15,11 @@ import {
   succ,
 } from "../../IR";
 import {
-  defaultDetokenizer,
   type Language,
   required,
   search,
   simplegolf,
 } from "../../common/Language";
-import emitProgram from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
@@ -34,6 +32,7 @@ import {
 } from "../../plugins/ops";
 import {
   alias,
+  clone,
   defaultIdentGen,
   renameIdents,
   useBuiltinAliases,
@@ -44,14 +43,13 @@ import {
   printConcatToMultiPrint,
   printLnToPrint,
   printToImplicitOutput,
-  putcToPrintChar,
   splitPrint,
 } from "../../plugins/print";
 import {
   forArgvToForEach,
   forRangeToForDifferenceRange,
   forRangeToForRangeOneStep,
-  removeUnusedForVar,
+  removeUnusedLoopVar,
 } from "../../plugins/loops";
 import { addImports } from "../../plugins/imports";
 import { getType } from "../../common/getType";
@@ -67,16 +65,16 @@ import {
 } from "../../plugins/arithmetic";
 import {
   usePrimaryTextOps,
-  textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
   startsWithEndsWithToSliceEquality,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
+import { GolfscriptEmitter } from "./emit";
 
 const golfscriptLanguage: Language = {
   name: "Golfscript",
   extension: "gs",
-  emitter: emitProgram,
+  emitter: new GolfscriptEmitter(),
   phases: [
     required(printIntToPrint, arraysToLists, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false)),
@@ -97,12 +95,11 @@ const golfscriptLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
-      removeUnusedForVar,
+      removeUnusedLoopVar,
       forRangeToForDifferenceRange(
         (node, spine) =>
-          !isSubtype(getType(node.start, spine.root.node), integerType(0)),
+          !isSubtype(getType(node.collection.args[0], spine), integerType(0)),
       ),
       replaceToSplitAndJoin,
       implicitlyConvertPrintArg,
@@ -119,7 +116,6 @@ const golfscriptLanguage: Language = {
     ),
     required(
       mapOps({
-        "at[argv]": (a) => op["at[List]"](op.argv, a),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
         "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
         max: (...x) => op["at[List]"](op["sorted[Int]"](list(x)), int(1)),
@@ -171,12 +167,17 @@ const golfscriptLanguage: Language = {
         "slice_back[List]": 0,
         "with_at_back[List]": 0,
       }),
-      textGetToTextGetToIntToText,
       mapMutationTo.index({
         "with_at[Array]": 0,
         "with_at[List]": 0,
         "with_at_back[List]": 0,
         "with_at[Table]": 0,
+      }),
+      mapOpsTo.func({
+        "ord_at[byte]": "=",
+      }),
+      mapOps({
+        "at[byte]": (a, b) => op["char[byte]"](func("=", a, b)),
       }),
       mapOpsTo.index({
         "at[Array]": 0,
@@ -232,6 +233,11 @@ const golfscriptLanguage: Language = {
       }),
     ),
     required(
+      clone((node, type) => {
+        if (["boolean", "integer", "text"].includes(type.kind)) {
+          return node;
+        }
+      }),
       printToImplicitOutput,
       addImports({ a: ["a"] }, (x) =>
         x.length > 0 ? assignment(builtin("a"), builtin("")) : undefined,
@@ -240,13 +246,6 @@ const golfscriptLanguage: Language = {
       removeImplicitConversions,
     ),
   ],
-  detokenizer: defaultDetokenizer(
-    (a, b) =>
-      a !== "" &&
-      b !== "" &&
-      ((/[A-Za-z0-9_]/.test(a[a.length - 1]) && /[A-Za-z0-9_]/.test(b[0])) ||
-        (a[a.length - 1] === "-" && /[0-9]/.test(b[0]))),
-  ),
 };
 
 export default golfscriptLanguage;

@@ -1,5 +1,4 @@
 import type { PluginVisitor, Spine } from "../common/Spine";
-import { replaceAtIndex } from "../common/arrays";
 import {
   block,
   implicitConversion,
@@ -7,7 +6,6 @@ import {
   type Node,
   op,
   text,
-  id,
   assignment,
   isUserIdent,
   isAssignmentToIdent,
@@ -16,6 +14,8 @@ import {
   blockOrSingle,
   type Op,
   isText,
+  argsOf,
+  uniqueId,
 } from "../IR";
 import { mapOps } from "./ops";
 import type { VisitorContext } from "../common/compile";
@@ -44,7 +44,7 @@ export function golfLastPrint(toPrintln = true): PluginVisitor {
       }
       if (arg !== lastStatement.args[0] || lastStatement.op !== newOp) {
         return blockOrSingle(
-          replaceAtIndex(statements, statements.length - 1, op[newOp](arg)),
+          statements.with(statements.length - 1, op[newOp](arg)),
         );
       }
     }
@@ -61,13 +61,10 @@ export function golfLastPrintInt(toPrintlnInt = true): PluginVisitor {
     const newOp = toPrintlnInt ? "println[Int]" : "print[Int]";
     const oldOp = toPrintlnInt ? "print[Int]" : "println[Int]";
     const lastStatement = statements[statements.length - 1];
-    if (isOp(oldOp)(lastStatement)) {
+    const args = argsOf[oldOp](lastStatement);
+    if (args !== undefined) {
       return blockOrSingle(
-        replaceAtIndex(
-          statements,
-          statements.length - 1,
-          op[newOp](lastStatement.args[0]),
-        ),
+        statements.with(statements.length - 1, op[newOp](args[0])),
       );
     }
   };
@@ -93,19 +90,13 @@ export function printConcatToMultiPrint(node: Node, spine: Spine) {
   }
 }
 
-export const putcToPrintChar = mapOps({
-  "putc[Ascii]": (a) => op["print[Text]"](op["char[Ascii]"](a)),
-  "putc[byte]": (a) => op["print[Text]"](op["char[byte]"](a)),
-  "putc[codepoint]": (a) => op["print[Text]"](op["char[codepoint]"](a)),
-});
-
 export function mergePrint(
   program: Node,
   spine: Spine,
   context: VisitorContext,
 ) {
   context.skipChildren();
-  const variable = id();
+  const variable = uniqueId();
   if (spine.countNodes(isOp("print[Text]", "println[Text]")) > 1) {
     const newSpine = spine.withReplacer((node) =>
       isOp("print[Text]", "println[Text]")(node)
@@ -147,12 +138,12 @@ export function splitPrint(node: Node, spine: Spine) {
             x === node
               ? blockOrSingle(node.children.slice(0, -1))
               : x === assignments[0]
-              ? isText("")(x.expr)
-                ? block([])
-                : op["print[Text]"](x.expr)
-              : assignments.includes(x as any)
-              ? op["print[Text]"](((x as Assignment).expr as Op).args[1]!)
-              : undefined,
+                ? isText("")(x.expr)
+                  ? block([])
+                  : op["print[Text]"](x.expr)
+                : assignments.includes(x as any)
+                  ? op["print[Text]"](((x as Assignment).expr as Op).args[1]!)
+                  : undefined,
           ).node;
         }
       }

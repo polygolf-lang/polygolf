@@ -22,6 +22,7 @@ import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
 import { getWrites, hasSideEffect } from "../common/symbols";
 import type { CompilationContext } from "../common/compile";
+import { $ } from "../common/fragments";
 
 /**
  * Collects neighbouring block children matching a predicate and replaces them with a different set of children.
@@ -271,8 +272,8 @@ export function inlineVariables(
         spine.someNode(
           (n) => n !== variable && isUserIdent(variable)(n), // in tests variables are often never read from and we don't want to make those disappear
         ) &&
-        !write.getChild("expr").someNode(isUserIdent(variable)) &&
-        !hasSideEffect(write.getChild("expr"))
+        !write.getChild($.expr).someNode(isUserIdent(variable)) &&
+        !hasSideEffect(write.getChild($.expr))
       ) {
         const assignmentToInlineSpine = write as Spine<Assignment<Identifier>>;
         const assignment = assignmentToInlineSpine.node;
@@ -282,13 +283,13 @@ export function inlineVariables(
             x === assignmentParent && x.kind === "Block"
               ? blockOrSingle(x.children.filter((y) => y !== assignment))
               : x.kind === "Identifier" &&
-                !x.builtin &&
-                x.name === assignment.variable.name
-              ? {
-                  ...assignment.expr,
-                  type: assignment.expr.type ?? assignment.variable.type,
-                }
-              : undefined,
+                  !x.builtin &&
+                  x.name === assignment.variable.name
+                ? {
+                    ...assignment.expr,
+                    type: assignment.expr.type ?? assignment.variable.type,
+                  }
+                : undefined,
           ).node,
         );
       }

@@ -28,13 +28,25 @@ import {
   opCodeDefinitions,
   isNullary,
   OpCodes,
+  defaults,
+  maxArity,
+  type PhysicalOpCode,
+  isPhysicalOpCode,
+  isVirtualOpCode,
+  virtualOpCodeDefinitions,
+  type VirtualOpCode,
 } from "./IR";
-import { mapObjectValues } from "../common/arrays";
+import { mapObjectValues, useDefaults } from "../common/arrays";
 
 export interface ImplicitConversion extends BaseNode {
   readonly kind: "ImplicitConversion";
   expr: Node;
   behavesLike: UnaryOpCode & `${string}_to_${string}`;
+}
+
+export interface Cast extends BaseNode {
+  readonly kind: "Cast";
+  expr: Node;
 }
 
 /**
@@ -45,9 +57,6 @@ export interface ImplicitConversion extends BaseNode {
  
 * Polygolf ensures that in the IR, there will never be:
 
- * - Op(neg), Op(sub)
- * - Op(pred), Op(succ)
- * - Op(is_even), Op(is_odd)
  * - Op as a direct child of a Op with the same associative OpCode
  * - Integer as a nonfirst child of a commutative Op
  * - Boolean negation of a boolean negation
@@ -55,16 +64,18 @@ export interface ImplicitConversion extends BaseNode {
  * 
  * This is ensured when using the op contructor function and the Spine API so avoid creating such nodes manually.
  */
-export interface Op<Op extends OpCode = OpCode> extends BaseNode {
+export interface Op<Op extends PhysicalOpCode = PhysicalOpCode>
+  extends BaseNode {
   readonly kind: "Op";
   readonly op: Op;
   readonly args: OpCodeArgValues<Op>;
 }
 
-export interface KeyValue extends BaseNode {
+export interface KeyValue<Key extends Node = Node, Value extends Node = Node>
+  extends BaseNode {
   readonly kind: "KeyValue";
-  readonly key: Node;
-  readonly value: Node;
+  readonly key: Key;
+  readonly value: Value;
 }
 
 export interface FunctionCall extends BaseNode {
@@ -156,6 +167,10 @@ export function implicitConversion(
   };
 }
 
+export function cast(expr: Node, targetType?: string): Cast {
+  return { kind: "Cast", expr, targetType };
+}
+
 export function keyValue(key: Node, value: Node): KeyValue {
   return {
     kind: "KeyValue",
@@ -181,17 +196,22 @@ export const op = {
             ), // allow unary opcodes to be used in map
   ) as {
     [O in OpCode]: OpCodeArgValues<O> extends readonly []
-      ? Op<O>
-      : (...args: OpCodeArgValues<O>) => Op<O>;
+      ? O extends PhysicalOpCode
+        ? Op<O>
+        : Op
+      : (...args: OpCodeArgValues<O>) => O extends PhysicalOpCode ? Op<O> : Op;
   }),
-  unsafe: opUnsafe,
+  unsafe(op: OpCode, useDefaults = false) {
+    return (...args: Node[]) =>
+      (useDefaults ? opUnsafeWithDefaults : opUnsafe)(op, ...args);
+  },
 } as const;
 
 /**
  * This assumes that the construction will not break the invariants described
  * on `Op` interface and hence is made private.
  */
-function _op(op: OpCode, ...args: Node[]): Op {
+function _op(op: PhysicalOpCode, ...args: Node[]): Op {
   return {
     kind: "Op",
     op,
@@ -205,14 +225,14 @@ function _op(op: OpCode, ...args: Node[]): Op {
  */
 function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   if (!isOpCode(opCode)) return _op(opCode, ...args);
-  if (opCode === "pred") return op.add(args[0], int(-1n));
-  if (opCode === "succ") return op.add(args[0], int(1n));
-  if (opCode === "is_even")
-    return op["eq[Int]"](int(0), op.mod(args[0], int(2)));
-  if (opCode === "is_odd")
-    return op["eq[Int]"](int(1), op.mod(args[0], int(2)));
+  if (isVirtualOpCode(opCode)) {
+    return (virtualOpCodeDefinitions[opCode].construct as any).apply(
+      null,
+      args,
+    );
+  }
   if (isUnary(opCode)) {
-    const value = evalUnary(opCode, args[0]);
+    const value = evalUnary({ kind: "Op", op: opCode, args: args as any });
     if (value !== null) return value;
   }
   if (opCode === "not" || opCode === "bit_not") {
@@ -224,9 +244,7 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
         if (arg.op in booleanNotOpCode) {
           return op.unsafe(
             booleanNotOpCode[arg.op as keyof typeof booleanNotOpCode],
-            arg.args[0]!,
-            arg.args[1]!,
-          );
+          )(arg.args[0]!, arg.args[1]!);
         }
       }
     }
@@ -237,15 +255,6 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
     args[0].args[0].kind !== "ImplicitConversion"
   ) {
     return args[0].args[0];
-  }
-  if (opCode === "neg") {
-    if (isInt()(args[0])) {
-      return int(-args[0].value);
-    }
-    return op.mul(int(-1), args[0]);
-  }
-  if (opCode === "sub") {
-    return op.add(args[0], op.neg(args[1]));
   }
   if (isAssociative(opCode)) {
     args = args.flatMap((x) => (isOp(opCode)(x) ? x.args : [x]));
@@ -287,8 +296,8 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
             isInt()(x)
               ? int(-x.value)
               : x === toNegate
-              ? op.unsafe("add", ...(x as Op).args.map(op.neg))
-              : x,
+                ? op.unsafe("add")(...(x as Op).args.map(op.neg))
+                : x,
           );
         }
       }
@@ -318,8 +327,23 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   return _op(opCode, ...args);
 }
 
+export function opArgsWithDefaults(
+  opCode: OpCode,
+  args: readonly Node[],
+): readonly Node[] {
+  const targetArity = maxArity(opCode);
+  if (targetArity !== Infinity) {
+    return useDefaults(targetArity, defaults[opCode] ?? [], args);
+  }
+  return args;
+}
+
+function opUnsafeWithDefaults(opCode: OpCode, ...args: Node[]): Node {
+  return opUnsafe(opCode, ...opArgsWithDefaults(opCode, args));
+}
+
 function evalBinary(
-  op: BinaryOpCode | VariadicOpCode,
+  op: PhysicalOpCode & (BinaryOpCode | VariadicOpCode),
   left: Node,
   right: Node,
 ): Integer | Text | null {
@@ -341,15 +365,19 @@ function evalBinary(
   return null;
 }
 
-function evalUnary(op: UnaryOpCode, arg: Node): Integer | Text | null {
-  if (isText()(arg)) {
-    const value = arg.value;
-    switch (op) {
-      case "size[byte]":
-      case "size[Ascii]":
-        return int(byteLength(value));
-      case "size[codepoint]":
-        return int(charLength(value));
+function evalUnary(
+  op: Op<UnaryOpCode & PhysicalOpCode>,
+): Integer | Text | null {
+  for (const opCode of [
+    "size[byte]",
+    "size[Ascii]",
+    "size[codepoint]",
+  ] as const) {
+    const args = argsOf[opCode](op);
+    if (args !== undefined && isText()(args[0])) {
+      return int(
+        (opCode === "size[codepoint]" ? charLength : byteLength)(args[0].value),
+      );
     }
   }
   return null;
@@ -627,15 +655,32 @@ export function isNegative(expr: Node) {
   );
 }
 
-function _isOp<O extends OpCode>(...ops: O[]): (x: Node) => x is Op<O> {
+function _isOp<O extends PhysicalOpCode>(...ops: O[]): (x: Node) => x is Op<O> {
   return ((x: Node) =>
     x.kind === "Op" && (ops.length === 0 || ops?.includes(x.op as any))) as any;
 }
 
 export const isOp: {
-  [O in OpCode]: (x: Node) => x is Op<O>;
-} & (<O extends OpCode>(...op: O[]) => (x: Node) => x is Op<O>) = _isOp as any;
+  [O in PhysicalOpCode]: (x: Node) => x is Op<O>;
+} & (<O extends PhysicalOpCode>(...op: O[]) => (x: Node) => x is Op<O>) =
+  _isOp as any;
+
+function _argsOf<O extends VirtualOpCode>(
+  op: O,
+): (x: Op) => OpCodeArgValues<O> | undefined {
+  return (node: Op) => virtualOpCodeDefinitions[op].getArgs(node) as any;
+}
+
+export const argsOf: {
+  [O in VirtualOpCode]: (x: Node) => OpCodeArgValues<O> | undefined;
+} & (<O extends VirtualOpCode>(
+  op: O,
+) => (x: Node) => OpCodeArgValues<O> | undefined) = _argsOf as any;
 
 for (const opCode of OpCodes) {
-  isOp[opCode] = _isOp(opCode) as any;
+  if (isPhysicalOpCode(opCode)) {
+    isOp[opCode] = _isOp(opCode) as any;
+  } else {
+    argsOf[opCode] = _argsOf(opCode) as any;
+  }
 }
