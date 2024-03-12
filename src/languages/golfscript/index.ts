@@ -175,6 +175,12 @@ const golfscriptLanguage: Language = {
         "with_at_back[List]": 0,
         "with_at[Table]": 0,
       }),
+      mapOpsTo.func({
+        "ord_at[byte]": "=",
+      }),
+      mapOps({
+        "at[byte]": (a, b) => op["char[byte]"](func("=", a, b)),
+      }),
       mapOpsTo.index({
         "at[Array]": 0,
         "at[List]": 0,

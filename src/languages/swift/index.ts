@@ -105,9 +105,6 @@ const swiftLanguage: Language = {
         argv: () => builtin("CommandLine.arguments[1...]"),
         "at[argv]": (a) =>
           op["at[List]"](builtin("CommandLine.arguments"), succ(a)),
-        "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
-        "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
-        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
       }),
 
       decomposeIntLiteral(),
@@ -133,9 +130,6 @@ const swiftLanguage: Language = {
         argv: () => builtin("CommandLine.arguments[1...]"),
         "at[argv]": (a) =>
           op["at[List]"](builtin("CommandLine.arguments"), succ(a)),
-        "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
-        "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
-        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
       }),
       implicitlyConvertPrintArg,
       mapOps({
@@ -143,6 +137,8 @@ const swiftLanguage: Language = {
           method(a, "joined", isText("")(b) ? [] : { separator: b }),
         "ord_at[byte]": (a, b) =>
           func("Int", indexCall(func("Array", prop(a, "utf8")), b)),
+        "ord[byte]": (a) =>
+          func("Int", indexCall(func("Array", prop(a, "utf8")), int(0))),
         "at[codepoint]": (a, b) =>
           func("String", indexCall(func("Array", a), b)),
         "slice[codepoint]": (a, b, c) =>
@@ -152,6 +148,11 @@ const swiftLanguage: Language = {
         "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
         "ord_at[codepoint]": (a, b) =>
           prop(indexCall(func("Array", prop(a, "unicodeScalars")), b), "value"),
+        "ord[codepoint]": (a) =>
+          prop(
+            indexCall(func("Array", prop(a, "unicodeScalars")), int(0)),
+            "value",
+          ),
         "char[byte]": (a) =>
           func("String", postfix("!", func("UnicodeScalar", a))),
         "char[codepoint]": (a) =>
@@ -308,6 +309,19 @@ const swiftLanguage: Language = {
         "with_at[Array]": 0,
         "with_at[List]": 0,
         "with_at[Table]": 0,
+      }),
+      mapOps({
+        "at[byte]": (a, b) =>
+          func(
+            "String",
+            postfix(
+              "!",
+              func(
+                "UnicodeScalar",
+                func("Int", indexCall(func("Array", prop(a, "utf8")), b)),
+              ),
+            ),
+          ),
       }),
       mapOpsTo.index({
         "at[Array]": 0,
