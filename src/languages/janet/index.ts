@@ -26,7 +26,6 @@ import {
   op,
   rangeIndexCall,
   text,
-  isInt,
   intToDecOpOrText,
   isForEachChar,
 } from "../../IR";
@@ -116,9 +115,8 @@ const janetLanguage: Language = {
         "contains[Table]": (a, b) =>
           op.not(func("nil?", op["at[Table]"](a, b))),
       }),
-      mapOps({
-        "at_back[List]": (a, b) =>
-          isInt(-1n)(b) ? func("last", a) : undefined,
+      mapOpsTo.func({
+        "last[List]": "last",
       }),
       mapBackwardsIndexToForwards({
         "at_back[Ascii]": "size[Ascii]",

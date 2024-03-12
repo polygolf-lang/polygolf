@@ -21,7 +21,6 @@ import {
   int,
   op,
   text,
-  isInt,
   intToDecOpOrText,
 } from "../../IR";
 import {
@@ -89,8 +88,7 @@ const clojureLanguage: Language = {
     required(
       mapOps({
         append: (a, b) => func("conj", func("vec", a), b),
-        "at_back[List]": (a, b) =>
-          isInt(-1n)(b) ? func("last", a) : undefined,
+        "last[List]": (a) => func("last", a),
         pow: (a, b) => func("int", func("Math/pow", a, b)),
       }),
       mapOpsTo.builtin({

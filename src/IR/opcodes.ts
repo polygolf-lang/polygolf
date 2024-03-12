@@ -122,13 +122,21 @@ export const opCodeDefinitions = {
   "at[Array]": { args: [array(T1, T2), T2], front: "@" },
   "at[List]": { args: [list(T1), int(0)], front: "@" },
   "at_back[List]": { args: [list(T1), int("-oo", -1)], front: "@" },
+  "first[List]": { args: [list(T1)] },
+  "last[List]": { args: [list(T1)] },
   "at[Table]": { args: [table(T1, T2), T1], front: "@" },
   "at[Ascii]": { args: [ascii, int(0)], front: "@" },
   "at_back[Ascii]": { args: [ascii, int("-oo", -1)], front: "@" },
+  "first[Ascii]": { args: [ascii] },
+  "last[Ascii]": { args: [ascii] },
   "at[byte]": { args: [text(), int(0)], front: true },
   "at_back[byte]": { args: [text(), int("-oo", -1)], front: true },
+  "first[byte]": { args: [text()] },
+  "last[byte]": { args: [text()] },
   "at[codepoint]": { args: [text(), int(0)], front: true },
   "at_back[codepoint]": { args: [text(), int("-oo", -1)], front: true },
+  "first[codepoint]": { args: [text()] },
+  "last[codepoint]": { args: [text()] },
   "with_at[Array]": { args: [array(T1, T2), T2, T1], front: "@" },
   "with_at[List]": { args: [list(T1), int(0), T1], front: "@" },
   "with_at_back[List]": { args: [list(T1), int("-oo", -1), T1], front: "@" },
@@ -258,6 +266,14 @@ export const VirtualOpCodes = [
   "ord_at_back[byte]",
   "ord_at_back[codepoint]",
   "ord_at_back[Ascii]",
+  "first[Ascii]",
+  "first[byte]",
+  "first[codepoint]",
+  "first[List]",
+  "last[Ascii]",
+  "last[byte]",
+  "last[codepoint]",
+  "last[List]",
 ] as const satisfies readonly AnyOpCode[];
 export type VirtualOpCode = (typeof VirtualOpCodes)[number];
 
@@ -596,6 +612,110 @@ export const virtualOpCodeDefinitions = {
       }
     },
   },
+  "first[List]": {
+    construct(data) {
+      return op["at[List]"](data, intNode(0));
+    },
+    getArgs(node) {
+      if (isOp["at[List]"](node) && isInt(0n)(node.args[1])) {
+        return [node.args[0]];
+      }
+    },
+  },
+  "first[Ascii]": {
+    construct(data) {
+      return op["at[Ascii]"](data, intNode(0));
+    },
+    getArgs(node) {
+      if (
+        isOp["at[List]"](node) &&
+        isInt(0n)(node.args[1]) &&
+        isOp["text_to_list[Ascii]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "first[byte]": {
+    construct(data) {
+      return op["at[byte]"](data, intNode(0));
+    },
+    getArgs(node) {
+      if (
+        isOp["at[List]"](node) &&
+        isInt(0n)(node.args[1]) &&
+        isOp["text_to_list[byte]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "first[codepoint]": {
+    construct(data) {
+      return op["at[codepoint]"](data, intNode(0));
+    },
+    getArgs(node) {
+      if (
+        isOp["at[List]"](node) &&
+        isInt(0n)(node.args[1]) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "last[List]": {
+    construct(data) {
+      return op["at_back[List]"](data, intNode(-1));
+    },
+    getArgs(node) {
+      if (isOp["at_back[List]"](node) && isInt(-1n)(node.args[1])) {
+        return [node.args[0]];
+      }
+    },
+  },
+  "last[Ascii]": {
+    construct(data) {
+      return op["at_back[Ascii]"](data, intNode(-1));
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isInt(-1n)(node.args[1]) &&
+        isOp["text_to_list[Ascii]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "last[byte]": {
+    construct(data) {
+      return op["at_back[byte]"](data, intNode(-1));
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isInt(-1n)(node.args[1]) &&
+        isOp["text_to_list[byte]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
+  "last[codepoint]": {
+    construct(data) {
+      return op["at_back[codepoint]"](data, intNode(-1));
+    },
+    getArgs(node) {
+      if (
+        isOp["at_back[List]"](node) &&
+        isInt(-1n)(node.args[1]) &&
+        isOp["text_to_list[codepoint]"](node.args[0])
+      ) {
+        return [node.args[0].args[0]];
+      }
+    },
+  },
 } as const satisfies {
   [T in VirtualOpCode]?: VirtualOpCodeDefinition<T>;
 };
@@ -692,16 +812,24 @@ export const opCodeDescriptions: Record<AnyOpCode, string> = {
   "at[Array]": "Gets the item at the 0-based index.",
   "at[List]": "Gets the item at the 0-based index.",
   "at_back[List]": "Gets the item at the -1-based backwards index.",
+  "first[List]": "Gets the first item.",
+  "last[List]": "Gets the last item.",
   "at[Table]": "Gets the item at the key.",
   "at[Ascii]": "Gets the character at the 0-based index.",
   "at_back[Ascii]": "Gets the character at the -1-based backwards index.",
+  "first[Ascii]": "Gets the first char.",
+  "last[Ascii]": "Gets the last char.",
   "at[byte]": "Gets the byte (as text) at the 0-based index (counting bytes).",
   "at_back[byte]":
     "Gets the byte (as text) at the -1-based backwards index (counting bytes).",
+  "first[byte]": "Gets the first byte.",
+  "last[byte]": "Gets the last byte.",
   "at[codepoint]":
     "Gets the codepoint (as text) at the 0-based index (counting codepoints).",
   "at_back[codepoint]":
     "Gets the codepoint (as text) at the -1-based backwards index (counting codepoints).",
+  "first[codepoint]": "Gets the first codepoint.",
+  "last[codepoint]": "Gets the last codepoint.",
   "with_at[Array]":
     "Returns an array with item at the given 0-based index replaced.",
   "with_at[List]":
