@@ -20,7 +20,8 @@
     "cli": "npm run build && node --enable-source-maps dist/cli.js",
     "test:build": "npm run build && node \"dist/markdown-tests/build.js\"",
     "cover": "npm run build && node \"dist/cover/index.js\"",
-    "cover-all": "npm run build && node \"dist/cover/index.js\" -a"
+    "cover-all": "npm run build && node \"dist/cover/index.js\" -a",
+    "cover-all:compare": "npm run build && node \"dist/cover/compare.js\""
   },
   "repository": {
     "type": "git",

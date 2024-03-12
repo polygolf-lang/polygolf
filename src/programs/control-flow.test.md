@@ -12,6 +12,12 @@ if true {
 };
 ```
 
+_Clojure_
+
+```clojure nogolf
+(cond true(println"a")true(println"b")"")
+```
+
 _Janet_
 
 ```janet nogolf
@@ -49,6 +55,12 @@ if true {
 };
 ```
 
+_Clojure_
+
+```clojure nogolf
+(cond true(println"a")true(println"b")""(println"c"))
+```
+
 _Janet_
 
 ```janet nogolf
@@ -82,6 +94,12 @@ $list <- (list "aaa" "bb" "c");
 for $x $list {
     println $x;
 };
+```
+
+_Clojure_
+
+```clojure nogolf
+(def l["aaa""bb""c"])(doseq[x l](println x))
 ```
 
 _Janet_
@@ -132,6 +150,18 @@ $text <- "asdfgh";
 for[Ascii] $x $text {
     println $x;
 };
+```
+
+_Clojure_
+
+```clojure nogolf
+(print"a
+s
+d
+f
+g
+h
+")
 ```
 
 _Janet_
@@ -189,6 +219,12 @@ $n <- 20;
 for $x (0..<$n 1) {
     println $x;
 };
+```
+
+_Clojure_
+
+```clojure nogolf
+(def n 20)(dotimes[x n](prn x))
 ```
 
 _Golfscript_
@@ -254,6 +290,12 @@ $k <- 3;
 for $x ($a..<$n $k) {
     println $x;
 };
+```
+
+_Clojure_
+
+```clojure nogolf
+(def a -20)(def n 20)(def k 3)(doseq[x(range a n k)](prn x))
 ```
 
 _Golfscript_

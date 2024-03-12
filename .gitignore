@@ -1,5 +1,7 @@
 node_modules
 dist
 src/frontend/grammar.ts
+cover-all.json
+cover.json
 *.test.md.ts
 .DS_Store

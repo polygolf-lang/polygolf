@@ -35,6 +35,7 @@ import { isCompilable } from "../common/compile";
 import asTable from "as-table";
 import { mapObjectValues } from "../common/arrays";
 import yargs from "yargs";
+import fs from "fs";
 
 const options = yargs()
   .options({
@@ -93,7 +94,10 @@ for (const lang of langs) {
 type Table = Record<string, Record<string, unknown>>;
 type CoverTableRecipe = Record<string, (x: LangCoverConfig) => Node>;
 
+let results: Table = {};
+
 function printTable(name: string, x: Table) {
+  results = { ...results, ...x };
   console.log(
     "\n" +
       asTable([
@@ -254,3 +258,9 @@ if (options.all === true) {
     ),
   );
 }
+
+fs.writeFileSync(
+  `cover${options.all === true ? "-all" : ""}.json`,
+  JSON.stringify(results),
+  { encoding: "utf-8" },
+);
