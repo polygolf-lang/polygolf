@@ -49,12 +49,15 @@ export function id(name: string, builtin: boolean = false): Identifier {
   return { kind: "Identifier", name, builtin };
 }
 
-const unique: Record<string, number> = {};
+let unique: Record<string, number> = {};
 export function uniqueId(sequenceName = "unique", builtin = false): Identifier {
   if (!(sequenceName in unique)) {
     unique[sequenceName] = 0;
   }
   return id(`${sequenceName}#${unique[sequenceName]++}`, builtin);
+}
+export function clearUniqueSequences() {
+  unique = {};
 }
 
 export function builtin(name: string): Identifier {

@@ -11,6 +11,7 @@ import {
   int,
   forEach,
   asciiType,
+  clearUniqueSequences,
 } from "../IR";
 import { expandVariants } from "./expandVariants";
 import { type Plugin, type Language } from "./Language";
@@ -192,6 +193,7 @@ export default function compile(
   partialOptions: Partial<CompilationOptions>,
   ...languages: Language[]
 ): CompilationResult[] {
+  clearUniqueSequences();
   const options = defaultCompilationOptions(partialOptions);
   const obj = getObjectiveFunc(options);
   let parsed: ParseResult;

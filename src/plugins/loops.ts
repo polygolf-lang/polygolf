@@ -8,7 +8,6 @@ import {
   forCLike,
   block,
   forEach,
-  id,
   op,
   type Node,
   isInt,
@@ -118,7 +117,7 @@ export function forRangeToForEach(node: Node, spine: Spine) {
       )?.args[0] as List | undefined;
 
       if (indexedList !== undefined) {
-        const elementIdentifier = id(node.variable.name + "+each");
+        const elementIdentifier = uniqueId(node.variable.name);
         const newBody = bodySpine.withReplacer((n) => {
           if (
             isOp["at[List]"](n) &&
@@ -164,7 +163,7 @@ export function forArgvToForRange(overshoot = true, inclusive = false): Plugin {
     name: `forArgvToForRange(${overshoot ? "" : "false"})`,
     visit(node) {
       if (node.kind === "ForArgv") {
-        const indexVar = id(node.variable.name + "+index");
+        const indexVar = uniqueId(node.variable.name);
         const newBody = block([
           assignment(node.variable, op["at[argv]"](indexVar)),
           node.body,
@@ -230,7 +229,7 @@ export function shiftRangeOneUp(node: Node, spine: Spine) {
       )
     ) {
       const bodySpine = spine.getChild($.body);
-      const newVar = id(node.variable.name + "+shift");
+      const newVar = uniqueId(node.variable.name);
       const newBodySpine = bodySpine.withReplacer((x) =>
         newVar !== undefined && isIdent(node.variable!)(x)
           ? pred(newVar)
@@ -271,7 +270,7 @@ export function forRangeToForRangeOneStep(node: Node, spine: Spine) {
   if (isForEachRange(node) && node.variable !== undefined) {
     const [low, high, step] = node.collection.args;
     if (isSubtype(getType(step, spine), integerType(2n))) {
-      const newVar = id(node.variable.name + "+1step");
+      const newVar = uniqueId(node.variable.name);
       return forEach(
         newVar,
         op[node.collection.op](
@@ -296,7 +295,7 @@ export function forEachToForRange(node: Node) {
     node.variable !== undefined &&
     !isOp("range_incl", "range_excl", "range_diff_excl")(node.collection)
   ) {
-    const variable = id(node.variable.name + "+index");
+    const variable = uniqueId(node.variable.name);
     if (isForEachChar(node)) {
       return forEach(
         variable,

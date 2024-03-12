@@ -206,7 +206,10 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
               opCode + "<-",
               (lang) => {
                 const types = getInstantiatedOpCodeArgTypes(opCode);
-                const variable = { ...uniqueId("cover", true), type: types[0] };
+                const variable = {
+                  ...uniqueId("cover", true),
+                  type: types[0],
+                };
                 return assignment(
                   variable,
                   op.unsafe(opCode)(
