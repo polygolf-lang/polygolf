@@ -1,6 +1,5 @@
 import {
   functionCall as func,
-  indexCall,
   methodCall as method,
   op,
   builtin,
@@ -37,11 +36,7 @@ import {
   useImplicitForEachChar,
 } from "../../plugins/loops";
 import { golfStringListLiteral } from "../../plugins/static";
-import {
-  golfLastPrint,
-  implicitlyConvertPrintArg,
-  putcToPrintChar,
-} from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   useDecimalConstantPackedPrinter,
   useLowDecimalListPackedPrinter,
@@ -49,11 +44,7 @@ import {
 import {
   charToIntToDec,
   ordToDecToInt,
-  atTextToListToAtText,
   replaceToSplitAndJoin,
-  textGetToIntToTextGet,
-  textToIntToFirstIndexTextGetToInt,
-  textToIntToTextGetToInt,
 } from "../../plugins/textOps";
 import { addOneToManyAssignments, inlineVariables } from "../../plugins/block";
 import {
@@ -85,11 +76,10 @@ const javascriptLanguage: Language = {
     simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       golfStringListLiteral(),
-      forRangeToForEach("at[Array]", "at[List]", "at[codepoint]"),
+      forRangeToForEach,
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
-      textToIntToTextGetToInt,
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -104,12 +94,10 @@ const javascriptLanguage: Language = {
       ...divisionToComparisonAndBack,
     ),
     required(
-      atTextToListToAtText,
       pickAnyInt,
       floodBigints("int53", {
         Assignment: "bigint",
         add: "bigint",
-        sub: "bigint",
         mul: "bigint",
         mod: "bigint",
         pow: "bigint",
@@ -128,14 +116,10 @@ const javascriptLanguage: Language = {
       }),
       mapVarsThatNeedBigint("int53", (x) => func("BigInt", x)),
       forArgvToForEach,
-      putcToPrintChar,
     ),
     required(
       useImplicitForEachChar("Ascii"),
       forRangeToForCLike,
-      mapOps({
-        "at[argv]": (a) => op["at[List]"](op.argv, a),
-      }),
       mapOpsTo.builtin({
         true: "true",
         false: "false",
@@ -146,22 +130,24 @@ const javascriptLanguage: Language = {
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
+      mapOps({
+        "ord_at[Ascii]": (a, b) => method(a, "charCodeAt", b),
+        "ord[Ascii]": (a) => method(a, "charCodeAt", int(0)),
+      }),
       mapOpsTo.index({
+        "at[Ascii]": 0,
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
       }),
 
       ...truncatingOpsPlugins,
-      textGetToIntToTextGet,
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       mapMutationTo.method({
         append: "push",
       }),
       numberDivisionToSlash,
       mapOps({
-        "at[Ascii]": (a, b) => indexCall(a, b),
         "slice[List]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
         "slice[Ascii]": (a, b, c) => method(a, "slice", b, op.add(b, c)),
         "sorted[Ascii]": (a) =>
@@ -235,7 +221,6 @@ const javascriptLanguage: Language = {
         or: "||=",
       }),
       mapOpsTo.method({
-        "ord_at[Ascii]": "charCodeAt",
         "contains[List]": "includes",
         "contains[Array]": "includes",
         "contains[Text]": "includes",
@@ -266,7 +251,7 @@ const javascriptLanguage: Language = {
         rem: "%",
         add: "+",
         "concat[Text]": "+",
-        sub: "-",
+        binarySub: "-",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         bit_and: "&",

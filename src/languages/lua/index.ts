@@ -40,15 +40,12 @@ import {
 import {
   golfLastPrint,
   implicitlyConvertPrintArg,
-  putcToPrintChar,
   mergePrint,
 } from "../../plugins/print";
 import {
   charToIntToDec,
   ordToDecToInt,
-  atTextToListToAtText,
   startsWithEndsWithToSliceEquality,
-  textToIntToFirstIndexTextGetToInt,
   usePrimaryTextOps,
 } from "../../plugins/textOps";
 import { assertInt64 } from "../../plugins/types";
@@ -72,7 +69,7 @@ const luaLanguage: Language = {
   extension: "lua",
   emitter: new LuaEmitter(),
   phases: [
-    required(printIntToPrint, putcToPrintChar, usePrimaryTextOps("byte")),
+    required(printIntToPrint, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       mergePrint,
@@ -88,7 +85,6 @@ const luaLanguage: Language = {
       inlineVariables,
       forArgvToForRange(),
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       mapOps({
         dec_to_int: (a) => op.add(int(0n), implicitConversion("dec_to_int", a)),
       }),
@@ -99,15 +95,13 @@ const luaLanguage: Language = {
       pickAnyInt,
       forArgvToForRange(),
       forEachToForRange,
-      atTextToListToAtText,
       rangeExclusiveToInclusive(),
       implicitlyConvertPrintArg,
-      textToIntToFirstIndexTextGetToInt,
       startsWithEndsWithToSliceEquality("byte"),
       mapOps({
         dec_to_int: (a) => op.mul(int(1n), implicitConversion("dec_to_int", a)),
-        "at[argv]": (a) => op["at[List]"](op.argv, a),
         "ord_at[byte]": (a, b) => method(a, "byte", succ(b)),
+        "ord[byte]": (a) => method(a, "byte", int(1)),
         "ord_at_back[byte]": (a, b) => method(a, "byte", b),
         "at[byte]": (a, b) => method(a, "sub", succ(b), succ(b)),
         "at_back[byte]": (a, b) => method(a, "sub", b, b),
@@ -191,7 +185,7 @@ const luaLanguage: Language = {
         div: "//",
         mod: "%",
         add: "+",
-        sub: "-",
+        binarySub: "-",
         "concat[Text]": "..",
         bit_shift_left: "<<",
         bit_shift_right: ">>",

@@ -89,13 +89,3 @@ $y <- ((ord[Ascii] $x) - 48):0..9;
 $x <- "0";
 $y <- (dec_to_int $x):0..9;
 ```
-
-## atTextToListToAtText
-
-```polygolf
-at[List] (text_to_list[Ascii] $text) $i;
-```
-
-```polygolf textOps.atTextToListToAtText
-at[Ascii] $text $i;
-```

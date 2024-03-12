@@ -6,7 +6,6 @@ import {
   type Node,
   op,
   text,
-  id,
   assignment,
   isUserIdent,
   isAssignmentToIdent,
@@ -15,6 +14,8 @@ import {
   blockOrSingle,
   type Op,
   isText,
+  argsOf,
+  uniqueId,
 } from "../IR";
 import { mapOps } from "./ops";
 import type { VisitorContext } from "../common/compile";
@@ -60,12 +61,10 @@ export function golfLastPrintInt(toPrintlnInt = true): PluginVisitor {
     const newOp = toPrintlnInt ? "println[Int]" : "print[Int]";
     const oldOp = toPrintlnInt ? "print[Int]" : "println[Int]";
     const lastStatement = statements[statements.length - 1];
-    if (isOp(oldOp)(lastStatement)) {
+    const args = argsOf[oldOp](lastStatement);
+    if (args !== undefined) {
       return blockOrSingle(
-        statements.with(
-          statements.length - 1,
-          op[newOp](lastStatement.args[0]),
-        ),
+        statements.with(statements.length - 1, op[newOp](args[0])),
       );
     }
   };
@@ -91,19 +90,13 @@ export function printConcatToMultiPrint(node: Node, spine: Spine) {
   }
 }
 
-export const putcToPrintChar = mapOps({
-  "putc[Ascii]": (a) => op["print[Text]"](op["char[Ascii]"](a)),
-  "putc[byte]": (a) => op["print[Text]"](op["char[byte]"](a)),
-  "putc[codepoint]": (a) => op["print[Text]"](op["char[codepoint]"](a)),
-});
-
 export function mergePrint(
   program: Node,
   spine: Spine,
   context: VisitorContext,
 ) {
   context.skipChildren();
-  const variable = id();
+  const variable = uniqueId();
   if (spine.countNodes(isOp("print[Text]", "println[Text]")) > 1) {
     const newSpine = spine.withReplacer((node) =>
       isOp("print[Text]", "println[Text]")(node)

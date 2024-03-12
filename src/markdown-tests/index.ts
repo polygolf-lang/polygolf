@@ -10,6 +10,7 @@ import { findLang } from "../languages/languages";
 import { type Plugin } from "../common/Language";
 import { getOnlyVariant } from "../common/expandVariants";
 import type { PluginVisitor } from "../common/Spine";
+import { clearUniqueSequences } from "../IR";
 
 export const keywords = [
   "nogolf",
@@ -74,6 +75,7 @@ export function testPlugin(
   output: string,
 ) {
   test(name, () => {
+    clearUniqueSequences();
     expect(
       (() => {
         const options = compilationOptionsFromKeywords(args, false);

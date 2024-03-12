@@ -52,6 +52,11 @@ import {
   opArgsWithDefaults,
   minArity,
   maxArity,
+  type PhysicalOpCode,
+  argsOf,
+  isVirtualOpCode,
+  annotate,
+  uniqueId,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
 import { PolygolfError } from "./errors";
@@ -85,9 +90,11 @@ export function getTypeAndResolveOpCode(
     return t;
   } catch (e) {
     currentlyFinding.delete(expr);
+    /*
     if (e instanceof Error && !(e instanceof PolygolfError)) {
       throw new PolygolfError(e.message, expr.source);
     }
+    */
     throw e;
   }
 }
@@ -325,6 +332,20 @@ export function getOpCodeTypeFromTypes(
   got: Type[],
   skipAdditionalChecks = false,
 ): Type {
+  if (isVirtualOpCode(opCode)) {
+    const x = op.unsafe(opCode)(
+      ...got.map((t) => annotate(uniqueId("getType"), t)),
+    );
+    return getType(x, x);
+  }
+  return _getOpCodeTypeFromTypes(opCode, got, skipAdditionalChecks);
+}
+
+function _getOpCodeTypeFromTypes(
+  opCode: PhysicalOpCode,
+  got: Type[],
+  skipAdditionalChecks = false,
+): Type {
   switch (opCode) {
     // binary
     // (num, num) => num
@@ -336,7 +357,6 @@ export function getOpCodeTypeFromTypes(
       );
     }
     case "add":
-    case "sub":
     case "mul":
     case "div":
     case "trunc_div":
@@ -383,8 +403,6 @@ export function getOpCodeTypeFromTypes(
       return (got[0] as ListType).member;
     case "at[Table]":
       return (got[0] as TableType).value;
-    case "at[argv]":
-      return text();
     // other
     case "include":
       return voidType;
@@ -425,13 +443,6 @@ export function getOpCodeTypeFromTypes(
       );
     case "split":
       return list(got[0]);
-    case "at[byte]":
-    case "at[codepoint]":
-    case "at[Ascii]":
-    case "at_back[byte]":
-    case "at_back[codepoint]":
-    case "at_back[Ascii]":
-      return text(int(1, 1), (got[0] as TextType).isAscii);
     case "join":
       return text(
         int(0, "oo"),
@@ -471,17 +482,6 @@ export function getOpCodeTypeFromTypes(
     }
     case "bit_count":
       return int(0, BigInt((got[0] as IntegerType).high.toString(2).length));
-    case "neg": {
-      const t = got[0] as IntegerType;
-      return int(neg(t.high), neg(t.low));
-    }
-    case "is_even":
-    case "is_odd":
-      return booleanType;
-    case "succ":
-      return getArithmeticType("add", got[0] as IntegerType, int(1n, 1n));
-    case "pred":
-      return getArithmeticType("sub", got[0] as IntegerType, int(1n, 1n));
     case "not":
       return booleanType;
     case "int_to_bool":
@@ -527,24 +527,11 @@ export function getOpCodeTypeFromTypes(
     case "text_to_list[Ascii]":
     case "text_to_list[byte]":
     case "text_to_list[codepoint]":
-      return list(text(int(1, 1), opCode === "text_to_list[Ascii]"));
+      return list(text(int(1, 1), (got[0] as TextType).isAscii));
     case "size[List]":
     case "size[Set]":
     case "size[Table]":
       return int(0, (1n << 31n) - 1n);
-    case "size[byte]": {
-      const codepointLength = (got[0] as TextType).codepointLength;
-      return int(
-        codepointLength.low,
-        min(
-          1n << 31n,
-          mul(codepointLength.high, (got[0] as TextType).isAscii ? 1n : 4n),
-        ),
-      );
-    }
-    case "size[codepoint]":
-    case "size[Ascii]":
-      return (got[0] as TextType).codepointLength;
     case "split_whitespace":
       return list(got[0]);
     case "sorted[Int]":
@@ -570,15 +557,8 @@ export function getOpCodeTypeFromTypes(
       return int(0, 2 ** 31 - 1);
     case "argv":
       return list(text());
-    case "putc[byte]":
-    case "putc[codepoint]":
-    case "putc[Ascii]":
-      return voidType;
     case "print[Text]":
     case "println[Text]":
-      return voidType;
-    case "print[Int]":
-    case "println[Int]":
       return voidType;
     case "println_list_joined":
       return voidType;
@@ -635,14 +615,6 @@ export function getOpCodeTypeFromTypes(
         )}.`,
       );
     }
-    case "ord_at[codepoint]":
-    case "ord_at_back[codepoint]":
-      return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
-    case "ord_at[byte]":
-    case "ord_at[Ascii]":
-    case "ord_at_back[byte]":
-    case "ord_at_back[Ascii]":
-      return int(0, (got[0] as TextType).isAscii ? 127 : 255);
     case "ord[codepoint]":
       return int(0, (got[0] as TextType).isAscii ? 127 : 0x10ffff);
     case "ord[byte]":
@@ -675,9 +647,25 @@ export function getOpCodeTypeFromTypes(
 }
 
 function getOpCodeType(expr: Op, program: Node): Type {
-  const got = expr.args.map((x) => getType(x, program));
+  let opCode: OpCode = expr.op;
+  let args = expr.args;
+  const specialCasedVirtualOpCodes = [
+    "size[byte]",
+    "size[codepoint]",
+    "size[Ascii]",
+  ] as const;
+  for (const virtualOpCode of specialCasedVirtualOpCodes) {
+    const args2 = argsOf(virtualOpCode)(expr);
+    if (args2 !== undefined) {
+      args = args2;
+      opCode = virtualOpCode;
+      break;
+    }
+  }
 
-  if (!isTypeMatch(got, opCodeDefinitions[expr.op].args)) {
+  const got = args.map((x) => getType(x, program));
+
+  if (!isTypeMatch(got, opCodeDefinitions[opCode].args)) {
     throw new Error(
       `Type error. Operator '${
         expr.op
@@ -687,7 +675,23 @@ function getOpCodeType(expr: Op, program: Node): Type {
     );
   }
 
-  return getOpCodeTypeFromTypes(expr.op, got);
+  switch (opCode) {
+    case "size[byte]": {
+      const codepointLength = (got[0] as TextType).codepointLength;
+      return int(
+        codepointLength.low,
+        min(
+          1n << 31n,
+          mul(codepointLength.high, (got[0] as TextType).isAscii ? 1n : 4n),
+        ),
+      );
+    }
+    case "size[codepoint]":
+    case "size[Ascii]":
+      return (got[0] as TextType).codepointLength;
+  }
+
+  return _getOpCodeTypeFromTypes(expr.op, got);
 }
 
 function resolveUnresolvedOpCode(
@@ -743,7 +747,7 @@ function resolveUnresolvedOpCode(
 }
 
 export function getArithmeticType(
-  op: OpCode,
+  op: PhysicalOpCode,
   a: IntegerType, // left argument
   b: IntegerType, // right argument
 ): IntegerType {
@@ -754,8 +758,6 @@ export function getArithmeticType(
       return int(max(a.low, b.low), max(a.high, b.high));
     case "add":
       return int(add(a.low, b.low), add(a.high, b.high));
-    case "sub":
-      return int(sub(a.low, b.high), sub(a.high, b.low));
     case "mul": {
       // Extreme values of a product arise from multiplying the extremes of the inputs.
       // The single case were simple multiplication of the bounds is not defined, corresponds to multiplying

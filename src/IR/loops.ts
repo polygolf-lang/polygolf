@@ -8,7 +8,7 @@ import {
   op,
   isOp,
   type Op,
-  type OpCode,
+  type PhysicalOpCode,
 } from "./IR";
 
 /**
@@ -130,7 +130,7 @@ export function forArgv(
 
 export const isRangeOp = isOp("range_excl", "range_incl");
 
-export function isForEach<O extends OpCode>(
+export function isForEach<O extends PhysicalOpCode>(
   ...ops: O[]
 ): (x: Node) => x is ForEach<Op<O>> {
   return function (x: Node): x is ForEach<Op<O>> {
@@ -139,6 +139,7 @@ export function isForEach<O extends OpCode>(
 }
 
 export const isForEachRange = isForEach("range_incl", "range_excl");
+export const isForEachExclRange = isForEach("range_excl");
 export const isForEachChar = isForEach(
   "text_to_list[Ascii]",
   "text_to_list[byte]",

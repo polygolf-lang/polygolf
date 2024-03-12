@@ -42,7 +42,6 @@ import {
   printConcatToMultiPrint,
   printLnToPrint,
   printToImplicitOutput,
-  putcToPrintChar,
   splitPrint,
 } from "../../plugins/print";
 import {
@@ -65,10 +64,8 @@ import {
 } from "../../plugins/arithmetic";
 import {
   usePrimaryTextOps,
-  textGetToTextGetToIntToText,
   replaceToSplitAndJoin,
   startsWithEndsWithToSliceEquality,
-  atTextToListToAtText,
 } from "../../plugins/textOps";
 import { inlineVariables } from "../../plugins/block";
 import { GolfscriptEmitter } from "./emit";
@@ -97,7 +94,6 @@ const golfscriptLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      putcToPrintChar,
       bitShiftToMulOrDiv(false, true, true),
       removeUnusedLoopVar,
       forRangeToForDifferenceRange(
@@ -118,9 +114,7 @@ const golfscriptLanguage: Language = {
       }),
     ),
     required(
-      atTextToListToAtText,
       mapOps({
-        "at[argv]": (a) => op["at[List]"](op.argv, a),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
         "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
         max: (...x) => op["at[List]"](op["sorted[Int]"](list(x)), int(1)),
@@ -172,12 +166,17 @@ const golfscriptLanguage: Language = {
         "slice_back[List]": 0,
         "with_at_back[List]": 0,
       }),
-      textGetToTextGetToIntToText,
       mapMutationTo.index({
         "with_at[Array]": 0,
         "with_at[List]": 0,
         "with_at_back[List]": 0,
         "with_at[Table]": 0,
+      }),
+      mapOpsTo.func({
+        "ord_at[byte]": "=",
+      }),
+      mapOps({
+        "at[byte]": (a, b) => op["char[byte]"](func("=", a, b)),
       }),
       mapOpsTo.index({
         "at[Array]": 0,

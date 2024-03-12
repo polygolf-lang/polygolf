@@ -48,11 +48,7 @@ import {
   removeUnusedLoopVar,
 } from "../../plugins/loops";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
-import {
-  golfLastPrint,
-  implicitlyConvertPrintArg,
-  putcToPrintChar,
-} from "../../plugins/print";
+import { golfLastPrint, implicitlyConvertPrintArg } from "../../plugins/print";
 import {
   packSource2to1,
   packSource3to1,
@@ -60,14 +56,11 @@ import {
   useLowDecimalListPackedPrinter,
 } from "../../plugins/packing";
 import {
-  textGetToIntToTextGet,
-  textToIntToTextGetToInt,
   usePrimaryTextOps,
   useMultireplace,
   startsWithEndsWithToSliceEquality,
   charToIntToDec,
   ordToDecToInt,
-  atTextToListToAtText,
 } from "../../plugins/textOps";
 import {
   addOneToManyAssignments,
@@ -106,11 +99,10 @@ const pythonLanguage: Language = {
       golfStringListLiteral(),
       listOpsToTextOps("find[codepoint]", "at[codepoint]"),
       tempVarToMultipleAssignment,
-      forRangeToForEach("at[List]", "at[codepoint]"),
+      forRangeToForEach,
       equalityToInequality,
       useDecimalConstantPackedPrinter,
       useLowDecimalListPackedPrinter,
-      textToIntToTextGetToInt,
       ...bitnotPlugins,
       ...lowBitsPlugins,
       applyDeMorgans,
@@ -128,7 +120,6 @@ const pythonLanguage: Language = {
     required(
       pickAnyInt,
       forArgvToForEach,
-      putcToPrintChar,
       {
         ...mapOps({
           argv: () => builtin("sys.argv[1:]"),
@@ -159,7 +150,12 @@ const pythonLanguage: Language = {
         "with_at[List]": 0,
         "with_at[Table]": 0,
       }),
+      mapOps({
+        "at[byte]": (a, b) =>
+          op["char[byte]"](indexCall(func("bytes", a, text("u8")), b)),
+      }),
       mapOpsTo.index({
+        "at[codepoint]": 0,
         "at[Array]": 0,
         "at[List]": 0,
         "at[Table]": 0,
@@ -171,8 +167,6 @@ const pythonLanguage: Language = {
       indexlessForRangeToForAscii,
     ),
     required(
-      atTextToListToAtText,
-      textGetToIntToTextGet,
       implicitlyConvertPrintArg,
       mapOps({
         true: () => int(1),
@@ -199,8 +193,6 @@ const pythonLanguage: Language = {
           ),
         "reversed[List]": (a) =>
           rangeIndexCall(a, builtin(""), builtin(""), int(-1)),
-        "at[codepoint]": (a, b) => indexCall(a, b),
-        "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
         "ord_at[byte]": (a, b) => indexCall(func("bytes", a, text("u8")), b),
         "ord_at_back[byte]": (a, b) =>
           indexCall(func("bytes", a, text("u8")), b),
@@ -275,7 +267,6 @@ const pythonLanguage: Language = {
         int_to_bool: (a) => implicitConversion("int_to_bool", a),
         bool_to_int: (a) =>
           op.mul(int(1n), implicitConversion("bool_to_int", a)),
-        "text_to_list[codepoint]": (x) => cast(x, "list"),
       }),
       mapOpsTo.method({
         "find[List]": "index",
@@ -317,6 +308,7 @@ const pythonLanguage: Language = {
             ),
             "list",
           ),
+        "text_to_list[codepoint]": (x) => cast(x, "list"),
       }),
       mapMutationTo.method({
         append: "append",
@@ -346,7 +338,7 @@ const pythonLanguage: Language = {
         add: "+",
         "concat[Text]": "+",
         "concat[List]": "+",
-        sub: "-",
+        binarySub: "-",
         bit_shift_left: "<<",
         bit_shift_right: ">>",
         bit_and: "&",

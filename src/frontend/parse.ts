@@ -56,7 +56,6 @@ import {
   postfix,
   type Text,
   type OpCodeFrontName,
-  OpCodesUser,
   OpCodeFrontNamesToOpCodes,
   OpCodeFrontNames,
   userName,
@@ -66,6 +65,7 @@ import {
   minArity,
   maxArity,
   cast,
+  OpCodesUser,
 } from "../IR";
 import grammar from "./grammar";
 

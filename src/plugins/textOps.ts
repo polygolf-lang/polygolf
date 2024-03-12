@@ -10,7 +10,6 @@ import {
   textType,
   annotate,
   isInt,
-  type BinaryOpCode,
 } from "../IR";
 import { type Plugin } from "../common/Language";
 import { mapOps } from "./ops";
@@ -30,54 +29,6 @@ export function usePrimaryTextOps(char: "byte" | "codepoint"): Plugin {
       }
     },
   };
-}
-
-export const textGetToIntToTextGet: Plugin = mapOps({
-  "ord_at[Ascii]": (a, b) => op["ord[Ascii]"](op["at[Ascii]"](a, b)),
-  "ord_at[byte]": (a, b) => op["ord[byte]"](op["at[byte]"](a, b)),
-  "ord_at[codepoint]": (a, b) =>
-    op["ord[codepoint]"](op["at[codepoint]"](a, b)),
-  "ord_at_back[Ascii]": (a, b) => op["ord[Ascii]"](op["at_back[Ascii]"](a, b)),
-  "ord_at_back[byte]": (a, b) => op["ord[byte]"](op["at_back[byte]"](a, b)),
-  "ord_at_back[codepoint]": (a, b) =>
-    op["ord[codepoint]"](op["at_back[codepoint]"](a, b)),
-});
-
-export const textToIntToTextGetToInt: Plugin = mapOps({
-  "ord[byte]": (a) =>
-    isOp("at[byte]")(a) ? op["ord_at[byte]"](...a.args) : undefined,
-  "ord[codepoint]": (a) =>
-    isOp("at[codepoint]")(a) ? op["ord_at[codepoint]"](...a.args) : undefined,
-});
-
-export const textGetToTextGetToIntToText: Plugin = mapOps({
-  "at[byte]": (a, b) => op["char[byte]"](op["ord_at[byte]"](a, b)),
-  "at[codepoint]": (a, b) =>
-    op["char[codepoint]"](op["ord_at[codepoint]"](a, b)),
-});
-
-export const textToIntToFirstIndexTextGetToInt: Plugin = mapOps({
-  "ord[Ascii]": (a) => op["ord_at[Ascii]"](a, int(0n)),
-  "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
-  "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
-});
-
-export function atTextToListToAtText(node: Node) {
-  if (
-    isOp("at[List]", "at_back[List]")(node) &&
-    isOp(
-      "text_to_list[Ascii]",
-      "text_to_list[byte]",
-      "text_to_list[codepoint]",
-    )(node.args[0])
-  ) {
-    return op[
-      node.args[0].op.replace(
-        "text_to_list",
-        node.op.replace("[List]", ""),
-      ) as BinaryOpCode
-    ](node.args[0].args[0], node.args[1]);
-  }
 }
 
 /**

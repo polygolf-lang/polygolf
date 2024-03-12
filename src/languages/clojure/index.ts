@@ -21,14 +21,9 @@ import {
   int,
   op,
   text,
-  isInt,
   intToDecOpOrText,
 } from "../../IR";
-import {
-  golfLastPrint,
-  golfLastPrintInt,
-  putcToPrintChar,
-} from "../../plugins/print";
+import { golfLastPrint, golfLastPrintInt } from "../../plugins/print";
 import { usePrimaryTextOps } from "../../plugins/textOps";
 import { golfStringListLiteral, listOpsToTextOps } from "../../plugins/static";
 import {
@@ -49,7 +44,7 @@ const clojureLanguage: Language = {
   extension: "clj",
   emitter: new ClojureEmitter(),
   phases: [
-    required(arraysToLists, putcToPrintChar, usePrimaryTextOps("codepoint")),
+    required(arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint(false), golfLastPrintInt(false)),
     search(
       flipBinaryOps,
@@ -89,11 +84,7 @@ const clojureLanguage: Language = {
     required(
       mapOps({
         append: (a, b) => func("conj", func("vec", a), b),
-        "at[argv]": (a) => op["at[List]"](op.argv, a),
-        "at[codepoint]": (a, b) => func("str", func("nth", a, b)),
-        "at_back[List]": (a, b) =>
-          isInt(-1n)(b) ? func("last", a) : undefined,
-        "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
+        "last[List]": (a) => func("last", a),
         pow: (a, b) => func("int", func("Math/pow", a, b)),
       }),
       mapOpsTo.builtin({
@@ -115,6 +106,8 @@ const clojureLanguage: Language = {
 
         "char[codepoint]": (a) => func("str", func("char", a)),
         "ord_at[codepoint]": (a, b) => func("int", func("nth", a, b)),
+        "ord[codepoint]": (a) => func("int", func("nth", a, int(0))),
+        "at[codepoint]": (a, b) => func("str", func("nth", a, b)),
         "slice[codepoint]": (a, b, c) => func("subs", a, b, op.add(b, c)),
         "slice[List]": (a, b, c) =>
           func("subvec", func("vec", a), b, op.add(b, c)),

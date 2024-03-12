@@ -9,6 +9,7 @@ import {
   type Node,
   int,
   id,
+  uniqueId,
   func,
   ifStatement,
   whileLoop,
@@ -25,7 +26,7 @@ import {
   text,
   getLiteralOfType,
   OpCodes,
-  OpCodesUser,
+  PhysicalOpCodesUser,
   isSubtype,
   type OpCode,
   forRangeCommon,
@@ -197,7 +198,7 @@ const tryAsMutation: OpCode[] = [
 ];
 
 const opCodes: CoverTableRecipe = Object.fromEntries(
-  OpCodesUser.flatMap((opCode) =>
+  PhysicalOpCodesUser.flatMap((opCode) =>
     (tryAsMutation.includes(opCode) ? [false, true] : [false]).map(
       (asMutation) =>
         asMutation
@@ -205,7 +206,10 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
               opCode + "<-",
               (lang) => {
                 const types = getInstantiatedOpCodeArgTypes(opCode);
-                const variable = { ...id(undefined, true), type: types[0] };
+                const variable = {
+                  ...uniqueId("cover", true),
+                  type: types[0],
+                };
                 return assignment(
                   variable,
                   op.unsafe(opCode)(
@@ -241,17 +245,19 @@ if (options.all === true) {
     "Backend OpCodes",
     runCoverTableRecipe(
       Object.fromEntries(
-        OpCodes.filter((x) => !OpCodesUser.includes(x as any)).map((opCode) => [
-          opCode,
-          (lang) =>
-            lang.stmt(
-              op.unsafe(opCode)(
-                ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
-                  lang.expr(x),
+        OpCodes.filter((x) => !PhysicalOpCodesUser.includes(x as any)).map(
+          (opCode) => [
+            opCode,
+            (lang) =>
+              lang.stmt(
+                op.unsafe(opCode)(
+                  ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
+                    lang.expr(x),
+                  ),
                 ),
               ),
-            ),
-        ]),
+          ],
+        ),
       ),
     ),
   );

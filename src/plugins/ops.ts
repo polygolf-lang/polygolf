@@ -30,6 +30,9 @@ import {
   type OpCodeArgValues,
   defaults,
   isEqualToLiteral,
+  type PhysicalOpCode,
+  isVirtualOpCode,
+  argsOf,
 } from "../IR";
 import { type Spine } from "../common/Spine";
 import { stringify } from "../common/stringify";
@@ -113,10 +116,7 @@ export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {
 };
 export const builtinOpMapper: OpMapper<string> = builtin;
 
-export function mapOpsUsing<
-  Targ = string,
-  TOpCode extends OpCode | "pred" | "succ" = OpCode,
->(
+export function mapOpsUsing<Targ = string, TOpCode extends OpCode = OpCode>(
   mapper: OpMapper<Targ>,
   variadicModeDefault: "variadic" | "leftChain" | "rightChain",
 ) {
@@ -125,6 +125,8 @@ export function mapOpsUsing<
     variadicMode: "variadic" | "leftChain" | "rightChain" = variadicModeDefault,
   ) {
     enhanceOpMap(opCodeMap);
+    const relevantVirtualOpCodes =
+      Object.keys(opCodeMap).filter(isVirtualOpCode);
     return {
       name: "mapOpsUsing(...)",
       bakeType: true,
@@ -138,7 +140,7 @@ export function mapOpsUsing<
             }
             exprs =
               variadicMode === "variadic" ||
-              (!isVariadic(opCode) && opCode !== "sub") ||
+              !isVariadic(opCode) ||
               exprs.length < 3
                 ? exprs
                 : variadicMode === "leftChain"
@@ -154,84 +156,13 @@ export function mapOpsUsing<
           }
         }
         if (isOp()(node)) {
-          let exprs = node.args;
-          if (
-            ("is_even" in opCodeMap || "is_odd" in opCodeMap) &&
-            isOp("eq[Int]", "neq[Int]", "leq", "geq", "lt", "gt")(node)
-          ) {
-            let [a, b] = node.args;
-            if (isInt(0n, 1n)(b)) {
-              [a, b] = [b, a];
-            }
-            if (isInt(0n, 1n)(a) && isOp.mod(b) && isInt(2n)(b.args[1])) {
-              let parity: undefined | 0 | 1;
-              if (a.value === 0n) {
-                if (isOp("neq[Int]", "gt")(node)) parity = 1;
-                else if (isOp("eq[Int]", "leq")(node)) parity = 0;
-              } else {
-                if (isOp("neq[Int]", "lt")(node)) parity = 0;
-                else if (isOp("eq[Int]", "geq")(node)) parity = 1;
-              }
-              if (parity === 0 && "is_even" in opCodeMap) {
-                return map("is_even", [b.args[0]]);
-              }
-              if (parity === 1 && "is_odd" in opCodeMap) {
-                return map("is_odd", [b.args[0]]);
-              }
+          for (const virtualOpCode of relevantVirtualOpCodes) {
+            const args = argsOf(virtualOpCode)(node);
+            if (args !== undefined) {
+              return map(virtualOpCode, args);
             }
           }
-          if (
-            node.op === "add" &&
-            exprs.length === 2 &&
-            isInt(-1n, 1n)(exprs[0])
-          ) {
-            if (exprs[0].value === -1n && "pred" in opCodeMap) {
-              return map("pred", [exprs[1]]);
-            }
-            if (exprs[0].value === 1n && "succ" in opCodeMap) {
-              return map("succ", [exprs[1]]);
-            }
-          }
-          if (
-            isOp.mul(node) &&
-            isInt(-1n)(node.args[0]) &&
-            "neg" in opCodeMap
-          ) {
-            const negation = map("neg", [node.args[1]]);
-            if (negation !== undefined) {
-              if (exprs.length > 2) {
-                exprs = [negation, ...exprs.slice(2)] as any;
-              } else {
-                return negation;
-              }
-            }
-          }
-          if (node.op === "add" && "add" in opCodeMap) {
-            let positiveArgs = exprs.filter((x) => !isNegative(x));
-            let negativeArgs = exprs.filter((x) => isNegative(x));
-            if (positiveArgs.length < 1) {
-              positiveArgs = [negativeArgs[0]];
-              negativeArgs = negativeArgs.slice(1);
-            }
-            const positive =
-              positiveArgs.length > 1
-                ? map("add", positiveArgs)!
-                : positiveArgs[0];
-            if (negativeArgs.length > 0) {
-              return map("sub", [
-                positive,
-                ...negativeArgs.map(
-                  (x) =>
-                    ({
-                      ...op.neg(x),
-                      targetType: x.targetType,
-                    }) as any,
-                ),
-              ]);
-            }
-            return positive;
-          }
-          return map(node.op, exprs);
+          return map(node.op, node.args);
         }
       },
     };
@@ -370,7 +301,7 @@ export const mapMutationTo = {
 
 // (a > b) --> (b < a)
 export function flipBinaryOps(node: Node) {
-  if (isOp(...BinaryOpCodes)(node)) {
+  if (isOp(...(BinaryOpCodes as (BinaryOpCode & PhysicalOpCode)[]))(node)) {
     if (node.op in flippedOpCode) {
       return op.unsafe(flippedOpCode[node.op as keyof typeof flippedOpCode])(
         node.args[1],

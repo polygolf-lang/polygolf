@@ -135,6 +135,15 @@ export class Spine<N extends IR.Node = IR.Node> {
     return [...this.filterNodes(cond)].length;
   }
 
+  /** Gets the first descendant node meeting the provided condition */
+  firstNode(cond: Visitor<boolean>) {
+    // eslint-disable-next-line no-unreachable-loop
+    for (const val of this.compactMap((node, spine, context) =>
+      cond(node, spine, context) ? node : undefined,
+    ))
+      return val;
+  }
+
   /** Return the spine (pointing to this node) determined from replacing this
    * node and all of its children with nodes given by the provided `replacer`
    * function. Replaces all of the ancestors of this node, up to the
