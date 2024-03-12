@@ -126,9 +126,6 @@ const javascriptLanguage: Language = {
     required(
       useImplicitForEachChar("Ascii"),
       forRangeToForCLike,
-      mapOps({
-        "at[argv]": (a) => op["at[List]"](op.argv, a),
-      }),
       mapOpsTo.builtin({
         true: "true",
         false: "false",

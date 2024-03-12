@@ -20,20 +20,28 @@ function codepointMap(x: number) {
   return `\\u{${x.toString(16)}}`;
 }
 
-export const emitJavascriptText = emitTextFactory(
-  {
-    '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
-    "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\"` },
-    "`TEXT`": { "\\": `\\\\`, "`": "\\`", "${": "\\${" },
-  },
-  codepointMap,
-);
-export const emitJavascriptTextBackticks = emitTextFactory(
-  {
-    "`TEXT`": { "\\": `\\\\`, "`": "\\`", "${": "\\${" },
-  },
-  codepointMap,
-);
+export function emitJavascriptText(value: string, lowHigh?: [number, number]) {
+  return emitTextFactory(
+    {
+      '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
+      "'TEXT'": { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, "'": `\\"` },
+      "`TEXT`": { "\\": `\\\\`, "`": "\\`", "${": "\\${" },
+    },
+    codepointMap,
+  )(value, lowHigh);
+}
+
+export function emitJavascriptTextBackticks(
+  value: string,
+  lowHigh?: [number, number],
+) {
+  return emitTextFactory(
+    {
+      "`TEXT`": { "\\": `\\\\`, "`": "\\`", "${": "\\${" },
+    },
+    codepointMap,
+  )(value, lowHigh);
+}
 
 function binaryPrecedence(opname: string): number {
   switch (opname) {

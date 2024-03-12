@@ -127,13 +127,16 @@ const janetLanguage: Language = {
         "at_back[List]": "size[List]",
         "with_at_back[List]": "size[List]",
       }),
+      mapOpsTo.func({
+        "ord_at[byte]": "",
+      }),
       mapOps({
         "at[byte]": (a, b) => op["slice[byte]"](a, b, int(1n)),
+        "ord[byte]": (a) => func("", a, int(0)),
       }),
       mapOpsTo.func({
         "at[List]": "",
         "at[Table]": "",
-        "ord_at[byte]": "",
       }),
       mapOps({
         bool_to_int: (a) => conditional(a, int(1n), int(0n)),
@@ -142,7 +145,6 @@ const janetLanguage: Language = {
         int_to_Hex: (a) => func("string/format", text("%X"), a),
         "char[byte]": (a) => func("string/format", text("%c"), a),
         "concat[List]": (...x) => func("array/concat", list([]), ...x),
-        "ord[byte]": (a) => op["ord_at[byte]"](a, int(0n)),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
         "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1n)),
       }),

@@ -89,11 +89,8 @@ const clojureLanguage: Language = {
     required(
       mapOps({
         append: (a, b) => func("conj", func("vec", a), b),
-        "at[argv]": (a) => op["at[List]"](op.argv, a),
-        "at[codepoint]": (a, b) => func("str", func("nth", a, b)),
         "at_back[List]": (a, b) =>
           isInt(-1n)(b) ? func("last", a) : undefined,
-        "ord[codepoint]": (a) => op["ord_at[codepoint]"](a, int(0n)),
         pow: (a, b) => func("int", func("Math/pow", a, b)),
       }),
       mapOpsTo.builtin({
@@ -115,6 +112,8 @@ const clojureLanguage: Language = {
 
         "char[codepoint]": (a) => func("str", func("char", a)),
         "ord_at[codepoint]": (a, b) => func("int", func("nth", a, b)),
+        "ord[codepoint]": (a) => func("int", func("nth", a, int(0))),
+        "at[codepoint]": (a, b) => func("str", func("nth", a, b)),
         "slice[codepoint]": (a, b, c) => func("subs", a, b, op.add(b, c)),
         "slice[List]": (a, b, c) =>
           func("subvec", func("vec", a), b, op.add(b, c)),

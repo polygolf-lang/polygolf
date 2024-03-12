@@ -117,7 +117,6 @@ const golfscriptLanguage: Language = {
     ),
     required(
       mapOps({
-        "at[argv]": (a) => op["at[List]"](op.argv, a),
         "slice[byte]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
         "slice[List]": (a, b, c) => rangeIndexCall(a, b, op.add(b, c), int(1)),
         max: (...x) => op["at[List]"](op["sorted[Int]"](list(x)), int(1)),
