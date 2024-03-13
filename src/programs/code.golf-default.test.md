@@ -30,8 +30,8 @@ _Coconut_
 ```coconut
 p=print
 p("Hello, World!")
-for i in range(10):p(i)
-for a in os.sys.argv[1:]:p(a)
+for i in range 10:p i
+for a in os.sys.argv[1:]:p a
 ```
 
 _Golfscript_

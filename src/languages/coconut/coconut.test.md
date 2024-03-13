@@ -8,7 +8,7 @@ for_argv $x 100 {
 };
 ```
 
-```coconut
+```coconut nogolf
 for x in os.sys.argv[1:]:print(x)
 ```
 
@@ -32,4 +32,14 @@ $y <- 0;
 x=0
 y=0
 x≤y
+```
+
+## Implicit application
+
+```polygolf
+max (builtin "a") (builtin "b") (builtin "c");
+```
+
+```coco skipTypecheck
+max a b c
 ```

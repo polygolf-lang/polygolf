@@ -34,6 +34,8 @@ function binaryPrecedence(opname: string): number {
   switch (opname) {
     case "**":
       return 12;
+    case " ":
+      return 11.5; // Used in Coconut
     case "*":
     case "//":
     case "%":
@@ -50,6 +52,8 @@ function binaryPrecedence(opname: string): number {
       return 6;
     case "|":
       return 5;
+    case "|>":
+      return 4.5; // Used in Coconut
     case "<":
     case "<=":
     case "==":
@@ -110,8 +114,8 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
           ? this.prec(parent) + (prop === "alternate" ? 0 : 1)
           : kind === "Infix"
             ? prop === "left"
-              ? this.prec(parent) + (parent.name === "**" ? 1 : 0)
-              : this.prec(parent) + (parent.name === "**" ? 0 : 1)
+              ? this.prec(parent) + (["**", " "].includes(parent.name) ? 1 : 0)
+              : this.prec(parent) + (["**", " "].includes(parent.name) ? 0 : 1)
             : kind === "Prefix" || kind === "Postfix"
               ? this.prec(parent)
               : -Infinity;
