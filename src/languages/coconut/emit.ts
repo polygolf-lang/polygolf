@@ -10,6 +10,7 @@ export class CoconutEmitter extends PythonEmitter {
             (token) =>
               (
                 ({
+                  "|>": "↦",
                   "=>": "⇒",
                   "->": "→",
                   "**": "↑",

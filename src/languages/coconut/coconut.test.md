@@ -43,3 +43,13 @@ max (builtin "a") (builtin "b") (builtin "c");
 ```coco skipTypecheck
 max a b c
 ```
+
+## Pipes
+
+```polygolf
+ord "x";
+```
+
+```coco chars
+"x"↦ord
+```
