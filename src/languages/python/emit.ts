@@ -89,13 +89,14 @@ function unaryPrecedence(opname: string): number {
 }
 
 export class PythonEmitter extends PrecedenceVisitorEmitter {
-  detokenize = (x: Token[], context: CompilationContext) =>
-    defaultDetokenizer((a, b) => {
+  detokenize(x: Token[], context: CompilationContext) {
+    return defaultDetokenizer((a, b) => {
       a = a[a.length - 1];
       b = b[0];
       if (/\d/.test(a) && /[a-zA-Z]/.test(b)) return false;
       return /\w/.test(a) && /\w/.test(b);
     })(x);
+  }
 
   prec(expr: Node): number {
     switch (expr.kind) {
