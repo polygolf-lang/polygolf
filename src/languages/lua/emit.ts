@@ -73,10 +73,8 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
       : kind === "IndexCall" && prop === "collection"
         ? Infinity
         : kind === "Infix"
-          ? prop === "left"
-            ? this.prec(parent) + (parent.name === "^" ? 1 : 0)
-            : this.prec(parent) + (parent.name === "^" ? 0 : 1)
-          : kind === "Prefix"
+          ? this.infixChildPrecForNoParens(parent, fragment, "^")
+          : kind === "Prefix" || kind === "Postfix"
             ? this.prec(parent)
             : -Infinity;
   }
@@ -148,7 +146,7 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
       case "MethodCall":
         return [$.object, ":", $.ident, "(", $.args.join(","), ")"];
       case "Infix":
-        return [$.left, e.name, $.right];
+        return $.args.join(e.name);
       case "Prefix":
         return [e.name, $.arg];
       case "IndexCall":

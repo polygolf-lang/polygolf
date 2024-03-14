@@ -107,7 +107,7 @@ export const propertyOpMapper: OpMapper<string> = (arg, [first]) =>
 export const prefixOpMapper: OpMapper<string> = (arg, opArgs) =>
   prefix(arg, opArgs[0]);
 export const infixOpMapper: OpMapper<string> = (arg, opArgs) =>
-  infix(arg, opArgs[0], opArgs[1]);
+  infix(arg, ...(opArgs as [Node, Node, ...Node[]]));
 export const postfixOpMapper: OpMapper<string> = (arg, opArgs) =>
   postfix(arg, opArgs[0]);
 export const indexOpMapper: OpMapper<0 | 1> = (arg, opArgs) => {

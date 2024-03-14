@@ -127,7 +127,8 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
       : kind === "Infix"
         ? this.prec(parent) +
           Number(
-            (parent.name === "^" || parent.name === " ") === (prop === "left"),
+            (parent.name === "^" || parent.name === " ") ===
+              (fragment.index === 0),
           )
         : kind === "Prefix" || kind === "Postfix"
           ? this.prec(parent)
@@ -222,13 +223,17 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
         return [$.func, "$GLUE$", "(", $.args.join(","), ")"];
       case "Infix": {
         if (n.name === "") {
-          return [$.left, "$GLUE$", emitAsRawText((n.right as Text).value)];
+          return [
+            $.args.at(0),
+            "$GLUE$",
+            emitAsRawText((n.args[1] as Text).value),
+          ];
         }
         return [
-          $.left,
+          $.args.at(0),
           /[A-Za-z]/.test(n.name[0]) ? [] : "$GLUE$",
           n.name,
-          $.right,
+          $.args.at(1),
         ];
       }
       case "Prefix":
