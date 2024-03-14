@@ -79,13 +79,3 @@ function_call (builtin "f") (builtin "x") "x";
 ```coco skipTypecheck
 x`f`"x"
 ```
-
-## temp
-
-```polygolf
-infix "" 42 (builtin "x");
-```
-
-```coco skipTypecheck
-42x
-```
