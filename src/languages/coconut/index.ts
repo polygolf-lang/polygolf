@@ -3,7 +3,7 @@ import { mapOps } from "../../plugins/ops";
 import { search, type Language } from "../../common/Language";
 import pythonLanguage from "../python";
 import { CoconutEmitter } from "./emit";
-import { useImplicitFunctionApplications, usePipes } from "./plugins";
+import { useImplicitFunctionApplications, usePipesWhenChars } from "./plugins";
 
 const coconutLanguage: Language = {
   name: "Coconut",
@@ -29,7 +29,7 @@ const coconutLanguage: Language = {
           : plugin,
       ),
     })),
-    search(useImplicitFunctionApplications, usePipes),
+    search(useImplicitFunctionApplications, usePipesWhenChars),
   ],
 };
 

@@ -1,3 +1,4 @@
+import type { CompilationContext } from "@/common/compile";
 import { type Node, infix, isIdent, isInt } from "../../IR";
 
 function isAllowedAsImplicitArg(node: Node): boolean {
@@ -23,7 +24,15 @@ export function useImplicitFunctionApplications(node: Node) {
   }
 }
 
-export function usePipes(node: Node) {
+export function usePipesWhenChars(
+  node: Node,
+  _: unknown,
+  context: CompilationContext,
+) {
+  if (context.options.objective !== "chars") {
+    context.skipChildren();
+    return;
+  }
   if (node.kind === "FunctionCall") {
     if (node.args.length === 1) {
       return infix("|>", node.args[0], node.func);
