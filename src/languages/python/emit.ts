@@ -52,6 +52,8 @@ function binaryPrecedence(opname: string): number {
       return 6;
     case "|":
       return 5;
+    case "`":
+      return 4.6; // Used in Coconut
     case "|>":
       return 4.5; // Used in Coconut
     case "<":

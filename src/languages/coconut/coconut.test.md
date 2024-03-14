@@ -34,7 +34,7 @@ y=0
 x≤y
 ```
 
-## Implicit application
+## Implicit calls
 
 ```polygolf
 max (builtin "a") (builtin "b") (builtin "c");
@@ -52,4 +52,14 @@ ord "x";
 
 ```coco chars
 "x"↦ord
+```
+
+## Infix calls
+
+```polygolf
+function_call (builtin "f") (builtin "x") "x";
+```
+
+```coco skipTypecheck
+x`f`"x"
 ```
