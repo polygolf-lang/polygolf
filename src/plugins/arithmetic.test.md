@@ -94,7 +94,7 @@ $b:Int <- 0;
 
 ```python
 a=b=0
-a!=5 and b==6
+a!=5and b==6
 a=b=0
 ```
 

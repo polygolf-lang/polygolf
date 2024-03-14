@@ -317,7 +317,7 @@ conditional true 3 4;
 ```
 
 ```python nogolf
-3 if 1 else 4
+3if 1else 4
 ```
 
 ```python

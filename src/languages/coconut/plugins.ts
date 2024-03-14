@@ -16,8 +16,15 @@ function isAllowedAsImplicitArg(node: Node): boolean {
 export function useImplicitFunctionCalls(node: Node) {
   if (node.kind === "FunctionCall") {
     if (node.args.length >= 1 && node.args.every(isAllowedAsImplicitArg)) {
-      return infix(" ", node.func, ...(node.args as [Node, ...Node[]]));
+      return infix("", node.func, ...(node.args as [Node, ...Node[]]));
     }
+  }
+  if (
+    node.kind === "Infix" &&
+    node.name === "*" &&
+    node.args.slice(1).every(isAllowedAsImplicitArg)
+  ) {
+    return infix("", ...node.args);
   }
 }
 

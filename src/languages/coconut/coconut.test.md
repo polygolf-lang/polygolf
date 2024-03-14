@@ -44,6 +44,22 @@ max (builtin "a") (builtin "b") (builtin "c");
 max a b c
 ```
 
+```polygolf
+42 * (builtin "x"):Int;
+```
+
+```coco
+42x
+```
+
+```polygolf
+print (42 * (builtin "x"):Int);
+```
+
+```coco
+print(42x)
+```
+
 ## Pipes
 
 ```polygolf
@@ -62,4 +78,14 @@ function_call (builtin "f") (builtin "x") "x";
 
 ```coco skipTypecheck
 x`f`"x"
+```
+
+## temp
+
+```polygolf
+infix "" 42 (builtin "x");
+```
+
+```coco skipTypecheck
+42x
 ```
