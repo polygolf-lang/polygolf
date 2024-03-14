@@ -131,9 +131,11 @@ export class SwiftEmitter extends PrecedenceVisitorEmitter {
             : prop === "consequent"
               ? -Infinity
               : this.prec(parent)
-          : kind === "Infix" || kind === "Prefix" || kind === "Postfix"
-            ? this.prec(parent) + (prop === "right" ? 1 : 0)
-            : -Infinity;
+          : kind === "Infix"
+            ? this.infixChildPrecForNoParens(parent, fragment)
+            : kind === "Prefix" || kind === "Postfix"
+              ? this.prec(parent)
+              : -Infinity;
   }
 
   visitNoParens(n: Node, spine: Spine, context: CompilationContext) {
@@ -182,7 +184,7 @@ export class SwiftEmitter extends PrecedenceVisitorEmitter {
       case "ConditionalOp":
         return [$.condition, "?", $.consequent, ":", $.alternate];
       case "Infix": {
-        return [$.left, n.name, $.right];
+        return $.args.join(n.name);
       }
       case "Prefix":
         return [n.name, $.arg];

@@ -8,18 +8,15 @@ function isAllowedAsImplicitArg(node: Node): boolean {
     isInt()(node) ||
     (node.kind === "Infix" &&
       node.name === "**" &&
-      isAllowedAsImplicitArg(node.left))
+      isAllowedAsImplicitArg(node.args[0]) &&
+      isInt()(node.args[1]))
   );
 }
 
 export function useImplicitFunctionCalls(node: Node) {
   if (node.kind === "FunctionCall") {
-    if (node.args.every(isAllowedAsImplicitArg)) {
-      return infix(
-        " ",
-        node.func,
-        node.args.reduceRight((b, a) => infix(" ", a, b)),
-      );
+    if (node.args.length >= 1 && node.args.every(isAllowedAsImplicitArg)) {
+      return infix(" ", node.func, ...(node.args as [Node, ...Node[]]));
     }
   }
 }
@@ -30,7 +27,7 @@ export function useInfixFunctionCalls(node: Node) {
     isIdent()(node.func) &&
     node.args.length === 2
   ) {
-    return infix("`", infix("`", node.args[0], node.func), node.args[1]);
+    return infix("`", node.args[0], node.func, node.args[1]);
   }
 }
 

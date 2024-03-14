@@ -98,8 +98,11 @@ export function useUFCS(node: Node) {
       );
     }
   }
-  if (node.kind === "Infix" && node.name === " " && isIdent()(node.left)) {
-    return infix(".", node.right, node.left);
+  if (node.kind === "Infix" && node.name === " " && node.args.length === 2) {
+    const [left, right] = node.args;
+    if (isIdent()(left)) {
+      return infix(".", right, left);
+    }
   }
 }
 
@@ -151,20 +154,17 @@ export function useRawStringLiteral(
   spine: Spine,
   context: CompilationContext,
 ) {
-  if (
-    node.kind === "Infix" &&
-    node.name === " " &&
-    isText()(node.right) &&
-    (isIdent()(node.left) ||
-      (node.left.kind === "Infix" && node.left.name === "."))
-  ) {
-    const [low, high] = context.options.codepointRange;
-    if (low === 1 && high === Infinity) {
-      if (
-        !node.right.value.includes("\n") &&
-        !node.right.value.includes("\r")
-      ) {
-        return infix("", node.left, node.right);
+  if (node.kind === "Infix" && node.name === " " && node.args.length === 2) {
+    const [left, right] = node.args;
+    if (
+      isText()(right) &&
+      (isIdent()(left) || (left.kind === "Infix" && left.name === "."))
+    ) {
+      const [low, high] = context.options.codepointRange;
+      if (low === 1 && high === Infinity) {
+        if (!right.value.includes("\n") && !right.value.includes("\r")) {
+          return infix("", left, right);
+        }
       }
     }
   }

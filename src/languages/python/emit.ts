@@ -115,9 +115,7 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
         : kind === "ConditionalOp"
           ? this.prec(parent) + (prop === "alternate" ? 0 : 1)
           : kind === "Infix"
-            ? prop === "left"
-              ? this.prec(parent) + (["**", " "].includes(parent.name) ? 1 : 0)
-              : this.prec(parent) + (["**", " "].includes(parent.name) ? 0 : 1)
+            ? this.infixChildPrecForNoParens(parent, fragment, "**")
             : kind === "Prefix" || kind === "Postfix"
               ? this.prec(parent)
               : -Infinity;
@@ -212,7 +210,7 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
       case "PropertyCall":
         return [$.object, ".", $.ident];
       case "Infix":
-        return [$.left, n.name, $.right];
+        return $.args.join(n.name);
       case "Prefix":
         return [n.name, $.arg];
       case "Set":

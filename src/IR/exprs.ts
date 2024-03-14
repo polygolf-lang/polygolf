@@ -113,8 +113,7 @@ export interface RangeIndexCall extends BaseNode {
 export interface Infix extends BaseNode {
   readonly kind: "Infix";
   readonly name: string;
-  readonly left: Node;
-  readonly right: Node;
+  readonly args: [Node, Node, ...Node[]];
 }
 
 export interface Prefix extends BaseNode {
@@ -495,12 +494,11 @@ export function rangeIndexCall(
   };
 }
 
-export function infix(name: string, left: Node, right: Node): Infix {
+export function infix(name: string, ...args: [Node, Node, ...Node[]]): Infix {
   return {
     kind: "Infix",
-    left,
-    right,
     name,
+    args,
   };
 }
 
@@ -567,7 +565,7 @@ export function getArgs(
 ): readonly Node[] {
   switch (node.kind) {
     case "Infix":
-      return [node.left, node.right];
+      return node.args;
     case "Prefix":
       return [node.arg];
     case "FunctionCall":

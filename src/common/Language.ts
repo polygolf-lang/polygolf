@@ -1,4 +1,4 @@
-import { type Node } from "IR";
+import type { Infix, Node } from "IR";
 import { Spine, type PluginVisitor, programToSpine } from "./Spine";
 import { type CompilationContext } from "./compile";
 import type {
@@ -93,6 +93,20 @@ export abstract class PrecedenceVisitorEmitter extends VisitorEmitter {
     spine: Spine,
     context: CompilationContext,
   ): EmitterVisitResult;
+  infixChildPrecForNoParens(
+    parent: Infix,
+    fragment: PathFragment,
+    ...rightAssociative: string[]
+  ) {
+    const indexThatDoesntNeedHigherPrec = rightAssociative.includes(parent.name)
+      ? parent.args.length - 1
+      : 0;
+    return (
+      this.prec(parent) +
+      Number(indexThatDoesntNeedHigherPrec !== fragment.index)
+    );
+  }
+
   visit(node: Node, spine: Spine, context: CompilationContext) {
     const res = this.visitNoParens(node, spine, context);
     const minPrec =

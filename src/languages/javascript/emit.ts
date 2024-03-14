@@ -138,9 +138,7 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
               ? -Infinity
               : this.prec(parent)
           : kind === "Infix"
-            ? prop === "left"
-              ? this.prec(parent) + (parent.name === "**" ? 1 : 0)
-              : this.prec(parent) + (parent.name === "**" ? 0 : 1)
+            ? this.infixChildPrecForNoParens(parent, fragment, "**")
             : kind === "Prefix" || kind === "Postfix"
               ? this.prec(parent)
               : -Infinity;
@@ -221,7 +219,7 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
       case "PropertyCall":
         return [$.object, ".", $.ident];
       case "Infix":
-        return [$.left, n.name, $.right];
+        return $.args.join(n.name);
       case "Prefix":
         return [n.name, $.arg];
       case "Postfix":
