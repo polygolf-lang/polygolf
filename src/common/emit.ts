@@ -9,7 +9,7 @@ import {
   argsOf,
 } from "../IR";
 import { debugEmit } from "./compile";
-import { PolygolfError } from "./errors";
+import { UserError } from "./errors";
 import { $ } from "./fragments";
 import type { TokenTree } from "./Language";
 import type { Spine } from "./Spine";
@@ -77,25 +77,6 @@ export function containsMultiNode(exprs: readonly IR.Node[]): boolean {
     }
   }
   return false;
-}
-
-export class EmitError extends PolygolfError {
-  expr: Node;
-  constructor(expr: Node, detail?: string) {
-    if (detail === undefined && "op" in expr && expr.op !== null) {
-      detail = [
-        expr.op,
-        ...VirtualOpCodes.filter((x) => argsOf[x](expr) !== undefined),
-      ].join(", ");
-    }
-    detail = detail === undefined ? "" : ` (${detail})`;
-    const message =
-      `emit error - ${expr.kind}${detail} not supported.\n` + debugEmit(expr);
-    super(message, expr.source);
-    this.name = "EmitError";
-    this.expr = expr;
-    Object.setPrototypeOf(this, EmitError.prototype);
-  }
 }
 
 export function shortest(x: string[]) {

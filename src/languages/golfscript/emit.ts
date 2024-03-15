@@ -3,11 +3,12 @@ import {
   VisitorEmitter,
   type EmitterVisitResult,
 } from "../../common/Language";
-import { EmitError, emitTextFactory } from "../../common/emit";
+import { emitTextFactory } from "../../common/emit";
 import { integerType, isInt, isSubtype, isOp, type Node } from "../../IR";
 import { getType } from "../../common/getType";
 import type { Spine } from "../../common/Spine";
 import { $ } from "../../common/fragments";
+import { NotImplementedError } from "../../common/errors";
 
 const emitGolfscriptText = emitTextFactory({
   '"TEXT"': { "\\": "\\\\", '"': `\\"` },
@@ -50,7 +51,7 @@ export class GolfscriptEmitter extends VisitorEmitter {
               isInt()(a.node) && a.node.value < 0n
                 ? [(-a.node.value).toString(), "-"]
                 : [a, "+"];
-          } else throw new EmitError(n, "inclusive");
+          } else throw new NotImplementedError(n, "inclusive");
         } else {
           collection = $.collection;
         }
@@ -117,7 +118,7 @@ export class GolfscriptEmitter extends VisitorEmitter {
           isInt(1n)(n.step) ? [] : [$.step, "%"],
         ];
       default:
-        throw new EmitError(n);
+        throw new NotImplementedError(n);
     }
   }
 }

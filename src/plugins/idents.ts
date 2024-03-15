@@ -17,7 +17,7 @@ import {
   toString,
 } from "../IR";
 import { getType } from "../common/getType";
-import { PolygolfError } from "../common/errors";
+import { UserError } from "../common/errors";
 import { $ } from "../common/fragments";
 import type { CompilationContext } from "@/common/compile";
 
@@ -170,7 +170,7 @@ export function clone(
       const type = getType(node, spine);
       const res = mapping(node, type, spine);
       if (res === undefined) {
-        throw new PolygolfError(
+        throw new UserError(
           `Could not clone an identifier of type ${toString(type)}`,
           node.source,
         );

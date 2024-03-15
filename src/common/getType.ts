@@ -59,7 +59,7 @@ import {
   uniqueId,
 } from "../IR";
 import { byteLength, charLength } from "./strings";
-import { PolygolfError } from "./errors";
+import { InvariantError, UserError } from "./errors";
 import { type Spine } from "./Spine";
 import { getIdentifierType, isIdentifierReadonly } from "./symbols";
 import { stringify } from "./stringify";
@@ -79,7 +79,7 @@ export function getTypeAndResolveOpCode(
   const program = "kind" in context ? context : context.root.node;
   if (cachedType.has(expr)) return cachedType.get(expr)!;
   if (currentlyFinding.has(expr))
-    throw new PolygolfError(`Node defined in terms of itself`, expr.source);
+    throw new UserError(`Node defined in terms of itself`, expr);
 
   currentlyFinding.add(expr);
   try {
@@ -132,9 +132,9 @@ export function calcTypeAndResolveOpCode(
         isIdent()(expr.variable) &&
         isIdentifierReadonly(expr.variable, program)
       ) {
-        throw new PolygolfError(
+        throw new UserError(
           `Type error. Cannot assign to readonly identifier ${expr.variable.name}.`,
-          expr.source,
+          expr,
         );
       }
       const a = type(expr.variable);
@@ -142,8 +142,9 @@ export function calcTypeAndResolveOpCode(
       if (isSubtype(b, a)) {
         return b;
       }
-      throw new Error(
+      throw new UserError(
         `Type error. Cannot assign ${toString(b)} to ${toString(a)}.`,
+        expr,
       );
     }
     case "Op":
@@ -151,17 +152,21 @@ export function calcTypeAndResolveOpCode(
     case "FunctionCall": {
       const fType = type(expr.func);
       if (fType.kind !== "Function") {
-        throw new Error(`Type error. Type ${toString(fType)} is not callable.`);
+        throw new UserError(
+          `Type error. Type ${toString(fType)} is not callable.`,
+          expr,
+        );
       }
       if (expr.args.every((x, i) => isSubtype(type(x), fType.arguments[i]))) {
         return fType.result;
       }
-      throw new Error(
+      throw new UserError(
         `Type error. Function expected [${fType.arguments
           .map(toString)
           .join(", ")}] but got [${expr.args
           .map((x) => toString(type(x)))
           .join(", ")}].`,
+        expr,
       );
     }
     case "Identifier":
@@ -193,10 +198,11 @@ export function calcTypeAndResolveOpCode(
       const k = type(expr.key);
       const v = type(expr.value);
       if (k.kind === "integer" || k.kind === "text") return keyValueType(k, v);
-      throw new Error(
+      throw new UserError(
         `Type error. Operator 'key_value' error. Expected [-oo..oo | Text, T1] but got [${toString(
           k,
         )}, ${toString(v)}].`,
+        expr,
       );
     }
     case "Table": {
@@ -212,15 +218,16 @@ export function calcTypeAndResolveOpCode(
             )
           : table(int(), voidType);
       }
-      throw new Error(
+      throw new UserError(
         "Programming error. Type of KeyValue nodes should always be KeyValue.",
+        expr,
       );
     }
     case "ConditionalOp": {
       const conditionType = type(expr.condition);
       if (isSubtype(conditionType, booleanType))
         return union(type(expr.consequent), type(expr.alternate));
-      throw new Error(
+      throw new UserError(
         `Type error. Operator '${
           expr.isSafe ? "conditional" : "unsafe_conditional"
         }' error. Expected [Boolean, T1, T1] but got [${toString(
@@ -228,6 +235,7 @@ export function calcTypeAndResolveOpCode(
         )}, ${toString(type(expr.condition))}, ${toString(
           type(expr.alternate),
         )}].`,
+        expr,
       );
     }
     case "ManyToManyAssignment":
@@ -246,7 +254,7 @@ export function calcTypeAndResolveOpCode(
       return type(op[expr.behavesLike](expr.expr));
     }
   }
-  throw new Error(`Type error. Unexpected node ${stringify(expr)}.`);
+  throw new InvariantError(`Type error. Unexpected node ${stringify(expr)}.`);
 }
 
 function getTypeBitNot(t: IntegerType): IntegerType {
@@ -595,7 +603,7 @@ function _getOpCodeTypeFromTypes(
           int(0n, min(t.codepointLength.high, length.high)),
           t.isAscii,
         );
-      throw new Error(
+      throw new UserError(
         `Type error. start index + length must be nonpositive, but got ${toString(
           startPlusLength,
         )}.`,
@@ -609,7 +617,7 @@ function _getOpCodeTypeFromTypes(
       const startPlusLength = getArithmeticType("add", start, length);
       if (skipAdditionalChecks || isSubtype(startPlusLength, int(-Infinity, 0)))
         return got[0];
-      throw new Error(
+      throw new UserError(
         `Type error. start index + length must be nonpositive, but got ${toString(
           startPlusLength,
         )}.`,
@@ -666,12 +674,13 @@ function getOpCodeType(expr: Op, program: Node): Type {
   const got = args.map((x) => getType(x, program));
 
   if (!isTypeMatch(got, opCodeDefinitions[opCode].args)) {
-    throw new Error(
+    throw new UserError(
       `Type error. Operator '${
         expr.op
       }' type error. Expected ${expectedTypesAsStrings(expr.op).join(
         ", ",
       )} but got [${got.map(toString).join(", ")}].`,
+      expr,
     );
   }
 
@@ -690,8 +699,14 @@ function getOpCodeType(expr: Op, program: Node): Type {
     case "size[Ascii]":
       return (got[0] as TextType).codepointLength;
   }
-
-  return _getOpCodeTypeFromTypes(expr.op, got);
+  try {
+    return _getOpCodeTypeFromTypes(expr.op, got);
+  } catch (e) {
+    if (e instanceof UserError) {
+      e.source = expr.source;
+      throw e;
+    }
+  }
 }
 
 function resolveUnresolvedOpCode(
@@ -721,7 +736,7 @@ function resolveUnresolvedOpCode(
     );
 
   if (opCode === undefined) {
-    throw new Error(
+    throw new UserError(
       `Type error. Operator '${
         expr.op
       }' type error. Expected ${arityMatchingOpCodes
@@ -729,14 +744,13 @@ function resolveUnresolvedOpCode(
         .join(" or ")} but got [${expr.args
         .map((x) => toString(getType(x, program)))
         .join(", ")}].`,
+      expr,
     );
   }
 
   if (expr.op === (".." as any) && legacyDotDot.includes(opCode)) {
     addWarning(
-      new PolygolfError(
-        `Deprecated alias .. used. Use ${opCode} or + instead.`,
-      ),
+      new UserError(`Deprecated alias .. used. Use ${opCode} or + instead.`),
     );
   }
   const got = opArgsWithDefaults(opCode, expr.args).map((x) =>
@@ -924,7 +938,7 @@ export function getArithmeticType(
       return int();
     }
   }
-  throw new Error(`Type error. Unknown opcode. ${op ?? "null"}`);
+  throw new InvariantError(`Type error. Unknown opcode. ${op ?? "null"}`);
 }
 
 export function getCollectionTypes(expr: Node, program: Node): Type[] {
@@ -939,7 +953,7 @@ export function getCollectionTypes(expr: Node, program: Node): Type[] {
     case "text":
       return [text(int(1, 1), exprType.isAscii)];
   }
-  throw new Error("Type error. Node is not a collection.");
+  throw new InvariantError("Type error. Node is not a collection.");
 }
 
 function getIntegerTypeMod(a: IntegerType, b: IntegerType): IntegerType {

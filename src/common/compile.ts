@@ -28,7 +28,7 @@ import {
   shorterBy,
 } from "./objective";
 import { readsFromArgv, readsFromStdin } from "./symbols";
-import { PolygolfError } from "./errors";
+import { InvariantError, UserError } from "./errors";
 import { charLength } from "./strings";
 import { getOutput } from "../interpreter";
 
@@ -114,7 +114,7 @@ export function applyAllToAllAndGetCounts(
 function getSingleOrUndefined<T>(x: T | T[] | undefined): T | undefined {
   if (Array.isArray(x)) {
     if (x.length > 1)
-      throw new Error(
+      throw new InvariantError(
         `Programming error. Expected at most 1 item, but got ${stringify(x)}.`,
       );
     return x[0];
@@ -324,7 +324,7 @@ function getVariantsByInputMethod(variants: Node[]): Map<boolean, Node[]> {
     };
   });
   if (variantsWithMethods.some((x) => x.readsFromArgv && x.readsFromStdin)) {
-    throw new PolygolfError("Program cannot read from both argv and stdin.");
+    throw new UserError("Program cannot read from both argv and stdin.");
   }
   return new Map<boolean, Node[]>(
     [true, false].map((preferStdin) => {

@@ -31,7 +31,7 @@ import {
   isText,
   uniqueId,
 } from "../IR";
-import { PolygolfError } from "../common/errors";
+import { UserError } from "../common/errors";
 import { mapOps } from "./ops";
 import { $ } from "../common/fragments";
 import { byteLength, charLength } from "../common/strings";
@@ -192,7 +192,7 @@ export function assertForArgvTopLevel(node: Node, spine: Spine) {
     for (const kind of spine.compactMap((x) => x.kind)) {
       if (kind === "ForArgv") {
         if (forArgvSeen)
-          throw new PolygolfError(
+          throw new UserError(
             "Only a single for_argv node allowed.",
             node.source,
           );
@@ -207,7 +207,7 @@ export function assertForArgvTopLevel(node: Node, spine: Spine) {
         (spine.parent?.node.kind === "Block" && spine.parent.isRoot)
       )
     ) {
-      throw new PolygolfError(
+      throw new UserError(
         "Node for_argv only allowed at the top level.",
         node.source,
       );

@@ -1,3 +1,4 @@
+import { InvariantError, UserError } from "@/common/errors";
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
 import {
@@ -358,7 +359,7 @@ export function intersection(a: Type, b: Type): Type {
   } else if (a.kind === b.kind) {
     return a;
   }
-  throw new Error("Empty intersection.");
+  throw new UserError("Empty intersection.", undefined);
 }
 
 export function union(a: Type, b: Type): Type {
@@ -397,12 +398,16 @@ export function union(a: Type, b: Type): Type {
     } else if (a.kind === b.kind) {
       return a;
     }
-    throw new Error(`Cannot model union of ${toString(a)} and ${toString(b)}.`);
+    throw new UserError(
+      `Cannot model union of ${toString(a)} and ${toString(b)}.`,
+      undefined,
+    );
   } catch (e) {
-    throw new Error(
+    throw new UserError(
       `Cannot model union of ${toString(a)} and ${toString(b)}.\n${
         e instanceof Error ? e.message : ""
       }`,
+      undefined,
     );
   }
 }
@@ -461,7 +466,7 @@ export function neg(a: IntegerBound): IntegerBound {
 export function add(a: IntegerBound, b: IntegerBound): IntegerBound {
   if (leq(b, a)) [a, b] = [b, a];
   if (a === "-oo" && b === "oo")
-    throw new Error("Indeterminate result of -oo + oo.");
+    throw new InvariantError("Indeterminate result of -oo + oo.");
   if (a === "-oo") return a;
   if (b === "oo") return b;
   return (a as bigint) + (b as bigint);
@@ -472,7 +477,7 @@ export function sub(a: IntegerBound, b: IntegerBound): IntegerBound {
 export function mul(a: IntegerBound, b: IntegerBound): IntegerBound {
   if (leq(b, a)) [a, b] = [b, a];
   if ((a === "-oo" && b === 0n) || (b === "oo" && a === 0n))
-    throw new Error("Indeterminate result of 0 * oo.");
+    throw new InvariantError("Indeterminate result of 0 * oo.");
   if (a === "-oo") return lt(b, 0n) ? "oo" : "-oo";
   if (b === "oo") return lt(a, 0n) ? "-oo" : "oo";
   return (a as bigint) * (b as bigint);
@@ -482,9 +487,9 @@ export function floorDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
   return mul(res, b) !== a && lt(a, 0n) !== lt(b, 0n) ? sub(res, 1n) : res;
 }
 export function truncDiv(a: IntegerBound, b: IntegerBound): IntegerBound {
-  if (b === 0n) throw new Error("Indeterminate result of x / 0.");
+  if (b === 0n) throw new InvariantError("Indeterminate result of x / 0.");
   if (!isFiniteBound(a) && !isFiniteBound(b))
-    throw new Error("Indeterminate result of +-oo / +-oo.");
+    throw new InvariantError("Indeterminate result of +-oo / +-oo.");
   if (!isFiniteBound(a)) {
     if (lt(a, 0n) === lt(b, 0n)) return "oo";
     else return "-oo";
@@ -531,7 +536,7 @@ export function defaultValue(a: Type): Node {
       if (lt(0n, a.low)) return int(a.low as bigint);
       return int(0);
   }
-  throw new Error(`Unsupported default value for type ${toString(a)}`);
+  throw new InvariantError(`Unsupported default value for type ${toString(a)}`);
 }
 
 export function instantiateGenerics(
@@ -542,7 +547,7 @@ export function instantiateGenerics(
       case "Array": {
         const lengthType = instantiate(type.length);
         if (lengthType.kind !== "TypeArg" && !isArrayIndexType(lengthType))
-          throw new Error(
+          throw new InvariantError(
             "Array type's second argument must be a constant integer type.",
           );
         return arrayType(instantiate(type.member), lengthType);
@@ -555,7 +560,7 @@ export function instantiateGenerics(
       case "KeyValue": {
         const keyType = instantiate(type.key);
         if (keyType.kind !== "integer" && keyType.kind !== "text")
-          throw new Error(
+          throw new InvariantError(
             "KeyValue type's first argument must be an integer or text type.",
           );
         return keyValueType(keyType, instantiate(type.value));
@@ -567,7 +572,7 @@ export function instantiateGenerics(
           keyType.kind !== "text" &&
           keyType.kind !== "TypeArg"
         )
-          throw new Error(
+          throw new InvariantError(
             "Table type's first argument must be an integer or text type.",
           );
         return tableType(keyType, instantiate(type.value));
@@ -626,5 +631,5 @@ export function getLiteralOfType(type: Type, nonEmpty = false): Node {
           : [],
       );
   }
-  throw new Error(`There's no literal of type '${type.kind}'.`);
+  throw new InvariantError(`There's no literal of type '${type.kind}'.`);
 }

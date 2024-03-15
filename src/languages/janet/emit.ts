@@ -19,6 +19,7 @@ import {
 import { type Spine } from "../../common/Spine";
 import type { CompilationContext } from "../../common/compile";
 import { $ } from "../../common/fragments";
+import { InvariantError } from "@/common/errors";
 
 const emitJanetText = emitTextFactory({
   '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
@@ -49,7 +50,9 @@ export class JanetEmitter extends VisitorEmitter {
         if (n.targetType === "array") {
           return ["@[;", "$GLUE$", $.expr, "]"];
         }
-        throw new EmitError(n, "unsuported cast target type");
+        throw new InvariantError(
+          `Unsuported cast target type '${n.targetType}'.`,
+        );
       case "Block": {
         return prop === "consequent" || prop === "alternate"
           ? list("do", $.children.join())

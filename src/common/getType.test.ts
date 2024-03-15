@@ -34,7 +34,7 @@ import {
   lengthToArrayIndexType as length,
   isPhysicalOpCode,
 } from "IR";
-import { PolygolfError } from "./errors";
+import { UserError } from "./errors";
 import { calcTypeAndResolveOpCode, getType } from "./getType";
 
 const ascii = (x: number | IntegerType = int(0)) => text(x, true);
@@ -159,7 +159,7 @@ describe("Assignment", () => {
     const aLHS = id("a");
     const expr = assignment(aLHS, op.add(id("a"), e(int(1))));
     expect(() => calcTypeAndResolveOpCode(aLHS, block([expr]))).toThrow(
-      PolygolfError,
+      UserError,
     );
   });
 });

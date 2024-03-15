@@ -10,7 +10,7 @@ import {
   type Type,
   toString,
 } from "../IR";
-import { PolygolfError } from "./errors";
+import { InvariantError, UserError } from "./errors";
 import { $, getChildFragments, type PathFragment } from "./fragments";
 import { getCollectionTypes, getType } from "./getType";
 import { programToSpine, type Spine } from "./Spine";
@@ -20,7 +20,7 @@ class SymbolTable extends Map<string, Spine> {
   getRequired(key: string) {
     const ret = this.get(key);
     if (ret === undefined)
-      throw new Error(
+      throw new UserError(
         `Symbol not found: ${key}. ` +
           `Defined symbols: ${[...this.keys()].join(", ")}`,
       );
@@ -54,7 +54,7 @@ export function symbolTableRoot(program: IR.Node): SymbolTable {
       (name, i) => i > 0 && sortedNames[i - 1] === name,
     );
     if (duplicate !== undefined)
-      throw new Error(`Duplicate symbol: ${duplicate}`);
+      throw new InvariantError(`Duplicate symbol: ${duplicate}`);
   }
   symbolTableCache.set(program, table);
   return table;
@@ -123,17 +123,17 @@ function getTypeFromBinding(name: string, spine: Spine): Type {
         node.variable.type !== undefined &&
         !isSubtype(assignedType, node.variable.type)
       )
-        throw new PolygolfError(
+        throw new UserError(
           `Value of type ${toString(assignedType)} cannot be assigned to ${
             (node.variable as Identifier).name
           } of type ${toString(node.variable.type)}`,
-          node.source,
+          node,
         );
       return node.variable.type ?? assignedType;
     }
     default:
-      throw new Error(
-        `Programming error: node of type ${node.kind} does not bind any symbol`,
+      throw new InvariantError(
+        `Node of type ${node.kind} does not bind any symbol`,
       );
   }
 }
