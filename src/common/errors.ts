@@ -10,7 +10,7 @@ export class InvariantError extends Error {
       cause === undefined ? undefined : { cause },
     );
     this.name = "InvariantError";
-    Object.setPrototypeOf(this, UserError.prototype);
+    Object.setPrototypeOf(this, InvariantError.prototype);
   }
 }
 

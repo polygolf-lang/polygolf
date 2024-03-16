@@ -4,7 +4,11 @@ import yargs from "yargs";
 import fs from "fs";
 import path from "path";
 import compile, { debugEmit } from "./common/compile";
-import { NotImplementedError, UserError } from "./common/errors";
+import {
+  InvariantError,
+  NotImplementedError,
+  UserError,
+} from "./common/errors";
 import languages, { findLang } from "./languages/languages";
 
 const languageChoices = [
@@ -130,6 +134,8 @@ if (options.all === true && options.output !== undefined) {
             "^",
         );
       }
+    } else if (e instanceof InvariantError) {
+      console.log(e);
     } else {
       throw e;
     }
