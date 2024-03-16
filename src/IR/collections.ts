@@ -1,4 +1,4 @@
-import { InvariantError } from "@/common/errors";
+import { InvariantError } from "../common/errors";
 import {
   type BaseNode,
   type Node,

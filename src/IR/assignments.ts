@@ -140,7 +140,7 @@ export function varDeclarationWithAssignment<T extends SomeAssignment>(
   ) {
     throw new UserError(
       "VarDeclarationWithAssignment needs assignments to variables.",
-      assignment.,
+      assignment,
     );
   }
   return {

@@ -7,7 +7,7 @@ import {
   isOfKind,
 } from "../IR";
 import { readsFromInput } from "../common/symbols";
-import { InterpreterError, UserError } from "../common/errors";
+import { InvariantError, UserError } from "../common/errors";
 import { compileVariant } from "../common/compile";
 import javascriptLanguage from "../languages/javascript";
 import { required } from "../common/Language";
@@ -88,7 +88,10 @@ function _getOutput(program: Node): string {
   } catch (e) {
     if (e instanceof Error) {
       if (e instanceof SyntaxError) {
-        throw new InterpreterError(jsCode.result);
+        throw new InvariantError(
+          `Error while executing the following javascript:\n${jsCode.result}`,
+          e,
+        );
       }
       if (!(e instanceof UserError)) {
         throw new UserError("Error while executing code.", undefined);

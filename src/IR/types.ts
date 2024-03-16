@@ -1,4 +1,4 @@
-import { InvariantError, UserError } from "@/common/errors";
+import { InvariantError, UserError } from "../common/errors";
 import { getType } from "../common/getType";
 import { type Spine } from "../common/Spine";
 import {

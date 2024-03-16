@@ -1,9 +1,4 @@
-import {
-  EmitError,
-  emitIntLiteral,
-  emitTextFactory,
-  getIfChain,
-} from "../../common/emit";
+import { emitIntLiteral, emitTextFactory, getIfChain } from "../../common/emit";
 import {
   isInt,
   isForEachRange,
@@ -17,9 +12,9 @@ import {
   type EmitterVisitResult,
 } from "../../common/Language";
 import { type Spine } from "../../common/Spine";
-import type { CompilationContext } from "../../common/compile";
+import { debugEmit, type CompilationContext } from "../../common/compile";
 import { $ } from "../../common/fragments";
-import { InvariantError } from "@/common/errors";
+import { InvariantError, NotImplementedError } from "../../common/errors";
 
 const emitJanetText = emitTextFactory({
   '"TEXT"': { "\\": `\\\\`, "\n": `\\n`, "\r": `\\r`, '"': `\\"` },
@@ -98,9 +93,8 @@ export class JanetEmitter extends VisitorEmitter {
       case "VarDeclarationWithAssignment": {
         const assignment = n.assignment;
         if (assignment.kind !== "Assignment") {
-          throw new EmitError(
-            n,
-            `Declaration cannot contain ${assignment.kind}`,
+          throw new InvariantError(
+            `Declaration cannot contain ${assignment.kind}. ${debugEmit(n)}`,
           );
         }
         return $.assignment;
@@ -120,7 +114,8 @@ export class JanetEmitter extends VisitorEmitter {
       case "FunctionCall":
         return list($.func, $.args.join());
       case "RangeIndexCall":
-        if (!isInt(1n)(n.step)) throw new EmitError(n, "step not equal one");
+        if (!isInt(1n)(n.step))
+          throw new NotImplementedError(n, "step not equal one");
         return isInt(0n)(n.low)
           ? list("take", $.high, $.collection)
           : list("slice", $.collection, $.low, $.high);
@@ -139,7 +134,7 @@ export class JanetEmitter extends VisitorEmitter {
       case "KeyValue":
         return [$.key, $.value];
       default:
-        throw new EmitError(n);
+        throw new NotImplementedError(n);
     }
   }
 }

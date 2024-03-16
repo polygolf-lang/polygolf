@@ -17,7 +17,7 @@ import {
   toString,
 } from "../IR";
 import { getType } from "../common/getType";
-import { UserError } from "../common/errors";
+import { InvariantError, NotImplementedError } from "../common/errors";
 import { $ } from "../common/fragments";
 import type { CompilationContext } from "@/common/compile";
 
@@ -78,8 +78,8 @@ export function renameIdents(
       if (isUserIdent()(node)) {
         const outputName = identMap.get(node.name);
         if (outputName === undefined) {
-          throw new Error(
-            `Programming error. Incomplete identMap. Defined: ${JSON.stringify([
+          throw new InvariantError(
+            `Incomplete identMap. Defined: ${JSON.stringify([
               ...identMap.keys(),
             ])}, missing ${JSON.stringify(node.name)}`,
           );
@@ -170,9 +170,9 @@ export function clone(
       const type = getType(node, spine);
       const res = mapping(node, type, spine);
       if (res === undefined) {
-        throw new UserError(
+        throw new NotImplementedError(
+          node,
           `Could not clone an identifier of type ${toString(type)}`,
-          node.source,
         );
       }
       context.skipChildren();

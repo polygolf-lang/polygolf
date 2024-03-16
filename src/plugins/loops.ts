@@ -31,7 +31,7 @@ import {
   isText,
   uniqueId,
 } from "../IR";
-import { UserError } from "../common/errors";
+import { InvariantError, UserError } from "../common/errors";
 import { mapOps } from "./ops";
 import { $ } from "../common/fragments";
 import { byteLength, charLength } from "../common/strings";
@@ -49,7 +49,7 @@ export function forRangeToWhile(node: Node, spine: Spine) {
     const low = getType(start, spine);
     const high = getType(end, spine);
     if (low.kind !== "integer" || high.kind !== "integer") {
-      throw new Error(`Unexpected type (${low.kind},${high.kind})`);
+      throw new InvariantError(`Unexpected type (${low.kind},${high.kind})`);
     }
     const increment = assignment(node.variable, op.add(node.variable, step));
     return block([
@@ -71,7 +71,7 @@ export function forRangeToForCLike(node: Node, spine: Spine) {
     const low = getType(start, spine);
     const high = getType(end, spine);
     if (low.kind !== "integer" || high.kind !== "integer") {
-      throw new Error(`Unexpected type (${low.kind},${high.kind})`);
+      throw new InvariantError(`Unexpected type (${low.kind},${high.kind})`);
     }
     const variable = node.variable ?? uniqueId();
     return forCLike(

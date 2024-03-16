@@ -66,6 +66,7 @@ function needsBigint(
         if (res === undefined) {
           throw new UserError(
             `Operation that is not supported on bigints encountered. (${op})`,
+            parent,
           );
         }
         if (res === "bigint" && node.targetType !== "bigint") {

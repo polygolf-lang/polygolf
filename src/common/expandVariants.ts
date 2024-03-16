@@ -17,6 +17,7 @@ export function expandVariants(program: IR.Node): IR.Node[] {
   if (n > 16)
     throw new UserError(
       `Variant count ${n} exceeds arbitrary limit. Giving up.`,
+      program,
     );
   return allVariantOptions(program).map((x) => structuredClone(x));
 }

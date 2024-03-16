@@ -5,7 +5,6 @@ import {
 import {
   emitTextFactory,
   joinTrees,
-  EmitError,
   emitIntLiteral,
   getIfChain,
 } from "../../common/emit";
@@ -13,6 +12,7 @@ import { type Array, isInt, type Node, type Text, type If } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
 import { type Spine } from "../../common/Spine";
 import { $, type PathFragment } from "../../common/fragments";
+import { InvariantError, NotImplementedError } from "../../common/errors";
 
 function escape(x: number, i: number, arr: number[]) {
   if (x < 100 && (i === arr.length - 1 || arr[i + 1] < 48 || arr[i + 1] > 57))
@@ -78,9 +78,7 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   if (opname.endsWith("=")) return 0;
-  throw new Error(
-    `Programming error - unknown Nim binary operator '${opname}.'`,
-  );
+  throw new InvariantError(`Unknown Nim binary operator '${opname}.'`);
 }
 
 export class NimEmitter extends PrecedenceVisitorEmitter {
@@ -201,7 +199,7 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
       }
       case "Variants":
       case "ForCLike":
-        throw new EmitError(n);
+        throw new InvariantError("");
       case "Assignment":
         return [$.variable, "=", $.expr];
       case "ManyToManyAssignment":
@@ -264,10 +262,10 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
       case "IndexCall":
         return [$.collection, "$GLUE$", "[", $.index, "]"];
       case "RangeIndexCall":
-        if (!isInt(1n)(n.step)) throw new EmitError(n, "step");
+        if (!isInt(1n)(n.step)) throw new NotImplementedError(n, "step");
         return [$.collection, "$GLUE$", "[", $.low, "..<", $.high, "]"];
       default:
-        throw new EmitError(n);
+        throw new NotImplementedError(n);
     }
   }
 }

@@ -90,11 +90,13 @@ export function getTypeAndResolveOpCode(
     return t;
   } catch (e) {
     currentlyFinding.delete(expr);
-    /*
-    if (e instanceof Error && !(e instanceof PolygolfError)) {
-      throw new PolygolfError(e.message, expr.source);
+    if (
+      e instanceof Error &&
+      !(e instanceof InvariantError) &&
+      !(e instanceof UserError)
+    ) {
+      throw new InvariantError(e.message, e);
     }
-    */
     throw e;
   }
 }
@@ -607,6 +609,7 @@ function _getOpCodeTypeFromTypes(
         `Type error. start index + length must be nonpositive, but got ${toString(
           startPlusLength,
         )}.`,
+        undefined,
       );
     }
     case "slice[List]":
@@ -621,6 +624,7 @@ function _getOpCodeTypeFromTypes(
         `Type error. start index + length must be nonpositive, but got ${toString(
           startPlusLength,
         )}.`,
+        undefined,
       );
     }
     case "ord[codepoint]":
@@ -704,8 +708,8 @@ function getOpCodeType(expr: Op, program: Node): Type {
   } catch (e) {
     if (e instanceof UserError) {
       e.source = expr.source;
-      throw e;
     }
+    throw e;
   }
 }
 
@@ -750,7 +754,10 @@ function resolveUnresolvedOpCode(
 
   if (expr.op === (".." as any) && legacyDotDot.includes(opCode)) {
     addWarning(
-      new UserError(`Deprecated alias .. used. Use ${opCode} or + instead.`),
+      new UserError(
+        `Deprecated alias .. used. Use ${opCode} or + instead.`,
+        expr,
+      ),
     );
   }
   const got = opArgsWithDefaults(opCode, expr.args).map((x) =>

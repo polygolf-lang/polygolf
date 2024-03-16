@@ -1,14 +1,10 @@
 import { PrecedenceVisitorEmitter, type Token } from "../../common/Language";
-import {
-  EmitError,
-  emitIntLiteral,
-  emitTextFactory,
-  joinTrees,
-} from "../../common/emit";
+import { emitIntLiteral, emitTextFactory, joinTrees } from "../../common/emit";
 import { type Node } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
 import { $, type PathFragment } from "../../common/fragments";
 import type { Spine } from "../../common/Spine";
+import { InvariantError, NotImplementedError } from "../../common/errors";
 
 const unicode01to09repls = {
   "\u{1}": `\\u{1}`,
@@ -95,9 +91,7 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   if (opname.endsWith("=")) return 0;
-  throw new Error(
-    `Programming error - unknown Swift binary operator '${opname}.'`,
-  );
+  throw new InvariantError(`Unknown Swift binary operator '${opname}.'`);
 }
 
 function unaryPrecedence(opname: string): number {
@@ -164,7 +158,7 @@ export class SwiftEmitter extends PrecedenceVisitorEmitter {
         ];
       case "Variants":
       case "ForCLike":
-        throw new EmitError(n);
+        throw new InvariantError("");
       case "Assignment":
         return [$.variable, "=", $.expr];
       case "NamedArg":
@@ -209,7 +203,7 @@ export class SwiftEmitter extends PrecedenceVisitorEmitter {
         return [$.collection, "[", $.low, "..<", $.high, "]"];
 
       default:
-        throw new EmitError(n);
+        throw new NotImplementedError(n);
     }
   }
 

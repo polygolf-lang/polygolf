@@ -324,7 +324,10 @@ function getVariantsByInputMethod(variants: Node[]): Map<boolean, Node[]> {
     };
   });
   if (variantsWithMethods.some((x) => x.readsFromArgv && x.readsFromStdin)) {
-    throw new UserError("Program cannot read from both argv and stdin.");
+    throw new UserError(
+      "Program cannot read from both argv and stdin.",
+      undefined,
+    );
   }
   return new Map<boolean, Node[]>(
     [true, false].map((preferStdin) => {

@@ -2,14 +2,9 @@ import {
   type If,
   type IR,
   type Integer,
-  type Node,
   type ConditionalOp,
   isOfKind,
-  VirtualOpCodes,
-  argsOf,
 } from "../IR";
-import { debugEmit } from "./compile";
-import { UserError } from "./errors";
 import { $ } from "./fragments";
 import type { TokenTree } from "./Language";
 import type { Spine } from "./Spine";

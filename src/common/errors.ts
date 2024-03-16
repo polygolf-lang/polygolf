@@ -4,25 +4,13 @@ import { VirtualOpCodes, type Node, type SourcePointer, argsOf } from "../IR";
  * This is an unrecoverable error. This should never be thrown unless there's a bug in Polygolf.
  */
 export class InvariantError extends Error {
-  constructor(message: string) {
+  constructor(message: string, cause?: Error) {
     super(
       "A Polygolf Invariant was broken. This is a bug in Polygolf.\n" + message,
+      cause === undefined ? undefined : { cause },
     );
     this.name = "InvariantError";
     Object.setPrototypeOf(this, UserError.prototype);
-  }
-}
-
-/**
- * This is caused by javascript target emitting a code that cannot be parsed.
- */
-export class InterpreterError extends InvariantError {
-  constructor(executedJavascript: string) {
-    super(
-      `Error while executing the following javascript:\n${executedJavascript}`,
-    );
-    this.name = "InterpreterError";
-    Object.setPrototypeOf(this, InterpreterError.prototype);
   }
 }
 
@@ -31,8 +19,12 @@ export class InterpreterError extends InvariantError {
  */
 export class UserError extends Error {
   source?: SourcePointer;
-  constructor(message: string, source: SourcePointer | Node | undefined) {
-    super(message);
+  constructor(
+    message: string,
+    source: SourcePointer | Node | undefined,
+    cause?: Error,
+  ) {
+    super(message, cause === undefined ? undefined : { cause });
     this.source =
       source !== undefined && "kind" in source ? source.source : source;
     this.name = "UserError";
@@ -45,7 +37,7 @@ export class UserError extends Error {
  */
 export class NotImplementedError extends UserError {
   expr: Node;
-  constructor(expr: Node, detail?: string) {
+  constructor(expr: Node, detail?: string, cause?: Error) {
     if (detail === undefined && "op" in expr && expr.op !== null) {
       detail = [
         expr.op,
@@ -54,7 +46,7 @@ export class NotImplementedError extends UserError {
     }
     detail = detail === undefined ? "" : ` (${detail})`;
     const message = `emit error - ${expr.kind}${detail} not supported.\n`;
-    super(message, expr.source);
+    super(message, expr.source, cause);
     this.name = "EmitError";
     this.expr = expr;
     Object.setPrototypeOf(this, NotImplementedError.prototype);

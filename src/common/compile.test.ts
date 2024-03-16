@@ -1,9 +1,8 @@
 import { isOp, isText, text } from "@/IR";
 import { type Language, type Plugin, search, required } from "./Language";
-import { EmitError } from "./emit";
 import compile from "./compile";
 import { compilationOptionsFromKeywords } from "@/markdown-tests";
-import { UserError } from "./errors";
+import { NotImplementedError, UserError } from "./errors";
 
 const textLang: Language = {
   name: "text",
@@ -14,18 +13,24 @@ const textLang: Language = {
         .map((x) => {
           if (isOp()(x) && x.args.length > 0 && isText()(x.args[0]!)) {
             if (x.args[0].value.endsWith("X")) {
-              context.addWarning(new UserError("global warning"), true);
               context.addWarning(
-                new UserError("local warning that should not be visible"),
+                new UserError("global warning", undefined),
+                true,
+              );
+              context.addWarning(
+                new UserError(
+                  "local warning that should not be visible",
+                  undefined,
+                ),
                 false,
               );
             }
             context.addWarning(
-              new UserError("local warning that should be visible"),
+              new UserError("local warning that should be visible", undefined),
               false,
             );
             return [x.args[0].value];
-          } else throw new EmitError(x);
+          } else throw new NotImplementedError(x);
         })
         .join("");
     },

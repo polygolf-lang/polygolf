@@ -23,6 +23,7 @@ class SymbolTable extends Map<string, Spine> {
       throw new UserError(
         `Symbol not found: ${key}. ` +
           `Defined symbols: ${[...this.keys()].join(", ")}`,
+        undefined,
       );
     return ret;
   }
