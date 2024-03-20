@@ -36,17 +36,21 @@ const javascriptForInterpreting = {
   ],
 };
 
-const outputCache = new Map<Node, unknown>();
+const outputCache = new Map<Node, string | Error>();
 
-export function getOutput(program: Node) {
+export function getOutputOrError(program: Node) {
   if (!outputCache.has(program)) {
     try {
       outputCache.set(program, _getOutput(program));
     } catch (e) {
-      outputCache.set(program, e);
+      outputCache.set(program, e as Error);
     }
   }
-  const res = outputCache.get(program);
+  return outputCache.get(program)!;
+}
+
+export function getOutputOrThrow(program: Node) {
+  const res = getOutputOrError(program);
   if (typeof res === "string") return res;
   throw res;
 }

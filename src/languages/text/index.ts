@@ -1,4 +1,4 @@
-import { getOutput } from "../../interpreter";
+import { getOutputOrThrow } from "../../interpreter";
 import type { Language } from "../../common/Language";
 
 const textLanguage: Language = {
@@ -7,7 +7,7 @@ const textLanguage: Language = {
   phases: [],
   emitter: {
     emit(x) {
-      return getOutput(x).trimEnd();
+      return getOutputOrThrow(x).trimEnd();
     },
   },
 };

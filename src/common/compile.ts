@@ -30,7 +30,7 @@ import {
 import { readsFromArgv, readsFromStdin } from "./symbols";
 import { InvariantError, UserError } from "./errors";
 import { charLength } from "./strings";
-import { getOutput } from "../interpreter";
+import { getOutputOrError } from "../interpreter";
 
 export type OptimisationLevel = "nogolf" | "simple" | "full";
 export interface CompilationOptions {
@@ -241,25 +241,24 @@ export default function compile(
       const outputs = errorlessVariants.flatMap((x) => {
         const res = [compileVariant(x, options, language)];
         if (!isOp("print[Text]")(x) || !isText()(x.args[0])) {
-          try {
-            const output = getOutput(x);
-            if (output !== "") {
-              const hardcoded = compileVariant(
-                op["print[Text]"](text(output)),
-                options,
-                language,
-              );
-              if (
-                isError(res[0].result) ||
-                (!isError(hardcoded.result) &&
-                  options.level !== "nogolf" &&
-                  !options.skipPlugins.includes("hardcode") &&
-                  obj(hardcoded.result) < obj(res[0].result))
-              ) {
-                res.push(hardcoded);
-              }
+          const output = getOutputOrError(x);
+
+          if (typeof output === "string" && output !== "") {
+            const hardcoded = compileVariant(
+              op["print[Text]"](text(output)),
+              options,
+              language,
+            );
+            if (
+              isError(res[0].result) ||
+              (!isError(hardcoded.result) &&
+                options.level !== "nogolf" &&
+                !options.skipPlugins.includes("hardcode") &&
+                obj(hardcoded.result) < obj(res[0].result))
+            ) {
+              res.push(hardcoded);
             }
-          } catch {}
+          }
         }
         return res;
       });
@@ -280,12 +279,9 @@ export default function compile(
             .get(language.readsFromStdinOnCodeDotGolf === true)!
             .map((x) => {
               if (!isOp("print[Text]")(x) || !isText()(x.args[0])) {
-                try {
-                  const output = getOutput(x);
-                  if (output !== "") {
-                    return op["print[Text]"](text(output));
-                  }
-                } catch {}
+                const output = getOutputOrError(x);
+                if (typeof output === "string" && output !== "")
+                  return op["print[Text]"](text(output));
               }
               return undefined;
             })
