@@ -19,13 +19,17 @@ function withInvariantErrorWarningsFrom(
   a: CompilationResult,
   b: CompilationResult,
 ) {
-  return {
+  const res = {
     ...a,
     warnings: [
       ...a.warnings,
       ...b.warnings.filter((x) => x instanceof InvariantError),
     ],
   };
+  if (typeof b.result !== "string" && b.result instanceof InvariantError) {
+    res.warnings.push(b.result);
+  }
+  return res;
 }
 
 export function shorterBy(

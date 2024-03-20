@@ -223,6 +223,7 @@ export default function compile(
   if (errorlessVariants.length === 0) {
     for (const variant of variants) {
       (variant as CompilationResult).warnings = parsed!.warnings;
+      keepDistinctWarningsOnly(variant as CompilationResult);
     }
     if (options.getAllVariants) {
       return variants as CompilationResult[];
