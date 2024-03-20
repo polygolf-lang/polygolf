@@ -173,7 +173,8 @@ function emit(
     if (language.noEmitter !== undefined) {
       try {
         return language.noEmitter.emit(program, context);
-      } catch {
+      } catch (e) {
+        if (e instanceof InvariantError) context.addWarning(e, true);
         return debugEmit(program);
       }
     } else {
@@ -258,6 +259,8 @@ export default function compile(
             ) {
               res.push(hardcoded);
             }
+          } else if (output instanceof InvariantError) {
+            res[0].warnings.push(output);
           }
         }
         return res;
@@ -305,9 +308,19 @@ export default function compile(
 
   for (const res of result) {
     res.warnings.push(...parsed!.warnings);
+    keepDistinctWarningsOnly(res);
   }
 
   return result;
+}
+
+function keepDistinctWarningsOnly(result: CompilationResult) {
+  const warningMessagesSeen = new Set<string>();
+  result.warnings = result.warnings.filter((x) => {
+    if (warningMessagesSeen.has(x.message)) return false;
+    warningMessagesSeen.add(x.message);
+    return true;
+  });
 }
 
 function getVariantsByInputMethod(variants: Node[]): Map<boolean, Node[]> {
@@ -511,6 +524,7 @@ export function compileVariantNoPacking(
         queue.enqueue(state);
       } catch (e) {
         if (isError(e)) {
+          if (e instanceof InvariantError) addWarning(e, true);
           errors.push(e);
         }
       }
