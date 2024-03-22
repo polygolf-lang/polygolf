@@ -1,4 +1,4 @@
-import { PolygolfError } from "../common/errors";
+import { InvariantError, UserError } from "../common/errors";
 import { type Token } from "moo";
 import nearley from "nearley";
 import {
@@ -108,7 +108,7 @@ export function sexpr(
       ? userName(alias.opCode)
       : alias.opCode;
     warnings.push(
-      new PolygolfError(
+      new UserError(
         `Deprecated alias used: ${callee}. Use ${alias.opCode} ${
           alias.opCode === uName ? "" : `or ${uName} `
         }${alias.asRhsOfAssignment ? "as RHS of an assignment " : ""}instead.`,
@@ -128,27 +128,27 @@ export function sexpr(
   }
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
-      throw new PolygolfError(
+      throw new UserError(
         `Syntax error. Invalid argument count in application of ${callee}: ` +
           `Expected ${low}${low === high ? "" : ".." + String(high)} but got ${
             args.length
           }.`,
-        calleeIdent.source,
+        calleeIdent,
       );
     }
   }
   function assertIdentifier(e: Node): asserts e is Identifier {
     if (!isIdent()(e))
-      throw new PolygolfError(
+      throw new UserError(
         `Syntax error. Application first argument must be identifier, but got ${args[0].kind}`,
-        e.source,
+        e,
       );
   }
   function assertInteger(e: Node): asserts e is Integer {
     if (!isInt()(e))
-      throw new PolygolfError(
+      throw new UserError(
         `Syntax error. Expected integer literal, but got ${e.kind}`,
-        e.source,
+        e,
       );
   }
   function assertIdentifiers(e: readonly Node[]): asserts e is Identifier[] {
@@ -157,17 +157,17 @@ export function sexpr(
   function assertKeyValues(e: readonly Node[]): asserts e is KeyValue[] {
     for (const x of e) {
       if (x.kind !== "KeyValue")
-        throw new PolygolfError(
+        throw new UserError(
           `Syntax error. Application ${callee} requires list of key-value pairs as argument`,
-          x.source,
+          x,
         );
     }
   }
   function asString(e: Node): string {
     if (isText()(e)) return e.value;
-    throw new PolygolfError(
+    throw new UserError(
       `Syntax error. Expected string literal, but got ${e.kind}`,
-      e.source,
+      e,
     );
   }
   function asArray(e: Node): readonly Node[] {
@@ -176,9 +176,9 @@ export function sexpr(
         ? e.variants[0].children
         : [e.variants[0]];
     }
-    throw new PolygolfError(
+    throw new UserError(
       `Syntax error. Expected single variant block, but got ${e.kind}`,
-      e.source,
+      e,
     );
   }
 
@@ -230,7 +230,7 @@ export function sexpr(
         colllection = op.range_excl(low, high, step);
         body = body0;
         warnings.push(
-          new PolygolfError(
+          new UserError(
             "Deprecated form of `for` used. Iterate over a range using `(low ..< high step)` instead.",
             calleeIdent.source,
           ),
@@ -241,7 +241,7 @@ export function sexpr(
         colllection = op.range_excl(low, high, intNode(1n));
         body = body0;
         warnings.push(
-          new PolygolfError(
+          new UserError(
             "Deprecated form of `for` used. Iterate over a range using `(low ..< high)` instead.",
             calleeIdent.source,
           ),
@@ -376,9 +376,9 @@ export function sexpr(
     matchingOpCodes.push("concat[List]", "concat[Text]", "append");
   }
   if (matchingOpCodes.length < 1) {
-    throw new PolygolfError(
+    throw new UserError(
       `Syntax error. Unrecognized builtin: ${callee}`,
-      calleeIdent.source,
+      calleeIdent,
     );
   }
 
@@ -390,7 +390,7 @@ export function sexpr(
     const expectedArities = normalizeRangeUnion(
       matchingOpCodes.map((opCode) => [minArity(opCode), maxArity(opCode)]),
     );
-    throw new PolygolfError(
+    throw new UserError(
       `Syntax error. Invalid argument count in application of ${callee}: ` +
         `Expected ${expectedArities
           .map(
@@ -398,7 +398,7 @@ export function sexpr(
               `${x}${y === x ? "" : ".." + (y === Infinity ? "oo" : y)}`,
           )
           .join(", ")} but got ${args.length}.`,
-      calleeIdent.source,
+      calleeIdent,
     );
   }
 
@@ -428,33 +428,28 @@ export function userIdentifier(token: Token): Identifier {
 }
 
 export function typeSexpr(callee: Token, args: (Type | Integer)[]): Type {
+  const source = { line: callee.line, column: callee.col };
   function expectArity(low: number, high: number = low) {
     if (args.length < low || args.length > high) {
-      throw new PolygolfError(
+      throw new UserError(
         `Syntax error. Invalid argument count in application of ${callee.value}: ` +
           `Expected ${low}${low === high ? "" : ".." + String(high)} but got ${
             args.length
           }.`,
-        { line: callee.line, column: callee.col },
+        source,
       );
     }
   }
   function assertNumber(e: Type | Integer): asserts e is Integer {
     if (e.kind !== "Integer")
-      throw new PolygolfError(`Syntax error. Expected number, got type.`, {
-        line: callee.line,
-        column: callee.col,
-      });
+      throw new UserError(`Syntax error. Expected number, got type.`, source);
   }
   function assertTypes(e: (Type | Integer)[]): asserts e is Type[] {
     e.forEach(assertType);
   }
   function assertType(e: Type | Integer): asserts e is Type {
     if (e.kind === "Integer")
-      throw new PolygolfError(`Syntax error. Expected type, got number.`, {
-        line: callee.line,
-        column: callee.col,
-      });
+      throw new UserError(`Syntax error. Expected type, got number.`, source);
   }
   switch (callee.value) {
     case "Void":
@@ -472,14 +467,11 @@ export function typeSexpr(callee: Token, args: (Type | Integer)[]): Type {
         return textType(Number(args[0].value), callee.value === "Ascii");
       if (args[0].kind === "integer")
         return textType(args[0], callee.value === "Ascii");
-      throw new PolygolfError(
+      throw new UserError(
         `Syntax error. Expected integer or integer type, got ${toString(
           args[0],
         )}.`,
-        {
-          line: callee.line,
-          column: callee.col,
-        },
+        source,
       );
     case "Bool":
       expectArity(0);
@@ -499,7 +491,7 @@ export function typeSexpr(callee: Token, args: (Type | Integer)[]): Type {
       assertType(args[1]);
       if (args[0].kind === "integer") return tableType(args[0], args[1]);
       if (args[0].kind === "text") return tableType(args[0], args[1]);
-      throw new PolygolfError("Unexpected key type for table.");
+      throw new UserError("Unexpected key type for table.", source);
     case "Set":
       expectArity(1);
       assertType(args[0]);
@@ -512,12 +504,9 @@ export function typeSexpr(callee: Token, args: (Type | Integer)[]): Type {
         args[args.length - 1],
       );
     default:
-      throw new PolygolfError(
+      throw new UserError(
         `Syntax error. Unrecognized type: ${callee.value}`,
-        {
-          line: callee.line,
-          column: callee.col,
-        },
+        source,
       );
   }
 }
@@ -585,7 +574,7 @@ export default function parse(
       if (expected.length > 0) {
         message += ` Expected one of ${expected.join(", ")}.`;
       }
-      throw new PolygolfError(
+      throw new UserError(
         message,
         token === undefined
           ? undefined
@@ -600,11 +589,11 @@ export default function parse(
   }
   const results = parser.results;
   if (results.length > 1) {
-    throw new Error("Ambiguous parse of code"); // this is most likely an error in the grammar
+    throw new InvariantError("Ambiguous parse of code."); // this is most likely an error in the grammar
   }
   if (results.length === 0) {
     const lines = code.split("\n");
-    throw new PolygolfError("Unexpected end of code", {
+    throw new UserError("Unexpected end of code", {
       line: lines.length + 1,
       column: (lines.at(-1)?.length ?? 0) + 1,
     });

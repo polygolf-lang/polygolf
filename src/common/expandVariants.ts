@@ -1,4 +1,5 @@
 import { type IR } from "../IR";
+import { InvariantError, UserError } from "./errors";
 import {
   fromChildRemapFunc,
   getChild,
@@ -14,13 +15,16 @@ import {
 export function expandVariants(program: IR.Node): IR.Node[] {
   const n = numVariants(program);
   if (n > 16)
-    throw new Error(`Variant count ${n} exceeds arbitrary limit. Giving up`);
+    throw new UserError(
+      `Variant count ${n} exceeds arbitrary limit. Giving up.`,
+      program,
+    );
   return allVariantOptions(program).map((x) => structuredClone(x));
 }
 
 export function getOnlyVariant(program: IR.Node): IR.Node {
   if (numVariants(program) > 1) {
-    throw new Error("Program contains multiple variants!");
+    throw new InvariantError("Program contains multiple variants!");
   }
   return allVariantOptions(program)[0];
 }

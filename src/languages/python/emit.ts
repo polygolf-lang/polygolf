@@ -6,7 +6,6 @@ import {
 } from "../../common/Language";
 import {
   containsMultiNode,
-  EmitError,
   emitIntLiteral,
   emitTextFactory,
   getIfChain,
@@ -16,6 +15,7 @@ import { isInt, isText, id, type Node, type If } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
 import { $, type PathFragment } from "../../common/fragments";
 import { type Spine } from "../../common/Spine";
+import { InvariantError, NotImplementedError } from "../../common/errors";
 
 export const emitPythonText = emitTextFactory(
   {
@@ -64,9 +64,7 @@ function binaryPrecedence(opname: string): number {
       return 1;
   }
   if (opname.endsWith("=")) return 0;
-  throw new Error(
-    `Programming error - unknown Python binary operator '${opname}'.`,
-  );
+  throw new InvariantError(`Unknown Python binary operator '${opname}'.`);
 }
 
 function unaryPrecedence(opname: string): number {
@@ -77,9 +75,7 @@ function unaryPrecedence(opname: string): number {
     case "not":
       return 3;
   }
-  throw new Error(
-    `Programming error - unknown Python unary operator '${opname}.'`,
-  );
+  throw new InvariantError(`Unknown Python unary operator '${opname}.'`);
 }
 
 export class PythonEmitter extends PrecedenceVisitorEmitter {
@@ -132,7 +128,9 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
         if (n.targetType === "set") {
           return ["{*", $.expr, "}"];
         }
-        throw new EmitError(n, "unsuported cast target type");
+        throw new InvariantError(
+          `Unsuported cast target type ${n.targetType}.`,
+        );
       case "Block":
         return $.children.join(
           spine.isRoot || containsMultiNode(n.children) ? "\n" : ";",
@@ -231,7 +229,7 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
         ];
       }
       default:
-        throw new EmitError(n);
+        throw new NotImplementedError(n);
     }
   }
 }

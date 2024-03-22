@@ -1,5 +1,5 @@
 import { type CompilationContext } from "../../common/compile";
-import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
+import { emitIntLiteral, emitTextFactory } from "../../common/emit";
 import { isInt, isOp, type Node } from "../../IR";
 import {
   defaultDetokenizer,
@@ -7,6 +7,7 @@ import {
 } from "../../common/Language";
 import type { Spine } from "../../common/Spine";
 import { $, type PathFragment } from "../../common/fragments";
+import { InvariantError, NotImplementedError } from "../../common/errors";
 
 const emitLuaText = emitTextFactory(
   {
@@ -57,9 +58,7 @@ function binaryPrecedence(opname: string): number {
     case "or":
       return 1;
   }
-  throw new Error(
-    `Programming error - unknown Lua binary operator '${opname}.'`,
-  );
+  throw new InvariantError(`Unknown Lua binary operator '${opname}.'`);
 }
 
 export class LuaEmitter extends PrecedenceVisitorEmitter {
@@ -158,6 +157,6 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
       case "KeyValue":
         return [$.key, "=", $.value];
     }
-    throw new EmitError(e);
+    throw new NotImplementedError(e);
   }
 }

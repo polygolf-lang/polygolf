@@ -7,7 +7,7 @@ import {
   isOfKind,
 } from "../IR";
 import { readsFromInput } from "../common/symbols";
-import { PolygolfError } from "../common/errors";
+import { InvariantError, UserError } from "../common/errors";
 import { compileVariant } from "../common/compile";
 import javascriptLanguage from "../languages/javascript";
 import { required } from "../common/Language";
@@ -36,17 +36,21 @@ const javascriptForInterpreting = {
   ],
 };
 
-const outputCache = new Map<Node, unknown>();
+const outputCache = new Map<Node, string | Error>();
 
-export function getOutput(program: Node) {
+export function getOutputOrError(program: Node) {
   if (!outputCache.has(program)) {
     try {
       outputCache.set(program, _getOutput(program));
     } catch (e) {
-      outputCache.set(program, e);
+      outputCache.set(program, e as Error);
     }
   }
-  const res = outputCache.get(program);
+  return outputCache.get(program)!;
+}
+
+export function getOutputOrThrow(program: Node) {
+  const res = getOutputOrError(program);
   if (typeof res === "string") return res;
   throw res;
 }
@@ -54,7 +58,10 @@ export function getOutput(program: Node) {
 function _getOutput(program: Node): string {
   const spine = programToSpine(program);
   if (spine.someNode(readsFromInput))
-    throw new PolygolfError("Program reads from input.");
+    throw new UserError(
+      "Program reads from input.",
+      spine.firstNode(readsFromInput),
+    );
   const jsCode = compileVariant(
     program,
     { level: "nogolf" },
@@ -73,14 +80,29 @@ function _getOutput(program: Node): string {
   const start = Date.now();
   function instrument() {
     if (Date.now() - start > 500)
-      throw new PolygolfError("Program took too long to interpret.");
+      throw new UserError("Program took too long to interpret.", undefined);
   }
   /* eslint-disable */
-  new Function("print", "write", "instrument", jsCode.result)(
-    print,
-    write,
-    instrument,
-  );
+  try {
+    new Function("print", "write", "instrument", jsCode.result)(
+      print,
+      write,
+      instrument,
+    );
+  } catch (e) {
+    if (e instanceof Error) {
+      if (e instanceof SyntaxError) {
+        throw new InvariantError(
+          `Error while executing the following javascript:\n${jsCode.result}`,
+          e,
+        );
+      }
+      if (!(e instanceof UserError)) {
+        throw new UserError("Error while executing code.", undefined);
+      }
+    }
+    throw e;
+  }
   /* eslint-enable */
   return output;
 }

@@ -28,9 +28,9 @@ import {
   shorterBy,
 } from "./objective";
 import { readsFromArgv, readsFromStdin } from "./symbols";
-import { PolygolfError } from "./errors";
+import { InvariantError, UserError } from "./errors";
 import { charLength } from "./strings";
-import { getOutput } from "../interpreter";
+import { getOutputOrError } from "../interpreter";
 
 export type OptimisationLevel = "nogolf" | "simple" | "full";
 export interface CompilationOptions {
@@ -114,7 +114,7 @@ export function applyAllToAllAndGetCounts(
 function getSingleOrUndefined<T>(x: T | T[] | undefined): T | undefined {
   if (Array.isArray(x)) {
     if (x.length > 1)
-      throw new Error(
+      throw new InvariantError(
         `Programming error. Expected at most 1 item, but got ${stringify(x)}.`,
       );
     return x[0];
@@ -173,7 +173,8 @@ function emit(
     if (language.noEmitter !== undefined) {
       try {
         return language.noEmitter.emit(program, context);
-      } catch {
+      } catch (e) {
+        if (e instanceof InvariantError) context.addWarning(e, true);
         return debugEmit(program);
       }
     } else {
@@ -222,6 +223,7 @@ export default function compile(
   if (errorlessVariants.length === 0) {
     for (const variant of variants) {
       (variant as CompilationResult).warnings = parsed!.warnings;
+      keepDistinctWarningsOnly(variant as CompilationResult);
     }
     if (options.getAllVariants) {
       return variants as CompilationResult[];
@@ -241,25 +243,26 @@ export default function compile(
       const outputs = errorlessVariants.flatMap((x) => {
         const res = [compileVariant(x, options, language)];
         if (!isOp("print[Text]")(x) || !isText()(x.args[0])) {
-          try {
-            const output = getOutput(x);
-            if (output !== "") {
-              const hardcoded = compileVariant(
-                op["print[Text]"](text(output)),
-                options,
-                language,
-              );
-              if (
-                isError(res[0].result) ||
-                (!isError(hardcoded.result) &&
-                  options.level !== "nogolf" &&
-                  !options.skipPlugins.includes("hardcode") &&
-                  obj(hardcoded.result) < obj(res[0].result))
-              ) {
-                res.push(hardcoded);
-              }
+          const output = getOutputOrError(x);
+
+          if (typeof output === "string" && output !== "") {
+            const hardcoded = compileVariant(
+              op["print[Text]"](text(output)),
+              options,
+              language,
+            );
+            if (
+              isError(res[0].result) ||
+              (!isError(hardcoded.result) &&
+                options.level !== "nogolf" &&
+                !options.skipPlugins.includes("hardcode") &&
+                obj(hardcoded.result) < obj(res[0].result))
+            ) {
+              res.push(hardcoded);
             }
-          } catch {}
+          } else if (output instanceof InvariantError) {
+            res[0].warnings.push(output);
+          }
         }
         return res;
       });
@@ -280,12 +283,9 @@ export default function compile(
             .get(language.readsFromStdinOnCodeDotGolf === true)!
             .map((x) => {
               if (!isOp("print[Text]")(x) || !isText()(x.args[0])) {
-                try {
-                  const output = getOutput(x);
-                  if (output !== "") {
-                    return op["print[Text]"](text(output));
-                  }
-                } catch {}
+                const output = getOutputOrError(x);
+                if (typeof output === "string" && output !== "")
+                  return op["print[Text]"](text(output));
               }
               return undefined;
             })
@@ -309,9 +309,19 @@ export default function compile(
 
   for (const res of result) {
     res.warnings.push(...parsed!.warnings);
+    keepDistinctWarningsOnly(res);
   }
 
   return result;
+}
+
+function keepDistinctWarningsOnly(result: CompilationResult) {
+  const warningMessagesSeen = new Set<string>();
+  result.warnings = result.warnings.filter((x) => {
+    if (warningMessagesSeen.has(x.message)) return false;
+    warningMessagesSeen.add(x.message);
+    return true;
+  });
 }
 
 function getVariantsByInputMethod(variants: Node[]): Map<boolean, Node[]> {
@@ -324,7 +334,10 @@ function getVariantsByInputMethod(variants: Node[]): Map<boolean, Node[]> {
     };
   });
   if (variantsWithMethods.some((x) => x.readsFromArgv && x.readsFromStdin)) {
-    throw new PolygolfError("Program cannot read from both argv and stdin.");
+    throw new UserError(
+      "Program cannot read from both argv and stdin.",
+      undefined,
+    );
   }
   return new Map<boolean, Node[]>(
     [true, false].map((preferStdin) => {
@@ -512,6 +525,7 @@ export function compileVariantNoPacking(
         queue.enqueue(state);
       } catch (e) {
         if (isError(e)) {
+          if (e instanceof InvariantError) addWarning(e, true);
           errors.push(e);
         }
       }

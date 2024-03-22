@@ -1,5 +1,5 @@
 import type { PluginVisitor, Spine } from "../common/Spine";
-import { PolygolfError } from "../common/errors";
+import { UserError } from "../common/errors";
 import { getType } from "../common/getType";
 import {
   int64Type,
@@ -27,7 +27,7 @@ export function assertInt64(node: Node, spine: Spine) {
     return; // stuff like builtin identifiers etc. throw
   }
   if (isSubtype(type, integerType()) && !isSubtype(type, int64Type)) {
-    throw new PolygolfError(
+    throw new UserError(
       `Integer value that doesn't provably fit into a int64 type encountered.`,
       node.source,
     );
@@ -64,8 +64,9 @@ function needsBigint(
         const op = isOp()(parent) ? parent.op : "Assignment";
         const res = (allowed as any)[op];
         if (res === undefined) {
-          throw new PolygolfError(
+          throw new UserError(
             `Operation that is not supported on bigints encountered. (${op})`,
+            parent,
           );
         }
         if (res === "bigint" && node.targetType !== "bigint") {

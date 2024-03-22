@@ -1,3 +1,4 @@
+import { InvariantError } from "../common/errors";
 import {
   type BaseNode,
   type Node,
@@ -62,7 +63,7 @@ export function isEqualToLiteral(x: Node, literal: Literal): boolean {
       isEqualToLiteral(x.value, literal.value)
     );
   }
-  throw new Error("Unknown literal kind.");
+  throw new InvariantError(`Unknown literal kind. ${literal.kind}`);
 }
 
 export function array(value: readonly Node[]): Array {

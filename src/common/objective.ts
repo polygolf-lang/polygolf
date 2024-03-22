@@ -1,4 +1,5 @@
 import { type CompilationOptions, type CompilationResult } from "./compile";
+import { InvariantError } from "./errors";
 import { byteLength, charLength } from "./strings";
 
 export type Objective = "bytes" | "chars";
@@ -14,15 +15,32 @@ function isError(x: any): x is Error {
   return x instanceof Error;
 }
 
+function withInvariantErrorWarningsFrom(
+  a: CompilationResult,
+  b: CompilationResult,
+) {
+  const res = {
+    ...a,
+    warnings: [
+      ...a.warnings,
+      ...b.warnings.filter((x) => x instanceof InvariantError),
+    ],
+  };
+  if (typeof b.result !== "string" && b.result instanceof InvariantError) {
+    res.warnings.push(b.result);
+  }
+  return res;
+}
+
 export function shorterBy(
   obj: ObjectiveFunc,
 ): (a: CompilationResult, b: CompilationResult) => CompilationResult {
   return (a, b) =>
     isError(a.result)
-      ? b
+      ? withInvariantErrorWarningsFrom(b, a)
       : isError(b.result)
-        ? a
+        ? withInvariantErrorWarningsFrom(a, b)
         : obj(a.result) < obj(b.result)
-          ? a
-          : b;
+          ? withInvariantErrorWarningsFrom(a, b)
+          : withInvariantErrorWarningsFrom(b, a);
 }

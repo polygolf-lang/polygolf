@@ -3,11 +3,12 @@ import {
   PrecedenceVisitorEmitter,
   type Token,
 } from "../../common/Language";
-import { EmitError, emitIntLiteral, emitTextFactory } from "../../common/emit";
+import { emitIntLiteral, emitTextFactory } from "../../common/emit";
 import { isText, isOfKind, type Node, uniqueId } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
 import { $, type PathFragment } from "../../common/fragments";
 import type { Spine } from "../../common/Spine";
+import { InvariantError, NotImplementedError } from "../../common/errors";
 
 function escapeRegExp(string: string) {
   // https://stackoverflow.com/a/6969486/14611638
@@ -81,9 +82,7 @@ function binaryPrecedence(opname: string): number {
       return 3;
   }
   if (opname.endsWith("=")) return 0;
-  throw new Error(
-    `Programming error - unknown Javascript binary operator '${opname}.'`,
-  );
+  throw new InvariantError(`Unknown Javascript binary operator '${opname}.'`);
 }
 
 export class JavascriptEmitter extends PrecedenceVisitorEmitter {
@@ -150,7 +149,9 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
         if (n.targetType === "array") {
           return ["[...", $.expr, "]"];
         }
-        throw new EmitError(n, "unsuported cast target type");
+        throw new InvariantError(
+          `Unsuported cast target type ${n.targetType}.`,
+        );
       case "VarDeclarationWithAssignment":
         return ["let", $.assignment];
       case "Block":
@@ -244,7 +245,7 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
         ];
 
       default:
-        throw new EmitError(n);
+        throw new NotImplementedError(n);
     }
   }
 }

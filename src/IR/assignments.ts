@@ -1,4 +1,4 @@
-import { PolygolfError } from "../common/errors";
+import { UserError } from "../common/errors";
 import {
   type BaseNode,
   id,
@@ -138,9 +138,9 @@ export function varDeclarationWithAssignment<T extends SomeAssignment>(
     (!isAssignment(assignment) &&
       assignment.variables.some((y) => !isIdent()(y)))
   ) {
-    throw new PolygolfError(
+    throw new UserError(
       "VarDeclarationWithAssignment needs assignments to variables.",
-      assignment.source,
+      assignment,
     );
   }
   return {
