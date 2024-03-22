@@ -93,6 +93,7 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
     return defaultDetokenizer((a, b) => {
       a = a[a.length - 1];
       b = b[0];
+      if (a === "0" && /[box]/.test(b)) return true;
       if (/\d/.test(a) && /[a-zA-Z]/.test(b)) return false;
       return /\w/.test(a) && /\w/.test(b);
     })(x);
