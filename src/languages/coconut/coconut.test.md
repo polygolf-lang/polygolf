@@ -8,7 +8,7 @@ for_argv $x 100 {
 };
 ```
 
-```coconut
+```coconut nogolf
 for x in os.sys.argv[1:]:print(x)
 ```
 
@@ -32,4 +32,50 @@ $y <- 0;
 x=0
 y=0
 x≤y
+```
+
+## Implicit calls
+
+```polygolf
+max (builtin "a") (builtin "b") (builtin "c");
+```
+
+```coco skipTypecheck
+max a b c
+```
+
+```polygolf
+42 * (builtin "x"):Int;
+```
+
+```coco
+42x
+```
+
+```polygolf
+print (42 * (builtin "x"):Int);
+```
+
+```coco
+print(42x)
+```
+
+## Pipes
+
+```polygolf
+ord "x";
+```
+
+```coco chars
+"x"↦ord
+```
+
+## Infix calls
+
+```polygolf
+function_call (builtin "f") (builtin "x") "x";
+```
+
+```coco skipTypecheck
+x`f`"x"
 ```

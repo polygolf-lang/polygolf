@@ -317,7 +317,7 @@ conditional true 3 4;
 ```
 
 ```python nogolf
-3 if 1 else 4
+3if 1else 4
 ```
 
 ```python
@@ -354,4 +354,16 @@ $r <- (10 ..< 40 2);
 
 ```py
 r=[*range(10,40,2)]
+```
+
+## Int token followed by a word token
+
+```polygolf
+or 1 (builtin "x");
+or 0 (builtin "x");
+```
+
+```py skipTypecheck
+1or x
+0 or x
 ```

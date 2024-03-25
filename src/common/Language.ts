@@ -64,8 +64,9 @@ export abstract class VisitorEmitter extends DetokenizingEmitter {
             prop: item.prop as ChildrenProp,
             index,
           });
-          if (index > 0 && item.delimiter !== undefined)
+          if (index > 0 && item.delimiter !== undefined) {
             tokens.push(item.delimiter);
+          }
           collect(this.visit(childSpine.node, childSpine, context), childSpine);
         });
       } else if (item instanceof Spine) {
@@ -77,7 +78,7 @@ export abstract class VisitorEmitter extends DetokenizingEmitter {
     };
     const programSpine = programToSpine(program);
     collect(this.visit(program, programSpine, context), programSpine);
-    return tokens;
+    return tokens.filter((x) => x !== "");
   }
 }
 
@@ -217,7 +218,7 @@ export function defaultDetokenizer(
 ): (x: Token[]) => string {
   return function (tokens: Token[]): string {
     let indentLevel = 0;
-    let result = tokens[0];
+    let result = tokens[0] ?? "";
     for (let i = 1; i < tokens.length; i++) {
       if (tokens[i] === "$INDENT$") indentLevel++;
       else if (tokens[i] === "$DEDENT$") indentLevel--;
