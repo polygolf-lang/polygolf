@@ -68,6 +68,7 @@ if (options.all === true && options.output !== undefined) {
     {
       objective: options.chars === true ? "chars" : "bytes",
       getAllVariants: options.all === true,
+      caller: "cli",
     },
     ...langs,
   )) {
