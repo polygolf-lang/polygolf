@@ -7,10 +7,9 @@ import {
   op,
   text,
   assignment,
-  isUserIdent,
+  isIdent,
   isAssignmentToIdent,
   type Assignment,
-  isIdent,
   blockOrSingle,
   type Op,
   isText,
@@ -121,7 +120,7 @@ export function mergePrint(
 export function splitPrint(node: Node, spine: Spine) {
   if (node.kind === "Block") {
     const last = node.children.at(-1)!;
-    if (isOp("print[Text]")(last) && isUserIdent()(last.args[0])) {
+    if (isOp("print[Text]")(last) && isIdent()(last.args[0])) {
       const printVar = last.args[0];
       const writes = getWrites(spine, printVar.name);
       if (writes.every((x) => isAssignmentToIdent()(x.parent!.node))) {

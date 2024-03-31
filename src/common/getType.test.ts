@@ -167,7 +167,7 @@ describe("Assignment", () => {
 describe("Functions", () => {
   testNode(
     "Function call wrong types",
-    functionCall(id("f", false), [intNode(1n)]),
+    functionCall(id("f"), [intNode(1n)]),
     "error",
     block([]),
   );

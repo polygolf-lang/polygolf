@@ -14,7 +14,7 @@ import {
   isAssignment,
   type Node,
   type Identifier,
-  isUserIdent,
+  isIdent,
   annotate,
   type PhysicalOpCode,
 } from "../IR";
@@ -101,7 +101,7 @@ export function mapVarsThatNeedBigint(
 ): PluginVisitor {
   const primitiveIntType = type(primitiveIntType0) as IntegerType;
   return function mapVarsThatNeedBigint(node, spine) {
-    if (isUserIdent()(node) && node.targetType === "bigint") {
+    if (isIdent()(node) && node.targetType === "bigint") {
       const type = getType(node, spine);
       if (isSubtype(type, primitiveIntType)) {
         return annotate(f({ ...node, targetType: "int" }), type);

@@ -76,7 +76,6 @@ export function isIdentifierReadonly(
   expr: IR.Identifier,
   program: IR.Node,
 ): boolean {
-  if (expr.builtin) return true;
   const definingNode = symbolTableRoot(program).get(expr.name);
   return definingNode !== undefined && definingNode.node.kind !== "Assignment";
 }
@@ -160,7 +159,6 @@ export function getDirectReads(
       (x) =>
         x !== undefined &&
         x.node.kind === "Identifier" &&
-        !x.node.builtin &&
         (variable === undefined || variable === x.node.name),
     ) as Spine<Identifier>[];
 }
@@ -182,7 +180,6 @@ export function getDirectWrites(
       (x) =>
         x !== undefined &&
         x.node.kind === "Identifier" &&
-        !x.node.builtin &&
         (variable === undefined || variable === x.node.name),
     ) as Spine<Identifier>[];
 }

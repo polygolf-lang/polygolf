@@ -295,12 +295,7 @@ const javascriptLanguage: Language = {
     search(propertyCallToIndexCall),
     simplegolf(
       alias({
-        Identifier: (n, s) =>
-          n.builtin &&
-          (s.parent?.node.kind !== "PropertyCall" ||
-            s.pathFragment?.prop !== "ident")
-            ? n.name
-            : undefined,
+        Builtin: (x) => x.name,
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
       }),

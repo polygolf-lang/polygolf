@@ -66,6 +66,8 @@ import {
   maxArity,
   cast,
   OpCodesUser,
+  builtin,
+  ssaRead,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -95,9 +97,6 @@ export function sexpr(
   args: readonly Node[],
   callee: string = calleeIdent.name,
 ): Node {
-  if (!calleeIdent.builtin) {
-    return functionCall(calleeIdent, ...args);
-  }
   if (callee in deprecatedAliases) {
     const alias0 = deprecatedAliases[callee];
     const alias =
@@ -348,9 +347,11 @@ export function sexpr(
         expectArity(2);
         return postfix(asString(args[0]), args[1]);
       case "builtin":
+        expectArity(1);
+        return builtin(asString(args[0]));
       case "id":
         expectArity(1);
-        return id(asString(args[0]), callee === "builtin");
+        return id(asString(args[0]));
       case "import":
         expectArity(2, Infinity);
         return importStatement(asString(args[0]), args.slice(1).map(asString));
@@ -422,9 +423,19 @@ export function int(x: Token) {
   return integer(intValue(x.text));
 }
 
-export function userIdentifier(token: Token): Identifier {
-  const name = token.value.slice(1);
-  return id(name, false);
+export function dollarExpr(token: Token) {
+  if (token.value.startsWith("$$")) {
+    return builtin(token.value.slice(2));
+  }
+  if (/^\$\d.*$/.test(token.value)) {
+    return ssaRead(
+      token.value
+        .slice(1)
+        .split("$")
+        .map((x) => Number(x)),
+    );
+  }
+  return id(token.value.slice(1));
 }
 
 export function typeSexpr(callee: Token, args: (Type | Integer)[]): Type {

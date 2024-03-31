@@ -9,7 +9,6 @@ import {
   isAssignment,
   isAssignmentToIdent,
   isIdent,
-  isUserIdent,
   manyToManyAssignment,
   oneToManyAssignment,
   type VarDeclaration,
@@ -155,7 +154,7 @@ export function addManyToManyAssignments(
     "addManyToManyAssignments",
     (expr, spine, previous) =>
       isAssignmentToIdent()(expr) &&
-      !previous.some((x) => spine.someNode(isUserIdent(x.variable.name))),
+      !previous.some((x) => spine.someNode(isIdent(x.variable.name))),
     (exprs) => [
       manyToManyAssignment(
         exprs.map((x) => x.variable),
@@ -180,7 +179,7 @@ export function addVarDeclarationManyToManyAssignments(
       expr.kind === "VarDeclarationWithAssignment" &&
       isAssignmentToIdent()(expr.assignment) &&
       !previous.some((x) =>
-        spine.someNode(isUserIdent(x.assignment.variable.name)),
+        spine.someNode(isIdent(x.assignment.variable.name)),
       ),
     (exprs) => [
       varDeclarationWithAssignment(
@@ -270,9 +269,9 @@ export function inlineVariables(
         write.node.kind === "Assignment" &&
         write.parent?.node.kind === "Block" &&
         spine.someNode(
-          (n) => n !== variable && isUserIdent(variable)(n), // in tests variables are often never read from and we don't want to make those disappear
+          (n) => n !== variable && isIdent(variable)(n), // in tests variables are often never read from and we don't want to make those disappear
         ) &&
-        !write.getChild($.expr).someNode(isUserIdent(variable)) &&
+        !write.getChild($.expr).someNode(isIdent(variable)) &&
         !hasSideEffect(write.getChild($.expr))
       ) {
         const assignmentToInlineSpine = write as Spine<Assignment<Identifier>>;
@@ -282,9 +281,7 @@ export function inlineVariables(
           spine.withReplacer((x) =>
             x === assignmentParent && x.kind === "Block"
               ? blockOrSingle(x.children.filter((y) => y !== assignment))
-              : x.kind === "Identifier" &&
-                  !x.builtin &&
-                  x.name === assignment.variable.name
+              : x.kind === "Identifier" && x.name === assignment.variable.name
                 ? {
                     ...assignment.expr,
                     type: assignment.expr.type ?? assignment.variable.type,

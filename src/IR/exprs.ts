@@ -34,6 +34,7 @@ import {
   isVirtualOpCode,
   virtualOpCodeDefinitions,
   type VirtualOpCode,
+  builtin,
 } from "./IR";
 import { mapObjectValues, useDefaults } from "../common/arrays";
 
@@ -86,14 +87,14 @@ export interface FunctionCall extends BaseNode {
 export interface MethodCall extends BaseNode {
   readonly kind: "MethodCall";
   readonly object: Node;
-  readonly ident: Identifier;
+  readonly name: string;
   readonly args: readonly Node[];
 }
 
 export interface PropertyCall extends BaseNode {
   readonly kind: "PropertyCall";
   readonly object: Node;
-  readonly ident: Identifier;
+  readonly name: string;
 }
 
 export interface IndexCall extends BaseNode {
@@ -434,7 +435,7 @@ export function functionCall(
 ): FunctionCall {
   return {
     kind: "FunctionCall",
-    func: typeof func === "string" ? id(func, true) : func,
+    func: typeof func === "string" ? builtin(func) : func,
     args: args.flatMap((x) =>
       Array.isArray(x) || "kind" in x
         ? x
@@ -445,12 +446,12 @@ export function functionCall(
 
 export function methodCall(
   object: Node,
-  ident: string | Identifier,
+  name: string,
   ...args: readonly (Node | Record<string, Node> | readonly Node[])[]
 ): MethodCall {
   return {
     kind: "MethodCall",
-    ident: typeof ident === "string" ? id(ident, true) : ident,
+    name,
     object,
     args: args.flatMap((x) =>
       Array.isArray(x) || "kind" in x
@@ -462,11 +463,11 @@ export function methodCall(
 
 export function propertyCall(
   object: Node | readonly Node[],
-  ident: string | Identifier,
+  name: string,
 ): PropertyCall {
   return {
     kind: "PropertyCall",
-    ident: typeof ident === "string" ? id(ident, true) : ident,
+    name,
     object: [object].flat()[0],
   };
 }
@@ -595,35 +596,22 @@ export function isText<Value extends string>(
     (vals.length === 0 || vals.includes(x.value as any))) as any;
 }
 
+export function isBuiltin<Name extends string>(
+  ...names: (Name | Identifier<Name>)[]
+): (x: Node) => x is Identifier<Name> {
+  return ((x: Node) =>
+    x.kind === "Identifier" &&
+    (names.length === 0 ||
+      names.some(
+        (n) => (typeof n === "string" ? n : n.name) === x.name,
+      ))) as any;
+}
+
 export function isIdent<Name extends string>(
-  ...names: (Name | Identifier<boolean, Name>)[]
-): (x: Node) => x is Identifier<boolean, Name> {
+  ...names: (Name | Identifier<Name>)[]
+): (x: Node) => x is Identifier<Name> {
   return ((x: Node) =>
     x.kind === "Identifier" &&
-    (names.length === 0 ||
-      names.some(
-        (n) => (typeof n === "string" ? n : n.name) === x.name,
-      ))) as any;
-}
-
-export function isBuiltinIdent<Name extends string>(
-  ...names: (Name | Identifier<boolean, Name>)[]
-): (x: Node) => x is Identifier<true, Name> {
-  return ((x: Node) =>
-    x.kind === "Identifier" &&
-    x.builtin &&
-    (names.length === 0 ||
-      names.some(
-        (n) => (typeof n === "string" ? n : n.name) === x.name,
-      ))) as any;
-}
-
-export function isUserIdent<Name extends string>(
-  ...names: (Name | Identifier<boolean, Name>)[]
-): (x: Node) => x is Identifier<false, Name> {
-  return ((x: Node) =>
-    x.kind === "Identifier" &&
-    !x.builtin &&
     (names.length === 0 ||
       names.some(
         (n) => (typeof n === "string" ? n : n.name) === x.name,

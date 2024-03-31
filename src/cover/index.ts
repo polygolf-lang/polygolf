@@ -31,6 +31,7 @@ import {
   type OpCode,
   forRangeCommon,
   block,
+  type Builtin,
 } from "../IR";
 import languages from "../languages/languages";
 import { isCompilable } from "../common/compile";
@@ -215,11 +216,12 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
               (lang) => {
                 const types = getInstantiatedOpCodeArgTypes(opCode);
                 const variable = {
-                  ...uniqueId("cover", true),
+                  ...uniqueId("cover"),
+                  kind: "Builtin",
                   type: types[0],
-                };
+                } satisfies Builtin;
                 return assignment(
-                  variable,
+                  variable as any,
                   op.unsafe(opCode)(
                     ...types.map((x, i) => (i < 1 ? variable : lang.expr(x))),
                   ),

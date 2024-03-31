@@ -378,17 +378,10 @@ const pythonLanguage: Language = {
     simplegolf(
       addOneToManyAssignments(),
       alias({
-        Identifier: (n, s) =>
-          n.builtin &&
-          (s.parent?.node.kind !== "PropertyCall" ||
-            s.pathFragment?.prop !== "ident")
-            ? n.name
-            : undefined,
+        Builtin: (n, s) => n.name,
         // TODO: handle more general cases
         PropertyCall: (n) =>
-          isText()(n.object) && n.ident.builtin
-            ? `"${n.object.value}".${n.ident.name}`
-            : undefined,
+          isText()(n.object) ? `"${n.object.value}".${n.name}` : undefined,
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
       }),

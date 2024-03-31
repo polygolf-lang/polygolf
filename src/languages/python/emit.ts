@@ -184,6 +184,7 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
       case "NamedArg":
         return [n.name, "=", $.value];
       case "Identifier":
+      case "Builtin":
         return n.name;
       case "Text":
         return emitPythonText(n.value, context.options.codepointRange);
@@ -213,7 +214,7 @@ export class PythonEmitter extends PrecedenceVisitorEmitter {
           ")",
         ];
       case "PropertyCall":
-        return [$.object, ".", $.ident];
+        return [$.object, ".", n.name];
       case "Infix":
         return $.args.join(n.name);
       case "Prefix":

@@ -1,11 +1,5 @@
 import { programToSpine } from "../common/Spine";
-import {
-  type Node,
-  block,
-  functionCall,
-  isBuiltinIdent,
-  isOfKind,
-} from "../IR";
+import { type Node, block, functionCall, isIdent, isOfKind } from "../IR";
 import { readsFromInput } from "../common/symbols";
 import { InvariantError, UserError } from "../common/errors";
 import { compileVariant } from "../common/compile";
@@ -27,7 +21,7 @@ const javascriptForInterpreting = {
           isOfKind("While", "ForEach", "ForCLike")(parent) &&
           (node.kind !== "Block" ||
             node.children[0].kind !== "FunctionCall" ||
-            !isBuiltinIdent("instrument")(node.children[0].func))
+            !isIdent("instrument")(node.children[0].func))
         ) {
           return block([functionCall("instrument"), node]);
         }

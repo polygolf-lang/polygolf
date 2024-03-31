@@ -177,6 +177,7 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
           return [$.func, emitJavascriptTextBackticks(n.args[0].value)];
         return [$.func, "(", $.args.join(","), ")"];
       case "Identifier":
+      case "Builtin":
         return n.name;
       case "Text":
         return n.targetType?.startsWith("regex") === true
@@ -218,7 +219,7 @@ export class JavascriptEmitter extends PrecedenceVisitorEmitter {
       case "IndexCall":
         return [$.collection, "[", $.index, "]"];
       case "PropertyCall":
-        return [$.object, ".", $.ident];
+        return [$.object, ".", n.name];
       case "Infix":
         return $.args.join(n.name);
       case "Prefix":

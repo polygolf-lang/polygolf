@@ -190,8 +190,7 @@ const clojureLanguage: Language = {
     simplegolf(
       alias(
         {
-          Identifier: (n, s) =>
-            n.builtin && s.pathFragment?.prop !== "ident" ? n.name : undefined,
+          Identifier: (x) => x.name,
           Integer: (x) => x.value.toString(),
           Text: (x) => `"${x.value}"`,
         },

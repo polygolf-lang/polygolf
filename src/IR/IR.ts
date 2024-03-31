@@ -25,15 +25,18 @@ import type {
   Postfix,
   Cast,
 } from "./exprs";
-import { type ForEach, type ForCLike, type While, type ForArgv } from "./loops";
-import {
-  type AnyInteger,
-  type Identifier,
-  type Integer,
-  type Text,
+import type { ForEach, ForCLike, While, ForArgv } from "./loops";
+import type {
+  Builtin,
+  AnyInteger,
+  Identifier,
+  Integer,
+  Text,
+  SsaRead,
+  SsaWrite,
 } from "./terminals";
-import { type Block, type If, type Import, type Variants } from "./toplevel";
-import { type Type } from "./types";
+import type { Block, If, Import, Variants } from "./toplevel";
+import type { Type } from "./types";
 
 export * from "./assignments";
 export * from "./opcodes";
@@ -81,6 +84,9 @@ export type Node =
   | ForArgv
   | If
   // Other nodes
+  | Builtin
+  | SsaRead
+  | SsaWrite
   | ImplicitConversion
   | VarDeclaration
   | VarDeclarationWithAssignment

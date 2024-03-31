@@ -6,7 +6,8 @@ import {
   blockOrSingle,
   variants,
   text,
-  id as identifier
+  id as identifier,
+  builtin as builtinExpr,
 } from "../IR";
 import {
   int,
@@ -15,7 +16,7 @@ import {
   integerType,
   annotate,
   refSource,
-  userIdentifier } from "./parse";
+  dollarExpr as dollarExpression } from "./parse";
 %}
 
 @lexer lexer
@@ -40,7 +41,7 @@ expr -> expr_inner (":" type_expr):? (":" string):? {% ([expr, type, targetType]
 expr_inner ->
   integer {% id %}
   | string {% id %}
-  | variable {% id %}
+  | dollarExpr {% id %}
   | nullary {% id %}
   | sexpr {% id %}
 
@@ -54,13 +55,13 @@ stmt ->
 
 callee -> builtin {% id %}
   | opalias {% id %}
-  | variable {% id %}
+  | dollarExpr {% id %}
 
 integer -> %integer {% d => refSource(int(d[0]), d[0]) %}
-variable -> %variable {% d => refSource(userIdentifier(d[0]), d[0]) %}
-builtin -> (%builtin | "for_argv") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
-opalias -> (%opalias | "..") {% d => refSource(identifier(d[0][0].value, true), d[0][0]) %}
-nullary -> %nullary {% d => refSource(sexpr(identifier(d[0].value, true), []), d[0]) %}
+dollarExpr -> %dollarExpr {% d => refSource(dollarExpression(d[0]), d[0]) %}
+builtin -> (%builtin | "for_argv") {% d => refSource(builtinExpr(d[0][0].value), d[0][0]) %}
+opalias -> (%opalias | "..") {% d => refSource(identifier(d[0][0].value), d[0][0]) %}
+nullary -> %nullary {% d => refSource(sexpr(identifier(d[0].value), []), d[0]) %}
 string -> %string {% d => refSource(text(JSON.parse(d[0])), d[0]) %}
 
 type_expr -> type_range {% id %}

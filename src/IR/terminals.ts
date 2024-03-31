@@ -7,15 +7,35 @@ export interface Argv extends BaseNode {
 }
 
 /**
- * An identifier, such as referring to a global variable. Raw OK
+ * A user identifier, such as `x` in `x=1`.
  */
-export interface Identifier<
-  Builtin extends boolean = boolean,
-  Name extends string = string,
-> extends BaseNode {
+export interface Identifier<Name extends string = string> extends BaseNode {
   readonly kind: "Identifier";
   readonly name: Name;
-  readonly builtin: Builtin;
+}
+
+/**
+ * A builtin, such as `print`.
+ */
+export interface Builtin<Name extends string = string> extends BaseNode {
+  readonly kind: "Builtin";
+  readonly name: Name;
+}
+
+/**
+ * A reference to a SSA binding.
+ */
+export interface SsaRead extends BaseNode {
+  readonly kind: "SsaRead";
+  readonly ids: number[]; // a list of bindings this refers to (based on control flow)
+}
+
+/**
+ * An SSa binding that's being defined (by assignment or for loop).
+ */
+export interface SsaWrite extends BaseNode {
+  readonly kind: "SsaWrite";
+  readonly id: number; // a list of bindings this refers to (based on control flow)
 }
 
 /**
@@ -45,23 +65,31 @@ export interface Text<Value extends string = string> extends BaseNode {
   readonly value: Value;
 }
 
-export function id(name: string, builtin: boolean = false): Identifier {
-  return { kind: "Identifier", name, builtin };
+export function id(name: string): Identifier {
+  return { kind: "Identifier", name };
 }
 
 let unique: Record<string, number> = {};
-export function uniqueId(sequenceName = "unique", builtin = false): Identifier {
+export function uniqueId(sequenceName = "unique"): Identifier {
   if (!(sequenceName in unique)) {
     unique[sequenceName] = 0;
   }
-  return id(`${sequenceName}#${unique[sequenceName]++}`, builtin);
+  return id(`${sequenceName}#${unique[sequenceName]++}`);
 }
 export function clearUniqueSequences() {
   unique = {};
 }
 
-export function builtin(name: string): Identifier {
-  return id(name, true);
+export function builtin(name: string): Builtin {
+  return { kind: "Builtin", name };
+}
+
+export function ssaRead(ids: number[]): SsaRead {
+  return { kind: "SsaRead", ids };
+}
+
+export function ssaWrite(id: number): SsaWrite {
+  return { kind: "SsaWrite", id };
 }
 
 export function int(value: bigint | number): Integer {

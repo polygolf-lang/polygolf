@@ -10,7 +10,6 @@ import {
   op,
   prefix,
   type Op,
-  isBuiltinIdent,
   isText,
   type PhysicalOpCode,
 } from "../../IR";
@@ -141,7 +140,7 @@ export function removeSystemNamespace(node: Node, spine: Spine) {
 export function removeToSeqFromFor(node: Node, spine: Spine) {
   if (
     node.kind === "FunctionCall" &&
-    isBuiltinIdent("toSeq")(node.func) &&
+    isIdent("toSeq")(node.func) &&
     spine.parent?.node.kind === "ForEach" &&
     spine.pathFragment?.prop === "collection"
   ) {

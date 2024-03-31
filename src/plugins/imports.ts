@@ -1,5 +1,5 @@
 import type { PluginVisitor, Spine } from "../common/Spine";
-import { block, type Node, importStatement, isUserIdent } from "../IR";
+import { block, type Node, importStatement, isIdent } from "../IR";
 
 /**
  * @param rules Map from expr to a import it needs or array encoded map from symbol name to import.
@@ -16,7 +16,7 @@ export function addImports( // TODO caching
       Object.entries(rules).find(
         ([_, names]) =>
           names.includes(x.kind) ||
-          (!isUserIdent()(x) && names.includes((x as any).name)),
+          (!isIdent()(x) && names.includes((x as any).name)),
       )?.[0];
   } else rulesFunc = rules;
 

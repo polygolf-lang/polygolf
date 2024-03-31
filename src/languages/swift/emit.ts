@@ -164,6 +164,7 @@ export class SwiftEmitter extends PrecedenceVisitorEmitter {
       case "NamedArg":
         return [n.name, ":", $.value];
       case "Identifier":
+      case "Builtin":
         return n.name;
       case "Text":
         return emitSwiftText(n.value, context.options.codepointRange);
@@ -172,9 +173,9 @@ export class SwiftEmitter extends PrecedenceVisitorEmitter {
       case "FunctionCall":
         return [$.func, "(", $.args.join(","), ")"];
       case "PropertyCall":
-        return [$.object, ".", $.ident];
+        return [$.object, ".", n.name];
       case "MethodCall":
-        return [$.object, ".", $.ident, "(", $.args.join(","), ")"];
+        return [$.object, ".", n.name, "(", $.args.join(","), ")"];
       case "ConditionalOp":
         return [$.condition, "?", $.consequent, ":", $.alternate];
       case "Infix": {

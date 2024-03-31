@@ -333,7 +333,7 @@ export const methodsAsFunctions: Plugin = {
   bakeType: true,
   visit(node) {
     if (node.kind === "MethodCall") {
-      return functionCall(propertyCall(node.object, node.ident), node.args);
+      return functionCall(propertyCall(node.object, node.name), node.args);
     }
   },
 };

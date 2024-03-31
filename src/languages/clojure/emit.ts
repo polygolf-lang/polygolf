@@ -82,6 +82,7 @@ export class ClojureEmitter extends VisitorEmitter {
       case "Assignment":
         return list("def", $.variable, $.expr);
       case "Identifier":
+      case "Builtin":
         return n.name;
       case "Text":
         return emitClojureText(n.value);

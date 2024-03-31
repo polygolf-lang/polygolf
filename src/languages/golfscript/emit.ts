@@ -94,6 +94,7 @@ export class GolfscriptEmitter extends VisitorEmitter {
           ];
         return [$.expr, ":", $.variable, ";"];
       case "Identifier":
+      case "Builtin":
         return n.name;
       case "Text":
         return emitGolfscriptText(n.value);

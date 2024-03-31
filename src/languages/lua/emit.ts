@@ -135,7 +135,8 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
       case "Assignment":
         return [$.variable, "=", $.expr];
       case "Identifier":
-        return [e.name];
+      case "Builtin":
+        return e.name;
       case "Text":
         return emitLuaText(e.value, context.options.codepointRange);
       case "Integer":
@@ -143,7 +144,7 @@ export class LuaEmitter extends PrecedenceVisitorEmitter {
       case "FunctionCall":
         return [$.func, "(", $.args.join(","), ")"];
       case "MethodCall":
-        return [$.object, ":", $.ident, "(", $.args.join(","), ")"];
+        return [$.object, ":", e.name, "(", $.args.join(","), ")"];
       case "Infix":
         return $.args.join(e.name);
       case "Prefix":

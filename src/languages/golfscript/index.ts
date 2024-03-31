@@ -240,7 +240,9 @@ const golfscriptLanguage: Language = {
       }),
       printToImplicitOutput,
       addImports({ a: ["a"] }, (x) =>
-        x.length > 0 ? assignment(builtin("a"), builtin("")) : undefined,
+        x.length > 0
+          ? assignment(builtin("a") as any /* TODO */, builtin(""))
+          : undefined,
       ),
       renameIdents(defaultIdentGen("a", "n")),
       removeImplicitConversions,

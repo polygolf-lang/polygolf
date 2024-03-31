@@ -123,7 +123,6 @@ const childProps = [
   "expr",
   "func",
   "high",
-  "ident",
   "index",
   "init",
   "key",

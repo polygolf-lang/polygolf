@@ -103,8 +103,8 @@ export function isAssignment(x: Node): x is Assignment {
   return x.kind === "Assignment";
 }
 export function isAssignmentToIdent<Name extends string>(
-  ...names: (Name | Identifier<boolean, Name>)[]
-): (x: Node) => x is Assignment<Identifier<boolean, Name>> {
+  ...names: (Name | Identifier<Name>)[]
+): (x: Node) => x is Assignment<Identifier<Name>> {
   return ((x: Node) => isAssignment(x) && isIdent(...names)(x.variable)) as any;
 }
 

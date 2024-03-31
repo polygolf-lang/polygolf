@@ -102,6 +102,7 @@ export class JanetEmitter extends VisitorEmitter {
       case "Assignment":
         return list(prop === "assignment" ? "var" : "set", $.variable, $.expr);
       case "Identifier":
+      case "Builtin":
         return n.name;
       case "Text":
         return emitJanetText(n.value);

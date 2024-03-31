@@ -206,13 +206,20 @@ export function emitNodeWithoutAnnotation(
       }
       return emitSexpr(null, id, ...expr.args);
     }
+    case "Builtin":
+      if (/^[a-zA-Z]\w*$/.test(expr.name)) {
+        return "$$" + expr.name;
+      }
+      return emitSexpr("builtin", text(expr.name));
     case "Identifier":
-      if (expr.builtin) {
-        return emitSexpr("builtin", text(expr.name));
-      } else if (/^\w+$/.test(expr.name)) {
+      if (/^[a-zA-Z]\w*$/.test(expr.name)) {
         return "$" + expr.name;
       }
       return emitSexpr("id", text(expr.name));
+    case "SsaWrite":
+      return `$${expr.id}`;
+    case "SsaRead":
+      return expr.ids.map((x) => `$${x}`).join("");
     case "Text":
       return JSON.stringify(expr.value);
     case "Integer":
@@ -278,9 +285,9 @@ export function emitNodeWithoutAnnotation(
     case "RangeIndexCall":
       return emitSexpr(null, expr.collection, expr.low, expr.high, expr.step);
     case "MethodCall":
-      return emitSexpr(null, expr.object, text(expr.ident.name), ...expr.args);
+      return emitSexpr(null, expr.object, text(expr.name), ...expr.args);
     case "PropertyCall":
-      return emitSexpr(null, expr.object, text(expr.ident.name));
+      return emitSexpr(null, expr.object, text(expr.name));
     case "Infix":
       return emitSexpr(null, text(expr.name), ...expr.args);
     case "Prefix":

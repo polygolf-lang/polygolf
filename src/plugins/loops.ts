@@ -17,7 +17,6 @@ import {
   succ,
   pred,
   isIdent,
-  isUserIdent,
   type ForEach,
   isForEachRange,
   type Op,
@@ -123,12 +122,12 @@ export function forRangeToForEach(node: Node, spine: Spine) {
             isOp["at[List]"](n) &&
             (n.args[0] === indexedList ||
               (indexedList!.kind === "Identifier" &&
-                isUserIdent(indexedList!)(n.args[0]))) &&
-            isUserIdent(indexVar.name)(n.args[1])
+                isIdent(indexedList!)(n.args[0]))) &&
+            isIdent(indexVar.name)(n.args[1])
           )
             return elementIdentifier;
         });
-        if (!newBody.someNode(isUserIdent(indexVar))) {
+        if (!newBody.someNode(isIdent(indexVar))) {
           return forEach(elementIdentifier, indexedList, newBody.node);
         }
       }
@@ -331,7 +330,7 @@ export function forEachToForRange(node: Node) {
 export function removeUnusedLoopVar(node: Node, spine: Spine) {
   if (node.kind === "ForEach" && node.variable !== undefined) {
     const variable = node.variable;
-    if (!spine.getChild($.body).someNode(isUserIdent(variable))) {
+    if (!spine.getChild($.body).someNode(isIdent(variable))) {
       return forEach(undefined, node.collection, node.body);
     }
   }

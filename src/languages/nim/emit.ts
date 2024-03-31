@@ -209,6 +209,7 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
       case "ConditionalOp":
         return ["if", $.condition, ":", $.consequent, "else", ":", $.alternate];
       case "Identifier":
+      case "Builtin":
         return n.name;
       case "Text":
         return (n.targetType === "char" ? emitNimChar : emitNimText)(

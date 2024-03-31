@@ -7,7 +7,7 @@ import {
   id,
   type Identifier,
   type IR,
-  isUserIdent,
+  isIdent,
   type Node,
   type NodeFuncRecord,
   getNodeFunc,
@@ -75,7 +75,7 @@ export function renameIdents(
     context.skipChildren();
     const identMap = getIdentMap(spine.root, identGen);
     return spine.withReplacer((node) => {
-      if (isUserIdent()(node)) {
+      if (isIdent()(node)) {
         const outputName = identMap.get(node.name);
         if (outputName === undefined) {
           throw new InvariantError(
@@ -155,7 +155,7 @@ export function clone(
 ) {
   function isAliasing(spine: Spine): boolean {
     return (
-      isUserIdent()(spine.node) ||
+      isIdent()(spine.node) ||
       (spine.node.kind === "ConditionalOp" &&
         [$.consequent, $.alternate].some((x) => isAliasing(spine.getChild(x))))
     );

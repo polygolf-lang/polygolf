@@ -23,7 +23,7 @@ import type { CompilationContext } from "../../common/compile";
 
 export function propertyCallToIndexCall(node: Node) {
   if (node.kind === "PropertyCall") {
-    return indexCall(node.object, text(node.ident.name));
+    return indexCall(node.object, text(node.name));
   }
 }
 

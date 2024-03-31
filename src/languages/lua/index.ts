@@ -220,12 +220,7 @@ const luaLanguage: Language = {
     ),
     simplegolf(
       alias({
-        Identifier: (n, s) =>
-          n.builtin &&
-          (s.parent?.node.kind !== "MethodCall" ||
-            s.pathFragment?.prop !== "ident")
-            ? n.name
-            : undefined,
+        Builtin: (n, s) => n.name,
         Integer: (x) => x.value.toString(),
         Text: (x) => `"${x.value}"`,
       }),
