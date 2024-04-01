@@ -46,6 +46,7 @@ export function compilationOptionsFromKeywords(
     skipTypecheck: isLangTest ? is("skipTypecheck") : !is("typecheck"),
     skipPlugins: is("no:hardcode") ? ["hardcode"] : [],
     noEmit: is("noEmit"),
+    caller: "test",
   };
 }
 

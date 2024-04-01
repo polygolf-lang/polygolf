@@ -8,7 +8,7 @@ import {
 import { $ } from "./fragments";
 import type { TokenTree } from "./Language";
 import type { Spine } from "./Spine";
-import { codepoints } from "./strings";
+import { codepoints, plainReplace } from "./strings";
 
 export function joinTrees(
   sep: TokenTree,
@@ -48,9 +48,9 @@ export function emitTextFactory(
       let current = value;
       for (const [c, d] of subs) {
         if (d === null) continue;
-        current = current.replaceAll(c, d);
+        current = plainReplace(current, c, d);
       }
-      current = template.replaceAll("TEXT", current);
+      current = plainReplace(template, "TEXT", current);
       if (!(codepointMap === undefined || (low === 1 && high === Infinity)))
         current = codepoints(current)
           .map((x, i, arr) =>

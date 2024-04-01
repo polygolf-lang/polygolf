@@ -42,6 +42,7 @@ export interface CompilationOptions {
   codepointRange: [number, number];
   skipPlugins: string[];
   noEmit: boolean;
+  caller: "cli" | "playground" | "test" | undefined;
 }
 
 export function defaultCompilationOptions(
@@ -56,6 +57,7 @@ export function defaultCompilationOptions(
     codepointRange: partial.codepointRange ?? [1, Infinity],
     skipPlugins: partial.skipPlugins ?? [],
     noEmit: partial.noEmit ?? false,
+    caller: undefined,
   };
 }
 
