@@ -4,12 +4,9 @@ import {
   id,
   type Identifier,
   type Type,
-  type IndexCall,
   isIdent,
   type Node,
 } from "./IR";
-
-export type LValue = Identifier | IndexCall;
 
 /**
  * Variable declaration.
@@ -26,7 +23,7 @@ export interface VarDeclaration extends BaseNode {
  * Since many languages lack assignment expressions, assignments are
  * statement-level by default.
  */
-export interface Assignment<T extends LValue = LValue> extends BaseNode {
+export interface Assignment<T extends Node = Node> extends BaseNode {
   readonly kind: "Assignment";
   readonly variable: T;
   readonly expr: Node;
@@ -39,7 +36,7 @@ export interface Assignment<T extends LValue = LValue> extends BaseNode {
  */
 export interface ManyToManyAssignment extends BaseNode {
   readonly kind: "ManyToManyAssignment";
-  readonly variables: readonly LValue[];
+  readonly variables: readonly Node[];
   readonly exprs: readonly Node[];
 }
 
@@ -50,7 +47,7 @@ export interface ManyToManyAssignment extends BaseNode {
  */
 export interface OneToManyAssignment extends BaseNode {
   readonly kind: "OneToManyAssignment";
-  readonly variables: readonly LValue[];
+  readonly variables: readonly Node[];
   readonly expr: Node;
 }
 
@@ -84,14 +81,14 @@ export function varDeclaration(
 }
 
 export function assignment(
-  variable: Identifier | string,
+  variable: string,
   expr: Node,
 ): Assignment<Identifier>;
-export function assignment(
-  variable: IndexCall,
+export function assignment<T extends Node>(
+  variable: T,
   expr: Node,
-): Assignment<IndexCall>;
-export function assignment(variable: LValue | string, expr: Node): Assignment {
+): Assignment<T>;
+export function assignment(variable: Node | string, expr: Node): Assignment {
   return {
     kind: "Assignment",
     variable: typeof variable === "string" ? id(variable) : variable,
@@ -109,7 +106,7 @@ export function isAssignmentToIdent<Name extends string>(
 }
 
 export function manyToManyAssignment(
-  variables: (LValue | string)[],
+  variables: (Node | string)[],
   exprs: readonly Node[],
 ): ManyToManyAssignment {
   return {
@@ -120,7 +117,7 @@ export function manyToManyAssignment(
 }
 
 export function oneToManyAssignment(
-  variables: readonly (LValue | string)[],
+  variables: readonly (Node | string)[],
   expr: Node,
 ): OneToManyAssignment {
   return {

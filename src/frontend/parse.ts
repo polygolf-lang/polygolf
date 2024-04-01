@@ -193,12 +193,12 @@ export function sexpr(
       expectArity(1, Infinity);
       const idents = args.slice(0, args.length);
       const expr = args[args.length - 1];
-      assertIdentifiers(idents);
+      if (restrictedFrontend) assertIdentifiers(idents);
       return func(idents, expr);
     }
     case "assign":
       expectArity(2);
-      assertIdentifier(args[0]);
+      if (restrictedFrontend) assertIdentifier(args[0]);
       return assignment(args[0], args[1]);
     case "function_call": {
       expectArity(1, Infinity);

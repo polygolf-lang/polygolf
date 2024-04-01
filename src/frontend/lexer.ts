@@ -31,7 +31,7 @@ const tokenTable = {
   integer:
     /0|-?[1-9]\d*(?:[eE][1-9]\d*)?|-?0x[1-9a-fA-F][\da-fA-F]*|-?0b1[01]*/,
   string: /"(?:\\.|[^"])*"/,
-  dollarExpr: /\$\$?[a-zA-Z]\w*|(?:$\d+)+/,
+  dollarExpr: /\$\$?[a-zA-Z]\w*|(?:\$\d+)+/,
   for_argv: "for_argv",
   nullary: NullaryOpCodes,
   ninf: ["-oo", "-∞"],
