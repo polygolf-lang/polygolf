@@ -90,3 +90,14 @@ export const chars = (str: string) => {
 
 export const byteLength = (x: string | null) =>
   x === null ? Infinity : Buffer.byteLength(x, "utf-8");
+
+export function plainReplace(
+  sourceValue: string,
+  searchValue: string,
+  replaceValue: string,
+) {
+  return sourceValue.replaceAll(
+    searchValue,
+    replaceValue.replaceAll("$", "$$$$"),
+  );
+}
