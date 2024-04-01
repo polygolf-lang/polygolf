@@ -21,6 +21,8 @@ import {
   type Type,
   lengthToArrayIndexType,
   forEach,
+  builtin,
+  ssaRead,
 } from "../IR";
 import parse from "./parse";
 
@@ -45,6 +47,8 @@ describe("Parse literals", () => {
   expectExprParse("binary literal", "-0b100110", int(-0b100110));
   expectExprParse("hexadecimal literal", "-0xabcdef", int(-0xabcdef));
   expectExprParse("variable", "$y", id("y"));
+  expectExprParse("builtin", "$$b", builtin("b"));
+  expectExprParse("ssa read", "$1$2$3", ssaRead([1, 2, 3]));
   expectExprParse("string literal", '"abc"', text("abc"));
   expectExprParse("string with escapes", '"\\u0001\\r"', text("\u0001\r"));
 });
