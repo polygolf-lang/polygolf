@@ -60,8 +60,8 @@ callee -> builtin {% id %}
 integer -> %integer {% d => refSource(int(d[0]), d[0]) %}
 dollarExpr -> %dollarExpr {% d => refSource(dollarExpression(d[0]), d[0]) %}
 builtin -> (%builtin | "for_argv") {% d => refSource(builtinExpr(d[0][0].value), d[0][0]) %}
-opalias -> (%opalias | "..") {% d => refSource(identifier(d[0][0].value), d[0][0]) %}
-nullary -> %nullary {% d => refSource(sexpr(identifier(d[0].value), []), d[0]) %}
+opalias -> (%opalias | "..") {% d => refSource(builtinExpr(d[0][0].value), d[0][0]) %}
+nullary -> %nullary {% d => refSource(sexpr(builtinExpr(d[0].value), []), d[0]) %}
 string -> %string {% d => refSource(text(JSON.parse(d[0])), d[0]) %}
 
 type_expr -> type_range {% id %}

@@ -68,6 +68,7 @@ import {
   OpCodesUser,
   builtin,
   ssaRead,
+  type Builtin,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -93,10 +94,13 @@ function normalizeRangeUnion(ranges: [number, number][]): [number, number][] {
 }
 
 export function sexpr(
-  calleeIdent: Identifier,
+  calleeIdent: Identifier | Builtin,
   args: readonly Node[],
   callee: string = calleeIdent.name,
 ): Node {
+  if (calleeIdent.kind === "Identifier") {
+    return functionCall(calleeIdent, ...args);
+  }
   if (callee in deprecatedAliases) {
     const alias0 = deprecatedAliases[callee];
     const alias =

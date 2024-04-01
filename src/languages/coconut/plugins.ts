@@ -1,10 +1,10 @@
 import type { CompilationContext } from "@/common/compile";
-import { type Node, infix, isIdent, isInt } from "../../IR";
+import { type Node, infix, isInt, isIdentOrBuiltin } from "../../IR";
 
 function isAllowedAsImplicitArg(node: Node): boolean {
   return (
-    isIdent()(node) ||
-    (node.kind === "PropertyCall" && isIdent()(node.object)) ||
+    isIdentOrBuiltin()(node) ||
+    (node.kind === "PropertyCall" && isIdentOrBuiltin()(node.object)) ||
     isInt()(node) ||
     (node.kind === "Infix" &&
       node.name === "**" &&
@@ -31,7 +31,7 @@ export function useImplicitFunctionCalls(node: Node) {
 export function useInfixFunctionCalls(node: Node) {
   if (
     node.kind === "FunctionCall" &&
-    isIdent()(node.func) &&
+    isIdentOrBuiltin()(node.func) &&
     node.args.length === 2
   ) {
     return infix("`", node.args[0], node.func, node.args[1]);

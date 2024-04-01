@@ -35,6 +35,7 @@ import {
   virtualOpCodeDefinitions,
   type VirtualOpCode,
   builtin,
+  type Builtin,
 } from "./IR";
 import { mapObjectValues, useDefaults } from "../common/arrays";
 
@@ -600,7 +601,7 @@ export function isBuiltin<Name extends string>(
   ...names: (Name | Identifier<Name>)[]
 ): (x: Node) => x is Identifier<Name> {
   return ((x: Node) =>
-    x.kind === "Identifier" &&
+    x.kind === "Builtin" &&
     (names.length === 0 ||
       names.some(
         (n) => (typeof n === "string" ? n : n.name) === x.name,
@@ -612,6 +613,17 @@ export function isIdent<Name extends string>(
 ): (x: Node) => x is Identifier<Name> {
   return ((x: Node) =>
     x.kind === "Identifier" &&
+    (names.length === 0 ||
+      names.some(
+        (n) => (typeof n === "string" ? n : n.name) === x.name,
+      ))) as any;
+}
+
+export function isIdentOrBuiltin<Name extends string>(
+  ...names: (Name | Identifier<Name>)[]
+): (x: Node) => x is Identifier<Name> | Builtin<Name> {
+  return ((x: Node) =>
+    isOfKind("Identifier", "Builtin")(x) &&
     (names.length === 0 ||
       names.some(
         (n) => (typeof n === "string" ? n : n.name) === x.name,

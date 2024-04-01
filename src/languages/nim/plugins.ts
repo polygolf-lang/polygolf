@@ -4,7 +4,6 @@ import {
   importStatement,
   infix,
   integerType,
-  isIdent,
   isOp,
   isSubtype,
   op,
@@ -12,6 +11,8 @@ import {
   type Op,
   isText,
   type PhysicalOpCode,
+  isIdentOrBuiltin,
+  isBuiltin,
 } from "../../IR";
 import { getType } from "../../common/getType";
 import { addImports } from "../../plugins/imports";
@@ -90,7 +91,7 @@ export function useUFCS(node: Node) {
     if (node.args.length === 1) {
       return infix(" ", node.func, node.args[0]);
     }
-    if (node.args.length > 1 && isIdent()(node.func)) {
+    if (node.args.length > 1 && isIdentOrBuiltin()(node.func)) {
       return functionCall(
         infix(".", node.args[0], node.func),
         ...node.args.slice(1),
@@ -99,7 +100,7 @@ export function useUFCS(node: Node) {
   }
   if (node.kind === "Infix" && node.name === " " && node.args.length === 2) {
     const [left, right] = node.args;
-    if (isIdent()(left)) {
+    if (isIdentOrBuiltin()(left)) {
       return infix(".", right, left);
     }
   }
@@ -140,7 +141,7 @@ export function removeSystemNamespace(node: Node, spine: Spine) {
 export function removeToSeqFromFor(node: Node, spine: Spine) {
   if (
     node.kind === "FunctionCall" &&
-    isIdent("toSeq")(node.func) &&
+    isBuiltin("toSeq")(node.func) &&
     spine.parent?.node.kind === "ForEach" &&
     spine.pathFragment?.prop === "collection"
   ) {
@@ -157,7 +158,7 @@ export function useRawStringLiteral(
     const [left, right] = node.args;
     if (
       isText()(right) &&
-      (isIdent()(left) || (left.kind === "Infix" && left.name === "."))
+      (isIdentOrBuiltin()(left) || (left.kind === "Infix" && left.name === "."))
     ) {
       const [low, high] = context.options.codepointRange;
       if (low === 1 && high === Infinity) {

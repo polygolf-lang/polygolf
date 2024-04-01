@@ -38,7 +38,7 @@ _Golfscript_
 
 ```gs
 :a;"Hello, World!
-"10,{:i;i n}%a{:b;b n}%
+"10,{:i;i n}%a{:A;A n}%
 ```
 
 _Janet_
