@@ -37,7 +37,7 @@ x≤y
 ## Implicit calls
 
 ```polygolf
-max (builtin "a") (builtin "b") (builtin "c");
+max $$a $$b $$c;
 ```
 
 ```coco skipTypecheck
@@ -45,7 +45,7 @@ max a b c
 ```
 
 ```polygolf
-42 * (builtin "x"):Int;
+42 * $$x:Int;
 ```
 
 ```coco
@@ -53,7 +53,7 @@ max a b c
 ```
 
 ```polygolf
-print (42 * (builtin "x"):Int);
+print (42 * $$x:Int);
 ```
 
 ```coco
@@ -73,7 +73,7 @@ ord "x";
 ## Infix calls
 
 ```polygolf
-function_call (builtin "f") (builtin "x") "x";
+function_call $$f $$x "x";
 ```
 
 ```coco skipTypecheck

@@ -367,7 +367,7 @@ for()in..9:echo"Hi"
 ## Conditional ops
 
 ```polygolf
-(conditional (builtin "c"):Bool 3 4) div 2;
+(conditional $$c:Bool 3 4) div 2;
 ```
 
 ```nim nogolf
@@ -393,9 +393,9 @@ var c=true
 ## Ufcs
 
 ```polygolf
-function_call (infix "." (builtin "x") (builtin "f")) (builtin "y");
-infix " " (builtin "f") (builtin "x");
-index_call (infix " " (infix "." "x" (builtin "f")) " ") 1;
+function_call (infix "." $$x $$f) $$y;
+infix " " $$f $$x;
+index_call (infix " " (infix "." "x" $$f) " ") 1;
 ```
 
 ```nim skipTypecheck
