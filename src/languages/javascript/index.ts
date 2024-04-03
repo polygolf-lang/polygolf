@@ -22,7 +22,6 @@ import {
 import { JavascriptEmitter } from "./emit";
 import {
   removeImplicitConversions,
-  printIntToPrint,
   methodsAsFunctions,
   mapOps,
   mapOpsTo,
@@ -73,7 +72,6 @@ const javascriptLanguage: Language = {
   extension: "js",
   emitter: new JavascriptEmitter(),
   phases: [
-    required(printIntToPrint),
     simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       golfStringListLiteral(),

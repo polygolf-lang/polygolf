@@ -338,11 +338,6 @@ export const methodsAsFunctions: Plugin = {
   },
 };
 
-export const printIntToPrint: Plugin = mapOps({
-  "print[Int]": (a) => op["print[Text]"](op.int_to_dec(a)),
-  "println[Int]": (a) => op["println[Text]"](op.int_to_dec(a)),
-});
-
 export const arraysToLists: Plugin = {
   name: "arraysToLists",
   bakeType: true,

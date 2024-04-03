@@ -24,7 +24,6 @@ import { NimEmitter } from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
-  printIntToPrint,
   mapOps,
   mapOpsTo,
   mapBackwardsIndexToForwards,
@@ -103,7 +102,7 @@ const nimLanguage: Language = {
   extension: "nim",
   emitter: new NimEmitter(),
   phases: [
-    required(printIntToPrint, usePrimaryTextOps("byte")),
+    required(usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(), charToIntToDec),
     search(
       mergePrint,

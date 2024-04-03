@@ -27,7 +27,6 @@ import {
 import {
   flipBinaryOps,
   removeImplicitConversions,
-  printIntToPrint,
   arraysToLists,
   mapOps,
   mapOpsTo,
@@ -78,7 +77,7 @@ const swiftLanguage: Language = {
   extension: "swift",
   emitter: new SwiftEmitter(),
   phases: [
-    required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
+    required(arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(
       golfLastPrint(),
       comparisonToDivision,

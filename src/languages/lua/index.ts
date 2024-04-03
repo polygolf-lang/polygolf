@@ -26,7 +26,6 @@ import { LuaEmitter } from "./emit";
 import {
   flipBinaryOps,
   removeImplicitConversions,
-  printIntToPrint,
   mapOps,
   mapOpsTo,
   mapBackwardsIndexToForwards,
@@ -69,7 +68,7 @@ const luaLanguage: Language = {
   extension: "lua",
   emitter: new LuaEmitter(),
   phases: [
-    required(printIntToPrint, usePrimaryTextOps("byte")),
+    required(usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(), charToIntToDec, ordToDecToInt),
     search(
       mergePrint,

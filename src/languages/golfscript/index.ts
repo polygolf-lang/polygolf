@@ -23,7 +23,6 @@ import {
 import {
   flipBinaryOps,
   removeImplicitConversions,
-  printIntToPrint,
   arraysToLists,
   mapBackwardsIndexToForwards,
   mapOps,
@@ -76,7 +75,7 @@ const golfscriptLanguage: Language = {
   extension: "gs",
   emitter: new GolfscriptEmitter(),
   phases: [
-    required(printIntToPrint, arraysToLists, usePrimaryTextOps("byte")),
+    required(arraysToLists, usePrimaryTextOps("byte")),
     simplegolf(golfLastPrint(false)),
     search(
       flipBinaryOps,

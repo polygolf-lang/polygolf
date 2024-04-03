@@ -31,7 +31,6 @@ import { PythonEmitter, emitPythonText } from "./emit";
 import {
   removeImplicitConversions,
   methodsAsFunctions,
-  printIntToPrint,
   arraysToLists,
   mapOps,
   mapBackwardsIndexToForwards,
@@ -93,7 +92,7 @@ const pythonLanguage: Language = {
   extension: "py",
   emitter: new PythonEmitter(),
   phases: [
-    required(printIntToPrint, arraysToLists, usePrimaryTextOps("codepoint")),
+    required(arraysToLists, usePrimaryTextOps("codepoint")),
     simplegolf(golfLastPrint()),
     search(
       golfStringListLiteral(),
