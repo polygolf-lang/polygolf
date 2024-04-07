@@ -18,7 +18,7 @@ describe("Restricted nodes: parse - emit match", () => {
     `$$builtin;`,
     `id "name!";`,
     `$id;`,
-    `$1$2$3;`,
+    `$1;`,
     `import "name" "x" "y";`,
     `for $i $e $body;`,
     `for $e $body;`,

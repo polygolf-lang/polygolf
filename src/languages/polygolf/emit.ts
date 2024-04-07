@@ -216,10 +216,10 @@ export function emitNodeWithoutAnnotation(
         return "$" + expr.name;
       }
       return emitSexpr("id", text(expr.name));
-    case "SsaWrite":
+    case "SsaId":
       return `$${expr.id}`;
-    case "SsaRead":
-      return expr.ids.map((x) => `$${x}`).join("");
+    case "Phi":
+      return emitSexpr(null, ...expr.ids);
     case "Text":
       return JSON.stringify(expr.value);
     case "Integer":

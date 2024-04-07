@@ -25,17 +25,18 @@ export interface Builtin<Name extends string = string> extends BaseNode {
 /**
  * A reference to a SSA binding.
  */
-export interface SsaRead extends BaseNode {
-  readonly kind: "SsaRead";
-  readonly ids: number[]; // a list of bindings this refers to (based on control flow)
+export interface Phi extends BaseNode {
+  readonly kind: "Phi";
+  readonly ids: SsaId[]; // a list of bindings this refers to (based on control flow)
 }
 
 /**
  * An SSa binding that's being defined (by assignment or for loop).
  */
-export interface SsaWrite extends BaseNode {
-  readonly kind: "SsaWrite";
-  readonly id: number; // a list of bindings this refers to (based on control flow)
+export interface SsaId extends BaseNode {
+  readonly kind: "SsaId";
+  readonly id: number; // an id of the bindign this defines
+  readonly originalVarName?: string;
 }
 
 /**
@@ -84,12 +85,12 @@ export function builtin(name: string): Builtin {
   return { kind: "Builtin", name };
 }
 
-export function ssaRead(ids: number[]): SsaRead {
-  return { kind: "SsaRead", ids };
+export function phi(ids: SsaId[]): Phi {
+  return { kind: "Phi", ids };
 }
 
-export function ssaWrite(id: number): SsaWrite {
-  return { kind: "SsaWrite", id };
+export function ssaId(id: number, originalVarName?: string): SsaId {
+  return { kind: "SsaId", id, originalVarName };
 }
 
 export function int(value: bigint | number): Integer {

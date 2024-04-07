@@ -67,8 +67,11 @@ import {
   cast,
   OpCodesUser,
   builtin,
-  ssaRead,
+  phi,
   type Builtin,
+  ssaId,
+  isOfKind,
+  type SsaId,
 } from "../IR";
 import grammar from "./grammar";
 
@@ -297,6 +300,11 @@ export function sexpr(
   }
   if (!restrictedFrontend)
     switch (callee) {
+      case "phi":
+        if (!args.every(isOfKind("SsaId"))) {
+          throw new UserError("Phi args must be SsaIds", calleeIdent);
+        }
+        return phi(args as SsaId[]);
       case "cast":
         expectArity(1);
         return cast(args[0]);
@@ -432,12 +440,7 @@ export function dollarExpr(token: Token) {
     return builtin(token.value.slice(2));
   }
   if (/^\$\d.*$/.test(token.value)) {
-    return ssaRead(
-      token.value
-        .slice(1)
-        .split("$")
-        .map((x) => Number(x)),
-    );
+    return ssaId(Number(token.value.slice(1)));
   }
   return id(token.value.slice(1));
 }

@@ -53,6 +53,7 @@
   "dependencies": {
     "@datastructures-js/priority-queue": "^6.3.0",
     "as-table": "^1.0.55",
+    "dominators": "^1.1.2",
     "moo": "^0.5.2",
     "nearley": "^2.20.1",
     "yargs": "^17.6.0"

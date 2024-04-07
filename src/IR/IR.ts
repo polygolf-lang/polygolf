@@ -32,8 +32,8 @@ import type {
   Identifier,
   Integer,
   Text,
-  SsaRead,
-  SsaWrite,
+  Phi,
+  SsaId,
 } from "./terminals";
 import type { Block, If, Import, Variants } from "./toplevel";
 import type { Type } from "./types";
@@ -85,8 +85,8 @@ export type Node =
   | If
   // Other nodes
   | Builtin
-  | SsaRead
-  | SsaWrite
+  | Phi
+  | SsaId
   | ImplicitConversion
   | VarDeclaration
   | VarDeclarationWithAssignment
