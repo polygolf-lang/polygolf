@@ -5397,6 +5397,12 @@ _Golfscript_
 1 16 base{.9>39*+48+}%""+
 ```
 
+_Lua_
+
+```lua
+io.write(string.format("%x",1))
+```
+
 _Nim_
 
 ```nim
