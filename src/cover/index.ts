@@ -179,27 +179,29 @@ function runCoverTableRecipe(recipe: CoverTableRecipe): Table {
 function runCoverTableRecipeMd(recipe: CoverTableRecipe): TableForMd {
   return Object.fromEntries(
     Object.entries(recipe)
-      .map(([key, f]) => {
-        return [
-          key,
-          langs
-            .map((lang) => {
-              const output = compileVariant(
-                f(lang),
-                {
-                  level: "nogolf",
-                  restrictFrontend: false,
-                  skipTypecheck: true,
-                },
-                lang,
-              ).result;
-              if (typeof output === "string") {
-                return { lang, output };
-              }
-            })
-            .filter((x) => x !== undefined),
-        ] as [string, { lang: Language; output: string }[]];
-      })
+      .map(
+        ([key, f]) =>
+          [
+            key,
+            langs
+              .map((lang) => {
+                const output = compileVariant(
+                  f(lang),
+                  {
+                    level: "nogolf",
+                    restrictFrontend: false,
+                    skipTypecheck: true,
+                  },
+                  lang,
+                ).result;
+                if (typeof output === "string") {
+                  return { lang, output };
+                }
+                return undefined;
+              })
+              .filter((x) => x !== undefined),
+          ] as [string, { lang: Language; output: string }[]],
+      )
       .filter((x) => x[1].length > 0),
   );
 }
