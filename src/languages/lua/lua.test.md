@@ -60,6 +60,7 @@ concat $b "xyz";
 text_byte_length $b;
 int_to_text 5;
 text_to_int "5";
+int_to_hex 10;
 text_replace $b "a" "A";
 text_replace $b "(" "*";
 text_replace $b $b:(Text 1..oo) $b;
@@ -106,6 +107,7 @@ b.."xyz"
 b:len()
 ""..5
 1*"5"
+string.format("%x",10)
 b:gsub("a","A")
 b:gsub("%(","*")
 b:gsub(b:gsub("(%W)","%%%1"),b:gsub("%%","%%%%"))
