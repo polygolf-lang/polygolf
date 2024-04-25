@@ -939,55 +939,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-2
+J K+
 ```
 
 _Lua_
 
 ```lua
-io.write(2)
+io.write(L+M)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,2)
+write(stdout,N+O)
 ```
 
 _Python_
 
 ```py
-print(2,end="")
+print(P+Q,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(2,end="")
+print(R+S,end="")
 ```
 
 _Swift_
 
 ```swift
-print(2,terminator:"")
+print(T+U,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(2)
+write(V+W)
 ```
 
 _Janet_
 
 ```janet
-(prin 2)
+(prin(+ X Y))
 ```
 
 _Clojure_
 
 ```clj
-(pr 2)
+(pr(+ Z A))
 ```
 
 
@@ -996,55 +996,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-1
+B C*
 ```
 
 _Lua_
 
 ```lua
-io.write(1)
+io.write(D*E)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,1)
+write(stdout,F*G)
 ```
 
 _Python_
 
 ```py
-print(1,end="")
+print(H*I,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(1,end="")
+print(J*K,end="")
 ```
 
 _Swift_
 
 ```swift
-print(1,terminator:"")
+print(L*M,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(1)
+write(N*O)
 ```
 
 _Janet_
 
 ```janet
-(prin 1)
+(prin(* P Q))
 ```
 
 _Clojure_
 
 ```clj
-(pr 1)
+(pr(* R S))
 ```
 
 
@@ -1053,55 +1053,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-1
+T U/
 ```
 
 _Lua_
 
 ```lua
-io.write(1)
+io.write(V//W)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,1)
+write(stdout,X/%Y)
 ```
 
 _Python_
 
 ```py
-print(1,end="")
+print(Z//A,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(1,end="")
+print(B//C,end="")
 ```
 
 _Swift_
 
 ```swift
-print(1,terminator:"")
+print(D/E,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(1)
+write(Math.floor(F/G))
 ```
 
 _Janet_
 
 ```janet
-(prin 1)
+(prin(div H I))
 ```
 
 _Clojure_
 
 ```clj
-(pr 1)
+(pr(quot J K))
 ```
 
 
@@ -1110,55 +1110,25 @@ _Clojure_
 _Golfscript_
 
 ```gs
-1
-```
-
-_Lua_
-
-```lua
-io.write(1)
-```
-
-_Nim_
-
-```nim
-write(stdout,1)
+L M?
 ```
 
 _Python_
 
 ```py
-print(1,end="")
+print(R**S,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(1,end="")
-```
-
-_Swift_
-
-```swift
-print(1,terminator:"")
+print(T**U,end="")
 ```
 
 _Javascript_
 
 ```js
-write(1)
-```
-
-_Janet_
-
-```janet
-(prin 1)
-```
-
-_Clojure_
-
-```clj
-(pr 1)
+write(X**Y)
 ```
 
 
@@ -1167,55 +1137,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-0
+D E%
 ```
 
 _Lua_
 
 ```lua
-io.write(0)
+io.write(F%G)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,0)
+write(stdout,H%%I)
 ```
 
 _Python_
 
 ```py
-print(0,end="")
+print(J%K,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(0,end="")
+print(L%M,end="")
 ```
 
 _Swift_
 
 ```swift
-print(0,terminator:"")
+print(N%O,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(0)
+write(P%Q)
 ```
 
 _Janet_
 
 ```janet
-(prin 0)
+(prin(% R S))
 ```
 
 _Clojure_
 
 ```clj
-(pr 0)
+(pr(mod T U))
 ```
 
 
@@ -1395,55 +1365,25 @@ _Clojure_
 _Golfscript_
 
 ```gs
-2
-```
-
-_Lua_
-
-```lua
-io.write(2)
-```
-
-_Nim_
-
-```nim
-write(stdout,2)
+X 2 Y?*
 ```
 
 _Python_
 
 ```py
-print(2,end="")
+print(D<<E,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(2,end="")
-```
-
-_Swift_
-
-```swift
-print(2,terminator:"")
+print(F<<G,end="")
 ```
 
 _Javascript_
 
 ```js
-write(2)
-```
-
-_Janet_
-
-```janet
-(prin 2)
-```
-
-_Clojure_
-
-```clj
-(pr 2)
+write(J<<K)
 ```
 
 
@@ -1452,55 +1392,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-0
+P 2 Q?/
 ```
 
 _Lua_
 
 ```lua
-io.write(0)
+io.write(R>>S)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,0)
+write(stdout,T shr U)
 ```
 
 _Python_
 
 ```py
-print(0,end="")
+print(V>>W,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(0,end="")
+print(X>>Y,end="")
 ```
 
 _Swift_
 
 ```swift
-print(0,terminator:"")
+print(Z>>A,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(0)
+write(B>>C)
 ```
 
 _Janet_
 
 ```janet
-(prin 0)
+(prin(brshift D E))
 ```
 
 _Clojure_
 
 ```clj
-(pr 0)
+(pr(bit-shift-right F G))
 ```
 
 
@@ -1545,55 +1485,55 @@ _Janet_
 _Golfscript_
 
 ```gs
-1
+[Z A]$0=
 ```
 
 _Lua_
 
 ```lua
-io.write(1)
+io.write(math.min(B,C))
 ```
 
 _Nim_
 
 ```nim
-write(stdout,1)
+write(stdout,min(D,E))
 ```
 
 _Python_
 
 ```py
-print(1,end="")
+print(min(F,G),end="")
 ```
 
 _Coconut_
 
 ```coco
-print(1,end="")
+print(min(H,I),end="")
 ```
 
 _Swift_
 
 ```swift
-print(1,terminator:"")
+print(min(J,K),terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(1)
+write(Math.min(L,M))
 ```
 
 _Janet_
 
 ```janet
-(prin 1)
+(prin(min N O))
 ```
 
 _Clojure_
 
 ```clj
-(pr 1)
+(pr(min P Q))
 ```
 
 
@@ -1602,55 +1542,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-1
+[R S]$1=
 ```
 
 _Lua_
 
 ```lua
-io.write(1)
+io.write(math.max(T,U))
 ```
 
 _Nim_
 
 ```nim
-write(stdout,1)
+write(stdout,max(V,W))
 ```
 
 _Python_
 
 ```py
-print(1,end="")
+print(max(X,Y),end="")
 ```
 
 _Coconut_
 
 ```coco
-print(1,end="")
+print(max(Z,A),end="")
 ```
 
 _Swift_
 
 ```swift
-print(1,terminator:"")
+print(max(B,C),terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(1)
+write(Math.max(D,E))
 ```
 
 _Janet_
 
 ```janet
-(prin 1)
+(prin(max F G))
 ```
 
 _Clojure_
 
 ```clj
-(pr 1)
+(pr(max H I))
 ```
 
 
@@ -2987,7 +2927,7 @@ _Clojure_
 _Golfscript_
 
 ```gs
-J 1=
+V 1=
 ```
 
 _Lua_
@@ -4599,7 +4539,7 @@ var x=Set([1]).insert(1)
 _Javascript_
 
 ```js
-x=Z.add(1)
+x=N.add(1)
 ```
 
 
@@ -4761,55 +4701,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-"xx"
+G H+
 ```
 
 _Lua_
 
 ```lua
-io.write("xx")
+io.write(I..J)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,"xx")
+write(stdout,K&L)
 ```
 
 _Python_
 
 ```py
-print(end="xx")
+print(end=M+N)
 ```
 
 _Coconut_
 
 ```coco
-print(end="xx")
+print(end=O+P)
 ```
 
 _Swift_
 
 ```swift
-print("xx",terminator:"")
+print(Q+R,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write`xx`
+write(S+T)
 ```
 
 _Janet_
 
 ```janet
-(prin"xx")
+(prin(string U V))
 ```
 
 _Clojure_
 
 ```clj
-(print"xx")
+(print(str W X))
 ```
 
 

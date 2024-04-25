@@ -31,6 +31,7 @@ import {
   type OpCode,
   forRangeCommon,
   block,
+  isLiteral,
 } from "../IR";
 import languages from "../languages/languages";
 import { compileVariant, isCompilable } from "../common/compile";
@@ -59,7 +60,7 @@ const options = yargs()
  * This aims at providing basic compilable building blocks.
  */
 interface LangCoverConfig {
-  expr: (x?: Type) => Node; // returns any node of given type (or 0..0)
+  expr: (x?: Type, forceBuiltin?: boolean) => Node; // returns any node of given type (or 0..0)
   stmt: (x?: Node) => Node; // returns any node of type void containing given Node (or any)
 }
 
@@ -91,7 +92,8 @@ for (const lang of langs) {
     return x;
   };
 
-  lang.expr = function (x: Type = integerType(1, 1)) {
+  lang.expr = function (x: Type = integerType(1, 1), forceBuiltin = false) {
+    if (forceBuiltin) return nextBuiltin(x);
     const literal = getLiteralOfType(x, true);
     return isCompilable(literal, lang) ? literal : nextBuiltin(x);
   };
@@ -280,18 +282,21 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
             ]
           : [
               opCode,
-              (lang) =>
-                lang.stmt(
+              (lang) => {
+                const exprs = [false, true].map((forceBuiltin) =>
                   op.unsafe(opCode)(
                     ...getInstantiatedOpCodeArgTypes(opCode).map((t, i) =>
                       lang.expr(
                         opCode === "range_excl" && i === 1
                           ? integerType(10, 10)
                           : t,
+                        forceBuiltin,
                       ),
                     ),
                   ),
-                ),
+                );
+                return lang.stmt(isLiteral(exprs[0]) ? exprs[1] : exprs[0]);
+              },
             ],
     ),
   ),
