@@ -33,7 +33,7 @@ import {
   block,
 } from "../IR";
 import languages from "../languages/languages";
-import { isCompilable } from "../common/compile";
+import { compileVariant, isCompilable } from "../common/compile";
 import asTable from "as-table";
 import { mapObjectValues } from "../common/arrays";
 import yargs from "yargs";
@@ -45,6 +45,10 @@ const options = yargs()
       alias: "a",
       description:
         "Print rows that are all true or all false & backend only opcodes",
+      type: "boolean",
+    },
+    md: {
+      description: "Output to md instead.",
       type: "boolean",
     },
   })
@@ -94,49 +98,69 @@ for (const lang of langs) {
 }
 
 type Table = Record<string, Record<string, unknown>>;
+type TableForMd = Record<string, { lang: Language; output: string }[]>;
 type CoverTableRecipe = Record<string, (x: LangCoverConfig) => Node>;
 
 let results: Table = {};
+let resultMd = "";
 
-function printTable(name: string, x: Table) {
-  results = { ...results, ...x };
-  console.log(
-    "\n" +
-      asTable([
-        {
-          [name]: "",
-          ...mapObjectValues(
-            Object.values(x)[0],
-            (v, k) =>
-              `${Math.floor(
-                (100 *
-                  Object.values(x)
-                    .map((x) => x[k])
-                    .filter((x) => x === true).length) /
-                  Object.values(x).length,
-              )}%`,
-          ),
-        },
-        ...Object.entries(x)
-          .filter(
-            ([k, v]) =>
-              options.all === true ||
-              Object.values(v).some((x, _, a) => x !== a[0]),
-          )
-          .map(([k, v]) => ({
-            [name]: k.padEnd(25),
-            ...mapObjectValues(v, (v2) =>
-              v2 === true
-                ? "✔️"
-                : v2 === false
-                  ? "❌"
-                  : v2 === undefined
-                    ? ""
-                    : v2,
+function addTable(name: string, recipe: CoverTableRecipe) {
+  if (options.md === true) {
+    const x = runCoverTableRecipeMd(recipe);
+    resultMd += `# ${name}`;
+    for (const [key, langs] of Object.entries(x)) {
+      resultMd += `\n\n## ${key}\n`;
+      for (const lang of langs) {
+        resultMd += `
+_${lang.lang.name}_
+
+\`\`\`${lang.lang.extension}
+${lang.output}
+\`\`\`
+`;
+      }
+    }
+  } else {
+    const x = runCoverTableRecipe(recipe);
+    results = { ...results, ...x };
+    console.log(
+      "\n" +
+        asTable([
+          {
+            [name]: "",
+            ...mapObjectValues(
+              Object.values(x)[0],
+              (v, k) =>
+                `${Math.floor(
+                  (100 *
+                    Object.values(x)
+                      .map((x) => x[k])
+                      .filter((x) => x === true).length) /
+                    Object.values(x).length,
+                )}%`,
             ),
-          })),
-      ]).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly
-  );
+          },
+          ...Object.entries(x)
+            .filter(
+              ([k, v]) =>
+                options.all === true ||
+                Object.values(v).some((x, _, a) => x !== a[0]),
+            )
+            .map(([k, v]) => ({
+              [name]: k.padEnd(25),
+              ...mapObjectValues(v, (v2) =>
+                v2 === true
+                  ? "✔️"
+                  : v2 === false
+                    ? "❌"
+                    : v2 === undefined
+                      ? ""
+                      : v2,
+              ),
+            })),
+        ]).replaceAll("❌ ", "❌"), // no table generating library I tried was able to align ❌ correctly
+    );
+  }
 }
 
 function runCoverTableRecipe(recipe: CoverTableRecipe): Table {
@@ -147,6 +171,34 @@ function runCoverTableRecipe(recipe: CoverTableRecipe): Table {
         isCompilable(f(lang), lang),
       ]),
     ),
+  );
+}
+
+function runCoverTableRecipeMd(recipe: CoverTableRecipe): TableForMd {
+  return Object.fromEntries(
+    Object.entries(recipe)
+      .map(([key, f]) => {
+        return [
+          key,
+          langs
+            .map((lang) => {
+              const output = compileVariant(
+                f(lang),
+                {
+                  level: "nogolf",
+                  restrictFrontend: false,
+                  skipTypecheck: true,
+                },
+                lang,
+              ).result;
+              if (typeof output === "string") {
+                return { lang, output };
+              }
+            })
+            .filter((x) => x !== undefined),
+        ] as [string, { lang: Language; output: string }[]];
+      })
+      .filter((x) => x[1].length > 0),
   );
 }
 
@@ -245,34 +297,30 @@ const opCodes: CoverTableRecipe = Object.fromEntries(
   ),
 );
 
-printTable("Features", runCoverTableRecipe(features));
-printTable("OpCodes", runCoverTableRecipe(opCodes));
+addTable("Features", features);
+addTable("OpCodes", opCodes);
 
 if (options.all === true) {
-  printTable(
-    "Backend OpCodes",
-    runCoverTableRecipe(
-      Object.fromEntries(
-        OpCodes.filter((x) => !PhysicalOpCodesUser.includes(x as any)).map(
-          (opCode) => [
-            opCode,
-            (lang) =>
-              lang.stmt(
-                op.unsafe(opCode)(
-                  ...getInstantiatedOpCodeArgTypes(opCode).map((x) =>
-                    lang.expr(x),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+  const theRest = Object.fromEntries(
+    OpCodes.filter((x) => !PhysicalOpCodesUser.includes(x as any)).map(
+      (opCode) => [
+        opCode,
+        (lang: LangCoverConfig) =>
+          lang.stmt(
+            op.unsafe(opCode)(
+              ...getInstantiatedOpCodeArgTypes(opCode).map((x) => lang.expr(x)),
+            ),
+          ),
+      ],
     ),
   );
+  addTable("Backend OpCodes", theRest);
 }
 
 fs.writeFileSync(
-  `cover${options.all === true ? "-all" : ""}.json`,
-  JSON.stringify(results),
+  options.md === true
+    ? `docs/opcodes-outputs${options.all === true ? "-all" : ""}.generated.md`
+    : `cover${options.all === true ? "-all" : ""}.json`,
+  options.md === true ? resultMd : JSON.stringify(results),
   { encoding: "utf-8" },
 );
