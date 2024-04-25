@@ -32,6 +32,7 @@ import {
   forRangeCommon,
   block,
   isLiteral,
+  OpCodesUser,
 } from "../IR";
 import languages from "../languages/languages";
 import { compileVariant, isCompilable } from "../common/compile";
@@ -262,7 +263,7 @@ const tryAsMutation: OpCode[] = [
 ];
 
 const opCodes: CoverTableRecipe = Object.fromEntries(
-  PhysicalOpCodesUser.flatMap((opCode) =>
+  (options.md === true ? OpCodesUser : PhysicalOpCodesUser).flatMap((opCode) =>
     (tryAsMutation.includes(opCode) ? [false, true] : [false]).map(
       (asMutation) =>
         asMutation

@@ -934,60 +934,345 @@ _Clojure_
 ```
 # OpCodes
 
-## add
+## is_even
 
 _Golfscript_
 
 ```gs
-J K+
+0 1=:x;
 ```
 
 _Lua_
 
 ```lua
-io.write(L+M)
+x=0==1
 ```
 
 _Nim_
 
 ```nim
-write(stdout,N+O)
+var x=0==1
 ```
 
 _Python_
 
 ```py
-print(P+Q,end="")
+x=0==1
 ```
 
 _Coconut_
 
 ```coco
-print(R+S,end="")
+x=0==1
 ```
 
 _Swift_
 
 ```swift
-print(T+U,terminator:"")
+var x=0==1
 ```
 
 _Javascript_
 
 ```js
-write(V+W)
+x=0==1
 ```
 
 _Janet_
 
 ```janet
-(prin(+ X Y))
+(var x(= 0 1))
 ```
 
 _Clojure_
 
 ```clj
-(pr(+ Z A))
+(def x(= 0 1))
+```
+
+
+## is_odd
+
+_Golfscript_
+
+```gs
+1 1=:x;
+```
+
+_Lua_
+
+```lua
+x=1==1
+```
+
+_Nim_
+
+```nim
+var x=1==1
+```
+
+_Python_
+
+```py
+x=1==1
+```
+
+_Coconut_
+
+```coco
+x=1==1
+```
+
+_Swift_
+
+```swift
+var x=1==1
+```
+
+_Javascript_
+
+```js
+x=1==1
+```
+
+_Janet_
+
+```janet
+(var x(= 1 1))
+```
+
+_Clojure_
+
+```clj
+(def x(= 1 1))
+```
+
+
+## succ
+
+_Golfscript_
+
+```gs
+1 B+
+```
+
+_Lua_
+
+```lua
+io.write(1+C)
+```
+
+_Nim_
+
+```nim
+write(stdout,1+D)
+```
+
+_Python_
+
+```py
+print(1+E,end="")
+```
+
+_Coconut_
+
+```coco
+print(1+F,end="")
+```
+
+_Swift_
+
+```swift
+print(1+G,terminator:"")
+```
+
+_Javascript_
+
+```js
+write(1+H)
+```
+
+_Janet_
+
+```janet
+(prin(+ 1 I))
+```
+
+_Clojure_
+
+```clj
+(pr(+ 1 J))
+```
+
+
+## pred
+
+_Golfscript_
+
+```gs
+K 1-
+```
+
+_Lua_
+
+```lua
+io.write(L-1)
+```
+
+_Nim_
+
+```nim
+write(stdout,M-1)
+```
+
+_Python_
+
+```py
+print(N-1,end="")
+```
+
+_Coconut_
+
+```coco
+print(O-1,end="")
+```
+
+_Swift_
+
+```swift
+print(P-1,terminator:"")
+```
+
+_Javascript_
+
+```js
+write(Q-1)
+```
+
+_Janet_
+
+```janet
+(prin(- R 1))
+```
+
+_Clojure_
+
+```clj
+(pr(- S 1))
+```
+
+
+## add
+
+_Golfscript_
+
+```gs
+T U+
+```
+
+_Lua_
+
+```lua
+io.write(V+W)
+```
+
+_Nim_
+
+```nim
+write(stdout,X+Y)
+```
+
+_Python_
+
+```py
+print(Z+A,end="")
+```
+
+_Coconut_
+
+```coco
+print(B+C,end="")
+```
+
+_Swift_
+
+```swift
+print(D+E,terminator:"")
+```
+
+_Javascript_
+
+```js
+write(F+G)
+```
+
+_Janet_
+
+```janet
+(prin(+ H I))
+```
+
+_Clojure_
+
+```clj
+(pr(+ J K))
+```
+
+
+## sub
+
+_Golfscript_
+
+```gs
+L M-
+```
+
+_Lua_
+
+```lua
+io.write(N-O)
+```
+
+_Nim_
+
+```nim
+write(stdout,P-Q)
+```
+
+_Python_
+
+```py
+print(R-S,end="")
+```
+
+_Coconut_
+
+```coco
+print(T-U,end="")
+```
+
+_Swift_
+
+```swift
+print(V-W,terminator:"")
+```
+
+_Javascript_
+
+```js
+write(X-Y)
+```
+
+_Janet_
+
+```janet
+(prin(- Z A))
+```
+
+_Clojure_
+
+```clj
+(pr(- B C))
 ```
 
 
@@ -996,55 +1281,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-B C*
+D E*
 ```
 
 _Lua_
 
 ```lua
-io.write(D*E)
+io.write(F*G)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,F*G)
+write(stdout,H*I)
 ```
 
 _Python_
 
 ```py
-print(H*I,end="")
+print(J*K,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(J*K,end="")
+print(L*M,end="")
 ```
 
 _Swift_
 
 ```swift
-print(L*M,terminator:"")
+print(N*O,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(N*O)
+write(P*Q)
 ```
 
 _Janet_
 
 ```janet
-(prin(* P Q))
+(prin(* R S))
 ```
 
 _Clojure_
 
 ```clj
-(pr(* R S))
+(pr(* T U))
 ```
 
 
@@ -1053,55 +1338,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-T U/
+V W/
 ```
 
 _Lua_
 
 ```lua
-io.write(V//W)
+io.write(X//Y)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,X/%Y)
+write(stdout,Z/%A)
 ```
 
 _Python_
 
 ```py
-print(Z//A,end="")
+print(B//C,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(B//C,end="")
+print(D//E,end="")
 ```
 
 _Swift_
 
 ```swift
-print(D/E,terminator:"")
+print(F/G,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(Math.floor(F/G))
+write(Math.floor(H/I))
 ```
 
 _Janet_
 
 ```janet
-(prin(div H I))
+(prin(div J K))
 ```
 
 _Clojure_
 
 ```clj
-(pr(quot J K))
+(pr(quot L M))
 ```
 
 
@@ -1110,25 +1395,25 @@ _Clojure_
 _Golfscript_
 
 ```gs
-L M?
+N O?
 ```
 
 _Python_
 
 ```py
-print(R**S,end="")
+print(T**U,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(T**U,end="")
+print(V**W,end="")
 ```
 
 _Javascript_
 
 ```js
-write(X**Y)
+write(Z**A)
 ```
 
 
@@ -1137,55 +1422,55 @@ write(X**Y)
 _Golfscript_
 
 ```gs
-D E%
+F G%
 ```
 
 _Lua_
 
 ```lua
-io.write(F%G)
+io.write(H%I)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,H%%I)
+write(stdout,J%%K)
 ```
 
 _Python_
 
 ```py
-print(J%K,end="")
+print(L%M,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(L%M,end="")
+print(N%O,end="")
 ```
 
 _Swift_
 
 ```swift
-print(N%O,terminator:"")
+print(P%Q,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(P%Q)
+write(R%S)
 ```
 
 _Janet_
 
 ```janet
-(prin(% R S))
+(prin(% T U))
 ```
 
 _Clojure_
 
 ```clj
-(pr(mod T U))
+(pr(mod V W))
 ```
 
 
@@ -1365,25 +1650,25 @@ _Clojure_
 _Golfscript_
 
 ```gs
-X 2 Y?*
+Z 2 A?*
 ```
 
 _Python_
 
 ```py
-print(D<<E,end="")
+print(F<<G,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(F<<G,end="")
+print(H<<I,end="")
 ```
 
 _Javascript_
 
 ```js
-write(J<<K)
+write(L<<M)
 ```
 
 
@@ -1392,55 +1677,55 @@ write(J<<K)
 _Golfscript_
 
 ```gs
-P 2 Q?/
+R 2 S?/
 ```
 
 _Lua_
 
 ```lua
-io.write(R>>S)
+io.write(T>>U)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,T shr U)
+write(stdout,V shr W)
 ```
 
 _Python_
 
 ```py
-print(V>>W,end="")
+print(X>>Y,end="")
 ```
 
 _Coconut_
 
 ```coco
-print(X>>Y,end="")
+print(Z>>A,end="")
 ```
 
 _Swift_
 
 ```swift
-print(Z>>A,terminator:"")
+print(B>>C,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(B>>C)
+write(D>>E)
 ```
 
 _Janet_
 
 ```janet
-(prin(brshift D E))
+(prin(brshift F G))
 ```
 
 _Clojure_
 
 ```clj
-(pr(bit-shift-right F G))
+(pr(bit-shift-right H I))
 ```
 
 
@@ -1485,55 +1770,55 @@ _Janet_
 _Golfscript_
 
 ```gs
-[Z A]$0=
+[B C]$0=
 ```
 
 _Lua_
 
 ```lua
-io.write(math.min(B,C))
+io.write(math.min(D,E))
 ```
 
 _Nim_
 
 ```nim
-write(stdout,min(D,E))
+write(stdout,min(F,G))
 ```
 
 _Python_
 
 ```py
-print(min(F,G),end="")
+print(min(H,I),end="")
 ```
 
 _Coconut_
 
 ```coco
-print(min(H,I),end="")
+print(min(J,K),end="")
 ```
 
 _Swift_
 
 ```swift
-print(min(J,K),terminator:"")
+print(min(L,M),terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(Math.min(L,M))
+write(Math.min(N,O))
 ```
 
 _Janet_
 
 ```janet
-(prin(min N O))
+(prin(min P Q))
 ```
 
 _Clojure_
 
 ```clj
-(pr(min P Q))
+(pr(min R S))
 ```
 
 
@@ -1542,55 +1827,112 @@ _Clojure_
 _Golfscript_
 
 ```gs
-[R S]$1=
+[T U]$1=
 ```
 
 _Lua_
 
 ```lua
-io.write(math.max(T,U))
+io.write(math.max(V,W))
 ```
 
 _Nim_
 
 ```nim
-write(stdout,max(V,W))
+write(stdout,max(X,Y))
 ```
 
 _Python_
 
 ```py
-print(max(X,Y),end="")
+print(max(Z,A),end="")
 ```
 
 _Coconut_
 
 ```coco
-print(max(Z,A),end="")
+print(max(B,C),end="")
 ```
 
 _Swift_
 
 ```swift
-print(max(B,C),terminator:"")
+print(max(D,E),terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(Math.max(D,E))
+write(Math.max(F,G))
 ```
 
 _Janet_
 
 ```janet
-(prin(max F G))
+(prin(max H I))
 ```
 
 _Clojure_
 
 ```clj
-(pr(max H I))
+(pr(max J K))
+```
+
+
+## neg
+
+_Golfscript_
+
+```gs
+-1 L*
+```
+
+_Lua_
+
+```lua
+io.write(-M)
+```
+
+_Nim_
+
+```nim
+write(stdout,-N)
+```
+
+_Python_
+
+```py
+print(-O,end="")
+```
+
+_Coconut_
+
+```coco
+print(-P,end="")
+```
+
+_Swift_
+
+```swift
+print(-Q,terminator:"")
+```
+
+_Javascript_
+
+```js
+write(-R)
+```
+
+_Janet_
+
+```janet
+(prin(- S))
+```
+
+_Clojure_
+
+```clj
+(pr(- T))
 ```
 
 
@@ -1787,6 +2129,65 @@ print(readLine(),terminator:"")
 ```
 
 
+## at[argv]
+
+_Golfscript_
+
+```gs
+:a;a 1=
+```
+
+_Lua_
+
+```lua
+io.write(arg[2])
+```
+
+_Nim_
+
+```nim
+import os
+write(stdout,paramStr(2))
+```
+
+_Python_
+
+```py
+import sys
+print(end=sys.argv[2])
+```
+
+_Coconut_
+
+```coco
+print(end=os.sys.argv[2])
+```
+
+_Swift_
+
+```swift
+print(CommandLine.arguments[2],terminator:"")
+```
+
+_Javascript_
+
+```js
+write(arguments[1])
+```
+
+_Janet_
+
+```janet
+(prin((dyn :args)2))
+```
+
+_Clojure_
+
+```clj
+(print(nth *command-line-args* 1))
+```
+
+
 ## print[Text]
 
 _Golfscript_
@@ -1841,6 +2242,63 @@ _Clojure_
 
 ```clj
 (def x(print"x"))
+```
+
+
+## print[Int]
+
+_Golfscript_
+
+```gs
+1:x;
+```
+
+_Lua_
+
+```lua
+x=io.write(1)
+```
+
+_Nim_
+
+```nim
+var x=write(stdout,1)
+```
+
+_Python_
+
+```py
+x=print(1,end="")
+```
+
+_Coconut_
+
+```coco
+x=print(1,end="")
+```
+
+_Swift_
+
+```swift
+var x=print(1,terminator:"")
+```
+
+_Javascript_
+
+```js
+x=write(1)
+```
+
+_Janet_
+
+```janet
+(var x(prin 1))
+```
+
+_Clojure_
+
+```clj
+(def x(pr 1))
 ```
 
 
@@ -1899,6 +2357,206 @@ _Clojure_
 
 ```clj
 (def x(println"x"))
+```
+
+
+## println[Int]
+
+_Golfscript_
+
+```gs
+1"
+"+:x;
+```
+
+_Lua_
+
+```lua
+x=print(1)
+```
+
+_Nim_
+
+```nim
+var x=echo(1)
+```
+
+_Python_
+
+```py
+x=print(1)
+```
+
+_Coconut_
+
+```coco
+x=print(1)
+```
+
+_Swift_
+
+```swift
+var x=print(1)
+```
+
+_Javascript_
+
+```js
+x=print(1)
+```
+
+_Janet_
+
+```janet
+(var x(pp 1))
+```
+
+_Clojure_
+
+```clj
+(def x(prn 1))
+```
+
+
+## putc[byte]
+
+_Golfscript_
+
+```gs
+[1]""+:x;
+```
+
+_Lua_
+
+```lua
+x=io.write(string.char(1))
+```
+
+_Nim_
+
+```nim
+var x=write(stdout,chr(1))
+```
+
+_Python_
+
+```py
+x=print(end=chr(1))
+```
+
+_Coconut_
+
+```coco
+x=print(end=chr(1))
+```
+
+_Swift_
+
+```swift
+var x=print(String(UnicodeScalar(1)!),terminator:"")
+```
+
+_Javascript_
+
+```js
+x=write(String.fromCharCode(1))
+```
+
+_Janet_
+
+```janet
+(var x(prin(string/format"%c"1)))
+```
+
+
+## putc[codepoint]
+
+_Nim_
+
+```nim
+import unicode
+var x=write(stdout,$Rune(1))
+```
+
+_Python_
+
+```py
+x=print(end=chr(1))
+```
+
+_Coconut_
+
+```coco
+x=print(end=chr(1))
+```
+
+_Swift_
+
+```swift
+var x=print(String(UnicodeScalar(1)!),terminator:"")
+```
+
+_Clojure_
+
+```clj
+(def x(print(str(char 1))))
+```
+
+
+## putc[Ascii]
+
+_Golfscript_
+
+```gs
+[1]""+:x;
+```
+
+_Lua_
+
+```lua
+x=io.write(string.char(1))
+```
+
+_Nim_
+
+```nim
+var x=write(stdout,chr(1))
+```
+
+_Python_
+
+```py
+x=print(end=chr(1))
+```
+
+_Coconut_
+
+```coco
+x=print(end=chr(1))
+```
+
+_Swift_
+
+```swift
+var x=print(String(UnicodeScalar(1)!),terminator:"")
+```
+
+_Javascript_
+
+```js
+x=write(String.fromCharCode(1))
+```
+
+_Janet_
+
+```janet
+(var x(prin(string/format"%c"1)))
+```
+
+_Clojure_
+
+```clj
+(def x(print(str(char 1))))
 ```
 
 
@@ -2927,7 +3585,7 @@ _Clojure_
 _Golfscript_
 
 ```gs
-V 1=
+I 1=
 ```
 
 _Lua_
@@ -2977,6 +3635,248 @@ _Clojure_
 
 ```clj
 (pr({1 1}1))
+```
+
+
+## at[Ascii]
+
+_Golfscript_
+
+```gs
+["x"1=]""+
+```
+
+_Lua_
+
+```lua
+io.write(("x"):sub(2,2))
+```
+
+_Nim_
+
+```nim
+write(stdout,"x"[1])
+```
+
+_Python_
+
+```py
+print(end="x"[1])
+```
+
+_Coconut_
+
+```coco
+print(end="x"[1])
+```
+
+_Swift_
+
+```swift
+print(String(Array("x")[1]),terminator:"")
+```
+
+_Javascript_
+
+```js
+write("x"[1])
+```
+
+_Janet_
+
+```janet
+(prin(slice"x"1 2))
+```
+
+_Clojure_
+
+```clj
+(print(str(nth"x"1)))
+```
+
+
+## at_back[Ascii]
+
+_Golfscript_
+
+```gs
+["x"-1=]""+
+```
+
+_Lua_
+
+```lua
+io.write(("x"):sub(-1,-1))
+```
+
+_Nim_
+
+```nim
+write(stdout,"x"[^1])
+```
+
+_Python_
+
+```py
+print(end="x"[-1])
+```
+
+_Coconut_
+
+```coco
+print(end="x"[-1])
+```
+
+_Swift_
+
+```swift
+print(String(Array("x")[0]),terminator:"")
+```
+
+
+## at[byte]
+
+_Golfscript_
+
+```gs
+["x"1=]""+
+```
+
+_Lua_
+
+```lua
+io.write(("x"):sub(2,2))
+```
+
+_Nim_
+
+```nim
+write(stdout,"x"[1])
+```
+
+_Python_
+
+```py
+print(end=chr(bytes("x","u8")[1]))
+```
+
+_Coconut_
+
+```coco
+print(end=chr(bytes("x","u8")[1]))
+```
+
+_Swift_
+
+```swift
+print(String(UnicodeScalar(Int(Array("x".utf8)[1]))!),terminator:"")
+```
+
+_Janet_
+
+```janet
+(prin(slice"x"1 2))
+```
+
+
+## at_back[byte]
+
+_Golfscript_
+
+```gs
+["x"-1=]""+
+```
+
+_Lua_
+
+```lua
+io.write(("x"):sub(-1,-1))
+```
+
+_Nim_
+
+```nim
+write(stdout,"x"[^1])
+```
+
+_Python_
+
+```py
+print(end=chr(bytes("x","u8")[-1]))
+```
+
+_Coconut_
+
+```coco
+print(end=chr(bytes("x","u8")[-1]))
+```
+
+_Swift_
+
+```swift
+print(String(UnicodeScalar(Int(Array("x".utf8)[0]))!),terminator:"")
+```
+
+
+## at[codepoint]
+
+_Nim_
+
+```nim
+import unicode
+write(stdout,$toRunes("x")[1])
+```
+
+_Python_
+
+```py
+print(end="x"[1])
+```
+
+_Coconut_
+
+```coco
+print(end="x"[1])
+```
+
+_Swift_
+
+```swift
+print(String(Array("x")[1]),terminator:"")
+```
+
+_Clojure_
+
+```clj
+(print(str(nth"x"1)))
+```
+
+
+## at_back[codepoint]
+
+_Nim_
+
+```nim
+import unicode
+write(stdout,$toRunes("x")[^1])
+```
+
+_Python_
+
+```py
+print(end="x"[-1])
+```
+
+_Coconut_
+
+```coco
+print(end="x"[-1])
+```
+
+_Swift_
+
+```swift
+print(String(Array("x")[0]),terminator:"")
 ```
 
 
@@ -4528,6 +5428,105 @@ _Clojure_
 ```
 
 
+## size[Ascii]
+
+_Golfscript_
+
+```gs
+Q,
+```
+
+_Lua_
+
+```lua
+io.write(R:len())
+```
+
+_Nim_
+
+```nim
+write(stdout,len(S))
+```
+
+_Python_
+
+```py
+print(len(T),end="")
+```
+
+_Coconut_
+
+```coco
+print(len(U),end="")
+```
+
+_Janet_
+
+```janet
+(prin(length X))
+```
+
+
+## size[codepoint]
+
+_Python_
+
+```py
+print(len(C),end="")
+```
+
+_Coconut_
+
+```coco
+print(len(D),end="")
+```
+
+
+## size[byte]
+
+_Golfscript_
+
+```gs
+I,
+```
+
+_Lua_
+
+```lua
+io.write(J:len())
+```
+
+_Nim_
+
+```nim
+write(stdout,len(K))
+```
+
+_Python_
+
+```py
+print(len(bytes(L,"u8")),end="")
+```
+
+_Coconut_
+
+```coco
+print(len(bytes(M,"u8")),end="")
+```
+
+_Swift_
+
+```swift
+print(N.utf8.count,terminator:"")
+```
+
+_Janet_
+
+```janet
+(prin(length P))
+```
+
+
 ## include
 
 _Swift_
@@ -4539,7 +5538,7 @@ var x=Set([1]).insert(1)
 _Javascript_
 
 ```js
-x=N.add(1)
+x=F.add(1)
 ```
 
 
@@ -4701,55 +5700,55 @@ _Clojure_
 _Golfscript_
 
 ```gs
-G H+
+Y Z+
 ```
 
 _Lua_
 
 ```lua
-io.write(I..J)
+io.write(A..B)
 ```
 
 _Nim_
 
 ```nim
-write(stdout,K&L)
+write(stdout,C&D)
 ```
 
 _Python_
 
 ```py
-print(end=M+N)
+print(end=E+F)
 ```
 
 _Coconut_
 
 ```coco
-print(end=O+P)
+print(end=G+H)
 ```
 
 _Swift_
 
 ```swift
-print(Q+R,terminator:"")
+print(I+J,terminator:"")
 ```
 
 _Javascript_
 
 ```js
-write(S+T)
+write(K+L)
 ```
 
 _Janet_
 
 ```janet
-(prin(string U V))
+(prin(string M N))
 ```
 
 _Clojure_
 
 ```clj
-(print(str W X))
+(print(str O P))
 ```
 
 
