@@ -137,6 +137,7 @@ const luaLanguage: Language = {
       mapOps({
         int_to_dec: (a) =>
           op["concat[Text]"](text(""), implicitConversion("int_to_dec", a)),
+        int_to_hex: (a) => func("string.format", text("%x"), a),
         join: (a, b) => func("table.concat", isText("")(b) ? [a] : [a, b]),
         "char[byte]": (x) => func("string.char", x),
 
