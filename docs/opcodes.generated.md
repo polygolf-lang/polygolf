@@ -1,5 +1,5 @@
 # OpCodes
-Hover opcode name to see a description.
+Hover opcode name to see a description or [see all outputs](opcodes-outputs.generated.md).
 
 | Alias | Full name | Input | Output |
 |-------|-----------|-------|--------|
