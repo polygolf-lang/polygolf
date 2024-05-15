@@ -17,7 +17,7 @@ import path from "path";
 import { debugEmit } from "../common/compile";
 
 let result = `# OpCodes
-Hover opcode name to see a description.
+Hover opcode name to see a description or click to see all outputs.
 
 | Alias | Full name | Input | Output |
 |-------|-----------|-------|--------|
@@ -35,7 +35,10 @@ function getOpCodeOutputType(opCode: OpCode) {
 
 for (const [alias, opCodes] of groupby(OpCodesUser, userName).entries()) {
   result += `| ${alias.replace("|", "\\|")} | ${opCodes
-    .map((x) => `[${x}](## ${JSON.stringify(opCodeDescriptions[x])})`)
+    .map(
+      (x) =>
+        `[${x}](opcodes-outputs.generated.md#${x.replaceAll(/\[|\]/g, "")} ${JSON.stringify(opCodeDescriptions[x])})`,
+    )
     .join("<br>")} | ${opCodes
     .map(
       (x) =>
