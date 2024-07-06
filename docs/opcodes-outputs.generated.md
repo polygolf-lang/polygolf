@@ -356,7 +356,7 @@ for x=4,9 do io.write(0)end
 _Nim_
 
 ```nim
-for()in 4..<10:write(stdout,0)
+for x in 4..<10:write(stdout,0)
 ```
 
 _Python_
@@ -413,7 +413,7 @@ for x=4,9,3 do io.write(0)end
 _Nim_
 
 ```nim
-for()in countup(4,10,3):write(stdout,0)
+for x in countup(4,10,3):write(stdout,0)
 ```
 
 _Python_
@@ -529,7 +529,7 @@ _Nim_
 
 ```nim
 import os
-for()in commandLineParams():write(stdout,0)
+for x in commandLineParams():write(stdout,0)
 ```
 
 _Python_

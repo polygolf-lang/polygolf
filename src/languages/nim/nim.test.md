@@ -343,7 +343,7 @@ for 10 (println "Hi");
 ```
 
 ```nim
-for()in..9:echo"Hi"
+for _ in..9:echo"Hi"
 ```
 
 ## Text literals

@@ -48,7 +48,6 @@ import {
   forRangeToForEach,
   rangeExclusiveToInclusive,
   forRangeToForRangeOneStep,
-  removeUnusedLoopVar,
   shiftRangeOneUp,
   useImplicitForEachChar,
 } from "../../plugins/loops";
@@ -141,7 +140,6 @@ const nimLanguage: Language = {
       mapOps({
         "at[argv]": (a) => func("paramStr", succ(a)),
       }),
-      removeUnusedLoopVar,
       rangeExclusiveToInclusive(true),
       implicitlyConvertPrintArg,
       useUnsignedDivision,

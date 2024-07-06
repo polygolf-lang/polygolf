@@ -8,7 +8,7 @@ import {
   emitIntLiteral,
   getIfChain,
 } from "../../common/emit";
-import { type Array, isInt, type Node, type Text, type If } from "../../IR";
+import { type Array, isInt, type Node, type Text, type If, id } from "../../IR";
 import { type CompilationContext } from "../../common/compile";
 import { type Spine } from "../../common/Spine";
 import { $, type PathFragment } from "../../common/fragments";
@@ -179,7 +179,7 @@ export class NimEmitter extends PrecedenceVisitorEmitter {
       case "ForEach":
         return [
           `for`,
-          n.variable === undefined ? "()" : $.variable,
+          (n.variable ?? id("_")).name,
           "in",
           $.collection,
           ":",
