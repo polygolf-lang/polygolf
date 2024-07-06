@@ -122,8 +122,8 @@ export function forRangeToForEach(node: Node, spine: Spine) {
           if (
             isOp["at[List]"](n) &&
             (n.args[0] === indexedList ||
-              (indexedList!.kind === "Identifier" &&
-                isUserIdent(indexedList!)(n.args[0]))) &&
+              (indexedList.kind === "Identifier" &&
+                isUserIdent(indexedList)(n.args[0]))) &&
             isUserIdent(indexVar.name)(n.args[1])
           )
             return elementIdentifier;

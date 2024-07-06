@@ -219,9 +219,7 @@ export default function compile(
   });
 
   const errorlessVariants = variants.filter((x) => !("result" in x)) as Node[];
-  const errorVariants = variants.filter(
-    (x) => "result" in x,
-  ) as CompilationResult[];
+  const errorVariants = variants.filter((x) => "result" in x);
   if (errorlessVariants.length === 0) {
     for (const variant of variants) {
       (variant as CompilationResult).warnings = parsed!.warnings;
@@ -292,7 +290,7 @@ export default function compile(
               return undefined;
             })
             .filter((x) => x !== undefined)
-            .map((x) => compileVariant(x!, options, language)),
+            .map((x) => compileVariant(x, options, language)),
         ].reduce(shorterBy(obj));
       }
       if (isError(res.result) && variants.length > 1)

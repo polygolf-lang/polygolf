@@ -357,8 +357,8 @@ function _decomposeAnyInt(
   hasShifts = true,
 ): IntDecomposition[] {
   function betterOrEqual(
-    [k1, b1, e1, d1, c1]: IntDecomposition,
-    [k2, b2, e2, d2, c2]: IntDecomposition,
+    [k1, b1, _, d1, c1]: IntDecomposition,
+    [k2, b2, __, d2, c2]: IntDecomposition,
   ): boolean {
     return (
       (!hasShifts || b1 === 2n || b2 !== 2n) &&

@@ -224,10 +224,7 @@ function _op(op: PhysicalOpCode, ...args: Node[]): Op {
 function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
   if (!isOpCode(opCode)) return _op(opCode, ...args);
   if (isVirtualOpCode(opCode)) {
-    return (virtualOpCodeDefinitions[opCode].construct as any).apply(
-      null,
-      args,
-    );
+    return (virtualOpCodeDefinitions[opCode].construct as any)(...args);
   }
   if (isUnary(opCode)) {
     const value = evalUnary({ kind: "Op", op: opCode, args: args as any });
@@ -260,9 +257,9 @@ function opUnsafe(opCode: OpCode, ...args: Node[]): Node {
     if (opCode === "add") args = simplifyPolynomial(args);
     else {
       if (isCommutative(opCode)) {
-        args = args
-          .filter((x) => isInt()(x))
-          .concat(args.filter((x) => !isInt()(x)));
+        args = (args.filter(isInt()) as Node[]).concat(
+          args.filter((x) => !isInt()(x)),
+        );
       } else {
         if (opCode === "concat[Text]")
           args = args.filter((x) => !isText("")(x));
